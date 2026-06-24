@@ -1,27 +1,45 @@
-// ============================================================
-// THENIJOBS — Job Detail Screen
-// ============================================================
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:thenijobs/core/services/firestore_service.dart';
 import 'package:thenijobs/core/theme/app_theme.dart';
 import 'package:thenijobs/features/auth/presentation/providers/auth_provider.dart';
+import 'package:thenijobs/features/public/presentation/providers/stats_provider.dart';
+import 'package:thenijobs/features/public/presentation/widgets/mobile_job_widgets.dart';
 import 'package:thenijobs/shared/data/models/job_model.dart';
 import 'package:thenijobs/shared/data/models/seeker_profile_model.dart';
-import 'package:thenijobs/features/public/presentation/providers/stats_provider.dart';
-import 'package:thenijobs/features/public/presentation/widgets/home_footer.dart';
-import 'package:thenijobs/shared/widgets/floating_whatsapp.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class JobDetailScreen extends ConsumerStatefulWidget {
+  const JobDetailScreen({
+    super.key,
+    required this.jobId,
+    this.openApplyOnAuth = false,
+    this.openSaveOnAuth = false,
+  });
+
   final String jobId;
-  const JobDetailScreen({super.key, required this.jobId});
+  final bool openApplyOnAuth;
+  final bool openSaveOnAuth;
 
   @override
   ConsumerState<JobDetailScreen> createState() => _JobDetailScreenState();
+}
+
+class _UploadedResume {
+  const _UploadedResume({
+    required this.id,
+    required this.name,
+    required this.url,
+  });
+
+  final String id;
+  final String name;
+  final String url;
 }
 
 class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
@@ -29,6 +47,8 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
   bool _hasApplied = false;
   bool _checkingStatus = true;
   bool _applying = false;
+  bool _deferredApplyHandled = false;
+  bool _deferredSaveHandled = false;
 
   @override
   void initState() {
@@ -39,996 +59,1326 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
   Future<void> _checkSavedAndAppliedStatus() async {
     final userId = ref.read(authStateStreamProvider).value?.uid;
     if (userId == null) {
-      if (mounted) {
-        setState(() => _checkingStatus = false);
-      }
+      if (mounted) setState(() => _checkingStatus = false);
       return;
     }
 
     try {
-      final firestore = FirebaseFirestore.instance;
+      final service = ref.read(firestoreServiceProvider);
+      final savedJobs = await service.getSavedJobs(userId);
+      final applications = await service.getApplications(
+        ApplicationFilters(seekerId: userId, jobId: widget.jobId),
+      );
+      if (!mounted) return;
+      setState(() {
+        _isSaved = savedJobs.any((item) => item['jobId'] == widget.jobId);
+        _hasApplied = applications.isNotEmpty;
+        _checkingStatus = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _checkingStatus = false);
+    }
+  }
 
-      // Check saved
-      final savedSnap = await firestore
-          .collection('savedJobs')
-          .where('userId', isEqualTo: userId)
-          .where('jobId', isEqualTo: widget.jobId)
-          .get();
+  Map<String, Object?> _savedJobMetadata(Job job) {
+    return {
+      'jobTitle': job.title,
+      'companyName': job.companyName,
+      'description': job.description,
+      'district': job.location.isNotEmpty ? job.location : job.district,
+      'jobType': job.jobType.toJson(),
+      'salaryMin': job.salaryMin ?? 0,
+      'salaryMax': job.salaryMax ?? 0,
+      'skills': job.skills,
+      'deadline': job.deadline != null
+          ? Timestamp.fromDate(job.deadline!)
+          : null,
+    };
+  }
 
-      // Check applied
-      final appliedSnap = await firestore
-          .collection('applications')
-          .where('seekerId', isEqualTo: userId)
-          .where('jobId', isEqualTo: widget.jobId)
-          .get();
-
-      if (mounted) {
-        setState(() {
-          _isSaved = savedSnap.docs.isNotEmpty;
-          _hasApplied = appliedSnap.docs.isNotEmpty;
-          _checkingStatus = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error checking status: $e');
-      if (mounted) {
-        setState(() => _checkingStatus = false);
-      }
+  Future<void> _saveJob(Job job, String userId, {bool showSnack = true}) async {
+    await ref
+        .read(firestoreServiceProvider)
+        .saveJob(userId, job.id, metadata: _savedJobMetadata(job));
+    if (!mounted) return;
+    setState(() => _isSaved = true);
+    ref.invalidate(savedJobsStreamProvider);
+    if (showSnack) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Job saved')));
     }
   }
 
   Future<void> _toggleSaveJob(Job job, String? userId) async {
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to save this job')),
-      );
+      _showAuthRequiredSheet(job, action: _AuthAction.save);
       return;
     }
 
-    final firestore = FirebaseFirestore.instance;
-    setState(() => _isSaved = !_isSaved);
-
     try {
-      if (!_isSaved) {
-        // Remove from saved list
-        final snap = await firestore
-            .collection('savedJobs')
-            .where('userId', isEqualTo: userId)
-            .where('jobId', isEqualTo: job.id)
-            .get();
-        for (var doc in snap.docs) {
-          await doc.reference.delete();
-        }
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Job removed from saved list')),
-          );
-        }
+      if (_isSaved) {
+        await ref.read(firestoreServiceProvider).unsaveJob(userId, job.id);
+        if (!mounted) return;
+        setState(() => _isSaved = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Removed from saved jobs')),
+        );
       } else {
-        // Add to saved list
-        await firestore.collection('savedJobs').add({
-          'userId': userId,
-          'jobId': job.id,
-          'jobTitle': job.title,
-          'companyName': job.companyName,
-          'description': job.description,
-          'district': job.location.isNotEmpty ? job.location : job.district,
-          'jobType': job.jobType.toJson(),
-          'salaryMin': job.salaryMin ?? 0,
-          'salaryMax': job.salaryMax ?? 0,
-          'skills': job.skills,
-          'deadline': job.deadline != null ? Timestamp.fromDate(job.deadline!) : null,
-          'savedAt': FieldValue.serverTimestamp(),
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Job saved successfully')),
-          );
-        }
+        await _saveJob(job, userId);
       }
-    } catch (e) {
-      setState(() => _isSaved = !_isSaved); // Revert UI state
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update saved status: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _applyToJob(Job job, String userId, String seekerName, String resumeUrl, String coverLetter) async {
-    setState(() => _applying = true);
-    final firestore = FirebaseFirestore.instance;
-    final batch = firestore.batch();
-
-    final applicationRef = firestore.collection('applications').doc();
-
-    batch.set(applicationRef, {
-      'jobId': job.id,
-      'companyId': job.companyId,
-      'seekerId': userId,
-      'seekerName': seekerName,
-      'jobTitle': job.title,
-      'companyName': job.companyName,
-      'resumeUrl': resumeUrl,
-      'coverLetter': coverLetter,
-      'status': 'applied',
-      'appliedAt': FieldValue.serverTimestamp(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-      'statusTimestamps': {
-        'applied': FieldValue.serverTimestamp(),
-      },
-    });
-
-    batch.update(firestore.collection('jobs').doc(job.id), {
-      'applicationCount': FieldValue.increment(1),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-
-    try {
-      await batch.commit();
-
-      // Log activity
-      await firestore.collection('activityLogs').add({
-        'userId': userId,
-        'userName': seekerName,
-        'action': 'Applied to job',
-        'target': job.id,
-        'targetId': job.id,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      // Find company owner ID for notification delivery
-      String notifyUserId = job.companyId;
-      try {
-        final companyDoc = await firestore.collection('companies').doc(job.companyId).get();
-        if (companyDoc.exists && companyDoc.data()?['ownerId'] != null) {
-          notifyUserId = companyDoc.data()!['ownerId'] as String;
-        }
-      } catch (e) {
-        debugPrint('Error looking up company owner: $e');
-      }
-
-      // Create notification
-      await firestore.collection('notifications').add({
-        'userId': notifyUserId,
-        'type': 'application_update',
-        'title': 'New Job Application',
-        'message': '$seekerName applied to ${job.title}',
-        'actionUrl': '/employer/candidates',
-        'createdBy': userId,
-        'read': false,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      if (mounted) {
-        setState(() {
-          _hasApplied = true;
-          _applying = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Application submitted successfully!')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _applying = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit application: $e')),
-        );
-      }
-    }
-  }
-
-  void _showApplyBottomSheet(Job job, JobSeekerProfile? profile, String userId) {
-    if (profile == null) {
+    } catch (error) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not load seeker profile. Please verify your profile info.')),
+        SnackBar(content: Text('Could not update saved job: $error')),
       );
-      return;
     }
+  }
 
-    final resumes = profile.resumes;
-    String selectedResumeUrl = resumes.isNotEmpty 
-        ? (resumes.firstWhere((r) => r.isDefault, orElse: () => resumes.first).url ?? '') 
-        : (profile.resumeUrl ?? '');
+  Future<void> _applyToJob({
+    required Job job,
+    required String userId,
+    required String seekerName,
+    String? seekerEmail,
+    String? seekerPhone,
+    String? resumeUrl,
+    String? resumeName,
+    String? coverLetter,
+  }) async {
+    setState(() => _applying = true);
+    try {
+      await ref
+          .read(firestoreServiceProvider)
+          .applyToJob(
+            ApplyToJobData(
+              jobId: job.id,
+              companyId: job.companyId,
+              seekerId: userId,
+              seekerName: seekerName,
+              jobTitle: job.title,
+              companyName: job.companyName,
+              seekerEmail: seekerEmail,
+              seekerPhone: seekerPhone,
+              resumeUrl: resumeUrl,
+              resumeName: resumeName,
+              coverLetter: coverLetter,
+            ),
+          );
+      if (!mounted) return;
+      setState(() {
+        _hasApplied = true;
+        _applying = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Application submitted')));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _applying = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not apply: $error')));
+    }
+  }
 
-    String selectedResumeId = resumes.isNotEmpty 
-        ? resumes.firstWhere((r) => r.isDefault, orElse: () => resumes.first).id 
-        : '';
+  Future<_UploadedResume?> _pickAndUploadResume(String userId) async {
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+        withData: true,
+      );
+      if (picked == null || picked.files.isEmpty) return null;
 
+      final file = picked.files.single;
+      final bytes = file.bytes;
+      if (bytes == null) throw Exception('Could not read the selected file');
+      if (file.size > 5 * 1024 * 1024) {
+        throw Exception('Resume must be smaller than 5 MB');
+      }
+
+      final fileName = _safeStorageFileName(file.name);
+      final storagePath =
+          'resumes/$userId/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      final storageRef = FirebaseStorage.instance.ref(storagePath);
+      final task = await storageRef.putData(
+        bytes,
+        SettableMetadata(
+          contentType: 'application/pdf',
+          customMetadata: {'ownerId': userId, 'source': 'mobile_apply_sheet'},
+        ),
+      );
+      final url = await task.ref.getDownloadURL();
+      final resumeId = DateTime.now().microsecondsSinceEpoch.toString();
+      final resume = {
+        'id': resumeId,
+        'name': file.name,
+        'uploadDate': DateFormat('d MMM yyyy').format(DateTime.now()),
+        'size': _formatFileSize(file.size),
+        'format': 'PDF',
+        'isDefault': true,
+        'url': url,
+        'storagePath': storagePath,
+      };
+
+      await ref.read(firestoreServiceProvider).addSeekerResume(userId, resume);
+      ref.invalidate(seekerProfileProvider);
+
+      return _UploadedResume(id: resumeId, name: file.name, url: url);
+    } catch (error) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Resume upload failed: $error')));
+      return null;
+    }
+  }
+
+  String _safeStorageFileName(String name) {
+    final cleaned = name.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    return cleaned.toLowerCase().endsWith('.pdf') ? cleaned : '$cleaned.pdf';
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes >= 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / 1024).ceil()} KB';
+  }
+
+  void _showAuthRequiredSheet(Job job, {required _AuthAction action}) {
+    final redirectPath =
+        '/jobs/${job.id}?${action == _AuthAction.apply ? 'apply' : 'save'}=1';
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                action == _AuthAction.apply
+                    ? 'Apply to this job'
+                    : 'Save this job',
+                style: const TextStyle(
+                  color: AppTheme.lightTextPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Continue with your preferred sign-in method. You will return to this job automatically.',
+                style: TextStyle(
+                  color: AppTheme.lightTextSecondary,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () async {
+                  try {
+                    await ref
+                        .read(authNotifierProvider.notifier)
+                        .signInWithGoogle();
+                    if (!sheetContext.mounted) return;
+                    Navigator.of(sheetContext).pop();
+                    final uid =
+                        ref.read(authNotifierProvider).user?.uid ??
+                        ref.read(authStateStreamProvider).value?.uid;
+                    if (uid == null) {
+                      sheetContext.go(
+                        '/login?redirect=${Uri.encodeComponent(redirectPath)}',
+                      );
+                      return;
+                    }
+                    if (action == _AuthAction.save) {
+                      await _saveJob(job, uid);
+                    } else {
+                      _showApplyBottomSheet(
+                        job,
+                        ref.read(seekerProfileProvider).value,
+                        uid,
+                      );
+                    }
+                  } catch (_) {
+                    if (!sheetContext.mounted) return;
+                    ScaffoldMessenger.of(sheetContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Google sign-in was not completed'),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.g_mobiledata_rounded),
+                label: const Text('Continue with Google'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  sheetContext.go(
+                    '/login?mode=email&redirect=${Uri.encodeComponent(redirectPath)}',
+                  );
+                },
+                icon: const Icon(Icons.mail_outline_rounded),
+                label: const Text('Continue with Email'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                  sheetContext.go(
+                    '/login?mode=phone&redirect=${Uri.encodeComponent(redirectPath)}',
+                  );
+                },
+                icon: const Icon(Icons.phone_iphone_rounded),
+                label: const Text('Continue with Phone'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showApplyBottomSheet(
+    Job job,
+    JobSeekerProfile? profile,
+    String userId,
+  ) {
+    final authUser = ref.read(authStateStreamProvider).value;
+    final availableResumes = (profile?.resumes ?? const <ResumeFile>[])
+        .where((resume) => (resume.url ?? '').trim().isNotEmpty)
+        .toList();
+    ResumeFile? selectedResume = availableResumes.isEmpty
+        ? null
+        : availableResumes.firstWhere(
+            (resume) => resume.isDefault,
+            orElse: () => availableResumes.first,
+          );
+    String selectedResumeId = selectedResume?.id ?? '';
+    String selectedResumeName = selectedResume?.name ?? '';
+    String selectedResumeUrl = selectedResume?.url ?? '';
+    bool uploadingResume = false;
     final coverLetterController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      useSafeArea: true,
+      showDragHandle: true,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                top: 24,
-                left: 20,
-                right: 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Apply for ${job.title}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (resumes.isEmpty && (profile.resumeUrl == null || profile.resumeUrl!.isEmpty)) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        border: Border.all(color: Colors.amber.shade200),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+            final hasResume = selectedResumeUrl.trim().isNotEmpty;
+            return SafeArea(
+              top: false,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 28),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'No resume found in your profile.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Please upload or build a resume in your seeker profile dashboard first.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 11, color: Colors.black54),
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              context.push('/seeker/resume');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          Text(
+                            'Apply for ${job.title}',
+                            style: const TextStyle(
+                              color: AppTheme.lightTextPrimary,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
                             ),
-                            child: const Text('Manage Resumes', style: TextStyle(fontSize: 12)),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            job.companyName.isNotEmpty
+                                ? job.companyName
+                                : 'Verified Employer',
+                            style: const TextStyle(
+                              color: AppTheme.lightTextSecondary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                  ] else ...[
-                    if (resumes.isNotEmpty) ...[
-                      const Text(
-                        'Select Resume',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: TailwindColors.slate.shade50,
-                          border: Border.all(color: TailwindColors.slate.shade200),
-                          borderRadius: BorderRadius.circular(10),
+                    const Divider(height: 1),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(
+                          20,
+                          16,
+                          20,
+                          MediaQuery.viewInsetsOf(context).bottom + 24,
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: selectedResumeId,
-                            isExpanded: true,
-                            items: resumes.map((r) {
-                              return DropdownMenuItem<String>(
-                                value: r.id,
-                                child: Text('${r.name} (${r.uploadDate})', style: const TextStyle(fontSize: 12)),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                final res = resumes.firstWhere((r) => r.id == val);
-                                setModalState(() {
-                                  selectedResumeId = val;
-                                  selectedResumeUrl = res.url ?? '';
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ] else ...[
-                      // Single resume URL fallback
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: TailwindColors.slate.shade50,
-                          border: Border.all(color: TailwindColors.slate.shade200),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Icon(Icons.file_present, color: Colors.teal),
-                            const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text(
-                                'Profile Default Resume',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            if (availableResumes.isNotEmpty) ...[
+                              const _SheetLabel('Resume'),
+                              DropdownButtonFormField<String>(
+                                initialValue: selectedResumeId,
+                                items: [
+                                  for (final resume in availableResumes)
+                                    DropdownMenuItem(
+                                      value: resume.id,
+                                      child: Text(
+                                        resume.name,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                ],
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  final resume = availableResumes.firstWhere(
+                                    (item) => item.id == value,
+                                  );
+                                  setModalState(() {
+                                    selectedResumeId = resume.id;
+                                    selectedResumeName = resume.name;
+                                    selectedResumeUrl = resume.url ?? '';
+                                  });
+                                },
                               ),
+                              const SizedBox(height: 12),
+                            ],
+                            _UploadResumeCard(
+                              hasResume: hasResume,
+                              resumeName: selectedResumeName,
+                              uploading: uploadingResume,
+                              onUpload: uploadingResume
+                                  ? null
+                                  : () async {
+                                      setModalState(() => uploadingResume = true);
+                                      final uploaded = await _pickAndUploadResume(
+                                        userId,
+                                      );
+                                      if (!context.mounted) return;
+                                      setModalState(() {
+                                        uploadingResume = false;
+                                        if (uploaded != null) {
+                                          selectedResumeId = uploaded.id;
+                                          selectedResumeName = uploaded.name;
+                                          selectedResumeUrl = uploaded.url;
+                                        }
+                                      });
+                                    },
                             ),
-                            Text(
-                              profile.resumeUrl!.split('/').last.split('_').last,
-                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                            const SizedBox(height: 18),
+                            const _SheetLabel('Message to recruiter'),
+                            TextField(
+                              controller: coverLetterController,
+                              minLines: 4,
+                              maxLines: 5,
+                              textInputAction: TextInputAction.newline,
+                              decoration: const InputDecoration(
+                                hintText: 'Briefly share why you are a strong fit.',
+                                alignLabelWithHint: true,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                    const Text(
-                      'Cover Letter / Message to Recruiter',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
                     ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: coverLetterController,
-                      maxLines: 4,
-                      style: const TextStyle(fontSize: 13),
-                      decoration: InputDecoration(
-                        hintText: "Briefly state why you're a good fit for this role...",
-                        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-                        filled: true,
-                        fillColor: TailwindColors.slate.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: TailwindColors.slate.shade200),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: TailwindColors.slate.shade200),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _applying
+                              ? null
+                              : () async {
+                                  if (!hasResume) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Upload or select a resume first',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  Navigator.of(context).pop();
+                                  await _applyToJob(
+                                    job: job,
+                                    userId: userId,
+                                    seekerName:
+                                        (profile?.name.trim().isNotEmpty ?? false)
+                                        ? profile!.name
+                                        : (authUser?.displayName ?? 'Job Seeker'),
+                                    seekerEmail:
+                                        (profile?.email.trim().isNotEmpty ?? false)
+                                        ? profile!.email
+                                        : authUser?.email,
+                                    seekerPhone:
+                                        (profile?.phone.trim().isNotEmpty ?? false)
+                                        ? profile!.phone
+                                        : authUser?.phone,
+                                    resumeUrl: selectedResumeUrl,
+                                    resumeName: selectedResumeName,
+                                    coverLetter: coverLetterController.text.trim(),
+                                  );
+                                },
+                          icon: _applying
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.send_rounded),
+                          label: Text(
+                            _applying ? 'Submitting...' : 'Submit application',
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: TailwindColors.slate.shade200),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: const Text('Cancel', style: TextStyle(color: Colors.black87, fontSize: 12)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _applying 
-                                ? null 
-                                : () async {
-                                    Navigator.of(context).pop();
-                                    await _applyToJob(
-                                      job,
-                                      userId,
-                                      profile.name.isNotEmpty ? profile.name : (ref.read(authStateStreamProvider).value?.displayName ?? 'Job Seeker'),
-                                      selectedResumeUrl,
-                                      coverLetterController.text.trim(),
-                                    );
-                                  },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F172A),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: const Text('Submit Application', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
-                ],
+                ),
               ),
             );
           },
         );
       },
-    );
+    ).whenComplete(coverLetterController.dispose);
   }
 
-  String _formatTime(DateTime? dateTime) {
-    if (dateTime == null) return 'Recently';
-    final difference = DateTime.now().difference(dateTime);
-    if (difference.inDays >= 1) return '${difference.inDays} d ago';
-    if (difference.inHours >= 1) return '${difference.inHours} hr ago';
-    if (difference.inMinutes >= 1) return '${difference.inMinutes} min ago';
-    return 'Just now';
-  }
+  void _handleDeferredIntent(
+    Job job,
+    String? userId,
+    AsyncValue<JobSeekerProfile?> profileAsync,
+  ) {
+    if (userId == null) return;
 
-  String _getFriendlyJobType(JobType type) {
-    switch (type) {
-      case JobType.fullTime:
-        return 'Full Time';
-      case JobType.partTime:
-        return 'Part Time';
-      case JobType.internship:
-        return 'Internship';
-      case JobType.remote:
-        return 'Remote';
-      case JobType.workFromHome:
-        return 'WFH';
-      case JobType.fresher:
-        return 'Fresher';
-      case JobType.contract:
-        return 'Contract';
+    if (widget.openSaveOnAuth && !_deferredSaveHandled) {
+      _deferredSaveHandled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _saveJob(job, userId);
+      });
     }
+
+    if (widget.openApplyOnAuth &&
+        !_deferredApplyHandled &&
+        profileAsync.hasValue) {
+      _deferredApplyHandled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showApplyBottomSheet(job, profileAsync.value, userId);
+      });
+    }
+  }
+
+  Future<void> _openMaps(Job job) async {
+    final location = [
+      if (job.location.isNotEmpty) job.location,
+      if (job.district.isNotEmpty) job.district,
+      'Tamil Nadu',
+    ].join(', ');
+    final uri = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': location,
+    });
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openWhatsApp(Job job) async {
+    var phone = job.postedBy;
+    if (!RegExp(r'^[0-9+]+$').hasMatch(phone)) {
+      try {
+        final company = await ref
+            .read(firestoreServiceProvider)
+            .fetchDocument('companies', job.companyId);
+        phone =
+            (company?['whatsapp'] as String?) ??
+            (company?['phone'] as String?) ??
+            '919876543210';
+      } catch (_) {
+        phone = '919876543210';
+      }
+    }
+    final clean = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final text =
+        'Hi, I am interested in ${job.title} at ${job.companyName} on TheNiJobs.';
+    final uri = Uri.parse(
+      'https://wa.me/$clean?text=${Uri.encodeComponent(text)}',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _callRecruiter(Job job) async {
+    var phone = job.postedBy;
+    if (!RegExp(r'^[0-9+]+$').hasMatch(phone)) {
+      try {
+        final company = await ref
+            .read(firestoreServiceProvider)
+            .fetchDocument('companies', job.companyId);
+        phone = (company?['phone'] as String?) ?? '';
+      } catch (_) {
+        phone = '';
+      }
+    }
+    if (phone.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Recruiter phone is not available')),
+      );
+      return;
+    }
+    final uri = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   @override
   Widget build(BuildContext context) {
     final jobAsync = ref.watch(jobDetailProvider(widget.jobId));
-    final seekerProfileAsync = ref.watch(seekerProfileProvider);
-    final authState = ref.watch(authStateStreamProvider);
-
-    final user = authState.value;
-    final formatter = NumberFormat.decimalPattern('en_IN');
+    final profileAsync = ref.watch(seekerProfileProvider);
+    final user = ref.watch(authStateStreamProvider).value;
 
     return Scaffold(
-      backgroundColor: AppTheme.lightBg,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Job Details'),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 1,
+        title: const Text('Job details'),
+        centerTitle: true,
         actions: [
-          jobAsync.when(
-            data: (job) {
-              if (job == null) return const SizedBox();
-              return IconButton(
-                onPressed: () => _toggleSaveJob(job, user?.uid),
-                icon: Icon(
-                  _isSaved ? Icons.bookmark : Icons.bookmark_border,
-                  color: _isSaved ? AppTheme.primaryPurple : TailwindColors.slate.shade600,
-                ),
-              );
-            },
-            loading: () => const SizedBox(),
-            error: (_, __) => const SizedBox(),
+          jobAsync.maybeWhen(
+            data: (job) => job == null
+                ? const SizedBox.shrink()
+                : IconButton(
+                    tooltip: _isSaved ? 'Saved' : 'Save job',
+                    onPressed: () => _toggleSaveJob(job, user?.uid),
+                    icon: Icon(
+                      _isSaved
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
+                    ),
+                  ),
+            orElse: () => const SizedBox.shrink(),
           ),
-          const SizedBox(width: 8),
         ],
+      ),
+      bottomNavigationBar: jobAsync.maybeWhen(
+        data: (job) => job == null
+            ? null
+            : _ApplyBar(
+                checking: _checkingStatus,
+                applied: _hasApplied,
+                applying: _applying,
+                onApply: () {
+                  if (user == null) {
+                    _showAuthRequiredSheet(job, action: _AuthAction.apply);
+                    return;
+                  }
+                  _showApplyBottomSheet(job, profileAsync.value, user.uid);
+                },
+              ),
+        orElse: () => null,
       ),
       body: SafeArea(
         child: jobAsync.when(
           data: (job) {
-            if (job == null) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            if (job == null) return const _JobNotFound();
+            _handleDeferredIntent(job, user?.uid, profileAsync);
+
+            final similarJobs = ref
+                .watch(allJobsProvider)
+                .maybeWhen(
+                  data: (jobs) => jobs
+                      .where(
+                        (item) =>
+                            item.id != job.id &&
+                            item.isActive &&
+                            (item.category == job.category ||
+                                item.district == job.district ||
+                                item.skills.any(job.skills.contains)),
+                      )
+                      .take(5)
+                      .toList(),
+                  orElse: () => const <Job>[],
+                );
+
+            return ListView(
+              padding: const EdgeInsets.only(bottom: 24),
+              children: [
+                _JobHero(job: job),
+                const SizedBox(height: 14),
+                _SectionCard(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      const Text(
-                        'Job Not Found',
-                        style: TextStyle(fontFamily: 'Outfit', fontSize: 18, fontWeight: FontWeight.bold),
+                      JobSignalChip(
+                        icon: Icons.payments_outlined,
+                        label: formatSalaryRange(job.salaryMin, job.salaryMax),
+                        color: AppTheme.brandEmerald,
                       ),
-                      const SizedBox(height: 8),
-                      const Text('This job posting may have expired or been deleted.'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => context.pop(),
-                        child: const Text('Back to Jobs'),
+                      JobSignalChip(
+                        icon: Icons.timeline_rounded,
+                        label: job.experience.isNotEmpty
+                            ? job.experience
+                            : 'Any experience',
+                        color: AppTheme.brandIndigo,
+                      ),
+                      JobSignalChip(
+                        icon: Icons.work_outline_rounded,
+                        label: friendlyJobType(job.jobType),
+                        color: AppTheme.brandCyan,
+                      ),
+                      JobSignalChip(
+                        icon: Icons.people_outline_rounded,
+                        label:
+                            '${job.openings} opening${job.openings == 1 ? '' : 's'}',
+                        color: AppTheme.lightTextSecondary,
                       ),
                     ],
                   ),
                 ),
-              );
-            }
-
-            final salaryStr = job.salaryMin != null && job.salaryMax != null
-                ? '₹${formatter.format(job.salaryMin)} - ₹${formatter.format(job.salaryMax)}'
-                : 'Salary Negotiable';
-
-            final timeStr = _formatTime(job.createdAt);
-            final typeStr = _getFriendlyJobType(job.jobType);
-
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Main Content Card
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                if (job.skills.isNotEmpty)
+                  _SectionCard(
+                    title: 'Skills',
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        // Company Logo and Badges Row
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 64,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: TailwindColors.slate.shade50,
-                                border: Border.all(color: TailwindColors.slate.shade200),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  job.companyName.isNotEmpty ? job.companyName.substring(0, 1).toUpperCase() : '💼',
-                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                        for (final skill in job.skills)
+                          Chip(
+                            label: Text(skill),
+                            avatar: const Icon(
+                              Icons.check_circle_outline_rounded,
+                              size: 16,
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    job.title,
-                                    style: const TextStyle(
-                                      fontFamily: 'Outfit',
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF0F172A),
-                                      height: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        job.companyName.isNotEmpty ? job.companyName : 'Verified Employer',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: TailwindColors.slate.shade500,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Icon(Icons.verified, color: Colors.teal, size: 14),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Tags (Urgent, Premium)
-                        Row(
-                          children: [
-                            if (job.isUrgent)
-                              Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFFBEB),
-                                  border: Border.all(color: const Color(0xFFFDE68A)),
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.flash_on, color: Color(0xFFB45309), size: 12),
-                                    SizedBox(width: 4),
-                                    Text('URGENT', style: TextStyle(color: Color(0xFFB45309), fontSize: 9, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                            if (job.isPremium)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEFF6FF),
-                                  border: Border.all(color: const Color(0xFFBFDBFE)),
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
-                                child: const Text('PREMIUM', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 9, fontWeight: FontWeight.bold)),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Details list
-                        _buildDetailRow(Icons.location_on_outlined, 'Location', '${job.location}, ${job.district}', Colors.teal),
-                        _buildDetailRow(Icons.payments_outlined, 'Salary', '$salaryStr / Month', Colors.emerald),
-                        _buildDetailRow(Icons.work_outline, 'Job Type', typeStr.toUpperCase(), Colors.cyan),
-                        _buildDetailRow(Icons.people_outline, 'Openings', '${job.openings} positions available', Colors.blueGrey),
-                        _buildDetailRow(Icons.schedule, 'Posted Date', 'Posted $timeStr', Colors.grey),
-
-                        const SizedBox(height: 16),
-                        const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                        const SizedBox(height: 16),
-
-                        // Apply Buttons Row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 48,
-                                child: _checkingStatus
-                                    ? const Center(child: CircularProgressIndicator())
-                                    : _hasApplied
-                                        ? ElevatedButton(
-                                            onPressed: null,
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.teal.shade50,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                              elevation: 0,
-                                            ),
-                                            child: const Text('Applied ✓', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
-                                          )
-                                        : ElevatedButton(
-                                            onPressed: () {
-                                              if (user == null) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text('Please login to apply')),
-                                                );
-                                                context.push('/login');
-                                                return;
-                                              }
-                                              _showApplyBottomSheet(job, seekerProfileAsync.value, user.uid);
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFF0F172A),
-                                              foregroundColor: Colors.white,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                              elevation: 0,
-                                            ),
-                                            child: const Text('Apply Now', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
-                                          ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        // WhatsApp and Call deep links
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 44,
-                                child: ElevatedButton.icon(
-                                  onPressed: () async {
-                                    final whatsappNum = job.phone ?? '919876543210';
-                                    final cleanNum = whatsappNum.replaceAll(RegExp(r'[^0-9]'), '');
-                                    final text = 'Hi, I am interested in the ${job.title} position at ${job.companyName} listed on TheNiJobs.';
-                                    final url = Uri.parse('https://wa.me/$cleanNum?text=${Uri.encodeComponent(text)}');
-                                    if (await canLaunchUrl(url)) {
-                                      await launchUrl(url, mode: LaunchMode.externalApplication);
-                                    } else {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Could not open WhatsApp')),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  icon: const Icon(Icons.message, size: 16),
-                                  label: const Text('WhatsApp Apply', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF25D366),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    elevation: 0,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (job.postedBy.isNotEmpty)
-                              Expanded(
-                                child: SizedBox(
-                                  height: 44,
-                                  child: OutlinedButton.icon(
-                                    onPressed: () async {
-                                      final phoneNum = job.postedBy; // postedBy stores HR phone number in Next.js in some collections or alternates
-                                      // Or fallback to standard query
-                                      String phoneToCall = phoneNum;
-                                      if (!RegExp(r'^[0-9+]+$').hasMatch(phoneToCall)) {
-                                        // fetch company phone
-                                        try {
-                                          final companyDoc = await FirebaseFirestore.instance.collection('companies').doc(job.companyId).get();
-                                          if (companyDoc.exists && companyDoc.data()?['phone'] != null) {
-                                            phoneToCall = companyDoc.data()!['phone'] as String;
-                                          }
-                                        } catch (e) {
-                                          debugPrint('Error fetching phone: $e');
-                                        }
-                                      }
-                                      final url = Uri.parse('tel:$phoneToCall');
-                                      if (await canLaunchUrl(url)) {
-                                        await launchUrl(url);
-                                      } else {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Could not initiate call')),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    icon: const Icon(Icons.phone, size: 16),
-                                    label: const Text('Call HR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.black87,
-                                      side: BorderSide(color: TailwindColors.slate.shade300),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Specifications Card
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Quick Specifications', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            _buildSpecBox('Experience', job.experience, '💼'),
-                            _buildSpecBox('Education', job.education ?? 'Any Degree', '🎓'),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _buildSpecBox('Openings', '${job.openings} Posts', '👥'),
-                            _buildSpecBox('Deadline', job.deadline != null ? DateFormat('dd MMM yyyy').format(job.deadline!) : 'N/A', '📅'),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Job Description
-                  Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Job Description', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                        const SizedBox(height: 12),
-                        Text(
-                          job.description,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: TailwindColors.slate.shade700,
-                            height: 1.6,
                           ),
-                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-
-                  // Key Requirements
-                  if (job.requirements.isNotEmpty)
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Key Requirements', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                          const SizedBox(height: 12),
-                          Column(
-                            children: job.requirements.map((req) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('▸ ', style: TextStyle(color: AppTheme.primaryPurple, fontWeight: FontWeight.bold)),
-                                    Expanded(
-                                      child: Text(
-                                        req,
-                                        style: TextStyle(fontSize: 13, color: TailwindColors.slate.shade700),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
+                _SectionCard(
+                  title: 'Description',
+                  child: Text(
+                    job.description.isNotEmpty
+                        ? job.description
+                        : 'The recruiter has not added a long description yet.',
+                    style: const TextStyle(
+                      color: AppTheme.lightTextSecondary,
+                      fontSize: 14,
+                      height: 1.6,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (job.requirements.isNotEmpty)
+                  _SectionCard(
+                    title: 'Responsibilities',
+                    child: _BulletList(items: job.requirements),
+                  ),
+                _SectionCard(
+                  title: 'Benefits',
+                  child: _BulletList(
+                    items: [
+                      'Verified recruiter listing',
+                      'Direct application tracking',
+                      if (job.isPremium) 'Premium employer visibility',
+                      if (job.deadline != null)
+                        'Application deadline: ${DateFormat('d MMM yyyy').format(job.deadline!)}',
+                    ],
+                  ),
+                ),
+                _SectionCard(
+                  title: 'Location',
+                  child: _LocationCard(
+                    job: job,
+                    onOpenMaps: () => _openMaps(job),
+                  ),
+                ),
+                _SectionCard(
+                  title: 'Recruiter contact',
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openWhatsApp(job),
+                          icon: const Icon(Icons.chat_outlined),
+                          label: const Text('WhatsApp'),
+                        ),
                       ),
-                    ),
-                  if (job.requirements.isNotEmpty) const SizedBox(height: 12),
-
-                  // Required Skills
-                  if (job.skills.isNotEmpty)
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Required Skills', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: job.skills.map((skill) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryPurple.withOpacity(0.08),
-                                  border: Border.all(color: AppTheme.primaryPurple.withOpacity(0.2)),
-                                  borderRadius: BorderRadius.circular(100),
-                                ),
-                                child: Text(
-                                  skill,
-                                  style: const TextStyle(
-                                    color: AppTheme.primaryPurple,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _callRecruiter(job),
+                          icon: const Icon(Icons.call_outlined),
+                          label: const Text('Call HR'),
+                        ),
                       ),
-                    ),
-                  if (job.skills.isNotEmpty) const SizedBox(height: 12),
-
-                  // Job Alerts Banner
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.cyan.shade50,
-                      border: Border.all(color: Colors.cyan.shade200),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.notifications_active, color: Colors.cyan),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Job Alerts', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${job.location} பகுதியில் இதுபோன்ற jobs வந்தவுடன் mobile alert பெறலாம்.',
-                                style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade700, height: 1.4),
-                              ),
-                              const SizedBox(height: 8),
-                              GestureDetector(
-                                onTap: () => context.push('/seeker/job-alerts'),
-                                child: const Row(
-                                  children: [
-                                    Text('Create Job Alert ', style: TextStyle(color: Colors.cyan, fontSize: 11, fontWeight: FontWeight.bold)),
-                                    Icon(Icons.chevron_right, size: 14, color: Colors.cyan),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    ],
+                  ),
+                ),
+                if (similarJobs.isNotEmpty)
+                  JobSection(
+                    title: 'Similar jobs',
+                    subtitle: 'More roles like this',
+                    jobs: similarJobs,
+                    onJobTap: (item) => context.push('/jobs/${item.id}'),
+                    onViewAll: () => context.go(
+                      '/jobs?category=${Uri.encodeComponent(job.category)}',
                     ),
                   ),
-
-                  const SizedBox(height: 16),
-                  const HomeFooter(),
-                ],
-              ),
+              ],
             );
           },
-          loading: () => const Center(
-            child: Padding(
-              padding: EdgeInsets.all(48.0),
-              child: CircularProgressIndicator(),
-            ),
+          loading: () => const Padding(
+            padding: EdgeInsets.only(top: 20),
+            child: JobSkeletonList(count: 4),
           ),
-          error: (err, stack) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Text('Error loading job details: $err'),
-            ),
+          error: (_, __) => const _JobNotFound(
+            title: 'Could not load this job',
+            message: 'Please go back and try another listing.',
           ),
         ),
       ),
-      floatingActionButton: const FloatingWhatsApp(),
     );
   }
+}
 
-  Widget _buildDetailRow(IconData icon, String label, String value, Color iconColor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
+enum _AuthAction { apply, save }
+
+class _JobHero extends StatelessWidget {
+  const _JobHero({required this.job});
+
+  final Job job;
+
+  @override
+  Widget build(BuildContext context) {
+    final location = job.location.isNotEmpty ? job.location : job.district;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.lightBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: iconColor),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+          Container(
+            height: 108,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF111827),
+                  Color(0xFF164E63),
+                  Color(0xFF312E81),
+                ],
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: 18,
+                  top: 18,
+                  child: Icon(
+                    Icons.business_center_rounded,
+                    size: 62,
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+                Positioned(
+                  left: 18,
+                  bottom: 16,
+                  child: Row(
+                    children: [
+                      if (job.isUrgent)
+                        const _HeroBadge(
+                          label: 'Urgent',
+                          icon: Icons.flash_on_rounded,
+                        ),
+                      if (job.isPremium || job.isFeatured) ...[
+                        const SizedBox(width: 8),
+                        const _HeroBadge(
+                          label: 'Featured',
+                          icon: Icons.star_rounded,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Transform.translate(
+                  offset: const Offset(0, -28),
+                  child: CompanyMark(
+                    name: job.companyName.isNotEmpty
+                        ? job.companyName
+                        : 'TheNiJobs',
+                    size: 64,
+                  ),
+                ),
+                Transform.translate(
+                  offset: const Offset(0, -16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        job.title.isNotEmpty ? job.title : 'Untitled job',
+                        style: const TextStyle(
+                          color: AppTheme.lightTextPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          height: 1.15,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              job.companyName.isNotEmpty
+                                  ? job.companyName
+                                  : 'Verified Employer',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppTheme.lightTextSecondary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.verified_rounded,
+                            color: AppTheme.brandEmerald,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 18,
+                            color: AppTheme.brandCyan,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              location.isEmpty ? 'Tamil Nadu' : location,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppTheme.lightTextSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSpecBox(String label, String value, String icon) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.all(4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: TailwindColors.slate.shade50,
-          border: Border.all(color: TailwindColors.slate.shade200),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 9, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 2),
+class _HeroBadge extends StatelessWidget {
+  const _HeroBadge({required this.label, required this.icon});
+
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 14),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.child, this.title});
+
+  final String? title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppTheme.lightBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null) ...[
             Text(
-              value,
-              maxLines: 1,
+              title!,
+              style: const TextStyle(
+                color: AppTheme.lightTextPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _BulletList extends StatelessWidget {
+  const _BulletList({required this.items});
+
+  final List<String> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (final item in items)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  size: 18,
+                  color: AppTheme.brandEmerald,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: const TextStyle(
+                      color: AppTheme.lightTextSecondary,
+                      fontSize: 14,
+                      height: 1.45,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  const _LocationCard({required this.job, required this.onOpenMaps});
+
+  final Job job;
+  final VoidCallback onOpenMaps;
+
+  @override
+  Widget build(BuildContext context) {
+    final location = [
+      if (job.location.isNotEmpty) job.location,
+      if (job.district.isNotEmpty) job.district,
+      'Tamil Nadu',
+    ].join(', ');
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppTheme.brandCyan.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.map_outlined,
+                  color: AppTheme.brandCyan,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  location,
+                  style: const TextStyle(
+                    color: AppTheme.lightTextPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 116,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: const Color(0xFFE0F2FE),
+              ),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: CustomPaint(painter: _MapGridPainter()),
+                  ),
+                  const Center(
+                    child: Icon(
+                      Icons.location_pin,
+                      color: AppTheme.brandRose,
+                      size: 44,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onOpenMaps,
+            icon: const Icon(Icons.open_in_new_rounded),
+            label: const Text('Open map'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF0284C7).withValues(alpha: 0.18)
+      ..strokeWidth = 1;
+
+    for (var x = 0.0; x < size.width; x += 28) {
+      canvas.drawLine(Offset(x, 0), Offset(x + 42, size.height), paint);
+    }
+    for (var y = 0.0; y < size.height; y += 24) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y + 8), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _UploadResumeCard extends StatelessWidget {
+  const _UploadResumeCard({
+    required this.hasResume,
+    required this.resumeName,
+    required this.uploading,
+    required this.onUpload,
+  });
+
+  final bool hasResume;
+  final String resumeName;
+  final bool uploading;
+  final VoidCallback? onUpload;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: hasResume ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: hasResume ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasResume ? Icons.description_rounded : Icons.upload_file_rounded,
+            color: hasResume ? AppTheme.brandEmerald : AppTheme.brandAmber,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              hasResume ? resumeName : 'Upload a PDF resume to continue',
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              style: const TextStyle(
+                color: AppTheme.lightTextPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          TextButton(
+            onPressed: onUpload,
+            child: Text(
+              uploading
+                  ? 'Uploading'
+                  : hasResume
+                  ? 'Replace'
+                  : 'Upload',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SheetLabel extends StatelessWidget {
+  const _SheetLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppTheme.lightTextPrimary,
+          fontSize: 14,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _ApplyBar extends StatelessWidget {
+  const _ApplyBar({
+    required this.checking,
+    required this.applied,
+    required this.applying,
+    required this.onApply,
+  });
+
+  final bool checking;
+  final bool applied;
+  final bool applying;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: AppTheme.lightBorder)),
+        ),
+        child: FilledButton.icon(
+          onPressed: checking || applied || applying ? null : onApply,
+          icon: checking || applying
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(applied ? Icons.check_circle_rounded : Icons.send_rounded),
+          label: Text(applied ? 'Applied' : 'Apply now'),
+        ),
+      ),
+    );
+  }
+}
+
+class _JobNotFound extends StatelessWidget {
+  const _JobNotFound({
+    this.title = 'Job not found',
+    this.message = 'This job may have expired or been removed.',
+  });
+
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.work_off_outlined,
+              size: 54,
+              color: AppTheme.lightTextSecondary,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: const TextStyle(
+                color: AppTheme.lightTextPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppTheme.lightTextSecondary),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: () => context.go('/jobs'),
+              child: const Text('Browse jobs'),
             ),
           ],
         ),

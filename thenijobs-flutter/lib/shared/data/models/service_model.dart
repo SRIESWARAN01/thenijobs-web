@@ -120,7 +120,11 @@ class Service {
       status: data['status'] != null
           ? ServiceStatus.fromString(data['status'] as String)
           : ServiceStatus.pending,
-      images: (data['images'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      images:
+          (data['images'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       rating: (data['rating'] as num? ?? 0.0).toDouble(),
       reviewCount: (data['reviewCount'] as num? ?? 0).toInt(),
       enquiryCount: (data['enquiryCount'] as num? ?? 0).toInt(),

@@ -21,11 +21,7 @@ class AuthStateData {
   final bool isLoading;
   final String? errorMessage;
 
-  const AuthStateData({
-    this.user,
-    this.isLoading = false,
-    this.errorMessage,
-  });
+  const AuthStateData({this.user, this.isLoading = false, this.errorMessage});
 
   AuthStateData copyWith({
     UserModel? user,
@@ -42,6 +38,10 @@ class AuthStateData {
 }
 
 class AuthNotifier extends StateNotifier<AuthStateData> {
+  static const String demoEmail = AuthRepositoryImpl.demoEmail;
+  static const String demoPassword = AuthRepositoryImpl.demoPassword;
+  static const bool demoLoginEnabled = AuthRepositoryImpl.demoLoginEnabled;
+
   final AuthRepository _repository;
   final Ref _ref;
 
@@ -53,7 +53,10 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
           state = state.copyWith(user: user, isLoading: false);
         },
         error: (err, stack) {
-          state = state.copyWith(errorMessage: err.toString(), isLoading: false);
+          state = state.copyWith(
+            errorMessage: err.toString(),
+            isLoading: false,
+          );
         },
         loading: () {
           state = state.copyWith(isLoading: true);
@@ -74,6 +77,15 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
       state = state.copyWith(errorMessage: _parseError(e), isLoading: false);
       rethrow;
     }
+  }
+
+  Future<void> signInWithDemoAccount() async {
+    if (!demoLoginEnabled) {
+      const message = 'Demo login is disabled for this build.';
+      state = state.copyWith(errorMessage: message, isLoading: false);
+      throw StateError(message);
+    }
+    await signIn(demoEmail, demoPassword);
   }
 
   Future<void> signInWithGoogle() async {
@@ -162,7 +174,9 @@ class AuthNotifier extends StateNotifier<AuthStateData> {
   }
 }
 
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthStateData>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository, ref);
-});
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthStateData>(
+  (ref) {
+    final repository = ref.watch(authRepositoryProvider);
+    return AuthNotifier(repository, ref);
+  },
+);

@@ -188,15 +188,34 @@ class Company {
       instagram: data['instagram'] as String?,
       linkedin: data['linkedin'] as String?,
       youtube: data['youtube'] as String?,
-      galleryImages: (data['galleryImages'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      galleryVideos: (data['galleryVideos'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      services: (data['services'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      galleryImages:
+          (data['galleryImages'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      galleryVideos:
+          (data['galleryVideos'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      services:
+          (data['services'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       verificationStatus: data['verificationStatus'] != null
           ? VerificationStatus.fromString(data['verificationStatus'] as String)
           : VerificationStatus.pending,
       verificationBadges: data['verificationBadges'] != null
-          ? VerificationBadges.fromMap(data['verificationBadges'] as Map<String, dynamic>)
-          : VerificationBadges(mobileVerified: false, emailVerified: false, gstVerified: false, businessVerified: false),
+          ? VerificationBadges.fromMap(
+              data['verificationBadges'] as Map<String, dynamic>,
+            )
+          : VerificationBadges(
+              mobileVerified: false,
+              emailVerified: false,
+              gstVerified: false,
+              businessVerified: false,
+            ),
       isActive: data['isActive'] as bool? ?? false,
       isFeatured: data['isFeatured'] as bool? ?? false,
       isPremium: data['isPremium'] as bool? ?? false,

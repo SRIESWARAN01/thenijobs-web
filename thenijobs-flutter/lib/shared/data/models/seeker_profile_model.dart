@@ -150,7 +150,6 @@ class JobSeekerProfile {
   final List<Experience> experience;
   final List<Education> education;
   final List<ResumeFile> resumes;
-  final String? resumeUrl;
   final double? expectedSalary;
   final List<JobType> jobTypePreference;
   final bool isOpenToWork;
@@ -171,7 +170,6 @@ class JobSeekerProfile {
     required this.experience,
     required this.education,
     required this.resumes,
-    this.resumeUrl,
     this.expectedSalary,
     required this.jobTypePreference,
     required this.isOpenToWork,
@@ -190,23 +188,29 @@ class JobSeekerProfile {
       district: data['district'] as String? ?? '',
       state: data['state'] as String? ?? '',
       profilePhotoUrl: data['profilePhotoUrl'] as String?,
-      skills: (data['skills'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      experience: (data['experience'] as List<dynamic>?)
+      skills:
+          (data['skills'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      experience:
+          (data['experience'] as List<dynamic>?)
               ?.map((e) => Experience.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],
-      education: (data['education'] as List<dynamic>?)
+      education:
+          (data['education'] as List<dynamic>?)
               ?.map((e) => Education.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],
-      resumes: (data['resumes'] as List<dynamic>?)
+      resumes:
+          (data['resumes'] as List<dynamic>?)
               ?.map((e) => ResumeFile.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],
-      // Consistency fallback for resumeUrl / resumeURL
-      resumeUrl: (data['resumeUrl'] as String?) ?? (data['resumeURL'] as String?),
       expectedSalary: (data['expectedSalary'] as num?)?.toDouble(),
-      jobTypePreference: (data['jobTypePreference'] as List<dynamic>?)
+      jobTypePreference:
+          (data['jobTypePreference'] as List<dynamic>?)
               ?.map((e) => JobType.fromString(e as String))
               .toList() ??
           [],
@@ -234,7 +238,6 @@ class JobSeekerProfile {
       'experience': experience.map((e) => e.toMap()).toList(),
       'education': education.map((e) => e.toMap()).toList(),
       'resumes': resumes.map((e) => e.toMap()).toList(),
-      if (resumeUrl != null) 'resumeUrl': resumeUrl, // Write canonical key
       if (expectedSalary != null) 'expectedSalary': expectedSalary,
       'jobTypePreference': jobTypePreference.map((e) => e.toJson()).toList(),
       'isOpenToWork': isOpenToWork,

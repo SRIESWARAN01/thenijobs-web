@@ -14,13 +14,14 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  
+
   bool _isSent = false;
   bool _isLoading = false;
 
@@ -37,7 +38,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     setState(() => _isLoading = true);
     final email = _emailController.text.trim();
     try {
-      await ref.read(authNotifierProvider.notifier).sendPasswordResetEmail(email);
+      await ref
+          .read(authNotifierProvider.notifier)
+          .sendPasswordResetEmail(email);
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -69,7 +72,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               height: 500,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primaryPurple.withOpacity(0.12),
+                color: AppTheme.primaryPurple.withValues(alpha: 0.12),
               ),
             ),
           ),
@@ -81,7 +84,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               height: 500,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.brandCyan.withOpacity(0.08),
+                color: AppTheme.brandCyan.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -98,14 +101,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.work, size: 28, color: AppTheme.primaryPurple),
+                        const Icon(
+                          Icons.work,
+                          size: 28,
+                          color: AppTheme.primaryPurple,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'THE',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
                         const Text(
@@ -114,10 +121,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                             color: AppTheme.brandCyan,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 32),
 
@@ -157,37 +164,77 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                 const SizedBox(height: 24),
 
                                 // Email Address
-                                const Text('Email Address', style: TextStyle(fontSize: 11, color: AppTheme.darkTextSecondary)),
+                                const Text(
+                                  'Email Address',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.darkTextSecondary,
+                                  ),
+                                ),
                                 const SizedBox(height: 6),
                                 TextFormField(
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   validator: Validators.validateEmail,
-                                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
                                   decoration: InputDecoration(
                                     hintText: 'your@email.com',
-                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
-                                    prefixIcon: const Icon(Icons.mail_outline, size: 16, color: Colors.grey),
+                                    hintStyle: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      fontSize: 13,
+                                    ),
+                                    prefixIcon: const Icon(
+                                      Icons.mail_outline,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
                                     filled: true,
-                                    fillColor: Colors.white.withOpacity(0.04),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                    fillColor: Colors.white.withValues(
+                                      alpha: 0.04,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 14,
+                                    ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                                      borderSide: BorderSide(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                      ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(color: AppTheme.primaryPurple, width: 1.5),
+                                      borderSide: const BorderSide(
+                                        color: AppTheme.primaryPurple,
+                                        width: 1.5,
+                                      ),
                                     ),
                                     errorBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(color: AppTheme.brandRose.withOpacity(0.5)),
+                                      borderSide: BorderSide(
+                                        color: AppTheme.brandRose.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                      ),
                                     ),
                                     focusedErrorBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(color: AppTheme.brandRose, width: 1.5),
+                                      borderSide: const BorderSide(
+                                        color: AppTheme.brandRose,
+                                        width: 1.5,
+                                      ),
                                     ),
-                                    errorStyle: const TextStyle(fontSize: 10, color: AppTheme.brandRose),
+                                    errorStyle: const TextStyle(
+                                      fontSize: 10,
+                                      color: AppTheme.brandRose,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -201,26 +248,44 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: ElevatedButton(
-                                      onPressed: _isLoading ? null : _handleSubmit,
+                                      onPressed: _isLoading
+                                          ? null
+                                          : _handleSubmit,
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.transparent,
                                         shadowColor: Colors.transparent,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
                                       ),
                                       child: _isLoading
                                           ? const SizedBox(
                                               width: 20,
                                               height: 20,
-                                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
                                             )
                                           : const Row(
-                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
                                               children: [
-                                                Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
+                                                Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  size: 16,
+                                                  color: Colors.white,
+                                                ),
                                                 SizedBox(width: 8),
                                                 Text(
                                                   'Send Reset Link',
-                                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -233,7 +298,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const Icon(Icons.check_circle_outline_rounded, size: 56, color: AppTheme.brandEmerald),
+                              const Icon(
+                                Icons.check_circle_outline_rounded,
+                                size: 56,
+                                color: AppTheme.brandEmerald,
+                              ),
                               const SizedBox(height: 16),
                               const Text(
                                 'Email Sent!',
@@ -263,7 +332,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                                 },
                                 child: const Text(
                                   '← Try a different email',
-                                  style: TextStyle(color: AppTheme.brandCyan, fontSize: 12),
+                                  style: TextStyle(
+                                    color: AppTheme.brandCyan,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
@@ -277,13 +349,20 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     children: [
                       const Text(
                         'Remember your password? ',
-                        style: TextStyle(color: AppTheme.darkTextSecondary, fontSize: 13),
+                        style: TextStyle(
+                          color: AppTheme.darkTextSecondary,
+                          fontSize: 13,
+                        ),
                       ),
                       GestureDetector(
                         onTap: () => context.push('/login'),
                         child: const Text(
                           'Sign In',
-                          style: TextStyle(color: AppTheme.brandCyan, fontSize: 13, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: AppTheme.brandCyan,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -308,10 +387,7 @@ class LinkButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: child,
-      ),
+      child: MouseRegion(cursor: SystemMouseCursors.click, child: child),
     );
   }
 }

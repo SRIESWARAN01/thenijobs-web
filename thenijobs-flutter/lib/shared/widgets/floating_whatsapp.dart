@@ -23,9 +23,7 @@ class FloatingWhatsApp extends StatelessWidget {
       backgroundColor: const Color(0xFF25D366), // WhatsApp brand green
       foregroundColor: Colors.white,
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: const Icon(Icons.chat_bubble_outline_rounded, size: 24),
     );
   }

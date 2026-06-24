@@ -151,8 +151,12 @@ class UserPreferences {
   factory UserPreferences.fromMap(Map<String, dynamic> map) {
     return UserPreferences(
       openToWork: map['openToWork'] as bool?,
-      jobTypes: (map['jobTypes'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      locations: (map['locations'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      jobTypes: (map['jobTypes'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
+      locations: (map['locations'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
       expectedSalary: (map['expectedSalary'] as num?)?.toDouble(),
     );
   }
@@ -209,29 +213,29 @@ class User {
       displayName: data['displayName'] as String? ?? '',
       photoURL: data['photoURL'] as String?,
       phone: data['phone'] as String?,
-      role: data['role'] != null 
-          ? UserRole.fromString(data['role'] as String) 
+      role: data['role'] != null
+          ? UserRole.fromString(data['role'] as String)
           : UserRole.jobSeeker,
-      adminRole: data['adminRole'] != null 
-          ? AdminRole.fromString(data['adminRole'] as String) 
+      adminRole: data['adminRole'] != null
+          ? AdminRole.fromString(data['adminRole'] as String)
           : null,
-      employerRole: data['employerRole'] != null 
-          ? EmployerRole.fromString(data['employerRole'] as String) 
+      employerRole: data['employerRole'] != null
+          ? EmployerRole.fromString(data['employerRole'] as String)
           : null,
       companyId: data['companyId'] as String?,
       district: data['district'] as String?,
-      preferences: data['preferences'] != null 
-          ? UserPreferences.fromMap(data['preferences'] as Map<String, dynamic>) 
+      preferences: data['preferences'] != null
+          ? UserPreferences.fromMap(data['preferences'] as Map<String, dynamic>)
           : null,
       isVerified: data['isVerified'] as bool? ?? false,
-      lastLoginAt: data['lastLoginAt'] != null 
-          ? (data['lastLoginAt'] as Timestamp).toDate() 
+      lastLoginAt: data['lastLoginAt'] != null
+          ? (data['lastLoginAt'] as Timestamp).toDate()
           : null,
-      createdAt: data['createdAt'] != null 
-          ? (data['createdAt'] as Timestamp).toDate() 
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
-      updatedAt: data['updatedAt'] != null 
-          ? (data['updatedAt'] as Timestamp).toDate() 
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] as Timestamp).toDate()
           : DateTime.now(),
     );
   }

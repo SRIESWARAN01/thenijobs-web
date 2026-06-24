@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# THENIJOBS Workspace
 
-## Getting Started
+This repository contains two project surfaces:
 
-First, run the development server:
+- repository root - canonical production Next.js web app, Firebase Hosting/App Hosting config, Firestore/Storage rules, and Cloud Functions.
+- `thenijobs-flutter/` - Flutter mobile app that uses the same Firebase backend.
 
-```bash
+## Canonical Development
+
+From the workspace root, standard npm scripts run the canonical web app directly:
+
+```powershell
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run typecheck
+npm run build
+npm run verify
+npm run functions:build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`npm run build` and `npm run verify` require the `NEXT_PUBLIC_FIREBASE_*` environment variables used by the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run web and Firebase backend work from the repository root:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```powershell
+cd E:\thenijobs-main
+npm install
+npm run lint
+npm run typecheck
+npm run build
+npm run functions:build
+```
 
-## Learn More
+Run mobile checks from the Flutter app:
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+cd E:\thenijobs-main\thenijobs-flutter
+D:\flutter\bin\flutter.bat pub get
+D:\flutter\bin\flutter.bat test
+D:\flutter\bin\flutter.bat analyze
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`flutter analyze` currently has a known backlog and should be cleaned before release.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment Rule
 
-## Deploy on Vercel
+Production deploys should use the repository root as the source of truth.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The root `firebase.json` points at the root Next.js app, `functions/`, Firestore indexes/rules, and Storage rules. `deploy.bat` follows the same canonical path.

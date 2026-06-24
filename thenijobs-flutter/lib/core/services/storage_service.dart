@@ -11,7 +11,8 @@ class UploadResult {
 }
 
 class StorageService {
-  StorageService({FirebaseStorage? storage}) : _storage = storage ?? FirebaseStorage.instance;
+  StorageService({FirebaseStorage? storage})
+    : _storage = storage ?? FirebaseStorage.instance;
 
   final FirebaseStorage _storage;
 

@@ -68,17 +68,30 @@ class FeaturedBusinesses extends ConsumerWidget {
                       children: [
                         const Text(
                           'BUSINESS PAGES',
-                          style: TextStyle(color: Colors.teal, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                          style: TextStyle(
+                            color: Colors.teal,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         const Text(
                           'Verified local businesses',
-                          style: TextStyle(fontFamily: 'Outfit', fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Call, WhatsApp, reviews and directions ready.',
-                          style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13),
+                          style: TextStyle(
+                            color: TailwindColors.slate.shade500,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -95,12 +108,21 @@ class FeaturedBusinesses extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(color: TailwindColors.slate.shade200),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('View all', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(
+                          'View all',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         SizedBox(width: 6),
                         Icon(Icons.arrow_forward, size: 14),
                       ],
@@ -123,23 +145,26 @@ class FeaturedBusinesses extends ConsumerWidget {
                       crossAxisCount: isWide ? 4 : 1,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: isWide ? 0.76 : 1.3,
+                      childAspectRatio: isWide ? 0.76 : 1.15,
                     ),
                     itemCount: companies.length,
                     itemBuilder: (context, index) {
                       final biz = companies[index];
                       final icon = _getCategoryIcon(biz.category);
-                      final isVerified = biz.verificationStatus == VerificationStatus.verified;
+                      final isVerified =
+                          biz.verificationStatus == VerificationStatus.verified;
                       final isPremium = biz.isPremium || biz.isFeatured;
 
                       return Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: TailwindColors.slate.shade200),
+                          border: Border.all(
+                            color: TailwindColors.slate.shade200,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
+                              color: Colors.black.withValues(alpha: 0.02),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -154,7 +179,10 @@ class FeaturedBusinesses extends ConsumerWidget {
                               padding: const EdgeInsets.all(16),
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: [Color(0xFF0F766E), Color(0xFF2563EB)],
+                                  colors: [
+                                    Color(0xFF0F766E),
+                                    Color(0xFF2563EB),
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
@@ -163,26 +191,44 @@ class FeaturedBusinesses extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
-                                        child: Icon(icon, color: Colors.white, size: 22),
+                                        child: Icon(
+                                          icon,
+                                          color: Colors.white,
+                                          size: 22,
+                                        ),
                                       ),
                                       if (isPremium)
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: Colors.white,
-                                            borderRadius: BorderRadius.circular(100),
+                                            borderRadius: BorderRadius.circular(
+                                              100,
+                                            ),
                                           ),
                                           child: const Text(
                                             'Premium',
-                                            style: TextStyle(color: Color(0xFF075985), fontSize: 9, fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                              color: Color(0xFF075985),
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                     ],
@@ -190,14 +236,24 @@ class FeaturedBusinesses extends ConsumerWidget {
                                   const SizedBox(height: 12),
                                   Text(
                                     biz.category.toUpperCase(),
-                                    style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 9, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.75,
+                                      ),
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     biz.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -209,25 +265,41 @@ class FeaturedBusinesses extends ConsumerWidget {
                                 padding: const EdgeInsets.all(12.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                biz.description.isNotEmpty ? biz.description : biz.name,
+                                                biz.description.isNotEmpty
+                                                    ? biz.description
+                                                    : biz.name,
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(color: TailwindColors.slate.shade600, fontSize: 12, fontWeight: FontWeight.bold, height: 1.4),
+                                                style: TextStyle(
+                                                  color: TailwindColors
+                                                      .slate
+                                                      .shade600,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  height: 1.4,
+                                                ),
                                               ),
                                             ),
                                             if (isVerified) ...[
                                               const SizedBox(width: 4),
-                                              const Icon(Icons.verified, color: Colors.teal, size: 16),
+                                              const Icon(
+                                                Icons.verified,
+                                                color: Colors.teal,
+                                                size: 16,
+                                              ),
                                             ],
                                           ],
                                         ),
@@ -239,22 +311,46 @@ class FeaturedBusinesses extends ConsumerWidget {
                                             Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                Icon(Icons.location_on_outlined, size: 12, color: TailwindColors.slate.shade400),
+                                                Icon(
+                                                  Icons.location_on_outlined,
+                                                  size: 12,
+                                                  color: TailwindColors
+                                                      .slate
+                                                      .shade400,
+                                                ),
                                                 const SizedBox(width: 2),
                                                 Text(
-                                                  biz.district.isNotEmpty ? biz.district : biz.address,
-                                                  style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 10, fontWeight: FontWeight.bold),
+                                                  biz.district.isNotEmpty
+                                                      ? biz.district
+                                                      : biz.address,
+                                                  style: TextStyle(
+                                                    color: TailwindColors
+                                                        .slate
+                                                        .shade500,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                               ],
                                             ),
                                             Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(Icons.star, size: 12, color: Colors.amber),
+                                                const Icon(
+                                                  Icons.star,
+                                                  size: 12,
+                                                  color: Colors.amber,
+                                                ),
                                                 const SizedBox(width: 2),
                                                 Text(
                                                   '${biz.rating} (${biz.reviewCount})',
-                                                  style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 10, fontWeight: FontWeight.bold),
+                                                  style: TextStyle(
+                                                    color: TailwindColors
+                                                        .slate
+                                                        .shade500,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                               ],
                                             ),
@@ -268,32 +364,53 @@ class FeaturedBusinesses extends ConsumerWidget {
                                       children: [
                                         Expanded(
                                           child: SizedBox(
-                                            height: 36,
+                                            height: 44,
                                             child: ElevatedButton(
-                                              onPressed: () => context.push('/company/${biz.slug}'),
+                                              onPressed: () => context.push(
+                                                '/company/${biz.slug}',
+                                              ),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(0xFF0F172A),
+                                                backgroundColor: const Color(
+                                                  0xFF0F172A,
+                                                ),
                                                 foregroundColor: Colors.white,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
                                                 padding: EdgeInsets.zero,
                                                 elevation: 0,
                                               ),
-                                              child: const Text('View Profile', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900)),
+                                              child: const Text(
+                                                'View Profile',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w900,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
                                         const SizedBox(width: 6),
                                         if (biz.phone.isNotEmpty) ...[
                                           SizedBox(
-                                            width: 36,
-                                            height: 36,
+                                            width: 44,
+                                            height: 44,
                                             child: IconButton(
-                                              onPressed: () => _launchPhone(biz.phone),
-                                              icon: const Icon(Icons.phone_outlined, size: 16),
+                                              onPressed: () =>
+                                                  _launchPhone(biz.phone),
+                                              icon: const Icon(
+                                                Icons.phone_outlined,
+                                                size: 16,
+                                              ),
                                               color: Colors.teal.shade800,
                                               style: IconButton.styleFrom(
-                                                backgroundColor: Colors.teal.shade50,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                backgroundColor:
+                                                    Colors.teal.shade50,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
                                                 padding: EdgeInsets.zero,
                                               ),
                                             ),
@@ -302,15 +419,28 @@ class FeaturedBusinesses extends ConsumerWidget {
                                         ],
                                         // WhatsApp fallback to phone if whatsapp is empty
                                         SizedBox(
-                                          width: 36,
-                                          height: 36,
+                                          width: 44,
+                                          height: 44,
                                           child: IconButton(
-                                            onPressed: () => _launchWhatsApp((biz.whatsapp ?? '').isNotEmpty ? biz.whatsapp! : biz.phone),
-                                            icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-                                            color: TailwindColors.emerald.shade800,
+                                            onPressed: () => _launchWhatsApp(
+                                              (biz.whatsapp ?? '').isNotEmpty
+                                                  ? biz.whatsapp!
+                                                  : biz.phone,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.chat_bubble_outline_rounded,
+                                              size: 16,
+                                            ),
+                                            color:
+                                                TailwindColors.emerald.shade800,
                                             style: IconButton.styleFrom(
-                                              backgroundColor: TailwindColors.emerald.shade50,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                              backgroundColor: TailwindColors
+                                                  .emerald
+                                                  .shade50,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
                                               padding: EdgeInsets.zero,
                                             ),
                                           ),
@@ -354,13 +484,22 @@ class FeaturedBusinesses extends ConsumerWidget {
         children: [
           const Text(
             'No featured businesses yet',
-            style: TextStyle(fontFamily: 'Outfit', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            style: TextStyle(
+              fontFamily: 'Outfit',
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Verified featured companies from Firebase will appear here when approved by admin.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 12,
+              color: TailwindColors.slate.shade500,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -368,13 +507,18 @@ class FeaturedBusinesses extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0F172A),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Register business', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(
+                  'Register business',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
                 SizedBox(width: 6),
                 Icon(Icons.arrow_forward, size: 14),
               ],

@@ -35,7 +35,8 @@ class RewardsPoints {
       'total': total,
       'monthlyPoints': monthlyPoints,
       'monthStartDate': Timestamp.fromDate(monthStartDate),
-      if (lastEarnedAt != null) 'lastEarnedAt': Timestamp.fromDate(lastEarnedAt!),
+      if (lastEarnedAt != null)
+        'lastEarnedAt': Timestamp.fromDate(lastEarnedAt!),
     };
   }
 }
@@ -191,21 +192,32 @@ class GamificationProfile {
     this.leaderboardRank,
   });
 
-  factory GamificationProfile.fromFirestore(Map<String, dynamic> data, String id) {
+  factory GamificationProfile.fromFirestore(
+    Map<String, dynamic> data,
+    String id,
+  ) {
     return GamificationProfile(
       uid: id,
       rewards: data['rewards'] != null
           ? RewardsPoints.fromMap(data['rewards'] as Map<String, dynamic>)
-          : RewardsPoints(current: 0, total: 0, monthlyPoints: 0, monthStartDate: DateTime.now()),
-      badges: (data['badges'] as List<dynamic>?)
+          : RewardsPoints(
+              current: 0,
+              total: 0,
+              monthlyPoints: 0,
+              monthStartDate: DateTime.now(),
+            ),
+      badges:
+          (data['badges'] as List<dynamic>?)
               ?.map((e) => Badge.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],
-      achievements: (data['achievements'] as List<dynamic>?)
+      achievements:
+          (data['achievements'] as List<dynamic>?)
               ?.map((e) => Achievement.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],
-      recentActivities: (data['recentActivities'] as List<dynamic>?)
+      recentActivities:
+          (data['recentActivities'] as List<dynamic>?)
               ?.map((e) => PointActivity.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],

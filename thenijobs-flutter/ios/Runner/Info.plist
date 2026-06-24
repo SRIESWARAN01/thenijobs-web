@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TheNiJobs uses the microphone for optional voice job search.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>TheNiJobs uses speech recognition to convert your voice search into job keywords.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

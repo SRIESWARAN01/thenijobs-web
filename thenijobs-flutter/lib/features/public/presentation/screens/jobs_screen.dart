@@ -1,18 +1,14 @@
-// ============================================================
-// THENIJOBS — Jobs Directory Screen
-// ============================================================
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:speech_to_text/speech_to_text.dart' as speech;
+import 'package:thenijobs/core/constants/app_constants.dart';
+import 'package:thenijobs/core/services/firestore_service.dart';
 import 'package:thenijobs/core/theme/app_theme.dart';
 import 'package:thenijobs/features/auth/presentation/providers/auth_provider.dart';
-import 'package:thenijobs/shared/data/models/job_model.dart';
 import 'package:thenijobs/features/public/presentation/providers/stats_provider.dart';
-import 'package:thenijobs/features/public/presentation/widgets/home_footer.dart';
-import 'package:thenijobs/shared/widgets/floating_whatsapp.dart';
+import 'package:thenijobs/features/public/presentation/widgets/mobile_job_widgets.dart';
+import 'package:thenijobs/shared/data/models/job_model.dart';
 
 class JobsScreen extends ConsumerStatefulWidget {
   const JobsScreen({
@@ -20,11 +16,15 @@ class JobsScreen extends ConsumerStatefulWidget {
     this.initialSearch,
     this.initialLocation,
     this.initialCategory,
+    this.initialSort,
+    this.focusSearch = false,
   });
 
   final String? initialSearch;
   final String? initialLocation;
   final String? initialCategory;
+  final String? initialSort;
+  final bool focusSearch;
 
   @override
   ConsumerState<JobsScreen> createState() => _JobsScreenState();
@@ -32,826 +32,852 @@ class JobsScreen extends ConsumerStatefulWidget {
 
 class _JobsScreenState extends ConsumerState<JobsScreen> {
   final _searchController = TextEditingController();
-  String _searchQuery = '';
-  String _selectedLocation = ''; // All Areas
-  final List<String> _selectedTypes = [];
-  final List<String> _selectedCategories = [];
-  String _sortBy = 'latest'; // latest, salary, relevance
-  bool _showFilters = false;
+  final _searchFocusNode = FocusNode();
+  final _speech = speech.SpeechToText();
 
-  final List<String> _jobTypesList = const [
+  String _searchQuery = '';
+  String _selectedLocation = '';
+  String _selectedExperience = '';
+  String _sortBy = 'latest';
+  RangeValues _salaryRange = const RangeValues(0, 100000);
+  bool _isListening = false;
+  bool _speechReady = false;
+
+  final Set<String> _selectedTypes = {};
+  final Set<String> _selectedCategories = {};
+
+  static const _jobTypes = [
     'Full Time',
     'Part Time',
     'Remote',
     'WFH',
     'Internship',
     'Fresher',
-    'Contract'
+    'Contract',
   ];
 
-  final List<String> _categoriesList = const [
-    'Agriculture',
-    'Education',
-    'IT & Software',
-    'Healthcare',
-    'Construction',
-    'Textiles',
-    'Transport',
-    'Finance'
-  ];
+  static const _sortOptions = {
+    'latest': 'Latest',
+    'relevance': 'Relevant',
+    'salary': 'Salary',
+    'trending': 'Trending',
+    'featured': 'Featured',
+  };
 
   @override
   void initState() {
     super.initState();
-    final initialSearch = widget.initialSearch?.trim() ?? '';
-    final initialLocation = widget.initialLocation?.trim() ?? '';
-    final initialCategory = widget.initialCategory?.trim() ?? '';
-    if (initialSearch.isNotEmpty) {
-      _searchController.text = initialSearch;
-      _searchQuery = initialSearch;
+    _searchController.text = widget.initialSearch?.trim() ?? '';
+    _searchQuery = _searchController.text;
+    _selectedLocation = widget.initialLocation?.trim() ?? '';
+    _sortBy = _sortOptions.containsKey(widget.initialSort)
+        ? widget.initialSort!
+        : 'latest';
+
+    final category = widget.initialCategory?.trim();
+    if (category != null && category.isNotEmpty) {
+      _selectedCategories.add(category);
     }
-    if (initialLocation.isNotEmpty) {
-      _selectedLocation = initialLocation;
-    }
-    if (initialCategory.isNotEmpty && _categoriesList.any((item) => item.toLowerCase() == initialCategory.toLowerCase())) {
-      _selectedCategories.add(_categoriesList.firstWhere((item) => item.toLowerCase() == initialCategory.toLowerCase()));
-    }
+
     _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim();
-      });
+      setState(() => _searchQuery = _searchController.text.trim());
     });
+
+    _initializeSpeech();
+
+    if (widget.focusSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _searchFocusNode.requestFocus();
+      });
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
+    _speech.stop();
     super.dispose();
   }
 
-  String _formatTime(DateTime? dateTime) {
-    if (dateTime == null) return 'Recently';
-    final difference = DateTime.now().difference(dateTime);
-    if (difference.inDays >= 1) return '${difference.inDays} d ago';
-    if (difference.inHours >= 1) return '${difference.inHours} hr ago';
-    if (difference.inMinutes >= 1) return '${difference.inMinutes} min ago';
-    return 'Just now';
-  }
-
-  String _formatSalary(double? min, double? max, NumberFormat formatter) {
-    if (min != null && max != null) {
-      return '₹${formatter.format(min)} - ₹${formatter.format(max)}';
-    }
-    return 'Salary Negotiable';
-  }
-
-  String _getFriendlyJobType(JobType type) {
-    switch (type) {
-      case JobType.fullTime:
-        return 'Full Time';
-      case JobType.partTime:
-        return 'Part Time';
-      case JobType.internship:
-        return 'Internship';
-      case JobType.remote:
-        return 'Remote';
-      case JobType.workFromHome:
-        return 'WFH';
-      case JobType.fresher:
-        return 'Fresher';
-      case JobType.contract:
-        return 'Contract';
+  Future<void> _initializeSpeech() async {
+    try {
+      final available = await _speech.initialize(
+        onStatus: (status) {
+          if (!mounted) return;
+          if (status == 'done' || status == 'notListening') {
+            setState(() => _isListening = false);
+          }
+        },
+        onError: (_) {
+          if (mounted) setState(() => _isListening = false);
+        },
+      );
+      if (mounted) setState(() => _speechReady = available);
+    } catch (_) {
+      if (mounted) setState(() => _speechReady = false);
     }
   }
 
-  Future<void> _toggleSaveJob(Job job, List<String> savedJobIds, String? userId) async {
-    if (userId == null) {
+  Future<void> _toggleVoiceSearch() async {
+    if (_isListening) {
+      await _speech.stop();
+      if (mounted) setState(() => _isListening = false);
+      return;
+    }
+
+    final available = _speechReady || await _speech.initialize();
+    if (!available) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to save jobs')),
+        const SnackBar(
+          content: Text('Voice search is not available on this device'),
+        ),
       );
       return;
     }
 
+    setState(() => _isListening = true);
+    await _speech.listen(
+      onResult: (result) {
+        if (!mounted) return;
+        setState(() {
+          _searchController.text = result.recognizedWords;
+          _searchController.selection = TextSelection.collapsed(
+            offset: _searchController.text.length,
+          );
+          _searchQuery = result.recognizedWords.trim();
+        });
+      },
+    );
+  }
+
+  Future<void> _refresh() async {
+    ref.invalidate(allJobsProvider);
+    ref.invalidate(savedJobsStreamProvider);
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+  }
+
+  int get _activeFilterCount {
+    var count = _selectedTypes.length + _selectedCategories.length;
+    if (_selectedLocation.isNotEmpty) count++;
+    if (_selectedExperience.isNotEmpty) count++;
+    if (_salaryRange.start > 0 || _salaryRange.end < 100000) count++;
+    return count;
+  }
+
+  List<Job> _filterAndSort(List<Job> jobs) {
+    final query = _searchQuery.toLowerCase();
+
+    final filtered = jobs.where((job) {
+      final matchesSearch =
+          query.isEmpty ||
+          job.title.toLowerCase().contains(query) ||
+          job.companyName.toLowerCase().contains(query) ||
+          job.location.toLowerCase().contains(query) ||
+          job.district.toLowerCase().contains(query) ||
+          job.skills.any((skill) => skill.toLowerCase().contains(query));
+
+      final matchesLocation =
+          _selectedLocation.isEmpty ||
+          job.location.toLowerCase().contains(
+            _selectedLocation.toLowerCase(),
+          ) ||
+          job.district.toLowerCase().contains(_selectedLocation.toLowerCase());
+
+      final typeLabel = friendlyJobType(job.jobType);
+      final matchesType =
+          _selectedTypes.isEmpty || _selectedTypes.contains(typeLabel);
+      final matchesCategory =
+          _selectedCategories.isEmpty ||
+          _selectedCategories.contains(job.category);
+
+      final matchesExperience =
+          _selectedExperience.isEmpty ||
+          job.experience.toLowerCase().contains(
+            _selectedExperience.toLowerCase(),
+          ) ||
+          (_selectedExperience == 'Fresher' && typeLabel == 'Fresher');
+
+      final salaryMin = job.salaryMin;
+      final salaryMax = job.salaryMax;
+      final usingSalaryFilter =
+          _salaryRange.start > 0 || _salaryRange.end < 100000;
+      final matchesSalary =
+          !usingSalaryFilter ||
+          (salaryMin != null &&
+              salaryMax != null &&
+              salaryMax >= _salaryRange.start &&
+              salaryMin <= _salaryRange.end) ||
+          (salaryMax != null &&
+              salaryMax >= _salaryRange.start &&
+              salaryMax <= _salaryRange.end) ||
+          (salaryMin != null &&
+              salaryMin >= _salaryRange.start &&
+              salaryMin <= _salaryRange.end);
+
+      return matchesSearch &&
+          matchesLocation &&
+          matchesType &&
+          matchesCategory &&
+          matchesExperience &&
+          matchesSalary;
+    }).toList();
+
+    filtered.sort((a, b) {
+      switch (_sortBy) {
+        case 'salary':
+          return (b.salaryMax ?? b.salaryMin ?? 0).compareTo(
+            a.salaryMax ?? a.salaryMin ?? 0,
+          );
+        case 'relevance':
+          return _relevanceScore(b, query).compareTo(_relevanceScore(a, query));
+        case 'trending':
+          return _trendScore(b).compareTo(_trendScore(a));
+        case 'featured':
+          return _featuredScore(b).compareTo(_featuredScore(a));
+        case 'latest':
+        default:
+          return b.createdAt.compareTo(a.createdAt);
+      }
+    });
+
+    return filtered;
+  }
+
+  int _relevanceScore(Job job, String query) {
+    if (query.isEmpty) return _featuredScore(job);
+    var score = 0;
+    if (job.title.toLowerCase().contains(query)) score += 10;
+    if (job.companyName.toLowerCase().contains(query)) score += 6;
+    if (job.skills.any((skill) => skill.toLowerCase().contains(query))) {
+      score += 5;
+    }
+    if (job.location.toLowerCase().contains(query) ||
+        job.district.toLowerCase().contains(query)) {
+      score += 3;
+    }
+    return score + _featuredScore(job);
+  }
+
+  int _trendScore(Job job) =>
+      job.viewCount + (job.applicationsCount * 3) + (job.isUrgent ? 25 : 0);
+
+  int _featuredScore(Job job) =>
+      (job.isFeatured ? 30 : 0) +
+      (job.isPremium ? 20 : 0) +
+      (job.isUrgent ? 10 : 0);
+
+  Future<void> _toggleSaveJob(
+    Job job,
+    List<String> savedJobIds,
+    String? userId,
+  ) async {
+    if (userId == null) {
+      context.go(
+        '/login?redirect=${Uri.encodeComponent('/jobs/${job.id}?save=1')}',
+      );
+      return;
+    }
+
+    final service = ref.read(firestoreServiceProvider);
     final isSaved = savedJobIds.contains(job.id);
-    final firestore = FirebaseFirestore.instance;
 
     try {
       if (isSaved) {
-        // Find saved record and delete
-        final snap = await firestore
-            .collection('savedJobs')
-            .where('userId', isEqualTo: userId)
-            .where('jobId', isEqualTo: job.id)
-            .get();
-        for (var doc in snap.docs) {
-          await doc.reference.delete();
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Job removed from saved list')),
-        );
+        await service.unsaveJob(userId, job.id);
       } else {
-        // Add to saved list
-        await firestore.collection('savedJobs').add({
-          'userId': userId,
-          'jobId': job.id,
-          'jobTitle': job.title,
-          'companyName': job.companyName,
-          'description': 'Positions available at ${job.companyName}. Required skills: ${job.skills.join(", ")}',
-          'district': job.location,
-          'jobType': job.jobType.toJson(),
-          'salaryMin': job.salaryMin ?? 0,
-          'salaryMax': job.salaryMax ?? 0,
-          'skills': job.skills,
-          'deadline': job.deadline != null ? Timestamp.fromDate(job.deadline!) : null,
-          'savedAt': FieldValue.serverTimestamp(),
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Job saved successfully')),
+        await service.saveJob(
+          userId,
+          job.id,
+          metadata: {
+            'jobTitle': job.title,
+            'companyName': job.companyName,
+            'description': job.description,
+            'district': job.location.isNotEmpty ? job.location : job.district,
+            'jobType': job.jobType.toJson(),
+            'salaryMin': job.salaryMin ?? 0,
+            'salaryMax': job.salaryMax ?? 0,
+            'skills': job.skills,
+          },
         );
       }
-    } catch (e) {
+      ref.invalidate(savedJobsStreamProvider);
+    } catch (error) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save job: $e')),
+        SnackBar(content: Text('Could not update saved job: $error')),
       );
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final allJobsAsync = ref.watch(allJobsProvider);
-    final savedJobsAsync = ref.watch(savedJobsStreamProvider);
-    final authState = ref.watch(authStateStreamProvider);
+  void _showFilters() {
+    var draftLocation = _selectedLocation;
+    var draftExperience = _selectedExperience;
+    var draftSalary = _salaryRange;
+    final draftTypes = {..._selectedTypes};
+    final draftCategories = {..._selectedCategories};
 
-    final user = authState.value;
-    final savedJobIds = savedJobsAsync.value ?? [];
-
-    final isWide = MediaQuery.of(context).size.width > 768;
-    final formatter = NumberFormat.decimalPattern('en_IN');
-
-    // 1. Filter jobs
-    final allJobs = allJobsAsync.value ?? [];
-    final filteredJobs = allJobs.where((j) {
-      final q = _searchQuery.toLowerCase();
-      final matchSearch = q.isEmpty ||
-          j.title.toLowerCase().contains(q) ||
-          j.companyName.toLowerCase().contains(q) ||
-          j.skills.any((s) => s.toLowerCase().contains(q));
-
-      final matchLoc = _selectedLocation.isEmpty ||
-          j.location.toLowerCase().contains(_selectedLocation.toLowerCase()) ||
-          j.district.toLowerCase().contains(_selectedLocation.toLowerCase());
-
-      final friendlyType = _getFriendlyJobType(j.jobType);
-      final matchType = _selectedTypes.isEmpty || _selectedTypes.contains(friendlyType);
-
-      final matchCat = _selectedCategories.isEmpty || _selectedCategories.contains(j.category);
-
-      return matchSearch && matchLoc && matchType && matchCat;
-    }).toList();
-
-    // 2. Sort jobs
-    filteredJobs.sort((a, b) {
-      if (_sortBy == 'salary') {
-        final valA = a.salaryMax ?? 0.0;
-        final valB = b.salaryMax ?? 0.0;
-        return valB.compareTo(valA);
-      } else if (_sortBy == 'relevance') {
-        if (_searchQuery.isEmpty) return 0;
-        final q = _searchQuery.toLowerCase();
-        int scoreA = 0;
-        if (a.title.toLowerCase().contains(q)) scoreA += 2;
-        if (a.skills.any((s) => s.toLowerCase().contains(q))) scoreA += 1;
-
-        int scoreB = 0;
-        if (b.title.toLowerCase().contains(q)) scoreB += 2;
-        if (b.skills.any((s) => s.toLowerCase().contains(q))) scoreB += 1;
-
-        return scoreB.compareTo(scoreA);
-      } else {
-        // 'latest'
-        return b.createdAt.compareTo(a.createdAt);
-      }
-    });
-
-    final activeFilters = _selectedTypes.length + _selectedCategories.length;
-
-    return Scaffold(
-      backgroundColor: AppTheme.lightBg,
-      appBar: AppBar(
-        title: const Text('Jobs Directory'),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 1,
-      ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(allJobsProvider);
-          },
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Top Search & Sticky area
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                  child: Center(
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 1100),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              top: false,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                      child: Row(
                         children: [
-                          Row(
-                            children: [
-                              // Search input
-                              Expanded(
-                                flex: 3,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: TailwindColors.slate.shade50,
-                                    border: Border.all(color: TailwindColors.slate.shade200),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.search, size: 16, color: Colors.grey),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: TextField(
-                                          controller: _searchController,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                          decoration: InputDecoration(
-                                            hintText: 'Job title, skill, company...',
-                                            hintStyle: TextStyle(
-                                              color: TailwindColors.slate.shade400,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.normal,
-                                            ),
-                                            border: InputBorder.none,
-                                            isDense: true,
-                                          ),
-                                        ),
-                                      ),
-                                      if (_searchQuery.isNotEmpty)
-                                        IconButton(
-                                          onPressed: () => _searchController.clear(),
-                                          icon: const Icon(Icons.close, size: 16, color: Colors.grey),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // Location Dropdown
-                              Expanded(
-                                flex: 2,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: TailwindColors.slate.shade50,
-                                    border: Border.all(color: TailwindColors.slate.shade200),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.location_on, size: 14, color: Colors.teal),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton<String>(
-                                            value: _selectedLocation.isEmpty ? null : _selectedLocation,
-                                            hint: const Text('All Areas', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                            style: TextStyle(color: TailwindColors.slate.shade700, fontWeight: FontWeight.bold, fontSize: 12),
-                                            items: ['Theni', 'Madurai', 'Dindigul', 'Coimbatore', 'Remote']
-                                                .map((loc) => DropdownMenuItem(value: loc, child: Text(loc)))
-                                                .toList(),
-                                            onChanged: (val) {
-                                              setState(() {
-                                                _selectedLocation = val ?? '';
-                                              });
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // Filter Toggle Button
-                              ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _showFilters = !_showFilters;
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _showFilters || activeFilters > 0
-                                      ? AppTheme.primaryPurple.withOpacity(0.12)
-                                      : TailwindColors.slate.shade50,
-                                  foregroundColor: _showFilters || activeFilters > 0
-                                      ? AppTheme.primaryPurple
-                                      : TailwindColors.slate.shade600,
-                                  surfaceTintColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(
-                                      color: _showFilters || activeFilters > 0
-                                          ? AppTheme.primaryPurple.withOpacity(0.4)
-                                          : TailwindColors.slate.shade200,
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.tune, size: 16),
-                                    if (activeFilters > 0) ...[
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        width: 18,
-                                        height: 18,
-                                        decoration: const BoxDecoration(
-                                          color: AppTheme.primaryPurple,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            '$activeFilters',
-                                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Filter Panel Expansion
-                          if (_showFilters) ...[
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                border: Border.all(color: TailwindColors.slate.shade200),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Job Type list
-                                  const Text('Job Type', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: _jobTypesList.map((type) {
-                                      final isSelected = _selectedTypes.contains(type);
-                                      return FilterChip(
-                                        label: Text(type, style: const TextStyle(fontSize: 11)),
-                                        selected: isSelected,
-                                        onSelected: (selected) {
-                                          setState(() {
-                                            if (selected) {
-                                              _selectedTypes.add(type);
-                                            } else {
-                                              _selectedTypes.remove(type);
-                                            }
-                                          });
-                                        },
-                                        selectedColor: AppTheme.primaryPurple.withOpacity(0.15),
-                                        checkmarkColor: AppTheme.primaryPurple,
-                                      );
-                                    }).toList(),
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Category list
-                                  const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-                                  const SizedBox(height: 8),
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: _categoriesList.map((cat) {
-                                      final isSelected = _selectedCategories.contains(cat);
-                                      return FilterChip(
-                                        label: Text(cat, style: const TextStyle(fontSize: 11)),
-                                        selected: isSelected,
-                                        onSelected: (selected) {
-                                          setState(() {
-                                            if (selected) {
-                                              _selectedCategories.add(cat);
-                                            } else {
-                                              _selectedCategories.remove(cat);
-                                            }
-                                          });
-                                        },
-                                        selectedColor: AppTheme.brandCyan.withOpacity(0.15),
-                                        checkmarkColor: AppTheme.brandCyan,
-                                      );
-                                    }).toList(),
-                                  ),
-
-                                  if (activeFilters > 0) ...[
-                                    const SizedBox(height: 16),
-                                    TextButton.icon(
-                                      onPressed: () {
-                                        setState(() {
-                                          _selectedTypes.clear();
-                                          _selectedCategories.clear();
-                                        });
-                                      },
-                                      icon: const Icon(Icons.clear_all, size: 16, color: Colors.red),
-                                      label: const Text('Clear all filters', style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ],
-                                ],
+                          const Expanded(
+                            child: Text(
+                              'Filters',
+                              style: TextStyle(
+                                color: AppTheme.lightTextPrimary,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
-                          ],
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setModalState(() {
+                                draftLocation = '';
+                                draftExperience = '';
+                                draftSalary = const RangeValues(0, 100000);
+                                draftTypes.clear();
+                                draftCategories.clear();
+                              });
+                            },
+                            child: const Text('Clear'),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Main Listing Grid
-                Center(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 1100),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        // Results Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    const Divider(height: 1),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            const _FilterTitle(
+                              icon: Icons.location_on_outlined,
+                              label: 'Location',
+                            ),
+                            DropdownButtonFormField<String>(
+                              key: ValueKey(draftLocation),
+                              initialValue: draftLocation.isEmpty
+                                  ? null
+                                  : draftLocation,
+                              items: AppConstants.tnDistricts
+                                  .map(
+                                    (district) => DropdownMenuItem(
+                                      value: district,
+                                      child: Text(district),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) =>
+                                  setModalState(() => draftLocation = value ?? ''),
+                              decoration: const InputDecoration(
+                                hintText: 'All Tamil Nadu',
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            const _FilterTitle(
+                              icon: Icons.work_outline_rounded,
+                              label: 'Job type',
+                            ),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
-                                Text(
-                                  '${filteredJobs.length} Jobs Found',
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                                ),
-                                Text(
-                                  _searchQuery.isNotEmpty ? 'Results for "$_searchQuery"' : 'All available positions',
-                                  style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
-                                ),
+                                for (final type in _jobTypes)
+                                  FilterChip(
+                                    label: Text(type),
+                                    selected: draftTypes.contains(type),
+                                    onSelected: (selected) {
+                                      setModalState(() {
+                                        selected
+                                            ? draftTypes.add(type)
+                                            : draftTypes.remove(type);
+                                      });
+                                    },
+                                  ),
                               ],
                             ),
-                            // Sort Dropdown
-                            Row(
+                            const SizedBox(height: 20),
+                            const _FilterTitle(
+                              icon: Icons.category_outlined,
+                              label: 'Category',
+                            ),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
-                                Text('Sort: ', style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold)),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    border: Border.all(color: TailwindColors.slate.shade200),
-                                    borderRadius: BorderRadius.circular(8),
+                                for (final category in AppConstants.jobCategories.take(
+                                  12,
+                                ))
+                                  FilterChip(
+                                    label: Text(category),
+                                    selected: draftCategories.contains(category),
+                                    onSelected: (selected) {
+                                      setModalState(() {
+                                        selected
+                                            ? draftCategories.add(category)
+                                            : draftCategories.remove(category);
+                                      });
+                                    },
                                   ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<String>(
-                                      value: _sortBy,
-                                      style: TextStyle(color: TailwindColors.slate.shade700, fontSize: 11, fontWeight: FontWeight.bold),
-                                      items: const [
-                                        DropdownMenuItem(value: 'latest', child: Text('Latest')),
-                                        DropdownMenuItem(value: 'salary', child: Text('Salary')),
-                                        DropdownMenuItem(value: 'relevance', child: Text('Relevance')),
-                                      ],
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() {
-                                            _sortBy = val;
-                                          });
-                                        }
-                                      },
-                                    ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            const _FilterTitle(
+                              icon: Icons.payments_outlined,
+                              label: 'Monthly salary',
+                            ),
+                            RangeSlider(
+                              values: draftSalary,
+                              min: 0,
+                              max: 100000,
+                              divisions: 20,
+                              labels: RangeLabels(
+                                'INR ${draftSalary.start.round()}',
+                                draftSalary.end >= 100000
+                                    ? 'INR 100000+'
+                                    : 'INR ${draftSalary.end.round()}',
+                              ),
+                              onChanged: (value) =>
+                                  setModalState(() => draftSalary = value),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'INR ${draftSalary.start.round()} - ${draftSalary.end >= 100000 ? '100000+' : draftSalary.end.round()}',
+                              style: const TextStyle(
+                                color: AppTheme.lightTextSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            const _FilterTitle(
+                              icon: Icons.timeline_rounded,
+                              label: 'Experience',
+                            ),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                for (final experience in AppConstants.experienceLevels)
+                                  ChoiceChip(
+                                    label: Text(experience),
+                                    selected: draftExperience == experience,
+                                    onSelected: (selected) {
+                                      setModalState(
+                                        () => draftExperience = selected
+                                            ? experience
+                                            : '',
+                                      );
+                                    },
                                   ),
-                                ),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-
-                        // List of Job Cards
-                        allJobsAsync.when(
-                          data: (jobsList) {
-                            if (filteredJobs.isEmpty) {
-                              return _buildEmptyState();
-                            }
-                            return ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: filteredJobs.length,
-                              itemBuilder: (context, index) {
-                                final job = filteredJobs[index];
-                                final isSaved = savedJobIds.contains(job.id);
-                                final salaryStr = _formatSalary(job.salaryMin, job.salaryMax, formatter);
-                                final timeStr = _formatTime(job.createdAt);
-                                final typeStr = _getFriendlyJobType(job.jobType);
-
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: TailwindColors.slate.shade200),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.01),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // Logo placeholder
-                                          Container(
-                                            width: 48,
-                                            height: 48,
-                                            decoration: BoxDecoration(
-                                              color: TailwindColors.slate.shade50,
-                                              border: Border.all(color: TailwindColors.slate.shade200),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Center(
-                                              child: Text(
-                                                job.companyName.isNotEmpty ? job.companyName.substring(0, 1).toUpperCase() : '💼',
-                                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-
-                                          // Details
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                InkWell(
-                                                  onTap: () => context.push('/jobs/${job.id}'),
-                                                  child: Text(
-                                                    job.title,
-                                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Row(
-                                                  children: [
-                                                    Text(
-                                                      job.companyName.isNotEmpty ? job.companyName : 'Verified Employer',
-                                                      style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    const Icon(Icons.verified_user, color: Colors.teal, size: 12),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-
-                                          // Badges
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.end,
-                                            children: [
-                                              if (job.isUrgent)
-                                                Container(
-                                                  margin: const EdgeInsets.only(bottom: 4),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFFFFBEB),
-                                                    border: Border.all(color: const Color(0xFFFDE68A)),
-                                                    borderRadius: BorderRadius.circular(100),
-                                                  ),
-                                                  child: const Text('URGENT', style: TextStyle(color: Color(0xFFB45309), fontSize: 8, fontWeight: FontWeight.bold)),
-                                                ),
-                                              if (job.isPremium)
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFEFF6FF),
-                                                    border: Border.all(color: const Color(0xFFBFDBFE)),
-                                                    borderRadius: BorderRadius.circular(100),
-                                                  ),
-                                                  child: const Text('PREMIUM', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 8, fontWeight: FontWeight.bold)),
-                                                ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-
-                                      // Meta Row
-                                      Wrap(
-                                        spacing: 12,
-                                        runSpacing: 4,
-                                        children: [
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.location_on_outlined, size: 12, color: Colors.teal),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                job.location.isNotEmpty ? job.location : job.district,
-                                                style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.payments_outlined, size: 12, color: Colors.emerald),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                salaryStr,
-                                                style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.work_outline, size: 12, color: Colors.cyan),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                typeStr,
-                                                style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.schedule, size: 12, color: Colors.grey),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                timeStr,
-                                                style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 10),
-
-                                      // Skills chips
-                                      if (job.skills.isNotEmpty) ...[
-                                        Wrap(
-                                          spacing: 4,
-                                          runSpacing: 4,
-                                          children: job.skills.map((skill) {
-                                            return Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: TailwindColors.slate.shade100,
-                                                borderRadius: BorderRadius.circular(100),
-                                              ),
-                                              child: Text(
-                                                skill,
-                                                style: TextStyle(color: TailwindColors.slate.shade600, fontSize: 9, fontWeight: FontWeight.bold),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
-
-                                      const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                                      const SizedBox(height: 8),
-
-                                      // Actions
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: SizedBox(
-                                              height: 38,
-                                              child: ElevatedButton(
-                                                onPressed: () => context.push('/jobs/${job.id}'),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: const Color(0xFF0F172A),
-                                                  foregroundColor: Colors.white,
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                                  elevation: 0,
-                                                ),
-                                                child: const Text('Apply Now', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900)),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          SizedBox(
-                                            width: 38,
-                                            height: 38,
-                                            child: IconButton(
-                                              onPressed: () => _toggleSaveJob(job, savedJobIds, user?.uid),
-                                              icon: Icon(
-                                                isSaved ? Icons.bookmark : Icons.bookmark_border,
-                                                color: isSaved ? AppTheme.primaryPurple : TailwindColors.slate.shade500,
-                                                size: 18,
-                                              ),
-                                              style: IconButton.styleFrom(
-                                                backgroundColor: isSaved
-                                                    ? AppTheme.primaryPurple.withOpacity(0.12)
-                                                    : TailwindColors.slate.shade50,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(10),
-                                                  side: BorderSide(
-                                                    color: isSaved
-                                                        ? AppTheme.primaryPurple.withOpacity(0.4)
-                                                        : TailwindColors.slate.shade200,
-                                                  ),
-                                                ),
-                                                padding: EdgeInsets.zero,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          loading: () => const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(48.0),
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                          error: (err, stack) => _buildEmptyState(),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _selectedLocation = draftLocation;
+                              _selectedExperience = draftExperience;
+                              _salaryRange = draftSalary;
+                              _selectedTypes
+                                ..clear()
+                                ..addAll(draftTypes);
+                              _selectedCategories
+                                ..clear()
+                                ..addAll(draftCategories);
+                            });
+                            Navigator.of(context).pop();
+                          },
+                          icon: const Icon(Icons.check_rounded),
+                          label: const Text('Apply filters'),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                const HomeFooter(),
-              ],
-            ),
-          ),
-        ),
-      ),
-      floatingActionButton: const FloatingWhatsApp(),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildEmptyState() {
+  @override
+  Widget build(BuildContext context) {
+    final jobsAsync = ref.watch(allJobsProvider);
+    final savedJobsAsync = ref.watch(savedJobsStreamProvider);
+    final user = ref.watch(authStateStreamProvider).value;
+    final savedJobIds = savedJobsAsync.value ?? const <String>[];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _SearchHeader(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  activeFilterCount: _activeFilterCount,
+                  sortBy: _sortBy,
+                  isListening: _isListening,
+                  onVoice: _toggleVoiceSearch,
+                  onFilter: _showFilters,
+                  onSortChanged: (value) {
+                    if (value != null) setState(() => _sortBy = value);
+                  },
+                ),
+              ),
+              jobsAsync.when(
+                data: (jobs) {
+                  final filtered = _filterAndSort(
+                    jobs.where((job) => job.isActive).toList(),
+                  );
+
+                  if (filtered.isEmpty) {
+                    return SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _EmptyResults(
+                        onClear: () {
+                          setState(() {
+                            _searchController.clear();
+                            _selectedLocation = '';
+                            _selectedExperience = '';
+                            _salaryRange = const RangeValues(0, 100000);
+                            _selectedTypes.clear();
+                            _selectedCategories.clear();
+                          });
+                        },
+                      ),
+                    );
+                  }
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        if (index.isOdd) return const SizedBox(height: 12);
+                        final itemIndex = index ~/ 2;
+                        if (itemIndex == 0) {
+                          return _ResultsSummary(
+                            count: filtered.length,
+                            query: _searchQuery,
+                          );
+                        }
+                        final job = filtered[itemIndex - 1];
+                        return NativeJobCard(
+                          job: job,
+                          isSaved: savedJobIds.contains(job.id),
+                          onTap: () => context.push('/jobs/${job.id}'),
+                          onSave: () =>
+                              _toggleSaveJob(job, savedJobIds, user?.uid),
+                        );
+                      }, childCount: (filtered.length + 1) * 2 - 1),
+                    ),
+                  );
+                },
+                loading: () => const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 18),
+                    child: JobSkeletonList(count: 6),
+                  ),
+                ),
+                error: (_, __) => SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _EmptyResults(
+                    title: 'Jobs could not load',
+                    message: 'Pull down to refresh the latest listings.',
+                    onClear: _refresh,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchHeader extends StatelessWidget {
+  const _SearchHeader({
+    required this.controller,
+    required this.focusNode,
+    required this.activeFilterCount,
+    required this.sortBy,
+    required this.isListening,
+    required this.onVoice,
+    required this.onFilter,
+    required this.onSortChanged,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final int activeFilterCount;
+  final String sortBy;
+  final bool isListening;
+  final VoidCallback onVoice;
+  final VoidCallback onFilter;
+  final ValueChanged<String?> onSortChanged;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: TailwindColors.slate.shade300),
+        border: Border(bottom: BorderSide(color: AppTheme.lightBorder)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'No jobs found',
-            style: TextStyle(fontFamily: 'Outfit', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+          Row(
+            children: [
+              IconButton(
+                tooltip: 'Back',
+                onPressed: () =>
+                    context.canPop() ? context.pop() : context.go('/'),
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+              const Expanded(
+                child: Text(
+                  'Search jobs',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppTheme.lightTextPrimary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Post job',
+                onPressed: () => context.go('/employer/post-job'),
+                icon: const Icon(Icons.add_business_outlined),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Try adjusting your search query or clear filters.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _searchController.clear();
-                _selectedLocation = '';
-                _selectedTypes.clear();
-                _selectedCategories.clear();
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0F172A),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          const SizedBox(height: 12),
+          SearchBar(
+            controller: controller,
+            focusNode: focusNode,
+            hintText: 'Title, company, skill, location',
+            leading: const Icon(Icons.search_rounded),
+            trailing: [
+              IconButton(
+                tooltip: isListening ? 'Stop voice search' : 'Voice search',
+                onPressed: onVoice,
+                icon: Icon(
+                  isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                  color: isListening ? AppTheme.brandRose : null,
+                ),
+              ),
+              if (controller.text.isNotEmpty)
+                IconButton(
+                  tooltip: 'Clear',
+                  onPressed: controller.clear,
+                  icon: const Icon(Icons.close_rounded),
+                ),
+            ],
+            elevation: const WidgetStatePropertyAll(0),
+            backgroundColor: const WidgetStatePropertyAll(Color(0xFFF8FAFC)),
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
             ),
-            child: const Text('Clear Filters', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            padding: const WidgetStatePropertyAll(
+              EdgeInsets.symmetric(horizontal: 14),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onFilter,
+                  icon: const Icon(Icons.tune_rounded),
+                  label: Text(
+                    activeFilterCount == 0
+                        ? 'Filters'
+                        : 'Filters ($activeFilterCount)',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              DropdownMenu<String>(
+                initialSelection: sortBy,
+                width: 150,
+                onSelected: onSortChanged,
+                dropdownMenuEntries: [
+                  for (final entry in _JobsScreenState._sortOptions.entries)
+                    DropdownMenuEntry(value: entry.key, label: entry.value),
+                ],
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ResultsSummary extends StatelessWidget {
+  const _ResultsSummary({required this.count, required this.query});
+
+  final int count;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$count job${count == 1 ? '' : 's'} found',
+                style: const TextStyle(
+                  color: AppTheme.lightTextPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              if (query.isNotEmpty)
+                Text(
+                  'Instant results for "$query"',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.lightTextSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const Icon(Icons.bolt_rounded, color: AppTheme.brandAmber),
+      ],
+    );
+  }
+}
+
+class _FilterTitle extends StatelessWidget {
+  const _FilterTitle({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppTheme.brandIndigo),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.lightTextPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyResults extends StatelessWidget {
+  const _EmptyResults({
+    required this.onClear,
+    this.title = 'No matching jobs',
+    this.message = 'Try a different keyword or clear filters.',
+  });
+
+  final VoidCallback onClear;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.manage_search_rounded,
+              size: 56,
+              color: AppTheme.lightTextSecondary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.lightTextPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.lightTextSecondary,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: onClear,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Reset search'),
+            ),
+          ],
+        ),
       ),
     );
   }

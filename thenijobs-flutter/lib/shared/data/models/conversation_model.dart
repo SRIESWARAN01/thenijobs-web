@@ -70,10 +70,23 @@ class Conversation {
   factory Conversation.fromFirestore(Map<String, dynamic> data, String id) {
     return Conversation(
       id: id,
-      participants: (data['participants'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      participantNames: (data['participantNames'] as Map<dynamic, dynamic>?)?.map((k, v) => MapEntry(k as String, v as String)) ?? {},
-      participantRoles: (data['participantRoles'] as Map<dynamic, dynamic>?)?.map((k, v) => MapEntry(k as String, v as String)) ?? {},
-      participantPhotos: (data['participantPhotos'] as Map<dynamic, dynamic>?)?.map((k, v) => MapEntry(k as String, v as String)),
+      participants:
+          (data['participants'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      participantNames:
+          (data['participantNames'] as Map<dynamic, dynamic>?)?.map(
+            (k, v) => MapEntry(k as String, v as String),
+          ) ??
+          {},
+      participantRoles:
+          (data['participantRoles'] as Map<dynamic, dynamic>?)?.map(
+            (k, v) => MapEntry(k as String, v as String),
+          ) ??
+          {},
+      participantPhotos: (data['participantPhotos'] as Map<dynamic, dynamic>?)
+          ?.map((k, v) => MapEntry(k as String, v as String)),
       jobId: data['jobId'] as String?,
       jobTitle: data['jobTitle'] as String?,
       companyId: data['companyId'] as String?,
@@ -82,9 +95,19 @@ class Conversation {
           ? (data['lastMessageAt'] as Timestamp).toDate()
           : DateTime.now(),
       lastMessageSenderId: data['lastMessageSenderId'] as String?,
-      typingUsers: (data['typingUsers'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      unreadCounts: (data['unreadCounts'] as Map<dynamic, dynamic>?)?.map((k, v) => MapEntry(k as String, (v as num).toInt())) ?? {},
-      status: data['status'] != null ? ConversationStatus.fromString(data['status'] as String) : ConversationStatus.active,
+      typingUsers:
+          (data['typingUsers'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      unreadCounts:
+          (data['unreadCounts'] as Map<dynamic, dynamic>?)?.map(
+            (k, v) => MapEntry(k as String, (v as num).toInt()),
+          ) ??
+          {},
+      status: data['status'] != null
+          ? ConversationStatus.fromString(data['status'] as String)
+          : ConversationStatus.active,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -105,7 +128,8 @@ class Conversation {
       if (companyId != null) 'companyId': companyId,
       'lastMessage': lastMessage,
       'lastMessageAt': Timestamp.fromDate(lastMessageAt),
-      if (lastMessageSenderId != null) 'lastMessageSenderId': lastMessageSenderId,
+      if (lastMessageSenderId != null)
+        'lastMessageSenderId': lastMessageSenderId,
       'typingUsers': typingUsers,
       'unreadCounts': unreadCounts,
       'status': status.toJson(),

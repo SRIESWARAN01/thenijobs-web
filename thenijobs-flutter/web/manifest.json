@@ -1,11 +1,11 @@
 {
-    "name": "thenijobs",
-    "short_name": "thenijobs",
+    "name": "TheNiJobs",
+    "short_name": "TheNiJobs",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#050816",
+    "theme_color": "#0F766E",
+    "description": "TheNiJobs mobile app for jobs, businesses, and services across Tamil Nadu.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

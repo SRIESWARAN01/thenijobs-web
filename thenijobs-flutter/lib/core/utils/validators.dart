@@ -7,9 +7,7 @@ class Validators {
     r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+',
   );
 
-  static final RegExp _phoneRegExp = RegExp(
-    r'^\+?[0-9]{10,12}$',
-  );
+  static final RegExp _phoneRegExp = RegExp(r'^\+?[0-9]{10,12}$');
 
   static String? validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {

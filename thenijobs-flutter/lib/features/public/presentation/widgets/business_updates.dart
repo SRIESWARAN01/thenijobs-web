@@ -61,7 +61,10 @@ class BusinessUpdates extends ConsumerWidget {
     final isWide = MediaQuery.of(context).size.width > 768;
 
     // Loading check
-    final isLoading = jobsAsync.isLoading || companiesAsync.isLoading || servicesAsync.isLoading;
+    final isLoading =
+        jobsAsync.isLoading ||
+        companiesAsync.isLoading ||
+        servicesAsync.isLoading;
 
     // Map and combine
     final jobsList = jobsAsync.value ?? [];
@@ -71,48 +74,61 @@ class BusinessUpdates extends ConsumerWidget {
     final List<FeedUpdate> updates = [];
 
     for (var job in jobsList.take(3)) {
-      updates.add(FeedUpdate(
-        id: 'job-${job.id}',
-        type: 'Job',
-        title: job.title,
-        subtitle: job.companyName.isNotEmpty ? job.companyName : 'Verified Employer',
-        time: _formatTime(job.createdAt),
-        href: '/jobs/${job.id}',
-        icon: Icons.work_outline,
-        toneColor: Colors.amber.shade800,
-        toneBg: const Color(0xFFFFFBEB), // amber-50
-        createdAt: job.createdAt,
-      ));
+      updates.add(
+        FeedUpdate(
+          id: 'job-${job.id}',
+          type: 'Job',
+          title: job.title,
+          subtitle: job.companyName.isNotEmpty
+              ? job.companyName
+              : 'Verified Employer',
+          time: _formatTime(job.createdAt),
+          href: '/jobs/${job.id}',
+          icon: Icons.work_outline,
+          toneColor: Colors.amber.shade800,
+          toneBg: const Color(0xFFFFFBEB), // amber-50
+          createdAt: job.createdAt,
+        ),
+      );
     }
 
     for (var company in companiesList.take(3)) {
-      updates.add(FeedUpdate(
-        id: 'company-${company.id}',
-        type: 'Business',
-        title: company.name,
-        subtitle: company.category.isNotEmpty ? company.category : 'Local Company',
-        time: _formatTime(company.createdAt),
-        href: '/company/${company.slug.isNotEmpty ? company.slug : company.id}',
-        icon: Icons.business_outlined,
-        toneColor: Colors.blue.shade800,
-        toneBg: const Color(0xFFEFF6FF), // blue-50
-        createdAt: company.createdAt,
-      ));
+      updates.add(
+        FeedUpdate(
+          id: 'company-${company.id}',
+          type: 'Business',
+          title: company.name,
+          subtitle: company.category.isNotEmpty
+              ? company.category
+              : 'Local Company',
+          time: _formatTime(company.createdAt),
+          href:
+              '/company/${company.slug.isNotEmpty ? company.slug : company.id}',
+          icon: Icons.business_outlined,
+          toneColor: Colors.blue.shade800,
+          toneBg: const Color(0xFFEFF6FF), // blue-50
+          createdAt: company.createdAt,
+        ),
+      );
     }
 
     for (var service in servicesList.take(3)) {
-      updates.add(FeedUpdate(
-        id: 'service-${service.id}',
-        type: 'Service',
-        title: service.name,
-        subtitle: service.providerName.isNotEmpty ? service.providerName : 'Service Provider',
-        time: _formatTime(service.createdAt),
-        href: '/services',
-        icon: Icons.construction_outlined,
-        toneColor: TailwindColors.emerald.shade800,
-        toneBg: const Color(0xFFECFDF5), // emerald-50
-        createdAt: service.createdAt,
-      ));
+      updates.add(
+        FeedUpdate(
+          id: 'service-${service.id}',
+          type: 'Service',
+          title: service.name,
+          subtitle: service.providerName.isNotEmpty
+              ? service.providerName
+              : 'Service Provider',
+          time: _formatTime(service.createdAt),
+          href: '/services',
+          icon: Icons.construction_outlined,
+          toneColor: TailwindColors.emerald.shade800,
+          toneBg: const Color(0xFFECFDF5), // emerald-50
+          createdAt: service.createdAt,
+        ),
+      );
     }
 
     // Sort by createdAt descending
@@ -131,7 +147,7 @@ class BusinessUpdates extends ConsumerWidget {
             border: Border.all(color: TailwindColors.slate.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -157,24 +173,41 @@ class BusinessUpdates extends ConsumerWidget {
                                 color: Colors.teal.shade50,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.trending_up, color: Colors.teal, size: 16),
+                              child: const Icon(
+                                Icons.trending_up,
+                                color: Colors.teal,
+                                size: 16,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             const Text(
                               'BUSINESS FEED',
-                              style: TextStyle(color: Colors.teal, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                              style: TextStyle(
+                                color: Colors.teal,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         const Text(
                           'Latest company updates',
-                          style: TextStyle(fontFamily: 'Outfit', fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'New jobs, products, services and business announcements in one feed.',
-                          style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13),
+                          style: TextStyle(
+                            color: TailwindColors.slate.shade500,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -191,12 +224,21 @@ class BusinessUpdates extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(color: TailwindColors.slate.shade200),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('View feed', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(
+                          'View feed',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         SizedBox(width: 6),
                         Icon(Icons.arrow_forward, size: 14),
                       ],
@@ -224,7 +266,7 @@ class BusinessUpdates extends ConsumerWidget {
                     crossAxisCount: isWide ? 2 : 1,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: isWide ? 3.0 : 4.0,
+                    childAspectRatio: isWide ? 3.0 : 3.4,
                   ),
                   itemCount: feedItems.length,
                   itemBuilder: (context, index) {
@@ -238,7 +280,9 @@ class BusinessUpdates extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: TailwindColors.slate.shade50,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: TailwindColors.slate.shade100),
+                          border: Border.all(
+                            color: TailwindColors.slate.shade100,
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -250,7 +294,11 @@ class BusinessUpdates extends ConsumerWidget {
                                 color: update.toneBg,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(update.icon, color: update.toneColor, size: 20),
+                              child: Icon(
+                                update.icon,
+                                color: update.toneColor,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 12),
 
@@ -261,15 +309,24 @@ class BusinessUpdates extends ConsumerWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(100),
-                                      border: Border.all(color: TailwindColors.slate.shade200),
+                                      border: Border.all(
+                                        color: TailwindColors.slate.shade200,
+                                      ),
                                     ),
                                     child: Text(
                                       update.type.toUpperCase(),
-                                      style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 8, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        color: TailwindColors.slate.shade500,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -277,7 +334,11 @@ class BusinessUpdates extends ConsumerWidget {
                                     update.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Row(
@@ -287,15 +348,28 @@ class BusinessUpdates extends ConsumerWidget {
                                           update.subtitle,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color:
+                                                TailwindColors.slate.shade500,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Icon(Icons.schedule, size: 10, color: Colors.grey),
+                                      const Icon(
+                                        Icons.schedule,
+                                        size: 10,
+                                        color: Colors.grey,
+                                      ),
                                       const SizedBox(width: 3),
                                       Text(
                                         update.time,
-                                        style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 10, fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          color: TailwindColors.slate.shade500,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -303,7 +377,11 @@ class BusinessUpdates extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Icon(Icons.chevron_right, color: TailwindColors.slate.shade300, size: 18),
+                            Icon(
+                              Icons.chevron_right,
+                              color: TailwindColors.slate.shade300,
+                              size: 18,
+                            ),
                           ],
                         ),
                       ),
@@ -329,13 +407,22 @@ class BusinessUpdates extends ConsumerWidget {
         children: [
           const Text(
             'No updates yet',
-            style: TextStyle(fontFamily: 'Outfit', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            style: TextStyle(
+              fontFamily: 'Outfit',
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Approved jobs, verified businesses, and active services will appear here.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 12,
+              color: TailwindColors.slate.shade500,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

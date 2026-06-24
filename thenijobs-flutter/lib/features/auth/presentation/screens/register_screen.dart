@@ -69,7 +69,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // Navigate to Step 2 or create account
   Future<void> _handleNext() async {
     ref.read(authNotifierProvider.notifier).clearError();
-    
+
     if (_step == 1) {
       if (_selectedRole.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -82,7 +82,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!_formKey.currentState!.validate()) return;
 
       try {
-        await ref.read(authNotifierProvider.notifier).register(
+        await ref
+            .read(authNotifierProvider.notifier)
+            .register(
               email: _emailController.text.trim(),
               password: _passwordController.text,
               displayName: _nameController.text.trim(),
@@ -123,7 +125,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               height: 500,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.primaryPurple.withOpacity(0.12),
+                color: AppTheme.primaryPurple.withValues(alpha: 0.12),
               ),
             ),
           ),
@@ -135,7 +137,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               height: 500,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppTheme.brandCyan.withOpacity(0.08),
+                color: AppTheme.brandCyan.withValues(alpha: 0.08),
               ),
             ),
           ),
@@ -150,14 +152,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.work, size: 28, color: AppTheme.primaryPurple),
+                      const Icon(
+                        Icons.work,
+                        size: 28,
+                        color: AppTheme.primaryPurple,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'THE',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                       const Text(
@@ -184,7 +190,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           Row(
                             children: [
                               _buildProgressIndicator(1, _step >= 1),
-                              Expanded(child: Divider(color: _step > 1 ? TailwindColors.emerald : Colors.white10, thickness: 2)),
+                              Expanded(
+                                child: Divider(
+                                  color: _step > 1
+                                      ? TailwindColors.emerald
+                                      : Colors.white10,
+                                  thickness: 2,
+                                ),
+                              ),
                               _buildProgressIndicator(2, _step >= 2),
                             ],
                           ),
@@ -193,20 +206,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           // Display auth error if active
                           if (authState.errorMessage != null) ...[
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppTheme.brandRose.withOpacity(0.1),
-                                border: Border.all(color: AppTheme.brandRose.withOpacity(0.2)),
+                                color: AppTheme.brandRose.withValues(
+                                  alpha: 0.1,
+                                ),
+                                border: Border.all(
+                                  color: AppTheme.brandRose.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.error_outline, size: 16, color: AppTheme.brandRose),
+                                  const Icon(
+                                    Icons.error_outline,
+                                    size: 16,
+                                    color: AppTheme.brandRose,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       authState.errorMessage!,
-                                      style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 11),
+                                      style: const TextStyle(
+                                        color: Color(0xFFFCA5A5),
+                                        fontSize: 11,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -219,12 +248,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             // STEP 1: Role Selection
                             const Text(
                               'I am a...',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             const Text(
                               'Select your role to get a personalised experience',
-                              style: TextStyle(color: AppTheme.darkTextSecondary, fontSize: 13),
+                              style: TextStyle(
+                                color: AppTheme.darkTextSecondary,
+                                fontSize: 13,
+                              ),
                             ),
                             const SizedBox(height: 20),
 
@@ -232,16 +268,25 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               children: _roles.map((r) {
                                 final isSelected = _selectedRole == r['id'];
                                 return GestureDetector(
-                                  onTap: () => setState(() => _selectedRole = r['id']),
+                                  onTap: () =>
+                                      setState(() => _selectedRole = r['id']),
                                   child: Container(
                                     margin: const EdgeInsets.only(bottom: 12),
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? (r['color'] as Color).withOpacity(0.1)
-                                          : Colors.white.withOpacity(0.02),
+                                          ? (r['color'] as Color).withValues(
+                                              alpha: 0.1,
+                                            )
+                                          : Colors.white.withValues(
+                                              alpha: 0.02,
+                                            ),
                                       border: Border.all(
-                                        color: isSelected ? r['color'] : Colors.white.withOpacity(0.1),
+                                        color: isSelected
+                                            ? r['color']
+                                            : Colors.white.withValues(
+                                                alpha: 0.1,
+                                              ),
                                         width: 1,
                                       ),
                                       borderRadius: BorderRadius.circular(16),
@@ -253,39 +298,63 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                           height: 44,
                                           decoration: BoxDecoration(
                                             color: isSelected
-                                                ? (r['color'] as Color).withOpacity(0.2)
-                                                : Colors.white.withOpacity(0.04),
-                                            borderRadius: BorderRadius.circular(12),
+                                                ? (r['color'] as Color)
+                                                      .withValues(alpha: 0.2)
+                                                : Colors.white.withValues(
+                                                    alpha: 0.04,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           child: Icon(
                                             r['icon'],
-                                            color: isSelected ? r['color'] : Colors.grey,
+                                            color: isSelected
+                                                ? r['color']
+                                                : Colors.grey,
                                             size: 20,
                                           ),
                                         ),
                                         const SizedBox(width: 16),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 r['label'],
-                                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
                                               ),
                                               Text(
                                                 r['subLabel'],
-                                                style: const TextStyle(color: AppTheme.darkTextSecondary, fontSize: 11),
+                                                style: const TextStyle(
+                                                  color: AppTheme
+                                                      .darkTextSecondary,
+                                                  fontSize: 11,
+                                                ),
                                               ),
                                               const SizedBox(height: 2),
                                               Text(
                                                 r['desc'],
-                                                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 10),
+                                                style: TextStyle(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.4),
+                                                  fontSize: 10,
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ),
                                         if (isSelected)
-                                          Icon(Icons.check_circle_rounded, color: r['color'], size: 20),
+                                          Icon(
+                                            Icons.check_circle_rounded,
+                                            color: r['color'],
+                                            size: 20,
+                                          ),
                                       ],
                                     ),
                                   ),
@@ -296,22 +365,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             // STEP 2: Basic details
                             const Text(
                               'Create Account',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             const Text(
                               'Fill in your basic details',
-                              style: TextStyle(color: AppTheme.darkTextSecondary, fontSize: 13),
+                              style: TextStyle(
+                                color: AppTheme.darkTextSecondary,
+                                fontSize: 13,
+                              ),
                             ),
                             const SizedBox(height: 20),
 
                             // Full Name
-                            const Text('Full Name *', style: TextStyle(fontSize: 11, color: AppTheme.darkTextSecondary)),
+                            const Text(
+                              'Full Name *',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.darkTextSecondary,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _nameController,
-                              validator: (val) => Validators.validateRequired(val, 'Full Name'),
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              validator: (val) =>
+                                  Validators.validateRequired(val, 'Full Name'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
                               decoration: _inputDecoration(
                                 hint: 'Your full name',
                                 prefixIcon: Icons.person_outline,
@@ -320,22 +406,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 12),
 
                             // Mobile Number
-                            const Text('Mobile Number', style: TextStyle(fontSize: 11, color: AppTheme.darkTextSecondary)),
+                            const Text(
+                              'Mobile Number',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.darkTextSecondary,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             Row(
                               children: [
                                 Container(
                                   width: 64,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.04),
-                                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                    color: Colors.white.withValues(alpha: 0.04),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Text(
                                     '+91',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(color: AppTheme.darkTextSecondary, fontSize: 14, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: AppTheme.darkTextSecondary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -344,8 +446,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     controller: _phoneController,
                                     keyboardType: TextInputType.phone,
                                     maxLength: 10,
-                                    validator: (val) => val != null && val.isNotEmpty ? Validators.validatePhone(val) : null,
-                                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                                    validator: (val) =>
+                                        val != null && val.isNotEmpty
+                                        ? Validators.validatePhone(val)
+                                        : null,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
                                     decoration: _inputDecoration(
                                       hint: '98765 43210',
                                       prefixIcon: Icons.phone_android_outlined,
@@ -357,13 +465,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 12),
 
                             // Email Address
-                            const Text('Email Address *', style: TextStyle(fontSize: 11, color: AppTheme.darkTextSecondary)),
+                            const Text(
+                              'Email Address *',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.darkTextSecondary,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _emailController,
                               keyboardType: TextInputType.emailAddress,
                               validator: Validators.validateEmail,
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
                               decoration: _inputDecoration(
                                 hint: 'your@email.com',
                                 prefixIcon: Icons.mail_outline,
@@ -372,13 +489,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 12),
 
                             // Password
-                            const Text('Password *', style: TextStyle(fontSize: 11, color: AppTheme.darkTextSecondary)),
+                            const Text(
+                              'Password *',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.darkTextSecondary,
+                              ),
+                            ),
                             const SizedBox(height: 6),
                             TextFormField(
                               controller: _passwordController,
                               obscureText: true,
                               validator: Validators.validatePassword,
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
                               decoration: _inputDecoration(
                                 hint: 'Min. 6 characters',
                                 prefixIcon: Icons.lock_outline,
@@ -391,8 +517,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               children: [
                                 Expanded(child: Divider(color: Colors.white10)),
                                 Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 12.0),
-                                  child: Text('or', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 12.0,
+                                  ),
+                                  child: Text(
+                                    'or',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
                                 Expanded(child: Divider(color: Colors.white10)),
                               ],
@@ -400,20 +534,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 12),
 
                             OutlinedButton(
-                              onPressed: authState.isLoading ? null : _handleGoogleRegister,
+                              onPressed: authState.isLoading
+                                  ? null
+                                  : _handleGoogleRegister,
                               style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.white.withOpacity(0.12)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.g_mobiledata_rounded, size: 24, color: Colors.white),
+                                  const Icon(
+                                    Icons.g_mobiledata_rounded,
+                                    size: 24,
+                                    color: Colors.white,
+                                  ),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Continue with Google',
-                                    style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontWeight: FontWeight.w500),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -430,16 +582,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   child: OutlinedButton(
                                     onPressed: () => setState(() => _step = 1),
                                     style: OutlinedButton.styleFrom(
-                                      side: BorderSide(color: Colors.white.withOpacity(0.15)),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      side: BorderSide(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.15,
+                                        ),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
                                     ),
                                     child: const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.arrow_back, size: 16, color: Colors.white),
+                                        Icon(
+                                          Icons.arrow_back,
+                                          size: 16,
+                                          color: Colors.white,
+                                        ),
                                         SizedBox(width: 6),
-                                        Text('Back', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        Text(
+                                          'Back',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -455,27 +626,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: ElevatedButton(
-                                    onPressed: authState.isLoading ? null : _handleNext,
+                                    onPressed: authState.isLoading
+                                        ? null
+                                        : _handleNext,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       shadowColor: Colors.transparent,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
                                     child: authState.isLoading
                                         ? const SizedBox(
                                             width: 20,
                                             height: 20,
-                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
                                           )
                                         : Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               Text(
-                                                _step == 2 ? 'Create Account' : 'Continue',
-                                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                                _step == 2
+                                                    ? 'Create Account'
+                                                    : 'Continue',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
                                               ),
                                               const SizedBox(width: 8),
-                                              const Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+                                              const Icon(
+                                                Icons.arrow_forward,
+                                                size: 16,
+                                                color: Colors.white,
+                                              ),
                                             ],
                                           ),
                                   ),
@@ -496,13 +685,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       children: [
                         const Text(
                           'Already have an account? ',
-                          style: TextStyle(color: AppTheme.darkTextSecondary, fontSize: 13),
+                          style: TextStyle(
+                            color: AppTheme.darkTextSecondary,
+                            fontSize: 13,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () => context.push('/login'),
                           child: const Text(
                             'Sign In',
-                            style: TextStyle(color: AppTheme.brandCyan, fontSize: 13, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: AppTheme.brandCyan,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -525,8 +721,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         color: isDone
             ? TailwindColors.emerald
             : active
-                ? AppTheme.primaryPurple
-                : Colors.white.withOpacity(0.1),
+            ? AppTheme.primaryPurple
+            : Colors.white.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
       child: Center(
@@ -544,17 +740,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, required IconData prefixIcon}) {
+  InputDecoration _inputDecoration({
+    required String hint,
+    required IconData prefixIcon,
+  }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 13),
+      hintStyle: TextStyle(
+        color: Colors.white.withValues(alpha: 0.3),
+        fontSize: 13,
+      ),
       prefixIcon: Icon(prefixIcon, size: 16, color: Colors.grey),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.04),
+      fillColor: Colors.white.withValues(alpha: 0.04),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -562,7 +764,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppTheme.brandRose.withOpacity(0.5)),
+        borderSide: BorderSide(
+          color: AppTheme.brandRose.withValues(alpha: 0.5),
+        ),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -572,4 +776,3 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 }
-

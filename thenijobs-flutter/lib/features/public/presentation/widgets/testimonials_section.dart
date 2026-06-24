@@ -5,14 +5,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:thenijobs/core/theme/app_theme.dart';
-import 'package:thenijobs/shared/data/models/review_model.dart';
 import 'package:thenijobs/features/public/presentation/providers/stats_provider.dart';
 
 class TestimonialsSection extends ConsumerStatefulWidget {
   const TestimonialsSection({super.key});
 
   @override
-  ConsumerState<TestimonialsSection> createState() => _TestimonialsSectionState();
+  ConsumerState<TestimonialsSection> createState() =>
+      _TestimonialsSectionState();
 }
 
 class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
@@ -34,7 +34,9 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
         }
 
         final activeReview = reviews[_currentIndex];
-        final reviewerName = activeReview.reviewerName.isNotEmpty ? activeReview.reviewerName : 'Verified user';
+        final reviewerName = activeReview.reviewerName.isNotEmpty
+            ? activeReview.reviewerName
+            : 'Verified user';
         final rating = activeReview.rating.clamp(1.0, 5.0).toInt();
 
         return Padding(
@@ -49,17 +51,30 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                     children: [
                       const Text(
                         'COMMUNITY',
-                        style: TextStyle(color: Colors.teal, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                        style: TextStyle(
+                          color: Colors.teal,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       const Text(
                         'People using THENIJOBS',
-                        style: TextStyle(fontFamily: 'Outfit', fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontFamily: 'Outfit',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Approved reviews from real platform users.',
-                        style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13),
+                        style: TextStyle(
+                          color: TailwindColors.slate.shade500,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -74,7 +89,7 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                       border: Border.all(color: TailwindColors.slate.shade200),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
+                          color: Colors.black.withValues(alpha: 0.02),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -90,7 +105,11 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                             color: Colors.teal.shade50,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(Icons.format_quote_rounded, color: Colors.teal, size: 24),
+                          child: const Icon(
+                            Icons.format_quote_rounded,
+                            color: Colors.teal,
+                            size: 24,
+                          ),
                         ),
                         const SizedBox(height: 16),
 
@@ -102,7 +121,9 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                             (index) => Icon(
                               Icons.star,
                               size: 20,
-                              color: index < rating ? Colors.amber : TailwindColors.slate.shade200,
+                              color: index < rating
+                                  ? Colors.amber
+                                  : TailwindColors.slate.shade200,
                             ),
                           ),
                         ),
@@ -135,8 +156,14 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                               ),
                               child: Center(
                                 child: Text(
-                                  reviewerName.isNotEmpty ? reviewerName[0].toUpperCase() : 'U',
-                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                  reviewerName.isNotEmpty
+                                      ? reviewerName[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -146,13 +173,22 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                               children: [
                                 Text(
                                   reviewerName,
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A),
+                                  ),
                                 ),
                                 Text(
                                   activeReview.title.isNotEmpty
                                       ? activeReview.title
-                                      : activeReview.targetType.name.toUpperCase(),
-                                  style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+                                      : activeReview.targetType.name
+                                            .toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: TailwindColors.slate.shade500,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
@@ -172,15 +208,21 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                         IconButton(
                           onPressed: () {
                             setState(() {
-                              _currentIndex = (_currentIndex - 1 + reviews.length) % reviews.length;
+                              _currentIndex =
+                                  (_currentIndex - 1 + reviews.length) %
+                                  reviews.length;
                             });
                           },
                           icon: const Icon(Icons.chevron_left, size: 20),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: TailwindColors.slate.shade700,
-                            side: BorderSide(color: TailwindColors.slate.shade200),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            side: BorderSide(
+                              color: TailwindColors.slate.shade200,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -197,11 +239,15 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                               },
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
                                 width: isActive ? 24 : 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: isActive ? Colors.teal.shade700 : TailwindColors.slate.shade300,
+                                  color: isActive
+                                      ? Colors.teal.shade700
+                                      : TailwindColors.slate.shade300,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -214,15 +260,20 @@ class _TestimonialsSectionState extends ConsumerState<TestimonialsSection> {
                         IconButton(
                           onPressed: () {
                             setState(() {
-                              _currentIndex = (_currentIndex + 1) % reviews.length;
+                              _currentIndex =
+                                  (_currentIndex + 1) % reviews.length;
                             });
                           },
                           icon: const Icon(Icons.chevron_right, size: 20),
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: TailwindColors.slate.shade700,
-                            side: BorderSide(color: TailwindColors.slate.shade200),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            side: BorderSide(
+                              color: TailwindColors.slate.shade200,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
                       ],

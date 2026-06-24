@@ -39,7 +39,7 @@ class HomeFooter extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w900,
-            color: const Color(0xFF0F172A).withOpacity(0.7),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.7),
           ),
         ),
         const Text(
@@ -55,7 +55,12 @@ class HomeFooter extends StatelessWidget {
 
     final descriptionWidget = Text(
       'Search, connect, hire and grow. Theni jobs and business discovery platform.',
-      style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13, fontWeight: FontWeight.bold, height: 1.4),
+      style: TextStyle(
+        color: TailwindColors.slate.shade500,
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        height: 1.4,
+      ),
     );
 
     final socialLinks = Row(
@@ -72,7 +77,11 @@ class HomeFooter extends StatelessWidget {
           child: Center(
             child: Text(
               short,
-              style: TextStyle(color: TailwindColors.slate.shade600, fontSize: 10, fontWeight: FontWeight.black),
+              style: TextStyle(
+                color: TailwindColors.slate.shade600,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         );
@@ -82,7 +91,14 @@ class HomeFooter extends StatelessWidget {
     final seekerLinks = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('For Job Seekers', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        const Text(
+          'For Job Seekers',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         const SizedBox(height: 8),
         _buildLinkItem(context, 'Browse Jobs', '/jobs'),
         _buildLinkItem(context, 'Create Profile', '/register'),
@@ -95,7 +111,14 @@ class HomeFooter extends StatelessWidget {
     final employerLinks = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('For Employers', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        const Text(
+          'For Employers',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         const SizedBox(height: 8),
         _buildLinkItem(context, 'Post a Job', '/employer/post-job'),
         _buildLinkItem(context, 'Register Company', '/company/register'),
@@ -108,7 +131,14 @@ class HomeFooter extends StatelessWidget {
     final contactInfo = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Contact', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+        const Text(
+          'Contact',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F172A),
+          ),
+        ),
         const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +148,11 @@ class HomeFooter extends StatelessWidget {
             Expanded(
               child: Text(
                 'Theni, Tamil Nadu, India',
-                style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: TailwindColors.slate.shade500,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -130,7 +164,11 @@ class HomeFooter extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '+91 98765 43210',
-              style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: TailwindColors.slate.shade500,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -141,7 +179,11 @@ class HomeFooter extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               'hello@thenijobs.com',
-              style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: TailwindColors.slate.shade500,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -209,40 +251,69 @@ class HomeFooter extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Bottom footer row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Copyright 2026 THENIJOBS. All rights reserved.',
-                      style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () => context.push('/privacy'),
-                        child: Text(
-                          'Privacy',
-                          style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      InkWell(
-                        onTap: () => context.push('/terms'),
-                        child: Text(
-                          'Terms',
-                          style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              if (isWide)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(child: _buildCopyrightText()),
+                    _buildPolicyLinks(context),
+                  ],
+                )
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCopyrightText(),
+                    const SizedBox(height: 12),
+                    _buildPolicyLinks(context),
+                  ],
+                ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCopyrightText() {
+    return Text(
+      'Copyright 2026 THENIJOBS. All rights reserved.',
+      style: TextStyle(
+        color: TailwindColors.slate.shade500,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _buildPolicyLinks(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: () => context.push('/privacy'),
+          child: Text(
+            'Privacy',
+            style: TextStyle(
+              color: TailwindColors.slate.shade500,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        InkWell(
+          onTap: () => context.push('/terms'),
+          child: Text(
+            'Terms',
+            style: TextStyle(
+              color: TailwindColors.slate.shade500,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

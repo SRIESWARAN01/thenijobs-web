@@ -75,7 +75,7 @@ class Job {
   final bool isPremium;
   final bool isFeatured;
   final bool isUrgent;
-  final int applicationCount;
+  final int applicationsCount;
   final int viewCount;
   final String postedBy;
   final DateTime createdAt;
@@ -105,7 +105,7 @@ class Job {
     required this.isPremium,
     required this.isFeatured,
     required this.isUrgent,
-    required this.applicationCount,
+    required this.applicationsCount,
     required this.viewCount,
     required this.postedBy,
     required this.createdAt,
@@ -118,14 +118,25 @@ class Job {
       slug: data['slug'] as String? ?? '',
       companyId: data['companyId'] as String? ?? '',
       company: data['company'] != null
-          ? Company.fromFirestore(data['company'] as Map<String, dynamic>, data['companyId'] as String? ?? '')
+          ? Company.fromFirestore(
+              data['company'] as Map<String, dynamic>,
+              data['companyId'] as String? ?? '',
+            )
           : null,
       companyName: data['companyName'] as String? ?? '',
       title: data['title'] as String? ?? '',
       category: data['category'] as String? ?? '',
       description: data['description'] as String? ?? '',
-      requirements: (data['requirements'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      skills: (data['skills'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      requirements:
+          (data['requirements'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      skills:
+          (data['skills'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       location: data['location'] as String? ?? '',
       district: data['district'] as String? ?? '',
       jobType: data['jobType'] != null
@@ -143,8 +154,7 @@ class Job {
       isPremium: data['isPremium'] as bool? ?? false,
       isFeatured: data['isFeatured'] as bool? ?? false,
       isUrgent: data['isUrgent'] as bool? ?? false,
-      // Consistency fallback for applicationCount / applicationsCount
-      applicationCount: (data['applicationCount'] as num? ?? data['applicationsCount'] as num? ?? 0).toInt(),
+      applicationsCount: (data['applicationsCount'] as num? ?? 0).toInt(),
       viewCount: (data['viewCount'] as num? ?? 0).toInt(),
       postedBy: data['postedBy'] as String? ?? '',
       createdAt: data['createdAt'] != null
@@ -180,7 +190,7 @@ class Job {
       'isPremium': isPremium,
       'isFeatured': isFeatured,
       'isUrgent': isUrgent,
-      'applicationCount': applicationCount, // Write canonical key
+      'applicationsCount': applicationsCount,
       'viewCount': viewCount,
       'postedBy': postedBy,
       'createdAt': Timestamp.fromDate(createdAt),

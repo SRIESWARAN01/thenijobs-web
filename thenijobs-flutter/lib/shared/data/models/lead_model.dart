@@ -35,6 +35,7 @@ enum LeadStatus {
   contacted,
   qualified,
   converted,
+  closed,
   lost;
 
   static LeadStatus fromString(String value) {
@@ -47,6 +48,8 @@ enum LeadStatus {
         return LeadStatus.qualified;
       case 'converted':
         return LeadStatus.converted;
+      case 'closed':
+        return LeadStatus.closed;
       case 'lost':
         return LeadStatus.lost;
       default:
@@ -64,6 +67,8 @@ enum LeadStatus {
         return 'qualified';
       case LeadStatus.converted:
         return 'converted';
+      case LeadStatus.closed:
+        return 'closed';
       case LeadStatus.lost:
         return 'lost';
     }
@@ -104,14 +109,29 @@ class Lead {
   factory Lead.fromFirestore(Map<String, dynamic> data, String id) {
     return Lead(
       id: id,
-      type: data['type'] != null ? LeadType.fromString(data['type'] as String) : LeadType.candidate,
+      type: data['type'] != null
+          ? LeadType.fromString(data['type'] as String)
+          : LeadType.candidate,
       source: data['source'] as String? ?? '',
       companyId: data['companyId'] as String?,
-      contactName: data['contactName'] as String? ?? '',
-      contactPhone: data['contactPhone'] as String? ?? '',
-      contactEmail: data['contactEmail'] as String?,
+      contactName:
+          data['contactName'] as String? ??
+          data['customerName'] as String? ??
+          data['name'] as String? ??
+          '',
+      contactPhone:
+          data['contactPhone'] as String? ??
+          data['customerPhone'] as String? ??
+          data['phone'] as String? ??
+          '',
+      contactEmail:
+          data['contactEmail'] as String? ??
+          data['customerEmail'] as String? ??
+          data['email'] as String?,
       message: data['message'] as String?,
-      status: data['status'] != null ? LeadStatus.fromString(data['status'] as String) : LeadStatus.newStatus,
+      status: data['status'] != null
+          ? LeadStatus.fromString(data['status'] as String)
+          : LeadStatus.newStatus,
       assignedTo: data['assignedTo'] as String?,
       notes: data['notes'] as String?,
       createdAt: data['createdAt'] != null

@@ -96,7 +96,10 @@ class InterviewSchedule {
     required this.createdAt,
   });
 
-  factory InterviewSchedule.fromFirestore(Map<String, dynamic> data, String id) {
+  factory InterviewSchedule.fromFirestore(
+    Map<String, dynamic> data,
+    String id,
+  ) {
     return InterviewSchedule(
       id: id,
       applicationId: data['applicationId'] as String? ?? '',
@@ -105,10 +108,14 @@ class InterviewSchedule {
       seekerId: data['seekerId'] as String? ?? '',
       date: data['date'] as String? ?? '',
       time: data['time'] as String? ?? '',
-      mode: data['mode'] != null ? InterviewMode.fromString(data['mode'] as String) : InterviewMode.inPerson,
+      mode: data['mode'] != null
+          ? InterviewMode.fromString(data['mode'] as String)
+          : InterviewMode.inPerson,
       location: data['location'] as String?,
       meetingLink: data['meetingLink'] as String?,
-      status: data['status'] != null ? InterviewStatus.fromString(data['status'] as String) : InterviewStatus.scheduled,
+      status: data['status'] != null
+          ? InterviewStatus.fromString(data['status'] as String)
+          : InterviewStatus.scheduled,
       notes: data['notes'] as String?,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()

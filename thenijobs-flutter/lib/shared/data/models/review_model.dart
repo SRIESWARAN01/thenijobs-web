@@ -8,6 +8,7 @@ enum ReviewTargetType {
   static ReviewTargetType fromString(String value) {
     switch (value) {
       case 'company':
+      case 'business':
         return ReviewTargetType.company;
       case 'employer':
         return ReviewTargetType.employer;
@@ -64,19 +65,27 @@ class Review {
   factory Review.fromFirestore(Map<String, dynamic> data, String id) {
     return Review(
       id: id,
-      targetId: data['targetId'] as String? ?? '',
+      targetId:
+          data['targetId'] as String? ?? data['companyId'] as String? ?? '',
       targetType: data['targetType'] != null
           ? ReviewTargetType.fromString(data['targetType'] as String)
           : ReviewTargetType.company,
       reviewerId: data['reviewerId'] as String? ?? '',
-      reviewerName: data['reviewerName'] as String? ?? '',
+      reviewerName:
+          data['reviewerName'] as String? ?? data['userName'] as String? ?? '',
       reviewerPhoto: data['reviewerPhoto'] as String?,
       rating: (data['rating'] as num? ?? 0.0).toDouble(),
       title: data['title'] as String? ?? '',
-      content: data['content'] as String? ?? '',
-      isVerified: data['isVerified'] as bool? ?? false,
-      helpfulCount: (data['helpfulCount'] as num? ?? 0).toInt(),
-      reply: data['reply'] as String?,
+      content:
+          data['content'] as String? ??
+          data['comment'] as String? ??
+          data['text'] as String? ??
+          '',
+      isVerified: data['isVerified'] as bool? ?? (data['status'] == 'approved'),
+      helpfulCount:
+          (data['helpfulCount'] as num? ?? data['helpful'] as num? ?? 0)
+              .toInt(),
+      reply: data['reply'] as String? ?? data['replyText'] as String?,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),

@@ -97,7 +97,9 @@ class Advertisement {
   factory Advertisement.fromFirestore(Map<String, dynamic> data, String id) {
     return Advertisement(
       id: id,
-      type: data['type'] != null ? AdvertisementType.fromString(data['type'] as String) : AdvertisementType.banner,
+      type: data['type'] != null
+          ? AdvertisementType.fromString(data['type'] as String)
+          : AdvertisementType.banner,
       title: data['title'] as String? ?? '',
       imageUrl: data['imageUrl'] as String? ?? '',
       targetUrl: data['targetUrl'] as String? ?? '',
@@ -110,7 +112,9 @@ class Advertisement {
           : DateTime.now(),
       impressions: (data['impressions'] as num? ?? 0).toInt(),
       clicks: (data['clicks'] as num? ?? 0).toInt(),
-      status: data['status'] != null ? AdvertisementStatus.fromString(data['status'] as String) : AdvertisementStatus.draft,
+      status: data['status'] != null
+          ? AdvertisementStatus.fromString(data['status'] as String)
+          : AdvertisementStatus.draft,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),

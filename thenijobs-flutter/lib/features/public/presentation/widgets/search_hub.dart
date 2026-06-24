@@ -43,7 +43,13 @@ class _SearchHubState extends State<SearchHub> {
       'tamil': 'நிறுவனம்',
       'icon': Icons.business_outlined,
       'placeholder': 'Agro, textiles, school, hospital...',
-      'tags': ['Agriculture', 'Construction', 'Textiles', 'Healthcare', 'Education'],
+      'tags': [
+        'Agriculture',
+        'Construction',
+        'Textiles',
+        'Healthcare',
+        'Education',
+      ],
       'color': Colors.blue,
       'bgColor': const Color(0xFFEFF6FF), // blue-50
       'textColor': const Color(0xFF1E40AF), // blue-800
@@ -61,7 +67,8 @@ class _SearchHubState extends State<SearchHub> {
     },
   ];
 
-  Map<String, dynamic> get _activeTab => _tabs.firstWhere((t) => t['id'] == _activeTabId);
+  Map<String, dynamic> get _activeTab =>
+      _tabs.firstWhere((t) => t['id'] == _activeTabId);
 
   void _handleSearch() {
     final query = _searchController.text.trim();
@@ -72,7 +79,7 @@ class _SearchHubState extends State<SearchHub> {
     if (_selectedArea != 'All Areas') {
       params['area'] = _selectedArea;
     }
-    
+
     // Redirect based on active search type
     String targetPath = '/jobs';
     if (_activeTabId == 'businesses') {
@@ -109,7 +116,7 @@ class _SearchHubState extends State<SearchHub> {
             border: Border.all(color: TailwindColors.slate.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -121,22 +128,41 @@ class _SearchHubState extends State<SearchHub> {
               // Header
               const Text(
                 'SMART SEARCH',
-                style: TextStyle(color: Colors.teal, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                style: TextStyle(
+                  color: Colors.teal,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
               ),
               const SizedBox(height: 4),
               const Text(
                 'நீங்கள் என்ன தேடுகிறீர்கள்?',
-                style: TextStyle(fontFamily: 'Outfit', fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                style: TextStyle(
+                  fontFamily: 'Outfit',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Job, company, service, supplier எல்லாத்தையும் ஒரே search flow-ல் கண்டுபிடிக்கலாம்.',
-                style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13),
+                style: TextStyle(
+                  color: TailwindColors.slate.shade500,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 20),
 
               // Tabs Row
-              isWide ? Row(children: _buildTabButtons()) : Wrap(spacing: 8, runSpacing: 8, children: _buildTabButtons()),
+              isWide
+                  ? Row(children: _buildTabButtons())
+                  : Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _buildTabButtons(),
+                    ),
               const SizedBox(height: 16),
 
               // Inputs Row (Search box, location select, button)
@@ -168,21 +194,37 @@ class _SearchHubState extends State<SearchHub> {
                 runSpacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  const Text('Popular:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  const Text(
+                    'Popular:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                  ),
                   ...(active['tags'] as List<String>).map((tag) {
                     return InkWell(
                       onTap: () => _searchTag(tag),
                       borderRadius: BorderRadius.circular(100),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          border: Border.all(color: TailwindColors.slate.shade200),
+                          border: Border.all(
+                            color: TailwindColors.slate.shade200,
+                          ),
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
                           tag,
-                          style: TextStyle(color: TailwindColors.slate.shade600, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: TailwindColors.slate.shade600,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     );
@@ -210,14 +252,18 @@ class _SearchHubState extends State<SearchHub> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : null,
         ),
-        child: Icon(tab['icon'] as IconData, size: 16, color: isSelected ? color : Colors.grey),
+        child: Icon(
+          tab['icon'] as IconData,
+          size: 16,
+          color: isSelected ? color : Colors.grey,
+        ),
       );
 
       return InkWell(
@@ -227,7 +273,9 @@ class _SearchHubState extends State<SearchHub> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           margin: const EdgeInsets.only(right: 8),
           decoration: BoxDecoration(
-            color: isSelected ? tab['bgColor'] as Color : TailwindColors.slate.shade50,
+            color: isSelected
+                ? tab['bgColor'] as Color
+                : TailwindColors.slate.shade50,
             border: Border.all(
               color: isSelected ? color : TailwindColors.slate.shade200,
               width: 1.5,
@@ -246,7 +294,9 @@ class _SearchHubState extends State<SearchHub> {
                   Text(
                     tab['label'] as String,
                     style: TextStyle(
-                      color: isSelected ? tab['textColor'] as Color : TailwindColors.slate.shade700,
+                      color: isSelected
+                          ? tab['textColor'] as Color
+                          : TailwindColors.slate.shade700,
                       fontWeight: FontWeight.w900,
                       fontSize: 12,
                     ),
@@ -254,7 +304,9 @@ class _SearchHubState extends State<SearchHub> {
                   Text(
                     tab['tamil'] as String,
                     style: TextStyle(
-                      color: isSelected ? (tab['textColor'] as Color).withOpacity(0.7) : Colors.grey,
+                      color: isSelected
+                          ? (tab['textColor'] as Color).withValues(alpha: 0.7)
+                          : Colors.grey,
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
                     ),
@@ -274,11 +326,18 @@ class _SearchHubState extends State<SearchHub> {
       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         hintText: active['placeholder'] as String,
-        hintStyle: TextStyle(color: TailwindColors.slate.shade400, fontSize: 13, fontWeight: FontWeight.normal),
+        hintStyle: TextStyle(
+          color: TailwindColors.slate.shade400,
+          fontSize: 13,
+          fontWeight: FontWeight.normal,
+        ),
         prefixIcon: const Icon(Icons.search, size: 18, color: Colors.grey),
         filled: true,
         fillColor: TailwindColors.slate.shade50,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: TailwindColors.slate.shade200),
@@ -311,10 +370,25 @@ class _SearchHubState extends State<SearchHub> {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedArea,
-                style: TextStyle(color: TailwindColors.slate.shade700, fontWeight: FontWeight.bold, fontSize: 13),
-                items: ['All Areas', 'Theni', 'Bodinayakanur', 'Periyakulam', 'Cumbum']
-                    .map((area) => DropdownMenuItem(value: area, child: Text(area)))
-                    .toList(),
+                isExpanded: true,
+                style: TextStyle(
+                  color: TailwindColors.slate.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                items:
+                    [
+                          'All Areas',
+                          'Theni',
+                          'Bodinayakanur',
+                          'Periyakulam',
+                          'Cumbum',
+                        ]
+                        .map(
+                          (area) =>
+                              DropdownMenuItem(value: area, child: Text(area)),
+                        )
+                        .toList(),
                 onChanged: (val) {
                   if (val != null) {
                     setState(() => _selectedArea = val);
@@ -338,8 +412,10 @@ class _SearchHubState extends State<SearchHub> {
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         elevation: 0,
       ),
-      child: const Text('தேடு', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+      child: const Text(
+        'தேடு',
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+      ),
     );
   }
 }
-

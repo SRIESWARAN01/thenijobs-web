@@ -70,7 +70,9 @@ class Notification {
     return Notification(
       id: id,
       userId: data['userId'] as String? ?? '',
-      type: data['type'] != null ? NotificationType.fromString(data['type'] as String) : NotificationType.system,
+      type: data['type'] != null
+          ? NotificationType.fromString(data['type'] as String)
+          : NotificationType.system,
       title: data['title'] as String? ?? '',
       message: data['message'] as String? ?? '',
       read: data['read'] as bool? ?? false,

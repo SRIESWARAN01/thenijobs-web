@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1057136000588",
+    "firebase_url": "https://thenijobs-9f01d-default-rtdb.firebaseio.com",
+    "project_id": "thenijobs-9f01d",
+    "storage_bucket": "thenijobs-9f01d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1057136000588:android:0765ac24f3dc62186a7ee9",
+        "android_client_info": {
+          "package_name": "com.thenijobs.thenijobs"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1057136000588-25l3iapj7mhdcg7gekb31pppggg1h5o1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAy1BNIoQL2pw9UAWnAyc_HJDu2i8aNSeg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1057136000588-25l3iapj7mhdcg7gekb31pppggg1h5o1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

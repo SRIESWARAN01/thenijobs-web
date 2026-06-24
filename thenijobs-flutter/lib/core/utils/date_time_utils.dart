@@ -6,7 +6,8 @@ class DateTimeUtils {
   static final _short = DateFormat('dd MMM yyyy');
   static final _dateTime = DateFormat('dd MMM yyyy, hh:mm a');
 
-  static String short(DateTime? value) => value == null ? 'Recent' : _short.format(value);
+  static String short(DateTime? value) =>
+      value == null ? 'Recent' : _short.format(value);
 
   static String dateTime(DateTime? value) =>
       value == null ? 'Recent' : _dateTime.format(value);

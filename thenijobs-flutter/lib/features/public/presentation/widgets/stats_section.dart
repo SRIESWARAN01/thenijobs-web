@@ -101,7 +101,7 @@ class StatsSection extends ConsumerWidget {
         border: Border.all(color: TailwindColors.slate.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.01),
+            color: Colors.black.withValues(alpha: 0.01),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -122,7 +122,7 @@ class StatsSection extends ConsumerWidget {
             child: Icon(icon, size: 18, color: TailwindColors.slate.shade700),
           ),
           const SizedBox(height: 12),
-          
+
           // Count text with animation
           asyncCount.when(
             data: (value) => _AnimatedNumber(
@@ -137,19 +137,31 @@ class StatsSection extends ConsumerWidget {
             ),
             error: (_, __) => Text(
               '0',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: textColor),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: textColor,
+              ),
             ),
           ),
           const SizedBox(height: 2),
-          
+
           // Labels
           Text(
             label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
           ),
           Text(
             tamil,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: TailwindColors.slate.shade500),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: TailwindColors.slate.shade500,
+            ),
           ),
         ],
       ),
@@ -189,4 +201,3 @@ class _AnimatedNumber extends StatelessWidget {
     );
   }
 }
-

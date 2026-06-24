@@ -80,7 +80,9 @@ class ChatAttachment {
 
   factory ChatAttachment.fromMap(Map<String, dynamic> data) {
     return ChatAttachment(
-      type: data['type'] != null ? AttachmentType.fromString(data['type'] as String) : AttachmentType.file,
+      type: data['type'] != null
+          ? AttachmentType.fromString(data['type'] as String)
+          : AttachmentType.file,
       url: data['url'] as String? ?? '',
       name: data['name'] as String? ?? '',
       size: (data['size'] as num?)?.toInt(),
@@ -124,7 +126,10 @@ class ConversationMessage {
     required this.createdAt,
   });
 
-  factory ConversationMessage.fromFirestore(Map<String, dynamic> data, String id) {
+  factory ConversationMessage.fromFirestore(
+    Map<String, dynamic> data,
+    String id,
+  ) {
     return ConversationMessage(
       id: id,
       conversationId: data['conversationId'] as String? ?? '',
@@ -132,12 +137,16 @@ class ConversationMessage {
       senderName: data['senderName'] as String? ?? '',
       senderRole: data['senderRole'] as String? ?? '',
       text: data['text'] as String? ?? '',
-      type: data['type'] != null ? MessageType.fromString(data['type'] as String) : MessageType.text,
+      type: data['type'] != null
+          ? MessageType.fromString(data['type'] as String)
+          : MessageType.text,
       attachments: (data['attachments'] as List<dynamic>?)
           ?.map((e) => ChatAttachment.fromMap(e as Map<String, dynamic>))
           .toList(),
       read: data['read'] as bool? ?? false,
-      readAt: data['readAt'] != null ? (data['readAt'] as Timestamp).toDate() : null,
+      readAt: data['readAt'] != null
+          ? (data['readAt'] as Timestamp).toDate()
+          : null,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -152,7 +161,8 @@ class ConversationMessage {
       'senderRole': senderRole,
       'text': text,
       'type': type.toJson(),
-      if (attachments != null) 'attachments': attachments!.map((e) => e.toMap()).toList(),
+      if (attachments != null)
+        'attachments': attachments!.map((e) => e.toMap()).toList(),
       'read': read,
       if (readAt != null) 'readAt': Timestamp.fromDate(readAt!),
       'createdAt': Timestamp.fromDate(createdAt),

@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:thenijobs/core/theme/app_theme.dart';
-import 'package:thenijobs/shared/data/models/job_model.dart';
 import 'package:thenijobs/features/public/presentation/providers/stats_provider.dart';
 
 class TrendingJobs extends ConsumerWidget {
@@ -84,17 +83,30 @@ class TrendingJobs extends ConsumerWidget {
                       children: [
                         const Text(
                           'LATEST JOBS',
-                          style: TextStyle(color: Colors.teal, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                          style: TextStyle(
+                            color: Colors.teal,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         const Text(
                           'இன்று வந்த வேலை வாய்ப்புகள்',
-                          style: TextStyle(fontFamily: 'Outfit', fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Verified local employers-லிருந்து fresh openings.',
-                          style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13),
+                          style: TextStyle(
+                            color: TailwindColors.slate.shade500,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -111,12 +123,21 @@ class TrendingJobs extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(color: TailwindColors.slate.shade200),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('View all jobs', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(
+                          'View all jobs',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         SizedBox(width: 6),
                         Icon(Icons.arrow_forward, size: 14),
                       ],
@@ -139,15 +160,21 @@ class TrendingJobs extends ConsumerWidget {
                       crossAxisCount: isWide ? 3 : 1,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: isWide ? 0.95 : 1.35,
+                      childAspectRatio: isWide ? 0.95 : 1.2,
                     ),
                     itemCount: jobs.length,
                     itemBuilder: (context, index) {
                       final job = jobs[index];
                       final icon = _getCategoryIcon(job.category);
-                      final salaryStr = _formatSalary(job.salaryMin, job.salaryMax, formatter);
+                      final salaryStr = _formatSalary(
+                        job.salaryMin,
+                        job.salaryMax,
+                        formatter,
+                      );
                       final timeStr = _formatTime(job.createdAt);
-                      final typeStr = job.jobType.name; // fullTime -> fullTime, contract -> contract
+                      final typeStr = job
+                          .jobType
+                          .name; // fullTime -> fullTime, contract -> contract
 
                       return InkWell(
                         onTap: () => context.push('/jobs/${job.id}'),
@@ -157,10 +184,12 @@ class TrendingJobs extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: TailwindColors.slate.shade200),
+                            border: Border.all(
+                              color: TailwindColors.slate.shade200,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
+                                color: Colors.black.withValues(alpha: 0.02),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -175,33 +204,64 @@ class TrendingJobs extends ConsumerWidget {
                                 children: [
                                   // Icon & Badges
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Container(
                                         width: 44,
                                         height: 44,
                                         decoration: BoxDecoration(
                                           color: Colors.teal.shade50,
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
-                                        child: Icon(icon, color: Colors.teal.shade800, size: 20),
+                                        child: Icon(
+                                          icon,
+                                          color: Colors.teal.shade800,
+                                          size: 20,
+                                        ),
                                       ),
                                       Row(
                                         children: [
                                           if (job.isUrgent) ...[
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFFFFBEB), // amber-50
-                                                borderRadius: BorderRadius.circular(100),
-                                                border: Border.all(color: const Color(0xFFFDE68A)),
+                                                color: const Color(
+                                                  0xFFFFFBEB,
+                                                ), // amber-50
+                                                borderRadius:
+                                                    BorderRadius.circular(100),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0xFFFDE68A,
+                                                  ),
+                                                ),
                                               ),
                                               child: const Row(
                                                 children: [
-                                                  Icon(Icons.bolt, size: 10, color: Color(0xFFB45309)),
+                                                  Icon(
+                                                    Icons.bolt,
+                                                    size: 10,
+                                                    color: Color(0xFFB45309),
+                                                  ),
                                                   SizedBox(width: 2),
-                                                  Text('Urgent', style: TextStyle(color: Color(0xFFB45309), fontSize: 9, fontWeight: FontWeight.bold)),
+                                                  Text(
+                                                    'Urgent',
+                                                    style: TextStyle(
+                                                      color: Color(0xFFB45309),
+                                                      fontSize: 9,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
                                             ),
@@ -209,17 +269,40 @@ class TrendingJobs extends ConsumerWidget {
                                           ],
                                           if (job.isPremium)
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFEFF6FF), // blue-50
-                                                borderRadius: BorderRadius.circular(100),
-                                                border: Border.all(color: const Color(0xFFBFDBFE)),
+                                                color: const Color(
+                                                  0xFFEFF6FF,
+                                                ), // blue-50
+                                                borderRadius:
+                                                    BorderRadius.circular(100),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0xFFBFDBFE,
+                                                  ),
+                                                ),
                                               ),
                                               child: const Row(
                                                 children: [
-                                                  Icon(Icons.star, size: 10, color: Color(0xFF1D4ED8)),
+                                                  Icon(
+                                                    Icons.star,
+                                                    size: 10,
+                                                    color: Color(0xFF1D4ED8),
+                                                  ),
                                                   SizedBox(width: 2),
-                                                  Text('Premium', style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 9, fontWeight: FontWeight.bold)),
+                                                  Text(
+                                                    'Premium',
+                                                    style: TextStyle(
+                                                      color: Color(0xFF1D4ED8),
+                                                      fontSize: 9,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
                                             ),
@@ -234,14 +317,24 @@ class TrendingJobs extends ConsumerWidget {
                                     job.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    job.companyName.isNotEmpty ? job.companyName : 'Verified Employer',
+                                    job.companyName.isNotEmpty
+                                        ? job.companyName
+                                        : 'Verified Employer',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: TailwindColors.slate.shade500),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: TailwindColors.slate.shade500,
+                                    ),
                                   ),
                                   const SizedBox(height: 10),
 
@@ -252,14 +345,25 @@ class TrendingJobs extends ConsumerWidget {
                                       runSpacing: 4,
                                       children: job.skills.take(3).map((skill) {
                                         return Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: TailwindColors.slate.shade100,
-                                            borderRadius: BorderRadius.circular(100),
+                                            color:
+                                                TailwindColors.slate.shade100,
+                                            borderRadius: BorderRadius.circular(
+                                              100,
+                                            ),
                                           ),
                                           child: Text(
                                             skill,
-                                            style: TextStyle(color: TailwindColors.slate.shade600, fontSize: 10, fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                              color:
+                                                  TailwindColors.slate.shade600,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         );
                                       }).toList(),
@@ -271,17 +375,31 @@ class TrendingJobs extends ConsumerWidget {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                                  const Divider(
+                                    height: 20,
+                                    color: Color(0xFFF1F5F9),
+                                  ),
                                   Row(
                                     children: [
-                                      const Icon(Icons.location_on_outlined, size: 12, color: Colors.teal),
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        size: 12,
+                                        color: Colors.teal,
+                                      ),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          job.location.isNotEmpty ? job.location : job.district,
+                                          job.location.isNotEmpty
+                                              ? job.location
+                                              : job.district,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color:
+                                                TailwindColors.slate.shade500,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -289,14 +407,23 @@ class TrendingJobs extends ConsumerWidget {
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const Icon(Icons.payments_outlined, size: 12, color: Colors.emerald),
+                                      const Icon(
+                                        Icons.payments_outlined,
+                                        size: 12,
+                                        color: AppTheme.brandEmerald,
+                                      ),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
                                           salaryStr,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color:
+                                                TailwindColors.slate.shade500,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -304,21 +431,30 @@ class TrendingJobs extends ConsumerWidget {
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const Icon(Icons.schedule_outlined, size: 12, color: Colors.grey),
+                                      const Icon(
+                                        Icons.schedule_outlined,
+                                        size: 12,
+                                        color: Colors.grey,
+                                      ),
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
                                           '$timeStr - ${typeStr.replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m[1]}').toUpperCase()}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color:
+                                                TailwindColors.slate.shade500,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 12),
                                   Container(
-                                    height: 38,
+                                    height: 44,
                                     decoration: BoxDecoration(
                                       color: const Color(0xFF0F172A),
                                       borderRadius: BorderRadius.circular(10),
@@ -326,7 +462,11 @@ class TrendingJobs extends ConsumerWidget {
                                     child: const Center(
                                       child: Text(
                                         'Apply Now',
-                                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w900,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -360,19 +500,31 @@ class TrendingJobs extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: TailwindColors.slate.shade300, style: BorderStyle.solid), // Dart custom borders can do dash border if custom painted, solid fallback is clean.
+        border: Border.all(
+          color: TailwindColors.slate.shade300,
+          style: BorderStyle.solid,
+        ), // Dart custom borders can do dash border if custom painted, solid fallback is clean.
       ),
       child: Column(
         children: [
           const Text(
             'No active jobs yet',
-            style: TextStyle(fontFamily: 'Outfit', fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+            style: TextStyle(
+              fontFamily: 'Outfit',
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Approved employer jobs from Firebase will appear here automatically.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 12,
+              color: TailwindColors.slate.shade500,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -380,13 +532,18 @@ class TrendingJobs extends ConsumerWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0F172A),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Post first job', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(
+                  'Post first job',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
                 SizedBox(width: 6),
                 Icon(Icons.arrow_forward, size: 14),
               ],

@@ -135,17 +135,30 @@ class CategoriesSection extends StatelessWidget {
                       children: [
                         const Text(
                           'BROWSE CATEGORIES',
-                          style: TextStyle(color: Colors.teal, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
+                          style: TextStyle(
+                            color: Colors.teal,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         const Text(
                           'Jobs + Businesses by industry',
-                          style: TextStyle(fontFamily: 'Outfit', fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                          style: TextStyle(
+                            fontFamily: 'Outfit',
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Theni local market-க்கு முக்கியமான categories. Mobile-ல் swipe இல்லாமல் scan பண்ண easy.',
-                          style: TextStyle(color: TailwindColors.slate.shade500, fontSize: 13),
+                          style: TextStyle(
+                            color: TailwindColors.slate.shade500,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
@@ -175,7 +188,9 @@ class CategoriesSection extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: TailwindColors.slate.shade200),
+                        border: Border.all(
+                          color: TailwindColors.slate.shade200,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +204,11 @@ class CategoriesSection extends StatelessWidget {
                               color: cat['bgColor'] as Color,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(cat['icon'] as IconData, size: 18, color: cat['iconColor'] as Color),
+                            child: Icon(
+                              cat['icon'] as IconData,
+                              size: 18,
+                              color: cat['iconColor'] as Color,
+                            ),
                           ),
                           const SizedBox(height: 8),
 
@@ -198,18 +217,30 @@ class CategoriesSection extends StatelessWidget {
                             cat['label'] as String,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
                           ),
                           Text(
                             cat['tamil'] as String,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: TailwindColors.slate.shade500,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${cat['count']} listings',
-                            style: const TextStyle(fontSize: 10, color: Colors.teal, fontWeight: FontWeight.w900),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.teal,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ],
                       ),
@@ -224,4 +255,3 @@ class CategoriesSection extends StatelessWidget {
     );
   }
 }
-

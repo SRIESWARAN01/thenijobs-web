@@ -76,14 +76,21 @@ class JobApplication {
       id: id,
       jobId: data['jobId'] as String? ?? '',
       job: data['job'] != null
-          ? Job.fromFirestore(data['job'] as Map<String, dynamic>, data['jobId'] as String? ?? '')
+          ? Job.fromFirestore(
+              data['job'] as Map<String, dynamic>,
+              data['jobId'] as String? ?? '',
+            )
           : null,
       seekerId: data['seekerId'] as String? ?? '',
       seeker: data['seeker'] != null
-          ? JobSeekerProfile.fromFirestore(data['seeker'] as Map<String, dynamic>, data['seekerId'] as String? ?? '')
+          ? JobSeekerProfile.fromFirestore(
+              data['seeker'] as Map<String, dynamic>,
+              data['seekerId'] as String? ?? '',
+            )
           : null,
       // Consistency fallback for resumeUrl / resumeURL
-      resumeUrl: (data['resumeUrl'] as String?) ?? (data['resumeURL'] as String?),
+      resumeUrl:
+          (data['resumeUrl'] as String?) ?? (data['resumeURL'] as String?),
       coverLetter: data['coverLetter'] as String?,
       status: data['status'] != null
           ? ApplicationStatus.fromString(data['status'] as String)
@@ -111,7 +118,8 @@ class JobApplication {
       if (coverLetter != null) 'coverLetter': coverLetter,
       'status': status.toJson(),
       if (employerNote != null) 'employerNote': employerNote,
-      if (interviewDate != null) 'interviewDate': Timestamp.fromDate(interviewDate!),
+      if (interviewDate != null)
+        'interviewDate': Timestamp.fromDate(interviewDate!),
       'appliedAt': Timestamp.fromDate(appliedAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };

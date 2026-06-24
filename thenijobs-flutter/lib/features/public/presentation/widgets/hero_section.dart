@@ -66,15 +66,12 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFDFF7EF),
-                    Color(0x00F6F8FB),
-                  ],
+                  colors: [Color(0xFFFFF1EB), Colors.transparent],
                 ),
               ),
             ),
           ),
-          
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
             child: Align(
@@ -85,14 +82,30 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(flex: 6, child: _buildLeftContent(activeJobsAsync, totalCompaniesAsync, totalUsersAsync, formatter)),
+                          Expanded(
+                            flex: 6,
+                            child: _buildLeftContent(
+                              activeJobsAsync,
+                              totalCompaniesAsync,
+                              totalUsersAsync,
+                              formatter,
+                            ),
+                          ),
                           const SizedBox(width: 48),
-                          Expanded(flex: 5, child: _buildRightContent(liveUpdatesAsync)),
+                          Expanded(
+                            flex: 5,
+                            child: _buildRightContent(liveUpdatesAsync),
+                          ),
                         ],
                       )
                     : Column(
                         children: [
-                          _buildLeftContent(activeJobsAsync, totalCompaniesAsync, totalUsersAsync, formatter),
+                          _buildLeftContent(
+                            activeJobsAsync,
+                            totalCompaniesAsync,
+                            totalUsersAsync,
+                            formatter,
+                          ),
                           const SizedBox(height: 48),
                           _buildRightContent(liveUpdatesAsync),
                         ],
@@ -121,10 +134,10 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: Colors.teal.shade200),
+            border: Border.all(color: const Color(0xFFFFC0A8)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -133,11 +146,19 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.shield_outlined, size: 14, color: Colors.teal.shade800),
+              const Icon(
+                Icons.shield_outlined,
+                size: 14,
+                color: AppTheme.brandRose,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Theni local jobs + business directory',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal.shade800),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.brandRose.withValues(alpha: 0.9),
+                ),
               ),
             ],
           ),
@@ -160,11 +181,7 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
         // Subtitle
         const Text(
           'வேலை தேடுபவர்களுக்கு jobs, business owners-க்கு public page, leads, calls, WhatsApp inquiries எல்லாம் mobile-லும் laptop-லும் easy-ஆ use பண்ண.',
-          style: TextStyle(
-            fontSize: 15,
-            color: Color(0xFF475569),
-            height: 1.5,
-          ),
+          style: TextStyle(fontSize: 15, color: Color(0xFF475569), height: 1.5),
         ),
         const SizedBox(height: 28),
 
@@ -177,7 +194,7 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
             border: Border.all(color: TailwindColors.slate.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 30,
                 offset: const Offset(0, 10),
               ),
@@ -189,25 +206,43 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
               // Search Input Row
               TextFormField(
                 controller: _searchController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Job, company, service தேடுங்கள்',
-                  hintStyle: TextStyle(color: TailwindColors.slate.shade400, fontSize: 13, fontWeight: FontWeight.normal),
-                  prefixIcon: const Icon(Icons.search, size: 18, color: Colors.grey),
+                  hintStyle: TextStyle(
+                    color: TailwindColors.slate.shade400,
+                    fontSize: 13,
+                    fontWeight: FontWeight.normal,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    size: 18,
+                    color: Colors.grey,
+                  ),
                   filled: true,
                   fillColor: TailwindColors.slate.shade50,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: TailwindColors.slate.shade200),
+                    borderSide: BorderSide(
+                      color: TailwindColors.slate.shade200,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: TailwindColors.slate.shade200),
+                    borderSide: BorderSide(
+                      color: TailwindColors.slate.shade200,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.teal),
+                    borderSide: const BorderSide(color: AppTheme.brandRose),
                   ),
                 ),
               ),
@@ -221,21 +256,44 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: TailwindColors.slate.shade50,
-                        border: Border.all(color: TailwindColors.slate.shade200),
+                        border: Border.all(
+                          color: TailwindColors.slate.shade200,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.location_on, size: 16, color: Colors.teal),
+                          const Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: AppTheme.brandRose,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: _selectedLocation,
-                                style: TextStyle(color: TailwindColors.slate.shade700, fontWeight: FontWeight.bold, fontSize: 13),
-                                items: ['Theni', 'Madurai', 'Dindigul', 'Coimbatore', 'Tamil Nadu']
-                                    .map((loc) => DropdownMenuItem(value: loc, child: Text(loc)))
-                                    .toList(),
+                                isExpanded: true,
+                                style: TextStyle(
+                                  color: TailwindColors.slate.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                                items:
+                                    [
+                                          'Theni',
+                                          'Madurai',
+                                          'Dindigul',
+                                          'Coimbatore',
+                                          'Tamil Nadu',
+                                        ]
+                                        .map(
+                                          (loc) => DropdownMenuItem(
+                                            value: loc,
+                                            child: Text(loc),
+                                          ),
+                                        )
+                                        .toList(),
                                 onChanged: (val) {
                                   if (val != null) {
                                     setState(() => _selectedLocation = val);
@@ -252,13 +310,24 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                   ElevatedButton(
                     onPressed: _handleSearch,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F172A),
+                      backgroundColor: AppTheme.brandRose,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
                       elevation: 0,
                     ),
-                    child: const Text('Search', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
+                    child: const Text(
+                      'Search',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -272,10 +341,34 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _buildQuickAction('Jobs தேடுங்கள்', '/jobs', Icons.work, Colors.teal, Colors.white),
-            _buildQuickAction('Business பார்க்க', '/businesses', Icons.business, Colors.white, TailwindColors.slate.shade800),
-            _buildQuickAction('Job Post', '/employer/post-job', Icons.send, Colors.white, TailwindColors.slate.shade800),
-            _buildQuickAction('Business Add', '/company/register', Icons.auto_awesome, Colors.white, TailwindColors.slate.shade800),
+            _buildQuickAction(
+              'Jobs தேடுங்கள்',
+              '/jobs',
+              Icons.work,
+              AppTheme.brandRose,
+              Colors.white,
+            ),
+            _buildQuickAction(
+              'Business பார்க்க',
+              '/businesses',
+              Icons.business,
+              Colors.white,
+              TailwindColors.slate.shade800,
+            ),
+            _buildQuickAction(
+              'Job Post',
+              '/employer/post-job',
+              Icons.send,
+              Colors.white,
+              TailwindColors.slate.shade800,
+            ),
+            _buildQuickAction(
+              'Business Add',
+              '/company/register',
+              Icons.auto_awesome,
+              Colors.white,
+              TailwindColors.slate.shade800,
+            ),
           ],
         ),
         const SizedBox(height: 32),
@@ -307,7 +400,7 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
             border: Border.all(color: TailwindColors.slate.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.07),
+                color: Colors.black.withValues(alpha: 0.07),
                 blurRadius: 40,
                 offset: const Offset(0, 20),
               ),
@@ -341,7 +434,11 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                         child: const Center(
                           child: Text(
                             'thenijobs.com',
-                            style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -350,7 +447,7 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Device preview mock panel
               Container(
                 height: 180,
@@ -360,23 +457,38 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Colors.teal.shade50, TailwindColors.emerald.shade50],
+                    colors: [
+                      Colors.teal.shade50,
+                      TailwindColors.emerald.shade50,
+                    ],
                   ),
                 ),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.devices_rounded, size: 48, color: Colors.teal.shade800),
+                      Icon(
+                        Icons.devices_rounded,
+                        size: 48,
+                        color: Colors.teal.shade800,
+                      ),
                       const SizedBox(height: 12),
                       const Text(
                         'THE NEW THENIJOBS PORTAL',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: 1),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: 1,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Responsive Mobile & Laptop Friendly App',
-                        style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade600),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: TailwindColors.slate.shade600,
+                        ),
                       ),
                     ],
                   ),
@@ -388,15 +500,30 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildMockBtn('Jobs', Icons.phone_outlined, Colors.teal.shade50, Colors.teal.shade900),
+                    child: _buildMockBtn(
+                      'Jobs',
+                      Icons.phone_outlined,
+                      Colors.teal.shade50,
+                      Colors.teal.shade900,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildMockBtn('Business', Icons.chat_bubble_outline, TailwindColors.emerald.shade50, TailwindColors.emerald950),
+                    child: _buildMockBtn(
+                      'Business',
+                      Icons.chat_bubble_outline,
+                      TailwindColors.emerald.shade50,
+                      TailwindColors.emerald950,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _buildMockBtn('Services', Icons.explore_outlined, Colors.amber.shade50, TailwindColors.amber950),
+                    child: _buildMockBtn(
+                      'Services',
+                      Icons.explore_outlined,
+                      Colors.amber.shade50,
+                      TailwindColors.amber950,
+                    ),
                   ),
                 ],
               ),
@@ -424,19 +551,31 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                     children: [
                       const Text(
                         'Live local updates',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                       Text(
                         'Jobs, services, offers',
-                        style: TextStyle(fontSize: 11, color: TailwindColors.slate.shade500, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: TailwindColors.slate.shade500,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
-                  const Icon(Icons.check_circle_rounded, color: Colors.teal, size: 20),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.teal,
+                    size: 20,
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Map list items
               liveUpdatesAsync.when(
                 data: (logs) {
@@ -444,32 +583,56 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                     return _buildNoUpdatesView();
                   }
                   return Column(
-                    children: logs.map((log) => _buildUpdateItem(log.action, '${log.target} ${log.userName.isNotEmpty ? "by ${log.userName}" : ""}')).toList(),
+                    children: logs
+                        .map(
+                          (log) => _buildUpdateItem(
+                            log.action,
+                            '${log.target} ${log.userName.isNotEmpty ? "by ${log.userName}" : ""}',
+                          ),
+                        )
+                        .toList(),
                   );
                 },
                 loading: () => const Center(
                   child: Padding(
                     padding: EdgeInsets.all(16.0),
-                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
                 ),
                 error: (_, __) => _buildNoUpdatesView(),
               ),
-              
+
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: () => context.push('/businesses'),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: TailwindColors.slate.shade200),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Explore platform', style: TextStyle(color: Color(0xFF0F172A), fontSize: 13, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Explore platform',
+                      style: TextStyle(
+                        color: Color(0xFF0F172A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, size: 14, color: Color(0xFF0F172A)),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 14,
+                      color: Color(0xFF0F172A),
+                    ),
                   ],
                 ),
               ),
@@ -481,7 +644,13 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
   }
 
   // Builder Helpers
-  Widget _buildQuickAction(String label, String path, IconData icon, Color bgColor, Color textColor) {
+  Widget _buildQuickAction(
+    String label,
+    String path,
+    IconData icon,
+    Color bgColor,
+    Color textColor,
+  ) {
     final hasRing = bgColor == Colors.white;
     return InkWell(
       onTap: () => context.push(path),
@@ -491,21 +660,34 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(12),
-          border: hasRing ? Border.all(color: TailwindColors.slate.shade200) : null,
+          border: hasRing
+              ? Border.all(color: TailwindColors.slate.shade200)
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 15, color: textColor),
             const SizedBox(width: 8),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textColor)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, AsyncValue<int> countAsync, NumberFormat formatter) {
+  Widget _buildStatItem(
+    String label,
+    AsyncValue<int> countAsync,
+    NumberFormat formatter,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -520,15 +702,34 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
             countAsync.when(
               data: (val) => Text(
                 formatter.format(val),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                ),
               ),
-              loading: () => const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-              error: (_, __) => const Text('0', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A))),
+              loading: () => const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              error: (_, __) => const Text(
+                '0',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: TailwindColors.slate.shade500),
+              style: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: TailwindColors.slate.shade500,
+              ),
             ),
           ],
         ),
@@ -540,14 +741,16 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
     return Container(
       width: 8,
       height: 8,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 
-  Widget _buildMockBtn(String label, IconData icon, Color bgColor, Color textColor) {
+  Widget _buildMockBtn(
+    String label,
+    IconData icon,
+    Color bgColor,
+    Color textColor,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
@@ -559,7 +762,14 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
         children: [
           Icon(icon, size: 14, color: textColor),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -575,9 +785,22 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
       ),
       child: Column(
         children: [
-          const Text('No live updates yet', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          const Text(
+            'No live updates yet',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F172A),
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('Admin activity and approvals will appear here.', style: TextStyle(fontSize: 10, color: TailwindColors.slate.shade500)),
+          Text(
+            'Admin activity and approvals will appear here.',
+            style: TextStyle(
+              fontSize: 10,
+              color: TailwindColors.slate.shade500,
+            ),
+          ),
         ],
       ),
     );
@@ -602,13 +825,20 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
                 Text(
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ],
             ),
@@ -621,12 +851,17 @@ class _HeroSectionState extends ConsumerState<HeroSection> {
               borderRadius: BorderRadius.circular(100),
               border: Border.all(color: Colors.teal.shade50),
             ),
-            child: const Text('Live', style: TextStyle(color: Colors.teal, fontSize: 8, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Live',
+              style: TextStyle(
+                color: Colors.teal,
+                fontSize: 8,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-

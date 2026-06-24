@@ -132,8 +132,12 @@ class Subscription {
       id: id,
       userId: data['userId'] as String? ?? '',
       companyId: data['companyId'] as String?,
-      plan: data['plan'] != null ? SubscriptionPlanSlug.fromString(data['plan'] as String) : SubscriptionPlanSlug.free,
-      status: data['status'] != null ? SubscriptionStatus.fromString(data['status'] as String) : SubscriptionStatus.expired,
+      plan: data['plan'] != null
+          ? SubscriptionPlanSlug.fromString(data['plan'] as String)
+          : SubscriptionPlanSlug.free,
+      status: data['status'] != null
+          ? SubscriptionStatus.fromString(data['status'] as String)
+          : SubscriptionStatus.expired,
       amount: (data['amount'] as num? ?? 0.0).toDouble(),
       startDate: data['startDate'] != null
           ? (data['startDate'] as Timestamp).toDate()
@@ -194,11 +198,23 @@ class SubscriptionPlan {
     return SubscriptionPlan(
       id: id,
       name: data['name'] as String? ?? '',
-      slug: data['slug'] != null ? SubscriptionPlanSlug.fromString(data['slug'] as String) : SubscriptionPlanSlug.free,
+      slug: data['slug'] != null
+          ? SubscriptionPlanSlug.fromString(data['slug'] as String)
+          : SubscriptionPlanSlug.free,
       price: (data['price'] as num? ?? 0.0).toDouble(),
-      period: data['period'] != null ? SubscriptionPeriod.fromString(data['period'] as String) : SubscriptionPeriod.month,
-      features: (data['features'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      notIncluded: (data['notIncluded'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      period: data['period'] != null
+          ? SubscriptionPeriod.fromString(data['period'] as String)
+          : SubscriptionPeriod.month,
+      features:
+          (data['features'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      notIncluded:
+          (data['notIncluded'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       recommended: data['recommended'] as bool? ?? false,
       bestFor: data['bestFor'] as String? ?? '',
       icon: data['icon'] as String? ?? '',

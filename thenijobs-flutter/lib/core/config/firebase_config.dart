@@ -18,12 +18,12 @@ class FirebaseConfig {
         measurementId: 'G-T21WC74YFY',
       );
     }
-    
+
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return const FirebaseOptions(
-          apiKey: 'AIzaSyAAXHgdvKXi4pFPNGciMbZE8lPITN9Hsug',
-          appId: '1:1057136000588:android:e10de83b27b8764b6a7ee9',
+          apiKey: 'AIzaSyAy1BNIoQL2pw9UAWnAyc_HJDu2i8aNSeg',
+          appId: '1:1057136000588:android:0765ac24f3dc62186a7ee9',
           messagingSenderId: '1057136000588',
           projectId: 'thenijobs-9f01d',
           storageBucket: 'thenijobs-9f01d.firebasestorage.app',

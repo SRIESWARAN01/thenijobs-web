@@ -5,38 +5,115 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:thenijobs/core/services/platform_actions_service.dart';
 import 'package:thenijobs/features/auth/domain/repositories/auth_repository.dart';
 import 'package:thenijobs/shared/data/models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
+  static const String _webGoogleClientId =
+      '1057136000588-25l3iapj7mhdcg7gekb31pppggg1h5o1.apps.googleusercontent.com';
+  static const String demoEmail = 'demo@thenijobs.com';
+  static const String demoPassword = 'Demo@123';
+  static const bool demoLoginEnabled = bool.fromEnvironment(
+    'THENIJOBS_ENABLE_DEMO_LOGIN',
+    defaultValue: false,
+  );
+
   final fb.FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
+  final PlatformActionsService _platformActions;
 
   UserModel? _cachedUser;
+  bool _isDemoSession = false;
+  final StreamController<UserModel?> _demoAuthController =
+      StreamController<UserModel?>.broadcast();
 
   AuthRepositoryImpl({
     fb.FirebaseAuth? firebaseAuth,
     FirebaseFirestore? firestore,
     GoogleSignIn? googleSignIn,
-  })  : _firebaseAuth = firebaseAuth ?? fb.FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance,
-        _googleSignIn = googleSignIn ?? GoogleSignIn();
+    PlatformActionsService? platformActions,
+  }) : _firebaseAuth = firebaseAuth ?? fb.FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _googleSignIn =
+           googleSignIn ??
+           GoogleSignIn(clientId: kIsWeb ? _webGoogleClientId : null),
+       _platformActions = platformActions ?? PlatformActionsService();
 
   @override
   Stream<UserModel?> get authStateChanges {
-    return _firebaseAuth.authStateChanges().asyncMap((fbUser) async {
-      if (fbUser == null) {
-        _cachedUser = null;
-        return null;
-      }
-      return await _fetchUserModel(fbUser.uid);
-    });
+    final controller = StreamController<UserModel?>();
+    StreamSubscription<UserModel?>? firebaseSubscription;
+    StreamSubscription<UserModel?>? demoSubscription;
+
+    controller.onListen = () {
+      controller.add(_cachedUser);
+
+      firebaseSubscription = _firebaseAuth
+          .authStateChanges()
+          .asyncMap((fbUser) async {
+            if (_isDemoSession) {
+              return _cachedUser;
+            }
+            if (fbUser == null) {
+              _cachedUser = null;
+              return null;
+            }
+            return _fetchUserModel(fbUser.uid);
+          })
+          .listen((user) {
+            if (!controller.isClosed) {
+              controller.add(user);
+            }
+          }, onError: controller.addError);
+
+      demoSubscription = _demoAuthController.stream.listen((user) {
+        if (!controller.isClosed) {
+          controller.add(user);
+        }
+      }, onError: controller.addError);
+    };
+
+    controller.onCancel = () async {
+      await firebaseSubscription?.cancel();
+      await demoSubscription?.cancel();
+    };
+
+    return controller.stream;
   }
 
   @override
   UserModel? get currentUser => _cachedUser;
+
+  UserModel _buildDemoUser() {
+    return UserModel(
+      uid: 'demo-seeker',
+      email: demoEmail,
+      displayName: 'Demo Job Seeker',
+      phone: '+919876543210',
+      role: UserRole.jobSeeker,
+      district: 'Demo District',
+      preferences: UserPreferences(
+        openToWork: true,
+        jobTypes: const ['Full-time', 'Part-time'],
+        locations: const ['Tamil Nadu', 'Remote'],
+        expectedSalary: 300000,
+      ),
+      isVerified: true,
+      lastLoginAt: DateTime.now(),
+      createdAt: DateTime(2026, 1, 1),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  bool _matchesDemoCredentials(String email, String password) {
+    return demoLoginEnabled &&
+        email.trim().toLowerCase() == demoEmail &&
+        password == demoPassword;
+  }
 
   Future<UserModel?> _fetchUserModel(String uid) async {
     try {
@@ -52,8 +129,26 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  Future<void> _syncMobileVerificationIfPossible() async {
+    try {
+      await _platformActions.syncMobileVerification();
+    } catch (_) {
+      // Keep auth usable even if callable functions are not deployed locally.
+    }
+  }
+
   @override
   Future<void> signInWithEmail(String email, String password) async {
+    if (_matchesDemoCredentials(email, password)) {
+      _isDemoSession = true;
+      _cachedUser = _buildDemoUser();
+      await _firebaseAuth.signOut();
+      await _googleSignIn.signOut();
+      _demoAuthController.add(_cachedUser);
+      return;
+    }
+
+    _isDemoSession = false;
     await _firebaseAuth.signInWithEmailAndPassword(
       email: email,
       password: password,
@@ -67,6 +162,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> signInWithGoogle() async {
+    _isDemoSession = false;
     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
     if (googleUser == null) {
       throw fb.FirebaseAuthException(
@@ -75,13 +171,15 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     }
 
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
     final fb.AuthCredential credential = fb.GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
 
-    final fb.UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
+    final fb.UserCredential userCredential = await _firebaseAuth
+        .signInWithCredential(credential);
     final fb.User? fbUser = userCredential.user;
 
     if (fbUser != null) {
@@ -99,7 +197,10 @@ class AuthRepositoryImpl implements AuthRepository {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        await _firestore.collection('users').doc(fbUser.uid).set(newUser.toFirestore());
+        await _firestore
+            .collection('users')
+            .doc(fbUser.uid)
+            .set(newUser.toFirestore());
       }
       await _fetchUserModel(fbUser.uid);
     }
@@ -112,6 +213,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<String> sendPhoneOTP(String phoneNumber) async {
+    _isDemoSession = false;
     final completer = Completer<String>();
 
     await _firebaseAuth.verifyPhoneNumber(
@@ -120,6 +222,8 @@ class AuthRepositoryImpl implements AuthRepository {
         await _firebaseAuth.signInWithCredential(credential);
         final fbUser = _firebaseAuth.currentUser;
         if (fbUser != null) {
+          await _syncMobileVerificationIfPossible();
+          await _fetchUserModel(fbUser.uid);
           if (!completer.isCompleted) {
             completer.complete('');
           }
@@ -145,17 +249,22 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> verifyPhoneOTP(String verificationId, String smsCode) async {
+    _isDemoSession = false;
     final fb.AuthCredential credential = fb.PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,
     );
 
-    final fb.UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
+    final fb.UserCredential userCredential = await _firebaseAuth
+        .signInWithCredential(credential);
     final fb.User? fbUser = userCredential.user;
 
     if (fbUser != null) {
       // Seed Firestore doc if first-time phone sign-in
-      final docSnapshot = await _firestore.collection('users').doc(fbUser.uid).get();
+      final docSnapshot = await _firestore
+          .collection('users')
+          .doc(fbUser.uid)
+          .get();
       if (!docSnapshot.exists) {
         final newUser = UserModel(
           uid: fbUser.uid,
@@ -167,8 +276,12 @@ class AuthRepositoryImpl implements AuthRepository {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        await _firestore.collection('users').doc(fbUser.uid).set(newUser.toFirestore());
+        await _firestore
+            .collection('users')
+            .doc(fbUser.uid)
+            .set(newUser.toFirestore());
       }
+      await _syncMobileVerificationIfPossible();
       await _fetchUserModel(fbUser.uid);
     }
   }
@@ -181,10 +294,9 @@ class AuthRepositoryImpl implements AuthRepository {
     required String role,
     String? phone,
   }) async {
-    final fb.UserCredential cred = await _firebaseAuth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    _isDemoSession = false;
+    final fb.UserCredential cred = await _firebaseAuth
+        .createUserWithEmailAndPassword(email: email, password: password);
     final fb.User? fbUser = cred.user;
 
     if (fbUser != null) {
@@ -200,13 +312,23 @@ class AuthRepositoryImpl implements AuthRepository {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      await _firestore.collection('users').doc(fbUser.uid).set(newUser.toFirestore());
+      await _firestore
+          .collection('users')
+          .doc(fbUser.uid)
+          .set(newUser.toFirestore());
       await _fetchUserModel(fbUser.uid);
     }
   }
 
   @override
   Future<void> logout() async {
+    if (_isDemoSession) {
+      _isDemoSession = false;
+      _cachedUser = null;
+      _demoAuthController.add(null);
+      return;
+    }
+
     await _firebaseAuth.signOut();
     await _googleSignIn.signOut();
     _cachedUser = null;

@@ -123,7 +123,7 @@ export default function JobDetailPageClient({ id }: { id: string }) {
             openings: d.openings ? Number(d.openings) : 1,
             logo: d.logo || '',
             isUrgent: d.isUrgent || false,
-            isVerified: d.isVerified || false,
+            isVerified: d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified || false,
             whatsapp: normaliseWhatsappNumber(d.whatsapp || d.phone),
             phone: d.phone || '',
             experience: d.experience || 'Not specified',

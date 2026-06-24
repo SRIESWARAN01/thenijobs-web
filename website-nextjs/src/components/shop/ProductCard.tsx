@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, Tag } from 'lucide-react';
+import { ShoppingCart, Tag } from 'lucide-react';
 
 // ─────────────────────────────────── Types ───────────────────────────────────
 

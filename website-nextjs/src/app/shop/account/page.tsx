@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Package, Clock, CheckCircle2, IndianRupee, LogOut, ChevronRight, Star } from 'lucide-react';
-import useShopAuth from '@/hooks/useShopAuth';
+import { Package, Clock, CheckCircle2, IndianRupee, LogOut, ChevronRight } from 'lucide-react';
+import { useShopAuth } from '@/hooks/useShopAuth';
 import { getOrders } from '@/lib/firebase/shopService';
 import type { Order } from '@/lib/types';
 
@@ -57,7 +57,7 @@ export default function AccountPage() {
   const deliveredCount = orders.filter((o) => o.status === 'delivered').length;
   const pendingCount = orders.filter((o) => o.status === 'pending' || o.status === 'processing').length;
 
-  const initials = (shopUserProfile?.fullName || shopUser?.displayName || 'U').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = (shopUserProfile?.fullName || shopUser?.displayName || 'U').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   if (loading) {
     return (
@@ -97,13 +97,13 @@ export default function AccountPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
             {[
-              { label: 'Total Orders', value: orders.length, icon: Package, color: 'violet' },
-              { label: 'Delivered', value: deliveredCount, icon: CheckCircle2, color: 'emerald' },
-              { label: 'Pending', value: pendingCount, icon: Clock, color: 'amber' },
-              { label: 'Total Spent', value: `₹${totalSpent.toLocaleString()}`, icon: IndianRupee, color: 'cyan' },
-            ].map(({ label, value, icon: Icon, color }) => (
+              { label: 'Total Orders', value: orders.length, icon: Package, colorClass: 'text-violet-400' },
+              { label: 'Delivered', value: deliveredCount, icon: CheckCircle2, colorClass: 'text-emerald-400' },
+              { label: 'Pending', value: pendingCount, icon: Clock, colorClass: 'text-amber-400' },
+              { label: 'Total Spent', value: `₹${totalSpent.toLocaleString()}`, icon: IndianRupee, colorClass: 'text-cyan-400' },
+            ].map(({ label, value, icon: Icon, colorClass }) => (
               <div key={label} className="glass-card rounded-xl p-4">
-                <Icon size={16} className={`text-${color}-400 mb-2`} />
+                <Icon size={16} className={`${colorClass} mb-2`} />
                 <div className="text-lg font-bold text-white">{value}</div>
                 <div className="text-xs text-gray-500">{label}</div>
               </div>

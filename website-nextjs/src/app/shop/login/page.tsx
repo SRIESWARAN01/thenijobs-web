@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, ShoppingBag, ArrowLeft } from 'lucide-react';
-import useShopAuth from '@/hooks/useShopAuth';
+import { useShopAuth } from '@/hooks/useShopAuth';
 
 function LoginContent() {
   const router = useRouter();
@@ -73,7 +73,7 @@ function LoginContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="search-input w-full pl-10 pr-4 py-3"
+                  className="search-input w-full pl-10 pr-4 py-3 min-h-12"
                   autoComplete="email"
                 />
               </div>
@@ -88,10 +88,12 @@ function LoginContent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Your password"
-                  className="search-input w-full pl-10 pr-10 py-3"
+                  className="search-input w-full pl-10 pr-10 py-3 min-h-12"
                   autoComplete="current-password"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-500 hover:text-gray-300"
+                  style={{ minHeight: '48px' }}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -100,7 +102,7 @@ function LoginContent() {
             <button
               type="submit"
               disabled={submitting || loading}
-              className="btn-gradient w-full py-3 font-semibold text-sm mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="btn-gradient w-full min-h-12 py-3 font-semibold text-sm mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -114,11 +116,11 @@ function LoginContent() {
           <div className="mt-6 text-center space-y-3">
             <p className="text-gray-500 text-sm">
               New customer?{' '}
-              <Link href="/shop/register" className="text-violet-400 hover:text-violet-300 font-semibold">
+              <Link href="/shop/register" className="text-violet-400 hover:text-violet-300 font-semibold py-1 inline-block">
                 Create Account
               </Link>
             </p>
-            <Link href="/shop" className="flex items-center justify-center gap-1.5 text-gray-600 hover:text-gray-400 text-xs transition-colors">
+            <Link href="/shop" className="flex items-center justify-center gap-1.5 text-gray-600 hover:text-gray-400 text-xs transition-colors py-1.5">
               <ArrowLeft size={12} /> Continue shopping without account
             </Link>
           </div>

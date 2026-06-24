@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Search, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { Search, X, ChevronDown } from 'lucide-react';
 import { getProducts } from '@/lib/firebase/shopService';
 import { SHOP_PRODUCT_CATEGORIES } from '@/lib/types';
 import type { Product } from '@/lib/types';

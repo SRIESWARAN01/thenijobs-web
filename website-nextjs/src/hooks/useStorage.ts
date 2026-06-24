@@ -38,7 +38,7 @@ export interface UseDeleteFileReturn {
 
 // ───────────────────────── Default limits ────────────────────────
 
-const DEFAULT_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
 // ───────────────────────────── useUploadFile ─────────────────────
 

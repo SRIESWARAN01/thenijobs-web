@@ -45,6 +45,7 @@ export function buildPublicSeekerProfile(
     portfolioLinks,
     resumeUrl: cleanString(profile.resumeUrl || defaultResume?.url),
     profileStrength: Number(profile.profileStrength || 0),
+    candidateId: cleanString(profile.candidateId),
     updatedAt: profile.updatedAt,
   };
 }

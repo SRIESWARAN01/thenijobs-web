@@ -18,7 +18,7 @@
     --secondary: 240 5% 14%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 5% 12%;
-    --muted-foreground: 240 5% 55%;
+    --muted-foreground: 240 5% 72%;
     --accent: 197 100% 47%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
@@ -87,6 +87,50 @@
   :where(input, select, textarea, button) {
     max-width: 100%;
     font: inherit;
+  }
+
+  select {
+    background-color: #0F172A;
+    border-color: #1E293B;
+    color: #FFFFFF;
+  }
+  select:focus {
+    border-color: #3B82F6;
+  }
+  select option {
+    background-color: #0F172A;
+    color: #FFFFFF;
+  }
+  select option:checked {
+    background-color: #2563EB;
+    color: #FFFFFF;
+  }
+  select:disabled {
+    background-color: #334155;
+    color: #64748B;
+  }
+
+  /* Radix UI & ShadCN Select Fallbacks */
+  [data-radix-select-viewport],
+  .select-content,
+  [role="listbox"] {
+    background-color: #0F172A !important;
+    border: 1px solid #1E293B !important;
+    color: #FFFFFF !important;
+  }
+  [role="option"] {
+    color: #FFFFFF !important;
+  }
+  [role="option"][data-state="checked"],
+  [role="option"][aria-selected="true"] {
+    background-color: #2563EB !important;
+    color: #FFFFFF !important;
+  }
+  [role="option"]:hover,
+  [role="option"][data-highlighted] {
+    background-color: #1D4ED8 !important;
+    color: #FFFFFF !important;
+    outline: none !important;
   }
 
   :where(p, h1, h2, h3, h4, h5, h6, li, dd, td, th, a, button, label) {
@@ -286,9 +330,9 @@
   .badge-verified {
     background: linear-gradient(135deg, #10b981, #06b6d4);
     color: white;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 2.5px 9px;
     border-radius: 100px;
     letter-spacing: 0.05em;
   }
@@ -296,18 +340,18 @@
   .badge-premium {
     background: linear-gradient(135deg, #f59e0b, #f43f5e);
     color: white;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 2.5px 9px;
     border-radius: 100px;
   }
 
   .badge-featured {
     background: linear-gradient(135deg, #7c3aed, #4f46e5);
     color: white;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 2.5px 9px;
     border-radius: 100px;
   }
 
@@ -503,7 +547,7 @@
 
   .btn-gradient,
   .btn-outline-glass {
-    min-height: 44px;
+    min-height: 48px;
     border-radius: 10px;
   }
 
@@ -632,3 +676,35 @@
     transform: scaleX(1);
   }
 }
+
+/* ===== RESUME PRINT / PDF EXPORT OVERRIDES ===== */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #resume-preview-card, #resume-preview-card * {
+    visibility: visible;
+  }
+  #resume-preview-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+  }
+  #resume-preview-card h2, 
+  #resume-preview-card h4, 
+  #resume-preview-card p, 
+  #resume-preview-card span {
+    color: black !important;
+  }
+}
+

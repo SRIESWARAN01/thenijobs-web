@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
@@ -12,16 +12,18 @@ import {
 
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { isPublicJobVisible } from '@/lib/jobPolicy';
+import { useToast } from '@/hooks/useToast';
+import { Select } from '@/components/ui/Select';
 
 const JOB_TYPES = ['Full Time', 'Part Time', 'Remote', 'WFH', 'Internship', 'Fresher', 'Contract'];
 const CATEGORIES = ['Agriculture', 'Education', 'IT & Software', 'Healthcare', 'Construction', 'Textiles', 'Transport', 'Finance'];
 const LOCATION_OPTIONS = Array.from(new Set([LAUNCH_DISTRICT, ...THENI_LAUNCH_LOCATIONS]));
+const LOCATION_ITEMS = [{ value: '', label: 'All Areas' }, ...LOCATION_OPTIONS.map(d => ({ value: d, label: d }))];
 
 interface Job {
   id: string;
@@ -74,6 +76,7 @@ function formatTime(timestamp: any) {
 
 export default function JobsPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -83,6 +86,9 @@ export default function JobsPage() {
   const [sortBy, setSortBy] = useState('latest');
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   // Initialize search and location from URL parameters
   useEffect(() => {
@@ -95,16 +101,51 @@ export default function JobsPage() {
     }
   }, []);
 
-  // Fetch jobs from Firestore
-  useEffect(() => {
-    async function loadJobs() {
-      try {
-        const q = query(collection(db, 'jobs'), where('isActive', '==', true), orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(q);
-        const data = snapshot.docs
-          .filter((jobDoc) => isPublicJobVisible(jobDoc.data()))
-          .filter((jobDoc) => (jobDoc.data().district || LAUNCH_DISTRICT) === LAUNCH_DISTRICT)
-          .map(doc => {
+  // Fetch jobs from Firestore (with pagination)
+  const loadJobs = async (isFirstPage = false) => {
+    try {
+      if (isFirstPage) {
+        setLoading(true);
+        setLastVisible(null);
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const { startAfter, limit } = await import('firebase/firestore');
+
+      const constraints: any[] = [
+        where('isActive', '==', true),
+        where('district', '==', LAUNCH_DISTRICT),
+        orderBy('createdAt', 'desc'),
+        limit(24)
+      ];
+
+      if (!isFirstPage && lastVisible) {
+        constraints.push(startAfter(lastVisible));
+      }
+
+      const q = query(collection(db, 'jobs'), ...constraints);
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        if (isFirstPage) {
+          setJobs([]);
+        }
+        setHasMore(false);
+        return;
+      }
+
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setLastVisible(lastDoc);
+
+      if (snapshot.docs.length < 24) {
+        setHasMore(false);
+      }
+
+      const newJobs = snapshot.docs
+        .filter((jobDoc) => isPublicJobVisible(jobDoc.data()))
+        .map(doc => {
           const d = doc.data();
           const salaryStr = d.salaryMin && d.salaryMax 
             ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}`
@@ -129,7 +170,7 @@ export default function JobsPage() {
             logo: d.logo || (d.companyName ? d.companyName.substring(0, 2).toUpperCase() : '💼'),
             isUrgent: d.isUrgent || false,
             isPremium: d.isPremium || false,
-            isVerified: d.isVerified || false,
+            isVerified: d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified || false,
             category: d.category || '',
             skills: d.skills || [],
             description: d.description || '',
@@ -140,14 +181,19 @@ export default function JobsPage() {
             createdAtMs,
           } as Job;
         });
-        setJobs(data);
-      } catch (err) {
-        console.error('Error loading jobs:', err);
-      } finally {
-        setLoading(false);
-      }
+
+      setJobs(prev => isFirstPage ? newJobs : [...prev, ...newJobs]);
+    } catch (err) {
+      console.error('Error loading jobs:', err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    loadJobs();
+  };
+
+  useEffect(() => {
+    loadJobs(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch saved jobs for the user
@@ -175,7 +221,7 @@ export default function JobsPage() {
 
   const toggleSave = async (job: Job) => {
     if (!user?.uid) {
-      alert('Please login to save jobs.');
+      toast({ title: 'Auth Required', description: 'Please login to save jobs.', variant: 'warning' });
       return;
     }
     const isCurrentlySaved = savedJobs.includes(job.id);
@@ -197,7 +243,7 @@ export default function JobsPage() {
       }
     } catch (err) {
       console.error('Failed to toggle save:', err);
-      alert('Failed to save job.');
+      toast({ title: 'Error', description: 'Failed to save job.', variant: 'error' });
     }
   };
 
@@ -262,15 +308,16 @@ export default function JobsPage() {
               className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none" />
             {search && <button onClick={() => setSearch('')}><X size={13} className="text-gray-500" /></button>}
           </div>
-          <div className="flex items-center gap-2 search-input px-3 py-2.5">
+          <div className="flex items-center gap-2 search-input px-3 py-1">
             <MapPin size={14} className="text-violet-400 shrink-0" />
-            <select value={location} onChange={e => setLocation(e.target.value)}
-              className="bg-transparent text-sm text-gray-300 outline-none pr-1 w-24">
-              <option value="">All Areas</option>
-              {LOCATION_OPTIONS.map(d => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
+            <Select
+              value={location}
+              onChange={setLocation}
+              options={LOCATION_ITEMS}
+              placeholder="All Areas"
+              className="w-28"
+              buttonClassName="bg-transparent border-none text-gray-300 text-sm hover:text-white"
+            />
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all border
@@ -334,12 +381,17 @@ export default function JobsPage() {
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <span className="hidden sm:inline text-xs">Sort:</span>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-gray-300 outline-none">
-              <option value="latest">Latest</option>
-              <option value="salary">Salary</option>
-              <option value="relevance">Relevance</option>
-            </select>
+            <Select
+              value={sortBy}
+              onChange={setSortBy}
+              options={[
+                { value: 'latest', label: 'Latest' },
+                { value: 'salary', label: 'Salary' },
+                { value: 'relevance', label: 'Relevance' }
+              ]}
+              className="w-28"
+              buttonClassName="bg-white/5 border border-white/10 hover:border-white/20 rounded-xl px-3 py-1.5 text-xs text-gray-300"
+            />
           </div>
         </div>
 
@@ -450,6 +502,24 @@ export default function JobsPage() {
                 </div>
               </div>
             ))
+          )}
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={() => loadJobs(false)}
+                disabled={loadingMore}
+                className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/[0.08] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2 cursor-pointer"
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin text-violet-400" />
+                    <span>Loading more...</span>
+                  </>
+                ) : (
+                  <span>Load More Jobs</span>
+                )}
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -66,7 +66,7 @@ export default function FeaturedBusinesses() {
           </div>
           <Link
             href="/businesses"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-800 shadow-sm hover:bg-slate-50"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-800 shadow-sm hover:bg-slate-50"
           >
             View all <ArrowRight size={15} />
           </Link>
@@ -130,14 +130,14 @@ export default function FeaturedBusinesses() {
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2">
                       <Link
                         href={`/company?slug=${encodeURIComponent(biz.slug)}`}
-                        className="flex min-h-11 items-center justify-center rounded-xl bg-slate-950 text-xs font-black text-white hover:bg-teal-800"
+                        className="flex min-h-12 items-center justify-center rounded-xl bg-slate-950 text-xs font-black text-white hover:bg-teal-800"
                       >
                         View Profile
                       </Link>
                       {biz.phone && (
                         <a
                           href={`tel:${biz.phone}`}
-                          className="flex min-h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-800"
+                          className="flex min-h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-800"
                           aria-label={`Call ${biz.name}`}
                         >
                           <Phone size={17} />
@@ -146,7 +146,7 @@ export default function FeaturedBusinesses() {
                       {biz.whatsapp && (
                         <a
                           href={`https://wa.me/${String(biz.whatsapp).replace(/\D/g, '')}`}
-                          className="flex min-h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"
+                          className="flex min-h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"
                           aria-label={`WhatsApp ${biz.name}`}
                         >
                           <MessageCircle size={17} />

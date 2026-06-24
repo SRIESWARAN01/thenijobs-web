@@ -58,6 +58,11 @@ export default function SearchHub() {
   const [location, setLocation] = useState('Theni');
   const active = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    setQuery('');
+  };
+
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (query.trim()) params.set('search', query.trim());
@@ -96,7 +101,7 @@ export default function SearchHub() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`flex min-h-14 items-center gap-3 rounded-2xl border px-3 text-left transition-colors ${
                     isActive ? activeClass[tab.color] : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-white'
                   }`}
@@ -119,7 +124,6 @@ export default function SearchHub() {
             <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 focus-within:border-teal-600 focus-within:bg-white">
               <Search size={18} className="shrink-0 text-slate-400" />
               <input
-                key={active.id}
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -164,7 +168,7 @@ export default function SearchHub() {
                   if (location && location !== 'All Areas') params.set('location', location);
                   router.push(`${active.id === 'jobs' ? '/jobs' : active.id === 'services' ? '/services' : '/businesses'}?${params.toString()}`);
                 }}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition-colors hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800"
+                className="rounded-full border border-slate-200 bg-white px-4 py-2.5 sm:px-3 sm:py-1.5 text-sm sm:text-xs font-bold text-slate-600 transition-colors hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800"
               >
                 {tag}
               </button>

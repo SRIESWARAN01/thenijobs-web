@@ -14,8 +14,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { useUploadFile } from '@/hooks/useStorage';
 import { db } from '@/lib/firebase/config';
-import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { setDoc, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { buildPublicSeekerProfile } from '@/lib/publicProfile';
+import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
+
 
 /** Skill suggestions for tag input */
 const SKILL_SUGGESTIONS = [
@@ -88,6 +90,10 @@ export default function SeekerProfilePage() {
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, progress: uploadProgress, loading: uploading } = useUploadFile();
+
+  // Cropper states
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   // Populate data when fetched
   useEffect(() => {
@@ -184,16 +190,12 @@ export default function SeekerProfilePage() {
     }
   };
 
-  const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
-    try {
-      const url = await uploadFile(file, `seekers/${user.uid}/avatar_${Date.now()}`);
-      setProfile(p => ({ ...p, photoUrl: url }));
-    } catch (err) {
-      console.error(err);
-      alert('Upload failed: ' + (err as Error).message);
-    }
+    if (!file) return;
+    setCropFile(file);
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
   };
 
   const handleSaveProfile = async () => {
@@ -205,6 +207,29 @@ export default function SeekerProfilePage() {
 
     setSaving(true);
     try {
+      let candidateId = remoteProfile?.candidateId || null;
+
+      if (profileStrength >= 80 && !candidateId) {
+        try {
+          const counterRef = doc(db, 'counters', 'seekerIds');
+          const generatedId = await runTransaction(db, async (transaction) => {
+            const counterSnap = await transaction.get(counterRef);
+            let nextNum = 1;
+            if (counterSnap.exists()) {
+              nextNum = (counterSnap.data().currentId || 0) + 1;
+            }
+            const paddedNum = String(nextNum).padStart(6, '0');
+            const newId = `TJ-${paddedNum}`;
+            
+            transaction.set(counterRef, { currentId: nextNum }, { merge: true });
+            return newId;
+          });
+          candidateId = generatedId;
+        } catch (txErr) {
+          console.error('Failed to generate candidate ID:', txErr);
+        }
+      }
+
       const profileData = {
         ...profile,
         education,
@@ -214,7 +239,8 @@ export default function SeekerProfilePage() {
         certifications,
         portfolio,
         profileStrength,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        ...(candidateId ? { candidateId } : {})
       };
 
       // Write to seekerProfiles
@@ -231,7 +257,9 @@ export default function SeekerProfilePage() {
         email: profile.email,
         phone: profile.phone,
         district: profile.district,
-        updatedAt: serverTimestamp()
+        photoURL: profile.photoUrl || '',
+        updatedAt: serverTimestamp(),
+        ...(candidateId ? { candidateId } : {})
       }, { merge: true });
 
       alert('Profile saved successfully!');
@@ -742,6 +770,30 @@ export default function SeekerProfilePage() {
         {saving ? <Loader2 size={18} className="animate-spin text-white" /> : <Save size={18} />}
         {saving ? 'Saving Profile...' : 'Save Profile'}
       </button>
+
+      <ImageCropperModal
+        open={showCropper}
+        onClose={() => {
+          setShowCropper(false);
+          setCropFile(null);
+        }}
+        file={cropFile}
+        aspectRatio={1}
+        cropWidth={400}
+        cropHeight={400}
+        isCircular={true}
+        title="Crop Profile Picture"
+        onCropComplete={async (croppedFile) => {
+          try {
+            if (!user?.uid) return;
+            const url = await uploadFile(croppedFile, `seekers/${user.uid}/avatar_${Date.now()}`);
+            setProfile(p => ({ ...p, photoUrl: url }));
+          } catch (err) {
+            console.error(err);
+            alert('Upload failed: ' + (err as Error).message);
+          }
+        }}
+      />
     </div>
   );
 }

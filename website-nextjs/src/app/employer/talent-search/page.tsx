@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, MapPin, Lock, User, Award, Clock, Loader2, Phone, Mail, Sparkles, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Lock, User, Award, Clock, Loader2, Phone, Mail, Sparkles, X, FileText, Download } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
@@ -41,11 +41,94 @@ export default function TalentSearchPage() {
     (user?.employerVerified || user?.companyVerified || hasApprovedCompany),
   );
 
-  // 2. Fetch employer-readable public seeker profiles
-  const { data: seekerProfiles, loading: profilesLoading } = useCollection<any>('publicProfiles', [
-    where('type', '==', 'job_seeker'),
-    where('isOpenToWork', '==', true),
-  ], { skip: !canSearchCandidates });
+  // 2. Fetch employer-readable public seeker profiles via Callable Function
+  const [seekerProfiles, setSeekerProfiles] = useState<any[]>([]);
+  const [profilesLoading, setProfilesLoading] = useState(false);
+  const [profilesError, setProfilesError] = useState<string | null>(null);
+
+  // 3. Cache contacts to avoid repeated backend calls
+  const [candidateContacts, setCandidateContacts] = useState<Record<string, { phone: string; email: string; resumeUrl?: string; resumes?: any[] }>>({});
+  const [contactLoading, setContactLoading] = useState<string | null>(null);
+
+  const selectedCandidateId = selectedCandidate?.id;
+  const contactInfo = selectedCandidateId ? candidateContacts[selectedCandidateId] : null;
+
+  useEffect(() => {
+    if (!canSearchCandidates) {
+      setSeekerProfiles([]);
+      return;
+    }
+
+    let active = true;
+    const loadProfiles = async () => {
+      setProfilesLoading(true);
+      setProfilesError(null);
+      try {
+        const { httpsCallable } = await import('firebase/functions');
+        const { functions } = await import('@/lib/firebase/config');
+        const talentSearchCallable = httpsCallable<any, { success: boolean; profiles: any[] }>(functions, 'serverTalentSearch');
+        const result = await talentSearchCallable();
+        if (active && result.data.success) {
+          setSeekerProfiles(result.data.profiles || []);
+        }
+      } catch (err: any) {
+        console.error('Failed to search candidates:', err);
+        if (active) {
+          setProfilesError(err.message || 'Failed to load candidates.');
+        }
+      } finally {
+        if (active) {
+          setProfilesLoading(false);
+        }
+      }
+    };
+
+    loadProfiles();
+    return () => {
+      active = false;
+    };
+  }, [canSearchCandidates]);
+
+  useEffect(() => {
+    if (!selectedCandidateId || !canContactCandidates) return;
+    if (candidateContacts[selectedCandidateId] || contactLoading === selectedCandidateId) return;
+
+    let active = true;
+    const loadContact = async () => {
+      setContactLoading(selectedCandidateId);
+      try {
+        const { httpsCallable } = await import('firebase/functions');
+        const { functions } = await import('@/lib/firebase/config');
+        const getContactCallable = httpsCallable<{ candidateId: string }, { success: boolean; phone: string; email: string; resumeUrl?: string; resumes?: any[] }>(
+          functions,
+          'serverGetCandidateContact'
+        );
+        const result = await getContactCallable({ candidateId: selectedCandidateId });
+        if (active && result.data.success) {
+          setCandidateContacts(prev => ({
+            ...prev,
+            [selectedCandidateId]: {
+              phone: result.data.phone,
+              email: result.data.email,
+              resumeUrl: result.data.resumeUrl,
+              resumes: result.data.resumes || [],
+            }
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch candidate contact:', err);
+      } finally {
+        if (active) {
+          setContactLoading(null);
+        }
+      }
+    };
+
+    loadContact();
+    return () => {
+      active = false;
+    };
+  }, [selectedCandidateId, canContactCandidates, candidateContacts, contactLoading]);
 
   const districts = ['All Areas', ...THENI_LAUNCH_LOCATIONS];
   
@@ -279,7 +362,14 @@ export default function TalentSearchPage() {
               );
             })}
 
-            {filtered.length === 0 && (
+            {profilesError && (
+              <div className="glass-card rounded-2xl p-6 text-center border-rose-500/20 bg-rose-500/5">
+                <p className="text-sm font-semibold text-rose-300">Error searching candidates</p>
+                <p className="text-xs text-rose-400/80 mt-1">{profilesError}</p>
+              </div>
+            )}
+
+            {filtered.length === 0 && !profilesError && (
               <div className="glass-card rounded-2xl p-12 text-center">
                 <User size={32} className="text-gray-600 mx-auto mb-3" />
                 <p className="text-sm text-gray-400">No candidates found</p>
@@ -322,16 +412,25 @@ export default function TalentSearchPage() {
                 <div className="p-4 rounded-xl bg-[#0e0e22] border border-white/[0.04] space-y-3">
                   <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact Information</h4>
                   {canContactCandidates ? (
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <Phone size={13} className="text-cyan-400" />
-                        <span className="text-white font-medium">{selectedCandidate.phone || 'N/A'}</span>
+                    contactLoading === selectedCandidateId ? (
+                      <div className="flex items-center gap-2 py-1 text-xs text-gray-400">
+                        <Loader2 size={12} className="animate-spin text-cyan-400" />
+                        <span>Contact info loading...</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Mail size={13} className="text-cyan-400" />
-                        <span className="text-white font-medium truncate block max-w-[180px]">{selectedCandidate.email || 'N/A'}</span>
+                    ) : contactInfo ? (
+                      <div className="space-y-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <Phone size={13} className="text-cyan-400" />
+                          <span className="text-white font-medium">{contactInfo.phone || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Mail size={13} className="text-cyan-400" />
+                          <span className="text-white font-medium truncate block max-w-[180px]">{contactInfo.email || 'N/A'}</span>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="text-xs text-rose-400/80">Failed to load contact details.</div>
+                    )
                   ) : (
                     <div className="space-y-3 py-1">
                       <div className="flex items-center gap-2 text-xs text-gray-500 blur-[3px] select-none">
@@ -347,6 +446,44 @@ export default function TalentSearchPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Resumes Section */}
+                {canContactCandidates && !contactLoading && contactInfo && (contactInfo.resumeUrl || (contactInfo.resumes && contactInfo.resumes.length > 0)) && (
+                  <div className="space-y-3 pt-3 border-t border-white/[0.06]">
+                    <h4 className="text-xs font-semibold text-gray-400">Candidate Resumes</h4>
+                    <div className="space-y-2">
+                      {contactInfo.resumeUrl && (
+                        <a
+                          href={contactInfo.resumeUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-colors"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText size={14} className="text-cyan-400 flex-shrink-0" />
+                            <span className="text-xs text-white truncate font-medium">Primary Resume</span>
+                          </div>
+                          <Download size={13} className="text-gray-400" />
+                        </a>
+                      )}
+                      {contactInfo.resumes?.map((res: any, idx: number) => (
+                        <a
+                          key={idx}
+                          href={res.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] transition-colors"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText size={14} className="text-cyan-400 flex-shrink-0" />
+                            <span className="text-xs text-white truncate font-medium">{res.name || `Resume ${idx + 1}`}</span>
+                          </div>
+                          <Download size={13} className="text-gray-400" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Experience details */}
                 <div className="space-y-3 pt-3 border-t border-white/[0.06]">

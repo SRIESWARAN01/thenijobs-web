@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
+import { Select } from '@/components/ui/Select';
 import {
   updateDocument,
   deleteDocument,
@@ -51,16 +52,38 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; d
 
 const DISTRICTS = ['All Areas', ...THENI_LAUNCH_LOCATIONS];
 
-const colorMap: Record<string, { bg: string; text: string; iconBg: string }> = {
-  violet: { bg: 'bg-violet-500/10', text: 'text-violet-400', iconBg: 'bg-violet-500/15' },
-  emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', iconBg: 'bg-emerald-500/15' },
-  rose: { bg: 'bg-rose-500/10', text: 'text-rose-400', iconBg: 'bg-rose-500/15' },
-  amber: { bg: 'bg-amber-500/10', text: 'text-amber-400', iconBg: 'bg-amber-500/15' },
+const ROLE_OPTIONS = [
+  { value: 'all', label: 'All Roles' },
+  { value: 'job_seeker', label: 'Job Seeker' },
+  { value: 'employer', label: 'Employer' },
+  { value: 'business_owner', label: 'Business Owner' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'super_admin', label: 'Super Admin' },
+  { value: 'supplier', label: 'Supplier' },
+  { value: 'service_provider', label: 'Service Provider' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All Status' },
+  { value: 'active', label: 'Active' },
+  { value: 'suspended', label: 'Suspended' },
+  { value: 'pending', label: 'Pending' },
+];
+
+const DISTRICT_OPTIONS = DISTRICTS.map((d) => ({ value: d, label: d }));
+
+const colorMap: Record<string, { bg: string; text: string; border: string; glow: string; iconBg: string }> = {
+  violet: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20', glow: 'shadow-violet-500/20', iconBg: 'bg-violet-500/10' },
+  cyan: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20', glow: 'shadow-cyan-500/20', iconBg: 'bg-cyan-500/10' },
+  emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', glow: 'shadow-emerald-500/20', iconBg: 'bg-emerald-500/10' },
+  amber: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', glow: 'shadow-amber-500/20', iconBg: 'bg-amber-500/10' },
+  rose: { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/20', glow: 'shadow-rose-500/20', iconBg: 'bg-rose-500/10' },
+  purple: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20', glow: 'shadow-purple-500/20', iconBg: 'bg-purple-500/10' },
 };
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
-  const { data: users, loading, error } = useCollection<UserDoc>('users');
+  const { data: users = [], loading, error } = useCollection<UserDoc>('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -281,48 +304,27 @@ export default function UsersPage() {
           </div>
           {/* Filters */}
           <div className="flex flex-wrap gap-2">
-            <div className="relative">
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer"
-              >
-                <option value="all">All Roles</option>
-                <option value="job_seeker">Job Seeker</option>
-                <option value="employer">Employer</option>
-                <option value="business_owner">Business Owner</option>
-                <option value="admin">Admin</option>
-                <option value="super_admin">Super Admin</option>
-                <option value="supplier">Supplier</option>
-                <option value="service_provider">Service Provider</option>
-              </select>
-              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-            </div>
-            <div className="relative">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-                <option value="pending">Pending</option>
-              </select>
-              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-            </div>
-            <div className="relative">
-              <select
-                value={districtFilter}
-                onChange={(e) => setDistrictFilter(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer"
-              >
-                {DISTRICTS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-            </div>
+            <Select
+              value={roleFilter}
+              onChange={setRoleFilter}
+              options={ROLE_OPTIONS}
+              placeholder="All Roles"
+              className="w-48"
+            />
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={STATUS_OPTIONS}
+              placeholder="All Status"
+              className="w-40"
+            />
+            <Select
+              value={districtFilter}
+              onChange={setDistrictFilter}
+              options={DISTRICT_OPTIONS}
+              placeholder="All Areas"
+              className="w-48"
+            />
           </div>
         </div>
       </div>
@@ -395,7 +397,7 @@ export default function UsersPage() {
                 {paginatedUsers.map((user) => {
                   const roleConfig = ROLE_CONFIG[user.role] || { label: user.role, bg: 'bg-gray-500/15', text: 'text-gray-400' };
                   const userStatus = user.status || 'active';
-                  const statusConfig = STATUS_CONFIG[userStatus];
+                  const statusConfig = STATUS_CONFIG[userStatus] || { label: userStatus, bg: 'bg-gray-500/15', text: 'text-gray-400', dot: 'bg-gray-400' };
                   return (
                     <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
                       <td className="px-5 py-3.5">
@@ -433,9 +435,9 @@ export default function UsersPage() {
                       </td>
                       <td className="px-4 py-3.5 hidden md:table-cell">
                         {user.isVerified ? (
-                          <CheckCircle size={18} className="text-emerald-400" />
+                           <CheckCircle size={18} className="text-emerald-400" />
                         ) : (
-                          <XCircle size={18} className="text-gray-600" />
+                           <XCircle size={18} className="text-gray-600" />
                         )}
                       </td>
                       <td className="px-4 py-3.5 hidden xl:table-cell">
@@ -472,10 +474,10 @@ export default function UsersPage() {
                               <button
                                 onClick={() => handleDelete(user.id)}
                                 className="p-2 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                                title="Delete User"
-                              >
-                                <Trash2 size={15} />
-                              </button>
+                                  title="Delete User"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
                             </>
                           )}
                         </div>

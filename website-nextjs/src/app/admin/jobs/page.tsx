@@ -18,6 +18,7 @@ import { getEffectiveJobExpiry, getEffectiveJobStatus, getJobPostedDate } from '
 import { toDate } from '@/lib/subscriptions';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { matchesSearch } from '@/lib/search';
+import { Select } from '@/components/ui/Select';
 
 // ===== TYPES =====
 interface JobDoc {
@@ -75,6 +76,10 @@ const TABS = ['All', 'Active', 'Pending', 'Expired', 'Reported', 'Featured'] as 
 const JOB_TYPES = ['All Types', 'Full Time', 'Part Time', 'Internship', 'Remote', 'Fresher'];
 const CATEGORIES = ['All Categories', 'IT & Software', 'Marketing', 'Sales', 'Healthcare', 'Education', 'Engineering', 'Retail', 'Agriculture', 'Construction'];
 const DISTRICTS = ['All Areas', ...THENI_LAUNCH_LOCATIONS];
+
+const JOB_TYPES_OPTIONS = JOB_TYPES.map((t) => ({ value: t, label: t }));
+const CATEGORIES_OPTIONS = CATEGORIES.map((c) => ({ value: c, label: c }));
+const DISTRICTS_OPTIONS = DISTRICTS.map((d) => ({ value: d, label: d }));
 
 export default function JobsPage() {
   const { user: currentUser } = useAuth();
@@ -251,6 +256,8 @@ export default function JobsPage() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeTab === tab
+
+
               ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
               : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
               }`}
@@ -278,24 +285,27 @@ export default function JobsPage() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          <div className="relative">
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer">
-              {JOB_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          </div>
-          <div className="relative">
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer">
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          </div>
-          <div className="relative">
-            <select value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer">
-              {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          </div>
+          <Select
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={JOB_TYPES_OPTIONS}
+            placeholder="All Types"
+            className="w-40"
+          />
+          <Select
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            options={CATEGORIES_OPTIONS}
+            placeholder="All Categories"
+            className="w-48"
+          />
+          <Select
+            value={districtFilter}
+            onChange={setDistrictFilter}
+            options={DISTRICTS_OPTIONS}
+            placeholder="All Areas"
+            className="w-48"
+          />
         </div>
       </div>
 

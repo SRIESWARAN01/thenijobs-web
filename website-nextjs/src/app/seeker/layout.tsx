@@ -1,14 +1,10 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useState, type FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  LayoutDashboard, User, FileText, Search, Bookmark,
-  Bell, Calendar, Building2, Settings, LogOut,
-  ChevronLeft, ChevronRight, Menu, X, Sparkles,
-  Briefcase, Send, GraduationCap
-} from 'lucide-react';
+import { Bell, Search } from 'lucide-react';
+import Sidebar from '@/components/ui/Sidebar';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -17,34 +13,28 @@ import { auth } from '@/lib/firebase/config';
 import type { JobSeekerProfile } from '@/lib/types';
 
 const SEEKER_NAV = [
-  { label: 'Dashboard', tamilLabel: 'டாஷ்போர்டு', icon: LayoutDashboard, href: '/seeker/dashboard' },
-  { label: 'My Profile', tamilLabel: 'என் விவரம்', icon: User, href: '/seeker/profile' },
-  { label: 'Resume', tamilLabel: 'ரெஸ்யூம்', icon: FileText, href: '/seeker/resume' },
-  { label: 'Job Search', tamilLabel: 'வேலை தேடல்', icon: Search, href: '/jobs' },
-  { label: 'Applications', tamilLabel: 'விண்ணப்பங்கள்', icon: Send, href: '/seeker/applications' },
-  { label: 'Saved Jobs', tamilLabel: 'சேமித்த வேலைகள்', icon: Bookmark, href: '/seeker/saved-jobs' },
-  { label: 'Job Alerts', tamilLabel: 'வேலை அலர்ட்', icon: Bell, href: '/seeker/job-alerts' },
-  { label: 'Interviews', tamilLabel: 'நேர்காணல்கள்', icon: Calendar, href: '/seeker/interviews' },
-  { label: 'Companies', tamilLabel: 'நிறுவனங்கள்', icon: Building2, href: '/businesses' },
-  { label: 'AI Coach', tamilLabel: 'AI பயிற்சி', icon: Sparkles, href: '/seeker/ai-coach' },
-  { label: 'Skill Dev', tamilLabel: 'திறன் மேம்பாடு', icon: GraduationCap, href: '/seeker/skills' },
-  { label: 'Settings', tamilLabel: 'அமைப்புகள்', icon: Settings, href: '/seeker/settings' },
+  { label: 'Dashboard', tamilLabel: 'டாஷ்போர்டு', icon: 'LayoutDashboard', href: '/seeker/dashboard' },
+  { label: 'My Profile', tamilLabel: 'என் விவரம்', icon: 'User', href: '/seeker/profile' },
+  { label: 'Resume', tamilLabel: 'ரெஸ்யூம்', icon: 'FileText', href: '/seeker/resume' },
+  { label: 'Job Search', tamilLabel: 'வேலை தேடல்', icon: 'Search', href: '/jobs' },
+  { label: 'Applications', tamilLabel: 'விண்ணப்பங்கள்', icon: 'Send', href: '/seeker/applications' },
+  { label: 'Saved Jobs', tamilLabel: 'சேமித்த வேலைகள்', icon: 'Bookmark', href: '/seeker/saved-jobs' },
+  { label: 'Job Alerts', tamilLabel: 'வேலை அலர்ட்', icon: 'Bell', href: '/seeker/job-alerts' },
+  { label: 'Interviews', tamilLabel: 'நேர்காணல்கள்', icon: 'Calendar', href: '/seeker/interviews' },
+  { label: 'Companies', tamilLabel: 'நிறுவனங்கள்', icon: 'Building2', href: '/businesses' },
+  { label: 'AI Coach', tamilLabel: 'AI பயிற்சி', icon: 'Sparkles', href: '/seeker/ai-coach' },
+  { label: 'Skill Dev', tamilLabel: 'திறன் மேம்பாடு', icon: 'GraduationCap', href: '/seeker/skills' },
+  { label: 'Settings', tamilLabel: 'அமைப்புகள்', icon: 'Settings', href: '/seeker/settings' },
 ];
 
 export default function SeekerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { user, loading: authLoading } = useRequireAuth(['job_seeker']);
   const { data: seekerProfile } = useDocument<JobSeekerProfile>('seekerProfiles', user?.uid);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   if (authLoading) {
     return (
@@ -71,7 +61,6 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
     : (user?.email ? user.email[0].toUpperCase() : 'JS');
   const userDisplayName = user?.displayName || user?.email?.split('@')[0] || 'Job Seeker';
   const profileStrength = Math.min(100, Math.max(0, Number(seekerProfile?.profileStrength ?? 0)));
-  const isOpenToWork = seekerProfile?.isOpenToWork !== false;
 
   const handleHeaderSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,152 +73,34 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="min-h-screen bg-[#0a0a1a] flex">
-      {/* Mobile Overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
       {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out
-          ${collapsed ? 'w-[72px]' : 'w-[280px]'}
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          bg-[#0d0d20]/95 backdrop-blur-xl border-r border-white/[0.06]
-          flex flex-col`}
+      <Sidebar
+        items={SEEKER_NAV}
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
+        portalTitle="THENIJOBS"
+        portalIcon="Briefcase"
+        user={{
+          name: userDisplayName,
+          email: user?.email || undefined,
+        }}
+        onLogout={handleLogout}
       >
-        {/* Brand Header */}
-        <div className={`flex items-center h-16 px-4 border-b border-white/[0.06] ${collapsed ? 'justify-center' : 'gap-3'}`}>
-          {!collapsed && (
-            <>
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-cyan-600 flex items-center justify-center">
-                <Briefcase size={18} className="text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-white font-outfit truncate">THENIJOBS</h2>
-                <p className="text-[10px] text-emerald-400 font-medium">Job Seeker Portal</p>
-              </div>
-            </>
-          )}
-          {collapsed && (
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-cyan-600 flex items-center justify-center">
-              <Briefcase size={18} className="text-white" />
-            </div>
-          )}
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden text-gray-400 hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Profile Completion */}
-        {!collapsed && (
-          <div className="px-3 pt-3">
-            <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Profile Strength</span>
-                <span className="text-xs font-bold text-emerald-400">{profileStrength}%</span>
-              </div>
-              <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-500" style={{ width: `${profileStrength}%` }} />
-              </div>
-            </div>
+        <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Profile Strength</span>
+            <span className="text-xs font-bold text-emerald-400">{profileStrength}%</span>
           </div>
-        )}
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 no-scrollbar">
-          {SEEKER_NAV.map((item) => {
-            const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative
-                  ${isActive
-                    ? 'bg-gradient-to-r from-emerald-600/20 to-cyan-600/10 text-white border border-emerald-500/20'
-                    : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
-                  }
-                  ${collapsed ? 'justify-center px-2' : ''}
-                `}
-              >
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 bg-emerald-500 rounded-r-full" />
-                )}
-                <Icon size={18} className={isActive ? 'text-emerald-400' : 'text-gray-500 group-hover:text-gray-300'} />
-                {!collapsed && (
-                  <>
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.tamilLabel && (
-                      <span className="text-[9px] text-gray-600 hidden xl:block">{item.tamilLabel}</span>
-                    )}
-                  </>
-                )}
-                {collapsed && (
-                  <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg
-                    opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50
-                    border border-white/10 shadow-xl">
-                    {item.label}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Collapse Toggle */}
-        <div className="hidden lg:block px-2 py-2 border-t border-white/[0.06]">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-500 hover:text-white hover:bg-white/[0.04] transition-all"
-          >
-            {collapsed ? <ChevronRight size={16} /> : <><ChevronLeft size={16} /> <span>Collapse</span></>}
-          </button>
+          <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-500" style={{ width: `${profileStrength}%` }} />
+          </div>
         </div>
-
-        {/* User Section */}
-        <div className={`px-3 py-3 border-t border-white/[0.06] ${collapsed ? 'flex justify-center' : ''}`}>
-          {collapsed ? (
-            <button onClick={handleLogout} title="Logout" className="p-2 rounded-xl text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
-              <LogOut size={18} />
-            </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">{userInitials}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{userDisplayName}</p>
-                <p className={`flex items-center gap-1.5 text-[10px] ${isOpenToWork ? 'text-emerald-400' : 'text-gray-500'}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${isOpenToWork ? 'bg-emerald-400' : 'bg-gray-500'}`} />
-                  {isOpenToWork ? 'Open to Work' : 'Not Looking'}
-                </p>
-              </div>
-              <button onClick={handleLogout} title="Logout" className="p-2 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
-                <LogOut size={16} />
-              </button>
-            </div>
-          )}
-        </div>
-      </aside>
+      </Sidebar>
 
       {/* Main Content Area */}
       <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-[280px]'}`}>
         {/* Top Header Bar */}
         <header className="sticky top-0 z-30 h-16 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-white/[0.06] flex items-center px-4 lg:px-6 gap-4">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
-          >
-            <Menu size={20} />
-          </button>
-
           <form onSubmit={handleHeaderSearch} className="flex-1 max-w-lg relative hidden sm:block" aria-label="Search jobs">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
@@ -254,14 +125,14 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
             <Link
               href="/jobs"
               aria-label="Search jobs"
-              className="sm:hidden p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
+              className="sm:hidden h-12 w-12 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
             >
               <Search size={18} />
             </Link>
             <div className="relative">
               <button
                 onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-                className="relative p-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                className="relative h-12 w-12 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
@@ -324,8 +195,8 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
                 </div>
               )}
             </div>
-            <Link href="/seeker/profile" aria-label="Open profile" className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center hover:opacity-90 transition-opacity">
-              <span className="text-white text-xs font-bold">{userInitials}</span>
+            <Link href="/seeker/profile" aria-label="Open profile" className="w-12 h-12 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center hover:opacity-90 transition-opacity">
+              <span className="text-white text-xs sm:text-[10px] font-bold">{userInitials}</span>
             </Link>
           </div>
         </header>

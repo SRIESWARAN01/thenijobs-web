@@ -4,9 +4,10 @@ import { useState } from 'react';
 import {
   Users2, Search, Eye, Download, CheckCircle, XCircle,
   Calendar, Clock, Briefcase,
-  Star, X, Mail, Phone, ExternalLink, Loader2, Save, GraduationCap, MessageSquare
+  Star, X, Mail, Phone, ExternalLink, Loader2, Save, GraduationCap, MessageSquare, Lock
 } from 'lucide-react';
 import Link from 'next/link';
+import { selectBestSubscription, planHasFeature } from '@/lib/subscriptions';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -50,7 +51,8 @@ function CandidateDetailPanel({
   jobTitle,
   seekerName,
   onNotesUpdated,
-  onStatusUpdated
+  onStatusUpdated,
+  canContact
 }: {
   application: any;
   applicationId: string;
@@ -63,6 +65,7 @@ function CandidateDetailPanel({
   seekerName: string;
   onNotesUpdated: (notes: string) => void;
   onStatusUpdated: (status: string) => void;
+  canContact: boolean;
 }) {
   const [savingNotes, setSavingNotes] = useState(false);
   const [localNotes, setLocalNotes] = useState(initialNotes || '');
@@ -160,46 +163,65 @@ function CandidateDetailPanel({
         <div className="space-y-4">
           <div className="glass-card rounded-xl p-4">
             <h4 className="text-xs font-semibold text-gray-400 mb-3">Contact Info</h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Phone size={13} className="text-cyan-400" />
-                <span className="text-gray-300">{phone}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Mail size={13} className="text-cyan-400" />
-                <span className="text-gray-300 truncate">{email}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2 py-1.5 text-xs">
-                <span className="text-gray-500">Area</span>
-                <span className="text-gray-300 truncate">{district}</span>
-              </div>
-              {portfolioLinks.length > 0 && (
-                <div className="pt-2 border-t border-white/[0.06] space-y-1">
-                  <p className="text-[10px] text-gray-500 font-semibold">Links</p>
-                  {portfolioLinks.map((link: string, i: number) => (
-                    <a key={i} href={link} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-cyan-400 hover:underline">
-                      <ExternalLink size={10} /> {link.replace(/^https?:\/\/(www\.)?/, '')}
-                    </a>
-                  ))}
+            {canContact ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone size={13} className="text-cyan-400" />
+                  <span className="text-gray-300">{phone}</span>
                 </div>
-              )}
-              {application?.coverLetter && (
-                <div className="pt-2 border-t border-white/[0.06]">
-                  <p className="text-[10px] text-gray-500 font-semibold mb-1">Cover Letter</p>
-                  <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-line">{application.coverLetter}</p>
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail size={13} className="text-cyan-400" />
+                  <span className="text-gray-300 truncate">{email}</span>
                 </div>
-              )}
-              {application?.applicationType === 'walk_in' && (
-                <div className="pt-2 border-t border-white/[0.06]">
-                  <p className="text-[10px] text-emerald-400 font-semibold mb-1">Walk-In Details</p>
-                  <div className="space-y-1 text-xs text-gray-400">
-                    <p>{walkIn.date || application.walkInDate || 'Date pending'} at {walkIn.time || application.walkInTime || 'Time pending'}</p>
-                    <p>{walkIn.venue || application.walkInVenue || 'Venue pending'}</p>
-                    <p>{walkIn.contactPerson || application.walkInContactPerson || 'HR'} - {walkIn.contactMobile || application.walkInContactMobile || 'Mobile pending'}</p>
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2 py-1.5 text-xs">
+                  <span className="text-gray-500">Area</span>
+                  <span className="text-gray-300 truncate">{district}</span>
+                </div>
+                {portfolioLinks.length > 0 && (
+                  <div className="pt-2 border-t border-white/[0.06] space-y-1">
+                    <p className="text-[10px] text-gray-500 font-semibold">Links</p>
+                    {portfolioLinks.map((link: string, i: number) => (
+                      <a key={i} href={link} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-cyan-400 hover:underline">
+                        <ExternalLink size={10} /> {link.replace(/^https?:\/\/(www\.)?/, '')}
+                      </a>
+                    ))}
                   </div>
+                )}
+                {application?.coverLetter && (
+                  <div className="pt-2 border-t border-white/[0.06]">
+                    <p className="text-[10px] text-gray-500 font-semibold mb-1">Cover Letter</p>
+                    <p className="text-xs text-gray-400 leading-relaxed whitespace-pre-line">{application.coverLetter}</p>
+                  </div>
+                )}
+                {application?.applicationType === 'walk_in' && (
+                  <div className="pt-2 border-t border-white/[0.06]">
+                    <p className="text-[10px] text-emerald-400 font-semibold mb-1">Walk-In Details</p>
+                    <div className="space-y-1 text-xs text-gray-400">
+                      <p>{walkIn.date || application.walkInDate || 'Date pending'} at {walkIn.time || application.walkInTime || 'Time pending'}</p>
+                      <p>{walkIn.venue || application.walkInVenue || 'Venue pending'}</p>
+                      <p>{walkIn.contactPerson || application.walkInContactPerson || 'HR'} - {walkIn.contactMobile || application.walkInContactMobile || 'Mobile pending'}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs text-gray-500 blur-[3px] select-none">
+                  <Phone size={13} />
+                  <span>+91 99999 99999</span>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500 blur-[3px] select-none">
+                  <Mail size={13} />
+                  <span>candidate@email.com</span>
+                </div>
+                <Link
+                  href="/employer/billing"
+                  className="mt-2 w-full py-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 text-center block"
+                >
+                  <Lock size={12} /> Unlock Contact Info
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Employer Notes */}
@@ -375,6 +397,15 @@ export default function CandidatesPage() {
     orderBy('createdAt', 'desc')
   ], { skip: !companyId });
 
+  // 3. Fetch subscriptions matching company
+  const { data: subscriptions, loading: subLoading } = useCollection<any>('subscriptions', [
+    where('companyId', '==', companyId || '')
+  ], { skip: !companyId });
+
+  const activeSub = selectBestSubscription(subscriptions);
+  const activePlan = activeSub?.plan || company?.subscriptionPlan || (company?.isPremium ? 'premium' : 'free');
+  const canContactCandidates = planHasFeature(activePlan, 'direct_candidate_contact');
+
   const [pipelineTab, setPipelineTab] = useState<PipelineStatus>('all');
   const [search, setSearch] = useState('');
   const [jobFilter, setJobFilter] = useState('All Jobs');
@@ -472,7 +503,7 @@ export default function CandidatesPage() {
     return true;
   });
 
-  const loading = companyLoading || appsLoading;
+  const loading = companyLoading || appsLoading || subLoading;
 
   if (!companyId && !companyLoading) {
     return (
@@ -510,7 +541,7 @@ export default function CandidatesPage() {
                 onClick={() => setPipelineTab(t.value)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                   pipelineTab === t.value
-                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20'
+                     ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/20'
                     : 'text-gray-400 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
@@ -598,7 +629,14 @@ export default function CandidatesPage() {
                               <Eye size={14} />
                             </button>
                             <button
-                              onClick={() => handleMessageCandidate(candidate)}
+                              onClick={() => {
+                                if (!canContactCandidates) {
+                                  alert('Upgrade to the Premium Plan to message candidates directly!');
+                                  router.push('/employer/billing');
+                                  return;
+                                }
+                                handleMessageCandidate(candidate);
+                              }}
                               disabled={actionLoading === `message-${candidate.id}`}
                               className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-all disabled:opacity-50"
                               title="Message Candidate"
@@ -679,6 +717,7 @@ export default function CandidatesPage() {
                       jobId={candidate.jobId}
                       jobTitle={candidate.jobTitle}
                       seekerName={candidate.seekerName}
+                      canContact={canContactCandidates}
                       onNotesUpdated={(newNotes) => {
                         candidate.employerNote = newNotes;
                       }}

@@ -266,7 +266,7 @@ export default function SkillsPage() {
       await saveProgress(path, {
         status: nextValue >= 100 ? 'completed' : 'in_progress',
         progress: nextValue,
-        score: progress.score,
+        score: progress.score ?? undefined,
         ...(nextValue >= 100 ? { completedAt: new Date().toISOString() } : {}),
       }, nextValue >= 100);
       return;
@@ -275,7 +275,7 @@ export default function SkillsPage() {
     await saveProgress(path, {
       status: 'in_progress',
       progress: 15,
-      score: progress.score,
+      score: progress.score ?? undefined,
     });
   };
 

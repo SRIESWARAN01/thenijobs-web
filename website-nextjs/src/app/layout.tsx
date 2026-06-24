@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
+import { ToastProvider } from "@/components/ui/Toaster";
 import SplashIntro from "@/components/ui/SplashIntro";
 
 export const metadata: Metadata = {
@@ -63,14 +64,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="font-sans antialiased bg-[#0a0a1a] text-white">
-        <PreferencesProvider>
-          <AuthProvider>
-            <NotificationProvider>
-              <SplashIntro />
-              {children}
-            </NotificationProvider>
-          </AuthProvider>
-        </PreferencesProvider>
+        <ToastProvider>
+          <PreferencesProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                <SplashIntro />
+                {children}
+              </NotificationProvider>
+            </AuthProvider>
+          </PreferencesProvider>
+        </ToastProvider>
       </body>
     </html>
   );

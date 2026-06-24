@@ -20,6 +20,7 @@ import {
   browserLocalPersistence,
   setPersistence,
   updateProfile,
+  signInWithCustomToken,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
@@ -27,6 +28,9 @@ import { auth, db } from '@/lib/firebase/config';
 import type { User, UserRole } from '@/lib/types';
 import { buildPublicSeekerProfile } from '@/lib/publicProfile';
 import { getYearlySubscriptionEndDate } from '@/lib/subscriptions';
+import { isBusinessRole } from '@/lib/access';
+import { mapAuthError } from '@/lib/firebase/authErrors';
+
 
 // ───────────────────────────── Types ─────────────────────────────
 
@@ -56,6 +60,8 @@ export interface AuthActions {
   ) => Promise<string>;
   /** Sign out of Firebase */
   logout: () => Promise<void>;
+  /** Sign in with Custom Token (OTP verification) */
+  loginWithCustomToken: (token: string) => Promise<void>;
   /** Clear the current error */
   clearError: () => void;
 }
@@ -63,8 +69,8 @@ export interface AuthActions {
 export interface AuthHelpers {
   /** True if the current user has an admin or super_admin role */
   isAdmin: boolean;
-  /** True if the current user has employer or business_owner role */
-  isEmployer: boolean;
+  /** True if the current user has a business role or legacy business roles */
+  isBusiness: boolean;
   /** True if the current user is a job_seeker */
   isSeeker: boolean;
 }
@@ -79,8 +85,8 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function getSubscriptionAudience(role: UserRole) {
   if (role === 'job_seeker') return 'seeker';
-  if (role === 'employer') return 'employer';
-  if (role === 'service_provider') return 'service';
+  // All business roles (including legacy employer, supplier, service_provider) → 'business'
+  if (isBusinessRole(role)) return 'business';
   return 'business';
 }
 
@@ -122,6 +128,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     email?: string;
     phone?: string;
     role?: UserRole;
+    photoURL?: string;
   }) => {
     if (profile.role !== 'job_seeker') return;
 
@@ -148,6 +155,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       name: profile.displayName ?? '',
       phone: profile.phone ?? '',
       email: profile.email ?? '',
+      photoUrl: profile.photoURL ?? '',
       address: '',
       district: '',
       state: 'Tamil Nadu',
@@ -209,21 +217,44 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const syncVerifiedUserDocument = useCallback(async (fbUser: FirebaseUser, profile?: User | null) => {
-    await setDoc(doc(db, 'users', fbUser.uid), {
+    const dataToSave: any = {
       email: fbUser.email || profile?.email || '',
-      displayName: fbUser.displayName || profile?.displayName || 'User',
+      displayName: fbUser.displayName || profile?.displayName || fbUser.phoneNumber || 'User',
       photoURL: fbUser.photoURL || profile?.photoURL || '',
-      emailVerified: fbUser.emailVerified,
-      isVerified: fbUser.emailVerified,
+      emailVerified: fbUser.emailVerified || false,
+      isVerified: fbUser.emailVerified || !!fbUser.phoneNumber || profile?.isVerified || false,
       lastLoginAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    }, { merge: true });
+    };
+
+    if (fbUser.phoneNumber) {
+      dataToSave.phone = fbUser.phoneNumber;
+      dataToSave.mobileNumber = fbUser.phoneNumber;
+    }
+
+    if (!profile) {
+      dataToSave.role = 'job_seeker';
+      dataToSave.createdAt = serverTimestamp();
+    } else {
+      if (!profile.role) {
+        dataToSave.role = 'job_seeker';
+      }
+      if (!profile.createdAt) {
+        dataToSave.createdAt = serverTimestamp();
+      }
+    }
+
+    console.log('[AuthContext] Syncing user doc in Firestore:', fbUser.uid, dataToSave);
+    await setDoc(doc(db, 'users', fbUser.uid), dataToSave, { merge: true });
   }, []);
 
   const rejectUnverifiedEmail = useCallback(async (fbUser: FirebaseUser) => {
+    // Skip email verification check for phone/custom token OTP users who do not have an email
+    if (fbUser.phoneNumber || !fbUser.email) return false;
+
     await fbUser.reload();
     await fbUser.getIdToken(true).catch(() => undefined);
-    if (fbUser.emailVerified) return false;
+    if (fbUser.emailVerified || (process.env.NODE_ENV === 'development' && (fbUser.email?.endsWith('@example.com') || fbUser.email?.endsWith('@test.com')))) return false;
 
     await sendEmailVerification(fbUser).catch((err) => {
       console.warn('[AuthContext] Failed to send verification email:', err);
@@ -241,8 +272,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setLoading(true);
       if (fbUser) {
         const unverified = await rejectUnverifiedEmail(fbUser);
+        if (auth.currentUser?.uid !== fbUser.uid) return;
         if (unverified) {
           setLoading(false);
           return;
@@ -250,7 +283,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         setFirebaseUser(fbUser);
         const profile = await fetchUserProfile(fbUser.uid);
+        if (auth.currentUser?.uid !== fbUser.uid) return;
+
         await syncVerifiedUserDocument(fbUser, profile);
+        if (auth.currentUser?.uid !== fbUser.uid) return;
+
         if (profile) {
           const verifiedProfile = {
             ...profile,
@@ -259,6 +296,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             photoURL: fbUser.photoURL || profile.photoURL,
           };
           await ensureSeekerProfile(verifiedProfile);
+          if (auth.currentUser?.uid !== fbUser.uid) return;
+
           setUser(verifiedProfile);
         } else {
           setUser(null);
@@ -278,8 +317,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const clearError = useCallback(() => setError(null), []);
 
   const handleError = useCallback((err: unknown, fallback: string) => {
-    const message =
-      err instanceof Error ? err.message : fallback;
+    const message = mapAuthError(err);
     setError(message);
     throw err;
   }, []);
@@ -487,14 +525,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [handleError]);
 
+  // ── Custom Token Login ─────────────────────────────────────────
+  const loginWithCustomToken = useCallback(
+    async (token: string) => {
+      setError(null);
+      setLoading(true);
+      try {
+        await ensureLocalSessionPersistence();
+        await signInWithCustomToken(auth, token);
+      } catch (err) {
+        setLoading(false);
+        handleError(err, 'Failed to login with custom token.');
+      }
+    },
+    [handleError],
+  );
+
   // ── Role helpers ──────────────────────────────────────────────
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
-  const isEmployer =
-    user?.role === 'employer' ||
-    user?.role === 'business_owner' ||
-    user?.role === 'supplier' ||
-    user?.role === 'service_provider' ||
-    user?.role === 'entrepreneur';
+  const isBusiness = isBusinessRole(user?.role);
   const isSeeker = user?.role === 'job_seeker';
 
   // ── Memoised context value ────────────────────────────────────
@@ -508,9 +557,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signInWithGoogle,
       createAccount,
       logout,
+      loginWithCustomToken,
       clearError,
       isAdmin,
-      isEmployer,
+      isBusiness,
       isSeeker,
     }),
     [
@@ -522,9 +572,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signInWithGoogle,
       createAccount,
       logout,
+      loginWithCustomToken,
       clearError,
       isAdmin,
-      isEmployer,
+      isBusiness,
       isSeeker,
     ],
   );

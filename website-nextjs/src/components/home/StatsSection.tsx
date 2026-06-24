@@ -8,6 +8,8 @@ import { useRealtimeCount } from '@/hooks/useRealtimeStats';
 function AnimatedNumber({ target }: { target: number }) {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
+  const hasAnimated = useRef(false);
+  const currentCountRef = useRef(0);
 
   useEffect(() => {
     const node = ref.current;
@@ -18,33 +20,66 @@ function AnimatedNumber({ target }: { target: number }) {
       ([entry]) => {
         if (!entry.isIntersecting) return;
 
+        const start = currentCountRef.current;
         const duration = 900;
         const steps = 36;
-        const start = count;
         const increment = (target - start) / steps;
         let current = start;
+
+        if (timer) window.clearInterval(timer);
 
         timer = window.setInterval(() => {
           current += increment;
           const done = increment >= 0 ? current >= target : current <= target;
           if (done) {
             setCount(target);
+            currentCountRef.current = target;
             if (timer) window.clearInterval(timer);
           } else {
-            setCount(Math.max(0, Math.floor(current)));
+            const nextVal = Math.max(0, Math.floor(current));
+            setCount(nextVal);
+            currentCountRef.current = nextVal;
           }
         }, duration / steps);
+
+        observer.disconnect();
       },
       { threshold: 0.25 },
     );
 
-    observer.observe(node);
+    if (!hasAnimated.current) {
+      observer.observe(node);
+    } else {
+      const start = currentCountRef.current;
+      const duration = 900;
+      const steps = 36;
+      const increment = (target - start) / steps;
+      let current = start;
+
+      if (timer) window.clearInterval(timer);
+
+      timer = window.setInterval(() => {
+        current += increment;
+        const done = increment >= 0 ? current >= target : current <= target;
+        if (done) {
+          setCount(target);
+          currentCountRef.current = target;
+          if (timer) window.clearInterval(timer);
+        } else {
+          const nextVal = Math.max(0, Math.floor(current));
+          setCount(nextVal);
+          currentCountRef.current = nextVal;
+        }
+      }, duration / steps);
+    }
+
+    hasAnimated.current = true;
 
     return () => {
       observer.disconnect();
       if (timer) window.clearInterval(timer);
     };
-  }, [count, target]);
+  }, [target]);
 
   return <span ref={ref}>{count.toLocaleString('en-IN')}</span>;
 }

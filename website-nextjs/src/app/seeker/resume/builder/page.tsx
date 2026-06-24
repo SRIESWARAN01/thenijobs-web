@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
-  User, GraduationCap, Briefcase, Star, Eye, Download,
+  User, GraduationCap, Briefcase, Star, Eye,
   ChevronLeft, ChevronRight, Check, FileText, Sparkles,
   Mail, Phone, MapPin, ArrowLeft, Palette, Loader2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
-import { setDoc, doc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { setDoc, doc, arrayUnion } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 type Step = 'personal' | 'education' | 'experience' | 'skills' | 'preview';
@@ -59,7 +59,7 @@ export default function ResumeBuilderPage() {
   const router = useRouter();
   
   // Fetch profile to allow auto-fill
-  const { data: profileDoc, loading: profileLoading } = useDocument<any>('seekerProfiles', user?.uid);
+  const { data: profileDoc } = useDocument<any>('seekerProfiles', user?.uid);
 
   const [currentStep, setCurrentStep] = useState<Step>('personal');
   const [selectedTemplate, setSelectedTemplate] = useState('professional');
@@ -311,7 +311,7 @@ export default function ResumeBuilderPage() {
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {education.map((edu, idx) => (
+                  {education.map((edu) => (
                     <div key={edu.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
                       {education.length > 1 && (
                         <button onClick={() => setEducation(e => e.filter(x => x.id !== edu.id))} className="absolute top-2 right-2 p-1 rounded text-gray-600 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all">✕</button>
@@ -393,7 +393,13 @@ export default function ResumeBuilderPage() {
                     className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {saving ? <Loader2 size={16} className="animate-spin text-white" /> : <Check size={16} />}
-                    {saving ? 'Saving...' : 'Save & Publish Resume'}
+                    {saving ? 'Saving...' : 'Save & Publish'}
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="flex-1 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06] text-gray-300 hover:bg-white/[0.08] text-sm font-semibold flex items-center justify-center gap-2"
+                  >
+                    <FileText size={16} /> Print / Export PDF
                   </button>
                 </div>
               </div>
@@ -431,7 +437,7 @@ export default function ResumeBuilderPage() {
               <Eye size={15} className="text-cyan-400" /> Live Preview
             </h3>
             {/* Simulated Resume Preview */}
-            <div className="bg-white rounded-xl p-5 min-h-[500px] text-gray-900">
+            <div id="resume-preview-card" className="bg-white rounded-xl p-5 min-h-[500px] text-gray-900">
               {/* Name */}
               <div className="text-center border-b border-gray-200 pb-3 mb-3">
                 <h2 className="text-lg font-bold text-gray-900">

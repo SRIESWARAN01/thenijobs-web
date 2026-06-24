@@ -11,14 +11,12 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import type { UserRole } from '@/lib/types';
 import { getDashboardPathForRole } from '@/lib/access';
+import { mapAuthError } from '@/lib/firebase/authErrors';
+
 
 const ROLES = [
   { id: 'job_seeker', label: 'Job Seeker', subLabel: 'வேலை தேடுகிறேன்', icon: Briefcase, desc: 'Find jobs, build resume, track applications', color: 'violet' },
-  { id: 'employer', label: 'Employer / HR', subLabel: 'ஆட்களை எடுக்கிறேன்', icon: Building2, desc: 'Post jobs, search candidates, hire talent', color: 'cyan' },
-  { id: 'business_owner', label: 'Business Owner', subLabel: 'Business வைத்திருக்கிறேன்', icon: Users, desc: 'List your business, get leads & enquiries', color: 'emerald' },
-  { id: 'supplier', label: 'Supplier / B2B', subLabel: 'Products விற்கிறேன்', icon: Package, desc: 'List products, receive RFQs from buyers', color: 'amber' },
-  { id: 'service_provider', label: 'Service Provider', subLabel: 'Service வழங்குகிறேன்', icon: Wrench, desc: 'Offer services, get bookings & reviews', color: 'rose' },
-  { id: 'entrepreneur', label: 'Entrepreneur', subLabel: 'Startup / idea builder', icon: Users, desc: 'Grow a venture, list services, and track leads', color: 'emerald' },
+  { id: 'business', label: 'Business', subLabel: 'Business நடத்துகிறேன்', icon: Building2, desc: 'Post jobs, manage products, offer services, generate leads — all in one', color: 'emerald' },
 ];
 
 const colorMap: Record<string, string> = {
@@ -83,6 +81,15 @@ export default function RegisterPage() {
         setLocalError('Please fill in all required fields.');
         return;
       }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email)) {
+        setLocalError('Please enter a valid email address.');
+        return;
+      }
+      if (form.phone && !/^\d{10}$/.test(form.phone)) {
+        setLocalError('Please enter a valid 10-digit mobile number.');
+        return;
+      }
       if (form.password.length < 6) {
         setLocalError('Password must be at least 6 characters.');
         return;
@@ -95,7 +102,7 @@ export default function RegisterPage() {
         setSuccessMessage('Account created. Please verify your email using the link we sent, then sign in.');
       } catch (err: any) {
         console.error(err);
-        setLocalError(err.message || 'Registration failed. Please try again.');
+        setLocalError(mapAuthError(err));
       } finally {
         setLoading(false);
       }
@@ -115,7 +122,7 @@ export default function RegisterPage() {
       await signInWithGoogle(role as UserRole);
     } catch (err: any) {
       console.error(err);
-      setLocalError(err.message || 'Google sign-up failed. Please try again.');
+      setLocalError(mapAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -131,7 +138,7 @@ export default function RegisterPage() {
           <Image src="/logo.png" alt="THENIJOBS Logo" width={160} height={40} className="h-10 w-auto object-contain" />
         </Link>
 
-        <div className="glass-card rounded-3xl p-7 shadow-2xl">
+        <form onSubmit={(e) => { e.preventDefault(); next(); }} className="glass-card rounded-3xl p-7 shadow-2xl">
           {/* Progress */}
           <div className="flex items-center gap-2 mb-7">
             {Array.from({ length: totalSteps }).map((_, i) => (
@@ -197,7 +204,7 @@ export default function RegisterPage() {
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Full Name *</label>
                   <div className="relative">
                     <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input type="text" placeholder="Your full name" value={form.name}
+                    <input type="text" required placeholder="Your full name" value={form.name}
                       onChange={e => setForm({ ...form, name: e.target.value })}
                       className="search-input w-full pl-10 pr-4 py-3 text-sm" />
                   </div>
@@ -218,7 +225,7 @@ export default function RegisterPage() {
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Email Address *</label>
                   <div className="relative">
                     <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input type="email" placeholder="your@email.com" value={form.email}
+                    <input type="email" required placeholder="your@email.com" value={form.email}
                       onChange={e => setForm({ ...form, email: e.target.value })}
                       className="search-input w-full pl-10 pr-4 py-3 text-sm" />
                   </div>
@@ -227,7 +234,7 @@ export default function RegisterPage() {
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Password *</label>
                   <div className="relative">
                     <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input type="password" placeholder="Min. 6 characters" value={form.password}
+                    <input type="password" required minLength={6} placeholder="Min. 6 characters" value={form.password}
                       onChange={e => setForm({ ...form, password: e.target.value })}
                       className="search-input w-full pl-10 pr-4 py-3 text-sm" />
                   </div>
@@ -252,12 +259,12 @@ export default function RegisterPage() {
           {/* Navigation Buttons */}
           <div className="flex gap-3 mt-6">
             {step > 1 && (
-              <button onClick={() => setStep(s => s - 1)}
+              <button type="button" onClick={() => setStep(s => s - 1)}
                 className="btn-outline-glass px-5 py-3 rounded-2xl text-sm font-semibold flex items-center gap-2">
                 <ArrowLeft size={15} /> Back
               </button>
             )}
-            <button onClick={next} disabled={(step === 1 && !role) || loading}
+            <button type="submit" disabled={(step === 1 && !role) || loading}
               className="flex-1 btn-gradient py-3 rounded-2xl font-semibold text-sm relative z-10 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
               {loading ? <Loader2 size={16} className="animate-spin" /> : null}
               {step === totalSteps ? 'Create Account' : 'Continue'}
@@ -271,7 +278,7 @@ export default function RegisterPage() {
               <Link href="/login" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">Sign In</Link>
             </p>
           )}
-        </div>
+        </form>
       </div>
     </div>
   );

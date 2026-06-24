@@ -141,10 +141,9 @@ export async function updateProduct(
   data: Partial<Product>,
 ): Promise<void> {
   const ref = doc(db, PRODUCTS_COL, id);
-  const { id: _id, createdAt: _ca, ...rest } = data as Partial<Product> & {
-    id?: string;
-    createdAt?: Date;
-  };
+  const rest = { ...data } as Record<string, any>;
+  delete rest.id;
+  delete rest.createdAt;
   await updateDoc(ref, { ...rest, updatedAt: serverTimestamp() });
 }
 
@@ -345,17 +344,16 @@ export async function updateCoupon(
   id: string,
   data: Partial<Coupon>,
 ): Promise<void> {
-  const { id: _id, createdAt: _ca, ...rest } = data as Partial<Coupon> & {
-    id?: string;
-    createdAt?: Date;
-  };
+  const rest = { ...data } as Record<string, any>;
+  delete rest.id;
+  delete rest.createdAt;
 
   // Convert Date → Timestamp if the caller passes a JS Date for expiresAt.
   if (rest.expiresAt instanceof Date) {
-    (rest as Record<string, unknown>).expiresAt = Timestamp.fromDate(rest.expiresAt);
+    rest.expiresAt = Timestamp.fromDate(rest.expiresAt);
   }
 
-  await updateDoc(doc(db, COUPONS_COL, id), rest as Record<string, unknown>);
+  await updateDoc(doc(db, COUPONS_COL, id), rest);
 }
 
 /** Permanently delete a coupon document. */

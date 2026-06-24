@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, Phone, Mail, Lock, Eye, EyeOff, ShoppingBag } from 'lucide-react';
-import useShopAuth from '@/hooks/useShopAuth';
+import { useShopAuth } from '@/hooks/useShopAuth';
 
 export default function ShopRegisterPage() {
   const router = useRouter();
@@ -86,7 +86,7 @@ export default function ShopRegisterPage() {
                   value={form.fullName}
                   onChange={(e) => update('fullName', e.target.value)}
                   placeholder="Your full name"
-                  className="search-input w-full pl-10 pr-4 py-3"
+                  className="search-input w-full pl-10 pr-4 py-3 min-h-12"
                 />
               </div>
             </div>
@@ -95,7 +95,7 @@ export default function ShopRegisterPage() {
             <div>
               <label className="block text-sm text-gray-400 mb-1.5">Mobile Number</label>
               <div className="relative flex">
-                <span className="flex items-center px-3 bg-white/[0.04] border border-white/[0.08] border-r-0 rounded-l-xl text-gray-500 text-sm font-medium">
+                <span className="flex items-center px-3 bg-white/[0.04] border border-white/[0.08] border-r-0 rounded-l-xl text-gray-500 text-sm font-medium min-h-12">
                   +91
                 </span>
                 <div className="relative flex-1">
@@ -106,7 +106,7 @@ export default function ShopRegisterPage() {
                     value={form.phone}
                     onChange={(e) => update('phone', e.target.value.replace(/\D/g, ''))}
                     placeholder="10-digit number"
-                    className="search-input w-full pl-10 pr-4 py-3 rounded-l-none"
+                    className="search-input w-full pl-10 pr-4 py-3 rounded-l-none min-h-12"
                   />
                 </div>
               </div>
@@ -122,7 +122,7 @@ export default function ShopRegisterPage() {
                   value={form.email}
                   onChange={(e) => update('email', e.target.value)}
                   placeholder="you@example.com"
-                  className="search-input w-full pl-10 pr-4 py-3"
+                  className="search-input w-full pl-10 pr-4 py-3 min-h-12"
                 />
               </div>
             </div>
@@ -137,9 +137,11 @@ export default function ShopRegisterPage() {
                   value={form.password}
                   onChange={(e) => update('password', e.target.value)}
                   placeholder="Min 8 characters"
-                  className="search-input w-full pl-10 pr-10 py-3"
+                  className="search-input w-full pl-10 pr-10 py-3 min-h-12"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 top-0 h-full w-12 flex items-center justify-center text-gray-500 hover:text-gray-300"
+                  style={{ minHeight: '48px' }}>
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -155,7 +157,7 @@ export default function ShopRegisterPage() {
                   value={form.confirmPassword}
                   onChange={(e) => update('confirmPassword', e.target.value)}
                   placeholder="Re-enter password"
-                  className="search-input w-full pl-10 pr-4 py-3"
+                  className="search-input w-full pl-10 pr-4 py-3 min-h-12"
                 />
               </div>
             </div>
@@ -163,7 +165,7 @@ export default function ShopRegisterPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="btn-gradient w-full py-3 font-semibold text-sm mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="btn-gradient w-full min-h-12 py-3 font-semibold text-sm mt-6 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -176,7 +178,7 @@ export default function ShopRegisterPage() {
 
           <p className="mt-6 text-center text-gray-500 text-sm">
             Already have an account?{' '}
-            <Link href="/shop/login" className="text-violet-400 hover:text-violet-300 font-semibold">
+            <Link href="/shop/login" className="text-violet-400 hover:text-violet-300 font-semibold py-1 inline-block">
               Sign In
             </Link>
           </p>

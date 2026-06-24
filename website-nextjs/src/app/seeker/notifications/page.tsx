@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc, writeBatch, where, orderBy } from 'firebase/firestore';
-import { Bell, Check, Trash2, Eye, MessageSquare, Calendar, Star, Loader2 } from 'lucide-react';
+import { Bell, Check, Eye, Calendar, Star, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface NotificationItem {

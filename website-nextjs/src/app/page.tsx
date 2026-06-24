@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
-import PublicOnlyGate from '@/components/auth/PublicOnlyGate';
 import HeroSection from '@/components/home/HeroSection';
 import SearchHub from '@/components/home/SearchHub';
 import StatsSection from '@/components/home/StatsSection';
@@ -21,21 +20,19 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <PublicOnlyGate>
-      <main className="min-h-screen bg-[#0a0a1a]">
-        <Header />
-        <HeroSection />
-        <SearchHub />
-        <StatsSection />
-        <CategoriesSection />
-        <TrendingJobs />
-        <FeaturedBusinesses />
-        <BusinessUpdates />
-        <TestimonialsSection />
-        <HomeFooter />
-        <BottomNav />
-        <FloatingWhatsApp />
-      </main>
-    </PublicOnlyGate>
+    <main className="min-h-screen bg-[#0a0a1a]">
+      <Header />
+      <HeroSection />
+      <SearchHub />
+      <StatsSection />
+      <CategoriesSection />
+      <TrendingJobs />
+      <FeaturedBusinesses />
+      <BusinessUpdates />
+      <TestimonialsSection />
+      <HomeFooter />
+      <BottomNav />
+      <FloatingWhatsApp />
+    </main>
   );
 }

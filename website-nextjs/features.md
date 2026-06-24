@@ -1,569 +1,1297 @@
-# THENIJOBS Website — Complete Features & Functions Inventory
+# THENIJOBS Platform - Complete Guide with Workflows
 
-## 1. Public Pages (No Login Required)
-
-### Home Page (`/`)
-| Feature | Implementation |
-|---------|---------------|
-| Hero Section | Animated hero with tagline, CTA buttons |
-| Search Hub | Unified search across jobs, businesses, and services |
-| Live Stats Counter | Real-time platform statistics (jobs, companies, users) |
-| Categories Section | Browse businesses by industry category |
-| Trending Jobs | Latest and trending job listings carousel |
-| Featured Businesses | Premium/verified businesses showcase |
-| Business Updates | Recent business activity feed |
-| Testimonials | User testimonials with ratings |
-| Footer | Navigation links, social links, contact info |
-| Floating WhatsApp Button | Quick WhatsApp contact CTA |
-| Bottom Navigation | Mobile-friendly bottom nav bar |
-
-### Jobs Listing Page (`/jobs`)
-| Feature | Implementation |
-|---------|---------------|
-| Job Search | Search by keyword, title, company, skills |
-| Filters | Filter by district, job type, category, salary range |
-| Sorting | Sort by newest, featured first, salary |
-| Verified Only Toggle | Filter to show only verified employer jobs |
-| Job Cards | Cards with company logo, title, location, salary, badges |
-| Featured/Urgent/Premium Badges | Visual badges for premium listings |
-| Pagination/Infinite Scroll | Browse through all listings |
-
-### Job Detail Page (`/jobs/[id]`)
-| Feature | Implementation |
-|---------|---------------|
-| Full Job Description | Complete job details rendering |
-| Company Info Sidebar | Linked company profile summary |
-| Apply Button | Direct application with resume attachment |
-| Save Job | Bookmark jobs for later |
-| Share Job | Share via social/WhatsApp |
-| Similar Jobs | Related job recommendations |
-
-### Services / Business Directory (`/services`)
-| Feature | Implementation |
-|---------|---------------|
-| Service Provider Search | Search by name, category, tagline |
-| Category Quick Pills | Horizontal scrollable category filter |
-| District Filter | Location-based filtering |
-| Verified Only Toggle | Show only verified businesses |
-| Sort Options | Featured First, Top Rated, Most Jobs, Newest |
-| Service Cards | Cards with logo initials, badges, ratings, job counts |
-| CTA to Register | "List Your Services Free" call-to-action |
-
-### Businesses Page (`/businesses`)
-| Feature | Implementation |
-|---------|---------------|
-| Business Directory | Full company listing with search |
-| Category Filtering | Filter by industry vertical |
-| Business Cards | Cards with company info, verification status |
-
-### Business Category Pages (`/businesses/[category]`)
-| Feature | Implementation |
-|---------|---------------|
-| Category-Specific Listing | Filtered view by industry category |
-| SEO-Optimized | Dynamic metadata per category |
-
-### Company Profile Page (`/company/[slug]`)
-| Feature | Implementation |
-|---------|---------------|
-| Company Overview | Full company profile with description |
-| Company Gallery | Photos and videos |
-| Contact Information | Phone, email, WhatsApp, website |
-| Social Media Links | Facebook, Instagram, LinkedIn, YouTube |
-| Map/Location | Address with district info |
-| Verification Badges | GST, mobile, email, business verification |
-| Active Jobs | Open positions at this company |
-| Reviews | Customer/employee reviews with ratings |
-| Lead/Enquiry Form | Contact form for business leads |
-| Share Profile | Social sharing |
-
-### Company Registration (`/company/register`)
-| Feature | Implementation |
-|---------|---------------|
-| Multi-Step Form | Guided company registration wizard |
-| GST Verification | GST number input and validation |
-| Logo/Cover Upload | Image upload to Firebase Storage |
-| Category Selection | Industry category picker |
-| Contact Details | Phone, email, WhatsApp, website |
-| Social Media Links | Add all social profiles |
-| Gallery Upload | Multiple image/video upload |
-| Service Description | Rich text company description |
-
-### Pricing Page (`/pricing`)
-| Feature | Implementation |
-|---------|---------------|
-| 4 Plans Display | Free, Basic (₹40/mo), Premium (₹100/mo), Enterprise (₹190/mo) |
-| Monthly/Annual Toggle | 20% discount for annual billing |
-| Feature Comparison | Detailed feature checklist per plan |
-| Popular Plan Badge | "Most Popular" highlight on Premium |
-| FAQ Accordion | 5 expandable FAQ items |
-| All Plans Include | Common features across plans |
+## Table of Contents
+1. Platform Overview
+2. User Roles & Complete Workflows
+3. Detailed Feature Breakdown
+4. Technical Architecture
+5. Database Schema
+6. Integration & Communication Flows
 
 ---
 
-## 2. Authentication System
+## 1. Platform Overview
 
-### Login Page (`/login`)
-| Feature | Implementation |
-|---------|---------------|
-| Email/Password Login | Standard email auth via Firebase |
-| Google Sign-In | OAuth popup via GoogleAuthProvider |
-| Role-Based Redirect | Auto-redirect to admin/employer/seeker dashboard |
-| Custom Redirect URL | `?redirect=` query parameter support |
-| Error Display | Inline error messages |
+### What is THENIJOBS?
+THENIJOBS is a **multi-sided marketplace platform** serving Tamil Nadu that connects:
+- 👤 **Job Seekers** (finding employment)
+- 🏢 **Employers/HR** (hiring talent)
+- 🏭 **Business Owners** (managing companies)
+- 📦 **Suppliers/B2B** (selling products/services)
+- 🔧 **Service Providers** (offering local services)
 
-### Registration Page (`/register`)
-| Feature | Implementation |
-|---------|---------------|
-| 2-Step Wizard | Step 1: Role selection, Step 2: Details |
-| 5 User Roles | Job Seeker, Employer/HR, Business Owner, Supplier, Service Provider |
-| Tamil Sub-Labels | Bilingual role descriptions (English + Tamil) |
-| Email + Password Registration | Firebase createUserWithEmailAndPassword |
-| Google Registration | OAuth with auto-profile seeding |
-| Phone Number (optional) | +91 prefix with 10-digit input |
-| Firestore Profile Seeding | Auto-creates user doc + seeker profile + public profile |
-| Progress Bar | Step indicators |
-
-### Forgot Password (`/forgot-password`)
-| Feature | Implementation |
-|---------|---------------|
-| Email Reset | Firebase sendPasswordResetEmail |
-| Success Confirmation | "Email Sent!" state with check icon |
-| Try Different Email | Reset form option |
+### Key Statistics & Metrics
+- **Active Users**: Tracked via Realtime Database
+- **Live Jobs**: Real-time counter
+- **Revenue Tracking**: Payment & subscription metrics
+- **User Engagement**: Application submissions, interviews scheduled
 
 ---
 
-## 3. Job Seeker Portal (`/seeker/*`)
+## 2. User Roles & Complete Workflows
 
-### Seeker Dashboard (`/seeker/dashboard`)
-| Feature | Implementation |
-|---------|---------------|
-| Profile Strength Meter | Percentage completion indicator |
-| Application Stats | Total applied, shortlisted, interviews, offers |
-| Recent Applications | Latest application status cards |
-| Recommended Jobs | Personalized job recommendations |
-| Quick Actions | Apply, Save, Update Profile shortcuts |
+### 2.1 🎯 JOB SEEKER WORKFLOW
 
-### My Applications (`/seeker/applications`)
-| Feature | Implementation |
-|---------|---------------|
-| Application List | All submitted applications with status |
-| Status Badges | Applied, Shortlisted, Interview, Selected, Rejected |
-| Filter by Status | Filter applications by current status |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      JOB SEEKER JOURNEY                         │
+└─────────────────────────────────────────────────────────────────┘
 
-### Saved Jobs (`/seeker/saved-jobs`)
-| Feature | Implementation |
-|---------|---------------|
-| Bookmarked Jobs | List of saved/favorited job listings |
-| Quick Apply | Apply directly from saved list |
-| Remove from Saved | Unsave jobs |
+Step 1: REGISTRATION & AUTHENTICATION
+├─ Visit Homepage (/)
+├─ Click "Sign Up" or use Google OAuth
+├─ Enter Email/Password or authenticate via Google
+├─ Select Role: "Job Seeker"
+└─ Firebase Auth creates user record
 
-### Profile Management (`/seeker/profile`)
-| Feature | Implementation |
-|---------|---------------|
-| Personal Info | Name, email, phone, address, district |
-| Profile Photo | Upload profile picture to Storage |
-| Skills Management | Add/remove skills tags |
-| Experience History | Add work experiences (company, role, dates) |
-| Education History | Add education entries (institution, degree, dates) |
-| Open to Work Toggle | Visibility flag for employers |
-| Profile Strength Calculator | Auto-calculated completion score |
+Step 2: PROFILE CREATION (Seeker Dashboard)
+├─ Complete Basic Info
+│  ├─ Full Name
+│  ├─ Email & Phone
+│  ├─ Profile Picture (upload to Cloud Storage)
+│  └─ Location/District (select from Tamil Nadu list)
+├─ Add Professional Details
+│  ├─ Skills Tags (searchable, multi-select)
+│  ├─ Years of Experience
+│  ├─ Current Job Title
+│  ├─ Educational Background (10th, 12th, Degree, etc.)
+│  └─ Languages Spoken
+└─ Firestore Updates: seekerProfiles collection
 
-### Resume Management (`/seeker/resume`)
-| Feature | Implementation |
-|---------|---------------|
-| Resume Upload | PDF upload to Firebase Storage |
-| Resume Preview | View uploaded resume |
+Step 3: RESUME MANAGEMENT
+├─ Option A: Upload Existing Resume
+│  ├─ PDF File Upload → Cloud Storage
+│  ├─ Auto-parse (optional AI extraction)
+│  └─ Store Reference in seekerProfiles
+├─ Option B: Use Built-in Resume Builder
+│  ├─ Step-by-step wizard form
+│  ├─ Fill: Personal Info, Experience, Education
+│  ├─ Select Resume Template (Modern/Classic/Minimal)
+│  └─ Export as PDF → Cloud Storage
+└─ Resume URL saved in user profile
 
-### Resume Builder (`/seeker/resume/builder`)
-| Feature | Implementation |
-|---------|---------------|
-| Multi-Section Builder | Step-by-step resume creation |
-| Sections | Personal info, objective, experience, education, skills, certifications |
-| Template Selection | Resume template options |
-| Download/Export | Generate downloadable resume |
+Step 4: JOB DISCOVERY
+├─ Browse Jobs (/jobs)
+├─ Apply Filters
+│  ├─ Location (All Tamil Nadu / Select District)
+│  ├─ Job Category (IT, Sales, Engineering, etc.)
+│  ├─ Salary Range Slider
+│  ├─ Experience Level
+│  └─ Verified Employers Only (toggle)
+├─ Sort Options
+│  ├─ Newest First
+│  ├─ Highest Salary
+│  ├─ Featured/Trending
+│  └─ Most Applications
+└─ View Job Details
+   ├─ Job Title, Description, Requirements
+   ├─ Salary Range & Benefits
+   ├─ Company Logo & Overview
+   ├─ Apply Button
+   └─ Save for Later (savedJobs collection)
 
-### Skills Assessment (`/seeker/skills`)
-| Feature | Implementation |
-|---------|---------------|
-| Skills Dashboard | View and manage skills |
-| Skill Endorsements | Skills validation system |
-| Skill Suggestions | AI-based skill recommendations |
+Step 5: JOB APPLICATION
+├─ Click "Apply Now"
+├─ Application Form Opens
+│  ├─ Select Resume (if multiple)
+│  ├─ Write Custom Cover Letter (optional)
+│  ├─ Confirm Contact Details
+│  └─ Consent to Share Details
+├─ Firebase Cloud Function Validates
+│  ├─ Check if user already applied
+│  ├─ Validate resume exists
+│  └─ Prevent duplicate applications
+├─ Create Record in applications Collection
+│  ├─ applicationId (unique)
+│  ├─ jobId, userId, resumeUrl
+│  ├─ coverLetter, appliedAt (timestamp)
+│  └─ status: "Applied" (initial state)
+└─ Notification Sent to Employer
 
-### Job Alerts (`/seeker/job-alerts`)
-| Feature | Implementation |
-|---------|---------------|
-| Create Alerts | Set keyword, location, job type preferences |
-| Alert Management | Enable/disable/delete alerts |
-| Notification Preferences | Email/push notification settings |
+Step 6: APPLICATION STATUS TRACKING
+Status Transitions (Employer Can Update):
+├─ 🟦 Applied (Initial state)
+│  └─ Application received, awaiting review
+├─ 🟨 Under Review
+│  └─ Employer reviewing profile & resume
+├─ 🟩 Shortlisted
+│  └─ Advanced to next round
+├─ 🔵 Interview Scheduled
+│  └─ Interview invitation sent
+├─ ✅ Selected
+│  └─ Job offer extended
+└─ ❌ Rejected
+   └─ Not selected for this role
 
-### AI Coach (`/seeker/ai-coach`)
-| Feature | Implementation |
-|---------|---------------|
-| Career Guidance | AI-powered career recommendations |
-| Interview Prep | Interview tips and preparation |
-| Resume Tips | Resume improvement suggestions |
-| Waitlist System | AI coach waitlist registration |
+Seeker can view:
+├─ /seeker/dashboard → All applications summary
+├─ View each application status
+├─ See interview details if scheduled
+└─ Download offer letter (if Selected)
 
-### Interviews (`/seeker/interviews`)
-| Feature | Implementation |
-|---------|---------------|
-| Interview Schedule | Upcoming interview calendar |
-| Interview Details | Date, time, mode (in-person/phone/video), location/link |
-| Status Tracking | Scheduled, completed, cancelled, no-show |
+Step 7: INTERVIEW MANAGEMENT
+├─ Employer sends Interview Invitation
+│  ├─ Create record in interviews Collection
+│  └─ Send notification to seeker
+├─ Seeker Receives Interview Details
+│  ├─ Interview Date & Time
+│  ├─ Interview Mode (Video/Phone/In-Person)
+│  ├─ Interview Link (for video calls)
+│  ├─ Venue Address (for in-person)
+│  └─ Duration (30/45/60 mins)
+├─ Seeker Confirms/Reschedules
+│  ├─ Update interviews record status
+│  └─ Notify employer of confirmation
+├─ Interview Reminders
+│  ├─ Email reminder 24 hours before
+│  ├─ SMS reminder 1 hour before
+│  └─ Notification in /seeker/reminders dashboard
+└─ Join Interview
+   ├─ Click "Join Meeting" button
+   ├─ Direct link to video call (Zoom/Google Meet)
+   ├─ Or call phone number provided
+   └─ System logs attendance
 
-### Messages (`/seeker/messages`)
-| Feature | Implementation |
-|---------|---------------|
-| Conversations List | All chat threads with employers |
-| Real-Time Chat | Message sending/receiving via Firestore |
-| Message Types | Text, image, file support |
-| Read Receipts | Read/unread status |
+Step 8: REMINDERS & TASK MANAGEMENT
+Dashboard: /seeker/reminders
+├─ Scheduled Interviews
+│  ├─ Calendar view of upcoming interviews
+│  ├─ Time zones adjusted
+│  └─ Quick action: "Join Now"
+├─ Subscription Expiry Alerts (if premium)
+│  └─ Notify before plan expires
+├─ Custom Reminders
+│  ├─ Create custom checklists (local storage)
+│  ├─ Examples:
+│  │  ├─ "Follow up with Company X"
+│  │  ├─ "Update resume skills"
+│  │  ├─ "Practice for Interview"
+│  │  └─ "Update portfolio"
+│  ├─ Set due dates
+│  └─ Check off as completed
+└─ Application Follow-up Tasks
+   └─ Auto-reminder to check application status
 
-### Notifications (`/seeker/notifications`)
-| Feature | Implementation |
-|---------|---------------|
-| Notification List | All notifications with types |
-| Types | Job alerts, application updates, interview schedules, system |
-| Mark as Read | Individual/bulk read toggling |
-| Action URLs | Deep links to relevant pages |
+Step 9: COMMUNICATION & CHAT
+├─ Employer Sends Message
+│  ├─ Create conversation in conversations Collection
+│  ├─ Send first message
+│  └─ Trigger notification to seeker
+├─ Real-Time Chat (/seeker/messages)
+│  ├─ View all conversations with employers
+│  ├─ Firestore messages collection (ordered by timestamp)
+│  ├─ Send/receive text messages
+│  ├─ Optional file attachments
+│  └─ Read receipts & typing indicators
+└─ Interview Q&A
+   ├─ Ask clarifying questions
+   ├─ Discuss job details
+   └─ Share additional documents
 
-### Settings (`/seeker/settings`)
-| Feature | Implementation |
-|---------|---------------|
-| Account Settings | Email, password, phone management |
-| Notification Preferences | Toggle email/push/SMS notifications |
-| Privacy Settings | Profile visibility controls |
-| Delete Account | Account deletion option |
+Step 10: AI COACH ASSISTANCE
+Dashboard: /seeker/ai-coach
+├─ Resume Enhancement Tips
+│  ├─ AI analyzes uploaded resume
+│  ├─ Suggests improvements
+│  │  ├─ Better wording for achievements
+│  │  ├─ Industry keyword optimization
+│  │  ├─ Format improvements
+│  │  └─ Missing sections to add
+│  └─ One-click apply suggestions
+├─ Mock Interview Practice
+│  ├─ AI generates random interview questions
+│  ├─ Seeker records video response (optional)
+│  ├─ AI provides feedback on:
+│  │  ├─ Content relevance
+│  │  ├─ Confidence assessment
+│  │  ├─ Clarity & communication
+│  │  └─ Estimated score
+│  └─ Practice multiple times
+├─ Job Match Analysis
+│  ├─ Match current profile against browsing jobs
+│  ├─ Show match percentage (0-100%)
+│  ├─ Highlight skills gaps
+│  ├─ Recommend new skills to learn
+│  └─ Suggest similar jobs better suited to profile
+└─ Career Recommendations
+   ├─ Based on profile & applied jobs
+   ├─ Suggest career growth paths
+   ├─ Recommend training/certifications
+   └─ Show salary progression trends in region
 
-### Subscription (`/seeker/subscription`)
-| Feature | Implementation |
-|---------|---------------|
-| Current Plan | Display active subscription |
-| Plan Comparison | Feature comparison table |
-| Upgrade/Downgrade | Plan change options |
-
----
-
-## 4. Employer Portal (`/employer/*`)
-
-### Employer Dashboard (`/employer/dashboard`)
-| Feature | Implementation |
-|---------|---------------|
-| Company Overview Stats | Active jobs, applications, views, leads |
-| Recent Applications | Latest candidate applications |
-| Job Performance | Views, applications per job |
-| Quick Actions | Post job, view candidates, manage company |
-
-### Post Job (`/employer/post-job`)
-| Feature | Implementation |
-|---------|---------------|
-| Job Creation Form | Title, description, requirements |
-| Job Type Selection | Full-time, part-time, internship, remote, WFH, fresher, contract |
-| Location & District | Tamil Nadu district picker |
-| Salary Range | Min/max with salary type (monthly/yearly/hourly) |
-| Skills Tags | Multi-select skill requirements |
-| Benefits | Add job benefits list |
-| Deadline Setting | Application deadline date |
-| Premium/Urgent/Featured Flags | Paid upgrade badges |
-| Plan-Based Limits | Cloud Function enforces job posting quotas |
-
-### Manage Jobs (`/employer/jobs`)
-| Feature | Implementation |
-|---------|---------------|
-| Job Listings | All posted jobs with status |
-| Status Management | Active, paused, closed, pending |
-| Edit Job | Modify existing job postings |
-| Delete Job | Remove job listings |
-| Application Count | Per-job application metrics |
-
-### Candidates / Talent Search (`/employer/candidates`, `/employer/talent-search`)
-| Feature | Implementation |
-|---------|---------------|
-| Candidate Database | Browse public seeker profiles |
-| Search & Filter | Search by skills, location, experience |
-| Profile Preview | View candidate profiles |
-| Shortlist | Save interesting candidates |
-
-### Company Profile (`/employer/company-profile`)
-| Feature | Implementation |
-|---------|---------------|
-| Edit Company Info | Update all company details |
-| Gallery Management | Add/remove photos and videos |
-| Verification Badges | View and manage verification status |
-| Social Links | Manage social media profiles |
-
-### Interviews (`/employer/interviews`)
-| Feature | Implementation |
-|---------|---------------|
-| Schedule Interviews | Create interview slots |
-| Interview Calendar | View all scheduled interviews |
-| Status Updates | Mark as completed/cancelled/no-show |
-
-### Lead Management (`/employer/leads`)
-| Feature | Implementation |
-|---------|---------------|
-| Lead Dashboard | All incoming business enquiries |
-| Lead Status | New, contacted, qualified, converted, lost |
-| Lead Details | Contact info, message, source |
-
-### Messages (`/employer/messages`)
-| Feature | Implementation |
-|---------|---------------|
-| Conversation Threads | Chat with candidates |
-| Real-Time Messaging | Firestore-backed live chat |
-
-### Reviews (`/employer/reviews`)
-| Feature | Implementation |
-|---------|---------------|
-| Company Reviews | View all reviews for company |
-| Reply to Reviews | Respond to customer reviews |
-| Rating Overview | Average rating display |
-
-### Reports & Analytics (`/employer/reports`)
-| Feature | Implementation |
-|---------|---------------|
-| Job Performance Reports | Views, applications, conversion rates |
-| Lead Analytics | Lead sources, conversion funnel |
-| Company Visibility | Profile view trends |
-
-### Billing (`/employer/billing`)
-| Feature | Implementation |
-|---------|---------------|
-| Payment History | Past transactions |
-| Invoice Download | Invoice/receipt access |
-
-### Subscription (`/employer/subscription`)
-| Feature | Implementation |
-|---------|---------------|
-| Current Plan Display | Active plan details |
-| Upgrade Options | Plan comparison and upgrade |
-| Payment Request | Submit payment request for plan change |
-
-### Settings (`/employer/settings`)
-| Feature | Implementation |
-|---------|---------------|
-| Company Settings | Business preferences |
-| Notification Preferences | Toggle alert types |
-| Account Management | Password, email changes |
+Workflow Summary:
+┌──────────┬──────────┬────────────┬──────────┬─────────┐
+│ Register │ Build    │ Discover & │ Interview│ Get Job │
+│ Profile  │ Resume   │ Apply Jobs │ Process  │ Offer   │
+└──────────┴──────────┴────────────┴──────────┴─────────┘
+```
 
 ---
 
-## 5. Admin Panel (`/admin/*`)
+### 2.2 🏢 EMPLOYER/COMPANY WORKFLOW
 
-### Admin Dashboard (`/admin/dashboard`)
-| Feature | Implementation |
-|---------|---------------|
-| Platform Overview | Total users, jobs, companies, revenue |
-| Real-Time Stats | Live dashboard with Realtime Database |
-| Recent Activity | Activity log feed |
-| Quick Actions | Approve companies, manage users |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     EMPLOYER JOURNEY                            │
+└─────────────────────────────────────────────────────────────────┘
 
-### User Management (`/admin/users`)
-| Feature | Implementation |
-|---------|---------------|
-| User List | All registered users with roles |
-| Role Assignment | Change user roles |
-| Verification Management | Verify/reject users |
-| User Search | Search by name, email, role |
-| Delete Users | Remove user accounts |
+Step 1: REGISTRATION & COMPANY VERIFICATION
+├─ Sign Up as Employer
+│  ├─ Email/Password or Google OAuth
+│  └─ Select Role: "Employer/HR"
+├─ Company Registration Form
+│  ├─ Company Name
+│  ├─ GST Number (mandatory verification)
+│  │  ├─ Validate against GSTIN API
+│  │  ├─ Verify company is registered
+│  │  ├─ Check if already registered on platform
+│  │  └─ Flag for admin review if duplicate
+│  ├─ Company Logo Upload
+│  │  ├─ Cloud Storage
+│  │  └─ Resize/optimize
+│  ├─ Company Description (250-500 chars)
+│  ├─ Industry Category
+│  ├─ Company Size (10-50, 50-200, 200+)
+│  ├─ Website URL
+│  ├─ Founded Year
+│  └─ Headquarters Address (Tamil Nadu location)
+├─ Store in companies Collection
+│  ├─ companyId (unique)
+│  ├─ ownerId (links to user)
+│  ├─ verificationStatus: "Pending" (initial)
+│  ├─ gstVerified: false (until admin approves)
+│  └─ createdAt timestamp
+└─ Notification Sent to Admin
+   └─ "New Company Registration Pending Verification"
 
-### Business/Company Management (`/admin/businesses`)
-| Feature | Implementation |
-|---------|---------------|
-| Company List | All registered companies |
-| Approval Queue | Pending verification requests |
-| Verify/Reject | Approve or reject companies |
-| Featured Toggle | Mark companies as featured |
-| Premium Toggle | Set premium status |
+Step 2: ADMIN VERIFICATION (Behind Scenes)
+├─ Admin Portal (/admin/companies)
+├─ Review Company Details
+│  ├─ Check GST validity
+│  ├─ Verify company legitimacy
+│  ├─ Review logo & description
+│  └─ Check for duplicate registrations
+├─ Approve or Reject
+│  ├─ If Approved:
+│  │  ├─ Set gstVerified = true
+│  │  ├─ verificationStatus = "Verified"
+│  │  └─ Send approval email to employer
+│  └─ If Rejected:
+│     ├─ Provide reason for rejection
+│     └─ Allow resubmission with corrections
+└─ Featured Status (Optional)
+   ├─ Admin can toggle "Featured" badge
+   └─ Featured companies appear at top of listings
 
-### Job Management (`/admin/jobs`)
-| Feature | Implementation |
-|---------|---------------|
-| All Jobs | View all posted jobs |
-| Job Moderation | Approve/reject/pause jobs |
-| Featured/Urgent Flags | Admin-set premium flags |
-| Bulk Actions | Mass status updates |
+Step 3: COMPANY PROFILE COMPLETION
+Dashboard: /employer/dashboard
+├─ Add Multiple Branches (Optional)
+│  ├─ Branch Name
+│  ├─ Address & District
+│  ├─ Phone Number
+│  └─ Manager Contact
+├─ Company Gallery (Media Upload)
+│  ├─ Office Photos (5-10 images)
+│  ├─ Team Photos
+│  ├─ Work Culture Videos
+│  └─ Cloud Storage handles all files
+├─ Company Social Links
+│  ├─ LinkedIn Page
+│  ├─ Twitter/X Account
+│  ├─ Facebook Page
+│  └─ Instagram Handle
+├─ Contact Information
+│  ├─ HR Email
+│  ├─ Recruitment Phone
+│  └─ Official Website
+└─ Firestore updates companies Collection with all data
 
-### Lead Management (`/admin/leads`)
-| Feature | Implementation |
-|---------|---------------|
-| All Leads | Platform-wide lead view |
-| Assign Leads | Assign leads to team members |
-| Lead Analytics | Source and conversion tracking |
+Step 4: SUBSCRIPTION & PAYMENT PLAN
+├─ Choose Subscription Tier
+│  ├─ 🆓 Free Plan
+│  │  ├─ 1 Active Job Post
+│  │  ├─ Receive Applications
+│  │  ├─ Basic Analytics
+│  │  └─ No video interviews
+│  ├─ 💚 Basic Plan
+│  │  ├─ 5 Active Job Posts
+│  │  ├─ Receive Applications
+│  │  ├─ View Candidate Database
+│  │  ├─ 1 Video Interview/month
+│  │  └─ Email Support
+│  ├─ 💙 Premium Plan
+│  │  ├─ 20 Active Job Posts
+│  │  ├─ Full Candidate Search & Filters
+│  │  ├─ Unlimited Video Interviews
+│  │  ├─ Bulk Email Candidates
+│  │  ├─ Advanced Analytics
+│  │  └─ Priority Support
+│  └─ 💎 Enterprise Plan
+│     ├─ Unlimited Active Posts
+│     ├─ Dedicated Account Manager
+│     ├─ Custom Branding
+│     ├─ API Access
+│     └─ Custom Integrations
+├─ Payment Methods
+│  ├─ Razorpay Credit/Debit Card Payment (instant)
+│  ├─ UPI Payment (instant)
+│  └─ Manual Bank Transfer
+│     ├─ Employer submits request
+│     ├─ Admin reviews & approves
+│     ├─ Creates payment record
+│     └─ Activates subscription
+├─ Store in subscriptions Collection
+│  ├─ subscriptionId
+│  ├─ companyId
+│  ├─ planType (Free/Basic/Premium/Enterprise)
+│  ├─ startDate & expiryDate
+│  ├─ jobPostingQuota (based on plan)
+│  └─ paymentStatus (Pending/Completed/Failed)
+└─ Update jobPostingQuota in Cloud Functions
+   └─ Enforce posting limits per subscription level
 
-### Reviews Management (`/admin/reviews`)
-| Feature | Implementation |
-|---------|---------------|
-| All Reviews | Platform-wide review moderation |
-| Approve/Reject | Review content moderation |
-| Flag Management | Handle flagged reviews |
+Step 5: JOB POSTING
+Dashboard: /employer/post-job
+├─ Create New Job Post
+├─ Basic Job Information
+│  ├─ Job Title
+│  ├─ Job Category (IT, HR, Sales, Engineering, etc.)
+│  ├─ No. of Vacancies (how many positions)
+│  └─ Work Mode (Full-time, Part-time, Contract, Remote)
+├─ Job Details
+│  ├─ Job Description (detailed)
+│  ├─ Key Responsibilities
+│  ├─ Required Skills (multi-select with suggestions)
+│  ├─ Required Experience (min years)
+│  ├─ Educational Qualification
+│  └─ Languages Required
+├─ Location & Salary
+│  ├─ Select District (select from Tamil Nadu districts)
+│  ├─ Select Area/City within district
+│  ├─ Salary Range (Min & Max)
+│  ├─ Salary Visibility (Public or Hidden)
+│  ├─ Benefits Offered (Health Insurance, Bonus, etc.)
+│  └─ Perks List
+├─ Additional Details
+│  ├─ Reporting Manager Title
+│  ├─ Company Culture Notes
+│  ├─ Application Deadline Date
+│  ├─ Interview Process Description
+│  └─ Questions to Ask Candidates (custom pre-screening)
+├─ Cloud Function Validation
+│  ├─ Check subscription posting limit not exceeded
+│  ├─ If limit reached:
+│  │  ├─ Show: "Upgrade plan to post more jobs"
+│  │  └─ Block posting
+│  └─ If limit available: Allow posting
+├─ Create Job Record in jobs Collection
+│  ├─ jobId (unique)
+│  ├─ companyId
+│  ├─ All job details
+│  ├─ status: "Active"
+│  ├─ views: 0 (counter for analytics)
+│  ├─ applicationsCount: 0
+│  ├─ createdAt & expiryAt (duration: 30/60/90 days)
+│  ├─ featured: false (unless paid for)
+│  └─ salaryTransparency: true/false
+└─ Job Goes Live
+   ├─ Appears in /jobs board immediately
+   ├─ Searchable and filterable
+   ├─ Show "Featured" badge (if selected)
+   └─ Visible to all job seekers
 
-### Services Management (`/admin/services`)
-| Feature | Implementation |
-|---------|---------------|
-| Service Listings | All service provider entries |
-| Approve/Reject | Service listing moderation |
-| Featured Toggle | Promote services |
+Step 6: TALENT SEARCH & CANDIDATE SOURCING
+Dashboard: /employer/talent-search
+├─ Access Full Candidate Database
+│  ├─ Available only to Basic+ plans
+│  ├─ Search Bar with keywords
+│  └─ Auto-complete suggestions from skill tags
+├─ Advanced Filters
+│  ├─ Skills (multi-select)
+│  │  └─ Filter candidates with specific skills
+│  ├─ Location/District
+│  │  └─ Find candidates in target areas
+│  ├─ Experience Range
+│  │  └─ Filter by years of experience
+│  ├─ Education Level
+│  │  └─ 10th Pass, 12th, Degree, Post-Graduate
+│  ├─ Languages
+│  │  └─ Tamil, English, Hindi, etc.
+│  ├─ Availability Status
+│  │  ├─ Actively Looking
+│  │  ├─ Open to Offers
+│  │  └─ Not Available
+│  └─ Salary Expectations
+│     └─ Match with budget
+├─ Search Results Display
+│  ├─ Candidate Card Layout
+│  │  ├─ Profile Picture
+│  │  ├─ Name & Job Title
+│  │  ├─ Skills Tags
+│  │  ├─ Experience Summary
+│  │  ├─ Location
+│  │  ├─ Match % to open job
+│  │  └─ Action Buttons:
+│  │     ├─ View Full Profile
+│  │     ├─ Send Interview Invite
+│  │     ├─ Save Candidate
+│  │     └─ Message Candidate
+│  └─ Bulk Actions
+│     ├─ Select Multiple Candidates
+│     ├─ Bulk Email (with template)
+│     ├─ Bulk Interview Invite
+│     └─ Add to Saved Pool
+├─ Saved Candidates List
+│  ├─ Star/bookmark candidates
+│  ├─ Organize by job
+│  ├─ Bulk manage saved candidates
+│  └─ Export candidate list (CSV)
+└─ Advanced Analytics
+   ├─ Search history
+   ├─ Top skills searched
+   └─ Candidate demographics
 
-### Notifications (`/admin/notifications`)
-| Feature | Implementation |
-|---------|---------------|
-| Broadcast Notifications | Send platform-wide announcements |
-| Targeted Notifications | Send to specific user groups |
+Step 7: APPLICATION MANAGEMENT
+Dashboard: /employer/applications (or applications tab)
+├─ View All Applications
+│  ├─ Filter by job post
+│  ├─ Filter by status
+│  ├─ Sort by date applied
+│  └─ Sort by match score
+├─ Application Card View
+│  ├─ Candidate Name & Photo
+│  ├─ Applied Position
+│  ├─ Applied Date & Time
+│  ├─ Current Status
+│  ├─ Quick Actions:
+│  │  ├─ View Resume (PDF)
+│  │  ├─ View Cover Letter
+│  │  ├─ View Full Profile
+│  │  ├─ View Match Score
+│  │  └─ Action Dropdown:
+│  │     ├─ Shortlist
+│  │     ├─ Send Interview Invite
+│  │     ├─ Reject (with reason)
+│  │     └─ Message Candidate
+│  └─ Application History
+│     └─ Timeline of all updates for this application
+├─ Bulk Application Management
+│  ├─ Select multiple applications
+│  ├─ Bulk Status Update
+│  │  ├─ Change to "Shortlisted"
+│  │  ├─ Change to "Under Review"
+│  │  └─ Bulk Reject
+│  └─ Bulk Interview Scheduling
+├─ Application Status Updates
+│  ├─ Change: "Applied" → "Under Review"
+│  ├─ Change: "Under Review" → "Shortlisted"
+│  ├─ Change: "Shortlisted" → "Interview Scheduled"
+│  ├─ Change: "Interview Scheduled" → "Selected"
+│  └─ Change: Any → "Rejected"
+│     ├─ Provide rejection reason
+│     └─ Send notification to candidate
+└─ Firestore Updates
+   └─ Update applications Collection status field
 
-### Ad Management (`/admin/ads`)
-| Feature | Implementation |
-|---------|---------------|
-| Advertisement CRUD | Create/edit/delete ads |
-| Ad Types | Banner, sponsored, featured |
-| Performance Metrics | Impressions, clicks tracking |
-| Status Management | Active, paused, expired |
+Step 8: INTERVIEW SCHEDULING & MANAGEMENT
+Dashboard: /employer/interviews
+├─ Send Interview Invite to Shortlisted Candidate
+│  ├─ Select Candidate from application
+│  ├─ Or search talent database
+│  ├─ Create Interview Record
+│  │  ├─ Interview Title/Round Name
+│  │  ├─ Proposed Date & Time
+│  │  ├─ Interview Duration (30/45/60 mins)
+│  │  ├─ Interview Mode:
+│  │  │  ├─ Video Call (Zoom/Google Meet auto-link)
+│  │  │  ├─ Phone Call (provide phone number)
+│  │  │  └─ In-Person (provide venue address)
+│  │  ├─ Interviewer Details (HR/Hiring Manager)
+│  │  ├─ Interview Description/Questions
+│  │  └─ Interview Link (auto-generated for video)
+│  └─ Send Invite
+│     ├─ Email notification to candidate
+│     ├─ SMS reminder option
+│     └─ In-app notification
+├─ Interview Calendar
+│  ├─ Calendar View of all scheduled interviews
+│  ├─ Color-coded by status
+│  │  ├─ Blue: Pending Confirmation
+│  │  ├─ Green: Confirmed
+│  │  └─ Red: Rejected/Rescheduled
+│  ├─ Quick Actions:
+│  │  ├─ Reschedule
+│  │  ├─ Cancel
+│  │  └─ Send Reminder
+│  └─ Time Zone Support
+│     └─ Auto-adjust candidate's local time
+├─ Interview Feedback
+│  ├─ After interview completes
+│  ├─ Interviewer submits Feedback Form
+│  │  ├─ Overall Rating (1-5 stars)
+│  │  ├─ Technical Skills (1-5)
+│  │  ├─ Communication (1-5)
+│  │  ├─ Cultural Fit (1-5)
+│  │  ├─ Comments & Notes
+│  │  └─ Recommendation (Proceed/Hold/Reject)
+│  └─ Feedback Stored in interviews Collection
+├─ Move to Next Round
+│  ├─ If Passed Round 1: Create Round 2 Interview
+│  ├─ Schedule with next interviewer
+│  └─ Repeat feedback process
+└─ Final Decision
+   ├─ After all rounds complete
+   ├─ Make Final Selection Decision
+   └─ Generate Offer Letter (if selected)
 
-### Subscription Management (`/admin/subscriptions`)
-| Feature | Implementation |
-|---------|---------------|
-| All Subscriptions | Platform-wide subscription view |
-| Payment Requests | Process payment approvals |
-| Plan Management | Subscription plan configuration |
+Step 9: OFFER & HIRING
+├─ Candidate Selected
+│  ├─ Generate Offer Letter
+│  │  ├─ Job Title
+│  │  ├─ Salary Details
+│  │  ├─ Joining Date
+│  │  ├─ Employment Terms
+│  │  └─ Benefits Summary
+│  ├─ Send to Candidate
+│  │  ├─ Email PDF offer
+│  │  ├─ In-app notification
+│  │  └─ SMS confirmation
+│  └─ Store in applications Collection
+│     └─ Update status to "Offer Extended"
+├─ Candidate Acceptance/Rejection
+│  ├─ If Accepted:
+│  │  ├─ Update status to "Selected"
+│  │  ├─ Close Job Posting (if all positions filled)
+│  │  ├─ Auto-reject remaining applicants
+│  │  └─ Store in hire_history collection
+│  └─ If Rejected:
+│     ├─ Update status back to "Interview Scheduled"
+│     ├─ Keep job posting active
+│     └─ Continue recruiting
+└─ Onboarding (Post-Hiring)
+   ├─ Create Onboarding Checklist
+   ├─ Send Joining Documentation
+   ├─ Schedule First-Day Orientation
+   └─ Store in onboarding Collection
 
-### Reports (`/admin/reports`)
-| Feature | Implementation |
-|---------|---------------|
-| Platform Analytics | User growth, revenue, engagement |
-| Business Reports | Company performance metrics |
-| Job Market Reports | Job posting trends |
+Step 10: LEADS & BUSINESS INQUIRIES (For B2B Companies)
+Dashboard: /employer/leads
+├─ This applies to companies listing products/services
+├─ Receive Inquiries from B2B Clients
+│  ├─ Via Company Showcase page
+│  ├─ Customer fills inquiry form:
+│  │  ├─ Business Name
+│  │  ├─ Contact Person
+│  │  ├─ Email & Phone
+│  │  ├─ Message/Inquiry Details
+│  │  ├─ Quote Amount (optional)
+│  │  └─ Preferred Contact Method
+│  └─ Inquiry stored in leads Collection
+├─ Kanban-Style Funnel Management
+│  ├─ 🆕 New Leads (inbox)
+│  │  ├─ Auto-notify employer
+│  │  ├─ Click to view details
+│  │  └─ Auto-move after 1st contact
+│  ├─ 📞 Contacted
+│  │  ├─ Employer clicked "Contact" button
+│  │  ├─ Call/Message log created
+│  │  └─ Tracks when contacted
+│  ├─ ✅ Qualified
+│  │  ├─ Customer interested & meeting scheduled
+│  │  ├─ Proposal shared
+│  │  └─ Move manually or auto-rule
+│  ├─ 🤝 Converted
+│  │  ├─ Deal closed, order received
+│  │  ├─ Mark as converted
+│  │  └─ Auto-calculate conversion rate
+│  └─ ❌ Lost
+│     ├─ Customer rejected
+│     ├─ Log reason
+│     └─ Archive for analysis
+├─ Lead Actions
+│  ├─ View Full Lead Details
+│  ├─ Call Candidate (VOIP/Phone)
+│  ├─ Send Email/Message
+│  ├─ Share Proposal/Quotation
+│  ├─ Schedule Callback
+│  ├─ Add Tags (VIP, Hot Lead, etc.)
+│  └─ Set Reminder/Follow-up Date
+├─ Lead Analytics
+│  ├─ Total Leads Received (MTD)
+│  ├─ Conversion Rate (%)
+│  ├─ Average Deal Value
+│  ├─ Sales Pipeline Value
+│  ├─ Lead Source Breakdown
+│  └─ Top Converting Products
+└─ CRM Features
+   ├─ Auto-email sequence after lead received
+   ├─ Scheduled reminders for follow-ups
+   ├─ Lead scoring (hot/warm/cold)
+   ├─ Notes & activity log per lead
+   └─ Export leads (CSV for external CRM)
 
-### Security (`/admin/security`)
-| Feature | Implementation |
-|---------|---------------|
-| Activity Logs | All admin actions audit trail |
-| Security Settings | Platform security configuration |
+Step 11: REVIEWS & REPUTATION MANAGEMENT
+├─ Employer Receives Reviews
+│  ├─ From job candidates
+│  ├─ From customers (B2B)
+│  └─ Stored in reviews Collection
+├─ Manage Reviews
+│  ├─ View all reviews on company profile
+│  ├─ See average rating (1-5 stars)
+│  ├─ Reply to reviews
+│  │  ├─ Public response
+│  │  ├─ Address concerns
+│  │  └─ Thank positive reviews
+│  ├─ Flag inappropriate reviews
+│  │  └─ Request admin removal if needed
+│  └─ Analytics
+│     ├─ Review trend over time
+│     ├─ Common feedback themes
+│     └─ Sentiment analysis
+└─ Reputation Dashboard
+   ├─ Overall Rating Score
+   ├─ Review Count
+   ├─ Response Rate %
+   └─ Trust Badges (if rating > 4.5 stars)
 
-### Settings (`/admin/settings`)
-| Feature | Implementation |
-|---------|---------------|
-| Platform Settings | Global configuration |
-| Subscription Plan Config | Plan pricing and features |
-| Franchise Management | District franchise settings |
+Workflow Summary:
+┌────────────┬──────────┬─────────────┬─────────┬──────────┬────────┐
+│ Register & │ Add Job  │ Receive &   │ Schedule│ Conduct  │ Offer &│
+│ Verify     │ Postings │ Review Apps │Interview│ Interview│ Hire   │
+└────────────┴──────────┴─────────────┴─────────┴──────────┴────────┘
+```
 
 ---
 
-## 6. Cloud Functions (Firebase Functions v2)
+### 2.3 🏪 BUSINESS OWNER / SUPPLIER WORKFLOW
 
-| Function | Purpose |
-|----------|---------|
-| `healthCheck` | API health check endpoint |
-| `syncMobileVerification` | Syncs Firebase Auth phone verification to Firestore user/company docs |
-| `createJobPosting` | Server-side job posting with plan-based limits, quota enforcement |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│           BUSINESS OWNER / SUPPLIER JOURNEY                     │
+└─────────────────────────────────────────────────────────────────┘
 
-### createJobPosting Enforces:
-- User must be `employer` or `business_owner`
-- Mobile number must be verified
-- Company ownership validation
-- Plan-based job posting limits (Free: 1, Basic: 3, Premium: 15, Enterprise: unlimited)
-- Featured/Urgent/Premium badge plan restrictions
-- Auto-generates slug, sets initial status to `pending`
-- Writes activity log entry
+Step 1: REGISTRATION & VERIFICATION
+├─ Select Role: "Business Owner" or "Supplier/B2B"
+├─ Complete Registration
+│  ├─ Company/Business Name
+│  ├─ GST Number (mandatory)
+│  ├─ Business Category (Retail, Manufacturing, Services, etc.)
+│  ├─ Phone Number Verification
+│  │  ├─ OTP sent to phone
+│  │  ├─ Verify to prove ownership
+│  │  └─ Phone stored in users Collection
+│  ├─ Email Verification
+│  └─ Set Password
+├─ Admin Verification Process
+│  ├─ Auto-verify phone number
+│  ├─ Check GST validity via GSTIN database
+│  ├─ Auto-approve if GST valid
+│  ├─ verificationStatus: "Verified" (if approved)
+│  └─ Set businessVerified flag in companies Collection
+└─ Account Status: Ready to Post
+
+Step 2: BUSINESS PROFILE SETUP
+Dashboard: /business/dashboard
+├─ Complete Company Profile
+│  ├─ Company Logo Upload
+│  ├─ Company Description (services/products offered)
+│  ├─ Business Category & Subcategories
+│  ├─ Years in Business
+│  ├─ Business Size (Sole Proprietor, 10-50 employees, etc.)
+│  ├─ Headquarters Address
+│  │  ├─ Street Address
+│  │  ├─ District (Tamil Nadu)
+│  │  ├─ City
+│  │  ├─ Pincode
+│  │  └─ Map coordinates
+│  ├─ Contact Information
+│  │  ├─ Primary Phone
+│  │  ├─ Business Email
+│  │  ├─ Website URL
+│  │  └─ WhatsApp Business Number
+│  └─ Operating Hours
+│     └─ Mon-Fri, Sat-Sun timings
+├─ Multiple Locations (Chain Businesses)
+│  ├─ Add Branch Locations
+│  ├─ Each location independent
+│  └─ Cross-link inventory (optional)
+├─ Upload Business Documents
+│  ├─ GST Certificate
+│  ├─ Business Registration
+│  ├─ Trade License
+│  ├─ Bank Account Proof
+│  └─ All stored in Cloud Storage
+└─ Firestore updates companies Collection
+
+Step 3: PRODUCT/SERVICE LISTING
+Dashboard: /business/listings
+├─ Add Products or Services
+├─ Product Listing Details
+│  ├─ Product/Service Name
+│  ├─ SKU/Reference Code
+│  ├─ Category (from taxonomy)
+│  ├─ Detailed Description
+│  ├─ Price (Offer Price)
+│  ├─ Cost Price (for analytics only)
+│  ├─ Minimum Order Quantity
+│  ├─ Available Stock Quantity
+│  ├─ Availability Status (In Stock/Out of Stock)
+│  ├─ Product Images (5-10 photos)
+│  │  ├─ Upload from device
+│  │  ├─ Cloud Storage handles uploads
+│  │  └─ Resize & thumbnail auto-generated
+│  ├─ Product Video (optional, embedded)
+│  ├─ Specifications
+│  │  ├─ Material, Size, Weight, etc.
+│  │  └─ Technical specs
+│  ├─ Certifications/Compliance
+│  │  └─ ISO, BIS, CE marks, etc.
+│  ├─ Delivery Options
+│  │  ├─ Pick-up (From Location)
+│  │  ├─ Same-city Delivery
+│  │  ├─ Pan-India Shipping
+│  │  └─ Delivery Charge
+│  ├─ Warranty/Guarantee Terms
+│  ├─ Return Policy
+│  ├─ Tags for Searchability
+│  │  ├─ Material tags
+│  │  ├─ Application tags
+│  │  └─ Feature tags
+│  └─ SEO Meta Information
+│     ├─ Custom URL slug
+│     ├─ Meta description
+│     └─ Meta keywords
+├─ Store in products Collection
+│  ├─ productId
+│  ├─ companyId (owner)
+│  ├─ All listing details
+│  ├─ status: "Active" (public)
+│  ├─ createdAt & updatedAt timestamps
+│  ├─ viewCount: 0
+│  ├─ likeCount: 0
+│  └─ rating: 0
+└─ Product Goes Live
+   ├─ Searchable via /services or marketplace
+   ├─ Appears in category listings
+   ├─ Indexed by search engine
+   └─ Shareable via social media
+
+Step 4: BULK PRODUCT IMPORT (B2B Feature)
+├─ For businesses with many products
+├─ Import via CSV Template
+│  ├─ Download CSV template
+│  ├─ Fill in product details:
+│  │  ├─ Name, Category, Price, Stock
+│  │  ├─ Description, Images (URLs)
+│  │  └─ SKU, Tags, Specifications
+│  ├─ Validate data
+│  │  ├─ Check for required fields
+│  │  ├─ Validate image URLs
+│  │  └─ Check for duplicates
+│  └─ Bulk upload 100+ products at once
+├─ Batch Import Schedule
+│  ├─ Schedule for off-peak hours
+│  ├─ Track progress via email notification
+│  └─ Download error report if issues
+└─ Update Existing Products
+   ├─ Bulk edit prices
+   ├─ Bulk update stock levels
+   └─ Bulk status changes (Active/Inactive)
+
+Step 5: INVENTORY MANAGEMENT
+Dashboard: /business/inventory
+├─ Real-Time Stock Tracking
+│  ├─ View all product stock levels
+│  ├─ Color-code by status:
+│  │  ├─ 🟢 In Stock (quantity > reorder level)
+│  │  ├─ 🟡 Low Stock (quantity = reorder level)
+│  │  └─ 🔴 Out of Stock (quantity = 0)
+│  └─ Sort by stock level
+├─ Inventory Alerts
+│  ├─ Auto-alert when stock hits reorder level
+│  ├─ Email notification to inventory manager
+│  ├─ In-app notification
+│  └─ Set custom reorder levels per product
+├─ Stock Adjustments
+│  ├─ Manual stock update
+│  │  ├─ Adjust quantity up/down
+│  │  ├─ Log reason (Purchase, Damage, Return, etc.)
+│  │  └─ Timestamp recorded for audit
+│  └─ Batch adjustments (Excel import)
+├─ Inventory Analytics
+│  ├─ Fastest moving products
+│  ├─ Slow-moving/dead stock products
+│  ├─ Stock value (on-hand value)
+│  ├─ Inventory turnover ratio
+│  ├─ Average days to sell
+│  └─ Forecasting (suggest reorder quantities)
+├─ Multi-Location Inventory
+│  ├─ Track stock across locations
+│  ├─ Transfer stock between branches
+│  ├─ Centralized or distributed views
+│  └─ Location-wise analytics
+└─ Barcode Integration (Optional)
+   ├─ Generate barcodes for products
+   ├─ Print barcode stickers
+   └─ Scan to update inventory
+
+Step 6: CUSTOMER INQUIRIES & LEADS
+├─ Receive Leads from Customers
+│  ├─ Via Product Page Inquiry Form
+│  ├─ Customer submits:
+│  │  ├─ Business Name
+│  │  ├─ Contact Name
+│  │  ├─ Email & Phone
+│  │  ├─ Quantity Required
+│  │  ├─ Message/Special Request
+│  │  └─ Preferred Contact Method
+│  └─ Lead Auto-Stored in leads Collection
+├─ Notification System
+│  ├─ Email notification to business email
+│  ├─ SMS notification to business phone
+│  ├─ WhatsApp notification (if opted-in)
+│  └─ In-app notification in dashboard
+├─ Lead Management Dashboard (/business/leads)
+│  ├─ View All Leads
+│  │  ├─ Filter by product
+│  │  ├─ Filter by status
+│  │  ├─ Sort by date or quantity
+│  │  └─ Search by customer name
+│  ├─ Lead Details Card
+│  │  ├─ Customer Name & Company
+│  │  ├─ Contact Information
+│  │  ├─ Product Inquired
+│  │  ├─ Quantity Required
+│  │  ├─ Message Details
+│  │  ├─ Inquiry Date & Time
+│  │  └─ Lead Status: New/Contacted/Quoted/Converted/Lost
+│  ├─ Quick Actions
+│  │  ├─ Call Customer (VOIP)
+│  │  ├─ Send Email
+│  │  ├─ Send WhatsApp Message
+│  │  ├─ Share Quotation
+│  │  ├─ Schedule Follow-up
+│  │  └─ Move to Next Stage
+│  └─ Bulk Actions
+│     ├─ Send mass email to new leads
+│     ├─ Bulk status change
+│     └─ Bulk export to CRM
+├─ Sales Funnel (Kanban View)
+│  ├─ Column 1: 🆕 New Leads
+│  │  └─ Inbox of inquiries
+│  ├─ Column 2: 📞 Contacted
+│  │  └─ Already called/messaged
+│  ├─ Column 3: 💰 Quoted
+│  │  └─ Quotation sent
+│  ├─ Column 4: ✅ Converted
+│  │  └─ Order received
+│  └─ Column 5: ❌ Lost
+│     └─ Customer rejected
+├─ Lead Scoring (A.I. Optional)
+│  ├─ Hot: High-value, quick response needed
+│  ├─ Warm: Medium-value, regular follow-up
+│  └─ Cold: Low-value, long-term nurture
+└─ Lead Analytics
+   ├─ Total leads (daily/monthly)
+   ├─ Conversion rate (% of Converted)
+   ├─ Avg. time to convert
+   ├─ Lead source breakdown
+   └─ Product-wise lead performance
+
+Step 7: QUOTATION & ORDER MANAGEMENT
+├─ Create Quotations
+│  ├─ For selected lead
+│  ├─ Or manual quotation
+│  ├─ Quotation Form
+│  │  ├─ Customer details auto-filled
+│  │  ├─ Add line items
+│  │  │  ├─ Product name
+│  │  │  ├─ Quantity
+│  │  │  ├─ Unit price
+│  │  │  ├─ Tax rate
+│  │  │  └─ Discount %
+│  │  ├─ Add delivery charges
+│  │  ├─ Add taxes (GST)
+│  │  ├─ Payment terms
+│  │  │  ├─ 50% Advance, 50% on delivery
+│  │  │  ├─ Full payment upfront
+│  │  │  ├─ Net 30/45/60 days (credit)
+│  │  │  └─ Custom terms
+│  │  ├─ Valid Until (expiry date)
+│  │  └─ Notes/Terms & Conditions
+│  └─ Auto-calculate Grand Total
+├─ Send Quotation
+│  ├─ Email PDF quotation to customer
+│  ├─ WhatsApp quotation link
+│  ├─ Mark as "Quoted" in lead funnel
+│  └─ System tracks send date
+├─ Quotation Tracking
+│  ├─ View: Opened by customer?
+│  ├─ View: Downloaded?
+│  ├─ View: Forwarded to others?
+│  ├─ Reminder: Follow-up after 3 days
+│  └─ Auto-expire quotation after validity date
+├─ Order Received
+│  ├─ Customer accepts quotation
+│  ├─ Create Purchase Order (PO) in system
+│  ├─ Auto-move lead to "Converted"
+│  └─ Generate Invoice
+├─ Invoice Management
+│  ├─ Auto-generate invoice from PO
+│  ├─ Invoice Details
+│  │  ├─ Invoice Number (auto-generated)
+│  │  ├─ Date
+│  │  ├─ All line items with taxes
+│  │  ├─ Payment terms
+│  │  ├─ Bank details for payment
+│  │  └─ Notes
+│  ├─ Email invoice to customer
+│  ├─ Payment tracking
+│  │  ├─ Mark partial payments
+│  │  ├─ Track payment date
+│  │  └─ Send payment reminders
+│  └─ Generate reports (Invoice history, paid/unpaid)
+└─ Purchase Orders Archive
+   └─ Store all PO/Invoice history for records
+
+Step 8: CUSTOMER REVIEWS & RATINGS
+├─ Receive Customer Reviews
+│  ├─ After product purchase/service completion
+│  ├─ Customer rates: 1-5 stars
+│  ├─ Customer writes review text
+│  └─ Review stored in reviews Collection
+├─ Manage Reviews on Profile
+│  ├─ View all reviews on company page
+│  ├─ See overall rating (average stars)
+│  ├─ See review count
+│  ├─ Reply to reviews
+│  │  ├─ Public response to customer
+│  │  ├─ Thank for positive reviews
+│  │  ├─ Address concerns in negative reviews
+│  │  └─ Response visible on product page
+│  ├─ Flag inappropriate reviews
+│  │  └─ Request admin removal if necessary
+│  └─ Analytics
+│     ├─ Review trend (improving/declining)
+│     ├─ Common feedback themes
+│     ├─ Sentiment analysis (positive/negative)
+│     └─ Keyword cloud of review text
+├─ Trust Badges (Reputation)
+│  ├─ Display on business profile if:
+│  │  ├─ Rating >= 4.5 stars
+│  │  ├─ 50+ reviews
+│  │  └─ Response rate > 80%
+│  └─ Badge improves visibility & credibility
+└─ Encourage Reviews
+   ├─ Auto-email request after purchase
+   ├─ In-app review request popup
+   ├─ WhatsApp review request
+   └─ Offer incentive (optional): "Give review, get coupon"
+
+Step 9: PAYMENT PROCESSING (B2B Payments)
+├─ Payment Methods Offered
+│  ├─ Direct Bank Transfer
+│  │  ├─ Provide business bank details
+│  │  ├─ Customer transfers amount
+│  │  ├─ Receive notification (optional)
+│  │  └─ Manually mark as paid
+│  ├─ Razorpay Payment Gateway
+│  │  ├─ Customer pays via Razorpay
+│  │  ├─ Accept Credit/Debit Card
+│  │  ├─ Accept Net Banking
+│  │  ├─ Accept UPI
+│  │  └─ Accept Wallet
+│  ├─ Cheque (for large orders)
+│  │  └─ Add as payment method
+│  └─ Credit Terms (for verified businesses)
+│     └─ Net 30/45/60 days payment
+├─ Payment Received Notification
+│  ├─ Real-time notification
+│  ├─ Auto-reconciliation (if integrated)
+│  ├─ Email confirmation to customer
+│  ├─ Update invoice status to "Paid"
+│  └─ Auto-trigger fulfillment process
+├─ Settlement & Payouts
+│  ├─ Admin processes payments to business bank account
+│  ├─ Monthly or weekly settlements (configurable)
+│  ├─ Net of platform commission (%)
+│  ├─ Store in paymentRequests Collection
+│  └─ Business receives bank transfer
+└─ Payment Analytics
+   ├─ Total revenue (daily/monthly)
+   ├─ Payment pending amount
+   ├─ Overdue payments
+   ├─ Average time to pay (metrics)
+   └─ Payment history export
+
+Step 10: MARKETING & PROMOTION
+Dashboard: /business/marketing
+├─ Featured Listing
+│  ├─ Pay for Featured Badge
+│  ├─ Appears at top of category/search
+│  ├─ Highlighted with badge
+│  ├─ Increase visibility & inquiries
+│  └─ Plans:
+│     ├─ Daily Featured (₹500)
+│     ├─ Weekly Featured (₹2,500)
+│     └─ Monthly Featured (₹8,000)
+├─ Advertisements
+│  ├─ Create Display Ads
+│  ├─ Ad details:
+│  │  ├─ Ad Image/Creative
+│  │  ├─ Headline Text
+│  │  ├─ Description
+│  │  ├─ Call-to-Action Button
+│  │  └─ Landing URL
+│  ├─ Targeting Options
+│  │  ├─ All Users / Category-specific
+│  │  ├─ District-specific
+│  │  ├─ Business Size targeting
+│  │  └─ Job title targeting
+│  ├─ Budget Setting
+│  │  ├─ Daily budget cap
+│  │  ├─ Total campaign budget
+│  │  ├─ Cost per click (CPC)
+│  │  └─ Cost per impression (CPM)
+│  ├─ Campaign Scheduling
+│  │  ├─ Start date
+│  │  ├─ End date
+│  │  └─ Time-of-day scheduling
+│  └─ Run Campaign
+│     ├─ Ad displays on platform
+│     ├─ Track impressions in real-time
+│     ├─ Track clicks
+│     └─ Calculate ROI
+├─ Email Marketing
+│  ├─ Build email list from inquiries
+│  ├─ Create email campaign
+│  │  ├─ Email template
+│  │  ├─ Subject line
+│  │  ├─ Body text
+│  │  ├─ Product links
+│  │  └─ Call-to-Action
+│  ├─ Schedule send
+│  │  ├─ Immediate
+│  │  ├─ Scheduled date/time
+│  │  └─ Recurring (weekly, monthly)
+│  ├─ Segment recipients
+│  │  ├─ By customer type
+│  │  ├─ By purchase history
+│  │  ├─ By engagement level
+│  │  └─ By location
+│  └─ Track Email Performance
+│     ├─ Opens, Clicks, Conversions
+│     ├─ Bounce rate
+│     ├─ Unsubscribe rate
+│     └─ A/B testing results
+├─ Social Media Integration
+│  ├─ Share products to Facebook
+│  ├─ Share products to Instagram
+│  ├─ Generate shareable product links
+│  └─ Track social clicks to store
+├─ Referral Program
+│  ├─ Generate referral link
+│  ├─ Share with customers/partners
+│  ├─ Offer incentive (₹X off per referral)
+│  ├─ Track referral signups
+│  └─ Offer rewards (commissions, credits)
+└─ Analytics Dashboard
+   ├─ Campaign performance
+   ├─ Top performing products
+   ├─ Marketing ROI
+   └─ Customer acquisition cost
+
+Workflow Summary:
+┌──────────┬────────────┬──────────┬───────────┬──────────┬─────────┐
+│ Register │ List       │ Receive  │ Send      │ Receive  │ Manage &│
+│ & Verify │ Products   │ Inquiries│ Quotation │ Payment  │ Grow    │
+└──────────┴────────────┴──────────┴───────────┴──────────┴─────────┘
+```
 
 ---
 
-## 7. Shared UI Components
+### 2.4 🔧 SERVICE PROVIDER WORKFLOW
 
-| Component | Purpose |
-|-----------|---------|
-| `Header` | Main navigation bar with auth-aware menu |
-| `BottomNav` | Mobile bottom navigation bar |
-| `Sidebar` | Portal sidebar with role-based menu items |
-| `FloatingWhatsApp` | Floating WhatsApp contact button |
-| `BrandIcons` | Google, WhatsApp brand icons |
-| `Breadcrumb` | Page breadcrumb navigation |
-| `Chart` | Recharts-based data visualization |
-| `DataTable` | Sortable, filterable data table with pagination |
-| `EmptyState` | Placeholder for empty data views |
-| `FileUpload` | Drag-and-drop file upload component |
-| `LoadingSkeleton` | Shimmer loading placeholders |
-| `Modal` | Dialog/modal wrapper (Radix UI) |
-| `SearchInput` | Debounced search input with filters |
-| `StatsCard` | Metric display card with trend indicators |
-| `StatusBadge` | Color-coded status indicators |
-| `WorkflowPage` | Step-by-step workflow renderer |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              SERVICE PROVIDER JOURNEY                           │
+└─────────────────────────────────────────────────────────────────┘
+
+Step 1: REGISTRATION & PROFILE SETUP
+├─ Sign Up as Service Provider
+│  ├─ Email/Password or Google OAuth
+│  └─ Select Role: "Service Provider"
+├─ Basic Information
+│  ├─ Full Name
+│  ├─ Phone Number (Mandatory - used for booking)
+│  ├─ Email Address
+│  ├─ Profile Picture (upload professional photo)
+│  └─ Location (Select District in Tamil Nadu)
+├─ Service Provider Verification
+│  ├─ Phone OTP Verification
+│  │  ├─ OTP sent to phone
+│  │  ├─ Verify ownership of number
+│  │  └─ Phone stored as primary contact
+│  └─ Optional: Government ID Verification
+│     ├─ Upload ID (Aadhar/PAN/License)
+│     ├─ Verify via document OCR
+│     └─ Build trust with customers
+├─ Store in users Collection
+│  ├─ userId
+│  ├─ role: "serviceProvider"
+│  ├─ verificationStatus: "Verified" (after phone OTP)
+│  └─ All profile details
+└─ Account Active
+
+Step 2: DETAILED SERVICE PROFILE
+Dashboard: /provider/profile
+├─ Add Service Details
+│  ├─ Primary Service Category
+│  │  ├─ Plumbing, Electrical, Carpentry
+│  │  ├─ Cleaning, Moving, Painting
+│  │  ├─ Tutoring, Coaching, Consulting
+│  │  ├─ Beauty, Health & Wellness
+│  │  ├─ Automotive Services
+│  │  └─ Other services (searchable)
+│  ├─ Service Specializations (multi-select)
+│  │  ├─ If Plumbing: Leak Fixing, Pipe Installation, etc.
+│  │  ├─ If Tutoring: Math, Science, English, IIT-JEE, etc.
+│  │  └─ Select all relevant options
+│  ├─ Experience & Qualifications
+│  │  ├─ Years in Business
+│  │  ├─ Certifications/Credentials (list)
+│  │  ├─ Education Level
+│  │  └─ Training Completed
+│  ├─ Bio/Professional Summary
+│  │  ├─ 50-200 words about services
+│  │  ├─ Expertise highlights
+│  │  └─ Unique selling points
+│  ├─ Service Coverage Area
+│  │  ├─ Which districts (multi-select)
+│  │  ├─ Within city or pan-state
+│  │  ├─ Willingness to travel
+│  │  └─ Service radius (KM from location)
+│  ├─ Pricing Model
+│  │  ├─ Hourly Rate (₹X per hour)
+│  │  ├─ Fixed Price per Job (₹X per job)
+│  │  ├─ Package Pricing
+│  │  │  ├─ Basic Package: ₹X (includes A, B, C)
+│  │  │  ├─ Standard Package: ₹Y (includes A, B, C, D, E)
+│  │  │  └─ Premium Package: ₹Z (full service)
+│  │  └─ Minimum Order Value (optional)
+│  ├─ Availability
+│  │  ├─ Working Days (Mon-Sun)
+│  │  ├─ Working Hours (9 AM - 6 PM, flexible)
+│  │  ├─ Availability Type (Real-time, Pre-booking)
+│  │  └─ Response Time (same-day, next-day, etc.)
+│  ├─ Service Images
+│  │  ├─ Portfolio Photos (5-10 images)
+│  │  ├─ Before/After Photos (if applicable)
+│  │  ├─ Equipment/Tools Photos
+│  │  └─ Cloud Storage handles uploads
+│  └─ Gallery Video (optional, 30-60 second demo)
+├─ Firestore stores in serviceProfiles Collection
+│  ├─ serviceProviderId
+│  ├─ All profile & pricing details
+│  ├─ rating: 0 (initially)
+│  ├─ reviewCount: 0
+│  ├─ completedJobs: 0
+│  └─ profileStrength: % (based on completeness)
+└─ Profile Goes Live
+   └─ Visible on /services directory
+
+Step 3: BOOKING & SERVICE REQUEST
+├─ Customer Books Service
+│  ├─ Visit /services directory
+│  ├─ Search/Filter by:
+│  │  ├─ Service Category
+│  │  ├─ District/Location
+│  │  ├─ Price Range
+│  │  ├─ Rating/Reviews
+│  │  └─ Availability
+│  ├─ View Service Provider Profile
+│  │  ├─ Photo, Bio, Qualifications
+│  │  ├─ Service Details, Pricing
+│  │  ├─ Average Rating & Review Count
+│  │  ├─ Response Time
+│  │  └─ Availability Status
+│  ├─ Click "Book Service" or "Get Quote"
+│  └─ Booking Form
+│     ├─ Service Date
+│     ├─ Service Time (optional)
+│     ├─ Service Location
+│     ├─ Service Description (detailed notes)
+│     ├─ Preferred Package (if applicable)
+│     ├─ Special Requests/Instructions
+│     ├─ Customer Contact (auto-filled)
+│     └─ Accept Terms & Conditions
+├─ Booking Created
+│  ├─ Store in bookings Collection
+│  │  ├─ bookingId (unique)
+│  │  ├─ serviceProviderId
+│  │  ├─ customerId
+│  │  ├─ All request details
+│  │  ├─ bookingStatus: "Pending" (awaiting provider response)
+│  │  ├─ quotedPrice: null (to be filled by provider)
+│  │  └─ createdAt timestamp
+│  ├─ Notification to Service Provider
+│  │  ├─ Email notification
+│  │  ├─ SMS notification
+│  │  ├─ In-app notification
+│  │  └─ Call-to-action: "Review & Respond"
+│  └─ Notification to Customer
+│     ├─ Confirmation email
+│     └─ In-app notification: "Provider will respond shortly"
+├─ Service Provider Reviews Booking
+│  ├─ View Booking Details
+│  ├─ Check Customer Profile
+│  │  ├─ Name, Rating, Reviews
+│  │  └─ Previous bookings/reviews
+│  └─ Make Decision:
+│     ├─ Option A: Accept Booking
+│     │  ├─ Auto-calculate price based on details
+│     │  ├─ Or override with custom quote
+│     │  ├─ Send quote to customer
+│     │  ├─ Update bookingStatus: "Quoted"
+│     │  └─ Wait for customer confirmation
+│     └─ Option B: Decline Booking
+│        ├─ Provide reason (optional)
+│        ├─ Update bookingStatus: "Declined"
+│        └─ Customer can book alternative provider
+└─ Customer Confirms Quote
+   ├─ Receives quote notification
+   ├─ Reviews price & details
+   ├─ Click "Confirm Booking"
+   ├─ Update bookingStatus: "Confirmed"
+   └─ Payment process begins
+
+Step 4: PAYMENT FOR SERVICE
+├─ Payment Options
+│  ├─ Online Payment (Razorpay)
+│  │  ├─ Customer pays via UPI/Card/Net Banking
+│  │  ├─ Platform collects with commission %
+│  │  └─ Real-time confirmation
+│  ├─ Cash Payment
+│  │  ├─ Pay provider directly at service
+│  │  ├─ Manual mark as paid post-service
+│  │  └─ Less recommended for both parties
+│  ├─ Wallet Payment
+│  │  ├─ Customer has account balance
+│  │  ├─ Auto-deduct on booking confirmation
+│  │  └─ Quick & hassle-free
+│  └─ Advance Payment Model
+│     ├─ Customer pays 30-50% advance now
+│     ├─ Rest pay after service completion
+│     └─ Reduces no-show risk
+```
 
 ---
 
-## 8. Custom React Hooks
-
-| Hook | Purpose |
-|------|---------|
-| `useAuth` | Access auth state, login/logout, role helpers |
-| `useCollection` | Real-time Firestore collection subscription |
-| `useDocument` | Real-time Firestore document subscription |
-| `useAddDocument` | Create Firestore documents |
-| `useUpdateDocument` | Update Firestore documents |
-| `useDeleteDocument` | Delete Firestore documents |
-| `useRealtimeStats` | Real-time dashboard statistics from RTDB |
-| `useStorage` | Firebase Storage file upload/download/delete |
-
----
-
-## 9. SEO & Web Standards
-
-| Feature | Implementation |
-|---------|---------------|
-| Dynamic Metadata | Per-page title, description, OpenGraph, Twitter cards |
-| Sitemap (`/sitemap.xml`) | Auto-generated XML sitemap with all pages |
-| Robots (`/robots.txt`) | Search engine crawl directives |
-| PWA Manifest | `manifest.json` with app icons, shortcuts |
-| Apple Touch Icon | iOS home screen icon |
-| Structured OpenGraph | Social sharing previews |
-
----
-
-## 10. Firebase Services Integration
-
-| Service | Usage |
-|---------|-------|
-| **Firebase Auth** | Email/password, Google OAuth |
-| **Cloud Firestore** | Primary database for all data collections |
-| **Realtime Database** | Live dashboard statistics |
-| **Cloud Storage** | File uploads (resumes, photos, logos, documents) |
-| **Cloud Functions** | Server-side business logic (job posting, verification sync) |
-| **Firebase Analytics** | Usage tracking and events |
-| **Firebase App Check** | reCAPTCHA Enterprise bot protection |
-| **Firebase Hosting** | Static export deployment |
-
-### Firestore Collections (17 total):
-`users`, `companies`, `jobs`, `applications`, `reviews`, `seekerProfiles`, `savedJobs`, `leads`, `interviews`, `notifications`, `jobAlerts`, `subscriptions`, `payments`, `paymentRequests`, `services`, `advertisements`, `activityLogs`, `supportTickets`, `serviceRequests`, `conversations`, `publicProfiles`, `platformSettings`, `employerSettings`, `broadcasts`, `aiCoachWaitlist`, `franchises`
-
----
-
-## 11. Security Rules
-
-| Rules File | Coverage |
-|------------|----------|
-| `firestore.rules` | 17+ collection-level rules with role-based access (admin, owner, employer) |
-| `storage.rules` | File upload rules with size limits (5MB images, 10MB videos/covers) and type validation |
-| `database.rules.json` | Realtime Database access control |
-| `firestore.indexes.json` | 25 composite indexes for query optimization |
-
----
-
-## 12. Data Types (TypeScript)
-
-| Type | Fields |
-|------|--------|
-| `User` | uid, email, displayName, role, adminRole, employerRole, companyId, isVerified |
-| `Company` | 40+ fields (basic info, contact, location, social, gallery, verification, analytics, SEO) |
-| `Job` | title, description, skills, salary, location, district, jobType, badges, status |
-| `JobApplication` | jobId, seekerId, resumeUrl, coverLetter, status, interviewDate |
-| `JobSeekerProfile` | skills, experience, education, resumeUrl, profileStrength, isOpenToWork |
-| `Review` | rating, title, content, reviewerId, targetId, isVerified, reply |
-| `Lead` | type, source, contact info, status, assignedTo |
-| `Service` | name, category, pricing, district, status, rating |
-| `Subscription` | plan (free/basic/premium/enterprise), status, dates, autoRenew |
-| `Advertisement` | type, placement, impressions, clicks, status |
-| `InterviewSchedule` | date, time, mode, location, meetingLink, status |
-| `ChatMessage` | senderId, message, type, read status |
-| `SupportTicket` | subject, category, priority, status, messages |
-| `Franchise` | district, managerId, revenue, businesses, users |
-| `ActivityLog` | userId, action, target, timestamp |
-| `Notification` | type, title, message, read, actionUrl |
+<!-- NOTE: The following sections were truncated during input and need to be added:
+   - Service Provider Steps 5-8 (Service Execution, Reviews, Analytics, Growth)
+   - Section 2.5: Admin Workflow
+   - Section 3: Detailed Feature Breakdown
+   - Section 4: Technical Architecture
+   - Section 5: Database Schema
+   - Section 6: Integration & Communication Flows
+-->

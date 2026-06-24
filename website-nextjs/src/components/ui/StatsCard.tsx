@@ -96,22 +96,27 @@ const COLOR_MAP: Record<
 
 function useCountUp(target: number, duration = 1200) {
   const [count, setCount] = useState(0);
+  const startValueRef = useRef(0);
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
     const start = performance.now();
-    const from = 0;
+    const from = startValueRef.current;
+    const to = target;
 
     function step(now: number) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
       // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(from + (target - from) * eased);
+      const current = Math.round(from + (to - from) * eased);
       setCount(current);
+      startValueRef.current = current;
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(step);
+      } else {
+        startValueRef.current = to;
       }
     }
 

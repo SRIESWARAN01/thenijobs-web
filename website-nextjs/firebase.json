@@ -6,17 +6,15 @@
   "storage": {
     "rules": "storage.rules"
   },
+  "database": {
+    "rules": "database.rules.json"
+  },
   "functions": {
     "source": "functions",
     "runtime": "nodejs20"
   },
   "hosting": {
     "source": ".",
-    "cleanUrls": true,
-    "trailingSlash": false,
-    "frameworksBackend": {
-      "region": "asia-south1"
-    },
     "ignore": [
       "firebase.json",
       "**/.*",

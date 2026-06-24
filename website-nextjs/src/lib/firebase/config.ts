@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 import { getAnalytics, isSupported } from 'firebase/analytics';
@@ -29,7 +29,6 @@ const missingFirebaseConfig = [
   ['NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET', firebaseConfig.storageBucket],
   ['NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', firebaseConfig.messagingSenderId],
   ['NEXT_PUBLIC_FIREBASE_APP_ID', firebaseConfig.appId],
-  ['NEXT_PUBLIC_FIREBASE_DATABASE_URL', firebaseConfig.databaseURL],
 ].filter(([, value]) => !value);
 
 if (missingFirebaseConfig.length > 0) {
@@ -66,7 +65,14 @@ export const appCheck: AppCheck | null = (() => {
 export const auth = getAuth(app);
 
 /** Cloud Firestore */
-export const db = getFirestore(app);
+export const db = (() => {
+  try {
+    return initializeFirestore(app, {});
+  } catch {
+    // Fallback to existing instance during Next.js Hot Reloads
+    return getFirestore(app);
+  }
+})();
 
 /** Cloud Storage */
 export const storage = getStorage(app);

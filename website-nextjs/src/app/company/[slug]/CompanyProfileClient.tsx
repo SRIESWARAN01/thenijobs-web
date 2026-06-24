@@ -512,6 +512,13 @@ export default function CompanyProfileClient({ company, jobs, reviews }: {
                   {company.facebook && <a href={company.facebook} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-white/5 hover:bg-blue-500/20 flex items-center justify-center text-gray-500 hover:text-blue-400 transition-all"><FacebookIcon size={14} /></a>}
                   {company.instagram && <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-lg bg-white/5 hover:bg-pink-500/20 flex items-center justify-center text-gray-500 hover:text-pink-400 transition-all"><InstagramIcon size={14} /></a>}
                 </div>
+
+                <Link
+                  href={`/services/book?companyId=${encodeURIComponent(company.id)}`}
+                  className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 text-xs font-bold text-white transition-opacity hover:opacity-90 cursor-pointer"
+                >
+                  Book Appointment / Service
+                </Link>
               </div>
 
               {/* Follow Signal */}

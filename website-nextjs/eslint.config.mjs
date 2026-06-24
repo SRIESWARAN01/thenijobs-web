@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "functions/lib/**",
     "next-env.d.ts",
+    "nextjs-fix-plan-1/**",
+    "nextjs-fix-plan/**",
+    "thenijobs-nextjs/**",
   ]),
   {
     rules: {

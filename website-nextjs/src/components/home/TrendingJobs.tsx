@@ -85,7 +85,7 @@ export default function TrendingJobs() {
           </div>
           <Link
             href="/jobs"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-800 shadow-sm hover:bg-slate-50"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-800 shadow-sm hover:bg-slate-50"
           >
             View all jobs <ArrowRight size={15} />
           </Link>
@@ -164,7 +164,7 @@ export default function TrendingJobs() {
                     </span>
                   </div>
 
-                  <div className="mt-4 flex min-h-11 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white transition-colors group-hover:bg-teal-800">
+                  <div className="mt-4 flex min-h-12 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white transition-colors group-hover:bg-teal-800">
                     Apply Now
                   </div>
                 </Link>

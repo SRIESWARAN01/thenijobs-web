@@ -3,9 +3,16 @@
 // ============================================================
 
 // ===== USER TYPES =====
+// Platform has 2 primary account types: job_seeker and business.
+// Legacy roles (employer, business_owner, supplier, service_provider, entrepreneur)
+// are kept for backward compatibility with existing Firestore documents.
+// All legacy business roles are treated identically as 'business'.
 export type UserRole =
   | 'job_seeker'
+  | 'business'
+  // Legacy roles — treated as 'business' at runtime
   | 'employer'
+  | 'pending_employer'
   | 'business_owner'
   | 'supplier'
   | 'service_provider'
@@ -45,6 +52,7 @@ export interface User {
   employerVerified?: boolean;
   companyVerified?: boolean;
   emailVerified?: boolean;
+  setupCompleted?: boolean;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -528,6 +536,7 @@ export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | '
 
 export interface Product {
   id: string;
+  companyId?: string;
   name: string;
   description: string;
   price: number;
@@ -626,6 +635,59 @@ export const SHOP_PRODUCT_CATEGORIES = [
 
 export type ShopProductCategory = typeof SHOP_PRODUCT_CATEGORIES[number];
 
-export const WHATSAPP_BUSINESS_NUMBER = '919876543210'; // Update with real number
+export const WHATSAPP_BUSINESS_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
 export const SHOP_NAME = 'THENIJOBS Store';
+
+// ===== SERVICE PROVIDER BOOKINGS =====
+export type BookingStatus = 'pending' | 'quoted' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface Booking {
+  id: string;
+  serviceProviderId: string; // companyId
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  serviceName: string;
+  bookingStatus: BookingStatus;
+  scheduledDate: string; // YYYY-MM-DD
+  scheduledTime: string; // HH:MM
+  customerAddress: string;
+  customerNotes?: string;
+  quotedPrice?: number;
+  specialRequests?: string;
+  preferredPackage?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ===== B2B RFQS & QUOTATIONS =====
+export type RFQStatus = 'pending_quote' | 'quoted' | 'accepted' | 'rejected' | 'invoiced' | 'paid' | 'cancelled';
+
+export interface RFQ {
+  id: string;
+  productId: string;
+  productName: string;
+  companyId: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  companyName?: string;
+  quantity: number;
+  targetDeliveryDate?: string;
+  message?: string;
+  status: RFQStatus;
+  quotedPricePerUnit?: number;
+  quotedTaxPercent?: number;
+  quotedDiscount?: number;
+  quotedTotal?: number;
+  paymentTerms?: string;
+  notes?: string;
+  invoiceNumber?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+
 

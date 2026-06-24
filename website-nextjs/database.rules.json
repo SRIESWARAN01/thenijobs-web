@@ -39,7 +39,7 @@
     "notifications": {
       "$notificationId": {
         ".read": "auth != null && (data.child('userId').val() === auth.uid || root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')",
-        ".write": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin' || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid && newData.child('userId').val() === data.child('userId').val()))"
+        ".write": "auth != null && (root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/role').val() === 'super_admin')"
       }
     },
     "$other": {

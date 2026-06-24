@@ -55,7 +55,7 @@ export default function HomeFooter() {
                   href={item.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-9 min-w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 text-xs font-black uppercase text-slate-600 hover:bg-teal-50 hover:text-teal-800"
+                  className="flex h-12 min-w-12 sm:h-9 sm:min-w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-2 text-xs font-black uppercase text-slate-600 hover:bg-teal-50 hover:text-teal-800"
                   aria-label={item.label}
                 >
                   {item.short}
@@ -66,10 +66,10 @@ export default function HomeFooter() {
 
           <div>
             <h4 className="mb-4 text-sm font-black text-slate-950">For Job Seekers</h4>
-            <ul className="space-y-2">
+            <ul className="space-y-3 sm:space-y-2">
               {seekerLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm font-semibold text-slate-500 hover:text-teal-700">
+                  <Link href={link.href} className="inline-flex min-h-[36px] sm:min-h-0 items-center text-sm font-semibold text-slate-500 hover:text-teal-700">
                     {link.label}
                   </Link>
                 </li>
@@ -79,10 +79,10 @@ export default function HomeFooter() {
 
           <div>
             <h4 className="mb-4 text-sm font-black text-slate-950">For Employers</h4>
-            <ul className="space-y-2">
+            <ul className="space-y-3 sm:space-y-2">
               {employerLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm font-semibold text-slate-500 hover:text-teal-700">
+                  <Link href={link.href} className="inline-flex min-h-[36px] sm:min-h-0 items-center text-sm font-semibold text-slate-500 hover:text-teal-700">
                     {link.label}
                   </Link>
                 </li>
@@ -92,7 +92,7 @@ export default function HomeFooter() {
 
           <div>
             <h4 className="mb-4 text-sm font-black text-slate-950">Contact</h4>
-            <ul className="space-y-3">
+            <ul className="space-y-4 sm:space-y-3">
               <li className="flex items-start gap-2 text-sm font-semibold text-slate-500">
                 <MapPin size={16} className="mt-0.5 shrink-0 text-teal-700" />
                 <span>
@@ -105,9 +105,9 @@ export default function HomeFooter() {
               </li>
               <li className="flex items-start gap-2 text-sm font-semibold text-slate-500">
                 <Phone size={16} className="mt-0.5 shrink-0 text-teal-700" />
-                <span className="space-y-1">
+                <span className="space-y-2 sm:space-y-1">
                   {mobileNumbers.map((number) => (
-                    <a key={number.href} href={number.href} className="block hover:text-teal-700">
+                    <a key={number.href} href={number.href} className="block py-1 sm:py-0 hover:text-teal-700">
                       {number.label}
                     </a>
                   ))}
@@ -115,7 +115,7 @@ export default function HomeFooter() {
               </li>
               <li className="flex items-center gap-2 text-sm font-semibold text-slate-500">
                 <MessageCircle size={16} className="shrink-0 text-teal-700" />
-                <a href="https://wa.me/917094826586" target="_blank" rel="noreferrer" className="hover:text-teal-700">
+                <a href="https://wa.me/917094826586" target="_blank" rel="noreferrer" className="py-1 sm:py-0 hover:text-teal-700">
                   +91 70948 26586
                 </a>
               </li>

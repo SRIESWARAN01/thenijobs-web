@@ -19,6 +19,7 @@ export interface WorkflowMetric {
   color: Accent;
 }
 
+
 export interface WorkflowTab {
   label: string;
   value: string;
@@ -29,6 +30,7 @@ export interface WorkflowAction {
   icon: LucideIcon;
   href?: string;
   tone?: Tone;
+  onClick?: () => void;
 }
 
 export interface WorkflowTimelineStep {
@@ -169,7 +171,7 @@ function renderAction(action: WorkflowAction) {
 
   if (!action.href) {
     return (
-      <button key={action.label} type="button" className={classes}>
+      <button key={action.label} type="button" onClick={action.onClick} className={classes}>
         <Icon size={14} />
         {action.label}
       </button>
@@ -178,7 +180,7 @@ function renderAction(action: WorkflowAction) {
 
   if (action.href.startsWith('http') || action.href.startsWith('tel:') || action.href.startsWith('mailto:')) {
     return (
-      <a key={action.label} href={action.href} target={action.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer" className={classes}>
+      <a key={action.label} href={action.href} target={action.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer" onClick={action.onClick} className={classes}>
         <Icon size={14} />
         {action.label}
       </a>
@@ -186,7 +188,7 @@ function renderAction(action: WorkflowAction) {
   }
 
   return (
-    <Link key={action.label} href={action.href} className={classes}>
+    <Link key={action.label} href={action.href} onClick={action.onClick} className={classes}>
       <Icon size={14} />
       {action.label}
     </Link>
@@ -242,6 +244,7 @@ export default function WorkflowPage({
             primaryAction.href ? (
               <Link
                 href={primaryAction.href}
+                onClick={primaryAction.onClick}
                 className={`inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${colors.button} px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto`}
               >
                 {PrimaryIcon && <PrimaryIcon size={16} />}
@@ -250,6 +253,7 @@ export default function WorkflowPage({
             ) : (
               <button
                 type="button"
+                onClick={primaryAction.onClick}
                 className={`inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${colors.button} px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto`}
               >
                 {PrimaryIcon && <PrimaryIcon size={16} />}

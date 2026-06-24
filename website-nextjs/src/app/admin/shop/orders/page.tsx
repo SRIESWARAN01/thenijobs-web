@@ -74,20 +74,20 @@ export default function AdminOrdersPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         {[
-          { label: 'Total', value: stats.total, color: 'gray' },
-          { label: 'Pending', value: stats.pending, color: 'amber' },
-          { label: 'Processing', value: stats.processing, color: 'blue' },
-          { label: 'Shipped', value: stats.shipped, color: 'violet' },
-          { label: 'Delivered', value: stats.delivered, color: 'emerald' },
-        ].map(({ label, value, color }) => (
+          { label: 'Total', value: stats.total, colorClass: { hover: 'hover:border-gray-500/30', active: 'border-gray-500/40', text: 'text-white' } },
+          { label: 'Pending', value: stats.pending, colorClass: { hover: 'hover:border-amber-500/30', active: 'border-amber-500/40', text: 'text-amber-400' } },
+          { label: 'Processing', value: stats.processing, colorClass: { hover: 'hover:border-blue-500/30', active: 'border-blue-500/40', text: 'text-blue-400' } },
+          { label: 'Shipped', value: stats.shipped, colorClass: { hover: 'hover:border-violet-500/30', active: 'border-violet-500/40', text: 'text-violet-400' } },
+          { label: 'Delivered', value: stats.delivered, colorClass: { hover: 'hover:border-emerald-500/30', active: 'border-emerald-500/40', text: 'text-emerald-400' } },
+        ].map(({ label, value, colorClass }) => (
           <button
             key={label}
             onClick={() => setStatusFilter(label === 'Total' ? 'all' : label.toLowerCase() as OrderStatus)}
-            className={`glass-card rounded-xl p-4 text-left transition-all hover:border-${color}-500/30 ${
-              (statusFilter === label.toLowerCase() || (statusFilter === 'all' && label === 'Total')) ? `border-${color}-500/40` : ''
+            className={`glass-card rounded-xl p-4 text-left transition-all ${colorClass.hover} ${
+              (statusFilter === label.toLowerCase() || (statusFilter === 'all' && label === 'Total')) ? colorClass.active : ''
             }`}
           >
-            <div className={`text-xl font-bold text-${color === 'gray' ? 'white' : color + '-400'}`}>{value}</div>
+            <div className={`text-xl font-bold ${colorClass.text}`}>{value}</div>
             <div className="text-xs text-gray-500 mt-0.5">{label}</div>
           </button>
         ))}

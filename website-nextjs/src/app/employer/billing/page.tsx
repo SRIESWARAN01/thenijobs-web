@@ -41,6 +41,24 @@ function formatDate(value?: unknown) {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+const loadRazorpayScript = () => {
+  return new Promise<boolean>((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve(false);
+      return;
+    }
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function EmployerBillingPage() {
   const { user } = useAuth();
   const [requestingPlan, setRequestingPlan] = useState<string | null>(null);
@@ -74,6 +92,111 @@ export default function EmployerBillingPage() {
     setRequestMessage(null);
 
     try {
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        setRequestMessage('Failed to load payment gateway SDK. Are you online?');
+        return;
+      }
+
+      // 1. Create order in cloud functions
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('@/lib/firebase/config');
+      
+      const createOrderCallable = httpsCallable<{ planSlug: string; audience: string }, { orderId: string; amount: number; currency: string; keyId: string; mockMode?: boolean }>(
+        functions,
+        'createRazorpayOrder'
+      );
+      
+      const orderRes = await createOrderCallable({ planSlug: plan.slug, audience: 'employer' });
+      const { orderId, amount, currency, keyId, mockMode } = orderRes.data;
+
+      // 2. Open Razorpay checkout
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        name: 'THENIJOBS',
+        description: `Upgrade to ${plan.name} (Yearly)`,
+        order_id: orderId,
+        handler: async (response: any) => {
+          setRequestingPlan(plan.slug);
+          try {
+            const verifyCallable = httpsCallable<any, { success: boolean }>(functions, 'verifyRazorpayPayment');
+            const verifyRes = await verifyCallable({
+              razorpay_payment_id: response.razorpay_payment_id || 'mock_pay_id',
+              razorpay_order_id: response.razorpay_order_id || orderId,
+              razorpay_signature: response.razorpay_signature || '',
+              planSlug: plan.slug,
+              audience: 'employer',
+              companyId,
+            });
+
+            if (verifyRes.data?.success) {
+              setRequestMessage(`Subscription upgraded to ${plan.name} successfully!`);
+              window.location.reload();
+            } else {
+              setRequestMessage('Payment verification failed.');
+            }
+          } catch (verifyErr) {
+            console.error('Verification error:', verifyErr);
+            setRequestMessage('Failed to verify payment with server.');
+          } finally {
+            setRequestingPlan(null);
+          }
+        },
+        prefill: {
+          name: user?.displayName || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
+        },
+        theme: {
+          color: '#06b6d4', // cyan color
+        },
+        modal: {
+          ondismiss: () => {
+            setRequestingPlan(null);
+          }
+        }
+      };
+
+      if (mockMode) {
+        const confirmMock = window.confirm(`[TEST MODE] Order created: ${orderId}.\nClick OK to simulate successful payment.`);
+        if (confirmMock) {
+          options.handler({
+            razorpay_payment_id: `pay_mock_${Math.random().toString(36).substring(2, 11)}`,
+            razorpay_order_id: orderId,
+            razorpay_signature: 'mock_sig',
+          });
+        } else {
+          setRequestingPlan(null);
+        }
+      } else {
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      }
+
+    } catch (err: any) {
+      console.error('Payment request error:', err);
+      setRequestMessage(err?.message || 'Unable to process payment request.');
+      setRequestingPlan(null);
+    }
+  };
+
+  const handleBankTransferUpgrade = async (plan: typeof YEARLY_SUBSCRIPTION_PLANS[number]) => {
+    if (!user?.uid || !companyId || plan.slug === 'free') return;
+    const confirmRequest = window.confirm(
+      `Submit bank transfer request for ${plan.name}?\n\nPlease transfer ₹${plan.price} to our official bank account:\n` +
+      `Bank: State Bank of India\n` +
+      `Account: 12345678901\n` +
+      `IFSC: SBIN0001234\n` +
+      `Branch: Theni Main\n\n` +
+      `Click OK to submit your request. Our admins will approve your plan once payment is verified.`
+    );
+    if (!confirmRequest) return;
+
+    setRequestingPlan(plan.slug);
+    setRequestMessage(null);
+    try {
       await createPaymentRequest({
         userId: user.uid,
         companyId,
@@ -81,17 +204,17 @@ export default function EmployerBillingPage() {
         plan: plan.slug,
         planName: plan.name,
         amount: plan.price,
-        period: 'year',
-        businessName: company?.name || company?.businessName || company?.companyName || 'Business',
-        companyName: company?.name || company?.businessName || company?.companyName || 'Business',
-        requesterName: user.displayName || company?.name || 'Employer',
-        requesterEmail: user.email,
-        requesterPhone: user.phone,
+        period: 'yearly',
+        businessName: company?.name || 'Employer Company',
+        companyName: company?.name || 'Employer Company',
+        requesterName: user?.displayName || user?.email || 'Employer',
+        requesterEmail: user?.email,
+        requesterPhone: user?.phone || '',
       });
-      setRequestMessage(`${plan.name} yearly upgrade request submitted.`);
-    } catch (err) {
-      console.error('Payment request error:', err);
-      setRequestMessage('Unable to submit upgrade request.');
+      setRequestMessage(`Bank transfer request for ${plan.name} submitted successfully! Awaiting admin verification.`);
+    } catch (err: any) {
+      console.error('Manual upgrade request error:', err);
+      setRequestMessage(err?.message || 'Unable to submit request.');
     } finally {
       setRequestingPlan(null);
     }
@@ -205,15 +328,28 @@ export default function EmployerBillingPage() {
                         {isCurrent ? 'Plan Active' : 'Free Included'}
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleUpgradeRequest(plan)}
-                        disabled={requestingPlan === plan.slug || hasPendingRequest}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                      >
-                        {requestingPlan === plan.slug && <Loader2 size={12} className="animate-spin" />}
-                        {hasPendingRequest ? 'Request Pending' : `Request ${plan.name}`}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleUpgradeRequest(plan)}
+                          disabled={requestingPlan === plan.slug || hasPendingRequest}
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 py-2.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 cursor-pointer"
+                        >
+                          {requestingPlan === plan.slug && <Loader2 size={12} className="animate-spin" />}
+                          {hasPendingRequest ? 'Request Pending' : `Request ${plan.name}`}
+                        </button>
+                        
+                        {!hasPendingRequest && (
+                          <button
+                            type="button"
+                            onClick={() => handleBankTransferUpgrade(plan)}
+                            disabled={requestingPlan === plan.slug}
+                            className="mt-2.5 text-center text-[10px] text-gray-400 hover:text-cyan-400 underline w-full cursor-pointer transition-colors"
+                          >
+                            Pay via Manual Bank Transfer
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </article>

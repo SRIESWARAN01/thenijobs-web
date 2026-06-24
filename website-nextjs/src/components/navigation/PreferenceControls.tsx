@@ -28,7 +28,7 @@ export default function PreferenceControls({ compact = false }: { compact?: bool
       <button
         type="button"
         onClick={toggleLanguage}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition-colors hover:border-teal-200 hover:text-teal-700"
+        className="inline-flex h-12 md:h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition-colors hover:border-teal-200 hover:text-teal-700"
         aria-label={copy.switchLanguage}
         title={copy.switchLanguage}
       >
@@ -38,7 +38,7 @@ export default function PreferenceControls({ compact = false }: { compact?: bool
       <button
         type="button"
         onClick={toggleTheme}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:border-teal-200 hover:text-teal-700"
+        className="inline-flex h-12 w-12 md:h-10 md:w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-colors hover:border-teal-200 hover:text-teal-700"
         aria-label={copy.switchTheme}
         title={copy.theme}
       >

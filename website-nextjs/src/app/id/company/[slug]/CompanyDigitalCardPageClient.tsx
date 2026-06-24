@@ -1,0 +1,509 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  BadgeCheck, MapPin, QrCode, ShieldCheck, Download,
+  Crown, Lock, Info, Sparkles, Check, Phone, Mail, Building2, ExternalLink
+} from 'lucide-react';
+import { useCollection } from '@/hooks/useFirestore';
+import { where, limit } from 'firebase/firestore';
+
+interface CompanyData {
+  id: string;
+  name?: string;
+  businessName?: string;
+  companyName?: string;
+  slug?: string;
+  logoUrl?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  district?: string;
+  category?: string;
+  description?: string;
+  website?: string;
+  verificationStatus?: string;
+  isPremium?: boolean;
+  subscriptionPlan?: string;
+}
+
+const WhatsAppIcon = () => (
+  <svg
+    className="w-5 h-5 fill-current"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.437.002 9.861-4.416 9.864-9.854.001-2.63-1.019-5.101-2.871-6.957C16.408 1.936 13.934 1.9 11.999 1.9 6.562 1.9 2.135 6.319 2.131 11.758c-.001 1.514.402 2.993 1.168 4.316l-.994 3.63 3.752-.984zm12.383-7.55c-.247-.123-1.464-.723-1.691-.806-.228-.083-.393-.123-.559.123-.166.247-.641.806-.784.97-.143.165-.286.185-.534.062-.247-.125-1.045-.385-1.99-1.231-.735-.656-1.232-1.467-1.376-1.714-.143-.247-.015-.38.109-.503.111-.11.247-.29.37-.435.123-.145.165-.248.248-.414.083-.165.042-.31-.02-.435-.063-.123-.559-1.345-.767-1.848-.201-.488-.406-.423-.559-.431-.144-.007-.31-.008-.475-.008-.166 0-.435.062-.663.31-.228.247-.868.847-.868 2.065 0 1.218.887 2.395.986 2.53.1.135 1.747 2.668 4.232 3.74.59.255 1.052.408 1.411.523.593.188 1.133.161 1.56.097.476-.07 1.464-.598 1.67-.176.206-.423.206-.785.145-.847-.06-.063-.227-.123-.474-.247z" />
+  </svg>
+);
+
+export default function CompanyDigitalCardPageClient({
+  slug,
+  initialCompany,
+}: {
+  slug: string;
+  initialCompany: CompanyData | null;
+}) {
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  const { data: companies, loading: dbLoading } = useCollection<any>(
+    'companies',
+    [where('slug', '==', slug), limit(1)],
+    { skip: !slug }
+  );
+
+  const company = useMemo(() => {
+    return companies[0] || initialCompany;
+  }, [companies, initialCompany]);
+
+  const profileUrl = useMemo(() => {
+    if (typeof window === 'undefined') return `/company/${slug}`;
+    return `${window.location.origin}/company/${encodeURIComponent(slug)}`;
+  }, [slug]);
+
+  if (dbLoading && !company) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] text-white">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500/30 border-t-purple-400" />
+      </main>
+    );
+  }
+
+  if (!company) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
+          <Info size={40} className="mx-auto text-amber-400 mb-4 animate-bounce" />
+          <h1 className="text-xl font-bold tracking-tight">Business card not available</h1>
+          <p className="mt-2 text-sm text-gray-400">Complete the business profile first to generate this card.</p>
+        </div>
+      </main>
+    );
+  }
+
+  const name = company.name || company.businessName || company.companyName || 'Business Partner';
+  const logoUrl = company.logoUrl || '';
+  const email = company.email || 'contact@business.com';
+  const phone = company.phone || 'N/A';
+  const category = company.category || 'Business Services';
+  const district = company.district || 'Theni';
+  const address = company.address || 'Theni, Tamil Nadu';
+  const description = company.description || 'Verified Business Partner listing on THENIJOBS.';
+  
+  const isVerified = company.verificationStatus === 'verified' || company.isPremium;
+  const isPremium = company.subscriptionPlan === 'premium' || company.isPremium;
+  const uniqueId = `TNI-BUS-${company.id.slice(0, 8).toUpperCase()}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}`;
+
+  const downloadPng = async (side: 'front' | 'back') => {
+    setExporting(side === 'front' ? 'png-front' : 'png-back');
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const element = document.getElementById(side === 'front' ? 'business-card-front' : 'business-card-back');
+      if (!element) return;
+
+      const canvas = await html2canvas(element, {
+        scale: 3, // High resolution
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `${name.replace(/\s+/g, '_')}_BusinessCard_${side.toUpperCase()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Error generating PNG:', error);
+      alert('Failed to generate PNG image. Please try again.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const downloadPdf = async () => {
+    setExporting('pdf');
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const frontElement = document.getElementById('business-card-front');
+      const backElement = document.getElementById('business-card-back');
+      if (!frontElement || !backElement) return;
+
+      const canvasFront = await html2canvas(frontElement, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      const imgFront = canvasFront.toDataURL('image/png');
+
+      const canvasBack = await html2canvas(backElement, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+      });
+      const imgBack = canvasBack.toDataURL('image/png');
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(20);
+      pdf.setTextColor(15, 23, 42); // slate-900
+      pdf.text('THENIJOBS Digital Business Card', 105, 30, { align: 'center' });
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 116, 139); // slate-500
+      pdf.text(`Verified Business ID: ${uniqueId}`, 105, 38, { align: 'center' });
+      pdf.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, 105, 43, { align: 'center' });
+
+      const cardWidth = 120;
+      const cardHeight = 76;
+      const x = 45;
+
+      // Front
+      pdf.addImage(imgFront, 'PNG', x, 60, cardWidth, cardHeight);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.setTextColor(148, 163, 184); // slate-400
+      pdf.text('FRONT SIDE', 105, 142, { align: 'center' });
+
+      // Back
+      pdf.addImage(imgBack, 'PNG', x, 155, cardWidth, cardHeight);
+      pdf.text('BACK SIDE / NETWORKING QR', 105, 237, { align: 'center' });
+
+      // Footers
+      pdf.setFont('helvetica', 'italic');
+      pdf.setFontSize(8);
+      pdf.text('Scan the QR code to view public SEO profile and products.', 105, 265, { align: 'center' });
+      pdf.text('Verified Business Listing issued by thenijobs.in.', 105, 270, { align: 'center' });
+
+      pdf.save(`${name.replace(/\s+/g, '_')}_BusinessCard.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF document. Please try again.');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const shareWhatsApp = async () => {
+    setExporting('share');
+    const shareText = `Scan our Business Card to view products, services, and profile on THENIJOBS: ${profileUrl}`;
+
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const frontElement = document.getElementById('business-card-front');
+
+      if (frontElement && navigator.share && navigator.canShare) {
+        const canvas = await html2canvas(frontElement, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false,
+        });
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+            return;
+          }
+
+          const file = new File([blob], `${name.replace(/\s+/g, '_')}_BusinessCard.png`, { type: 'image/png' });
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: `${name} Business Card`,
+              text: shareText,
+            });
+          } else {
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+          }
+        }, 'image/png');
+      } else {
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+      }
+    } catch (error) {
+      console.error('Error sharing on WhatsApp:', error);
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`, '_blank');
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-[#070714] bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#0f172a] via-[#070714] to-[#020617] px-4 py-12 text-white sm:px-6">
+      <style>{`
+        @media print {
+          body {
+            background: #070714 !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .no-print {
+            display: none !important;
+          }
+          main {
+            padding: 0 !important;
+            background: transparent !important;
+          }
+          #id-card-print-area {
+            grid-template-columns: 1fr 1fr !important;
+            max-width: 100% !important;
+            gap: 20px !important;
+          }
+          .id-card-section {
+            box-shadow: none !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            background: #0f172a !important;
+          }
+        }
+      `}</style>
+
+      <div className="mx-auto max-w-5xl space-y-8">
+        <header className="text-center space-y-2 no-print font-outfit">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold">
+            <Sparkles size={14} className="animate-pulse" /> Digital Business ID Card Active
+          </div>
+          <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            Digital Business card
+          </h1>
+          <p className="text-sm text-slate-400 max-w-md mx-auto">
+            Networking and marketing card. Scan to visit our SEO profile, services, and openings.
+          </p>
+        </header>
+
+        <div id="id-card-print-area" className="grid gap-8 lg:grid-cols-2 justify-center">
+          {/* Card Front */}
+          <section
+            id="business-card-front"
+            className="id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#0e0e1e] via-[#15152d] to-[#251f47] shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit"
+          >
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-purple-500/10 transition-all" />
+            <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Top Row */}
+            <div className="flex items-center justify-between z-10">
+              <div className="flex flex-col border-l-2 border-purple-500 pl-2">
+                <span className="text-[10px] tracking-[0.2em] font-black text-purple-400 uppercase">THENIJOBS</span>
+                <span className="text-xs font-extrabold tracking-wide text-white uppercase flex items-center gap-1">
+                  VERIFIED PARTNER
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {isPremium && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 border border-amber-400/30 px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                    <Crown size={10} /> Premium
+                  </span>
+                )}
+                <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-slate-300 border border-white/5">
+                  BUSINESS
+                </span>
+              </div>
+            </div>
+
+            {/* Logo & Info */}
+            <div className="my-5 flex gap-5 items-center z-10">
+              <div className="relative">
+                <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center">
+                  {logoUrl ? (
+                    <Image src={logoUrl} alt={name} fill sizes="96px" className="object-cover" />
+                  ) : (
+                    <Building2 size={36} className="text-purple-400" />
+                  )}
+                </div>
+                {isVerified && (
+                  <div className="absolute -bottom-2 -right-2 bg-purple-500 text-white rounded-full p-1 border-2 border-[#15152d] shadow-md">
+                    <BadgeCheck size={16} className="fill-current text-white" />
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-black text-white leading-tight truncate">
+                  {name}
+                </h2>
+                <p className="text-xs font-semibold text-purple-400 truncate mt-0.5">{category}</p>
+                <div className="mt-3 font-mono text-sm tracking-wider font-bold text-slate-300">
+                  {uniqueId.split('-').slice(0, 2).join('-') + ' - ' + uniqueId.split('-')[2]}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div className="border-t border-white/5 pt-3 flex flex-col gap-1 z-10 text-xs text-slate-300">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Phone size={11} className="text-purple-400 shrink-0" />
+                <span className="truncate">{phone}</span>
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Mail size={11} className="text-purple-400 shrink-0" />
+                <span className="truncate">{email}</span>
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <MapPin size={11} className="text-purple-400 shrink-0" />
+                <span className="truncate">{address}</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Card Back */}
+          <section
+            id="business-card-back"
+            className="id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#0c0c16] via-[#101020] to-[#1c1c38] shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit"
+          >
+            {/* Background design */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-purple-500/[0.02] rounded-full blur-2xl pointer-events-none" />
+
+            {/* Top logo header */}
+            <div className="flex justify-between items-start border-b border-white/5 pb-3">
+              <div>
+                <span className="text-[10px] tracking-[0.2em] font-black text-purple-400 block uppercase">THENIJOBS</span>
+                <span className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 block">VERIFIED LISTING</span>
+              </div>
+              <Building2 size={16} className="text-slate-600" />
+            </div>
+
+            {/* Mid Section: QR Code & Summary */}
+            <div className="my-4 flex items-center gap-6 justify-between">
+              <div className="flex-1 min-w-0 space-y-2">
+                <p className="text-xs font-semibold text-white uppercase tracking-wider text-purple-400">About Company</p>
+                <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                  {description}
+                </p>
+                <div className="pt-1 flex flex-wrap gap-1.5 text-[9px] font-bold text-slate-400">
+                  <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">{district}</span>
+                  <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">1 Year Validity</span>
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div className="shrink-0 flex flex-col items-center gap-1.5">
+                <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white p-1 shadow-lg">
+                  <Image src={qrUrl} alt="QR Verification Link" fill sizes="96px" className="object-contain" />
+                </div>
+                <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <QrCode size={8} /> Scan to verify
+                </span>
+              </div>
+            </div>
+
+            {/* Footer link */}
+            <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[10px] text-slate-500">
+              <div className="flex items-center gap-1 text-purple-400/90 font-semibold truncate max-w-[240px]">
+                <ExternalLink size={10} />
+                <span className="truncate">{profileUrl.replace(/^https?:\/\//, '')}</span>
+              </div>
+              <span className="font-bold tracking-widest text-[8px] text-slate-600">THENIJOBS</span>
+            </div>
+          </section>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="no-print mx-auto max-w-md bg-white/[0.02] border border-white/[0.06] rounded-3xl p-5 shadow-2xl backdrop-blur-md flex flex-col gap-3 font-outfit">
+          <p className="text-xs text-gray-400 font-semibold text-center uppercase tracking-wider">Export Tools</p>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              onClick={() => downloadPng('front')}
+              disabled={exporting !== null}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:text-purple-300 text-xs font-bold text-gray-200 transition-all disabled:opacity-50"
+            >
+              {exporting === 'png-front' ? (
+                <Loader2 size={14} className="animate-spin text-purple-400" />
+              ) : (
+                <Download size={14} />
+              )}
+              Download Front PNG
+            </button>
+            <button
+              onClick={() => downloadPng('back')}
+              disabled={exporting !== null}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:text-purple-300 text-xs font-bold text-gray-200 transition-all disabled:opacity-50"
+            >
+              {exporting === 'png-back' ? (
+                <Loader2 size={14} className="animate-spin text-purple-400" />
+              ) : (
+                <Download size={14} />
+              )}
+              Download Back PNG
+            </button>
+          </div>
+
+          <button
+            onClick={downloadPdf}
+            disabled={exporting !== null}
+            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white text-xs font-bold transition-all disabled:opacity-50"
+          >
+            {exporting === 'pdf' ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
+            Download Print PDF (A4 Sheet)
+          </button>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              onClick={shareWhatsApp}
+              disabled={exporting !== null}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all disabled:opacity-50"
+            >
+              {exporting === 'share' ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <WhatsAppIcon />
+              )}
+              Share on WhatsApp
+            </button>
+            <button
+              onClick={() => window.print()}
+              disabled={exporting !== null}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-xs font-bold text-gray-200 transition-all disabled:opacity-50"
+            >
+              Print Card
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// Simple loader helper icon
+const Loader2 = ({ size, className }: { size?: number; className?: string }) => (
+  <svg
+    className={`animate-spin ${className}`}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    width={size || 14}
+    height={size || 14}
+  >
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    />
+  </svg>
+);

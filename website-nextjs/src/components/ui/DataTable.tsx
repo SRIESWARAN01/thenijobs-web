@@ -317,82 +317,85 @@ export function DataTable<T extends Record<string, unknown>>({
             </div>
           </div>
         ) : (
-          sortedData.map((row, rowIndex) => (
-            <article
-              key={rowIndex}
-              onClick={() => onRowClick?.(row, rowIndex)}
-              className={`rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 transition-colors
-                ${onRowClick ? 'cursor-pointer' : ''}
-                hover:bg-purple-500/[0.04]`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">
-                    {columns[0]?.label ?? 'Item'}
-                  </p>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {columns[0] ? renderCellContent(columns[0], row, rowIndex) : `Row ${rowIndex + 1}`}
+          sortedData.map((row, rowIndex) => {
+            const rowKey = String(row.id || row.uid || row._id || row.key || rowIndex);
+            return (
+              <article
+                key={rowKey}
+                onClick={() => onRowClick?.(row, rowIndex)}
+                className={`rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 transition-colors
+                  ${onRowClick ? 'cursor-pointer' : ''}
+                  hover:bg-purple-500/[0.04]`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">
+                      {columns[0]?.label ?? 'Item'}
+                    </p>
+                    <div className="mt-1 text-sm font-semibold text-white">
+                      {columns[0] ? renderCellContent(columns[0], row, rowIndex) : `Row ${rowIndex + 1}`}
+                    </div>
                   </div>
+
+                  {hasBulk && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Checkbox.Root
+                        checked={selected.has(rowIndex)}
+                        onCheckedChange={() => toggleRow(rowIndex)}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20
+                          bg-white/[0.04] data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600
+                          transition-colors"
+                      >
+                        <Checkbox.Indicator>
+                          <Check className="w-4 h-4 text-white" />
+                        </Checkbox.Indicator>
+                      </Checkbox.Root>
+                    </div>
+                  )}
                 </div>
 
-                {hasBulk && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Checkbox.Root
-                      checked={selected.has(rowIndex)}
-                      onCheckedChange={() => toggleRow(rowIndex)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20
-                        bg-white/[0.04] data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600
-                        transition-colors"
-                    >
-                      <Checkbox.Indicator>
-                        <Check className="w-4 h-4 text-white" />
-                      </Checkbox.Indicator>
-                    </Checkbox.Root>
+                {columns.length > 1 && (
+                  <dl className="mt-3 space-y-2 border-t border-white/[0.05] pt-3">
+                    {columns.slice(1).map((col) => (
+                      <div key={col.key} className="grid grid-cols-[6.5rem_1fr] gap-3 text-xs">
+                        <dt className="text-white/35">{col.label}</dt>
+                        <dd className="min-w-0 text-right text-white/75">
+                          {renderCellContent(col, row, rowIndex)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+
+                {actions.length > 0 && (
+                  <div
+                    className="mt-4 flex flex-wrap justify-end gap-2 border-t border-white/[0.05] pt-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {actions.map((action, ai) => {
+                      const ActionIcon = ACTION_ICONS[action.icon];
+                      return (
+                        <button
+                          key={ai}
+                          onClick={() => action.onClick(row, rowIndex)}
+                          title={action.label}
+                          className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors
+                            ${
+                              action.variant === 'danger'
+                                ? 'text-rose-300 bg-rose-500/10 hover:bg-rose-500/20'
+                                : 'text-white/70 bg-white/[0.06] hover:bg-white/[0.1]'
+                            }`}
+                        >
+                          <ActionIcon className="w-4 h-4" />
+                          {action.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
-              </div>
-
-              {columns.length > 1 && (
-                <dl className="mt-3 space-y-2 border-t border-white/[0.05] pt-3">
-                  {columns.slice(1).map((col) => (
-                    <div key={col.key} className="grid grid-cols-[6.5rem_1fr] gap-3 text-xs">
-                      <dt className="text-white/35">{col.label}</dt>
-                      <dd className="min-w-0 text-right text-white/75">
-                        {renderCellContent(col, row, rowIndex)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-
-              {actions.length > 0 && (
-                <div
-                  className="mt-4 flex flex-wrap justify-end gap-2 border-t border-white/[0.05] pt-3"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {actions.map((action, ai) => {
-                    const ActionIcon = ACTION_ICONS[action.icon];
-                    return (
-                      <button
-                        key={ai}
-                        onClick={() => action.onClick(row, rowIndex)}
-                        title={action.label}
-                        className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-xs font-semibold transition-colors
-                          ${
-                            action.variant === 'danger'
-                              ? 'text-rose-300 bg-rose-500/10 hover:bg-rose-500/20'
-                              : 'text-white/70 bg-white/[0.06] hover:bg-white/[0.1]'
-                          }`}
-                      >
-                        <ActionIcon className="w-4 h-4" />
-                        {action.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </article>
-          ))
+              </article>
+            );
+          })
         )}
       </div>
 
@@ -474,75 +477,78 @@ export function DataTable<T extends Record<string, unknown>>({
                 </td>
               </tr>
             ) : (
-              sortedData.map((row, rowIndex) => (
-                <tr
-                  key={rowIndex}
-                  onClick={() => onRowClick?.(row, rowIndex)}
-                  className={`border-b border-white/[0.03] transition-colors
-                    ${onRowClick ? 'cursor-pointer' : ''}
-                    hover:bg-purple-500/[0.04]`}
-                >
-                  {/* Checkbox */}
-                  {hasBulk && (
-                    <td
-                      className="w-12 px-4 py-3 sticky left-0 bg-[rgba(10,10,26,0.95)] z-10"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Checkbox.Root
-                        checked={selected.has(rowIndex)}
-                        onCheckedChange={() => toggleRow(rowIndex)}
-                        className="flex h-4 w-4 items-center justify-center rounded border border-white/20
-                          bg-white/[0.04] data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600
-                          transition-colors"
-                      >
-                        <Checkbox.Indicator>
-                          <Check className="w-3 h-3 text-white" />
-                        </Checkbox.Indicator>
-                      </Checkbox.Root>
-                    </td>
-                  )}
-
-                  {/* Data cells */}
-                  {columns.map((col) => {
-                    return (
+              sortedData.map((row, rowIndex) => {
+                const rowKey = String(row.id || row.uid || row._id || row.key || rowIndex);
+                return (
+                  <tr
+                    key={rowKey}
+                    onClick={() => onRowClick?.(row, rowIndex)}
+                    className={`border-b border-white/[0.03] transition-colors
+                      ${onRowClick ? 'cursor-pointer' : ''}
+                      hover:bg-purple-500/[0.04]`}
+                  >
+                    {/* Checkbox */}
+                    {hasBulk && (
                       <td
-                        key={col.key}
-                        className="px-4 py-3 text-white/80
-                          first:sticky first:left-0 first:bg-[rgba(10,10,26,0.95)] first:z-10"
-                        style={{ width: col.width }}
+                        className="w-12 px-4 py-3 sticky left-0 bg-[rgba(10,10,26,0.95)] z-10"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {renderCellContent(col, row, rowIndex)}
+                        <Checkbox.Root
+                          checked={selected.has(rowIndex)}
+                          onCheckedChange={() => toggleRow(rowIndex)}
+                          className="flex h-4 w-4 items-center justify-center rounded border border-white/20
+                            bg-white/[0.04] data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600
+                            transition-colors"
+                        >
+                          <Checkbox.Indicator>
+                            <Check className="w-3 h-3 text-white" />
+                          </Checkbox.Indicator>
+                        </Checkbox.Root>
                       </td>
-                    );
-                  })}
+                    )}
 
-                  {/* Actions */}
-                  {actions.length > 0 && (
-                    <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="inline-flex items-center gap-1">
-                        {actions.map((action, ai) => {
-                          const ActionIcon = ACTION_ICONS[action.icon];
-                          return (
-                            <button
-                              key={ai}
-                              onClick={() => action.onClick(row, rowIndex)}
-                              title={action.label}
-                              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors
-                                ${
-                                  action.variant === 'danger'
-                                    ? 'text-white/30 hover:text-rose-400 hover:bg-rose-500/10'
-                                    : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
-                                }`}
-                            >
-                              <ActionIcon className="w-4 h-4" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))
+                    {/* Data cells */}
+                    {columns.map((col) => {
+                      return (
+                        <td
+                          key={col.key}
+                          className="px-4 py-3 text-white/80
+                            first:sticky first:left-0 first:bg-[rgba(10,10,26,0.95)] first:z-10"
+                          style={{ width: col.width }}
+                        >
+                          {renderCellContent(col, row, rowIndex)}
+                        </td>
+                      );
+                    })}
+
+                    {/* Actions */}
+                    {actions.length > 0 && (
+                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="inline-flex items-center gap-1">
+                          {actions.map((action, ai) => {
+                            const ActionIcon = ACTION_ICONS[action.icon];
+                            return (
+                              <button
+                                key={ai}
+                                onClick={() => action.onClick(row, rowIndex)}
+                                title={action.label}
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors
+                                  ${
+                                    action.variant === 'danger'
+                                      ? 'text-white/30 hover:text-rose-400 hover:bg-rose-500/10'
+                                      : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
+                                  }`}
+                              >
+                                <ActionIcon className="w-4 h-4" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

@@ -29,6 +29,7 @@ import {
 } from 'firebase/firestore';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
+import { Select } from '@/components/ui/Select';
 import {
   YEARLY_PLAN_BY_SLUG,
   YEARLY_SUBSCRIPTION_PLANS,
@@ -103,6 +104,21 @@ const PLAN_CONFIG = {
   basic: { label: 'Basic Plan', bg: 'bg-cyan-500/15', text: 'text-cyan-300' },
   premium: { label: 'Premium Plan', bg: 'bg-amber-500/15', text: 'text-amber-300' },
 };
+
+const PLAN_OPTIONS = [
+  { value: 'all', label: 'All Plans' },
+  { value: 'free', label: 'Free Plan Users' },
+  { value: 'basic', label: 'Basic Plan Users' },
+  { value: 'premium', label: 'Premium Plan Users' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All Status' },
+  { value: 'active', label: 'Active' },
+  { value: 'pending_renewal', label: 'Pending Renewal' },
+  { value: 'expired', label: 'Expired' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 const STATUS_CONFIG: Record<SubscriptionStatus, { label: string; bg: string; text: string; dot: string }> = {
   active: { label: 'Active', bg: 'bg-emerald-500/15', text: 'text-emerald-400', dot: 'bg-emerald-400' },
@@ -538,25 +554,20 @@ export default function SubscriptionsPage() {
           />
         </div>
         <div className="flex gap-2">
-          <div className="relative">
-            <select value={planFilter} onChange={(event) => setPlanFilter(event.target.value)} className="appearance-none rounded-xl border border-white/[0.1] bg-white/[0.04] py-2.5 pl-3 pr-8 text-sm text-gray-300 outline-none transition-all focus:border-violet-500/40">
-              <option value="all">All Plans</option>
-              <option value="free">Free Plan Users</option>
-              <option value="basic">Basic Plan Users</option>
-              <option value="premium">Premium Plan Users</option>
-            </select>
-            <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-          </div>
-          <div className="relative">
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="appearance-none rounded-xl border border-white/[0.1] bg-white/[0.04] py-2.5 pl-3 pr-8 text-sm text-gray-300 outline-none transition-all focus:border-violet-500/40">
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="pending_renewal">Pending Renewal</option>
-              <option value="expired">Expired</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
-          </div>
+          <Select
+            value={planFilter}
+            onChange={setPlanFilter}
+            options={PLAN_OPTIONS}
+            placeholder="All Plans"
+            className="w-48"
+          />
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_OPTIONS}
+            placeholder="All Status"
+            className="w-48"
+          />
         </div>
       </div>
 

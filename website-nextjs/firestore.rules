@@ -43,6 +43,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
     }
 
+    function isPremiumCompanyOwner(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.companyId != null &&
+        exists(/databases/$(database)/documents/companies/$(get(/databases/$(database)/documents/users/$(uid)).data.companyId)) &&
+        get(/databases/$(database)/documents/companies/$(get(/databases/$(database)/documents/users/$(uid)).data.companyId)).data.isPremium == true;
+    }
+
     function optionalFalse(field) {
       return !request.resource.data.keys().hasAny([field]) || request.resource.data[field] == false;
     }
@@ -50,15 +56,19 @@ service cloud.firestore {
     function optionalFalseOrUnchanged(field) {
       return !request.resource.data.keys().hasAny([field]) ||
         request.resource.data[field] == false ||
-        request.resource.data[field] == resource.data[field];
+        (resource.data.keys().hasAny([field]) && request.resource.data[field] == resource.data[field]);
     }
 
     function unchanged(field) {
-      return request.resource.data[field] == resource.data[field];
+      // If neither the existing doc nor the incoming write has this field, it's unchanged.
+      // If only one side has it, treat as changed. Otherwise compare values.
+      let inReq = request.resource.data.keys().hasAny([field]);
+      let inRes = resource.data.keys().hasAny([field]);
+      return (!inReq && !inRes) || (inReq && inRes && request.resource.data[field] == resource.data[field]);
     }
 
     function isEndUserRole(role) {
-      return role in ['job_seeker', 'employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'];
+      return role in ['job_seeker', 'pending_employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'];
     }
 
     function hasEmployerRole() {
@@ -104,13 +114,40 @@ service cloud.firestore {
         );
     }
 
+    function isOnlyIncrementingJobCounters() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      let hasAppsCount = request.resource.data.keys().hasAny(['applicationsCount']);
+      let hasWalkInCount = request.resource.data.keys().hasAny(['walkInApplicationsCount']);
+      
+      let validAppsCount = !hasAppsCount || (
+        (resource.data.keys().hasAny(['applicationsCount']) ? request.resource.data.applicationsCount == resource.data.applicationsCount + 1 : request.resource.data.applicationsCount == 1)
+      );
+      
+      let validWalkInCount = !hasWalkInCount || (
+        (resource.data.keys().hasAny(['walkInApplicationsCount']) ? request.resource.data.walkInApplicationsCount == resource.data.walkInApplicationsCount + 1 : request.resource.data.walkInApplicationsCount == 1)
+      );
+
+      return isAuthenticated()
+        && affected.hasOnly(['applicationsCount', 'walkInApplicationsCount', 'updatedAt'])
+        && validAppsCount
+        && validWalkInCount;
+    }
+
     // ===== USERS =====
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin() || (
+        isAuthenticated() && (
+          exists(/databases/$(database)/documents/conversations/$(request.auth.uid + '_' + userId)) ||
+          exists(/databases/$(database)/documents/conversations/$(userId + '_' + request.auth.uid))
+        )
+      );
       allow create: if isOwner(userId)
         && isEndUserRole(request.resource.data.role)
         && optionalFalse('employerVerified')
         && optionalFalse('companyVerified')
+        && optionalFalse('adminRole')
+        && optionalFalse('employerRole')
+        && optionalFalse('companyId')
         && (
           request.resource.data.isVerified == false ||
           (
@@ -151,29 +188,42 @@ service cloud.firestore {
         && optionalFalse('isActive')
         && optionalFalse('isFeatured')
         && optionalFalse('isPremium');
+      // Admin: full update access (can approve/reject, feature, premium, activate)
       allow update: if isAdmin()
-        || (
-          resource.data.ownerId == request.auth.uid
-          && request.resource.data.ownerId == resource.data.ownerId
-          && request.resource.data.verificationStatus == resource.data.verificationStatus
-          && optionalFalseOrUnchanged('isFeatured')
-        );
+        && request.resource.data.ownerId == resource.data.ownerId;
+      // Owner: restricted update (cannot change status, verification, featured, premium, active)
+      allow update: if resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.verificationStatus == resource.data.verificationStatus
+        && request.resource.data.status == resource.data.status
+        && optionalFalseOrUnchanged('isFeatured')
+        && optionalFalseOrUnchanged('isPremium')
+        && optionalFalseOrUnchanged('isActive');
       allow delete: if isAdmin();
+
+      match /private/verification {
+        allow read, write: if isAdmin() || isCompanyOwner(companyId);
+      }
     }
 
     // ===== JOBS =====
     match /jobs/{jobId} {
       allow read: if true;
       allow create: if isAdmin();
-      allow update: if isAdmin()
-        || (
-          resource.data.postedBy == request.auth.uid
+      allow update: if (
+          (isAdmin() || resource.data.postedBy == request.auth.uid)
           && request.resource.data.postedBy == resource.data.postedBy
-          && ownerCanChangeJobVisibility()
-          && optionalFalseOrUnchanged('isFeatured')
-          && optionalFalseOrUnchanged('isUrgent')
-          && optionalFalseOrUnchanged('isPremium')
-        );
+          && request.resource.data.status == resource.data.status
+          && (resource.data.postedBy == request.auth.uid ? (
+               ownerCanChangeJobVisibility()
+               && optionalFalseOrUnchanged('isFeatured')
+               && optionalFalseOrUnchanged('isUrgent')
+               && optionalFalseOrUnchanged('isPremium')
+             ) : (
+               request.resource.data.isActive == resource.data.isActive
+             ))
+        )
+        || isOnlyIncrementingJobCounters();
       allow delete: if isAdmin()
         || (isAuthenticated() && resource.data.postedBy == request.auth.uid);
     }
@@ -185,24 +235,8 @@ service cloud.firestore {
         isCompanyOwner(resource.data.companyId) ||
         isAdmin()
       );
-      allow create: if isAuthenticated()
-        && applicationId == request.auth.uid + '_' + request.resource.data.jobId
-        && request.resource.data.seekerId == request.auth.uid
-        && request.resource.data.status in ['applied', 'pending_review']
-        && (
-          !request.resource.data.keys().hasAny(['applicationType']) ||
-          request.resource.data.applicationType in ['job', 'walk_in']
-        )
-        && exists(/databases/$(database)/documents/jobs/$(request.resource.data.jobId))
-        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.companyId == request.resource.data.companyId
-        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.isActive == true
-        && get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'active'
-        && (
-          !get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.keys().hasAny(['expiresAt']) ||
-          get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.expiresAt > request.time
-        );
-      allow update: if isAdmin() || isCompanyOwner(resource.data.companyId);
-      allow delete: if isAdmin();
+      // All creation/updates must go through Cloud Functions (serverApplyToJob / serverUpdateApplicationStatus)
+      allow create, update, delete: if isAdmin();
     }
 
     // ===== REVIEWS =====
@@ -245,7 +279,16 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (isAuthenticated() && resource.data.userId == request.auth.uid)
         || (resource.data.companyId != null && isCompanyOwner(resource.data.companyId));
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.contactName is string
+        && request.resource.data.contactName.size() <= 100
+        && request.resource.data.contactPhone is string
+        && request.resource.data.contactPhone.size() >= 10
+        && request.resource.data.contactPhone.size() <= 15
+        && request.resource.data.type in ['candidate', 'business', 'service']
+        && request.resource.data.status == 'new'
+        && (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == request.auth.uid)
+        && (!request.resource.data.keys().hasAny(['message']) || (request.resource.data.message is string && request.resource.data.message.size() <= 1000));
       allow update: if isAdmin()
         || (resource.data.companyId != null && isCompanyOwner(resource.data.companyId));
       allow delete: if isAdmin();
@@ -272,8 +315,8 @@ service cloud.firestore {
     // ===== NOTIFICATIONS =====
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated()
-        && (request.resource.data.userId == request.auth.uid || isAdmin());
+      // All creations must go through Cloud Functions (createNotification / sendBroadcastNotification)
+      allow create: if isAdmin();
       allow update: if isAdmin()
         || (
           resource.data.userId == request.auth.uid
@@ -287,14 +330,21 @@ service cloud.firestore {
     match /jobAlerts/{alertId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin()
+        || (
+          isAuthenticated()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+        );
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ===== SUBSCRIPTIONS / PAYMENTS =====
     match /subscriptions/{subscriptionId} {
       allow read: if isAuthenticated() && (
+        resource == null ||
         resource.data.userId == request.auth.uid ||
-        (resource.data.companyId != null && isCompanyOwner(resource.data.companyId)) ||
+        (resource.data.keys().hasAny(['companyId']) && resource.data.companyId != null && isCompanyOwner(resource.data.companyId)) ||
         isAdmin()
       );
       allow create: if isAdmin()
@@ -329,10 +379,33 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /razorpayOrders/{orderId} {
+      allow read: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow write: if isAdmin();
+    }
+
+    match /webhookEvents/{eventId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /employer_requests/{requestId} {
+      allow read: if isAuthenticated() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
     // ===== SETTINGS =====
     match /platformSettings/{settingsId} {
       allow read: if isAdmin();
-      allow create, update, delete: if isSuperAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     match /employerSettings/{companyId} {
@@ -365,12 +438,59 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // ===== SHOP PRODUCTS =====
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (isAdmin() || isCompanyOwner(request.resource.data.companyId));
+      allow update: if isAuthenticated() && (isAdmin() || (isCompanyOwner(resource.data.companyId) && request.resource.data.companyId == resource.data.companyId));
+      allow delete: if isAuthenticated() && (isAdmin() || isCompanyOwner(resource.data.companyId));
+    }
+
+    // ===== SHOP ORDERS =====
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ===== B2B RFQS & QUOTATIONS =====
+    match /rfqs/{rfqId} {
+      allow read: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid ||
+        isCompanyOwner(resource.data.companyId) ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid ||
+        isCompanyOwner(resource.data.companyId) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+
+    // ===== SHOP COUPONS =====
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ===== SHOP PRODUCT REVIEWS =====
+    match /productReviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
     // ===== PUBLIC PROFILE INDEX =====
     match /publicProfiles/{profileId} {
       allow read: if isAdmin()
-        || (isAuthenticated() && resource.data.ownerId == request.auth.uid)
-        || (resource.data.type == 'job_seeker' && hasVerifiedEmployerAccess())
-        || resource.data.type in ['employer', 'business_owner'];
+        || isOwner(profileId)
+        || (isAuthenticated() && (resource == null || resource.data.ownerId == request.auth.uid))
+        || (resource != null && resource.data.type == 'job_seeker' && hasVerifiedEmployerAccess())
+        || (resource != null && resource.data.type in ['employer', 'business_owner']);
       allow create: if isAuthenticated()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.type in ['job_seeker', 'employer', 'business_owner'];
@@ -392,18 +512,7 @@ service cloud.firestore {
 
     match /activityLogs/{activityLogId} {
       allow read: if isAdmin();
-      allow create: if isAuthenticated()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.keys().hasOnly([
-          'userId',
-          'userName',
-          'action',
-          'target',
-          'targetId',
-          'details',
-          'timestamp',
-          'createdAt'
-        ]);
+      allow create: if false;
       allow update, delete: if false;
     }
 
@@ -463,6 +572,24 @@ service cloud.firestore {
           );
         allow update, delete: if false;
       }
+    }
+
+    // ===== BOOKINGS =====
+    match /bookings/{bookingId} {
+      allow read: if isAdmin()
+        || (isAuthenticated() && resource.data.customerId == request.auth.uid)
+        || (isAuthenticated() && isCompanyOwner(resource.data.serviceProviderId));
+      allow create: if isAuthenticated()
+        && request.resource.data.customerId == request.auth.uid;
+      allow update: if isAdmin()
+        || (isAuthenticated() && resource.data.customerId == request.auth.uid)
+        || (isAuthenticated() && isCompanyOwner(resource.data.serviceProviderId));
+      allow delete: if isAdmin();
+    }
+
+    // ===== RATE LIMITERS =====
+    match /rateLimiters/{limiterId} {
+      allow read, write: if false;
     }
 
     // ===== CATCH-ALL =====

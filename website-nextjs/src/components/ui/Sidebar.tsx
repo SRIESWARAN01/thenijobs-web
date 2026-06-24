@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   PanelLeftClose,
   PanelLeft,
@@ -84,6 +84,12 @@ import {
   Sparkles,
   Crown,
   Gem,
+  User,
+  Send,
+  GraduationCap,
+  Megaphone,
+  ShoppingBag,
+  UserCircle,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -102,6 +108,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   SlidersHorizontal, RefreshCw, MoreHorizontal, ChevronRight,
   ChevronDown, ArrowLeft, ArrowRight, Flag, Target, Lightbulb,
   Sparkles, Crown, Gem, Menu, X, LogOut, PanelLeft, PanelLeftClose,
+  User, Send, GraduationCap, Megaphone, ShoppingBag, UserCircle,
 };
 
 /* ------------------------------------------------------------------ */
@@ -114,6 +121,8 @@ export interface SidebarItem {
   icon: string; // icon name from ICON_MAP
   href: string;
   badge?: string | number;
+  /** Optional section header shown above this item when the section changes */
+  section?: string;
 }
 
 export interface SidebarUser {
@@ -131,6 +140,7 @@ export interface SidebarProps {
   user?: SidebarUser;
   onLogout?: () => void;
   className?: string;
+  children?: React.ReactNode;
 }
 
 /* ------------------------------------------------------------------ */
@@ -154,11 +164,15 @@ export function Sidebar({
   user,
   onLogout,
   className = '',
+  children,
 }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   const PortalIcon = useMemo(() => resolveIcon(portalIcon), [portalIcon]);
+
+  const motionTransition = shouldReduceMotion ? { duration: 0 } : undefined;
 
   /* ---- Shared nav content ---- */
   const navContent = (isMobile: boolean) => (
@@ -174,6 +188,7 @@ export function Sidebar({
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
+              transition={motionTransition}
               className="text-base font-bold text-white font-[Outfit] overflow-hidden whitespace-nowrap"
             >
               {portalTitle}
@@ -182,13 +197,32 @@ export function Sidebar({
         </AnimatePresence>
       </div>
 
+      {children && (!collapsed || isMobile) && (
+        <div className="px-3 pt-3 shrink-0 animate-fade-in">
+          {children}
+        </div>
+      )}
+
       {/* ── Nav items ── */}
       <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5 no-scrollbar">
-        {items.map((item) => {
+        {items.map((item, idx) => {
           const Icon = resolveIcon(item.icon);
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const prevSection = idx > 0 ? items[idx - 1].section : undefined;
+          const showSectionHeader = item.section && item.section !== prevSection;
 
           return (
+            <React.Fragment key={item.href}>
+              {showSectionHeader && (!collapsed || isMobile) && (
+                <div className={`px-3 pt-4 pb-1.5 ${idx > 0 ? 'mt-1 border-t border-white/[0.04]' : ''}`}>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">
+                    {item.section}
+                  </span>
+                </div>
+              )}
+              {showSectionHeader && collapsed && !isMobile && (
+                <div className="my-2 mx-2 border-t border-white/[0.06]" />
+              )}
             <Link
               key={item.href}
               href={item.href}
@@ -210,7 +244,7 @@ export function Sidebar({
                     layoutId="sidebar-active"
                     className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full
                       bg-gradient-to-b from-purple-500 to-indigo-500"
-                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 30 }}
                   />
                 )}
 
@@ -225,16 +259,22 @@ export function Sidebar({
                       initial={{ opacity: 0, width: 0 }}
                       animate={{ opacity: 1, width: 'auto' }}
                       exit={{ opacity: 0, width: 0 }}
-                      className="text-sm font-medium overflow-hidden whitespace-nowrap flex-1"
+                      transition={motionTransition}
+                      className="text-sm font-medium overflow-hidden whitespace-nowrap flex-1 flex items-center justify-between gap-2"
                     >
-                      {item.label}
+                      <span className="truncate">{item.label}</span>
+                      {item.tamilLabel && (
+                        <span className="text-xs text-white/45 hidden xl:block font-normal truncate shrink-0">
+                          {item.tamilLabel}
+                        </span>
+                      )}
                     </motion.span>
                   )}
                 </AnimatePresence>
 
                 {/* Badge */}
                 {item.badge != null && (!collapsed || isMobile) && (
-                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full
+                  <span className="ml-auto text-xs font-bold px-1.5 py-0.5 rounded-full
                     bg-purple-600/20 text-purple-300 min-w-[20px] text-center">
                     {item.badge}
                   </span>
@@ -257,13 +297,14 @@ export function Sidebar({
                 >
                   {item.label}
                   {item.badge != null && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded-full bg-purple-600/30 text-purple-300 text-[10px]">
+                    <span className="ml-2 px-1.5 py-0.5 rounded-full bg-purple-600/30 text-purple-300 text-xs">
                       {item.badge}
                     </span>
                   )}
                 </div>
               )}
             </Link>
+            </React.Fragment>
           );
         })}
       </nav>
@@ -287,6 +328,7 @@ export function Sidebar({
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: 'auto' }}
                   exit={{ opacity: 0, width: 0 }}
+                  transition={motionTransition}
                   className="flex-1 min-w-0 overflow-hidden"
                 >
                   <p className="text-sm font-medium text-white truncate">{user.name}</p>
@@ -338,7 +380,7 @@ export function Sidebar({
       {/* ── Desktop Sidebar ── */}
       <motion.aside
         animate={{ width: collapsed ? 72 : 280 }}
-        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         className={`hidden md:flex flex-col h-screen sticky top-0 shrink-0 z-40
           border-r border-white/[0.06] ${className}`}
         style={{
@@ -371,6 +413,7 @@ export function Sidebar({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={motionTransition}
               onClick={() => setMobileOpen(false)}
               className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
             />
@@ -381,7 +424,7 @@ export function Sidebar({
               initial={{ x: -300 }}
               animate={{ x: 0 }}
               exit={{ x: -300 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 35 }}
               className="md:hidden fixed inset-y-0 left-0 z-50 w-[280px] flex flex-col
                 border-r border-white/[0.06]"
               style={{

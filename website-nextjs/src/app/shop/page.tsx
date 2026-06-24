@@ -187,7 +187,7 @@ export default function ShopPage() {
           </div>
         ) : featuredProducts.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {featuredProducts.map((product, i) => (
+            {featuredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -225,7 +225,7 @@ export default function ShopPage() {
           </div>
         ) : latestProducts.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {latestProducts.map((product, i) => (
+            {latestProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}

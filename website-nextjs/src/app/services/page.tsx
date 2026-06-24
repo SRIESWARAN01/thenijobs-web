@@ -11,9 +11,11 @@ import {
 import { getPublicCompanies } from '@/lib/firebase/firestoreService';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
+import { Select } from '@/components/ui/Select';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance'];
 const DISTRICTS = ['All', ...THENI_LAUNCH_LOCATIONS];
+const DISTRICT_OPTIONS = DISTRICTS.map(d => ({ value: d, label: d }));
 
 interface Service {
   id: string;
@@ -150,13 +152,13 @@ export default function ServicesPage() {
               className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none" />
             {search && <button onClick={() => setSearch('')}><X size={13} className="text-gray-500" /></button>}
           </div>
-          <div className="flex items-center gap-2 search-input px-3 py-2.5">
-            <MapPin size={14} className="text-violet-400 shrink-0" />
-            <select value={selectedDistrict} onChange={e => setSelectedDistrict(e.target.value)}
-              className="bg-transparent text-sm text-gray-300 outline-none pr-1 w-24">
-              {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
+          <Select
+            value={selectedDistrict}
+            onChange={setSelectedDistrict}
+            options={DISTRICT_OPTIONS}
+            placeholder="All Areas"
+            className="w-36"
+          />
           <button onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all border
               ${showFilters || activeFilters > 0 ? 'bg-violet-500/20 border-violet-500/40 text-violet-300' : 'bg-white/5 border-white/10 text-gray-400'}`}>
@@ -211,10 +213,13 @@ export default function ServicesPage() {
               {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across Theni district'}
             </p>
           </div>
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-300 outline-none">
-            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+          <Select
+            value={sortBy}
+            onChange={setSortBy}
+            options={SORT_OPTIONS}
+            placeholder="Sort by"
+            className="w-40"
+          />
         </div>
 
         {/* Category quick pills */}

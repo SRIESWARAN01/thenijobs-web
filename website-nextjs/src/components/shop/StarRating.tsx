@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useId } from 'react';
 
 // ─────────────────────────────────── Types ───────────────────────────────────
 
@@ -38,7 +38,8 @@ interface SvgStarProps {
  * scoped within the SVG element so there are no global ID collisions.
  */
 function SvgStar({ px, fill, color }: SvgStarProps) {
-  const gradId = `half-${px}-${Math.random().toString(36).slice(2, 7)}`;
+  const reactId = useId();
+  const gradId = `half-${px}-${reactId.replace(/:/g, '')}`;
 
   return (
     <svg

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateLeadStatus } from '@/lib/firebase/firestoreService';
+import { Select } from '@/components/ui/Select';
 
 // ===== TYPES =====
 interface LeadDoc {
@@ -49,6 +50,22 @@ const PIPELINE_STAGES: { status: LeadStatus; label: string }[] = [
   { status: 'qualified', label: 'Qualified' },
   { status: 'converted', label: 'Converted' },
   { status: 'lost', label: 'Lost' },
+];
+
+const TYPE_OPTIONS = [
+  { value: 'all', label: 'All Types' },
+  { value: 'candidate', label: 'Candidate' },
+  { value: 'business', label: 'Business' },
+  { value: 'service', label: 'Service' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All Status' },
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'qualified', label: 'Qualified' },
+  { value: 'converted', label: 'Converted' },
+  { value: 'lost', label: 'Lost' },
 ];
 
 export default function LeadsPage() {
@@ -179,26 +196,20 @@ export default function LeadsPage() {
           />
         </div>
         <div className="flex gap-2">
-          <div className="relative">
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer">
-              <option value="all">All Types</option>
-              <option value="candidate">Candidate</option>
-              <option value="business">Business</option>
-              <option value="service">Service</option>
-            </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          </div>
-          <div className="relative">
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer">
-              <option value="all">All Status</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="qualified">Qualified</option>
-              <option value="converted">Converted</option>
-              <option value="lost">Lost</option>
-            </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          </div>
+          <Select
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={TYPE_OPTIONS}
+            placeholder="All Types"
+            className="w-40"
+          />
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_OPTIONS}
+            placeholder="All Status"
+            className="w-40"
+          />
         </div>
       </div>
 

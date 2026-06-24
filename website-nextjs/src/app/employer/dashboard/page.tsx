@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Briefcase, Calendar, Eye, TrendingUp,
@@ -48,6 +48,27 @@ export default function EmployerDashboard() {
     limit(5)
   ], { skip: !companyId });
 
+  // 6. Fetch pending applications for over-7-days alert
+  const { data: pendingApplications, loading: pendingAppsLoading } = useCollection<any>('applications', [
+    where('companyId', '==', companyId || ''),
+    where('status', 'in', ['applied', 'pending_review', 'resume_viewed', 'under_review'])
+  ], { skip: !companyId });
+
+  const pendingOver7DaysCount = useMemo(() => {
+    if (!pendingApplications) return 0;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    return pendingApplications.filter((app: any) => {
+      const appDate = app.createdAt?.seconds 
+        ? new Date(app.createdAt.seconds * 1000) 
+        : app.createdAt?.toDate 
+          ? app.createdAt.toDate() 
+          : new Date(app.createdAt);
+      return appDate < sevenDaysAgo;
+    }).length;
+  }, [pendingApplications]);
+
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const handleAppStatus = async (appId: string, status: string) => {
@@ -94,7 +115,7 @@ export default function EmployerDashboard() {
     { label: 'Rejected', value: stats.rejected, icon: XCircle, color: 'rose' },
   ];
 
-  const loading = companyLoading || statsLoading || appsLoading || jobsLoading || interviewsLoading;
+  const loading = companyLoading || statsLoading || appsLoading || jobsLoading || interviewsLoading || pendingAppsLoading;
 
   if (!companyId && !companyLoading) {
     return (
@@ -133,6 +154,23 @@ export default function EmployerDashboard() {
         </div>
       ) : (
         <>
+          {pendingOver7DaysCount > 0 && (
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15 animate-pulse-glow">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                <Clock size={20} className="text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-300">Pending Applications Alert</p>
+                <p className="text-xs text-gray-300 mt-0.5 font-medium">
+                  You have <span className="text-amber-400 font-bold">{pendingOver7DaysCount}</span> applications pending for more than 7 days. Please review and update candidate status.
+                </p>
+              </div>
+              <Link href="/employer/candidates" className="text-xs text-amber-400 font-bold hover:text-amber-300 whitespace-nowrap bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                Update Status →
+              </Link>
+            </div>
+          )}
+
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {statItems.map((stat) => {

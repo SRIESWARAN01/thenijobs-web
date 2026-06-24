@@ -45,54 +45,41 @@ export interface UseMutationReturn {
   error: string | null;
 }
 
-interface ConstraintShape {
-  type?: string;
-  _field?: { segments?: unknown[]; canonicalString?: () => string };
-  _op?: string;
-  _value?: unknown;
-  _direction?: string;
-  _limit?: number;
-  _limitType?: string;
-}
-
-function stableValue(value: unknown): unknown {
-  if (value == null || ['string', 'number', 'boolean'].includes(typeof value)) {
-    return value;
+function serializeValue(val: unknown): unknown {
+  if (val === null || val === undefined) {
+    return val;
   }
-
-  if (value instanceof Date) {
-    return value.toISOString();
+  if (['string', 'number', 'boolean'].includes(typeof val)) {
+    return val;
   }
-
-  if (Array.isArray(value)) {
-    return value.map(stableValue);
+  if (val instanceof Date) {
+    return val.toISOString();
   }
-
-  if (typeof value === 'object') {
-    const record = value as Record<string, unknown>;
+  if (Array.isArray(val)) {
+    return val.map(serializeValue);
+  }
+  if (typeof val === 'object') {
+    const record = val as Record<string, unknown>;
     if (typeof record.toMillis === 'function') {
       return (record.toMillis as () => number)();
     }
     if (typeof record.path === 'string') {
       return record.path;
     }
-
+    if (typeof record.canonicalString === 'function') {
+      return (record.canonicalString as () => string)();
+    }
     return Object.keys(record)
       .sort()
       .reduce<Record<string, unknown>>((acc, key) => {
-        acc[key] = stableValue(record[key]);
+        const item = record[key];
+        if (typeof item !== 'function') {
+          acc[key] = serializeValue(item);
+        }
         return acc;
       }, {});
   }
-
-  return String(value);
-}
-
-function getFieldKey(field: ConstraintShape['_field']) {
-  if (!field) return undefined;
-  if (typeof field.canonicalString === 'function') return field.canonicalString();
-  if (Array.isArray(field.segments)) return field.segments.join('.');
-  return undefined;
+  return String(val);
 }
 
 function getConstraintsKey(
@@ -100,23 +87,9 @@ function getConstraintsKey(
   deps?: readonly unknown[],
 ) {
   if (deps) {
-    return JSON.stringify(deps.map(stableValue));
+    return JSON.stringify(deps.map(serializeValue));
   }
-
-  return JSON.stringify(
-    constraints.map((constraint) => {
-      const shape = constraint as unknown as ConstraintShape;
-      return {
-        type: shape.type,
-        field: getFieldKey(shape._field),
-        op: shape._op,
-        value: stableValue(shape._value),
-        direction: shape._direction,
-        limit: shape._limit,
-        limitType: shape._limitType,
-      };
-    }),
-  );
+  return JSON.stringify(constraints.map((c) => serializeValue(c)));
 }
 
 // ───────────────────────────── useCollection ─────────────────────

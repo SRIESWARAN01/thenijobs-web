@@ -14,6 +14,7 @@ import { useCollection } from '@/hooks/useFirestore';
 import { useUploadFile } from '@/hooks/useStorage';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
 import { where } from 'firebase/firestore';
+import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 
 const DEFAULT_COMPANY = {
   name: '',
@@ -78,6 +79,12 @@ export default function CompanyProfilePage() {
 
   const { uploadFile, progress: uploadProgress, loading: uploading } = useUploadFile();
 
+  // Cropper states
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropType, setCropType] = useState<'logo' | 'cover' | 'gallery' | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [galleryCropIndex, setGalleryCropIndex] = useState<number | null>(null);
+
   useEffect(() => {
     if (resolvedCompany) {
       setCompany({
@@ -126,42 +133,32 @@ export default function CompanyProfilePage() {
     }));
   };
 
-  const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadCover = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
-    try {
-      const url = await uploadFile(file, `companies/${user.uid}/cover_${Date.now()}`);
-      update('coverUrl', url);
-    } catch (err) {
-      console.error(err);
-      alert('Upload failed: ' + (err as Error).message);
-    }
+    if (!file) return;
+    setCropFile(file);
+    setCropType('cover');
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
   };
 
-  const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
-    try {
-      const url = await uploadFile(file, `companies/${user.uid}/logo_${Date.now()}`);
-      update('logoUrl', url);
-    } catch (err) {
-      console.error(err);
-      alert('Upload failed: ' + (err as Error).message);
-    }
+    if (!file) return;
+    setCropFile(file);
+    setCropType('logo');
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
   };
 
-  const handleUploadGallery = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleUploadGallery = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
-    try {
-      const url = await uploadFile(file, `companies/${user.uid}/gallery_${index}_${Date.now()}`);
-      const newGallery = [...company.gallery];
-      newGallery[index] = url;
-      setCompany(prev => ({ ...prev, gallery: newGallery }));
-    } catch (err) {
-      console.error(err);
-      alert('Upload failed: ' + (err as Error).message);
-    }
+    if (!file) return;
+    setCropFile(file);
+    setCropType('gallery');
+    setGalleryCropIndex(index);
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
   };
 
   const handleSave = async () => {
@@ -746,6 +743,54 @@ export default function CompanyProfilePage() {
           </div>
         </div>
       </div>
+
+      <ImageCropperModal
+        open={showCropper}
+        onClose={() => {
+          setShowCropper(false);
+          setCropFile(null);
+          setCropType(null);
+          setGalleryCropIndex(null);
+        }}
+        file={cropFile}
+        aspectRatio={cropType === 'logo' ? 1 : cropType === 'cover' ? 4 : 4/3}
+        cropWidth={cropType === 'logo' ? 400 : cropType === 'cover' ? 1200 : 800}
+        cropHeight={cropType === 'logo' ? 400 : cropType === 'cover' ? 300 : 600}
+        isCircular={cropType === 'logo'}
+        title={
+          cropType === 'logo'
+            ? 'Crop Company Logo'
+            : cropType === 'cover'
+            ? 'Crop Cover Banner'
+            : 'Crop Gallery Image'
+        }
+        onCropComplete={async (croppedFile) => {
+          try {
+            if (!user?.uid) return;
+            const uploadPath = cropType === 'logo'
+              ? `companies/${user.uid}/logo_${Date.now()}`
+              : cropType === 'cover'
+              ? `companies/${user.uid}/cover_${Date.now()}`
+              : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`;
+            
+            const url = await uploadFile(croppedFile, uploadPath);
+            if (cropType === 'logo') {
+              update('logoUrl', url);
+            } else if (cropType === 'cover') {
+              update('coverUrl', url);
+            } else if (cropType === 'gallery' && galleryCropIndex !== null) {
+              const newGallery = [...company.gallery];
+              newGallery[galleryCropIndex] = url;
+              update('gallery', newGallery);
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Upload failed: ' + (err as Error).message);
+          } finally {
+            setGalleryCropIndex(null);
+          }
+        }}
+      />
     </div>
   );
 }

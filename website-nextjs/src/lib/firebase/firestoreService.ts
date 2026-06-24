@@ -401,71 +401,12 @@ export async function applyToJob(data: {
   resumeName?: string;
   coverLetter?: string;
 }) {
-  const job = await fetchDocument<DocumentData>('jobs', data.jobId);
-  if (!job || !isPublicJobVisible(job)) {
-    throw new Error('This job is no longer accepting applications.');
-  }
-
-  const applicationId = deterministicId(data.seekerId, data.jobId);
-  const applicationRef = doc(db, 'applications', applicationId);
-  const existing = await getDoc(applicationRef);
-  if (existing.exists()) return applicationId;
-  const applicationType = data.applicationType || 'job';
-  const status = applicationType === 'walk_in' ? 'pending_review' : 'applied';
-
-  await setDoc(applicationRef, {
-    ...data,
-    applicationType,
-    status,
-    appliedAt: serverTimestamp(),
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
-
-  await runSideEffect('increment application counter', () =>
-    updateDoc(doc(db, 'jobs', data.jobId), {
-      applicationsCount: increment(1),
-      ...(applicationType === 'walk_in' ? { walkInApplicationsCount: increment(1) } : {}),
-      updatedAt: serverTimestamp(),
-    }),
-  );
-
-  await runSideEffect('log job application activity', () =>
-    logActivity({
-      userId: data.seekerId,
-      userName: data.seekerName,
-      action: applicationType === 'walk_in' ? 'Submitted walk-in application' : 'Applied to job',
-      target: data.jobTitle || data.jobId,
-      targetId: data.jobId,
-    }),
-  );
-
-  await runSideEffect('create application notification', async () => {
-    const company = await fetchDocument<{ ownerId?: string }>('companies', data.companyId);
-    if (!company?.ownerId) return;
-
-    await createNotification({
-      userId: company.ownerId,
-      type: 'application_update',
-      title: applicationType === 'walk_in' ? 'New Walk-In Candidate' : 'New Job Application',
-      message: `${data.seekerName} ${applicationType === 'walk_in' ? 'submitted a walk-in application for' : 'applied to'} ${data.jobTitle || 'your job posting'}`,
-      actionUrl: `/employer/candidates`,
-    });
-  });
-
-  if (applicationType === 'walk_in') {
-    await runSideEffect('create walk-in seeker notification', () =>
-      createNotification({
-        userId: data.seekerId,
-        type: 'application_update',
-        title: 'Walk-In Application Submitted',
-        message: `Your walk-in application for ${data.jobTitle || 'this job'} has been submitted.`,
-        actionUrl: '/seeker/applications',
-      }),
-    );
-  }
-
-  return applicationId;
+  const callable = httpsCallable<
+    typeof data,
+    { success: boolean; applicationId: string; alreadyApplied?: boolean }
+  >(functions, 'serverApplyToJob');
+  const result = await callable(data);
+  return result.data.applicationId;
 }
 
 export async function updateApplicationStatus(
@@ -473,11 +414,12 @@ export async function updateApplicationStatus(
   status: string,
   note?: string,
 ) {
-  await updateDoc(doc(db, 'applications', applicationId), {
-    status,
-    ...(note ? { employerNote: note } : {}),
-    updatedAt: serverTimestamp(),
-  });
+  const callable = httpsCallable<
+    { applicationId: string; status: string; note?: string },
+    { success: boolean }
+  >(functions, 'serverUpdateApplicationStatus');
+  const result = await callable({ applicationId, status, note });
+  return result.data;
 }
 
 // ============================================================
@@ -1062,6 +1004,62 @@ export async function startConversation(data: {
     createdAt: serverTimestamp(),
   }, { merge: true });
   return conversationId;
+}
+
+export async function sendBroadcastNotification(data: {
+  title: string;
+  message: string;
+  actionUrl?: string;
+  targetRole?: string;
+  targetUserIds?: string[];
+}) {
+  const callable = httpsCallable<typeof data, {
+    success: boolean;
+    sentCount: number;
+  }>(functions, 'sendBroadcastNotification');
+  const result = await callable(data);
+  return result.data;
+}
+
+export async function createBooking(data: any) {
+  return createDocument('bookings', {
+    ...data,
+    bookingStatus: 'pending',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateBookingStatus(
+  bookingId: string,
+  status: string,
+  notes?: string,
+  quotedPrice?: number
+) {
+  const updates: any = {
+    bookingStatus: status,
+    updatedAt: serverTimestamp(),
+  };
+  if (notes !== undefined) updates.providerNotes = notes;
+  if (quotedPrice !== undefined) updates.quotedPrice = Number(quotedPrice);
+
+  await updateDoc(doc(db, 'bookings', bookingId), updates);
+}
+
+export async function createRFQ(data: any) {
+  return createDocument('rfqs', {
+    ...data,
+    status: 'pending_quote',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function updateRFQ(rfqId: string, data: any) {
+  await updateDoc(doc(db, 'rfqs', rfqId), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 export { fetchCollection, fetchDocument, getCount };

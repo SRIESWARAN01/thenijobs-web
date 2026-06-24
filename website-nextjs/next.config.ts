@@ -5,13 +5,12 @@ import { fileURLToPath } from "node:url";
 const appRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  output: 'standalone',
   devIndicators: false,
   turbopack: {
     root: appRoot,
   },
   images: {
-    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },

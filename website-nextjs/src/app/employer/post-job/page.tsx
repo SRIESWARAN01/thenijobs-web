@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Briefcase, Banknote, FileText, Users, Clock,
-  ArrowLeft, ArrowRight, Check, Loader2, Plus, X, Zap, CalendarCheck, Crown
+  ArrowLeft, ArrowRight, Check, Loader2, Plus, X, Zap, CalendarCheck, Crown, Lock
 } from 'lucide-react';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { JOB_CATEGORIES } from '@/lib/constants';
@@ -637,30 +637,54 @@ export default function PostJobPage() {
             <div className="space-y-2.5 pt-4 border-t border-white/[0.06]">
               <p className="text-xs font-semibold text-gray-400">Boost Options (Optional)</p>
               {[
-                { key: 'isUrgent', label: '⚡ Mark as Urgent Hiring', desc: 'Get 3× more visibility on listings', color: 'amber' },
-                { key: 'isFeatured', label: '⭐ Featured Job Listing', desc: 'Positioned prominently on the homepage', color: 'violet' },
-                { key: 'isPremium', label: '👑 Premium Badge', desc: 'Highlighted list styling for more views', color: 'cyan' },
-              ].map(({ key, label, desc, color }) => {
+                { key: 'isUrgent', label: '⚡ Mark as Urgent Hiring', desc: 'Get 3× more visibility on listings', color: 'amber', requiresPremium: true },
+                { key: 'isFeatured', label: '⭐ Featured Job Listing', desc: 'Positioned prominently on the homepage', color: 'violet', requiresPremium: true },
+                { key: 'isPremium', label: '👑 Premium Badge', desc: 'Highlighted list styling for more views', color: 'cyan', requiresPremium: true },
+              ].map(({ key, label, desc, color, requiresPremium }) => {
                 const isChecked = (form as any)[key];
+                const isLocked = requiresPremium && currentPlan !== 'premium';
+
                 return (
                   <div
                     key={key}
-                    onClick={() => update(key, !isChecked)}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all
-                      ${isChecked
-                        ? BOOST_SELECTED_STYLES[color]
-                        : 'bg-white/[0.02] border-white/[0.06] hover:border-white/10'
+                    onClick={() => {
+                      if (isLocked) {
+                        alert('Upgrade to the Premium Plan to unlock this boost feature!');
+                        router.push('/employer/billing');
+                        return;
+                      }
+                      update(key, !isChecked);
+                    }}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer
+                      ${isLocked
+                        ? 'bg-white/[0.01] border-white/[0.03] opacity-60 hover:border-white/10'
+                        : isChecked
+                          ? BOOST_SELECTED_STYLES[color]
+                          : 'bg-white/[0.02] border-white/[0.06] hover:border-white/10'
                       }`}
                   >
                     <div>
-                      <div className="text-sm font-semibold text-white">{label}</div>
+                      <div className="text-sm font-semibold text-white flex items-center gap-1.5">
+                        {label}
+                        {isLocked && <Lock size={12} className="text-violet-400" />}
+                      </div>
                       <div className="text-xs text-gray-500 mt-0.5">{desc}</div>
                     </div>
-                    <div
-                      className={`w-10 h-6 rounded-full relative transition-all ${isChecked ? 'bg-cyan-500' : 'bg-white/20'}`}
-                    >
-                      <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${isChecked ? 'left-5' : 'left-1'}`} />
-                    </div>
+                    {isLocked ? (
+                      <Link
+                        href="/employer/billing"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-[10px] font-bold text-violet-400 hover:underline flex items-center gap-1"
+                      >
+                        Upgrade
+                      </Link>
+                    ) : (
+                      <div
+                        className={`w-10 h-6 rounded-full relative transition-all ${isChecked ? 'bg-cyan-500' : 'bg-white/20'}`}
+                      >
+                        <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-all ${isChecked ? 'left-5' : 'left-1'}`} />
+                      </div>
+                    )}
                   </div>
                 );
               })}

@@ -11,8 +11,9 @@ import {
   Loader2, Upload, Plus, X, BadgeCheck
 } from 'lucide-react';
 import { BUSINESS_CATEGORIES, LAUNCH_DISTRICT, LAUNCH_STATE, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
 const STEPS = [
@@ -25,6 +26,9 @@ const STEPS = [
 ];
 
 const COMPANY_SIZES = ['1–10', '11–50', '51–200', '201–500', '500+'];
+const COMPANY_SIZE_OPTIONS = COMPANY_SIZES.map(s => ({ value: s, label: `${s} employees` }));
+const CATEGORY_OPTIONS = BUSINESS_CATEGORIES.map(c => ({ value: c, label: c }));
+const LOCATION_OPTIONS = THENI_LAUNCH_LOCATIONS.map(d => ({ value: d, label: d }));
 const HOURS = ['08:00 AM', '09:00 AM', '10:00 AM'] as const;
 
 export default function CompanyRegisterPage() {
@@ -65,8 +69,10 @@ export default function CompanyRegisterPage() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
 
-      await addDoc(collection(db, 'companies'), {
-        ...form,
+      const { gstNumber, registrationNumber, ...publicForm } = form;
+
+      const docRef = await addDoc(collection(db, 'companies'), {
+        ...publicForm,
         foundedYear: form.foundedYear ? parseInt(form.foundedYear) : '',
         services,
         ownerId: user.uid,
@@ -84,12 +90,22 @@ export default function CompanyRegisterPage() {
         slug,
         verificationBadges: {
           emailVerified: !!form.email,
-          gstVerified: !!form.gstNumber,
+          gstVerified: !!gstNumber,
           businessVerified: false,
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+
+      if (gstNumber || registrationNumber) {
+        await setDoc(doc(db, 'companies', docRef.id, 'private', 'verification'), {
+          gstNumber: gstNumber || '',
+          registrationNumber: registrationNumber || '',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
       alert('Business registered successfully! Pending admin approval.');
       router.push('/employer/dashboard');
     } catch (err) {
@@ -158,11 +174,12 @@ export default function CompanyRegisterPage() {
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Business Category *</label>
-                  <select value={form.category} onChange={e => update('category', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm">
-                    <option value="">Select category</option>
-                    {BUSINESS_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <Select
+                    value={form.category}
+                    onChange={(val) => update('category', val)}
+                    options={CATEGORY_OPTIONS}
+                    placeholder="Select category"
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Sub-category</label>
@@ -178,11 +195,12 @@ export default function CompanyRegisterPage() {
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Company Size</label>
-                  <select value={form.companySize} onChange={e => update('companySize', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm">
-                    <option value="">Select size</option>
-                    {COMPANY_SIZES.map(s => <option key={s} value={s}>{s} employees</option>)}
-                  </select>
+                  <Select
+                    value={form.companySize}
+                    onChange={(val) => update('companySize', val)}
+                    options={COMPANY_SIZE_OPTIONS}
+                    placeholder="Select size"
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">GST Number (Optional)</label>
@@ -265,11 +283,12 @@ export default function CompanyRegisterPage() {
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Area / Town *</label>
-                  <select value={form.location} onChange={e => update('location', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm">
-                    <option value="">Select area</option>
-                    {THENI_LAUNCH_LOCATIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                  <Select
+                    value={form.location}
+                    onChange={(val) => update('location', val)}
+                    options={LOCATION_OPTIONS}
+                    placeholder="Select area"
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">State</label>

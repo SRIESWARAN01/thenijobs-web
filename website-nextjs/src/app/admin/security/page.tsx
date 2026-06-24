@@ -9,6 +9,7 @@ import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { getCount, upsertDocument } from '@/lib/firebase/firestoreService';
 import { useAuth } from '@/hooks/useAuth';
 import { orderBy, limit, where } from 'firebase/firestore';
+import { Select } from '@/components/ui/Select';
 
 const PERMISSIONS = [
   { module: 'Users', super_admin: true, admin: true },
@@ -26,6 +27,12 @@ const roleColors: Record<string, string> = {
   'admin': 'text-violet-400 bg-violet-500/10',
   'moderator': 'text-cyan-400 bg-cyan-500/10',
 };
+
+const TIMEOUT_OPTIONS = [
+  { value: '15', label: '15 min' },
+  { value: '30', label: '30 min' },
+  { value: '60', label: '1 hr' },
+];
 
 interface LogDoc {
   id: string;
@@ -112,7 +119,7 @@ export default function SecurityPage() {
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return 'Just now';
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp.toDate ? timestamp.toDate() : timestamp);
     const diff = Date.now() - date.getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Just now';
@@ -123,7 +130,7 @@ export default function SecurityPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="space-y-6 animate-fade-in-up animate-outfit">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white font-outfit">Security & Access Control</h1>
@@ -148,7 +155,7 @@ export default function SecurityPage() {
                 <h2 className="text-sm font-semibold text-white">Activity Logs</h2>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto font-outfit">
               {logsLoading ? (
                 <div className="flex flex-col items-center justify-center py-20">
                   <Loader2 size={36} className="text-violet-400 animate-spin mb-4" />
@@ -181,14 +188,14 @@ export default function SecurityPage() {
         </div>
 
         {/* Security Settings */}
-        <div className="space-y-4">
+        <div className="space-y-4 font-outfit">
           <div className="glass-card rounded-2xl p-5">
             <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2"><Shield size={16} className="text-violet-400" /> Security Settings</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-white">Two-Factor Auth</p>
-                  <p className="text-[10px] text-gray-500">Require 2FA for admin login</p>
+                  <p className="text-[10px] text-gray-500">Require 2FA for admin login (Coming Soon)</p>
                 </div>
                 <button disabled={!canManageSecurity} onClick={handleToggleTwoFa} className={`w-11 h-6 rounded-full transition-colors ${twoFa ? 'bg-emerald-600' : 'bg-white/10'} relative disabled:opacity-50`}>
                   <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${twoFa ? 'left-6' : 'left-1'}`} />
@@ -197,13 +204,15 @@ export default function SecurityPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-white">Session Timeout</p>
-                  <p className="text-[10px] text-gray-500">Auto-logout inactive admins</p>
+                  <p className="text-[10px] text-gray-500">Auto-logout inactive admins (Coming Soon)</p>
                 </div>
-                <select disabled={!canManageSecurity} value={sessionTimeout} onChange={e => handleTimeoutChange(e.target.value)} className="bg-white/[0.06] border border-white/[0.1] rounded-lg px-3 py-1.5 text-sm text-white outline-none disabled:opacity-50">
-                  <option value="15">15 min</option>
-                  <option value="30">30 min</option>
-                  <option value="60">1 hr</option>
-                </select>
+                <Select
+                  disabled={!canManageSecurity}
+                  value={sessionTimeout}
+                  onChange={handleTimeoutChange}
+                  options={TIMEOUT_OPTIONS}
+                  className="w-28"
+                />
               </div>
               {!canManageSecurity && (
                 <p className="text-[10px] text-amber-400">Super admin access is required to change security settings.</p>
@@ -232,8 +241,8 @@ export default function SecurityPage() {
         </div>
       </div>
 
-      {/* Admin Roles */}
-      <div className="glass-card rounded-2xl overflow-hidden">
+      {/* Admin Staff */}
+      <div className="glass-card rounded-2xl overflow-hidden font-outfit">
         <div className="px-5 py-4 border-b border-white/[0.06]">
           <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Users size={16} className="text-violet-400" /> Admin Staff ({admins.length})</h2>
         </div>
@@ -253,7 +262,7 @@ export default function SecurityPage() {
                   <p className="text-[10px] text-gray-500">{admin.email}</p>
                 </div>
                 <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${roleColors[admin.role] || 'text-gray-400 bg-gray-500/10'}`}>{admin.role}</span>
-                <span className="text-[10px] text-gray-600 hidden sm:block">
+                <span className="text-[10px] text-gray-655 hidden sm:block">
                   {admin.lastLogin ? formatTime(admin.lastLogin) : 'Active now'}
                 </span>
               </div>
@@ -265,7 +274,10 @@ export default function SecurityPage() {
       {/* Permission Matrix */}
       <div className="glass-card rounded-2xl overflow-hidden font-outfit">
         <div className="px-5 py-4 border-b border-white/[0.06]">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Key size={16} className="text-amber-400" /> Permission Matrix</h2>
+          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Key size={16} className="text-amber-400" /> Permission Matrix
+            <span className="text-[10px] text-amber-400/80 font-normal ml-2">(Role-based access enforcement on roadmap)</span>
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">

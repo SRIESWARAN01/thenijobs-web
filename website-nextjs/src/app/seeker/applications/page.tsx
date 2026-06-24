@@ -16,6 +16,7 @@ import { where, orderBy } from 'firebase/firestore';
 const tabs: WorkflowTab[] = [
   { label: 'All', value: 'all' },
   { label: 'Applied', value: 'applied' },
+  { label: 'Resume Viewed', value: 'resume_viewed' },
   { label: 'Pending Review', value: 'pending_review' },
   { label: 'Review', value: 'under_review' },
   { label: 'Shortlisted', value: 'shortlisted' },
@@ -28,6 +29,7 @@ const tabs: WorkflowTab[] = [
 
 const statusConfig = {
   applied: { label: 'Applied', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
+  resume_viewed: { label: 'Resume Viewed', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
   pending_review: { label: 'Pending Review', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
   under_review: { label: 'Under Review', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
   shortlisted: { label: 'Shortlisted', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
@@ -109,8 +111,9 @@ export default function SeekerApplicationsPage() {
 
       const base = [
         { label: 'Applied', detail: appliedDate, state: app.status === 'applied' ? 'current' : 'done' },
-        { label: 'Under Review', detail: app.status === 'under_review' ? 'Evaluating' : '', state: app.status === 'under_review' ? 'current' : app.status === 'applied' ? 'next' : 'done' },
-        { label: 'Shortlisted', detail: app.status === 'shortlisted' ? 'Shortlisted' : app.status === 'interview_scheduled' ? 'Interview Set' : '', state: (app.status === 'shortlisted' || app.status === 'interview_scheduled') ? 'current' : (app.status === 'applied' || app.status === 'under_review') ? 'next' : 'done' },
+        { label: 'Resume Viewed', detail: app.status === 'resume_viewed' ? 'Viewed by Employer' : '', state: app.status === 'resume_viewed' ? 'current' : app.status === 'applied' ? 'next' : 'done' },
+        { label: 'Under Review', detail: app.status === 'under_review' ? 'Evaluating' : '', state: app.status === 'under_review' ? 'current' : ['applied', 'resume_viewed'].includes(app.status) ? 'next' : 'done' },
+        { label: 'Shortlisted', detail: app.status === 'shortlisted' ? 'Shortlisted' : app.status === 'interview_scheduled' ? 'Interview Set' : '', state: (app.status === 'shortlisted' || app.status === 'interview_scheduled') ? 'current' : ['applied', 'resume_viewed', 'under_review'].includes(app.status) ? 'next' : 'done' },
         { label: app.status === 'rejected' ? 'Rejected' : app.status === 'selected' ? 'Selected' : 'Decision', detail: app.status === 'selected' ? 'Offer Made' : '', state: (app.status === 'selected' || app.status === 'rejected') ? 'done' : 'next' }
       ];
       return base;

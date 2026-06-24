@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Users, Building2, Briefcase, FileText, TrendingUp,
@@ -21,7 +21,13 @@ import {
 } from '@/lib/firebase/firestoreService';
 import { getShopStats } from '@/lib/firebase/shopService';
 import { useAuth } from '@/hooks/useAuth';
-import { where, orderBy, limit } from 'firebase/firestore';
+import { where, orderBy, limit, getDocs, collection, query, writeBatch, doc, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import {
+  YEARLY_PLAN_BY_SLUG,
+  getRenewalEndDate,
+  normalizePlanSlug,
+} from '@/lib/subscriptions';
 import { SkeletonCard } from '@/components/ui/LoadingSkeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 
@@ -102,6 +108,33 @@ export default function AdminDashboard() {
     [where('isActive', '==', false)],
   );
 
+  // Pending payment requests for subscription approval
+  const { data: pendingRequests, loading: requestsLoading } = useCollection<any>(
+    'paymentRequests',
+    [where('status', '==', 'pending')],
+  );
+
+  // Pending applications for platform-wide over-7-days alert
+  const { data: allPendingApplications } = useCollection<any>(
+    'applications',
+    [where('status', 'in', ['applied', 'pending_review', 'resume_viewed', 'under_review'])],
+  );
+
+  const adminPendingOver7DaysCount = useMemo(() => {
+    if (!allPendingApplications) return 0;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    return allPendingApplications.filter((app: any) => {
+      const appDate = app.createdAt?.seconds 
+        ? new Date(app.createdAt.seconds * 1000) 
+        : app.createdAt?.toDate 
+          ? app.createdAt.toDate() 
+          : new Date(app.createdAt);
+      return appDate < sevenDaysAgo;
+    }).length;
+  }, [allPendingApplications]);
+
   // Fetch recent activity logs
   useEffect(() => {
     async function loadActivities() {
@@ -152,34 +185,150 @@ export default function AdminDashboard() {
       district: j.district || 'Unknown',
       date: j.createdAt ? new Date(j.createdAt).toLocaleDateString() : 'Recently',
     })),
+    ...pendingRequests.map((r: any) => ({
+      id: r.id,
+      name: `${r.requesterName || 'User'} (${r.planName || r.plan})`,
+      type: 'subscription' as const,
+      company: `₹${r.amount} · ${r.audience === 'seeker' ? 'Seeker' : 'Employer'}`,
+      district: r.companyName || 'Personal Request',
+      date: r.requestedAt ? new Date(r.requestedAt).toLocaleDateString() : 'Recently',
+      raw: r,
+    })),
   ].slice(0, 8);
 
+  async function findExistingSubscription(request: any) {
+    const constraints = request.companyId
+      ? [where('companyId', '==', request.companyId), where('plan', '==', normalizePlanSlug(request.plan))]
+      : [where('userId', '==', request.userId), where('plan', '==', normalizePlanSlug(request.plan))];
+
+    const snapshot = await getDocs(query(collection(db, 'subscriptions'), ...constraints, limit(1)));
+    if (snapshot.empty) return null;
+    const subscription = snapshot.docs[0];
+    return { id: subscription.id, ...subscription.data() } as any;
+  }
+
   // Action handlers
-  const handleApprove = async (id: string, type: 'business' | 'job') => {
+  const handleApprove = async (id: string, type: 'business' | 'job' | 'subscription', raw?: any) => {
     setActionLoading(id);
     try {
       if (type === 'business') {
         await approveCompany(id, user?.uid || 'admin');
-      } else {
+      } else if (type === 'job') {
         await approveJob(id, user?.uid || 'admin');
+      } else if (type === 'subscription' && raw) {
+        const request = raw;
+        const planSlug = normalizePlanSlug(request.plan);
+        const plan = YEARLY_PLAN_BY_SLUG[planSlug];
+        const existing: any = await findExistingSubscription(request);
+        const now = new Date();
+        const endDate = getRenewalEndDate(existing?.endDate, now);
+        const subscriptionId = existing?.id || `${request.companyId || request.userId}_${planSlug}`;
+        const requesterName = request.requesterName || request.businessName || request.companyName || (request.audience === 'seeker' ? 'Candidate' : 'Business');
+        const companyName = request.businessName || request.companyName || (request.audience === 'seeker' ? 'Job Seeker' : requesterName);
+        const amount = Number(request.amount) || plan.price;
+        const batch = writeBatch(db);
+
+        batch.set(doc(db, 'subscriptions', subscriptionId), {
+          userId: request.userId,
+          ...(request.companyId ? { companyId: request.companyId } : {}),
+          audience: request.audience,
+          userName: requesterName,
+          companyName,
+          businessName: companyName,
+          email: request.requesterEmail || '',
+          mobile: request.requesterPhone || '',
+          plan: planSlug,
+          planName: plan.name,
+          amount,
+          period: 'year',
+          status: 'active',
+          startDate: existing?.startDate ? existing.startDate : Timestamp.fromDate(now),
+          endDate: Timestamp.fromDate(endDate),
+          paymentDate: serverTimestamp(),
+          autoRenew: false,
+          paymentMethod: 'manual_approval',
+          paymentRequestId: request.id,
+          expiryReminderDaysSent: [],
+          updatedAt: serverTimestamp(),
+          ...(existing ? {} : { createdAt: serverTimestamp() }),
+        }, { merge: true });
+
+        batch.set(doc(collection(db, 'payments')), {
+          userId: request.userId,
+          ...(request.companyId ? { companyId: request.companyId } : {}),
+          audience: request.audience,
+          userName: requesterName,
+          businessName: companyName,
+          companyName,
+          plan: plan.name,
+          planSlug,
+          period: 'year',
+          paymentMethod: 'manual_approval',
+          amount,
+          status: 'approved',
+          paymentRequestId: request.id,
+          createdAt: serverTimestamp(),
+        });
+
+        batch.update(doc(db, 'paymentRequests', request.id), {
+          status: 'approved',
+          approvedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        if (request.audience === 'employer' && request.companyId) {
+          batch.update(doc(db, 'companies', request.companyId), {
+            isPremium: planSlug === 'premium',
+            subscriptionPlan: planSlug,
+            subscriptionStatus: 'active',
+            subscriptionStartsAt: Timestamp.fromDate(now),
+            subscriptionEndsAt: Timestamp.fromDate(endDate),
+            updatedAt: serverTimestamp(),
+          });
+        }
+
+        if (request.audience === 'seeker') {
+          batch.set(doc(db, 'seekerProfiles', request.userId), {
+            isPremium: planSlug === 'premium',
+            premiumPlan: planSlug,
+            premiumUntil: Timestamp.fromDate(endDate),
+            subscriptionPlan: planSlug,
+            subscriptionStatus: 'active',
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        }
+
+        await batch.commit();
+        alert(`Subscription for ${requesterName} approved successfully!`);
       }
     } catch (err) {
       console.error('Approve error:', err);
+      alert('Approval failed.');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleReject = async (id: string, type: 'business' | 'job') => {
+  const handleReject = async (id: string, type: 'business' | 'job' | 'subscription') => {
     setActionLoading(id);
     try {
       if (type === 'business') {
         await rejectCompany(id, user?.uid || 'admin');
-      } else {
+      } else if (type === 'job') {
         await rejectJob(id, user?.uid || 'admin');
+      } else if (type === 'subscription') {
+        const batch = writeBatch(db);
+        batch.update(doc(db, 'paymentRequests', id), {
+          status: 'rejected',
+          rejectedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        await batch.commit();
+        alert('Subscription request rejected.');
       }
     } catch (err) {
       console.error('Reject error:', err);
+      alert('Rejection failed.');
     } finally {
       setActionLoading(null);
     }
@@ -215,6 +364,42 @@ export default function AdminDashboard() {
     { label: 'Total Job Seekers', value: stats.totalJobSeekers, icon: UserPlus, color: 'purple', prefix: '', href: '/admin/users' },
     { label: 'Total Applications', value: stats.totalApplications, icon: FileText, color: 'amber', prefix: '', href: '/admin/jobs' },
     { label: 'Walk-In Registrations', value: stats.totalWalkInRegistrations, icon: Activity, color: 'rose', prefix: '', href: '/admin/jobs' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white font-outfit">Admin Dashboard</h1>
+          <p className="text-sm text-gray-400 mt-1">Platform overview and management</p>
+        </div>
+      </div>
+
+      {adminPendingOver7DaysCount > 0 && (
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15 animate-pulse-glow">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0 animate-pulse">
+            <AlertTriangle size={20} className="text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-300">Pending Applications Alert (Admin)</p>
+            <p className="text-xs text-gray-300 mt-0.5 font-medium">
+              There are <span className="text-amber-400 font-bold">{adminPendingOver7DaysCount}</span> applications pending across the platform for more than 7 days.
+            </p>
+          </div>
+          <Link href="/admin/jobs" className="text-xs text-amber-400 font-bold hover:text-amber-300 whitespace-nowrap bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors">
+            Manage Jobs →
+          </Link>
+        </div>
+      )}
+
+      {/* Stat Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {statsConfig.map((card, i) => (
+          <StatCard key={i} {...card} />
+        ))}
+      </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Pending Approvals */}
@@ -255,8 +440,8 @@ export default function AdminDashboard() {
               <div className="divide-y divide-white/[0.04]">
                 {pendingApprovals.map((item) => (
                   <div key={item.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'business' ? 'bg-cyan-500/10' : 'bg-emerald-500/10'}`}>
-                      {item.type === 'business' ? <Building size={18} className="text-cyan-400" /> : <BriefcaseBusiness size={18} className="text-emerald-400" />}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'business' ? 'bg-cyan-500/10' : item.type === 'job' ? 'bg-emerald-500/10' : 'bg-violet-500/10'}`}>
+                      {item.type === 'business' ? <Building size={18} className="text-cyan-400" /> : item.type === 'job' ? <BriefcaseBusiness size={18} className="text-emerald-400" /> : <CreditCard size={18} className="text-violet-400" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">{item.name}</p>
@@ -270,21 +455,21 @@ export default function AdminDashboard() {
                       ) : (
                         <>
                           <button
-                            onClick={() => handleApprove(item.id, item.type)}
-                            className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                            onClick={() => handleApprove(item.id, item.type, (item as any).raw)}
+                            className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer"
                             title="Approve"
                           >
                             <CheckCircle size={16} />
                           </button>
                           <button
                             onClick={() => handleReject(item.id, item.type)}
-                            className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                            className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
                             title="Reject"
                           >
                             <XCircle size={16} />
                           </button>
                           <Link
-                            href={item.type === 'business' ? `/admin/businesses?focus=${item.id}` : `/admin/jobs?focus=${item.id}`}
+                            href={item.type === 'business' ? `/admin/businesses?focus=${item.id}` : item.type === 'job' ? `/admin/jobs?focus=${item.id}` : `/admin/subscriptions`}
                             className="p-2 rounded-lg bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] transition-colors"
                             title="View Details"
                           >

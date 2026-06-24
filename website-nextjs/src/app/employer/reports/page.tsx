@@ -7,9 +7,10 @@ import { useEmployerStats } from '@/hooks/useRealtimeStats';
 import { where } from 'firebase/firestore';
 import {
   BarChart3, Download, FileText, Loader2, Briefcase,
-  Users2, Calendar, Star, Eye, TrendingUp, IndianRupee
+  Users2, Calendar, Star, Eye, TrendingUp, IndianRupee, Lock
 } from 'lucide-react';
 import Link from 'next/link';
+import { selectBestSubscription, planHasFeature } from '@/lib/subscriptions';
 import { formatJobType } from '@/lib/jobFormatters';
 
 export default function EmployerReportsPage() {
@@ -36,7 +37,16 @@ export default function EmployerReportsPage() {
     where('companyId', '==', companyId || '')
   ], { skip: !companyId });
 
-  const loading = companyLoading || statsLoading || jobsLoading || appsLoading;
+  // 5. Fetch subscriptions
+  const { data: subscriptions, loading: subLoading } = useCollection<any>('subscriptions', [
+    where('companyId', '==', companyId || ''),
+  ], { skip: !companyId });
+
+  const activeSub = selectBestSubscription(subscriptions);
+  const activePlan = activeSub?.plan || company?.subscriptionPlan || (company?.isPremium ? 'premium' : 'free');
+  const hasAnalytics = planHasFeature(activePlan, 'basic_analytics');
+
+  const loading = companyLoading || statsLoading || jobsLoading || appsLoading || subLoading;
 
   if (!companyId && !companyLoading) {
     return (
@@ -46,6 +56,21 @@ export default function EmployerReportsPage() {
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view reports and metrics.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
           Setup Company Profile
+        </Link>
+      </div>
+    );
+  }
+
+  if (!hasAnalytics && !companyLoading && !subLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
+        <Lock size={48} className="mb-4 text-cyan-400 animate-pulse" />
+        <h2 className="text-xl font-bold text-white">Unlock Recruitment Reports</h2>
+        <p className="mt-2 max-w-sm text-sm text-gray-400">
+          Analytics and performance reports are restricted to Basic and Premium plans. Upgrade today to track job views, application conversion rates, and pipeline health.
+        </p>
+        <Link href="/employer/billing" className="mt-6 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 px-5 py-2.5 font-semibold text-white hover:opacity-90">
+          Upgrade Plan
         </Link>
       </div>
     );

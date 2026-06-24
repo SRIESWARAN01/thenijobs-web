@@ -22,6 +22,8 @@ import { useRealtimeCount } from '@/hooks/useRealtimeStats';
 import { where } from 'firebase/firestore';
 import { getActivityLogs } from '@/lib/firebase/firestoreService';
 import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useAuth } from '@/hooks/useAuth';
 
 const quickActions = [
   { label: 'Jobs தேடுங்கள்', href: '/jobs', icon: Briefcase, className: 'bg-teal-700 text-white hover:bg-teal-800' },
@@ -32,6 +34,8 @@ const quickActions = [
 
 export default function HeroSection() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { user, isAdmin } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState('Theni');
   const [updates, setUpdates] = useState<any[]>([]);
@@ -42,6 +46,10 @@ export default function HeroSection() {
 
   useEffect(() => {
     async function fetchUpdates() {
+      if (!user || !isAdmin) {
+        setUpdates([]);
+        return;
+      }
       try {
         const logs = await getActivityLogs(3);
         if (logs && logs.length > 0) {
@@ -58,7 +66,7 @@ export default function HeroSection() {
       }
     }
     fetchUpdates();
-  }, []);
+  }, [user, isAdmin]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -78,9 +86,9 @@ export default function HeroSection() {
   };
 
   const statsList = [
-    { value: activeJobs.toLocaleString('en-IN'), label: 'Active Jobs' },
-    { value: totalCompanies.toLocaleString('en-IN'), label: 'Local Companies' },
-    { value: totalUsers.toLocaleString('en-IN'), label: 'Registered Users' },
+    { value: activeJobs.toLocaleString('en-IN'), label: t('home.statsJobs') },
+    { value: totalCompanies.toLocaleString('en-IN'), label: t('home.statsCompanies') },
+    { value: totalUsers.toLocaleString('en-IN'), label: t('home.statsSeekers') },
   ];
 
   return (
@@ -94,12 +102,11 @@ export default function HeroSection() {
           </div>
 
           <h1 className="max-w-3xl font-outfit text-4xl font-black leading-[1.08] text-slate-950 sm:text-5xl lg:text-6xl">
-            Theni Jobs, Business & Services ஒரே இடத்தில்
+            {t('home.heroTitle')}
           </h1>
 
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-            வேலை தேடுபவர்களுக்கு jobs, business owners-க்கு public page, leads, calls, WhatsApp
-            inquiries எல்லாம் mobile-லும் laptop-லும் easy-ஆ use பண்ண.
+            {t('home.heroSubtitle')}
           </p>
 
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
@@ -147,7 +154,7 @@ export default function HeroSection() {
                 <Link
                   key={action.href}
                   href={action.href}
-                  className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-black transition-colors ${action.className}`}
+                  className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-black transition-colors ${action.className}`}
                 >
                   <Icon size={17} />
                   {action.label}
@@ -180,15 +187,15 @@ export default function HeroSection() {
             </div>
 
             <div className="grid gap-3 p-3 sm:grid-cols-3">
-              <a href="tel:+919360519460" className="flex items-center justify-center gap-2 rounded-xl bg-teal-50 px-3 py-3 text-xs font-black text-teal-800">
+              <a href="tel:+919360519460" className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-teal-50 px-3 py-2 text-xs font-black text-teal-800">
                 <Phone size={15} />
                 Call
               </a>
-              <a href="https://wa.me/917094826586" className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-3 py-3 text-xs font-black text-emerald-800">
+              <a href="https://wa.me/917094826586" className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-800">
                 <MessageCircle size={15} />
                 WhatsApp
               </a>
-              <Link href="/businesses" className="flex items-center justify-center gap-2 rounded-xl bg-amber-50 px-3 py-3 text-xs font-black text-amber-800">
+              <Link href="/businesses" className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-black text-amber-800">
                 <Navigation size={15} />
                 Direction
               </Link>

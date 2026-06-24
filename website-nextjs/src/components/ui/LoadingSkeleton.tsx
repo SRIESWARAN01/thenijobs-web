@@ -205,7 +205,7 @@ export function SkeletonChart({ height = 280, className = '' }: SkeletonChartPro
   );
 }
 
-export default {
+const LoadingSkeletons = {
   SkeletonCard,
   SkeletonTable,
   SkeletonList,
@@ -213,3 +213,5 @@ export default {
   SkeletonAvatar,
   SkeletonChart,
 };
+
+export default LoadingSkeletons;

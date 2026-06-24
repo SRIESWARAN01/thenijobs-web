@@ -7,9 +7,10 @@ import { updateLeadStatus } from '@/lib/firebase/firestoreService';
 import { where, orderBy } from 'firebase/firestore';
 import {
   TrendingUp, Search, ChevronDown, CheckCircle2, XCircle,
-  Clock, Phone, Mail, FileText, User, Loader2, MessageSquare
+  Clock, Phone, Mail, FileText, User, Loader2, MessageSquare, Lock
 } from 'lucide-react';
 import Link from 'next/link';
+import { selectBestSubscription, planHasFeature } from '@/lib/subscriptions';
 
 type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 
@@ -47,11 +48,19 @@ export default function EmployerLeadsPage() {
   const company = companies[0];
   const companyId = company?.id;
 
-  // 2. Fetch leads
+  // 2. Fetch subscriptions & leads
+  const { data: subscriptions, loading: subLoading } = useCollection<any>('subscriptions', [
+    where('companyId', '==', companyId || ''),
+  ], { skip: !companyId });
+
   const { data: leads, loading: leadsLoading } = useCollection<LeadDoc>('leads', [
     where('companyId', '==', companyId || ''),
     orderBy('createdAt', 'desc')
   ], { skip: !companyId });
+
+  const activeSub = selectBestSubscription(subscriptions);
+  const activePlan = activeSub?.plan || company?.subscriptionPlan || (company?.isPremium ? 'premium' : 'free');
+  const hasLeadDashboard = planHasFeature(activePlan, 'lead_dashboard');
 
   const handleStatusChange = async (leadId: string, status: LeadStatus) => {
     setActionLoading(leadId);
@@ -85,7 +94,7 @@ export default function EmployerLeadsPage() {
     return digits.length === 10 ? `91${digits}` : digits;
   };
 
-  const loading = companyLoading || leadsLoading;
+  const loading = companyLoading || leadsLoading || subLoading;
 
   if (!companyId && !companyLoading) {
     return (
@@ -95,6 +104,21 @@ export default function EmployerLeadsPage() {
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and manage customer leads.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
           Setup Company Profile
+        </Link>
+      </div>
+    );
+  }
+
+  if (!hasLeadDashboard && !companyLoading && !subLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
+        <Lock size={48} className="mb-4 text-violet-400 animate-pulse" />
+        <h2 className="text-xl font-bold text-white">Unlock Lead Management Dashboard</h2>
+        <p className="mt-2 max-w-sm text-sm text-gray-400">
+          The lead management dashboard is a Premium feature. Upgrade your plan today to capture, track, and convert business leads.
+        </p>
+        <Link href="/employer/billing" className="mt-6 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-5 py-2.5 font-semibold text-white hover:opacity-90">
+          Upgrade to Premium Plan
         </Link>
       </div>
     );

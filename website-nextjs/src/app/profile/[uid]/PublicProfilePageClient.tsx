@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Award, BadgeCheck, Briefcase, Download, GraduationCap, Mail, MapPin, Phone, ShieldCheck, Star } from 'lucide-react';
@@ -15,6 +16,7 @@ interface PublicProfile {
   phone?: string;
   photoUrl?: string;
   profilePhotoUrl?: string;
+  photoURL?: string;
   skills?: string[];
   education?: any[];
   experience?: any[];
@@ -23,6 +25,8 @@ interface PublicProfile {
   resumeUrl?: string;
   isOpenToWork?: boolean;
   profileStrength?: number;
+  role?: string;
+  candidateId?: string;
 }
 
 function getText(value: unknown, fallback = '') {
@@ -38,7 +42,19 @@ function getEntrySubtitle(entry: any) {
 }
 
 export default function PublicProfilePageClient({ uid }: { uid: string }) {
-  const { data: profile, loading } = useDocument<PublicProfile>('publicProfiles', uid);
+  // Cascading fallback: publicProfiles → seekerProfiles → users
+  const { data: publicProfile, loading: l1 } = useDocument<PublicProfile>('publicProfiles', uid);
+  const { data: seekerProfile, loading: l2 } = useDocument<PublicProfile>('seekerProfiles', uid);
+  const { data: userProfile, loading: l3 } = useDocument<PublicProfile>('users', uid);
+
+  const loading = l1 || ((!publicProfile) && l2) || ((!publicProfile && !seekerProfile) && l3);
+
+  const profile = useMemo(() => {
+    if (publicProfile) return publicProfile;
+    if (seekerProfile) return seekerProfile;
+    if (userProfile) return userProfile;
+    return null;
+  }, [publicProfile, seekerProfile, userProfile]);
 
   if (loading) {
     return (
@@ -60,8 +76,8 @@ export default function PublicProfilePageClient({ uid }: { uid: string }) {
   }
 
   const name = profile.name || profile.displayName || 'THENIJOBS Member';
-  const photoUrl = profile.photoUrl || profile.profilePhotoUrl || '';
-  const role = profile.currentRole || profile.qualification || 'Job Seeker';
+  const photoUrl = profile.photoUrl || profile.profilePhotoUrl || (profile as any).photoURL || '';
+  const role = profile.currentRole || profile.qualification || profile.role || 'Job Seeker';
 
   return (
     <main className="min-h-screen bg-[#0a0a1a] px-4 py-8 text-white sm:px-6">
@@ -82,13 +98,20 @@ export default function PublicProfilePageClient({ uid }: { uid: string }) {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="font-outfit text-3xl font-black">{name}</h1>
+                  {profile.candidateId && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 px-2.5 py-0.5 text-xs font-bold text-cyan-300">
+                      <ShieldCheck size={12} className="text-cyan-400 fill-cyan-400/20 shrink-0" /> Verified Candidate
+                    </span>
+                  )}
                   {profile.isOpenToWork !== false && (
                     <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
                       Open to Work
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm font-semibold text-emerald-300">{role}</p>
+                <p className="mt-1 text-sm font-semibold text-emerald-300">
+                  {role} {profile.candidateId && <span className="text-xs text-gray-500 font-mono ml-2">({profile.candidateId})</span>}
+                </p>
                 <div className="mt-3 flex flex-wrap gap-3 text-sm text-gray-400">
                   {profile.district && <span className="flex items-center gap-1.5"><MapPin size={14} />{profile.district}</span>}
                   {profile.email && <span className="flex items-center gap-1.5"><Mail size={14} />{profile.email}</span>}

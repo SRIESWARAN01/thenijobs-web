@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Briefcase, Send, Bookmark, Calendar, Bell,
-  TrendingUp, ArrowUpRight, Eye, Clock, CheckCircle,
-  ChevronRight, Star, MapPin, Building2, FileText,
-  Sparkles, Target, Award, Zap, GraduationCap,
-  User, Search, Loader2, type LucideIcon
+  Send, Bookmark, Calendar, Bell,
+  TrendingUp, Eye, Clock, MapPin, Building2, FileText,
+  Sparkles, User, Search, Loader2, type LucideIcon
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';

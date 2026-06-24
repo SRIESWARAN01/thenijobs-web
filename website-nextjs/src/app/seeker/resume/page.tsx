@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Upload, FileText, Download, Trash2, Star, CheckCircle,
@@ -31,7 +31,7 @@ export default function ResumeManagementPage() {
 
   // 1. Fetch seekerProfile to get resumes list in real-time
   const { data: seekerProfile, loading: profileLoading } = useDocument<any>('seekerProfiles', uid);
-  const resumes: ResumeFile[] = seekerProfile?.resumes || [];
+  const resumes: ResumeFile[] = useMemo(() => seekerProfile?.resumes || [], [seekerProfile?.resumes]);
 
   const { uploadFile, progress: uploadProgress, loading: uploading } = useUploadFile();
   const { deleteFile } = useDeleteFile();
@@ -47,7 +47,7 @@ export default function ResumeManagementPage() {
     setIsDragging(false);
   }, []);
 
-  const saveResumesToDb = async (newResumes: ResumeFile[]) => {
+  const saveResumesToDb = useCallback(async (newResumes: ResumeFile[]) => {
     if (!uid) return;
     try {
       const defaultResume = newResumes.find((resume) => resume.isDefault) || newResumes[0];
@@ -71,9 +71,9 @@ export default function ResumeManagementPage() {
       console.error('Failed to save resumes:', err);
       alert('Failed to update resumes list.');
     }
-  };
+  }, [uid, seekerProfile, user]);
 
-  const handleUpload = async (file: File) => {
+  const handleUpload = useCallback(async (file: File) => {
     if (!uid) return;
     try {
       const timestamp = Date.now();
@@ -99,7 +99,7 @@ export default function ResumeManagementPage() {
       console.error(err);
       alert('Upload failed: ' + (err as Error).message);
     }
-  };
+  }, [uid, resumes, uploadFile, saveResumesToDb]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -108,7 +108,7 @@ export default function ResumeManagementPage() {
     if (file) {
       handleUpload(file);
     }
-  }, [resumes, uid]);
+  }, [handleUpload]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

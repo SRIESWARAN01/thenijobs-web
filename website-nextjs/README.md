@@ -2,6 +2,8 @@
 
 A Next.js 16 web application for THENIJOBS — a job portal, business directory, and B2B lead platform for Theni and Tamil Nadu.
 
+<!-- Deploy Trigger for Vercel -->
+
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router, Static Export)

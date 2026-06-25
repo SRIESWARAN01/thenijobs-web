@@ -598,7 +598,7 @@ export default function JobsPage() {
                     {/* Title + Badges */}
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <div>
-                        <Link href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}>
+                        <Link href={`/jobs/${job.id}`}>
                           <h2 className="font-semibold text-white text-base hover:text-violet-400 transition-colors cursor-pointer leading-tight">
                             {job.title}
                           </h2>
@@ -653,7 +653,7 @@ export default function JobsPage() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 pt-3 border-t border-white/5">
-                      <Link href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}
+                      <Link href={`/jobs/${job.id}`}
                         className="flex-1 sm:flex-none btn-gradient px-5 py-2.5 rounded-xl text-sm font-semibold relative z-10 text-center flex items-center justify-center gap-2">
                         Apply Now <ArrowRight size={14} />
                       </Link>

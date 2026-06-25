@@ -181,7 +181,7 @@ export default function SavedJobsPage() {
 
                   <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto sm:flex-col sm:items-end">
                     <Link
-                      href={`/jobs/detail?id=${encodeURIComponent(item.jobId)}`}
+                      href={`/jobs/${item.jobId}`}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-500"
                     >
                       <Send size={12} />

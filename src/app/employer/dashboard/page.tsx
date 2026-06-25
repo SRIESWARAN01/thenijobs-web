@@ -534,7 +534,7 @@ export default function EmployerDashboard() {
                                   </button>
                                 </>
                               )}
-                              <Link href={`/jobs/detail?id=${encodeURIComponent(app.jobId)}`} className="p-2 rounded-lg bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] transition-colors" title="View Job">
+                              <Link href={`/jobs/${app.jobId}`} className="p-2 rounded-lg bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] transition-colors" title="View Job">
                                 <Eye size={14} />
                               </Link>
                             </>

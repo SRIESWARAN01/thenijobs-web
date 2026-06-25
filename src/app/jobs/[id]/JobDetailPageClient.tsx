@@ -76,9 +76,6 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
   const [saved, setSaved] = useState(false);
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
-  const [showApplyModal, setShowApplyModal] = useState(false);
-  const [coverLetter, setCoverLetter] = useState('');
-  const [selectedResumeId, setSelectedResumeId] = useState('');
   const [shareCopied, setShareCopied] = useState(false);
 
   const renderVerificationBadge = (level?: string, isVerified?: boolean) => {
@@ -103,20 +100,6 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
 
   // Fetch seekerProfile to check their resumes
   const { data: seekerProfile } = useDocument<any>('seekerProfiles', uid);
-  const resumes = useMemo(() => {
-    const uploaded = Array.isArray(seekerProfile?.resumes) ? seekerProfile.resumes : [];
-    if (uploaded.length > 0) return uploaded;
-    if (seekerProfile?.resumeUrl) {
-      return [{
-        id: 'profile-resume',
-        name: seekerProfile.resumeName || 'Profile Resume',
-        url: seekerProfile.resumeUrl,
-        isDefault: true,
-        uploadDate: 'Profile',
-      }];
-    }
-    return [];
-  }, [seekerProfile]);
 
   // 1. Fetch job details from Firestore
   useEffect(() => {
@@ -199,13 +182,7 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
     checkSavedAndApplied();
   }, [uid, id]);
 
-  // Set default resume selection
-  useEffect(() => {
-    if (resumes.length > 0) {
-      const def = resumes.find((r: any) => r.isDefault);
-      setSelectedResumeId(def ? def.id : resumes[0].id);
-    }
-  }, [resumes]);
+
 
   const handleToggleSave = async () => {
     if (!uid || !job) {
@@ -233,16 +210,42 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
     }
   };
 
-  const openApplyModal = () => {
-    if (!uid) {
-      alert('Please login or register to apply.');
-      router.push(`/login?redirect=/jobs/detail?id=${encodeURIComponent(id)}`);
-      return;
-    }
-    setShowApplyModal(true);
+  const getProfileCompletionScore = (profile: any) => {
+    if (!profile) return 0;
+    let score = 0;
+    if (profile.photoUrl || profile.profilePhotoUrl) score += 10;
+    if (profile.phone && profile.email) score += 10;
+    if (Array.isArray(profile.education) && profile.education.length > 0) score += 10;
+    if (Array.isArray(profile.experience) && profile.experience.length > 0) score += 10;
+    if (Array.isArray(profile.skills) && profile.skills.length >= 3) score += 10;
+    if (Array.isArray(profile.languages) && profile.languages.length > 0) score += 10;
+    if (Array.isArray(profile.certifications) && profile.certifications.length > 0) score += 10;
+    const portfolio = profile.portfolio || profile.portfolioLinks || [];
+    if (Array.isArray(portfolio) && portfolio.length > 0) score += 10;
+    if (profile.aboutMe || profile.summary) score += 10;
+    if (Array.isArray(profile.achievements) && profile.achievements.length > 0) score += 10;
+    return score;
   };
 
-  const handleApply = async () => {
+  const handleApplyClick = () => {
+    if (!uid) {
+      alert('Please login or register to apply.');
+      router.push(`/login?redirect=/jobs/${encodeURIComponent(id)}`);
+      return;
+    }
+
+    const profileName = seekerProfile?.name || user?.displayName;
+    const profilePhone = seekerProfile?.phone;
+
+    if (profileName && profilePhone) {
+      handleApplyDirect();
+    } else {
+      alert('Complete Your Profile First (Name and Phone Number are required).');
+      router.push('/seeker/profile');
+    }
+  };
+
+  const handleApplyDirect = async () => {
     if (!uid || !job) {
       alert('Please login as a seeker to apply.');
       router.push('/login');
@@ -251,8 +254,8 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
 
     setApplying(true);
     try {
-      const selectedResume = resumes.find((r: any) => r.id === selectedResumeId);
       const portfolioLinks = seekerProfile?.portfolio || seekerProfile?.portfolioLinks || [];
+      const score = getProfileCompletionScore(seekerProfile);
 
       const batch = writeBatch(db);
       const appRef = doc(db, 'jobApplications', `${uid}_${job.id}`);
@@ -262,24 +265,34 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
         applicantId: uid,
         appliedDate: serverTimestamp(),
         status: job.isWalkIn ? 'pending_review' : 'applied',
+        jobTitle: job.title,
+        companyName: job.companyName,
+        district: job.location,
+        coverLetter: '',
+        resumeName: seekerProfile?.resumeName || '',
+        resumeUrl: seekerProfile?.resumeUrl || '',
+        profileCompletion: score,
+        isVerified: seekerProfile?.isVerified || false,
+        applicationType: job.isWalkIn ? 'walk_in' : 'job',
         applicantData: {
           name: seekerProfile?.name || user?.displayName || 'Job Seeker',
           phone: seekerProfile?.phone || '',
           email: seekerProfile?.email || user?.email || '',
           dob: seekerProfile?.dob || '',
           gender: seekerProfile?.gender || 'Male',
-          photoUrl: seekerProfile?.photoUrl || '',
+          photoUrl: seekerProfile?.photoUrl || seekerProfile?.profilePhotoUrl || '',
           address: seekerProfile?.address || '',
           district: seekerProfile?.district || '',
-          currentRole: seekerProfile?.currentRole || ''
+          currentRole: seekerProfile?.currentRole || '',
+          aboutMe: seekerProfile?.aboutMe || seekerProfile?.summary || ''
         },
         qualificationData: Array.isArray(seekerProfile?.education) ? seekerProfile.education : [],
         skills: Array.isArray(seekerProfile?.skills) ? seekerProfile.skills : [],
         experience: Array.isArray(seekerProfile?.experience) ? seekerProfile.experience : [],
         portfolioData: {
           portfolio: Array.isArray(portfolioLinks) ? portfolioLinks : [],
-          resumeUrl: selectedResume?.url || '',
-          resumeName: selectedResume?.name || '',
+          resumeUrl: seekerProfile?.resumeUrl || '',
+          resumeName: seekerProfile?.resumeName || '',
           linkedin: seekerProfile?.linkedin || '',
           website: seekerProfile?.website || ''
         }
@@ -295,7 +308,6 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
       await batch.commit();
 
       setHasApplied(true);
-      setShowApplyModal(false);
       alert(job.isWalkIn ? 'Walk-in application submitted successfully!' : 'Application submitted successfully!');
     } catch (err) {
       console.error(err);
@@ -438,49 +450,64 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
                     </button>
                   ) : (
                     <button
-                      onClick={openApplyModal}
+                      onClick={handleApplyClick}
+                      disabled={applying}
                       className="flex-1 btn-gradient py-3.5 rounded-xl font-semibold text-sm relative z-10 flex items-center justify-center gap-2"
                     >
-                      {job.isWalkIn ? 'Submit Walk-In Application' : 'Apply Now'}
+                      {applying && <Loader2 size={14} className="animate-spin" />}
+                      {applying ? 'Applying...' : job.isWalkIn ? 'Submit Walk-In Application' : 'Apply Now'}
                     </button>
                   )}
                 </div>
 
                 {/* Direct HR Call, WhatsApp & Email actions */}
-                {(job.phone || whatsappNumber || job.email || job.walkIn?.contactMobile) && (
-                  <div className="grid grid-cols-3 gap-3">
-                    {(job.phone || job.walkIn?.contactMobile) && (
-                      <a
-                        href={`tel:${job.phone || job.walkIn?.contactMobile}`}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15 transition-all"
-                        title="Call HR Mobile"
-                      >
-                        <Phone size={16} />
-                        <span className="text-[10px] font-bold tracking-wide uppercase">Call HR</span>
-                      </a>
-                    )}
-                    {whatsappNumber && (
-                      <a
-                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I am interested in the "${job.title}" position posted on THENIJOBS.`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 transition-all"
-                        title="WhatsApp HR Chat"
-                      >
-                        <MessageCircle size={16} />
-                        <span className="text-[10px] font-bold tracking-wide uppercase">WhatsApp</span>
-                      </a>
-                    )}
-                    {job.email && (
-                      <a
-                        href={`mailto:${job.email}?subject=${encodeURIComponent(`Job Application: ${job.title}`)}&body=${encodeURIComponent(`Hi HR Team,\n\nI am interested in applying for the "${job.title}" position at ${job.companyName} listed on THENIJOBS.\n\nPlease find my application details on the platform.`)}`}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15 transition-all"
-                        title="Email HR Address"
-                      >
-                        <Mail size={16} />
-                        <span className="text-[10px] font-bold tracking-wide uppercase">Email HR</span>
-                      </a>
-                    )}
+                {hasApplied ? (
+                  (job.phone || whatsappNumber || job.email || job.walkIn?.contactMobile) && (
+                    <div className="grid grid-cols-3 gap-3">
+                      {(job.phone || job.walkIn?.contactMobile) && (
+                        <a
+                          href={`tel:${job.phone || job.walkIn?.contactMobile}`}
+                          className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15 transition-all"
+                          title="Call HR Mobile"
+                        >
+                          <Phone size={16} />
+                          <span className="text-[10px] font-bold tracking-wide uppercase">Call HR</span>
+                        </a>
+                      )}
+                      {whatsappNumber && (
+                        <a
+                          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I am interested in the "${job.title}" position posted on THENIJOBS.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 transition-all"
+                          title="WhatsApp HR Chat"
+                        >
+                          <MessageCircle size={16} />
+                          <span className="text-[10px] font-bold tracking-wide uppercase">WhatsApp</span>
+                        </a>
+                      )}
+                      {job.email && (
+                        <a
+                          href={`mailto:${job.email}?subject=${encodeURIComponent(`Job Application: ${job.title}`)}&body=${encodeURIComponent(`Hi HR Team,\n\nI am interested in applying for the "${job.title}" position at ${job.companyName} listed on THENIJOBS.\n\nPlease find my application details on the platform.`)}`}
+                          className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15 transition-all"
+                          title="Email HR Address"
+                        >
+                          <Mail size={16} />
+                          <span className="text-[10px] font-bold tracking-wide uppercase">Email HR</span>
+                        </a>
+                      )}
+                    </div>
+                  )
+                ) : (
+                  <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-center space-y-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 mx-auto">
+                      <Users size={16} />
+                    </div>
+                    <h4 className="text-xs font-bold text-white">Contact Info Protected 🔒</h4>
+                    <p className="text-[10px] text-gray-500 leading-relaxed max-w-md mx-auto">
+                      Employer Contact Information (HR Phone, WhatsApp, and Email) is hidden. 
+                      Successfully apply to this job to unlock direct contact buttons.
+                    </p>
                   </div>
                 )}
               </div>
@@ -516,7 +543,7 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
                   <div className="rounded-xl bg-white/[0.03] p-3">
                     <p className="text-xs font-semibold text-gray-500">Contact Person</p>
                     <p className="mt-1 font-medium text-white">{job.walkIn?.contactPerson || 'HR Team'}</p>
-                    {job.walkIn?.contactMobile && <p className="text-xs text-gray-400">{job.walkIn.contactMobile}</p>}
+                    {job.walkIn?.contactMobile && <p className="text-xs text-gray-400">Mobile: {hasApplied ? job.walkIn.contactMobile : 'Protected (Apply to Unlock)'}</p>}
                   </div>
                   <div className="rounded-xl bg-white/[0.03] p-3 sm:col-span-2">
                     <p className="text-xs font-semibold text-gray-500">Venue</p>
@@ -603,11 +630,12 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
                   Applied ✓
                 </button>
               ) : (
-                <button onClick={openApplyModal} className="w-full btn-gradient py-3.5 rounded-xl font-semibold text-sm relative z-10 mb-3">
-                  {job.isWalkIn ? 'Submit Walk-In Application' : 'Apply Now'}
+                <button onClick={handleApplyClick} disabled={applying} className="w-full btn-gradient py-3.5 rounded-xl font-semibold text-sm relative z-10 mb-3 flex items-center justify-center gap-2">
+                  {applying && <Loader2 size={14} className="animate-spin" />}
+                  {applying ? 'Applying...' : job.isWalkIn ? 'Submit Walk-In Application' : 'Apply Now'}
                 </button>
               )}
-              {job.phone && (
+              {hasApplied && job.phone && (
                 <a
                   href={`tel:${job.phone}`}
                   className="w-full btn-outline-glass py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 mb-2"
@@ -615,7 +643,7 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
                   📞 Call HR
                 </a>
               )}
-              <p className="text-center text-[10px] text-gray-655 mt-2">
+              <p className="text-center text-[10px] text-gray-500 mt-2">
                 🔒 Your details are kept private and secure
               </p>
             </div>
@@ -643,88 +671,6 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
         </div>
       </div>
       {!hideNav && <BottomNav />}
-
-      {/* Apply Modal */}
-      {showApplyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card rounded-2xl w-full max-w-lg overflow-hidden border border-emerald-500/20 shadow-2xl relative p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white">Apply for {job.title}</h3>
-            
-            {resumes.length === 0 ? (
-              <div className="text-center py-6 border border-dashed border-white/10 rounded-xl space-y-3 p-4">
-                <FileText className="mx-auto text-gray-500" size={30} />
-                <p className="text-xs text-gray-400">You need to upload or build a resume in your Seeker Portal first before applying.</p>
-                <Link
-                  href="/seeker/resume"
-                  className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-semibold text-white"
-                >
-                  Manage Resumes
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <p className="mb-2 flex items-center gap-2 text-xs font-semibold text-emerald-300">
-                    <UserRound size={13} />
-                    Auto-filled candidate details
-                  </p>
-                  <div className="grid gap-1.5 text-xs text-gray-400 sm:grid-cols-2">
-                    <span>Name: {seekerProfile?.name || user?.displayName || 'Job Seeker'}</span>
-                    <span>Mobile: {seekerProfile?.phone || 'Not added'}</span>
-                    <span className="sm:col-span-2">Email: {seekerProfile?.email || user?.email || 'Not added'}</span>
-                    {job.isWalkIn && (
-                      <span className="sm:col-span-2 text-emerald-300">Walk-in status starts as Pending Review.</span>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1.5 font-medium">Select Resume</label>
-                  <select
-                    value={selectedResumeId}
-                    onChange={e => setSelectedResumeId(e.target.value)}
-                    className="search-input w-full px-3 py-2.5 text-sm bg-[#0a0a1a]"
-                  >
-                    {resumes.map((r: any) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name} ({r.uploadDate})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1.5 font-medium">Cover Letter / Message to Recruiter</label>
-                  <textarea
-                    rows={4}
-                    value={coverLetter}
-                    onChange={e => setCoverLetter(e.target.value)}
-                    placeholder="Briefly state why you're a good fit for this role..."
-                    className="search-input w-full px-3 py-2.5 text-sm bg-[#0a0a1a] resize-none"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setShowApplyModal(false)}
-                    className="flex-1 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-semibold hover:bg-white/[0.08]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleApply}
-                    disabled={applying}
-                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-semibold text-xs hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-50"
-                  >
-                    {applying && <Loader2 size={12} className="animate-spin" />}
-                    {job.isWalkIn ? 'Submit Walk-In' : 'Submit Application'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </main>
   );
 }

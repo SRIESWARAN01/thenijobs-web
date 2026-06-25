@@ -25,6 +25,7 @@ export const dynamic = 'force-dynamic';
 const SERVER_PLAN_CONFIGS: Record<string, { price: number; name: string }> = {
   basic: { price: 499, name: 'Basic Plan' },
   premium: { price: 999, name: 'Premium Plan' },
+  enterprise: { price: 5000, name: 'Enterprise Plan' },
 };
 
 // ──────────────────────────────────────────────────────────────────
@@ -238,7 +239,7 @@ async function handlePaymentSuccess(
   // Update company or seeker profile
   if (audience === 'employer' && companyId) {
     batch.update(adminDb.doc(`companies/${companyId}`), {
-      isPremium: planSlug === 'premium',
+      isPremium: planSlug === 'premium' || planSlug === 'enterprise',
       subscriptionPlan: planSlug,
       subscriptionStatus: 'active',
       subscriptionStartsAt: Timestamp.fromDate(now),
@@ -249,7 +250,7 @@ async function handlePaymentSuccess(
 
   if (audience === 'seeker') {
     batch.set(adminDb.doc(`seekerProfiles/${userId}`), {
-      isPremium: planSlug === 'premium',
+      isPremium: planSlug === 'premium' || planSlug === 'enterprise',
       premiumPlan: planSlug,
       premiumUntil: Timestamp.fromDate(endDate),
       subscriptionPlan: planSlug,

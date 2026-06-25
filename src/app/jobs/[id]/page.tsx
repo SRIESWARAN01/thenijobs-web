@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = jobData.title
-    ? `${jobData.title}${jobData.companyName ? ` at ${jobData.companyName}` : ''}`
+    ? `${jobData.title} Jobs in ${jobData.location || jobData.district || 'Theni'}${jobData.companyName ? ` at ${jobData.companyName}` : ''} | THENIJOBS`
     : 'Job Details';
   const description = jobData.description
     ? String(jobData.description).replace(/\s+/g, ' ').slice(0, 160)
@@ -117,12 +117,47 @@ export default async function JobDetailPage({ params }: PageProps) {
     } : undefined
   } : null;
 
+  const orgLd = jobData ? {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    'name': jobData.companyName || 'Verified Employer',
+    'logo': jobData.companyLogoUrl || undefined,
+    'url': jobData.companySlug ? `https://thenijobs.com/company/${jobData.companySlug}` : undefined
+  } : null;
+
+  const businessLd = jobData ? {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    'name': jobData.companyName || 'Verified Employer',
+    'image': jobData.companyLogoUrl || undefined,
+    'telephone': jobData.phone || undefined,
+    'email': jobData.email || undefined,
+    'address': {
+      '@type': 'PostalAddress',
+      'addressLocality': jobData.location || jobData.district || 'Theni',
+      'addressRegion': 'Tamil Nadu',
+      'addressCountry': 'IN'
+    }
+  } : null;
+
   return (
     <>
       {jsonLd && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      {orgLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
+        />
+      )}
+      {businessLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(businessLd) }}
         />
       )}
       <JobDetailPageClient id={id} />

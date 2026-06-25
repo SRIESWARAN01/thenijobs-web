@@ -174,7 +174,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                 <h3 className="text-sm font-semibold text-white mb-2">Active Jobs</h3>
                 {jobs.length > 0 ? (
                   jobs.map(job => (
-                    <Link key={job.id} href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}
+                    <Link key={job.id} href={`/jobs/${job.id}`}
                       className="block p-3 rounded-lg bg-slate-950 border border-slate-850 hover:border-slate-700 transition-colors">
                       <div className="text-xs font-bold text-white">{job.title}</div>
                       <div className="text-[10px] text-slate-500 mt-1 flex justify-between">
@@ -485,7 +485,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                   <h3 className="text-sm font-semibold text-white mb-2">Jobs from this Company</h3>
                   {jobs.length > 0 ? (
                     jobs.map(job => (
-                      <Link key={job.id} href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}
+                      <Link key={job.id} href={`/jobs/${job.id}`}
                         className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all">
                         <div>
                           <div className="text-xs font-bold text-white">{job.title}</div>
@@ -608,7 +608,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                     <h3 className="text-sm font-semibold text-white mb-2">Jobs from this Company</h3>
                     {jobs.length > 0 ? (
                       jobs.map(job => (
-                        <Link key={job.id} href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}
+                        <Link key={job.id} href={`/jobs/${job.id}`}
                           className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 transition-all">
                           <div>
                             <div className="text-xs font-bold text-white">{job.title}</div>
@@ -1184,7 +1184,7 @@ Please confirm my booking request. Thanks!`;
                     {jobs.length > 0 ? (
                       <div className="space-y-3">
                         {jobs.map(job => (
-                          <Link key={job.id} href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}
+                          <Link key={job.id} href={`/jobs/${job.id}`}
                             className={`flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all duration-300 group`}>
                             <div>
                               <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">{job.title}</div>
@@ -1372,7 +1372,7 @@ Please confirm my booking request. Thanks!`;
                   {jobs.length > 0 ? (
                     <div className="space-y-3">
                       {jobs.map(job => (
-                        <Link key={job.id} href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}
+                        <Link key={job.id} href={`/jobs/${job.id}`}
                           className={`flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/25 transition-all group`}>
                           <div>
                             <div className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors">{job.title}</div>

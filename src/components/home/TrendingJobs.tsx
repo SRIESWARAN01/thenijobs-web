@@ -112,7 +112,7 @@ export default function TrendingJobs() {
               return (
                 <Link
                   key={job.id}
-                  href={`/jobs/detail?id=${encodeURIComponent(job.id)}`}
+                  href={`/jobs/${job.id}`}
                   className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50/30"
                 >
                   <div className="mb-4 flex items-start justify-between gap-3">

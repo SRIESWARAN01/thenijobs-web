@@ -317,6 +317,11 @@ export default function SeekerProfilePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  // Auto save states and refs
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoaded = useRef(false);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -365,6 +370,9 @@ export default function SeekerProfilePage() {
       setPortfolio(remoteProfile.portfolio || []);
       setProjects(remoteProfile.projects || []);
       setAchievements(remoteProfile.achievements || []);
+      setTimeout(() => {
+        isLoaded.current = true;
+      }, 500);
     } else if (user) {
       setProfile(p => ({
         ...p,
@@ -372,6 +380,9 @@ export default function SeekerProfilePage() {
         email: user.email || '',
         phone: user.phone || ''
       }));
+      setTimeout(() => {
+        isLoaded.current = true;
+      }, 500);
     }
   }, [remoteProfile, user]);
 
@@ -389,6 +400,80 @@ export default function SeekerProfilePage() {
     { label: 'Achievements listed', done: achievements.length > 0 },
   ];
   const profileStrength = Math.round((strengthItems.filter(i => i.done).length / strengthItems.length) * 100);
+
+  // Debounced auto-save effect for Job Seeker Profile
+  useEffect(() => {
+    if (!isLoaded.current || !user?.uid) return;
+
+    setAutoSaveStatus('saving');
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const profileData = {
+          name: profile.name,
+          dob: profile.dob,
+          gender: profile.gender,
+          phone: profile.phone,
+          email: profile.email,
+          address: profile.address,
+          district: profile.district,
+          currentRole: profile.currentRole,
+          isOpenToWork: profile.isOpenToWork,
+          photoUrl: profile.photoUrl || '',
+          expectedSalary: profile.expectedSalary,
+          linkedin: profile.linkedin,
+          website: profile.website,
+          aboutMe: profile.aboutMe,
+          education,
+          experience,
+          skills,
+          languages,
+          certifications,
+          achievements,
+          portfolio,
+          projects,
+          profileStrength,
+          updatedAt: serverTimestamp()
+        };
+
+        await setDoc(doc(db, 'seekerProfiles', user.uid), profileData, { merge: true });
+
+        // Sync to publicProfiles
+        await setDoc(doc(db, 'publicProfiles', user.uid), {
+          ...buildPublicSeekerProfile(user.uid, profileData, user),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        // Sync key details back to users collection
+        await setDoc(doc(db, 'users', user.uid), {
+          displayName: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          district: profile.district,
+          photoURL: profile.photoUrl || '',
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        setAutoSaveStatus('saved');
+        setTimeout(() => {
+          setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+        }, 2000);
+      } catch (err) {
+        console.error('Background auto-save failed:', err);
+        setAutoSaveStatus('error');
+      }
+    }, 1500);
+
+    return () => {
+      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    };
+  }, [
+    profile, education, experience, skills, languages,
+    certifications, achievements, portfolio, projects, profileStrength, user?.uid
+  ]);
 
   // ── Handlers ──
   const addSkill = () => {
@@ -479,6 +564,9 @@ export default function SeekerProfilePage() {
       alert('Please fill in Name, Email, and Phone number.');
       return;
     }
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
 
     setSaving(true);
     try {
@@ -539,10 +627,13 @@ export default function SeekerProfilePage() {
         ...(candidateId ? { candidateId } : {})
       }, { merge: true });
 
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
       alert('Profile saved successfully!');
     } catch (err) {
       console.error(err);
       alert('Failed to save profile details.');
+      setAutoSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -573,6 +664,28 @@ export default function SeekerProfilePage() {
 
   return (
     <div className="animate-fade-in-up space-y-6 max-w-4xl mx-auto font-outfit text-white">
+      {/* Auto saving progress notification */}
+      {autoSaveStatus !== 'idle' && (
+        <div className={`glass-card rounded-2xl p-4 border flex items-center gap-3 transition-all ${
+          autoSaveStatus === 'saving' 
+            ? 'border-amber-500/20 bg-amber-500/5 text-amber-450' 
+            : autoSaveStatus === 'saved' 
+            ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400' 
+            : 'border-rose-500/20 bg-rose-500/5 text-rose-450'
+        }`}>
+          {autoSaveStatus === 'saving' ? (
+            <Loader2 size={18} className="animate-spin text-amber-400" />
+          ) : autoSaveStatus === 'saved' ? (
+            <CheckCircle size={18} className="text-emerald-400" />
+          ) : (
+            <CheckCircle size={18} className="text-rose-400" />
+          )}
+          <span className="text-xs font-semibold">
+            {autoSaveStatus === 'saving' ? 'Saving changes in background...' : autoSaveStatus === 'saved' ? 'Saved Successfully' : 'Background Save Error'}
+          </span>
+        </div>
+      )}
+
       {/* Uploading progress notification */}
       {uploading && (
         <div className="glass-card rounded-2xl p-4 border border-emerald-500/20 bg-emerald-500/5 flex items-center gap-3">

@@ -21,6 +21,8 @@ export default function EmployerSettingsPage() {
   const companyId = company?.id;
   const { data: remoteSettings } = useDocument<any>('employerSettings', companyId);
 
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
   const [notifs, setNotifs] = useState({
     applications: true,
     leads: true,
@@ -36,27 +38,32 @@ export default function EmployerSettingsPage() {
     }
   }, [remoteSettings]);
 
-  const handleSave = async () => {
+  const handleSave = async (updatedNotifs = notifs) => {
+    if (!companyId || !user?.uid) return;
     setSaving(true);
     setSaved(false);
+    setAutoSaveStatus('saving');
     try {
-      if (!companyId || !user?.uid) throw new Error('Missing company profile.');
       await upsertDocument('employerSettings', companyId, {
         companyId,
         ownerId: user.uid,
-        notifications: notifs,
+        notifications: updatedNotifs,
       });
       setSaved(true);
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
     } catch (err) {
       console.error(err);
-      alert('Failed to save settings');
+      setAutoSaveStatus('error');
     } finally {
       setSaving(false);
     }
   };
 
   const toggleNotif = (key: keyof typeof notifs) => {
-    setNotifs(p => ({ ...p, [key]: !p[key] }));
+    const updated = { ...notifs, [key]: !notifs[key] };
+    setNotifs(updated);
+    handleSave(updated);
   };
 
   const loading = companyLoading;
@@ -77,9 +84,23 @@ export default function EmployerSettingsPage() {
   return (
     <div className="space-y-6 animate-fade-in-up font-outfit text-white">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-sm text-gray-400 mt-1">Configure your employer portal settings and preferences</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-sm text-gray-400 mt-1">Configure your employer portal settings and preferences</p>
+        </div>
+        {autoSaveStatus !== 'idle' && (
+          <span className={`text-xs font-semibold flex items-center gap-1 ${
+            autoSaveStatus === 'saving' 
+              ? 'text-amber-400' 
+              : autoSaveStatus === 'saved' 
+              ? 'text-emerald-400' 
+              : 'text-rose-400'
+          }`}>
+            {autoSaveStatus === 'saving' && <Loader2 size={14} className="animate-spin" />}
+            {autoSaveStatus === 'saving' ? 'Saving changes...' : autoSaveStatus === 'saved' ? 'Saved Successfully' : 'Save Error'}
+          </span>
+        )}
       </div>
 
       {loading ? (
@@ -142,7 +163,7 @@ export default function EmployerSettingsPage() {
           </div>
 
           <button
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={saving}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-xs font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
           >

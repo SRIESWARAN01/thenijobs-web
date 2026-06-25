@@ -33,8 +33,8 @@ export default function EmployerReportsPage() {
   ], { skip: !companyId });
 
   // 4. Fetch applications
-  const { data: applications, loading: appsLoading } = useCollection<any>('applications', [
-    where('companyId', '==', companyId || '')
+  const { data: applications, loading: appsLoading } = useCollection<any>('jobApplications', [
+    where('employerId', '==', companyId || '')
   ], { skip: !companyId });
 
   // 5. Fetch subscriptions

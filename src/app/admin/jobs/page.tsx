@@ -133,8 +133,10 @@ export default function JobsPage() {
     setActionLoading(id);
     try {
       await approveJob(id, currentUser?.uid || 'admin');
-    } catch (err) {
+      alert('Job approved successfully!');
+    } catch (err: any) {
       console.error('Approve job error:', err);
+      alert('Failed to approve job: ' + (err.message || err));
     } finally {
       setActionLoading(null);
     }
@@ -144,8 +146,10 @@ export default function JobsPage() {
     setActionLoading(id);
     try {
       await rejectJob(id, currentUser?.uid || 'admin');
-    } catch (err) {
+      alert('Job rejected successfully!');
+    } catch (err: any) {
       console.error('Reject job error:', err);
+      alert('Failed to reject job: ' + (err.message || err));
     } finally {
       setActionLoading(null);
     }
@@ -155,8 +159,10 @@ export default function JobsPage() {
     setActionLoading(id);
     try {
       await updateDocument('jobs', id, { isFeatured: !currentFeatured });
-    } catch (err) {
+      alert(currentFeatured ? 'Job removed from featured list!' : 'Job marked as featured successfully!');
+    } catch (err: any) {
       console.error('Feature job error:', err);
+      alert('Failed to update featured status: ' + (err.message || err));
     } finally {
       setActionLoading(null);
     }
@@ -167,8 +173,10 @@ export default function JobsPage() {
     setActionLoading(id);
     try {
       await deleteDocument('jobs', id);
-    } catch (err) {
+      alert('Job posting deleted successfully!');
+    } catch (err: any) {
       console.error('Delete job error:', err);
+      alert('Failed to delete job: ' + (err.message || err));
     } finally {
       setActionLoading(null);
     }
@@ -404,23 +412,23 @@ export default function JobsPage() {
                             <Loader2 size={16} className="text-violet-400 animate-spin" />
                           ) : (
                             <>
-                              {(job.isActive === false || jobStatus === 'pending' || jobStatus === 'pending_renewal') && (
-                                <>
-                                  <button
-                                    onClick={() => handleApprove(job.id)}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
-                                    title="Approve Job"
-                                  >
-                                    <CheckCircle size={15} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleReject(job.id)}
-                                    className="p-2 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                                    title="Reject Job"
-                                  >
-                                    <XCircle size={15} />
-                                  </button>
-                                </>
+                              {jobStatus !== 'active' && (
+                                <button
+                                  onClick={() => handleApprove(job.id)}
+                                  className="p-2 rounded-lg text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                                  title="Approve Job"
+                                >
+                                  <CheckCircle size={15} />
+                                </button>
+                              )}
+                              {jobStatus !== 'rejected' && (
+                                <button
+                                  onClick={() => handleReject(job.id)}
+                                  className="p-2 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                                  title="Reject Job"
+                                >
+                                  <XCircle size={15} />
+                                </button>
                               )}
                               <button
                                 onClick={() => handleDelete(job.id)}

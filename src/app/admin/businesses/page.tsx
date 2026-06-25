@@ -206,7 +206,7 @@ export default function BusinessesPage() {
       oneYear.setFullYear(now.getFullYear() + 1);
 
       await updateDocument('companies', bizId, {
-        isPremium: planSlug === 'premium',
+        isPremium: planSlug === 'premium' || planSlug === 'enterprise',
         subscriptionPlan: planSlug,
         subscriptionStatus: 'active',
         subscriptionStartsAt: Timestamp.fromDate(now),
@@ -216,7 +216,7 @@ export default function BusinessesPage() {
       if (selectedBiz && selectedBiz.id === bizId) {
         setSelectedBiz(prev => prev ? {
           ...prev,
-          isPremium: planSlug === 'premium',
+          isPremium: planSlug === 'premium' || planSlug === 'enterprise',
           subscriptionPlan: planSlug,
           subscriptionStatus: 'active',
         } : null);
@@ -712,6 +712,7 @@ export default function BusinessesPage() {
                       <option value="free">Free Plan</option>
                       <option value="basic">Basic Plan</option>
                       <option value="premium">Premium Plan</option>
+                      <option value="enterprise">Enterprise Plan</option>
                     </select>
                   </div>
                 </div>

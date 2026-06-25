@@ -46,9 +46,9 @@ export default function SeekerApplicationsPage() {
   const uid = user?.uid;
 
   // Fetch applications for current seeker
-  const { data: rawApps, loading } = useCollection<any>('applications', [
-    where('seekerId', '==', uid || ''),
-    orderBy('createdAt', 'desc')
+  const { data: rawApps, loading } = useCollection<any>('jobApplications', [
+    where('applicantId', '==', uid || ''),
+    orderBy('appliedDate', 'desc')
   ], { skip: !uid });
 
   if (loading) {
@@ -94,8 +94,8 @@ export default function SeekerApplicationsPage() {
 
   // Map to WorkflowItem format
   const applications: WorkflowItem[] = rawApps.map((app) => {
-    const appliedDate = app.createdAt
-      ? new Date(app.createdAt.seconds * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    const appliedDate = app.appliedDate
+      ? new Date(app.appliedDate.seconds * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
       : 'Recently';
 
     // Timeline steps based on status
@@ -136,7 +136,7 @@ export default function SeekerApplicationsPage() {
       tags: app.skills || [],
       timeline: getTimeline(),
       actions: [
-        { label: 'View Job', icon: Eye, href: `/jobs/detail?id=${encodeURIComponent(app.jobId)}`, tone: 'primary' },
+        { label: 'View Job', icon: Eye, href: `/jobs/${app.jobId}`, tone: 'primary' },
         { label: 'Messages', icon: MessageSquare, href: '/seeker/messages', tone: 'neutral' },
       ]
     };

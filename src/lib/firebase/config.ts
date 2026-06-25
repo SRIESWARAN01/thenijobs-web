@@ -32,11 +32,18 @@ const missingFirebaseConfig = [
 ].filter(([, value]) => !value);
 
 if (missingFirebaseConfig.length > 0) {
-  throw new Error(`Missing Firebase environment variables: ${missingFirebaseConfig.map(([key]) => key).join(', ')}`);
+  const errorMsg = `Missing Firebase environment variables: ${missingFirebaseConfig.map(([key]) => key).join(', ')}`;
+  if (typeof window === 'undefined') {
+    console.warn(`[Firebase Config] Build Warning: ${errorMsg}`);
+  } else {
+    throw new Error(errorMsg);
+  }
 }
 
 /** Firebase app instance (singleton) */
-const app = getApps().length === 0 ? initializeApp(firebaseConfig as FirebaseOptions) : getApp();
+const app = getApps().length === 0
+  ? initializeApp((firebaseConfig.apiKey ? firebaseConfig : { apiKey: 'mock', projectId: 'mock-id' }) as FirebaseOptions)
+  : getApp();
 
 /** Firebase App Check (client-only, requires Firebase console enforcement setup). */
 export const appCheck: AppCheck | null = (() => {

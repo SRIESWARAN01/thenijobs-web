@@ -154,14 +154,14 @@ export async function getEmployerStats(
         where('companyId', '==', companyId),
         where('isActive', '==', true),
       ]),
-      getCount('applications', [where('companyId', '==', companyId)]),
-      getCount('applications', [
-        where('companyId', '==', companyId),
+      getCount('jobApplications', [where('employerId', '==', companyId)]),
+      getCount('jobApplications', [
+        where('employerId', '==', companyId),
         where('status', '==', 'shortlisted'),
       ]),
       getCount('interviews', [where('companyId', '==', companyId)]),
-      getCount('applications', [
-        where('companyId', '==', companyId),
+      getCount('jobApplications', [
+        where('employerId', '==', companyId),
         where('status', '==', 'selected'),
       ]),
     ]);
@@ -201,7 +201,7 @@ export interface SeekerStats {
 
 export async function getSeekerStats(seekerId: string): Promise<SeekerStats> {
   const [appliedJobs, savedJobs, interviews] = await Promise.all([
-    getCount('applications', [where('seekerId', '==', seekerId)]),
+    getCount('jobApplications', [where('applicantId', '==', seekerId)]),
     getCount('savedJobs', [where('userId', '==', seekerId)]),
     getCount('interviews', [where('seekerId', '==', seekerId)]),
   ]);
@@ -732,6 +732,7 @@ export async function approveJob(jobId: string, adminId: string) {
     activatedAt: Timestamp.fromDate(activatedAt),
     expiresAt: Timestamp.fromDate(expiresAt),
     expiryReminderDaysSent: [],
+    reportReason: null,
     updatedAt: serverTimestamp(),
   });
 

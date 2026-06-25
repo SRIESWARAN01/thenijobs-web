@@ -357,26 +357,26 @@ export function useEmployerStats(companyId: string | undefined) {
           where('companyId', '==', companyId),
           where('isActive', '==', true),
         ]),
-        getAggregateCount('applications', [where('companyId', '==', companyId)]),
-        getAggregateCount('applications', [
-          where('companyId', '==', companyId),
+        getAggregateCount('jobApplications', [where('employerId', '==', companyId)]),
+        getAggregateCount('jobApplications', [
+          where('employerId', '==', companyId),
           where('status', 'in', ['applied', 'pending_review', 'under_review']),
         ]),
-        getAggregateCount('applications', [
-          where('companyId', '==', companyId),
+        getAggregateCount('jobApplications', [
+          where('employerId', '==', companyId),
           where('status', '==', 'shortlisted'),
         ]),
-        getAggregateCount('applications', [
-          where('companyId', '==', companyId),
+        getAggregateCount('jobApplications', [
+          where('employerId', '==', companyId),
           where('status', '==', 'interview_scheduled'),
         ]),
         getAggregateCount('interviews', [where('companyId', '==', companyId)]),
-        getAggregateCount('applications', [
-          where('companyId', '==', companyId),
+        getAggregateCount('jobApplications', [
+          where('employerId', '==', companyId),
           where('status', '==', 'selected'),
         ]),
-        getAggregateCount('applications', [
-          where('companyId', '==', companyId),
+        getAggregateCount('jobApplications', [
+          where('employerId', '==', companyId),
           where('status', '==', 'rejected'),
         ]),
       ]);
@@ -430,7 +430,7 @@ export function useSeekerStats(seekerId: string | undefined) {
     async function loadStats() {
       setLoading(true);
       const [appliedJobs, savedJobs, interviews] = await Promise.all([
-        getAggregateCount('applications', [where('seekerId', '==', currentSeekerId)]),
+        getAggregateCount('jobApplications', [where('applicantId', '==', currentSeekerId)]),
         getAggregateCount('savedJobs', [where('userId', '==', currentSeekerId)]),
         getAggregateCount('interviews', [where('seekerId', '==', currentSeekerId)]),
       ]);

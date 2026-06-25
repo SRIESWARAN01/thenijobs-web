@@ -184,7 +184,7 @@ export default function SubscriptionsPage() {
     limit(20)
   ]);
   const { data: jobs } = useCollection<any>('jobs');
-  const { data: applications } = useCollection<any>('applications');
+  const { data: applications } = useCollection<any>('jobApplications');
 
   const { user: currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -228,8 +228,8 @@ export default function SubscriptionsPage() {
     const relatedCompanyIds = new Set(relatedJobs.map((job) => job.companyId).filter(Boolean));
     const activeJobs = relatedJobs.filter((job) => isActiveJobSlot(job)).length;
     const totalApplications = applications.filter((app) => (
-      (sub.companyId && app.companyId === sub.companyId) ||
-      relatedCompanyIds.has(app.companyId)
+      (sub.companyId && app.employerId === sub.companyId) ||
+      (app.employerId && relatedCompanyIds.has(app.employerId))
     )).length;
 
     return {
@@ -314,7 +314,7 @@ export default function SubscriptionsPage() {
 
       if (request.audience === 'employer' && request.companyId) {
         batch.update(doc(db, 'companies', request.companyId), {
-          isPremium: planSlug === 'premium',
+          isPremium: planSlug === 'premium' || planSlug === 'enterprise',
           subscriptionPlan: planSlug,
           subscriptionStatus: 'active',
           subscriptionStartsAt: Timestamp.fromDate(now),
@@ -325,7 +325,7 @@ export default function SubscriptionsPage() {
 
       if (request.audience === 'seeker') {
         batch.set(doc(db, 'seekerProfiles', request.userId), {
-          isPremium: planSlug === 'premium',
+          isPremium: planSlug === 'premium' || planSlug === 'enterprise',
           premiumPlan: planSlug,
           premiumUntil: Timestamp.fromDate(endDate),
           subscriptionPlan: planSlug,
@@ -416,7 +416,7 @@ export default function SubscriptionsPage() {
       // 2. If employer/business, update company profile document
       if (sub.audience !== 'seeker' && sub.companyId) {
         batch.update(doc(db, 'companies', sub.companyId), {
-          isPremium: overrideNewPlan === 'premium',
+          isPremium: overrideNewPlan === 'premium' || overrideNewPlan === 'enterprise',
           subscriptionPlan: overrideNewPlan,
           subscriptionStatus: 'active',
           subscriptionStartsAt: Timestamp.fromDate(now),
@@ -428,7 +428,7 @@ export default function SubscriptionsPage() {
       // 3. If seeker, update seeker profile document
       if (sub.audience === 'seeker') {
         batch.set(doc(db, 'seekerProfiles', sub.userId), {
-          isPremium: overrideNewPlan === 'premium',
+          isPremium: overrideNewPlan === 'premium' || overrideNewPlan === 'enterprise',
           premiumPlan: overrideNewPlan,
           premiumUntil: Timestamp.fromDate(endDate),
           subscriptionPlan: overrideNewPlan,
@@ -943,13 +943,13 @@ export default function SubscriptionsPage() {
               {/* Target Plan */}
               <div>
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Target Plan</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['free', 'basic', 'premium'] as const).map(p => (
+                <div className="grid grid-cols-4 gap-2">
+                  {(['free', 'basic', 'premium', 'enterprise'] as const).map(p => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setOverrideNewPlan(p)}
-                      className={`py-2 rounded-xl text-xs font-bold border transition-colors uppercase ${
+                      className={`py-2 rounded-xl text-[10px] font-bold border transition-colors uppercase ${
                         overrideNewPlan === p
                           ? 'bg-purple-600 border-purple-500 text-white'
                           : 'border-white/5 text-slate-450 bg-white/[0.01]'

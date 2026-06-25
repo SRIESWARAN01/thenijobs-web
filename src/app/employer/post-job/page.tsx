@@ -14,7 +14,7 @@ import { createJobPosting } from '@/lib/firebase/firestoreService';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import Link from 'next/link';
-import { normalizePlanSlug, planHasFeature, selectBestSubscription } from '@/lib/subscriptions';
+import { normalizePlanSlug, planHasFeature, selectBestSubscription, getPlanRank } from '@/lib/subscriptions';
 import { getJobPlanLimit, isActiveJobSlot } from '@/lib/jobPolicy';
 
 const STEPS = [
@@ -699,7 +699,7 @@ export default function PostJobPage() {
                 { key: 'isPremium', label: '👑 Premium Badge', desc: 'Highlighted list styling for more views', color: 'cyan', requiresPremium: true },
               ].map(({ key, label, desc, color, requiresPremium }) => {
                 const isChecked = (form as any)[key];
-                const isLocked = requiresPremium && currentPlan !== 'premium';
+                const isLocked = requiresPremium && getPlanRank(currentPlan) < 2;
 
                 return (
                   <div

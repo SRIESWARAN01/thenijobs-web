@@ -126,7 +126,7 @@ export default function AdminDashboard() {
 
   // Pending applications for platform-wide over-7-days alert
   const { data: allPendingApplications } = useCollection<any>(
-    'applications',
+    'jobApplications',
     [where('status', 'in', ['applied', 'pending_review', 'resume_viewed', 'under_review'])],
   );
 
@@ -136,11 +136,11 @@ export default function AdminDashboard() {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     return allPendingApplications.filter((app: any) => {
-      const appDate = app.createdAt?.seconds 
-        ? new Date(app.createdAt.seconds * 1000) 
-        : app.createdAt?.toDate 
-          ? app.createdAt.toDate() 
-          : new Date(app.createdAt);
+      const appDate = (app.appliedDate || app.createdAt)?.seconds 
+        ? new Date((app.appliedDate || app.createdAt).seconds * 1000) 
+        : (app.appliedDate || app.createdAt)?.toDate 
+          ? (app.appliedDate || app.createdAt).toDate() 
+          : new Date(app.appliedDate || app.createdAt || Date.now());
       return appDate < sevenDaysAgo;
     }).length;
   }, [allPendingApplications]);
@@ -288,7 +288,7 @@ export default function AdminDashboard() {
 
         if (request.audience === 'employer' && request.companyId) {
           batch.update(doc(db, 'companies', request.companyId), {
-            isPremium: planSlug === 'premium',
+            isPremium: planSlug === 'premium' || planSlug === 'enterprise',
             subscriptionPlan: planSlug,
             subscriptionStatus: 'active',
             subscriptionStartsAt: Timestamp.fromDate(now),
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
 
         if (request.audience === 'seeker') {
           batch.set(doc(db, 'seekerProfiles', request.userId), {
-            isPremium: planSlug === 'premium',
+            isPremium: planSlug === 'premium' || planSlug === 'enterprise',
             premiumPlan: planSlug,
             premiumUntil: Timestamp.fromDate(endDate),
             subscriptionPlan: planSlug,

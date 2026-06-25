@@ -63,6 +63,16 @@ const ROLE_OPTIONS = [
   { value: 'service_provider', label: 'Service Provider' },
 ];
 
+const EDITABLE_ROLE_OPTIONS = [
+  { value: 'job_seeker', label: 'Job Seeker' },
+  { value: 'employer', label: 'Employer' },
+  { value: 'business_owner', label: 'Business Owner' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'super_admin', label: 'Super Admin' },
+  { value: 'supplier', label: 'Supplier' },
+  { value: 'service_provider', label: 'Service Provider' },
+];
+
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Status' },
   { value: 'active', label: 'Active' },
@@ -146,6 +156,18 @@ export default function UsersPage() {
       await verifyUser(userId, currentUser?.uid || 'admin');
     } catch (err) {
       console.error('Verify user error:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    setActionLoading(userId);
+    try {
+      await updateUserRole(userId, newRole, currentUser?.uid || 'admin');
+    } catch (err) {
+      console.error('Update user role error:', err);
+      alert('Failed to update user role');
     } finally {
       setActionLoading(null);
     }
@@ -420,9 +442,18 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${roleConfig.bg} ${roleConfig.text}`}>
-                          {roleConfig.label}
-                        </span>
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+                          disabled={actionLoading === user.id}
+                          className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-transparent border border-white/10 outline-none cursor-pointer focus:border-violet-500/50 transition-all ${roleConfig.text} ${roleConfig.bg}`}
+                        >
+                          {EDITABLE_ROLE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value} className="bg-[#0F172A] text-white uppercase text-[10px]">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td className="px-4 py-3.5 hidden lg:table-cell">
                         <span className="text-sm text-gray-300">{user.district || 'Theni'}</span>

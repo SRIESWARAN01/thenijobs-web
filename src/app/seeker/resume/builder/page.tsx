@@ -5,7 +5,8 @@ import Link from 'next/link';
 import {
   User, GraduationCap, Briefcase, Star, Eye,
   ChevronLeft, ChevronRight, Check, FileText, Sparkles,
-  Mail, Phone, MapPin, ArrowLeft, Palette, Loader2, Download, Printer, ExternalLink
+  Mail, Phone, MapPin, ArrowLeft, Palette, Loader2, Download, Printer, ExternalLink,
+  CheckCircle, Circle, Zap, Link2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
@@ -32,12 +33,42 @@ export default function ResumeBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  // Auto save states and refs
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  const [profileUrl, setProfileUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && user?.uid) {
+      setProfileUrl(`${window.location.origin}/profile/${user.uid}`);
+    }
+  }, [user?.uid]);
+
+  const qrCodeUrl = profileUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(profileUrl)}` : '';
+
   // Initialize template choice from profile if saved
   useEffect(() => {
     if (profile?.resumeTemplate) {
       setSelectedTemplate(profile.resumeTemplate);
     }
   }, [profile?.resumeTemplate]);
+
+  const handleAutoSaveTemplate = async (templateId: string) => {
+    if (!user?.uid) return;
+    setAutoSaveStatus('saving');
+    try {
+      await setDoc(doc(db, 'seekerProfiles', user.uid), {
+        resumeTemplate: templateId,
+        updatedAt: new Date()
+      }, { merge: true });
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
+    } catch (err) {
+      console.error('Template selection auto-save failed:', err);
+      setAutoSaveStatus('error');
+    }
+  };
 
   const handleSaveTemplateSelection = async () => {
     if (!user?.uid) return;
@@ -47,10 +78,13 @@ export default function ResumeBuilderPage() {
         resumeTemplate: selectedTemplate,
         updatedAt: new Date()
       }, { merge: true });
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
       alert('Preferred template layout saved successfully!');
     } catch (err) {
       console.error(err);
       alert('Failed to save template selection');
+      setAutoSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -60,8 +94,11 @@ export default function ResumeBuilderPage() {
     if (!profile) return;
     setExporting(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
+      const html2canvasModule = await import('html2canvas');
+      const html2canvas = html2canvasModule.default || html2canvasModule;
+
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default || jsPDFModule;
 
       const element = previewRef.current;
       if (!element) return;
@@ -115,6 +152,17 @@ export default function ResumeBuilderPage() {
     }
   };
 
+  const handleCopyShareLink = async () => {
+    if (!profileUrl) return;
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy share link:', err);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -158,7 +206,25 @@ export default function ResumeBuilderPage() {
   const certifications = profile.certifications || [];
   const projects = profile.projects || [];
   const languages = profile.languages || [];
+  const achievements = profile.achievements || [];
+  const portfolio = profile.portfolio || [];
+  const summary = profile.aboutMe || profile.summary || '';
   const initials = profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const strengthItems = [
+    { label: 'Photo uploaded', done: !!(profile.photoUrl || profile.profilePhotoUrl) },
+    { label: 'Contact details', done: !!profile.phone && !!profile.email },
+    { label: 'Education added', done: education.length > 0 },
+    { label: 'Experience added', done: experience.length > 0 },
+    { label: 'Skills added', done: skills.length >= 3 },
+    { label: 'Languages selected', done: languages.length > 0 },
+    { label: 'Certifications', done: certifications.length > 0 },
+    { label: 'Portfolio links', done: portfolio.length > 0 },
+    { label: 'About Me summary', done: !!summary },
+    { label: 'Achievements listed', done: achievements.length > 0 },
+  ];
+  const profileStrength = Math.round((strengthItems.filter(i => i.done).length / strengthItems.length) * 100);
+
 
   return (
     <div className="animate-fade-in-up space-y-6 max-w-6xl mx-auto font-outfit text-white">
@@ -194,16 +260,63 @@ export default function ResumeBuilderPage() {
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
         {/* Left Column: Template Selection & Controls */}
         <div className="xl:col-span-2 space-y-6">
+          {/* Profile Strength Checklist */}
+          <div className="glass-card rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+                <Zap size={15} className="text-emerald-400" /> Profile Strength
+              </h3>
+              <span className={`text-sm font-bold ${profileStrength >= 90 ? 'text-emerald-400' : profileStrength >= 60 ? 'text-amber-400' : 'text-rose-400'}`}>
+                {profileStrength}%
+              </span>
+            </div>
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-700"
+                style={{ width: `${profileStrength}%` }}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-white/[0.06]">
+              {strengthItems.map(item => (
+                <div key={item.label} className="flex items-center gap-2 text-xs">
+                  {item.done ? (
+                    <CheckCircle size={14} className="text-emerald-400 shrink-0" />
+                  ) : (
+                    <Circle size={14} className="text-gray-600 shrink-0" />
+                  )}
+                  <span className={item.done ? 'text-gray-300' : 'text-gray-500'}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Template Choices */}
           <div className="glass-card rounded-2xl p-5 space-y-4">
-            <h3 className="font-semibold text-white text-sm flex items-center gap-2">
-              <Palette size={15} className="text-emerald-400" /> Choose Template
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+                <Palette size={15} className="text-emerald-400" /> Choose Template
+              </h3>
+              {autoSaveStatus !== 'idle' && (
+                <span className={`text-[10px] font-semibold flex items-center gap-1 ${
+                  autoSaveStatus === 'saving' 
+                    ? 'text-amber-400' 
+                    : autoSaveStatus === 'saved' 
+                    ? 'text-emerald-400' 
+                    : 'text-rose-455'
+                }`}>
+                  {autoSaveStatus === 'saving' && <Loader2 size={10} className="animate-spin" />}
+                  {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Saved' : 'Error'}
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-3 gap-2">
               {TEMPLATES.map(t => (
                 <button
                   key={t.id}
-                  onClick={() => setSelectedTemplate(t.id)}
+                  onClick={() => {
+                    setSelectedTemplate(t.id);
+                    handleAutoSaveTemplate(t.id);
+                  }}
                   className={`p-3 rounded-xl border text-center transition-all ${
                     selectedTemplate === t.id
                       ? 'border-emerald-500/30 bg-emerald-500/10'
@@ -235,6 +348,13 @@ export default function ResumeBuilderPage() {
               >
                 <Printer size={16} />
                 Print / Export via Browser
+              </button>
+              <button
+                onClick={handleCopyShareLink}
+                className="w-full py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                {copied ? <Check size={16} /> : <Link2 size={16} />}
+                {copied ? 'Link Copied!' : 'Copy Shareable Profile Link'}
               </button>
             </div>
             <p className="text-[10px] text-gray-500 text-center mt-2 leading-relaxed">
@@ -282,22 +402,27 @@ export default function ResumeBuilderPage() {
                       </div>
                       {(profile.photoUrl || profile.profilePhotoUrl) && (
                         <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
-                          <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" />
+                          <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                         </div>
                       )}
                     </div>
                     {/* Social/Portfolio Links */}
-                    <div className="flex items-center gap-4 mt-3 text-[10px] text-emerald-600 font-semibold">
+                    <div className="flex items-center gap-4 mt-3 text-[10px] text-emerald-600 font-semibold flex-wrap">
                       {profile.linkedin && <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-0.5">LinkedIn <ExternalLink size={8} /></a>}
                       {profile.website && <a href={profile.website} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-0.5">Portfolio <ExternalLink size={8} /></a>}
+                      {portfolio.map((link: string, idx: number) => (
+                        <a key={idx} href={link} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-0.5">
+                          Link {idx + 1} <ExternalLink size={8} />
+                        </a>
+                      ))}
                     </div>
                   </div>
 
                   {/* Summary */}
-                  {profile.summary && (
+                  {summary && (
                     <div className="space-y-1.5">
                       <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1">Professional Summary</h3>
-                      <p className="text-[11px] leading-relaxed text-gray-700">{profile.summary}</p>
+                      <p className="text-[11px] leading-relaxed text-gray-700">{summary}</p>
                     </div>
                   )}
 
@@ -383,6 +508,61 @@ export default function ResumeBuilderPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Achievements */}
+                  {achievements.length > 0 && (
+                    <div className="space-y-2 pt-3">
+                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1">Achievements</h3>
+                      <div className="space-y-2">
+                        {achievements.map((ach: any, idx: number) => (
+                          <div key={ach.id || idx} className="space-y-1">
+                            <p className="font-semibold text-gray-900 text-[11px]">{ach.name}</p>
+                            {ach.description && <p className="text-[10px] text-gray-600 leading-normal">{ach.description}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Digital Member ID Card & QR Code */}
+                  <div className="pt-6 border-t border-gray-200 mt-6 grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-8">
+                      {/* Mini Digital ID Card */}
+                      <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-[#0e1224] to-[#1e2a4a] text-white p-4 shadow-md flex justify-between items-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/20 bg-slate-900/50 relative flex-shrink-0">
+                            {profile.photoUrl || profile.profilePhotoUrl ? (
+                              <img src={profile.photoUrl || profile.profilePhotoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-lg font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
+                                {initials}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <span className="text-[7px] tracking-[0.2em] font-black text-emerald-400 uppercase block leading-none">THENIJOBS</span>
+                            <h4 className="text-xs font-black text-white leading-tight truncate">{profile.name}</h4>
+                            <p className="text-[8px] font-semibold text-emerald-400 leading-normal">{profile.currentRole || 'Job Seeker'}</p>
+                            <p className="text-[8px] font-mono font-bold text-slate-300 mt-0.5 leading-none">
+                              {profile.candidateId || `TNI-${user?.uid?.slice(0, 8).toUpperCase()}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right text-[8px] text-slate-400 space-y-0.5 border-l border-white/10 pl-3">
+                          <p><span className="font-semibold text-slate-500 uppercase">Location:</span> {profile.district || 'Tamil Nadu'}</p>
+                          <p><span className="font-semibold text-slate-500 uppercase">Member:</span> Verified</p>
+                          <p><span className="font-semibold text-slate-500 uppercase">Status:</span> Active</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-span-4 flex flex-col items-center justify-center text-center pl-2">
+                      <div className="bg-white p-1 rounded-lg border border-gray-200 shadow-sm inline-block">
+                        {qrCodeUrl && <img src={qrCodeUrl} alt="Verify Profile QR" className="w-12 h-12" crossOrigin="anonymous" />}
+                      </div>
+                      <span className="text-[7px] font-bold text-gray-500 mt-1 uppercase tracking-wider">Scan to Verify Profile</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -398,7 +578,7 @@ export default function ResumeBuilderPage() {
                       <div className="text-center">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-xl font-bold flex items-center justify-center mx-auto mb-3 shadow overflow-hidden">
                           {profile.photoUrl || profile.profilePhotoUrl ? (
-                            <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" />
+                            <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                           ) : (
                             initials
                           )}
@@ -414,6 +594,26 @@ export default function ResumeBuilderPage() {
                           <p className="flex items-center gap-1.5"><Mail size={9} /> {profile.email}</p>
                           <p className="flex items-center gap-1.5"><Phone size={9} /> {profile.phone}</p>
                           {profile.address && <p className="flex items-center gap-1.5"><MapPin size={9} /> {profile.district}</p>}
+                          {profile.linkedin && (
+                            <p className="flex items-center gap-1.5">
+                              <ExternalLink size={9} className="text-indigo-600" />
+                              <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="hover:underline text-indigo-600 truncate max-w-[120px]">LinkedIn</a>
+                            </p>
+                          )}
+                          {profile.website && (
+                            <p className="flex items-center gap-1.5">
+                              <ExternalLink size={9} className="text-indigo-600" />
+                              <a href={profile.website} target="_blank" rel="noopener noreferrer" className="hover:underline text-indigo-600 truncate max-w-[120px]">Portfolio</a>
+                            </p>
+                          )}
+                          {portfolio.map((link: string, idx: number) => (
+                            <p key={idx} className="flex items-center gap-1.5">
+                              <ExternalLink size={9} className="text-indigo-600" />
+                              <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline text-indigo-600 truncate max-w-[120px]">
+                                Link {idx + 1}
+                              </a>
+                            </p>
+                          ))}
                         </div>
                       </div>
 
@@ -453,10 +653,10 @@ export default function ResumeBuilderPage() {
                   {/* Right Column (col-span-2) */}
                   <div className="col-span-2 space-y-5">
                     {/* Summary */}
-                    {profile.summary && (
+                    {summary && (
                       <div className="space-y-1">
                         <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b-2 border-indigo-500 pb-1">Profile</h3>
-                        <p className="text-[10px] text-slate-600 leading-relaxed">{profile.summary}</p>
+                        <p className="text-[10px] text-slate-600 leading-relaxed">{summary}</p>
                       </div>
                     )}
 
@@ -515,6 +715,61 @@ export default function ResumeBuilderPage() {
                         ))}
                       </div>
                     )}
+
+                    {/* Achievements */}
+                    {achievements.length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b-2 border-indigo-500 pb-1">Achievements</h3>
+                        <div className="space-y-1.5">
+                          {achievements.map((ach: any, idx: number) => (
+                            <div key={ach.id || idx} className="space-y-0.5">
+                              <p className="font-semibold text-slate-900 text-[10px]">{ach.name}</p>
+                              {ach.description && <p className="text-[9px] text-slate-600 leading-normal">{ach.description}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Digital Member ID Card & QR Code */}
+                  <div className="col-span-3 pt-5 border-t border-slate-200 mt-5 grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-8">
+                      {/* Mini Digital ID Card */}
+                      <div className="rounded-xl border border-indigo-500/30 bg-gradient-to-br from-[#0e1224] to-[#1e2a4a] text-white p-4 shadow-md flex justify-between items-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/20 bg-slate-900/50 relative flex-shrink-0">
+                            {profile.photoUrl || profile.profilePhotoUrl ? (
+                              <img src={profile.photoUrl || profile.profilePhotoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-lg font-black bg-gradient-to-br from-slate-800 to-slate-950 text-indigo-400 uppercase">
+                                {initials}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <span className="text-[7px] tracking-[0.2em] font-black text-indigo-400 uppercase block leading-none">THENIJOBS</span>
+                            <h4 className="text-xs font-black text-white leading-tight truncate">{profile.name}</h4>
+                            <p className="text-[8px] font-semibold text-indigo-400 leading-normal">{profile.currentRole || 'Job Seeker'}</p>
+                            <p className="text-[8px] font-mono font-bold text-slate-300 mt-0.5 leading-none">
+                              {profile.candidateId || `TNI-${user?.uid?.slice(0, 8).toUpperCase()}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right text-[8px] text-slate-400 space-y-0.5 border-l border-white/10 pl-3 text-left">
+                          <p><span className="font-semibold text-slate-500 uppercase">Location:</span> {profile.district || 'Tamil Nadu'}</p>
+                          <p><span className="font-semibold text-slate-500 uppercase">Member:</span> Verified</p>
+                          <p><span className="font-semibold text-slate-500 uppercase">Status:</span> Active</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-span-4 flex flex-col items-center justify-center text-center pl-2">
+                      <div className="bg-white p-1 rounded-lg border border-slate-200 shadow-sm inline-block">
+                        {qrCodeUrl && <img src={qrCodeUrl} alt="Verify Profile QR" className="w-12 h-12" crossOrigin="anonymous" />}
+                      </div>
+                      <span className="text-[7px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Scan to Verify Profile</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -538,7 +793,7 @@ export default function ResumeBuilderPage() {
                       </div>
                       {(profile.photoUrl || profile.profilePhotoUrl) && (
                         <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200">
-                          <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" />
+                          <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                         </div>
                       )}
                     </div>
@@ -552,9 +807,30 @@ export default function ResumeBuilderPage() {
                     </div>
                   )}
 
+                  {/* Social & Portfolio Links */}
+                  {(profile.linkedin || profile.website || portfolio.length > 0) && (
+                    <div className="text-[10px] text-gray-500 border-b border-gray-100 pb-2 flex gap-4 flex-wrap">
+                      {profile.linkedin && (
+                        <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline flex items-center gap-0.5 font-medium">
+                          LinkedIn <ExternalLink size={8} />
+                        </a>
+                      )}
+                      {profile.website && (
+                        <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline flex items-center gap-0.5 font-medium">
+                          Portfolio <ExternalLink size={8} />
+                        </a>
+                      )}
+                      {portfolio.map((link: string, idx: number) => (
+                        <a key={idx} href={link} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline flex items-center gap-0.5 font-medium">
+                          Link {idx + 1} <ExternalLink size={8} />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Summary */}
-                  {profile.summary && (
-                    <p className="text-[10px] leading-relaxed italic text-gray-600 font-serif">{profile.summary}</p>
+                  {summary && (
+                    <p className="text-[10px] leading-relaxed italic text-gray-600 font-serif">{summary}</p>
                   )}
 
                   {/* Experience */}
@@ -593,6 +869,33 @@ export default function ResumeBuilderPage() {
                     </div>
                   )}
 
+                  {/* Projects */}
+                  {projects.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider">Projects</h3>
+                      <div className="space-y-2">
+                        {projects.map((proj: any, idx: number) => (
+                          <div key={proj.id || idx} className="grid grid-cols-4 gap-2">
+                            <span className="col-span-1 text-[9px] text-gray-500">
+                              {proj.url ? (
+                                <a href={proj.url} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline inline-flex items-center gap-0.5">
+                                  Link <ExternalLink size={8} />
+                                </a>
+                              ) : (
+                                'Project'
+                              )}
+                            </span>
+                            <div className="col-span-3 space-y-0.5">
+                              <p className="font-bold text-gray-900 text-[10px]">{proj.title}</p>
+                              {proj.technologies && <p className="text-[8px] text-gray-400">Technologies: {proj.technologies}</p>}
+                              {proj.description && <p className="text-[9px] text-gray-600 leading-normal">{proj.description}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Skills */}
                   {skills.length > 0 && (
                     <div className="space-y-1.5">
@@ -620,6 +923,64 @@ export default function ResumeBuilderPage() {
                       </ul>
                     </div>
                   )}
+
+                  {/* Achievements */}
+                  {achievements.length > 0 && (
+                    <div className="space-y-1.5">
+                      <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider">Achievements</h3>
+                      <div className="space-y-2">
+                        {achievements.map((ach: any, idx: number) => (
+                          <div key={ach.id || idx} className="grid grid-cols-4 gap-2">
+                            <span className="col-span-1 text-[9px] text-gray-500">Award / Key</span>
+                            <div className="col-span-3 space-y-0.5">
+                              <p className="font-bold text-gray-900 text-[10px]">{ach.name}</p>
+                              {ach.description && <p className="text-[9px] text-gray-600 leading-normal">{ach.description}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Digital Member ID Card & QR Code */}
+                  <div className="pt-5 border-t border-gray-100 mt-5 grid grid-cols-12 gap-4 items-center">
+                    <div className="col-span-8">
+                      {/* Mini Digital ID Card */}
+                      <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-[#0e1224] to-[#1e2a4a] text-white p-4 shadow-md flex justify-between items-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/20 bg-slate-900/50 relative flex-shrink-0">
+                            {profile.photoUrl || profile.profilePhotoUrl ? (
+                              <img src={profile.photoUrl || profile.profilePhotoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-lg font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
+                                {initials}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <span className="text-[7px] tracking-[0.2em] font-black text-emerald-400 uppercase block leading-none">THENIJOBS</span>
+                            <h4 className="text-xs font-black text-white leading-tight truncate">{profile.name}</h4>
+                            <p className="text-[8px] font-semibold text-emerald-400 leading-normal">{profile.currentRole || 'Job Seeker'}</p>
+                            <p className="text-[8px] font-mono font-bold text-slate-300 mt-0.5 leading-none">
+                              {profile.candidateId || `TNI-${user?.uid?.slice(0, 8).toUpperCase()}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right text-[8px] text-slate-400 space-y-0.5 border-l border-white/10 pl-3 text-left">
+                          <p><span className="font-semibold text-slate-500 uppercase">Location:</span> {profile.district || 'Tamil Nadu'}</p>
+                          <p><span className="font-semibold text-slate-500 uppercase">Member:</span> Verified</p>
+                          <p><span className="font-semibold text-slate-500 uppercase">Status:</span> Active</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-span-4 flex flex-col items-center justify-center text-center pl-2">
+                      <div className="bg-white p-1 rounded-lg border border-gray-200 shadow-sm inline-block">
+                        {qrCodeUrl && <img src={qrCodeUrl} alt="Verify Profile QR" className="w-12 h-12" crossOrigin="anonymous" />}
+                      </div>
+                      <span className="text-[7px] font-bold text-gray-500 mt-1 uppercase tracking-wider">Scan to Verify Profile</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

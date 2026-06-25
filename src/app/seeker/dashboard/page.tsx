@@ -79,9 +79,9 @@ export default function SeekerDashboard() {
   const { stats, loading: statsLoading } = useSeekerStats(uid);
 
   // 2. Fetch recent applications
-  const { data: applications, loading: appsLoading } = useCollection<any>('applications', [
-    where('seekerId', '==', uid || ''),
-    orderBy('createdAt', 'desc'),
+  const { data: applications, loading: appsLoading } = useCollection<any>('jobApplications', [
+    where('applicantId', '==', uid || ''),
+    orderBy('appliedDate', 'desc'),
     limit(5)
   ], { skip: !uid });
 
@@ -200,7 +200,7 @@ export default function SeekerDashboard() {
                         </div>
                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
                           <div className="flex items-center gap-1">
-                            <Link href={`/jobs/detail?id=${encodeURIComponent(job.id)}`} className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors">
+                            <Link href={`/jobs/${job.id}`} className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors">
                               Apply
                             </Link>
                           </div>
@@ -302,7 +302,7 @@ export default function SeekerDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">{app.jobTitle}</p>
-                      <p className="text-[11px] text-gray-500">{app.companyName} · Applied {app.createdAt ? new Date(app.createdAt.seconds * 1000).toLocaleDateString() : 'Recently'}</p>
+                       <p className="text-[11px] text-gray-500">{app.companyName} · Applied {app.appliedDate ? new Date(app.appliedDate.seconds * 1000).toLocaleDateString() : 'Recently'}</p>
                     </div>
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${statusConfig[app.status || 'applied']?.color || 'bg-gray-500/10 text-gray-400'}`}>
                       {statusConfig[app.status || 'applied']?.label || app.status}

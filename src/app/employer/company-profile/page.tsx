@@ -16,7 +16,7 @@ import { useUploadFile } from '@/hooks/useStorage';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
 import { where } from 'firebase/firestore';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
-import { normalizePlanSlug, selectBestSubscription } from '@/lib/subscriptions';
+import { normalizePlanSlug, selectBestSubscription, getPlanRank } from '@/lib/subscriptions';
 
 const DEFAULT_COMPANY = {
   name: '',
@@ -107,6 +107,34 @@ export default function CompanyProfilePage() {
   const [showCropper, setShowCropper] = useState(false);
   const [galleryCropIndex, setGalleryCropIndex] = useState<number | null>(null);
 
+  // Auto save states and refs
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+
+  // Background company profile auto-creation for new business owners
+  useEffect(() => {
+    if (!companyLoading && user?.uid && companies.length === 0 && !isCreatingDraft) {
+      setIsCreatingDraft(true);
+      const docData = {
+        ...DEFAULT_COMPANY,
+        ownerId: user.uid,
+        name: user.displayName || 'My Business',
+        verificationStatus: 'pending',
+        isActive: false,
+        isFeatured: false,
+        isPremium: false,
+        viewCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      createDocument('companies', docData).catch((err) => {
+        console.error('Failed to auto-create company draft:', err);
+        setIsCreatingDraft(false);
+      });
+    }
+  }, [companyLoading, user?.uid, companies.length, isCreatingDraft]);
+
   useEffect(() => {
     if (resolvedCompany) {
       setCompany({
@@ -126,33 +154,100 @@ export default function CompanyProfilePage() {
 
   const completion = calcCompletion(company);
 
+  const triggerAutoSave = (updatedCompanyData: typeof DEFAULT_COMPANY) => {
+    if (!resolvedCompany?.id) return;
+    setAutoSaveStatus('saving');
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const docData = {
+          name: updatedCompanyData.name,
+          tagline: updatedCompanyData.tagline,
+          logoUrl: updatedCompanyData.logoUrl,
+          coverUrl: updatedCompanyData.coverUrl,
+          description: updatedCompanyData.description,
+          phone: updatedCompanyData.phone,
+          email: updatedCompanyData.email,
+          whatsapp: updatedCompanyData.whatsapp,
+          website: updatedCompanyData.website,
+          address: updatedCompanyData.address,
+          location: updatedCompanyData.location,
+          district: updatedCompanyData.district,
+          facebook: updatedCompanyData.facebook,
+          instagram: updatedCompanyData.instagram,
+          linkedin: updatedCompanyData.linkedin,
+          youtube: updatedCompanyData.youtube,
+          gallery: updatedCompanyData.gallery,
+          branches: updatedCompanyData.branches,
+          customTheme: updatedCompanyData.customTheme || 'classic_blue',
+          websiteTemplate: updatedCompanyData.websiteTemplate || 'classic',
+          customMetaTitle: updatedCompanyData.customMetaTitle || '',
+          customMetaDescription: updatedCompanyData.customMetaDescription || '',
+          googleAnalyticsId: updatedCompanyData.googleAnalyticsId || '',
+          facebookPixelId: updatedCompanyData.facebookPixelId || '',
+          whatsappMessageTemplate: updatedCompanyData.whatsappMessageTemplate || '',
+          customCtaLabel: updatedCompanyData.customCtaLabel || '',
+          customCtaUrl: updatedCompanyData.customCtaUrl || '',
+          hideBranding: updatedCompanyData.hideBranding || false,
+          updatedAt: new Date()
+        };
+        await updateDocument('companies', resolvedCompany.id, docData);
+        setAutoSaveStatus('saved');
+        setTimeout(() => {
+          setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+        }, 2000);
+      } catch (err) {
+        console.error('Background auto-save failed:', err);
+        setAutoSaveStatus('error');
+      }
+    }, 1500);
+  };
+
   const update = (key: string, value: any) => {
-    setCompany((prev) => ({ ...prev, [key]: value }));
+    setCompany((prev) => {
+      const next = { ...prev, [key]: value };
+      triggerAutoSave(next);
+      return next;
+    });
   };
 
   const handleDescChange = (value: string) => {
     if (value.length <= 1000) {
-      update('description', value);
+      setCompany((prev) => {
+        const next = { ...prev, description: value };
+        triggerAutoSave(next);
+        return next;
+      });
       setCharCount(value.length);
     }
   };
 
   const addBranch = () => {
     if (newBranch.name && newBranch.address && newBranch.location) {
-      setCompany((prev) => ({
-        ...prev,
-        branches: [...(prev.branches || []), { id: Date.now().toString(), ...newBranch }],
-      }));
+      setCompany((prev) => {
+        const next = {
+          ...prev,
+          branches: [...(prev.branches || []), { id: Date.now().toString(), ...newBranch }],
+        };
+        triggerAutoSave(next);
+        return next;
+      });
       setNewBranch({ name: '', address: '', district: LAUNCH_DISTRICT, location: '' });
       setShowBranchForm(false);
     }
   };
 
   const removeBranch = (id: string) => {
-    setCompany((prev) => ({
-      ...prev,
-      branches: (prev.branches || []).filter((b) => b.id !== id),
-    }));
+    setCompany((prev) => {
+      const next = {
+        ...prev,
+        branches: (prev.branches || []).filter((b) => b.id !== id),
+      };
+      triggerAutoSave(next);
+      return next;
+    });
   };
 
   const handleUploadCover = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,6 +290,9 @@ export default function CompanyProfilePage() {
     if (!company.address || !company.location) {
       alert('Please fill in Address and Area / Town.');
       return;
+    }
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
     }
     setSaving(true);
     try {
@@ -246,9 +344,12 @@ export default function CompanyProfilePage() {
         });
         alert('Company profile created successfully! It is currently pending admin approval.');
       }
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
     } catch (err) {
       console.error(err);
       alert('Failed to save company profile.');
+      setAutoSaveStatus('error');
     } finally {
       setSaving(false);
     }
@@ -266,9 +367,23 @@ export default function CompanyProfilePage() {
   return (
     <div className="space-y-6 animate-fade-in-up font-outfit">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white font-outfit">Company Profile</h1>
-        <p className="text-sm text-gray-400 mt-1">Manage your company information and branding</p>
+      <div className="flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white font-outfit">Company Profile</h1>
+          <p className="text-sm text-gray-400 mt-1">Manage your company information and branding</p>
+        </div>
+        {autoSaveStatus !== 'idle' && (
+          <div className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            autoSaveStatus === 'saving' 
+              ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
+              : autoSaveStatus === 'saved' 
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+              : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+          }`}>
+            {autoSaveStatus === 'saving' && <Loader2 size={12} className="animate-spin" />}
+            {autoSaveStatus === 'saving' ? 'Saving changes...' : autoSaveStatus === 'saved' ? 'Saved Successfully' : 'Save Error'}
+          </div>
+        )}
       </div>
 
       {/* Profile Completion Banner */}
@@ -731,391 +846,406 @@ export default function CompanyProfilePage() {
                   {[
                     { id: 'classic_blue', label: 'Classic Blue', desc: 'Professional corporate blue style', tier: 'free', bg: 'bg-[#0a1128]', border: 'border-blue-500/30' },
                     { id: 'emerald_growth', label: 'Emerald Growth', desc: 'Fresh green growth accent', tier: 'basic', bg: 'bg-[#05160e]', border: 'border-emerald-500/30' },
-                    { id: 'royal_purple', label: 'Royal Purple', desc: 'Creative violet & pink gradient', tier: 'basic', bg: 'bg-[#0f0720]', border: 'border-purple-500/30' },
-                    { id: 'sunset_amber', label: 'Sunset Amber (Premium)', desc: 'Amber glow effect', tier: 'premium', bg: 'bg-[#150a02]', border: 'border-amber-500/30' },
+                    { id: 'royal_purple', label: 'Royal Purple', desc: 'Creative violet & pink gradient', tier: 'basic', bg: 'bg-[#0f0720]', border: 'border-purple-500/30' },                    { id: 'sunset_amber', label: 'Sunset Amber (Premium)', desc: 'Amber glow effect', tier: 'premium', bg: 'bg-[#150a02]', border: 'border-amber-500/30' },
                     { id: 'royal_gold', label: 'Royal Gold (Premium)', desc: 'Prestigious yellow-gold details', tier: 'premium', bg: 'bg-[#0d0a02]', border: 'border-yellow-500/35' },
                   ].map((themeOpt) => {
-                    const isLocked = (themeOpt.tier === 'basic' && currentPlan === 'free') || 
-                                     (themeOpt.tier === 'premium' && currentPlan !== 'premium');
+                    const isLocked = getPlanRank(themeOpt.tier) > getPlanRank(currentPlan);
                     const isSelected = company.customTheme === themeOpt.id;
-
-                    return (
-                      <div
-                        key={themeOpt.id}
-                        onClick={() => {
-                          if (isLocked) {
-                            alert(`Please upgrade your subscription plan to unlock the ${themeOpt.label}.`);
-                            return;
-                          }
-                          update('customTheme', themeOpt.id);
-                        }}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all relative overflow-hidden ${themeOpt.bg} ${
-                          isSelected
-                            ? 'border-cyan-500 ring-1 ring-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-                            : themeOpt.border
-                        } ${isLocked ? 'opacity-50 hover:opacity-60' : 'hover:border-white/20'}`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="text-sm font-bold text-white block">{themeOpt.label}</span>
-                            <span className="text-xs text-gray-400 block mt-1">{themeOpt.desc}</span>
-                          </div>
-                          {isLocked && (
-                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
-                              <Lock size={10} className="w-3 h-3 text-amber-400" /> Locked
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Website Templates */}
-              <div className="glass-card rounded-2xl p-6">
-                <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
-                  <Building2 size={16} className="text-cyan-400" />
-                  Website Templates
-                </h3>
-                <p className="text-xs text-gray-500 mb-4">Choose how your public company page layout is structured.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { id: 'classic', label: 'Classic Directory', desc: 'Standard tabbed view of profile and info', tier: 'free' },
-                    { id: 'modern', label: 'Modern Portfolio', desc: 'Clean SaaS-like portfolio view with neon accents', tier: 'basic' },
-                    { id: 'e_commerce', label: 'E-Commerce Storefront', desc: 'Highlights product catalog grid at the top', tier: 'premium' },
-                    { id: 'service_booking', label: 'Service Booking Portal', desc: 'Highlights services lists with booking forms', tier: 'premium' },
-                  ].map((tempOpt) => {
-                    const isLocked = (tempOpt.tier === 'basic' && currentPlan === 'free') || 
-                                     (tempOpt.tier === 'premium' && currentPlan !== 'premium');
-                    const isSelected = company.websiteTemplate === tempOpt.id;
-
-                    return (
-                      <div
-                        key={tempOpt.id}
-                        onClick={() => {
-                          if (isLocked) {
-                            alert(`Please upgrade your subscription plan to unlock the ${tempOpt.label} template.`);
-                            return;
-                          }
-                          update('websiteTemplate', tempOpt.id);
-                        }}
-                        className={`p-4 rounded-xl border cursor-pointer transition-all bg-white/[0.02] ${
-                          isSelected
-                            ? 'border-cyan-500 ring-1 ring-cyan-500/30'
-                            : 'border-white/[0.06]'
-                        } ${isLocked ? 'opacity-50 font-medium' : 'hover:border-white/10'}`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="text-sm font-bold text-white block">{tempOpt.label}</span>
-                            <span className="text-xs text-gray-400 block mt-1">{tempOpt.desc}</span>
-                          </div>
-                          {isLocked && (
-                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
-                              <Lock size={10} className="w-3 h-3 text-amber-400" /> Locked
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Custom Action (CTA) Button */}
-              <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
-                {currentPlan === 'free' && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                    <Lock size={24} className="text-amber-400 mb-2" />
-                    <h4 className="text-sm font-bold text-white">Custom CTA is a Standard/Premium Feature</h4>
-                    <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to add a custom action button to your public micro-website.</p>
-                  </div>
-                )}
-                <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                  <Globe size={16} className="text-cyan-400" />
-                  Custom Action Button (CTA)
-                </h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Button Label</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Book Appointment, Visit Shop"
-                      value={company.customCtaLabel || ''}
-                      onChange={(e) => update('customCtaLabel', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Button Link URL</label>
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      value={company.customCtaUrl || ''}
-                      onChange={(e) => update('customCtaUrl', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Hide Platform Branding */}
-              <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
-                {currentPlan !== 'premium' && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                    <Lock size={24} className="text-amber-400 mb-2" />
-                    <h4 className="text-sm font-bold text-white">White-labeled Branding is a Premium Feature</h4>
-                    <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade to Premium to remove the &quot;Powered by THENIJOBS&quot; badge from your website footer.</p>
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="hideBranding"
-                    checked={company.hideBranding || false}
-                    onChange={(e) => update('hideBranding', e.target.checked)}
-                    className="w-4 h-4 rounded border-white/[0.08] bg-white/[0.04] text-cyan-500 focus:ring-cyan-500/30"
-                  />
-                  <label htmlFor="hideBranding" className="text-sm font-semibold text-white cursor-pointer select-none">
-                    Hide platform branding footer badge
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* SEO & MARKETING TAB */}
-          {activeFormTab === 'seo' && (
-            <div className="space-y-6">
-              {/* Custom SEO Meta Tags */}
-              <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
-                {currentPlan === 'free' && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                    <Lock size={24} className="text-amber-400 mb-2" />
-                    <h4 className="text-sm font-bold text-white">SEO customization is a Standard/Premium Feature</h4>
-                    <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the title and description indexed by search engines like Google.</p>
-                  </div>
-                )}
-                <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                  <Globe size={16} className="text-cyan-400" />
-                  SEO Customization
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Title (Indexed by Google)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Best Biryani in Theni | Hotel Salem Ananda"
-                      value={company.customMetaTitle || ''}
-                      onChange={(e) => update('customMetaTitle', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Description</label>
-                    <textarea
-                      rows={3}
-                      placeholder="e.g. Hotel Salem Ananda offers premium traditional Biryani and South Indian foods in Theni district. Visit us or order online."
-                      value={company.customMetaDescription || ''}
-                      onChange={(e) => update('customMetaDescription', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Marketing Analytics & Pixels */}
-              <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
-                {currentPlan !== 'premium' && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                    <Lock size={24} className="text-amber-400 mb-2" />
-                    <h4 className="text-sm font-bold text-white">Marketing integrations are a Premium Feature</h4>
-                    <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade to Premium to track client visits using Facebook Pixel and Google Analytics.</p>
-                  </div>
-                )}
-                <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                  <Sparkles size={16} className="text-cyan-400" />
-                  Analytics & Ad Tracking
-                </h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Google Analytics Tracking ID</label>
-                    <input
-                      type="text"
-                      placeholder="G-XXXXXXXXXX"
-                      value={company.googleAnalyticsId || ''}
-                      onChange={(e) => update('googleAnalyticsId', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Facebook Pixel ID</label>
-                    <input
-                      type="text"
-                      placeholder="123456789012345"
-                      value={company.facebookPixelId || ''}
-                      onChange={(e) => update('facebookPixelId', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* WhatsApp Chat Pre-fill Template */}
-              <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
-                {currentPlan === 'free' && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                    <Lock size={24} className="text-amber-400 mb-2" />
-                    <h4 className="text-sm font-bold text-white">WhatsApp template customization is locked</h4>
-                    <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the default message sent when customers click your WhatsApp button.</p>
-                  </div>
-                )}
-                <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                  <MessageCircle size={16} className="text-cyan-400" />
-                  WhatsApp Click-to-Chat Pre-fill Message
-                </h3>
-                <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Custom Pre-fill Message</label>
-                  <textarea
-                    rows={2}
-                    placeholder="e.g. Hello! I visited your website on THENIJOBS and would like to ask about..."
-                    value={company.whatsappMessageTemplate || ''}
-                    onChange={(e) => update('whatsappMessageTemplate', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Save Button */}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {saving ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
-            {saving ? 'Saving...' : 'Save Company Profile'}
-          </button>
-        </div>
-
-        {/* Sidebar — Verification Status */}
-        <div className="xl:col-span-1 font-outfit">
-          <div className="glass-card rounded-2xl p-6 sticky top-24">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Shield size={16} className="text-cyan-400" />
-              Verification Status
-            </h3>
-            <div className="space-y-3">
-              {[
-                { label: 'Email Verified', icon: Mail, verified: company.verification.email },
-                { label: 'GST Verified', icon: FileText, verified: company.verification.gst },
-                { label: 'Business Verified', icon: Building2, verified: company.verification.business },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={item.label}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      item.verified
-                        ? 'bg-emerald-500/5 border-emerald-500/20'
-                        : 'bg-white/[0.02] border-white/[0.06]'
-                    }`}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        item.verified ? 'bg-emerald-500/10' : 'bg-white/[0.04]'
-                      }`}
-                    >
-                      <Icon size={14} className={item.verified ? 'text-emerald-400' : 'text-gray-500'} />
-                    </div>
-                    <span className={`text-sm font-medium flex-1 ${item.verified ? 'text-emerald-300' : 'text-gray-400'}`}>
-                      {item.label}
-                    </span>
-                    {item.verified && (
-                      <CheckCircle size={16} className="text-emerald-400" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Trust Score */}
-            <div className="mt-5 pt-4 border-t border-white/[0.06]">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400">Trust Score</span>
-                <span className="text-sm font-bold text-cyan-400">
-                  {Math.round(
-                    ((Object.values(company.verification).filter(Boolean).length) /
-                      Object.keys(company.verification).length) *
-                      100
-                  )}%
-                </span>
-              </div>
-              <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full"
-                  style={{
-                    width: `${
-                      ((Object.values(company.verification).filter(Boolean).length) /
-                        Object.keys(company.verification).length) *
-                      100
-                    }%`
-                  }}
-                />
-              </div>
-              <p className="text-[10px] text-gray-500 mt-2">
-                Verification status is managed by administrators to ensure platform safety and trust.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ImageCropperModal
-        open={showCropper}
-        onClose={() => {
-          setShowCropper(false);
-          setCropFile(null);
-          setCropType(null);
-          setGalleryCropIndex(null);
-        }}
-        file={cropFile}
-        aspectRatio={cropType === 'logo' ? 1 : cropType === 'cover' ? 4 : 4/3}
-        cropWidth={cropType === 'logo' ? 400 : cropType === 'cover' ? 1200 : 800}
-        cropHeight={cropType === 'logo' ? 400 : cropType === 'cover' ? 300 : 600}
-        isCircular={cropType === 'logo'}
-        title={
-          cropType === 'logo'
-            ? 'Crop Company Logo'
-            : cropType === 'cover'
-            ? 'Crop Cover Banner'
-            : 'Crop Gallery Image'
-        }
-        uploadPath={user?.uid && cropType ? (cropType === 'logo' ? `companies/${user.uid}/logo_${Date.now()}` : cropType === 'cover' ? `companies/${user.uid}/cover_${Date.now()}` : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`) : undefined}
-        onUploadComplete={async (url) => {
-          try {
-            if (cropType === 'logo') {
-              update('logoUrl', url);
-            } else if (cropType === 'cover') {
-              update('coverUrl', url);
-            } else if (cropType === 'gallery' && galleryCropIndex !== null) {
-              const newGallery = [...company.gallery];
-              newGallery[galleryCropIndex] = url;
-              update('gallery', newGallery);
-            }
-          } catch (err) {
-            console.error(err);
-          } finally {
-            setGalleryCropIndex(null);
-          }
-        }}
-      />
+ 
+                     return (
+                       <div
+                         key={themeOpt.id}
+                         onClick={() => {
+                           if (isLocked) {
+                             alert(`Please upgrade your subscription plan to unlock the ${themeOpt.label}.`);
+                             return;
+                           }
+                           update('customTheme', themeOpt.id);
+                         }}
+                         className={`p-4 rounded-xl border cursor-pointer transition-all relative overflow-hidden ${themeOpt.bg} ${
+                           isSelected
+                             ? 'border-cyan-500 ring-1 ring-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                             : themeOpt.border
+                         } ${isLocked ? 'opacity-50 hover:opacity-60' : 'hover:border-white/20'}`}
+                       >
+                         <div className="flex justify-between items-start">
+                           <div>
+                             <span className="text-sm font-bold text-white block">{themeOpt.label}</span>
+                             <span className="text-xs text-gray-400 block mt-1">{themeOpt.desc}</span>
+                           </div>
+                           {isLocked && (
+                             <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                               <Lock size={10} className="w-3 h-3 text-amber-400" /> Locked
+                             </span>
+                           )}
+                         </div>
+                       </div>
+                     );
+                   })}
+                 </div>
+               </div>
+ 
+               {/* Website Templates */}
+               <div className="glass-card rounded-2xl p-6">
+                 <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+                   <Building2 size={16} className="text-cyan-400" />
+                   Website Templates
+                 </h3>
+                 <p className="text-xs text-gray-500 mb-4">Choose how your public company page layout is structured.</p>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                   {[
+                     { id: 'classic', label: 'Classic Directory', desc: 'Standard tabbed view of profile and info', tier: 'free' },
+                     { id: 'modern', label: 'Modern Portfolio', desc: 'Clean SaaS-like portfolio view with neon accents', tier: 'basic' },
+                     { id: 'e_commerce', label: 'E-Commerce Storefront', desc: 'Highlights product catalog grid at the top', tier: 'premium' },
+                     { id: 'service_booking', label: 'Service Booking Portal', desc: 'Highlights services lists with booking forms', tier: 'premium' },
+                   ].map((tempOpt) => {
+                     const isLocked = getPlanRank(tempOpt.tier) > getPlanRank(currentPlan);
+                     const isSelected = company.websiteTemplate === tempOpt.id;
+ 
+                     return (
+                       <div
+                         key={tempOpt.id}
+                         onClick={() => {
+                           if (isLocked) {
+                             alert(`Please upgrade your subscription plan to unlock the ${tempOpt.label} template.`);
+                             return;
+                           }
+                           update('websiteTemplate', tempOpt.id);
+                         }}
+                         className={`p-4 rounded-xl border cursor-pointer transition-all bg-white/[0.02] ${
+                           isSelected
+                             ? 'border-cyan-500 ring-1 ring-cyan-500/30'
+                             : 'border-white/[0.06]'
+                         } ${isLocked ? 'opacity-50 font-medium' : 'hover:border-white/10'}`}
+                       >
+                         <div className="flex justify-between items-start">
+                           <div>
+                             <span className="text-sm font-bold text-white block">{tempOpt.label}</span>
+                             <span className="text-xs text-gray-400 block mt-1">{tempOpt.desc}</span>
+                           </div>
+                           {isLocked && (
+                             <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                               <Lock size={10} className="w-3 h-3 text-amber-400" /> Locked
+                             </span>
+                           )}
+                         </div>
+                       </div>
+                     );
+                   })}
+                 </div>
+               </div>
+ 
+               {/* Custom Action (CTA) Button */}
+               <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                 {getPlanRank(currentPlan) < 1 && (
+                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
+                     <Lock size={24} className="text-amber-400 mb-2" />
+                     <h4 className="text-sm font-bold text-white">Custom CTA is a Standard/Premium Feature</h4>
+                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to add a custom action button to your public micro-website.</p>
+                   </div>
+                 )}
+                 <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                   <Globe size={16} className="text-cyan-400" />
+                   Custom Action Button (CTA)
+                 </h3>
+                 <div className="grid sm:grid-cols-2 gap-4">
+                   <div>
+                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Button Label</label>
+                     <input
+                       type="text"
+                       placeholder="e.g. Book Appointment, Visit Shop"
+                       value={company.customCtaLabel || ''}
+                       onChange={(e) => update('customCtaLabel', e.target.value)}
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                     />
+                   </div>
+                   <div>
+                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Button Link URL</label>
+                     <input
+                       type="url"
+                       placeholder="https://..."
+                       value={company.customCtaUrl || ''}
+                       onChange={(e) => update('customCtaUrl', e.target.value)}
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                     />
+                   </div>
+                 </div>
+               </div>
+ 
+               {/* Hide Platform Branding */}
+               <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                 {getPlanRank(currentPlan) < 2 && (
+                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
+                     <Lock size={24} className="text-amber-400 mb-2" />
+                     <h4 className="text-sm font-bold text-white">White-labeled Branding is a Premium Feature</h4>
+                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade to Premium to remove the &quot;Powered by THENIJOBS&quot; badge from your website footer.</p>
+                   </div>
+                 )}
+                 <div className="flex items-center gap-3">
+                   <input
+                     type="checkbox"
+                     id="hideBranding"
+                     checked={company.hideBranding || false}
+                     onChange={(e) => update('hideBranding', e.target.checked)}
+                     className="w-4 h-4 rounded border-white/[0.08] bg-white/[0.04] text-cyan-500 focus:ring-cyan-500/30"
+                   />
+                   <label htmlFor="hideBranding" className="text-sm font-semibold text-white cursor-pointer select-none">
+                     Hide platform branding footer badge
+                   </label>
+                 </div>
+               </div>
+             </div>
+           )}
+ 
+           {/* SEO & MARKETING TAB */}
+           {activeFormTab === 'seo' && (
+             <div className="space-y-6">
+               {/* Custom SEO Meta Tags */}
+               <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                 {getPlanRank(currentPlan) < 1 && (
+                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
+                     <Lock size={24} className="text-amber-400 mb-2" />
+                     <h4 className="text-sm font-bold text-white">SEO customization is a Standard/Premium Feature</h4>
+                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the title and description indexed by search engines like Google.</p>
+                   </div>
+                 )}
+                 <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                   <Globe size={16} className="text-cyan-400" />
+                   SEO Customization
+                 </h3>
+                 <div className="space-y-4">
+                   <div>
+                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Title (Indexed by Google)</label>
+                     <input
+                       type="text"
+                       placeholder="e.g. Best Biryani in Theni | Hotel Salem Ananda"
+                       value={company.customMetaTitle || ''}
+                       onChange={(e) => update('customMetaTitle', e.target.value)}
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                     />
+                   </div>
+                   <div>
+                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Description</label>
+                     <textarea
+                       rows={3}
+                       placeholder="e.g. Hotel Salem Ananda offers premium traditional Biryani and South Indian foods in Theni district. Visit us or order online."
+                       value={company.customMetaDescription || ''}
+                       onChange={(e) => update('customMetaDescription', e.target.value)}
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                     />
+                   </div>
+                 </div>
+               </div>
+ 
+               {/* Marketing Analytics & Pixels */}
+               <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                 {getPlanRank(currentPlan) < 2 && (
+                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
+                     <Lock size={24} className="text-amber-400 mb-2" />
+                     <h4 className="text-sm font-bold text-white">Marketing integrations are a Premium Feature</h4>
+                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade to Premium to track client visits using Facebook Pixel and Google Analytics.</p>
+                   </div>
+                 )}
+                 <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                   <Sparkles size={16} className="text-cyan-400" />
+                   Analytics & Ad Tracking
+                 </h3>
+                 <div className="grid sm:grid-cols-2 gap-4">
+                   <div>
+                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Google Analytics Tracking ID</label>
+                     <input
+                       type="text"
+                       placeholder="G-XXXXXXXXXX"
+                       value={company.googleAnalyticsId || ''}
+                       onChange={(e) => update('googleAnalyticsId', e.target.value)}
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                     />
+                   </div>
+                   <div>
+                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Facebook Pixel ID</label>
+                     <input
+                       type="text"
+                       placeholder="123456789012345"
+                       value={company.facebookPixelId || ''}
+                       onChange={(e) => update('facebookPixelId', e.target.value)}
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                     />
+                   </div>
+                 </div>
+               </div>
+ 
+               {/* WhatsApp Chat Pre-fill Template */}
+               <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                 {getPlanRank(currentPlan) < 1 && (
+                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
+                     <Lock size={24} className="text-amber-400 mb-2" />
+                     <h4 className="text-sm font-bold text-white">WhatsApp template customization is locked</h4>
+                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the default message sent when customers click your WhatsApp button.</p>
+                   </div>
+                 )}
+                 <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                   <MessageCircle size={16} className="text-cyan-400" />
+                   WhatsApp Click-to-Chat Pre-fill Message
+                 </h3>
+                 <div>
+                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Custom Pre-fill Message</label>
+                   <textarea
+                     rows={2}
+                     placeholder="e.g. Hello! I visited your website on THENIJOBS and would like to ask about..."
+                     value={company.whatsappMessageTemplate || ''}
+                     onChange={(e) => update('whatsappMessageTemplate', e.target.value)}
+                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                   />
+                 </div>
+               </div>
+             </div>
+           )}
+ 
+           {/* Save Button */}
+           <button
+             onClick={handleSave}
+             disabled={saving}
+             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+           >
+             {saving ? (
+               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+             ) : (
+               <Save size={16} />
+             )}
+             {saving ? 'Saving...' : 'Save Company Profile'}
+           </button>
+         </div>
+ 
+         {/* Sidebar — Verification Status */}
+         <div className="xl:col-span-1 font-outfit">
+           <div className="glass-card rounded-2xl p-6 sticky top-24">
+             <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+               <Shield size={16} className="text-cyan-400" />
+               Verification Status
+             </h3>
+             <div className="space-y-3">
+               {[
+                 { label: 'Email Verified', icon: Mail, verified: company.verification.email },
+                 { label: 'GST Verified', icon: FileText, verified: company.verification.gst },
+                 { label: 'Business Verified', icon: Building2, verified: company.verification.business },
+               ].map((item) => {
+                 const Icon = item.icon;
+                 return (
+                   <div
+                     key={item.label}
+                     className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                       item.verified
+                         ? 'bg-emerald-500/5 border-emerald-500/20'
+                         : 'bg-white/[0.02] border-white/[0.06]'
+                     }`}
+                   >
+                     <div
+                       className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                         item.verified ? 'bg-emerald-500/10' : 'bg-white/[0.04]'
+                       }`}
+                     >
+                       <Icon size={14} className={item.verified ? 'text-emerald-400' : 'text-gray-500'} />
+                     </div>
+                     <span className={`text-sm font-medium flex-1 ${item.verified ? 'text-emerald-300' : 'text-gray-400'}`}>
+                       {item.label}
+                     </span>
+                     {item.verified && (
+                       <CheckCircle size={16} className="text-emerald-400" />
+                     )}
+                   </div>
+                 );
+               })}
+             </div>
+ 
+             {/* Trust Score */}
+             <div className="mt-5 pt-4 border-t border-white/[0.06]">
+               <div className="flex items-center justify-between mb-2">
+                 <span className="text-xs text-gray-400">Trust Score</span>
+                 <span className="text-sm font-bold text-cyan-400">
+                   {Math.round(
+                     ((Object.values(company.verification).filter(Boolean).length) /
+                       Object.keys(company.verification).length) *
+                       100
+                   )}%
+                 </span>
+               </div>
+               <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                 <div
+                   className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full"
+                   style={{
+                     width: `${
+                       ((Object.values(company.verification).filter(Boolean).length) /
+                         Object.keys(company.verification).length) *
+                       100
+                     }%`
+                   }}
+                 />
+               </div>
+               <p className="text-[10px] text-gray-500 mt-2">
+                 Verification status is managed by administrators to ensure platform safety and trust.
+               </p>
+             </div>
+           </div>
+         </div>
+       </div>
+ 
+       <ImageCropperModal
+         open={showCropper}
+         onClose={() => {
+           setShowCropper(false);
+           setCropFile(null);
+           setCropType(null);
+           setGalleryCropIndex(null);
+         }}
+         file={cropFile}
+         aspectRatio={cropType === 'logo' ? 1 : cropType === 'cover' ? 4 : 4/3}
+         cropWidth={cropType === 'logo' ? 400 : cropType === 'cover' ? 1200 : 800}
+         cropHeight={cropType === 'logo' ? 400 : cropType === 'cover' ? 300 : 600}
+         isCircular={cropType === 'logo'}
+         title={
+           cropType === 'logo'
+             ? 'Crop Company Logo'
+             : cropType === 'cover'
+             ? 'Crop Cover Banner'
+             : 'Crop Gallery Image'
+         }
+         uploadPath={user?.uid && cropType ? (cropType === 'logo' ? `companies/${user.uid}/logo_${Date.now()}` : cropType === 'cover' ? `companies/${user.uid}/cover_${Date.now()}` : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`) : undefined}
+         onUploadComplete={async (url) => {
+           try {
+             let nextCompany = { ...company };
+             if (cropType === 'logo') {
+               nextCompany.logoUrl = url;
+             } else if (cropType === 'cover') {
+               nextCompany.coverUrl = url;
+             } else if (cropType === 'gallery' && galleryCropIndex !== null) {
+               const newGallery = [...company.gallery];
+               newGallery[galleryCropIndex] = url;
+               nextCompany.gallery = newGallery;
+             }
+             
+             // Set local state
+             setCompany(nextCompany);
+ 
+             // Persist immediately to Firestore!
+             if (resolvedCompany?.id) {
+               setAutoSaveStatus('saving');
+               await updateDocument('companies', resolvedCompany.id, {
+                 logoUrl: nextCompany.logoUrl,
+                 coverUrl: nextCompany.coverUrl,
+                 gallery: nextCompany.gallery,
+                 updatedAt: new Date()
+               });
+               setAutoSaveStatus('saved');
+               setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
+             }
+           } catch (err) {
+             console.error(err);
+             setAutoSaveStatus('error');
+           } finally {
+             setGalleryCropIndex(null);
+           }
+         }}
+       />
     </div>
   );
 }

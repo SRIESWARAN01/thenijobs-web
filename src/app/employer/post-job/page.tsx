@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Briefcase, Banknote, FileText, Users, Clock,
@@ -73,6 +73,14 @@ export default function PostJobPage() {
   const activeJobCount = companyJobs.filter((job) => isActiveJobSlot(job)).length;
   const hasUnlimitedJobs = !Number.isFinite(maxActiveJobs);
   const planLimitReached = !hasUnlimitedJobs && activeJobCount >= maxActiveJobs;
+
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -424,6 +432,7 @@ export default function PostJobPage() {
                     <input
                       type="date"
                       required
+                      min={todayStr}
                       value={form.customStartDate}
                       onChange={(e) => update('customStartDate', e.target.value)}
                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
@@ -434,6 +443,7 @@ export default function PostJobPage() {
                     <input
                       type="date"
                       required
+                      min={form.customStartDate || todayStr}
                       value={form.customEndDate}
                       onChange={(e) => update('customEndDate', e.target.value)}
                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
@@ -445,6 +455,7 @@ export default function PostJobPage() {
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Application Deadline (Optional)</label>
                   <input
                     type="date"
+                    min={todayStr}
                     value={form.deadline}
                     onChange={(e) => update('deadline', e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
@@ -473,6 +484,7 @@ export default function PostJobPage() {
                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Interview Date *</label>
                     <input
                       type="date"
+                      min={todayStr}
                       value={form.walkInDate}
                       onChange={(e) => update('walkInDate', e.target.value)}
                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"

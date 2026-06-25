@@ -335,7 +335,7 @@ export default function SeekerCompaniesPage() {
               </div>
 
               <div className="flex gap-2 mt-auto">
-                <Link href={`/company?slug=${encodeURIComponent(biz.slug)}`}
+                <Link href={`/company/${encodeURIComponent(biz.slug)}`}
                   className="flex-1 py-2 rounded-xl bg-[#0e0e22] hover:bg-white/5 border border-white/10 text-white text-xs font-semibold text-center flex items-center justify-center gap-1.5 transition-all">
                   View Profile <ArrowRight size={12} />
                 </Link>

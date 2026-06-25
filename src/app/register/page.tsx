@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   ArrowRight, ArrowLeft, Check, Briefcase, Building2,
-  Package, Wrench, Users, Loader2, User, Phone, Mail, Lock, AlertCircle
+  Package, Wrench, Users, Loader2, User, Phone, Mail, Lock, AlertCircle,
+  Eye, EyeOff
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { UserRole } from '@/lib/types';
@@ -49,7 +50,9 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', phone: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', password: '', confirmPassword: '' });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const totalSteps = 2;
 
@@ -77,7 +80,7 @@ export default function RegisterPage() {
     }
 
     if (step === 2) {
-      if (!form.name || !form.email || !form.password) {
+      if (!form.name || !form.email || !form.password || !form.confirmPassword) {
         setLocalError('Please fill in all required fields.');
         return;
       }
@@ -92,6 +95,10 @@ export default function RegisterPage() {
       }
       if (form.password.length < 6) {
         setLocalError('Password must be at least 6 characters.');
+        return;
+      }
+      if (form.password !== form.confirmPassword) {
+        setLocalError('Passwords do not match.');
         return;
       }
 
@@ -116,10 +123,20 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!form.phone) {
+      setLocalError('Please enter your mobile number. It is required for Google registration.');
+      return;
+    }
+    if (!/^\d{10}$/.test(form.phone)) {
+      setLocalError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
     setLoading(true);
     setLocalError(null);
     try {
-      await signInWithGoogle(role as UserRole);
+      const normalizedPhone = `+91${form.phone}`;
+      await signInWithGoogle(role as UserRole, normalizedPhone);
     } catch (err: any) {
       console.error(err);
       setLocalError(mapAuthError(err));
@@ -210,7 +227,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Mobile Number (optional contact)</label>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Mobile Number * <span className="text-violet-400 font-normal">(Required for Google)</span></label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-16 text-center rounded-xl">+91</div>
                     <div className="relative flex-1">
@@ -234,9 +251,26 @@ export default function RegisterPage() {
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Password *</label>
                   <div className="relative">
                     <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input type="password" required minLength={6} placeholder="Min. 6 characters" value={form.password}
+                    <input type={showPassword ? 'text' : 'password'} required minLength={6} placeholder="Min. 6 characters" value={form.password}
                       onChange={e => setForm({ ...form, password: e.target.value })}
-                      className="search-input w-full pl-10 pr-4 py-3 text-sm" />
+                      className="search-input w-full pl-10 pr-10 py-3 text-sm" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Confirm Password *</label>
+                  <div className="relative">
+                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <input type={showConfirmPassword ? 'text' : 'password'} required minLength={6} placeholder="Confirm your password" value={form.confirmPassword}
+                      onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                      className="search-input w-full pl-10 pr-10 py-3 text-sm" />
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
                 </div>
 

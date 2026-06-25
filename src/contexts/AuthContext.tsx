@@ -49,7 +49,7 @@ export interface AuthActions {
   /** Email + password sign-in */
   signInWithEmail: (email: string, password: string) => Promise<void>;
   /** Google account sign-in */
-  signInWithGoogle: (role?: UserRole) => Promise<void>;
+  signInWithGoogle: (role?: UserRole, phone?: string) => Promise<void>;
   /** Create a new account (email + password) and seed Firestore user doc */
   createAccount: (
     email: string,
@@ -350,7 +350,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // ── Create account (email + password) ─────────────────────────
   const signInWithGoogle = useCallback(
-    async (role: UserRole = 'job_seeker') => {
+    async (role: UserRole = 'job_seeker', phoneParam?: string) => {
       setError(null);
       setLoading(true);
       try {
@@ -368,7 +368,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const existingProfile = await fetchUserProfile(fbUser.uid);
         const displayName = fbUser.displayName || fbUser.email?.split('@')[0] || 'User';
         const email = fbUser.email || '';
-        const phone = fbUser.phoneNumber || undefined;
+        const phone = fbUser.phoneNumber || phoneParam || undefined;
         let resolvedProfile: User | null = existingProfile;
 
         if (!existingProfile) {

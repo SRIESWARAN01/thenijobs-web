@@ -1,20 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
+import ApplicationSuccessOverlay from '@/components/ui/ApplicationSuccessOverlay';
 import {
   MapPin, Briefcase, Banknote, Clock, Users, BadgeCheck,
   BookmarkPlus, Share2, Zap, Building2, ChevronRight,
   CheckCircle, BellRing, MessageCircle, Loader2, FileText, CalendarCheck, UserRound,
-  Phone, Mail
+  Phone, Mail, Eye
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
-import { doc, getDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { applyToJob, saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
 import { formatDate, formatJobType } from '@/lib/jobFormatters';
 import { isPublicJobVisible } from '@/lib/jobPolicy';
@@ -55,6 +56,7 @@ interface JobRecord {
     contactPerson?: string;
     contactMobile?: string;
   };
+  companySlug?: string;
 }
 
 function normaliseWhatsappNumber(value?: string) {
@@ -77,6 +79,8 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const handleCloseSuccess = useCallback(() => setShowSuccess(false), []);
 
   const renderVerificationBadge = (level?: string, isVerified?: boolean) => {
     const activeLevel = level || (isVerified ? 'standard' : 'free');
@@ -150,6 +154,7 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
               contactPerson: d.walkIn?.contactPerson || d.walkInContactPerson || '',
               contactMobile: d.walkIn?.contactMobile || d.walkInContactMobile || '',
             },
+            companySlug: d.companySlug || '',
           });
         }
       } catch (err) {
@@ -257,58 +262,42 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
       const portfolioLinks = seekerProfile?.portfolio || seekerProfile?.portfolioLinks || [];
       const score = getProfileCompletionScore(seekerProfile);
 
-      const batch = writeBatch(db);
-      const appRef = doc(db, 'jobApplications', `${uid}_${job.id}`);
-      batch.set(appRef, {
+      const result = await applyToJob({
         jobId: job.id,
-        employerId: job.companyId,
-        applicantId: uid,
-        appliedDate: serverTimestamp(),
-        status: job.isWalkIn ? 'pending_review' : 'applied',
         jobTitle: job.title,
+        companyId: job.companyId,
         companyName: job.companyName,
-        district: job.location,
-        coverLetter: '',
-        resumeName: seekerProfile?.resumeName || '',
-        resumeUrl: seekerProfile?.resumeUrl || '',
-        profileCompletion: score,
-        isVerified: seekerProfile?.isVerified || false,
+        seekerId: uid,
+        seekerName: seekerProfile?.name || user?.displayName || 'Job Seeker',
+        seekerEmail: seekerProfile?.email || user?.email || '',
+        seekerPhone: seekerProfile?.phone || '',
         applicationType: job.isWalkIn ? 'walk_in' : 'job',
-        applicantData: {
-          name: seekerProfile?.name || user?.displayName || 'Job Seeker',
-          phone: seekerProfile?.phone || '',
-          email: seekerProfile?.email || user?.email || '',
-          dob: seekerProfile?.dob || '',
-          gender: seekerProfile?.gender || 'Male',
-          photoUrl: seekerProfile?.photoUrl || seekerProfile?.profilePhotoUrl || '',
-          address: seekerProfile?.address || '',
-          district: seekerProfile?.district || '',
-          currentRole: seekerProfile?.currentRole || '',
-          aboutMe: seekerProfile?.aboutMe || seekerProfile?.summary || ''
-        },
-        qualificationData: Array.isArray(seekerProfile?.education) ? seekerProfile.education : [],
+        currentRole: seekerProfile?.currentRole || '',
+        district: seekerProfile?.district || job.location,
+        location: seekerProfile?.district || '',
+        photoUrl: seekerProfile?.photoUrl || seekerProfile?.profilePhotoUrl || '',
         skills: Array.isArray(seekerProfile?.skills) ? seekerProfile.skills : [],
         experience: Array.isArray(seekerProfile?.experience) ? seekerProfile.experience : [],
-        portfolioData: {
-          portfolio: Array.isArray(portfolioLinks) ? portfolioLinks : [],
-          resumeUrl: seekerProfile?.resumeUrl || '',
-          resumeName: seekerProfile?.resumeName || '',
-          linkedin: seekerProfile?.linkedin || '',
-          website: seekerProfile?.website || ''
-        }
+        education: Array.isArray(seekerProfile?.education) ? seekerProfile.education : [],
+        portfolio: Array.isArray(portfolioLinks) ? portfolioLinks : [],
+        profileStrength: score,
+        resumeUrl: seekerProfile?.resumeUrl || '',
+        resumeName: seekerProfile?.resumeName || '',
+        coverLetter: '',
+        seekerDob: seekerProfile?.dob || '',
+        seekerGender: seekerProfile?.gender || 'Male',
+        expectedSalary: seekerProfile?.expectedSalary || '',
+        linkedin: seekerProfile?.linkedin || '',
+        website: seekerProfile?.website || '',
       });
 
-      const jobRef = doc(db, 'jobs', job.id);
-      batch.update(jobRef, {
-        applicationsCount: increment(1),
-        applicationCount: increment(1),
-        updatedAt: serverTimestamp()
-      });
-
-      await batch.commit();
+      if (result.alreadyApplied) {
+        setHasApplied(true);
+        return;
+      }
 
       setHasApplied(true);
-      alert(job.isWalkIn ? 'Walk-in application submitted successfully!' : 'Application submitted successfully!');
+      setShowSuccess(true);
     } catch (err) {
       console.error(err);
       alert('Failed to submit application.');
@@ -371,6 +360,16 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
   return (
     <main className="min-h-screen bg-[#0a0a1a] font-outfit text-white">
       {!hideNav && <Header />}
+      {job && (
+        <ApplicationSuccessOverlay
+          show={showSuccess}
+          applicantName={seekerProfile?.name || user?.displayName || 'Applicant'}
+          jobTitle={job.title}
+          companyName={job.companyName}
+          isWalkIn={job.isWalkIn}
+          onClose={handleCloseSuccess}
+        />
+      )}
       <div className={`max-w-5xl mx-auto px-4 sm:px-6 ${hideNav ? 'pt-6' : 'pt-20'} pb-28 md:pb-12`}>
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-gray-500 mt-4 mb-6">
@@ -510,6 +509,28 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
                     </p>
                   </div>
                 )}
+
+                {/* View Company Profile & Call Company */}
+                <div className="flex gap-3">
+                  {job.companySlug && (
+                    <Link
+                      href={`/company/${job.companySlug}`}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-violet-500/20 bg-violet-500/5 text-violet-400 hover:bg-violet-500/15 transition-all text-sm font-semibold"
+                    >
+                      <Eye size={15} />
+                      View Company Profile
+                    </Link>
+                  )}
+                  {(job.phone || job.walkIn?.contactMobile) && hasApplied && (
+                    <a
+                      href={`tel:${job.phone || job.walkIn?.contactMobile}`}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15 transition-all text-sm font-semibold"
+                    >
+                      <Phone size={15} />
+                      Call Company
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 

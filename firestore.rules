@@ -112,10 +112,15 @@ service cloud.firestore {
     function isOnlyIncrementingJobCounters() {
       let affected = request.resource.data.diff(resource.data).affectedKeys();
       let hasAppsCount = request.resource.data.keys().hasAny(['applicationsCount']);
+      let hasAppCount = request.resource.data.keys().hasAny(['applicationCount']);
       let hasWalkInCount = request.resource.data.keys().hasAny(['walkInApplicationsCount']);
       
       let validAppsCount = !hasAppsCount || (
         (resource.data.keys().hasAny(['applicationsCount']) ? request.resource.data.applicationsCount == resource.data.applicationsCount + 1 : request.resource.data.applicationsCount == 1)
+      );
+
+      let validAppCount = !hasAppCount || (
+        (resource.data.keys().hasAny(['applicationCount']) ? request.resource.data.applicationCount == resource.data.applicationCount + 1 : request.resource.data.applicationCount == 1)
       );
       
       let validWalkInCount = !hasWalkInCount || (
@@ -123,8 +128,9 @@ service cloud.firestore {
       );
 
       return isAuthenticated()
-        && affected.hasOnly(['applicationsCount', 'walkInApplicationsCount', 'updatedAt'])
+        && affected.hasOnly(['applicationsCount', 'applicationCount', 'walkInApplicationsCount', 'updatedAt'])
         && validAppsCount
+        && validAppCount
         && validWalkInCount;
     }
 
@@ -234,21 +240,27 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // ===== NEW JOB APPLICATIONS =====
+    // ===== JOB APPLICATIONS (canonical collection) =====
     match /jobApplications/{applicationId} {
       allow read: if isAuthenticated() && (
         resource.data.applicantId == request.auth.uid ||
         isCompanyOwner(resource.data.employerId) ||
         isAdmin()
       );
+      // Creation is now handled by cloud function serverApplyToJob
       allow create: if isAuthenticated() && (
         request.resource.data.applicantId == request.auth.uid
       );
-      allow update: if isAuthenticated() && (
-        resource.data.applicantId == request.auth.uid ||
-        isCompanyOwner(resource.data.employerId) ||
-        isAdmin()
-      );
+      // Seekers can only update non-status fields (e.g. coverLetter). Status changes require employer/admin.
+      allow update: if isAdmin()
+        || (
+          isCompanyOwner(resource.data.employerId)
+        )
+        || (
+          isAuthenticated()
+          && resource.data.applicantId == request.auth.uid
+          && request.resource.data.status == resource.data.status
+        );
       allow delete: if isAuthenticated() && (
         resource.data.applicantId == request.auth.uid ||
         isAdmin()

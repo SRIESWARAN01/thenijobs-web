@@ -107,6 +107,7 @@ exports.processSubscriptionAutomation = (0, scheduler_1.onSchedule)({
         const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         const reminderDaysSent = getNumberArray(data.expiryReminderDaysSent);
         const updates = {
+            daysRemaining: Math.max(0, daysUntilExpiry),
             updatedAt: firestore_1.FieldValue.serverTimestamp(),
         };
         if (daysUntilExpiry < 0) {

@@ -65,7 +65,7 @@ exports.serverApplyToJob = (0, https_1.onCall)({ region: config_1.REGION, enforc
     }
     // Deterministic ID prevents duplicates
     const applicationId = `${seekerId}_${jobId}`;
-    const applicationRef = config_1.db.doc(`applications/${applicationId}`);
+    const applicationRef = config_1.db.doc(`jobApplications/${applicationId}`);
     const existing = await applicationRef.get();
     if (existing.exists) {
         // Already applied - return success (idempotent)
@@ -78,8 +78,8 @@ exports.serverApplyToJob = (0, https_1.onCall)({ region: config_1.REGION, enforc
     const batch = config_1.db.batch();
     batch.set(applicationRef, {
         jobId,
-        companyId,
-        seekerId,
+        employerId: companyId,
+        applicantId: seekerId,
         seekerName,
         seekerEmail: getString(data.seekerEmail),
         seekerPhone: getString(data.seekerPhone),
@@ -87,19 +87,34 @@ exports.serverApplyToJob = (0, https_1.onCall)({ region: config_1.REGION, enforc
         companyName: getString(data.companyName),
         applicationType,
         status,
-        currentRole: getString(data.currentRole),
-        district: getString(data.district),
-        location: getString(data.location),
-        photoUrl: getString(data.photoUrl),
+        applicantData: {
+            name: seekerName,
+            phone: getString(data.seekerPhone),
+            email: getString(data.seekerEmail),
+            dob: getString(data.seekerDob),
+            gender: getString(data.seekerGender),
+            photoUrl: getString(data.photoUrl),
+            district: getString(data.district),
+            currentRole: getString(data.currentRole),
+        },
+        qualificationData: Array.isArray(data.education) ? data.education : [],
         skills: getStringArray(data.skills),
         experience: Array.isArray(data.experience) ? data.experience : [],
-        education: Array.isArray(data.education) ? data.education : [],
-        portfolio: getStringArray(data.portfolio),
-        profileStrength: getNumber(data.profileStrength, 0),
+        portfolioData: {
+            portfolio: getStringArray(data.portfolio),
+            resumeUrl: getString(data.resumeUrl),
+            resumeName: getString(data.resumeName),
+            linkedin: getString(data.linkedin),
+            website: getString(data.website),
+        },
+        profileCompletion: getNumber(data.profileStrength, 0),
         resumeUrl: getString(data.resumeUrl),
         resumeName: getString(data.resumeName),
         coverLetter: getString(data.coverLetter),
-        appliedAt: firestore_1.FieldValue.serverTimestamp(),
+        district: getString(data.district),
+        location: getString(data.location),
+        expectedSalary: getString(data.expectedSalary),
+        appliedDate: firestore_1.FieldValue.serverTimestamp(),
         createdAt: firestore_1.FieldValue.serverTimestamp(),
         updatedAt: firestore_1.FieldValue.serverTimestamp(),
     });
@@ -155,15 +170,15 @@ exports.serverUpdateApplicationStatus = (0, https_1.onCall)({ region: config_1.R
     if (!validStatuses.includes(newStatus)) {
         throw new https_1.HttpsError('invalid-argument', `Invalid status. Must be one of: ${validStatuses.join(', ')}`);
     }
-    const applicationRef = config_1.db.doc(`applications/${applicationId}`);
+    const applicationRef = config_1.db.doc(`jobApplications/${applicationId}`);
     const applicationSnap = await applicationRef.get();
     if (!applicationSnap.exists) {
         throw new https_1.HttpsError('not-found', 'Application not found.');
     }
     const application = applicationSnap.data();
     const oldStatus = getString(application.status);
-    const companyId = getString(application.companyId);
-    const seekerId = getString(application.seekerId);
+    const companyId = getString(application.employerId) || getString(application.companyId);
+    const seekerId = getString(application.applicantId) || getString(application.seekerId);
     // Verify caller has permission:
     // - Company owner can update (employer side)
     // - Seeker can only withdraw their own
@@ -318,8 +333,31 @@ exports.createJobPosting = (0, https_1.onCall)({ region: config_1.REGION, enforc
     if (duplicate) {
         throw new https_1.HttpsError('already-exists', 'A matching job is already pending or active for this company and location.');
     }
-    const postedAt = new Date();
-    const expiresAt = addDays(postedAt, config_1.JOB_VALIDITY_DAYS);
+    let postedAt = new Date();
+    const customStartDateStr = getString(data.customStartDate);
+    if (customStartDateStr) {
+        const parsedStart = new Date(customStartDateStr);
+        if (!isNaN(parsedStart.getTime())) {
+            postedAt = parsedStart;
+        }
+    }
+    let expiresAt = addDays(postedAt, config_1.JOB_VALIDITY_DAYS);
+    let validityDays = config_1.JOB_VALIDITY_DAYS;
+    const durationDaysInput = getNullableNumber(data.durationDays);
+    const customEndDateStr = getString(data.customEndDate);
+    if (durationDaysInput && [30, 60, 90].includes(durationDaysInput)) {
+        validityDays = durationDaysInput;
+        expiresAt = addDays(postedAt, durationDaysInput);
+    }
+    else if (customEndDateStr) {
+        const parsedEnd = new Date(customEndDateStr);
+        if (!isNaN(parsedEnd.getTime())) {
+            expiresAt = parsedEnd;
+            const diffTime = expiresAt.getTime() - postedAt.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            validityDays = diffDays > 0 ? diffDays : config_1.JOB_VALIDITY_DAYS;
+        }
+    }
     const spamFlags = detectSpamFlags({ title, description });
     const isSpam = spamFlags.length > 0;
     const status = isSpam ? 'reported' : 'active';
@@ -370,7 +408,7 @@ exports.createJobPosting = (0, https_1.onCall)({ region: config_1.REGION, enforc
         walkInApplicationsCount: 0,
         planAtCreation: plan,
         planType: plan,
-        validityDays: config_1.JOB_VALIDITY_DAYS,
+        validityDays,
         postedAt: firestore_1.Timestamp.fromDate(postedAt),
         expiresAt: firestore_1.Timestamp.fromDate(expiresAt),
         expiryReminderDaysSent: [],
@@ -387,6 +425,41 @@ exports.createJobPosting = (0, https_1.onCall)({ region: config_1.REGION, enforc
         targetId: jobRef.id,
         timestamp: firestore_1.FieldValue.serverTimestamp(),
     });
+    // Saved Search Alerts notification trigger
+    try {
+        const categoryVal = getString(data.category);
+        const districtVal = district;
+        const jobTypeVal = getString(data.jobType, 'full_time');
+        const alertsQuery = config_1.db.collection('jobAlerts').where('status', '==', 'active');
+        const alertsSnapshot = await alertsQuery.get();
+        for (const alertDoc of alertsSnapshot.docs) {
+            const alertData = alertDoc.data();
+            const matchesCategory = !alertData.category || alertData.category === categoryVal;
+            const matchesDistrict = !alertData.district || alertData.district === districtVal;
+            const matchesJobType = !alertData.jobType || alertData.jobType === jobTypeVal;
+            if (matchesCategory && matchesDistrict && matchesJobType) {
+                const alertUserId = alertData.userId;
+                if (alertUserId && alertUserId !== uid) {
+                    await serverCreateNotification({
+                        userId: alertUserId,
+                        type: 'job_alert',
+                        title: `New Job Match: ${title} 🔔`,
+                        message: `A new job matching your saved alert "${alertData.title}" has been posted in ${location || districtVal}.`,
+                        actionUrl: `/jobs/${jobRef.id}`,
+                    });
+                    if (alertData.whatsappEnabled) {
+                        firebase_functions_1.logger.info(`[WhatsApp Notify] Mocking WhatsApp alert for user ${alertUserId} about job ${jobRef.id}`);
+                    }
+                    if (alertData.emailEnabled) {
+                        firebase_functions_1.logger.info(`[Email Notify] Mocking email alert for user ${alertUserId} about job ${jobRef.id}`);
+                    }
+                }
+            }
+        }
+    }
+    catch (alertErr) {
+        firebase_functions_1.logger.error('Failed matching job alerts:', alertErr);
+    }
     return {
         jobId: jobRef.id,
         plan,
@@ -444,7 +517,7 @@ exports.processJobAutomation = (0, scheduler_1.onSchedule)({
             await createJobNotification({
                 userId: getString(data.postedBy),
                 title: 'Job expired',
-                message: `${getString(data.title, 'Your job')} has expired after 30 days and is no longer public.`,
+                message: `${getString(data.title, 'Your job')} has expired after its validity period and is no longer public.`,
                 actionUrl: '/employer/jobs',
             });
             continue;

@@ -352,10 +352,10 @@ export async function getApplications(filters?: {
   const constraints: QueryConstraint[] = [];
 
   if (filters?.seekerId) {
-    constraints.push(where('seekerId', '==', filters.seekerId));
+    constraints.push(where('applicantId', '==', filters.seekerId));
   }
   if (filters?.companyId) {
-    constraints.push(where('companyId', '==', filters.companyId));
+    constraints.push(where('employerId', '==', filters.companyId));
   }
   if (filters?.jobId) {
     constraints.push(where('jobId', '==', filters.jobId));
@@ -366,7 +366,7 @@ export async function getApplications(filters?: {
 
   constraints.push(limit(100));
 
-  return fetchCollection<DocumentData>('applications', constraints);
+  return fetchCollection<DocumentData>('jobApplications', constraints);
 }
 
 export async function applyToJob(data: {
@@ -409,7 +409,7 @@ export async function applyToJob(data: {
     { success: boolean; applicationId: string; alreadyApplied?: boolean }
   >(functions, 'serverApplyToJob');
   const result = await callable(data);
-  return result.data.applicationId;
+  return result.data;
 }
 
 export async function updateApplicationStatus(

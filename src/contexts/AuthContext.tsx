@@ -244,7 +244,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
-    console.log('[AuthContext] Syncing user doc in Firestore:', fbUser.uid, dataToSave);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AuthContext] Syncing user doc in Firestore:', fbUser.uid, dataToSave);
+    }
     await setDoc(doc(db, 'users', fbUser.uid), dataToSave, { merge: true });
   }, []);
 

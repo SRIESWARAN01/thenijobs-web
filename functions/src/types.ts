@@ -42,6 +42,9 @@ export interface CreateJobPostingData {
   walkInVenue?: unknown;
   walkInContactPerson?: unknown;
   walkInContactMobile?: unknown;
+  customStartDate?: unknown;
+  durationDays?: unknown;
+  customEndDate?: unknown;
 }
 
 export interface ValidateSubscriptionAccessData {

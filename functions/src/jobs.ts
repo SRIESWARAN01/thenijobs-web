@@ -72,7 +72,7 @@ export const serverApplyToJob = onCall(
 
     // Deterministic ID prevents duplicates
     const applicationId = `${seekerId}_${jobId}`;
-    const applicationRef = db.doc(`applications/${applicationId}`);
+    const applicationRef = db.doc(`jobApplications/${applicationId}`);
     const existing = await applicationRef.get();
     if (existing.exists) {
       // Already applied - return success (idempotent)
@@ -88,8 +88,8 @@ export const serverApplyToJob = onCall(
 
     batch.set(applicationRef, {
       jobId,
-      companyId,
-      seekerId,
+      employerId: companyId,
+      applicantId: seekerId,
       seekerName,
       seekerEmail: getString(data.seekerEmail),
       seekerPhone: getString(data.seekerPhone),
@@ -97,24 +97,34 @@ export const serverApplyToJob = onCall(
       companyName: getString(data.companyName),
       applicationType,
       status,
-      currentRole: getString(data.currentRole),
-      district: getString(data.district),
-      location: getString(data.location),
-      photoUrl: getString(data.photoUrl),
+      applicantData: {
+        name: seekerName,
+        phone: getString(data.seekerPhone),
+        email: getString(data.seekerEmail),
+        dob: getString(data.seekerDob),
+        gender: getString(data.seekerGender),
+        photoUrl: getString(data.photoUrl),
+        district: getString(data.district),
+        currentRole: getString(data.currentRole),
+      },
+      qualificationData: Array.isArray(data.education) ? data.education : [],
       skills: getStringArray(data.skills),
       experience: Array.isArray(data.experience) ? data.experience : [],
-      education: Array.isArray(data.education) ? data.education : [],
-      portfolio: getStringArray(data.portfolio),
-      profileStrength: getNumber(data.profileStrength, 0),
+      portfolioData: {
+        portfolio: getStringArray(data.portfolio),
+        resumeUrl: getString(data.resumeUrl),
+        resumeName: getString(data.resumeName),
+        linkedin: getString(data.linkedin),
+        website: getString(data.website),
+      },
+      profileCompletion: getNumber(data.profileStrength, 0),
       resumeUrl: getString(data.resumeUrl),
       resumeName: getString(data.resumeName),
       coverLetter: getString(data.coverLetter),
-      seekerDob: getString(data.seekerDob),
-      seekerGender: getString(data.seekerGender),
+      district: getString(data.district),
+      location: getString(data.location),
       expectedSalary: getString(data.expectedSalary),
-      linkedin: getString(data.linkedin),
-      website: getString(data.website),
-      appliedAt: FieldValue.serverTimestamp(),
+      appliedDate: FieldValue.serverTimestamp(),
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -185,7 +195,7 @@ export const serverUpdateApplicationStatus = onCall(
       throw new HttpsError('invalid-argument', `Invalid status. Must be one of: ${validStatuses.join(', ')}`);
     }
 
-    const applicationRef = db.doc(`applications/${applicationId}`);
+    const applicationRef = db.doc(`jobApplications/${applicationId}`);
     const applicationSnap = await applicationRef.get();
     if (!applicationSnap.exists) {
       throw new HttpsError('not-found', 'Application not found.');
@@ -193,8 +203,8 @@ export const serverUpdateApplicationStatus = onCall(
 
     const application = applicationSnap.data()!;
     const oldStatus = getString(application.status);
-    const companyId = getString(application.companyId);
-    const seekerId = getString(application.seekerId);
+    const companyId = getString(application.employerId) || getString(application.companyId);
+    const seekerId = getString(application.applicantId) || getString(application.seekerId);
 
     // Verify caller has permission:
     // - Company owner can update (employer side)

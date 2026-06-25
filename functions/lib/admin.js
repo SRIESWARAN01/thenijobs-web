@@ -215,7 +215,8 @@ exports.approveJob = (0, https_1.onCall)({ region: config_1.REGION, enforceAppCh
         }
     }
     const activatedAt = new Date();
-    const expiresAt = addDays(activatedAt, config_1.JOB_VALIDITY_DAYS);
+    const validityDays = typeof job.validityDays === 'number' ? job.validityDays : config_1.JOB_VALIDITY_DAYS;
+    const expiresAt = addDays(activatedAt, validityDays);
     await jobRef.update({
         isActive: true,
         status: 'active',

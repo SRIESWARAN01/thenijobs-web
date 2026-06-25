@@ -1,49 +1,90 @@
-# THENIJOBS Workspace
+# THENIJOBS — Next.js Website
 
-This repository contains two project surfaces:
+A Next.js 16 web application for THENIJOBS — a job portal, business directory, and B2B lead platform for Theni and Tamil Nadu.
 
-- repository root - canonical production Next.js web app, Firebase Hosting/App Hosting config, Firestore/Storage rules, and Cloud Functions.
-- `thenijobs-flutter/` - Flutter mobile app that uses the same Firebase backend.
+<!-- Deploy Trigger for Vercel -->
 
-## Canonical Development
+## Tech Stack
 
-From the workspace root, standard npm scripts run the canonical web app directly:
+- **Framework**: Next.js 16 (App Router, Static Export)
+- **UI**: React 19, Radix UI, Tailwind CSS 4, Framer Motion
+- **Backend**: Firebase (Firestore, Auth, Storage, Realtime Database, Cloud Functions)
+- **State**: React Query (TanStack), React Context
+- **Forms**: React Hook Form + Zod validation
 
-```powershell
-npm run dev
-npm run lint
-npm run typecheck
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- npm 10+
+
+### Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Create `.env.local` with your Firebase configuration:
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://your_project.firebaseio.com
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+### Build
+
+```bash
 npm run build
-npm run verify
-npm run functions:build
 ```
 
-`npm run build` and `npm run verify` require the `NEXT_PUBLIC_FIREBASE_*` environment variables used by the app.
+### Deploy
 
-Run web and Firebase backend work from the repository root:
+```bash
+# Windows
+deploy.bat
 
-```powershell
-cd E:\thenijobs-main
+# Manual
+firebase deploy --project thenijobs-9f01d
+```
+
+## Cloud Functions
+
+Cloud Functions are located in the `functions/` directory.
+
+```bash
+cd functions
 npm install
-npm run lint
-npm run typecheck
 npm run build
-npm run functions:build
 ```
 
-Run mobile checks from the Flutter app:
+## Project Structure
 
-```powershell
-cd E:\thenijobs-main\thenijobs-flutter
-D:\flutter\bin\flutter.bat pub get
-D:\flutter\bin\flutter.bat test
-D:\flutter\bin\flutter.bat analyze
+```
+├── src/
+│   ├── app/            # Next.js App Router pages
+│   ├── components/     # Reusable UI components
+│   ├── contexts/       # React Context providers
+│   ├── hooks/          # Custom React hooks
+│   └── lib/            # Utilities, Firebase config, types
+├── public/             # Static assets
+├── functions/          # Firebase Cloud Functions
+├── firestore.rules     # Firestore security rules
+├── storage.rules       # Cloud Storage security rules
+└── firebase.json       # Firebase hosting config
 ```
 
-`flutter analyze` currently has a known backlog and should be cleaned before release.
+## License
 
-## Deployment Rule
-
-Production deploys should use the repository root as the source of truth.
-
-The root `firebase.json` points at the root Next.js app, `functions/`, Firestore indexes/rules, and Storage rules. `deploy.bat` follows the same canonical path.
+Private — All rights reserved.

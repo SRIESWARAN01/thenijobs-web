@@ -1,0 +1,127 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ===== HELPERS =====
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'super_admin'
+      );
+    }
+
+    function isCompanyOwner(companyId) {
+      return isAuthenticated() && (
+        companyId == request.auth.uid ||
+        (
+          firestore.exists(/databases/(default)/documents/companies/$(companyId)) &&
+          firestore.get(/databases/(default)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )
+      );
+    }
+
+    function isUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    function isUnder10MB() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isVideo() {
+      return request.resource.contentType.matches('video/.*');
+    }
+
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+
+    // ===== USER PROFILE PHOTOS =====
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isImage() && isUnder5MB();
+    }
+
+    match /seekers/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isImage() && isUnder5MB();
+    }
+
+    // ===== COMPANY LOGOS, COVERS & GALLERY =====
+    match /companies/{companyId}/logo/{fileName} {
+      allow read: if true;
+      allow write: if isCompanyOwner(companyId) && isImage() && isUnder5MB();
+    }
+
+    match /companies/{companyId}/cover/{fileName} {
+      allow read: if true;
+      allow write: if isCompanyOwner(companyId) && isImage() && isUnder10MB();
+    }
+
+    match /companies/{companyId}/gallery/{fileName} {
+      allow read: if true;
+      allow write: if isCompanyOwner(companyId) && (isImage() || isVideo()) && isUnder10MB();
+    }
+
+    // The current company profile UI stores assets directly under companies/{ownerId}/...
+    match /companies/{ownerId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(ownerId) && (isImage() || isVideo()) && isUnder10MB();
+    }
+
+    // ===== RESUMES =====
+    match /resumes/{userId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && isPDF() && isUnder5MB();
+    }
+
+    // ===== GST / VERIFICATION DOCUMENTS =====
+    match /verification/{companyId}/{fileName} {
+      allow read: if isCompanyOwner(companyId) || isAdmin();
+      allow write: if (isCompanyOwner(companyId) || isAdmin()) && (isImage() || isPDF()) && isUnder5MB();
+    }
+
+    // ===== PRODUCT IMAGES =====
+    match /products/{companyId}/{fileName} {
+      allow read: if true;
+      allow write: if isCompanyOwner(companyId) && isImage() && isUnder10MB();
+    }
+
+    // ===== SERVICE IMAGES =====
+    match /services/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isImage() && isUnder5MB();
+    }
+
+    // ===== ADVERTISEMENT BANNERS (admin only) =====
+    match /advertisements/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
+
+    // ===== SOCIAL FEED POST IMAGES =====
+    match /social/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isImage() && isUnder10MB();
+    }
+
+    // ===== CATCH-ALL =====
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

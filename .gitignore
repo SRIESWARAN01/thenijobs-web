@@ -50,17 +50,7 @@ next-env.d.ts
 .firebase/
 **/.firebase/
 
-# flutter
-**/.dart_tool/
-**/.flutter-plugins
-**/.flutter-plugins-dependencies
-
-# large files & archives
-*.apk
-*.zip
-stale-root-archive/
-mobile-flutter/
-audit-screenshots/
-full.mf
-*.log
+# razorpay and functions secrets
+rzp-test-key.csv
+functions/.env
 

@@ -49,6 +49,7 @@ export function buildPublicSeekerProfile(
     expectedSalary: cleanString(profile.expectedSalary),
     linkedin: cleanString(profile.linkedin),
     website: cleanString(profile.website),
+    aboutMe: cleanString(profile.aboutMe),
     updatedAt: profile.updatedAt,
   };
 }

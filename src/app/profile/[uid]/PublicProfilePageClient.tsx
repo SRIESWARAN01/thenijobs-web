@@ -35,6 +35,7 @@ interface PublicProfile {
   profileStrength?: number;
   role?: string;
   candidateId?: string;
+  aboutMe?: string;
 }
 
 function getText(value: unknown, fallback = '') {
@@ -354,6 +355,19 @@ export default function PublicProfilePageClient({ uid }: { uid: string }) {
           {/* RIGHT CONTAINER (Experience & Education Timeline, Achievements & Certifications) */}
           <div className="space-y-6 lg:col-span-2">
             
+            {/* About Me */}
+            {profile.aboutMe && (
+              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 shadow-lg shadow-black/20 backdrop-blur-lg">
+                <h2 className="flex items-center gap-2.5 text-xl font-outfit font-black tracking-tight text-white mb-4">
+                  <User size={18} className="text-indigo-400 shrink-0" />
+                  About Me
+                </h2>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">
+                  {profile.aboutMe}
+                </p>
+              </div>
+            )}
+
             {/* Timeline: Experience */}
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 shadow-lg shadow-black/20 backdrop-blur-lg">
               <h2 className="flex items-center gap-2.5 text-xl font-outfit font-black tracking-tight text-white mb-6">

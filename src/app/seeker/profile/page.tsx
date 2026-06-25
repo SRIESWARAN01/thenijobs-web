@@ -255,6 +255,12 @@ interface ExperienceEntry {
   description: string;
 }
 
+interface AchievementEntry {
+  id: string;
+  name: string;
+  description: string;
+}
+
 interface CertificationEntry {
   id: string;
   name: string;
@@ -271,7 +277,7 @@ interface ProjectEntry {
   url: string;
 }
 
-type TabKey = 'personal' | 'education' | 'experience' | 'skills' | 'languages' | 'certifications' | 'portfolio' | 'projects';
+type TabKey = 'personal' | 'education' | 'experience' | 'skills' | 'languages' | 'certifications' | 'portfolio' | 'projects' | 'achievements';
 
 const DEFAULT_PROFILE = {
   name: '',
@@ -286,7 +292,8 @@ const DEFAULT_PROFILE = {
   photoUrl: '',
   expectedSalary: '',
   linkedin: '',
-  website: ''
+  website: '',
+  aboutMe: ''
 };
 
 export default function SeekerProfilePage() {
@@ -303,6 +310,7 @@ export default function SeekerProfilePage() {
   const [certifications, setCertifications] = useState<CertificationEntry[]>([]);
   const [portfolio, setPortfolio] = useState<string[]>([]);
   const [projects, setProjects] = useState<ProjectEntry[]>([]);
+  const [achievements, setAchievements] = useState<AchievementEntry[]>([]);
 
   const [newSkill, setNewSkill] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -346,7 +354,8 @@ export default function SeekerProfilePage() {
         photoUrl: remoteProfile.photoUrl || '',
         expectedSalary: remoteProfile.expectedSalary || '',
         linkedin: remoteProfile.linkedin || '',
-        website: remoteProfile.website || ''
+        website: remoteProfile.website || '',
+        aboutMe: remoteProfile.aboutMe || ''
       });
       setEducation(remoteProfile.education || []);
       setExperience(remoteProfile.experience || []);
@@ -355,6 +364,7 @@ export default function SeekerProfilePage() {
       setCertifications(remoteProfile.certifications || []);
       setPortfolio(remoteProfile.portfolio || []);
       setProjects(remoteProfile.projects || []);
+      setAchievements(remoteProfile.achievements || []);
     } else if (user) {
       setProfile(p => ({
         ...p,
@@ -375,6 +385,8 @@ export default function SeekerProfilePage() {
     { label: 'Languages selected', done: languages.length > 0 },
     { label: 'Certifications', done: certifications.length > 0 },
     { label: 'Portfolio links', done: portfolio.length > 0 },
+    { label: 'About Me summary', done: !!profile.aboutMe },
+    { label: 'Achievements listed', done: achievements.length > 0 },
   ];
   const profileStrength = Math.round((strengthItems.filter(i => i.done).length / strengthItems.length) * 100);
 
@@ -434,6 +446,18 @@ export default function SeekerProfilePage() {
     setCertifications(c => c.map(item => item.id === id ? { ...item, [key]: value } : item));
   };
 
+  const addAchievement = () => {
+    setAchievements(a => [...a, { id: Date.now().toString(), name: '', description: '' }]);
+  };
+
+  const removeAchievement = (id: string) => {
+    setAchievements(a => a.filter(item => item.id !== id));
+  };
+
+  const updateAchievement = (id: string, key: keyof AchievementEntry, value: string) => {
+    setAchievements(a => a.map(item => item.id === id ? { ...item, [key]: value } : item));
+  };
+
   const addPortfolioLink = () => {
     if (newPortfolioLink.trim()) {
       setPortfolio(p => [...p, newPortfolioLink.trim()]);
@@ -488,6 +512,7 @@ export default function SeekerProfilePage() {
         skills,
         languages,
         certifications,
+        achievements,
         portfolio,
         projects,
         profileStrength,
@@ -530,6 +555,7 @@ export default function SeekerProfilePage() {
     { key: 'skills', label: 'Skills', icon: Star },
     { key: 'languages', label: 'Languages', icon: Languages },
     { key: 'certifications', label: 'Certifications', icon: Award },
+    { key: 'achievements', label: 'Achievements', icon: Star },
     { key: 'portfolio', label: 'Portfolio', icon: Globe },
     { key: 'projects', label: 'Projects', icon: Briefcase },
   ];
@@ -740,6 +766,16 @@ export default function SeekerProfilePage() {
                   <option value="">Select area</option>
                   {THENI_LAUNCH_LOCATIONS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs text-gray-400 block mb-1.5">About Me</label>
+                <textarea
+                  rows={4}
+                  value={profile.aboutMe || ''}
+                  onChange={e => setProfile(p => ({ ...p, aboutMe: e.target.value }))}
+                  placeholder="Tell employers about your goals, professional summary, and background..."
+                  className="search-input w-full px-3 py-2.5 text-sm bg-[#0e0e22] resize-none"
+                />
               </div>
             </div>
           </div>
@@ -1105,6 +1141,45 @@ export default function SeekerProfilePage() {
           </div>
         )}
 
+        {/* ── Achievements ── */}
+        {activeTab === 'achievements' && (
+          <div>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-semibold text-white text-sm flex items-center gap-2">
+                <Star size={15} className="text-emerald-400" /> Achievements & Awards
+              </h2>
+              <button onClick={addAchievement} className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 transition-all">
+                <Plus size={12} /> Add Achievement
+              </button>
+            </div>
+            <div className="space-y-4">
+              {achievements.map(ach => (
+                <div key={ach.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
+                  <button onClick={() => removeAchievement(ach.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                    <X size={14} />
+                  </button>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-gray-500 block mb-1">Achievement Title *</label>
+                      <input type="text" required value={ach.name} onChange={e => updateAchievement(ach.id, 'name', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="e.g. Employee of the Month, 1st Place in Theni Hackathon" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-gray-500 block mb-1">Description / Organization</label>
+                      <input type="text" value={ach.description} onChange={e => updateAchievement(ach.id, 'description', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="e.g. Awarded by ABC Technologies, recognition for outstanding sales growth" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {achievements.length === 0 && (
+                <div className="text-center py-10 text-gray-600 text-sm">
+                  <Star size={32} className="mx-auto mb-2 opacity-40 text-amber-400" />
+                  No achievements listed yet. Click &quot;Add Achievement&quot; to show off your awards.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Portfolio ── */}
         {activeTab === 'portfolio' && (
           <div>
@@ -1273,6 +1348,7 @@ export default function SeekerProfilePage() {
               skills,
               languages,
               certifications,
+              achievements,
               portfolio,
               projects,
               profileStrength

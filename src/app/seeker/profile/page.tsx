@@ -19,12 +19,221 @@ import { buildPublicSeekerProfile } from '@/lib/publicProfile';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 
 
-/** Skill suggestions for tag input */
-const SKILL_SUGGESTIONS = [
-  'Driving License', 'Tractor Driving', 'Tally', 'Excel', 'GST Filing',
-  'English Speaking', 'Communication', 'Team Work', 'Agriculture', 'Computer',
-  'Accounting', 'Sales', 'Marketing', 'Welding', 'Electrical', 'Plumbing',
-  'AutoCAD', 'Data Entry', 'Customer Service', 'Machine Operation'
+/** Skill categories and recommendations */
+const SKILL_CATEGORIES = [
+  {
+    name: 'Driving & Transport',
+    skills: [
+      'Driving License (LMV)',
+      'Two Wheeler Driving',
+      'Four Wheeler Driving',
+      'Heavy Vehicle Driving',
+      'Delivery Management',
+      'Route Planning',
+      'Vehicle Maintenance'
+    ]
+  },
+  {
+    name: '💰 Accounting & Finance',
+    skills: [
+      'Tally ERP',
+      'Tally Prime',
+      'GST Filing',
+      'Income Tax Filing',
+      'Accounting',
+      'Bookkeeping',
+      'Payroll Processing',
+      'Financial Reporting',
+      'Banking Operations',
+      'Auditing',
+      'Taxation',
+      'Budget Management',
+      'Accounts Receivable',
+      'Accounts Payable'
+    ]
+  },
+  {
+    name: '💻 Computer Skills',
+    skills: [
+      'MS Word',
+      'MS Excel',
+      'MS PowerPoint',
+      'MS Office',
+      'Google Sheets',
+      'Google Docs',
+      'Data Entry',
+      'Typing (English)',
+      'Typing (Tamil)',
+      'Internet Browsing',
+      'Email Management',
+      'PDF Editing',
+      'Computer Hardware',
+      'Computer Networking'
+    ]
+  },
+  {
+    name: '📊 Office Administration',
+    skills: [
+      'Office Management',
+      'Documentation',
+      'File Management',
+      'Record Keeping',
+      'Calendar Management',
+      'Meeting Coordination',
+      'Reception Handling',
+      'Administrative Support'
+    ]
+  },
+  {
+    name: '📞 Customer Service',
+    skills: [
+      'Customer Support',
+      'Customer Relationship Management (CRM)',
+      'Call Handling',
+      'Telecalling',
+      'Help Desk Support',
+      'Complaint Resolution',
+      'Client Communication'
+    ]
+  },
+  {
+    name: '🗣️ Communication Skills',
+    skills: [
+      'English Speaking',
+      'Tamil Speaking',
+      'Hindi Speaking',
+      'Public Speaking',
+      'Verbal Communication',
+      'Written Communication',
+      'Presentation Skills',
+      'Negotiation Skills'
+    ]
+  },
+  {
+    name: '👥 Soft Skills',
+    skills: [
+      'Team Work',
+      'Leadership',
+      'Problem Solving',
+      'Time Management',
+      'Critical Thinking',
+      'Decision Making',
+      'Adaptability',
+      'Creativity',
+      'Multitasking',
+      'Self Motivation',
+      'Work Ethics',
+      'Conflict Resolution'
+    ]
+  },
+  {
+    name: '🏭 Manufacturing & Production',
+    skills: [
+      'Machine Operation',
+      'Quality Control',
+      'Production Planning',
+      'Assembly Line Work',
+      'CNC Operation',
+      'Welding',
+      'Fabrication',
+      'Packaging',
+      'Inventory Control'
+    ]
+  },
+  {
+    name: '🛒 Sales & Marketing',
+    skills: [
+      'Sales Management',
+      'Retail Sales',
+      'Field Sales',
+      'Digital Marketing',
+      'Social Media Marketing',
+      'SEO',
+      'Lead Generation',
+      'Business Development',
+      'Market Research',
+      'Branding'
+    ]
+  },
+  {
+    name: '🏗️ Technical Skills',
+    skills: [
+      'Electrical Maintenance',
+      'Mechanical Maintenance',
+      'AutoCAD',
+      'PLC Programming',
+      'HVAC Systems',
+      'Solar Installation',
+      'Electronics Repair',
+      'Mobile Repairing'
+    ]
+  },
+  {
+    name: '👨‍🍳 Hospitality & Service',
+    skills: [
+      'Cooking',
+      'Food Preparation',
+      'Housekeeping',
+      'Hotel Management',
+      'Front Office Operations',
+      'Restaurant Service',
+      'Catering Management'
+    ]
+  },
+  {
+    name: '🏥 Healthcare',
+    skills: [
+      'Nursing Assistance',
+      'Patient Care',
+      'Medical Coding',
+      'Medical Billing',
+      'Pharmacy Assistance',
+      'Laboratory Assistance'
+    ]
+  },
+  {
+    name: '📦 Logistics & Warehouse',
+    skills: [
+      'Inventory Management',
+      'Warehouse Operations',
+      'Supply Chain Management',
+      'Forklift Operation',
+      'Stock Management',
+      'Dispatch Management'
+    ]
+  },
+  {
+    name: '👷 Construction',
+    skills: [
+      'Masonry',
+      'Carpentry',
+      'Plumbing',
+      'Painting',
+      'Electrical Wiring',
+      'Site Supervision',
+      'Civil Construction'
+    ]
+  },
+  {
+    name: '👨‍💻 IT & Software',
+    skills: [
+      'Flutter Development',
+      'Android Development',
+      'Web Development',
+      'Firebase',
+      'HTML',
+      'CSS',
+      'JavaScript',
+      'React',
+      'Node.js',
+      'Python',
+      'Java',
+      'PHP',
+      'SQL',
+      'UI/UX Design',
+      'Graphic Design'
+    ]
+  }
 ];
 
 const LANGUAGE_OPTIONS = ['Tamil', 'English', 'Hindi', 'Telugu', 'Malayalam', 'Kannada', 'Urdu', 'Sanskrit', 'French'];
@@ -96,6 +305,20 @@ export default function SeekerProfilePage() {
   const [projects, setProjects] = useState<ProjectEntry[]>([]);
 
   const [newSkill, setNewSkill] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const [newPortfolioLink, setNewPortfolioLink] = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('personal');
   const [saving, setSaving] = useState(false);
@@ -635,32 +858,161 @@ export default function SeekerProfilePage() {
                 </span>
               ))}
             </div>
-            {/* Add Skill */}
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                value={newSkill}
-                onChange={e => setNewSkill(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addSkill()}
-                placeholder="Type a skill and press Enter..."
-                className="search-input flex-1 px-3 py-2.5 text-sm bg-[#0e0e22]"
-              />
-              <button onClick={addSkill} className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                <Plus size={15} />
-              </button>
-            </div>
-            {/* Suggestions */}
-            <p className="text-xs text-gray-500 mb-2">Suggested skills:</p>
-            <div className="flex flex-wrap gap-1.5">
-              {SKILL_SUGGESTIONS.filter(s => !skills.includes(s)).slice(0, 8).map(s => (
-                <button
-                  key={s}
-                  onClick={() => setSkills(p => [...p, s])}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-white/[0.04] text-gray-400 border border-white/[0.08] hover:border-emerald-500/30 hover:text-emerald-400 transition-all bg-[#0e0e22]"
-                >
-                  + {s}
+
+            {/* Add Skill with Autocomplete and Categories Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={newSkill}
+                  onChange={e => {
+                    setNewSkill(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addSkill();
+                      setShowDropdown(false);
+                    }
+                  }}
+                  placeholder="Search skills (e.g. driving, tally, Excel) or type to add custom..."
+                  className="search-input flex-1 px-3 py-2.5 text-sm bg-[#0e0e22]"
+                />
+                <button onClick={() => { addSkill(); setShowDropdown(false); }} className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                  <Plus size={15} />
                 </button>
-              ))}
+              </div>
+
+              {/* Suggestions Dropdown */}
+              {showDropdown && (
+                <div className="absolute left-0 right-0 mt-1 bg-[#0d0d21] border border-white/10 rounded-2xl shadow-2xl z-50 max-h-72 overflow-y-auto p-3 space-y-2 backdrop-blur-xl">
+                  {newSkill.trim() ? (
+                    (() => {
+                      const query = newSkill.toLowerCase().trim();
+                      const filtered: { skill: string; category: string }[] = [];
+                      SKILL_CATEGORIES.forEach(cat => {
+                        cat.skills.forEach(s => {
+                          if (s.toLowerCase().includes(query)) {
+                            filtered.push({ skill: s, category: cat.name });
+                          }
+                        });
+                      });
+
+                      const exactMatch = filtered.some(item => item.skill.toLowerCase() === query);
+
+                      return (
+                        <div className="space-y-1">
+                          {filtered.length > 0 ? (
+                            filtered.map(item => {
+                              const isAdded = skills.includes(item.skill);
+                              return (
+                                <button
+                                  key={item.skill}
+                                  onClick={() => {
+                                    if (!isAdded) {
+                                      setSkills(p => [...p, item.skill]);
+                                    }
+                                    setNewSkill('');
+                                    setShowDropdown(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left transition-all ${
+                                    isAdded
+                                      ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                                      : 'hover:bg-white/5 text-gray-300'
+                                  }`}
+                                >
+                                  <div>
+                                    <span className="font-medium text-white">{item.skill}</span>
+                                    <span className="text-[10px] text-gray-500 block">{item.category}</span>
+                                  </div>
+                                  {isAdded ? <Check size={12} className="text-emerald-400" /> : <Plus size={12} className="text-gray-500" />}
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="text-center py-4 text-xs text-gray-500">
+                              No matching skills found in recommendations.
+                            </div>
+                          )}
+
+                          {!exactMatch && (
+                            <button
+                              onClick={() => {
+                                addSkill();
+                                setShowDropdown(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-left text-emerald-400 hover:bg-emerald-500/10 transition-all font-semibold border border-dashed border-emerald-500/30 mt-2"
+                            >
+                              <Plus size={12} /> Add custom skill: &quot;{newSkill.trim()}&quot;
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-gray-500 px-1 mb-2 uppercase tracking-wider font-semibold">Recommended Skill Categories</p>
+                      {SKILL_CATEGORIES.map(cat => {
+                        const isExpanded = activeCategory === cat.name;
+                        const addedCount = cat.skills.filter(s => skills.includes(s)).length;
+                        return (
+                          <div key={cat.name} className="border-b border-white/[0.04] last:border-0 pb-1">
+                            <button
+                              type="button"
+                              onClick={() => setActiveCategory(isExpanded ? null : cat.name)}
+                              className="w-full flex items-center justify-between py-2 px-2 rounded-xl hover:bg-white/[0.02] text-xs text-gray-300 font-medium text-left transition-colors"
+                            >
+                              <span>{cat.name}</span>
+                              <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                {addedCount > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/10">
+                                    {addedCount} added
+                                  </span>
+                                )}
+                                <span>{isExpanded ? 'Collapse' : 'Expand'}</span>
+                              </div>
+                            </button>
+                            {isExpanded && (
+                              <div className="grid grid-cols-2 gap-1.5 p-2 mt-1 bg-white/[0.01] rounded-xl border border-white/[0.03]">
+                                {cat.skills.map(s => {
+                                  const isAdded = skills.includes(s);
+                                  return (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      onClick={() => {
+                                        if (!isAdded) {
+                                          setSkills(p => [...p, s]);
+                                        } else {
+                                          setSkills(p => p.filter(item => item !== s));
+                                        }
+                                      }}
+                                      className={`flex items-center justify-between p-2 rounded-lg text-[11px] text-left transition-all ${
+                                        isAdded
+                                          ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-medium'
+                                          : 'bg-[#0a0a1a]/50 text-gray-400 hover:text-white hover:bg-white/5 border border-white/[0.04]'
+                                      }`}
+                                    >
+                                      <span className="truncate pr-1">{s}</span>
+                                      {isAdded ? (
+                                        <Check size={10} className="text-emerald-400 shrink-0" />
+                                      ) : (
+                                        <Plus size={10} className="text-gray-500 shrink-0" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -890,6 +1242,48 @@ export default function SeekerProfilePage() {
             if (!user?.uid) return;
             const url = await uploadFile(croppedFile, `seekers/${user.uid}/avatar_${Date.now()}`);
             setProfile(p => ({ ...p, photoUrl: url }));
+
+            // Save immediately to Firestore so it is stored permanently without requiring a full save profile click
+            await setDoc(doc(db, 'seekerProfiles', user.uid), {
+              photoUrl: url,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            await setDoc(doc(db, 'users', user.uid), {
+              photoURL: url,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            const updatedProfileData = {
+              name: profile.name,
+              dob: profile.dob,
+              gender: profile.gender,
+              phone: profile.phone,
+              email: profile.email,
+              address: profile.address,
+              district: profile.district,
+              currentRole: profile.currentRole,
+              isOpenToWork: profile.isOpenToWork,
+              photoUrl: url,
+              expectedSalary: profile.expectedSalary,
+              linkedin: profile.linkedin,
+              website: profile.website,
+              education,
+              experience,
+              skills,
+              languages,
+              certifications,
+              portfolio,
+              projects,
+              profileStrength
+            };
+
+            await setDoc(doc(db, 'publicProfiles', user.uid), {
+              ...buildPublicSeekerProfile(user.uid, updatedProfileData, user),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+
+            alert('Profile picture uploaded and saved successfully!');
           } catch (err) {
             console.error(err);
             alert('Upload failed: ' + (err as Error).message);

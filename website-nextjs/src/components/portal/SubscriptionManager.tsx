@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Crown, Zap, Shield, Calendar, Clock, ArrowUpRight,
-  CreditCard, AlertTriangle, CheckCircle, Sparkles,
+  CreditCard, AlertTriangle, CheckCircle, Sparkles, Building2
 } from 'lucide-react';
 import {
   YEARLY_PLAN_BY_SLUG,
@@ -39,12 +39,14 @@ const planIcons: Record<VisibleSubscriptionPlanSlug, typeof Shield> = {
   free: Shield,
   basic: Zap,
   premium: Crown,
+  enterprise: Building2,
 };
 
 const planGradients: Record<VisibleSubscriptionPlanSlug, string> = {
   free: 'from-slate-500 to-slate-600',
   basic: 'from-cyan-500 to-blue-600',
   premium: 'from-amber-500 to-rose-500',
+  enterprise: 'from-violet-500 to-purple-600',
 };
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { where, limit } from 'firebase/firestore';
+import { toDate } from '@/lib/subscriptions';
 
 interface CompanyData {
   id: string;
@@ -27,6 +28,7 @@ interface CompanyData {
   verificationStatus?: string;
   isPremium?: boolean;
   subscriptionPlan?: string;
+  tagline?: string;
 }
 
 const WhatsAppIcon = () => (
@@ -39,6 +41,8 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
+type CardThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald';
+
 export default function CompanyDigitalCardPageClient({
   slug,
   initialCompany,
@@ -47,6 +51,7 @@ export default function CompanyDigitalCardPageClient({
   initialCompany: CompanyData | null;
 }) {
   const [exporting, setExporting] = useState<string | null>(null);
+  const [activeTheme, setActiveTheme] = useState<CardThemeName>('luxury_gold');
 
   const { data: companies, loading: dbLoading } = useCollection<any>(
     'companies',
@@ -62,6 +67,17 @@ export default function CompanyDigitalCardPageClient({
     if (typeof window === 'undefined') return `/company/${slug}`;
     return `${window.location.origin}/company/${encodeURIComponent(slug)}`;
   }, [slug]);
+
+  const plan = useMemo(() => {
+    if (!company) return 'free';
+    if (company.subscriptionEndsAt) {
+      const endsAt = toDate(company.subscriptionEndsAt);
+      if (endsAt && endsAt < new Date()) {
+        return 'free'; // Expired
+      }
+    }
+    return company.subscriptionPlan || (company.isPremium ? 'premium' : 'free');
+  }, [company]);
 
   if (dbLoading && !company) {
     return (
@@ -91,11 +107,46 @@ export default function CompanyDigitalCardPageClient({
   const district = company.district || 'Theni';
   const address = company.address || 'Theni, Tamil Nadu';
   const description = company.description || 'Verified Business Partner listing on THENIJOBS.';
+  const tagline = company.tagline || 'Verified Local Partner';
+
+  const isPremium = plan === 'premium';
+  const isVerified = plan !== 'free' || company.verificationStatus === 'verified';
   
-  const isVerified = company.verificationStatus === 'verified' || company.isPremium;
-  const isPremium = company.subscriptionPlan === 'premium' || company.isPremium;
   const uniqueId = `TNI-BUS-${company.id.slice(0, 8).toUpperCase()}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}`;
+
+  // Premium themes config for visiting card background
+  const themeGradients: Record<CardThemeName, {
+    frontBg: string;
+    backBg: string;
+    accent: string;
+    badge: string;
+    border: string;
+  }> = {
+    luxury_gold: {
+      frontBg: 'from-[#0e0e1e] via-[#201808] to-[#36270b] border-amber-500/30',
+      backBg: 'from-[#0a0a14] via-[#1c1407] to-[#281d08] border-amber-500/30',
+      accent: 'text-amber-400',
+      badge: 'bg-amber-400/15 border-amber-400/30 text-amber-300',
+      border: 'border-amber-500/30'
+    },
+    midnight_purple: {
+      frontBg: 'from-[#0e0e1e] via-[#1a0820] to-[#2c0b36] border-purple-500/30',
+      backBg: 'from-[#0a0a14] via-[#14071c] to-[#200828] border-purple-500/30',
+      accent: 'text-purple-400',
+      badge: 'bg-purple-400/15 border-purple-400/30 text-purple-300',
+      border: 'border-purple-500/30'
+    },
+    mint_emerald: {
+      frontBg: 'from-[#0e0e1e] via-[#082017] to-[#0b3626] border-emerald-500/30',
+      backBg: 'from-[#0a0a14] via-[#071c14] to-[#08281d] border-emerald-500/30',
+      accent: 'text-emerald-400',
+      badge: 'bg-emerald-400/15 border-emerald-400/30 text-emerald-300',
+      border: 'border-emerald-500/30'
+    }
+  };
+
+  const currentCardTheme = themeGradients[activeTheme];
 
   const downloadPng = async (side: 'front' | 'back') => {
     setExporting(side === 'front' ? 'png-front' : 'png-back');
@@ -275,59 +326,102 @@ export default function CompanyDigitalCardPageClient({
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="text-center space-y-2 no-print font-outfit">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold">
-            <Sparkles size={14} className="animate-pulse" /> Digital Business ID Card Active
+            <Sparkles size={14} className="animate-pulse" /> Dynamic Visiting Card active
           </div>
           <h1 className="text-3xl font-black tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-            Digital Business card
+            Digital Business Identity Card
           </h1>
           <p className="text-sm text-slate-400 max-w-md mx-auto">
-            Networking and marketing card. Scan to visit our SEO profile, services, and openings.
+            Plan-based branding asset. Scan the QR code to navigate straight to the public portfolio site.
           </p>
+
+          {/* Premium Theme Switcher for Premium card holders */}
+          {plan === 'premium' && (
+            <div className="mt-4 inline-flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-2xl p-1 px-3">
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Premium Card Themes:</span>
+              {(['luxury_gold', 'midnight_purple', 'mint_emerald'] as CardThemeName[]).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setActiveTheme(t)}
+                  className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-colors ${
+                    activeTheme === t
+                      ? 'bg-purple-600 border-purple-500 text-white'
+                      : 'border-white/5 text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {t.replace('_', ' ').toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
         </header>
 
         <div id="id-card-print-area" className="grid gap-8 lg:grid-cols-2 justify-center">
           {/* Card Front */}
           <section
             id="business-card-front"
-            className="id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#0e0e1e] via-[#15152d] to-[#251f47] shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit"
+            className={`id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit ${
+              plan === 'premium'
+                ? `bg-gradient-to-br ${currentCardTheme.frontBg} ${currentCardTheme.border}`
+                : plan === 'basic'
+                  ? 'bg-gradient-to-br from-[#0e1633] via-[#111c44] to-[#1c2e6f] border-blue-500/30'
+                  : 'bg-slate-900 border-slate-800'
+            }`}
           >
             {/* Background elements */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-purple-500/10 transition-all" />
-            <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+            {plan !== 'free' && (
+              <>
+                <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-colors duration-1000 ${
+                  plan === 'premium' ? 'bg-amber-500/5 group-hover:bg-amber-500/10' : 'bg-blue-500/5 group-hover:bg-blue-500/10'
+                }`} />
+                <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+              </>
+            )}
 
             {/* Top Row */}
             <div className="flex items-center justify-between z-10">
-              <div className="flex flex-col border-l-2 border-purple-500 pl-2">
-                <span className="text-[10px] tracking-[0.2em] font-black text-purple-400 uppercase">THENIJOBS</span>
+              <div className={`flex flex-col border-l-2 pl-2 ${
+                plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-blue-400' : 'border-slate-500'
+              }`}>
+                <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 uppercase">THENIJOBS</span>
                 <span className="text-xs font-extrabold tracking-wide text-white uppercase flex items-center gap-1">
                   VERIFIED PARTNER
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {isPremium && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 border border-amber-400/30 px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                    <Crown size={10} /> Premium
+                {plan === 'premium' ? (
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase shadow-lg ${currentCardTheme.badge}`}>
+                    <Crown size={10} className="animate-bounce" /> PREMIUM VERIFIED
+                  </span>
+                ) : plan === 'basic' ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-bold text-blue-300 uppercase">
+                    Standard
+                  </span>
+                ) : (
+                  <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-slate-400 border border-white/5">
+                    FREE TIER
                   </span>
                 )}
-                <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-slate-300 border border-white/5">
-                  BUSINESS
-                </span>
               </div>
             </div>
 
             {/* Logo & Info */}
             <div className="my-5 flex gap-5 items-center z-10">
               <div className="relative">
-                <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center">
+                <div className={`relative h-24 w-24 overflow-hidden rounded-2xl border bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center ${
+                  plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
+                }`}>
                   {logoUrl ? (
-                    <Image src={logoUrl} alt={name} fill sizes="96px" className="object-cover" />
+                    <img src={logoUrl} alt={name} className="object-cover w-full h-full" />
                   ) : (
-                    <Building2 size={36} className="text-purple-400" />
+                    <Building2 size={36} className={plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
                   )}
                 </div>
                 {isVerified && (
-                  <div className="absolute -bottom-2 -right-2 bg-purple-500 text-white rounded-full p-1 border-2 border-[#15152d] shadow-md">
-                    <BadgeCheck size={16} className="fill-current text-white" />
+                  <div className={`absolute -bottom-2 -right-2 rounded-full p-1 border-2 border-[#15152d] shadow-md ${
+                    plan === 'premium' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'
+                  }`}>
+                    <BadgeCheck size={16} className="fill-current" />
                   </div>
                 )}
               </div>
@@ -336,8 +430,10 @@ export default function CompanyDigitalCardPageClient({
                 <h2 className="text-lg font-black text-white leading-tight truncate">
                   {name}
                 </h2>
-                <p className="text-xs font-semibold text-purple-400 truncate mt-0.5">{category}</p>
-                <div className="mt-3 font-mono text-sm tracking-wider font-bold text-slate-300">
+                <p className={`text-xs font-semibold truncate mt-0.5 ${
+                  plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-400'
+                }`}>{category}</p>
+                <div className="mt-3 font-mono text-sm tracking-wider font-bold text-slate-350">
                   {uniqueId.split('-').slice(0, 2).join('-') + ' - ' + uniqueId.split('-')[2]}
                 </div>
               </div>
@@ -346,15 +442,15 @@ export default function CompanyDigitalCardPageClient({
             {/* Bottom Row */}
             <div className="border-t border-white/5 pt-3 flex flex-col gap-1 z-10 text-xs text-slate-300">
               <div className="flex items-center gap-1.5 min-w-0">
-                <Phone size={11} className="text-purple-400 shrink-0" />
+                <Phone size={11} className={`shrink-0 ${plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{phone}</span>
               </div>
               <div className="flex items-center gap-1.5 min-w-0">
-                <Mail size={11} className="text-purple-400 shrink-0" />
+                <Mail size={11} className={`shrink-0 ${plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{email}</span>
               </div>
               <div className="flex items-center gap-1.5 min-w-0">
-                <MapPin size={11} className="text-purple-400 shrink-0" />
+                <MapPin size={11} className={`shrink-0 ${plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{address}</span>
               </div>
             </div>
@@ -363,37 +459,54 @@ export default function CompanyDigitalCardPageClient({
           {/* Card Back */}
           <section
             id="business-card-back"
-            className="id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#0c0c16] via-[#101020] to-[#1c1c38] shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit"
+            className={`id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit ${
+              plan === 'premium'
+                ? `bg-gradient-to-br ${currentCardTheme.backBg} ${currentCardTheme.border}`
+                : plan === 'basic'
+                  ? 'bg-gradient-to-br from-[#0a0f24] via-[#0d1538] to-[#142252] border-blue-500/30'
+                  : 'bg-slate-900 border-slate-800'
+            }`}
           >
             {/* Background design */}
-            <div className="absolute top-0 left-0 w-32 h-32 bg-purple-500/[0.02] rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 left-0 w-32 h-32 bg-white/[0.01] rounded-full blur-2xl pointer-events-none" />
 
             {/* Top logo header */}
             <div className="flex justify-between items-start border-b border-white/5 pb-3">
               <div>
-                <span className="text-[10px] tracking-[0.2em] font-black text-purple-400 block uppercase">THENIJOBS</span>
+                <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 block uppercase">THENIJOBS</span>
                 <span className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 block">VERIFIED LISTING</span>
               </div>
-              <Building2 size={16} className="text-slate-600" />
+              <Building2 size={16} className="text-slate-500" />
             </div>
 
             {/* Mid Section: QR Code & Summary */}
-            <div className="my-4 flex items-center gap-6 justify-between">
+            <div className="my-4 flex items-center gap-6 justify-between z-10">
               <div className="flex-1 min-w-0 space-y-2">
-                <p className="text-xs font-semibold text-white uppercase tracking-wider text-purple-400">About Company</p>
-                <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                <p className="text-xs font-bold text-white uppercase tracking-wider">About Company</p>
+                <p className="text-[11px] text-slate-350 leading-relaxed line-clamp-3">
                   {description}
                 </p>
+                {tagline && (
+                  <p className="text-[10px] text-slate-500 italic truncate mt-1">&quot;{tagline}&quot;</p>
+                )}
                 <div className="pt-1 flex flex-wrap gap-1.5 text-[9px] font-bold text-slate-400">
                   <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">{district}</span>
                   <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">1 Year Validity</span>
                 </div>
               </div>
 
-              {/* QR Code */}
+              {/* QR Code with Centered Logo Overlay (Premium Scan Asset) */}
               <div className="shrink-0 flex flex-col items-center gap-1.5">
-                <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white p-1 shadow-lg">
+                <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white p-1 shadow-lg flex items-center justify-center">
                   <Image src={qrUrl} alt="QR Verification Link" fill sizes="96px" className="object-contain" />
+                  {/* Central Logo Overlay */}
+                  <div className="absolute w-6 h-6 rounded bg-white p-0.5 border border-slate-200 flex items-center justify-center shadow-md">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" />
+                    ) : (
+                      <Building2 className="text-purple-600 w-full h-full p-0.5" />
+                    )}
+                  </div>
                 </div>
                 <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
                   <QrCode size={8} /> Scan to verify
@@ -401,11 +514,14 @@ export default function CompanyDigitalCardPageClient({
               </div>
             </div>
 
-            {/* Footer link */}
+            {/* Footer link & Powered branding details */}
             <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[10px] text-slate-500">
-              <div className="flex items-center gap-1 text-purple-400/90 font-semibold truncate max-w-[240px]">
-                <ExternalLink size={10} />
-                <span className="truncate">{profileUrl.replace(/^https?:\/\//, '')}</span>
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <div className="flex items-center gap-1 text-slate-400 font-semibold truncate max-w-[240px]">
+                  <ExternalLink size={10} />
+                  <span className="truncate">{profileUrl.replace(/^https?:\/\//, '')}</span>
+                </div>
+                <span className="text-[8px] text-slate-600 block">Powered by THENIJOBS.in · Support: +91 98765 43210</span>
               </div>
               <span className="font-bold tracking-widest text-[8px] text-slate-600">THENIJOBS</span>
             </div>

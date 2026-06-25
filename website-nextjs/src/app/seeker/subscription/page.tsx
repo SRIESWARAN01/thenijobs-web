@@ -12,6 +12,7 @@ const iconMap = {
   free: Shield,
   basic: Zap,
   premium: Crown,
+  enterprise: Star,
 };
 
 const loadRazorpayScript = () => {
@@ -209,7 +210,7 @@ export default function SeekerSubscriptionPage() {
             <div key={plan.slug} className={`glass-card rounded-2xl p-6 ${plan.recommended ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-white/[0.06] bg-white/[0.01]'}`}>
               <div className="flex items-center justify-between">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05]">
-                  <Icon size={20} className={plan.slug === 'premium' ? 'text-amber-300' : 'text-emerald-300'} />
+                  <Icon size={20} className={plan.slug === 'premium' ? 'text-amber-300' : plan.slug === 'enterprise' ? 'text-purple-300' : 'text-emerald-300'} />
                 </div>
                 {isCurrent && (
                   <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase text-emerald-300">

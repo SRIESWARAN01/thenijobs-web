@@ -3,11 +3,15 @@
 import { useEffect, useState, useRef } from 'react';
 import {
   ArrowRight, Award, Check, Cpu, Loader2, MessageSquare, Sparkles, Zap,
-  Mic, Video, AlertCircle, RotateCcw, CheckCircle2, TrendingUp, BookOpen, FileText
+  Mic, Video, AlertCircle, RotateCcw, CheckCircle2, TrendingUp, BookOpen, FileText,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useDocument } from '@/hooks/useFirestore';
+import { useDocument, useCollection } from '@/hooks/useFirestore';
 import { upsertDocument } from '@/lib/firebase/firestoreService';
+import { selectBestSubscription } from '@/lib/subscriptions';
+import { where } from 'firebase/firestore';
+import Link from 'next/link';
 
 type ExperienceLevel = 'fresher' | 'junior' | 'experienced' | 'career_switch';
 type ActiveTab = 'plan' | 'interview' | 'resume' | 'matcher';
@@ -97,6 +101,14 @@ export default function AICoachPage() {
   const { data: savedPlanDoc } = useDocument<any>('aiCoachWaitlist', uid);
   const { data: seekerProfile } = useDocument<any>('seekerProfiles', uid);
 
+  // Fetch subscriptions
+  const { data: subscriptions, loading: subsLoading } = useCollection<any>('subscriptions', [
+    where('userId', '==', uid || '')
+  ], { skip: !uid });
+
+  const activeSub = selectBestSubscription(subscriptions);
+  const activePlan = activeSub?.planId || 'free';
+
   // Mock Interview State
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -131,6 +143,34 @@ export default function AICoachPage() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
+
+  if (!subsLoading && activePlan !== 'premium') {
+    return (
+      <main className="min-h-screen bg-[#07050a] text-white flex flex-col font-outfit justify-center items-center">
+        <div className="max-w-2xl mx-auto px-4 py-20 text-center flex flex-col justify-center items-center space-y-6">
+          <div className="relative w-20 h-20 bg-gradient-to-br from-violet-600/20 to-purple-600/20 border border-purple-500/20 rounded-full flex items-center justify-center text-purple-400">
+            <Lock size={32} className="animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-400">
+              Seeker AI Career Coach is Locked
+            </h1>
+            <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+              Accelerate your career search with AI Mock Interviews, real-time speech analytics, and automated resume keyword matchers. Available exclusively to Premium seekers.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 w-full justify-center">
+            <Link href="/seeker/subscription" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-purple-650 px-6 py-3 rounded-xl text-xs font-bold text-white hover:opacity-90 shadow-lg shadow-purple-550/15">
+              Upgrade to Seeker Premium <ArrowRight size={14} />
+            </Link>
+            <Link href="/seeker/dashboard" className="w-full sm:w-auto inline-flex items-center justify-center bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-white/10 transition-colors">
+              Return to Dashboard
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

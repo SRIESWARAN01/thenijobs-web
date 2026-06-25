@@ -1,6 +1,6 @@
 import type { SubscriptionPlan, SubscriptionPlanSlug } from '@/lib/types';
 
-export type VisibleSubscriptionPlanSlug = 'free' | 'basic' | 'premium';
+export type VisibleSubscriptionPlanSlug = 'free' | 'basic' | 'premium' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'expired' | 'pending_renewal' | 'cancelled';
 export type SubscriptionFeature =
   | 'basic_profile'
@@ -15,7 +15,12 @@ export type SubscriptionFeature =
   | 'featured_listing'
   | 'premium_badge'
   | 'lead_dashboard'
-  | 'ai_coach';
+  | 'ai_coach'
+  | 'product_ecommerce'
+  | 'service_marketplace'
+  | 'custom_branding'
+  | 'advanced_seo'
+  | 'marketing_tools';
 
 export interface YearlySubscriptionPlan extends Omit<SubscriptionPlan, 'period' | 'slug'> {
   slug: VisibleSubscriptionPlanSlug;
@@ -52,7 +57,11 @@ export const YEARLY_SUBSCRIPTION_PLANS: YearlySubscriptionPlan[] = [
     ],
     featureKeys: ['basic_profile', 'job_applications', 'job_alerts', 'job_posting'],
     notIncluded: [
-      'Advanced filters',
+      'Product listings',
+      'Service catalog',
+      'Custom branding/presets',
+      'Advanced SEO meta settings',
+      'Pixel & Google Analytics',
       'Featured placement',
       'Direct candidate contact',
       'Lead dashboard',
@@ -66,21 +75,25 @@ export const YEARLY_SUBSCRIPTION_PLANS: YearlySubscriptionPlan[] = [
   },
   {
     id: 'plan_basic_yearly',
-    name: 'Basic Plan',
+    name: 'Standard Plan',
     slug: 'basic',
     price: 480,
     displayPrice: '₹480',
     period: 'year',
     durationLabel: '1 year',
-    statusLabel: 'Yearly basic access',
+    statusLabel: 'Yearly standard access',
     features: [
       'Everything in Free',
-      'Up to 2 active job postings',
+      'Up to 10 active job postings',
       '30-day validity for each job',
       'Resume upload and sharing',
       'Advanced job filters',
       '10 active job alerts',
       'Basic analytics',
+      'E-Commerce (up to 20 products)',
+      'Service Marketplace (up to 10 services)',
+      'Customizable Design Themes (Standard)',
+      'Custom SEO meta tags (title & description)',
     ],
     featureKeys: [
       'basic_profile',
@@ -90,17 +103,23 @@ export const YEARLY_SUBSCRIPTION_PLANS: YearlySubscriptionPlan[] = [
       'advanced_filters',
       'job_posting',
       'basic_analytics',
+      'product_ecommerce',
+      'service_marketplace',
+      'custom_branding',
+      'advanced_seo',
     ],
     notIncluded: [
+      'Advanced CRM & Lead dashboard',
+      'Mock interviews & AI career tools',
+      'Pixel & Google Analytics integrations',
       'Featured placement',
       'Direct candidate contact',
-      'Lead dashboard',
       'Premium badge',
     ],
     recommended: false,
     bestFor: 'Active users and small businesses',
     icon: 'Zap',
-    maxActiveJobs: 2,
+    maxActiveJobs: 10,
     maxJobAlerts: 10,
   },
   {
@@ -113,16 +132,19 @@ export const YEARLY_SUBSCRIPTION_PLANS: YearlySubscriptionPlan[] = [
     durationLabel: '1 year',
     statusLabel: 'Yearly premium access',
     features: [
-      'Everything in Basic',
-      'Up to 5 active job postings',
-      '30-day validity for each job',
-      'Premium badge',
-      'Featured listings',
-      'Higher visibility in job search',
+      'Everything in Standard',
+      'Up to 50 active job postings',
+      'Premium badge & Featured listings',
+      'Higher visibility in job & business search',
       'Direct candidate contact',
-      'Lead management dashboard',
-      'Advanced analytics',
-      'AI coach access',
+      'Advanced CRM & Lead management dashboard',
+      'Mock interviews & AI career tools',
+      'Pixel & Google Analytics integrations',
+      'Unlimited E-Commerce (up to 100 products)',
+      'Unlimited Service Marketplace (up to 50 services)',
+      'Full Design Presets (including Amber/Gold themes)',
+      'Custom Call-to-Action (CTA) link',
+      'Dedicated Priority support',
     ],
     featureKeys: [
       'basic_profile',
@@ -138,13 +160,65 @@ export const YEARLY_SUBSCRIPTION_PLANS: YearlySubscriptionPlan[] = [
       'premium_badge',
       'lead_dashboard',
       'ai_coach',
+      'product_ecommerce',
+      'service_marketplace',
+      'custom_branding',
+      'advanced_seo',
+      'marketing_tools',
     ],
     notIncluded: [],
     recommended: true,
     bestFor: 'Recruiters, business owners, and power users',
     icon: 'Crown',
-    maxActiveJobs: 5,
+    maxActiveJobs: 50,
     maxJobAlerts: 50,
+  },
+  {
+    id: 'plan_enterprise_yearly',
+    name: 'Enterprise Plan',
+    slug: 'enterprise',
+    price: 5000,
+    displayPrice: '₹5,000',
+    period: 'year',
+    durationLabel: '1 year',
+    statusLabel: 'Yearly enterprise access',
+    features: [
+      'Everything in Premium',
+      'Unlimited active job postings',
+      'Enterprise Analytics & Reports',
+      'Unlimited Product Catalog',
+      'Unlimited Service Listings',
+      'Dedicated Priority Support',
+      'Featured + Promoted Listing',
+      'Maximum SEO Boost',
+      'API Access',
+    ],
+    featureKeys: [
+      'basic_profile',
+      'job_applications',
+      'job_alerts',
+      'resume_upload',
+      'advanced_filters',
+      'job_posting',
+      'basic_analytics',
+      'advanced_candidate_search',
+      'direct_candidate_contact',
+      'featured_listing',
+      'premium_badge',
+      'lead_dashboard',
+      'ai_coach',
+      'product_ecommerce',
+      'service_marketplace',
+      'custom_branding',
+      'advanced_seo',
+      'marketing_tools',
+    ],
+    notIncluded: [],
+    recommended: false,
+    bestFor: 'Large organizations and recruiters',
+    icon: 'Building2',
+    maxActiveJobs: 99999,
+    maxJobAlerts: 99999,
   },
 ];
 
@@ -160,6 +234,7 @@ const PLAN_RANK: Record<VisibleSubscriptionPlanSlug, number> = {
   free: 0,
   basic: 1,
   premium: 2,
+  enterprise: 3,
 };
 
 export function normalizePlanSlug(value?: string | null): VisibleSubscriptionPlanSlug {
@@ -170,12 +245,13 @@ export function normalizePlanSlug(value?: string | null): VisibleSubscriptionPla
     .trim();
 
   if (normalized === 'basic') return 'basic';
-  if (normalized === 'premium' || normalized === 'enterprise') return 'premium';
+  if (normalized === 'premium') return 'premium';
+  if (normalized === 'enterprise') return 'enterprise';
   return 'free';
 }
 
 export function isVisiblePlanSlug(value: SubscriptionPlanSlug): value is VisibleSubscriptionPlanSlug {
-  return value === 'free' || value === 'basic' || value === 'premium';
+  return value === 'free' || value === 'basic' || value === 'premium' || value === 'enterprise';
 }
 
 export function getPlanRank(plan: string | null | undefined) {

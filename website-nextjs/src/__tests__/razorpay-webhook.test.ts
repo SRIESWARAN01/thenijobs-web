@@ -148,7 +148,7 @@ describe('Razorpay Webhook Handler API', () => {
           entity: {
             id: 'pay_123',
             order_id: 'order_123',
-            amount: 48000,
+            amount: 49900,
             currency: 'INR',
             status: 'captured',
           },
@@ -185,7 +185,7 @@ describe('Razorpay Webhook Handler API', () => {
           entity: {
             id: 'pay_123',
             order_id: 'order_123',
-            amount: 48000,
+            amount: 49900,
             currency: 'INR',
             status: 'captured',
           },
@@ -246,7 +246,7 @@ describe('Razorpay Webhook Handler API', () => {
           entity: {
             id: 'pay_456',
             order_id: 'order_456',
-            amount: 120000,
+            amount: 99900,
             currency: 'INR',
             status: 'captured',
           },
@@ -313,7 +313,7 @@ describe('Razorpay Webhook Handler API', () => {
           entity: {
             id: 'pay_fail_111',
             order_id: 'order_fail_111',
-            amount: 48000,
+            amount: 49900,
             currency: 'INR',
             status: 'failed',
             error_description: 'Card expired',

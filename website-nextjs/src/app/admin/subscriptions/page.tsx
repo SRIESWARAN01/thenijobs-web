@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Bell,
   CalendarClock,
@@ -13,6 +13,10 @@ import {
   Search,
   TrendingUp,
   XCircle,
+  ShieldAlert,
+  Sparkles,
+  ExternalLink,
+  UserCheck
 } from 'lucide-react';
 import {
   collection,
@@ -30,6 +34,7 @@ import {
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
 import { Select } from '@/components/ui/Select';
+import { useAuth } from '@/hooks/useAuth';
 import {
   YEARLY_PLAN_BY_SLUG,
   YEARLY_SUBSCRIPTION_PLANS,
@@ -39,6 +44,7 @@ import {
   normalizePlanSlug,
   toDate,
   type SubscriptionStatus,
+  type VisibleSubscriptionPlanSlug,
 } from '@/lib/subscriptions';
 import { isActiveJobSlot } from '@/lib/jobPolicy';
 
@@ -99,17 +105,19 @@ interface PaymentDoc {
   createdAt?: unknown;
 }
 
-const PLAN_CONFIG = {
+const PLAN_CONFIG: Record<VisibleSubscriptionPlanSlug, { label: string; bg: string; text: string }> = {
   free: { label: 'Free Plan', bg: 'bg-slate-500/15', text: 'text-slate-300' },
-  basic: { label: 'Basic Plan', bg: 'bg-cyan-500/15', text: 'text-cyan-300' },
+  basic: { label: 'Standard Plan', bg: 'bg-cyan-500/15', text: 'text-cyan-300' },
   premium: { label: 'Premium Plan', bg: 'bg-amber-500/15', text: 'text-amber-300' },
+  enterprise: { label: 'Enterprise Plan', bg: 'bg-purple-500/15', text: 'text-purple-300' },
 };
 
 const PLAN_OPTIONS = [
   { value: 'all', label: 'All Plans' },
   { value: 'free', label: 'Free Plan Users' },
-  { value: 'basic', label: 'Basic Plan Users' },
+  { value: 'basic', label: 'Standard Plan Users' },
   { value: 'premium', label: 'Premium Plan Users' },
+  { value: 'enterprise', label: 'Enterprise Plan Users' },
 ];
 
 const STATUS_OPTIONS = [
@@ -138,7 +146,7 @@ const INITIAL_COLORS = [
 function formatDate(value?: unknown, fallback = 'Not set') {
   const date = toDate(value);
   if (!date) return fallback;
-  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function getInitials(name?: string) {
@@ -171,14 +179,39 @@ export default function SubscriptionsPage() {
     orderBy('requestedAt', 'desc'),
     limit(30),
   ]);
+  const { data: changeLogs, loading: logsLoading } = useCollection<any>('subscriptionChangeLogs', [
+    orderBy('changedAt', 'desc'),
+    limit(20)
+  ]);
   const { data: jobs } = useCollection<any>('jobs');
   const { data: applications } = useCollection<any>('applications');
 
+  const { user: currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  // Subscription Override Module states
+  const [overrideModalOpen, setOverrideModalOpen] = useState(false);
+  const [selectedSubForOverride, setSelectedSubForOverride] = useState<SubscriptionDoc | null>(null);
+  const [overrideNewPlan, setOverrideNewPlan] = useState<VisibleSubscriptionPlanSlug>('free');
+  const [overrideDuration, setOverrideDuration] = useState<'1m_trial' | '3m_trial' | '1y' | 'custom'>('3m_trial');
+  const [overrideCustomDate, setOverrideCustomDate] = useState('');
+  const [overrideReason, setOverrideReason] = useState('');
+  const [overrideAdminName, setOverrideAdminName] = useState('System Admin');
+  const [overrideAutoRefresh, setOverrideAutoRefresh] = useState(true);
+  const [overrideSubmitting, setOverrideSubmitting] = useState(false);
+
+  // Sync logged in admin name
+  useEffect(() => {
+    if (currentUser?.displayName) {
+      setOverrideAdminName(currentUser.displayName);
+    } else if (currentUser?.email) {
+      setOverrideAdminName(currentUser.email);
+    }
+  }, [currentUser]);
 
   const rows = useMemo(() => subscriptions.map((sub) => {
     const plan = normalizePlanSlug(sub.plan || sub.planName);
@@ -330,6 +363,125 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const handleOverrideSubmit = async () => {
+    if (!selectedSubForOverride) return;
+    setOverrideSubmitting(true);
+    try {
+      const sub = selectedSubForOverride;
+      const now = new Date();
+      let endDate = new Date(now);
+
+      if (overrideDuration === '1m_trial') {
+        endDate.setMonth(now.getMonth() + 1);
+      } else if (overrideDuration === '3m_trial') {
+        endDate.setMonth(now.getMonth() + 3);
+      } else if (overrideDuration === '1y') {
+        endDate.setFullYear(now.getFullYear() + 1);
+      } else if (overrideCustomDate) {
+        endDate = new Date(overrideCustomDate);
+      }
+
+      const batch = writeBatch(db);
+      const planName = {
+        free: 'Free Plan',
+        basic: 'Basic Plan',
+        premium: 'Premium Plan',
+        enterprise: 'Enterprise Plan',
+      }[overrideNewPlan];
+
+      // 1. Update/Set Subscription document
+      batch.set(doc(db, 'subscriptions', sub.id), {
+        userId: sub.userId,
+        ...(sub.companyId ? { companyId: sub.companyId } : {}),
+        audience: sub.audience || 'business',
+        userName: sub.userName,
+        companyName: sub.companyName,
+        businessName: sub.companyName,
+        email: sub.email || '',
+        mobile: sub.mobile || '',
+        plan: overrideNewPlan,
+        planName: planName,
+        amount: 0, // Override/Trial has 0 amount
+        period: 'year',
+        status: 'active',
+        startDate: Timestamp.fromDate(now),
+        endDate: Timestamp.fromDate(endDate),
+        paymentDate: serverTimestamp(),
+        autoRenew: false,
+        paymentMethod: 'admin_override',
+        expiryReminderDaysSent: [],
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      // 2. If employer/business, update company profile document
+      if (sub.audience !== 'seeker' && sub.companyId) {
+        batch.update(doc(db, 'companies', sub.companyId), {
+          isPremium: overrideNewPlan === 'premium',
+          subscriptionPlan: overrideNewPlan,
+          subscriptionStatus: 'active',
+          subscriptionStartsAt: Timestamp.fromDate(now),
+          subscriptionEndsAt: Timestamp.fromDate(endDate),
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      // 3. If seeker, update seeker profile document
+      if (sub.audience === 'seeker') {
+        batch.set(doc(db, 'seekerProfiles', sub.userId), {
+          isPremium: overrideNewPlan === 'premium',
+          premiumPlan: overrideNewPlan,
+          premiumUntil: Timestamp.fromDate(endDate),
+          subscriptionPlan: overrideNewPlan,
+          subscriptionStatus: 'active',
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+
+      // 4. Save Audit Change Log
+      const logRef = doc(collection(db, 'subscriptionChangeLogs'));
+      batch.set(logRef, {
+        userId: sub.userId,
+        companyId: sub.companyId || '',
+        userName: sub.userName,
+        companyName: sub.companyName,
+        previousPlan: sub.plan || 'free',
+        newPlan: overrideNewPlan,
+        durationLabel: overrideDuration === '1m_trial' ? '1 Month Trial' : overrideDuration === '3m_trial' ? '3 Month Trial' : overrideDuration === '1y' ? '1 Year Activation' : 'Custom Expiry',
+        adminName: overrideAdminName || 'System Admin',
+        reason: overrideReason || 'Manual Admin Override',
+        changedAt: serverTimestamp(),
+      });
+
+      await batch.commit();
+      setActionMessage(`Plan successfully overridden for ${sub.userName}.`);
+      setOverrideModalOpen(false);
+
+      if (overrideAutoRefresh) {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Error overriding subscription:', err);
+      alert('Failed to override subscription. Check console for details.');
+    } finally {
+      setOverrideSubmitting(false);
+    }
+  };
+
+  const handlePreview = async (companyId: string) => {
+    try {
+      const snap = await getDocs(query(collection(db, 'companies'), where('id', '==', companyId), limit(1)));
+      if (!snap.empty) {
+        const data = snap.docs[0].data();
+        const slug = data.slug || companyId;
+        window.open(`/company/${slug}`, '_blank');
+      } else {
+        window.open(`/company/${companyId}`, '_blank');
+      }
+    } catch (err) {
+      window.open(`/company/${companyId}`, '_blank');
+    }
+  };
+
   const filteredRows = rows.filter((sub) => {
     const haystack = `${sub.userName} ${sub.companyName} ${sub.email} ${sub.mobile}`.toLowerCase();
     const matchesSearch = haystack.includes(searchQuery.toLowerCase());
@@ -369,6 +521,7 @@ export default function SubscriptionsPage() {
       free: ['bg-slate-500', 'text-slate-300'],
       basic: ['bg-cyan-500', 'text-cyan-300'],
       premium: ['bg-amber-500', 'text-amber-300'],
+      enterprise: ['bg-purple-500', 'text-purple-300'],
     }[plan.slug];
 
     return {
@@ -385,7 +538,7 @@ export default function SubscriptionsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white font-outfit">Subscription Management</h1>
-          <p className="mt-1 text-sm text-gray-400">Track yearly plans, payments, expiry dates, and renewals</p>
+          <p className="mt-1 text-sm text-gray-400">Track yearly plans, override packages, payments, and renewals</p>
         </div>
         <button className="flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm text-gray-300 transition-all hover:bg-white/[0.08] hover:border-white/[0.15]">
           <Download size={16} />
@@ -459,6 +612,7 @@ export default function SubscriptionsPage() {
         </div>
       </div>
 
+      {/* PENDING PAYMENT REQUESTS */}
       <div className="glass-card overflow-hidden rounded-2xl">
         <div className="flex flex-col gap-2 border-b border-white/[0.06] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -571,6 +725,7 @@ export default function SubscriptionsPage() {
         </div>
       </div>
 
+      {/* SUBSCRIBERS LIST TABLE */}
       <div className="glass-card overflow-hidden rounded-2xl">
         <div className="border-b border-white/[0.06] px-5 py-4">
           <h2 className="text-sm font-semibold text-white">Subscribers</h2>
@@ -593,6 +748,7 @@ export default function SubscriptionsPage() {
                   <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Payment Date</th>
                   <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Expiry Date</th>
                   <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">Status</th>
+                  <th className="px-4 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-gray-400">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -642,6 +798,32 @@ export default function SubscriptionsPage() {
                           {statusCfg.label}
                         </span>
                       </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSubForOverride(sub);
+                              setOverrideNewPlan(sub.plan as any);
+                              setOverrideReason('');
+                              setOverrideModalOpen(true);
+                            }}
+                            className="rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-xs font-bold text-purple-400 hover:bg-purple-500/20 transition-all cursor-pointer"
+                          >
+                            Override
+                          </button>
+                          {sub.companyId && (
+                            <button
+                              type="button"
+                              onClick={() => handlePreview(sub.companyId!)}
+                              className="rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] px-2 py-1 text-xs font-medium text-slate-300 transition-all flex items-center gap-0.5"
+                              title="Preview business website"
+                            >
+                              <ExternalLink size={10} /> Preview
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -661,36 +843,213 @@ export default function SubscriptionsPage() {
         )}
       </div>
 
-      <div className="glass-card overflow-hidden rounded-2xl">
-        <div className="border-b border-white/[0.06] px-5 py-4">
-          <h2 className="text-sm font-semibold text-white">Recent Payments</h2>
-        </div>
-        {paymentsLoading ? (
-          <div className="flex justify-center p-5">
-            <Loader2 size={24} className="animate-spin text-violet-400" />
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* RECENT PAYMENTS */}
+        <div className="glass-card overflow-hidden rounded-2xl">
+          <div className="border-b border-white/[0.06] px-5 py-4">
+            <h2 className="text-sm font-semibold text-white">Recent Payments</h2>
           </div>
-        ) : payments.length === 0 ? (
-          <div className="p-8 text-center text-xs text-gray-500">No payments recorded yet.</div>
-        ) : (
-          <div className="divide-y divide-white/[0.04]">
-            {payments.map((payment) => (
-              <div key={payment.id} className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-                  <TrendingUp size={16} className="text-emerald-400" />
+          {paymentsLoading ? (
+            <div className="flex justify-center p-5">
+              <Loader2 size={24} className="animate-spin text-violet-400" />
+            </div>
+          ) : payments.length === 0 ? (
+            <div className="p-8 text-center text-xs text-gray-500">No payments recorded yet.</div>
+          ) : (
+            <div className="divide-y divide-white/[0.04]">
+              {payments.map((payment) => (
+                <div key={payment.id} className="flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-white/[0.02]">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <TrendingUp size={16} className="text-emerald-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-white">{payment.userName || payment.businessName || payment.companyName || 'User'}</p>
+                    <p className="text-[10px] text-gray-500">{payment.plan || 'Plan'} · {payment.paymentMethod || 'Manual'}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-bold text-emerald-400">₹{Number(payment.amount || 0).toLocaleString('en-IN')}</p>
+                    <p className="text-[10px] text-gray-500">{formatDate(payment.createdAt, 'Recent')}</p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-white">{payment.userName || payment.businessName || payment.companyName || 'User'}</p>
-                  <p className="text-[10px] text-gray-500">{payment.plan || 'Plan'} · {payment.paymentMethod || 'Manual'}</p>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* AUDIT LOGS: SUBSCRIPTION OVERRIDE CHANGE LOGS */}
+        <div className="glass-card overflow-hidden rounded-2xl">
+          <div className="border-b border-white/[0.06] px-5 py-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">Subscription Change Logs (Audit)</h2>
+            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold text-slate-400">Security Logging</span>
+          </div>
+          {logsLoading ? (
+            <div className="flex justify-center p-5">
+              <Loader2 size={24} className="animate-spin text-violet-400" />
+            </div>
+          ) : changeLogs.length === 0 ? (
+            <div className="p-8 text-center text-xs text-gray-500">No override logs recorded yet.</div>
+          ) : (
+            <div className="divide-y divide-white/[0.04] max-h-[380px] overflow-y-auto">
+              {changeLogs.map((log: any) => (
+                <div key={log.id} className="p-4 transition-colors hover:bg-white/[0.02] space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-white flex items-center gap-1">
+                      <UserCheck size={11} className="text-purple-400" /> {log.adminName}
+                    </span>
+                    <span className="text-slate-500 text-[10px]">{formatDate(log.changedAt)}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-350">
+                    Modified <span className="text-white font-bold">{log.userName || log.companyName || 'Business User'}</span> plan: 
+                    <span className="text-slate-500 line-through mx-1">{log.previousPlan}</span> ➔ 
+                    <span className="text-purple-400 font-bold ml-1">{log.newPlan}</span> ({log.durationLabel})
+                  </div>
+                  {log.reason && (
+                    <p className="text-[10px] text-slate-500 bg-white/[0.01] border border-white/[0.04] rounded-lg p-1.5 mt-1">
+                      Note: {log.reason}
+                    </p>
+                  )}
                 </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-sm font-bold text-emerald-400">₹{Number(payment.amount || 0).toLocaleString('en-IN')}</p>
-                  <p className="text-[10px] text-gray-500">{formatDate(payment.createdAt, 'Recent')}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* OVERRIDE MODAL DIALOG */}
+      {overrideModalOpen && selectedSubForOverride && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl space-y-4 font-outfit text-white relative">
+            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+              <h3 className="text-base font-bold text-white flex items-center gap-1.5">
+                <Sparkles size={16} className="text-purple-400" /> Subscription Plan Override
+              </h3>
+              <button
+                onClick={() => setOverrideModalOpen(false)}
+                className="text-slate-400 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Target Info */}
+            <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl text-xs space-y-1">
+              <div>Name: <span className="font-bold text-white">{selectedSubForOverride.userName}</span></div>
+              <div>Company: <span className="font-bold text-white">{selectedSubForOverride.companyName || 'None'}</span></div>
+              <div>Current Plan: <span className="font-bold text-purple-400 uppercase">{selectedSubForOverride.plan}</span></div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-3.5">
+              {/* Target Plan */}
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Target Plan</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['free', 'basic', 'premium'] as const).map(p => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setOverrideNewPlan(p)}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-colors uppercase ${
+                        overrideNewPlan === p
+                          ? 'bg-purple-600 border-purple-500 text-white'
+                          : 'border-white/5 text-slate-450 bg-white/[0.01]'
+                      }`}
+                    >
+                      {p === 'basic' ? 'Standard' : p}
+                    </button>
+                  ))}
                 </div>
               </div>
-            ))}
+
+              {/* Expiry Duration / Trial */}
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Trial / Expiry Period</label>
+                <select
+                  value={overrideDuration}
+                  onChange={(e: any) => setOverrideDuration(e.target.value)}
+                  className="w-full bg-slate-950 border border-white/10 px-3 py-2 text-xs rounded-xl text-white outline-none"
+                >
+                  <option value="1m_trial">1 Month Trial (Trial Activation)</option>
+                  <option value="3m_trial">3 Month Trial (Trial Activation)</option>
+                  <option value="1y">1 Year Activation</option>
+                  <option value="custom">Custom Expiry Date</option>
+                </select>
+              </div>
+
+              {/* Custom Date Input */}
+              {overrideDuration === 'custom' && (
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Custom Expiry Date</label>
+                  <input
+                    type="date"
+                    value={overrideCustomDate}
+                    onChange={(e) => setOverrideCustomDate(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 px-3 py-2 text-xs rounded-xl text-white outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Reason / Notes */}
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Reason / Notes (Audit log)</label>
+                <textarea
+                  placeholder="e.g. Free trial token activation for testing..."
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  rows={2}
+                  className="w-full bg-slate-950 border border-white/10 p-3 text-xs rounded-xl text-white outline-none resize-none"
+                />
+              </div>
+
+              {/* Admin Name */}
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Authorizing Admin Name</label>
+                <input
+                  type="text"
+                  value={overrideAdminName}
+                  onChange={(e) => setOverrideAdminName(e.target.value)}
+                  placeholder="Admin Name"
+                  className="w-full bg-slate-950 border border-white/10 px-3 py-2 text-xs rounded-xl text-white outline-none"
+                />
+              </div>
+
+              {/* Auto Refresh Toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="auto-refresh"
+                  checked={overrideAutoRefresh}
+                  onChange={(e) => setOverrideAutoRefresh(e.target.checked)}
+                  className="rounded border-white/10 bg-slate-950 text-purple-600 focus:ring-0 w-3.5 h-3.5"
+                />
+                <label htmlFor="auto-refresh" className="text-xs text-slate-400 cursor-pointer">
+                  Auto-refresh page on update completion
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2.5 pt-2 border-t border-white/5">
+              <button
+                type="button"
+                onClick={() => setOverrideModalOpen(false)}
+                className="flex-1 py-2.5 border border-white/10 rounded-xl text-xs font-bold hover:bg-white/5 transition-colors cursor-pointer text-center"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleOverrideSubmit}
+                disabled={overrideSubmitting}
+                className="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {overrideSubmitting && <Loader2 size={13} className="animate-spin" />}
+                Confirm Override
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

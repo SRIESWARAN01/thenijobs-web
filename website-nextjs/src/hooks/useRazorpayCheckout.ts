@@ -12,7 +12,7 @@ declare global {
 }
 
 interface RazorpayCheckoutOptions {
-  planSlug: 'basic' | 'premium';
+  planSlug: 'basic' | 'premium' | 'enterprise';
   audience: 'seeker' | 'employer';
   companyId?: string;
   userName?: string;

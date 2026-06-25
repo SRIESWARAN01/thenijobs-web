@@ -53,7 +53,7 @@ export default function PricingPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-violet-400">Yearly Plans Only</span>
             </div>
             <h1 className="font-outfit text-4xl font-black text-white sm:text-5xl gradient-text">
-              Free, Basic and Premium access
+              Free, Standard and Premium access
             </h1>
             <p className="mt-4 text-base font-semibold leading-7 text-gray-400">
               THENIJOBS subscriptions run on a yearly model. Paid features unlock only for users with an active plan.

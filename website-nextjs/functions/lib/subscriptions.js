@@ -47,8 +47,9 @@ const config_1 = require("./config");
 const helpers = __importStar(require("./helpers"));
 const SERVER_PLAN_CONFIGS = {
     free: { price: 0, name: 'Free Plan' },
-    basic: { price: 480, name: 'Basic Plan' },
-    premium: { price: 1200, name: 'Premium Plan' },
+    basic: { price: 499, name: 'Basic Plan' },
+    premium: { price: 999, name: 'Premium Plan' },
+    enterprise: { price: 5000, name: 'Enterprise Plan' },
 };
 const { requireUid, checkRateLimit, getString, getPlanConfigs, resolveCompanyPlanState, resolveUserPlanState, featureAllowed, expireSubscription, syncSubscriptionStatus, createSubscriptionNotification, hasActiveSubscriptionBenefits, getDate, getNumberArray } = helpers;
 exports.validateSubscriptionAccess = (0, https_1.onCall)({ region: config_1.REGION, enforceAppCheck: false }, async (request) => {
@@ -137,8 +138,8 @@ exports.createRazorpayOrder = (0, https_1.onCall)({ region: config_1.REGION, enf
     const planSlug = getString(request.data?.planSlug);
     const audience = getString(request.data?.audience);
     const companyId = getString(request.data?.companyId);
-    if (planSlug !== 'basic' && planSlug !== 'premium') {
-        throw new https_1.HttpsError('invalid-argument', 'Invalid plan slug. Only basic and premium are supported.');
+    if (planSlug !== 'basic' && planSlug !== 'premium' && planSlug !== 'enterprise') {
+        throw new https_1.HttpsError('invalid-argument', 'Invalid plan slug. Only basic, premium, and enterprise are supported.');
     }
     if (audience !== 'seeker' && audience !== 'employer') {
         throw new https_1.HttpsError('invalid-argument', 'Invalid audience. Must be seeker or employer.');

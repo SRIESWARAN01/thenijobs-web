@@ -16,8 +16,8 @@ export type JobLifecycleStatus =
 
 export const JOB_PLAN_LIMITS: Record<VisibleSubscriptionPlanSlug | 'enterprise', number> = {
   free: 1,
-  basic: 2,
-  premium: 5,
+  basic: 10,
+  premium: 50,
   enterprise: Number.POSITIVE_INFINITY,
 };
 

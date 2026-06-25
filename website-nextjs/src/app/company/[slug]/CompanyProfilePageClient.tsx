@@ -12,6 +12,7 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
   const [company, setCompany] = useState<any | null>(null);
   const [jobs, setJobs] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
 
@@ -106,8 +107,21 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
           };
         });
         setReviews(reviewsData);
+
+        // 4. Fetch products
+        const qProducts = query(
+          collection(db, 'products'),
+          where('companyId', '==', companyId),
+          where('isActive', '==', true)
+        );
+        const snapProducts = await getDocs(qProducts);
+        const productsData = snapProducts.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setProducts(productsData);
       } catch (err) {
-        console.error('Error fetching jobs/reviews:', err);
+        console.error('Error fetching jobs/reviews/products:', err);
       }
     }
 
@@ -162,7 +176,7 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
     posts: company.posts || [],
     services: company.services || [],
     verificationBadges: visibleVerificationBadges,
-    products: company.products || [],
+    products: products,
     viewCount: company.viewCount || 0,
     enquiryCount: company.enquiryCount || 0,
     followerCount: company.followerCount || 0,

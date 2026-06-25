@@ -38,28 +38,75 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const name = companyData.name || companyData.businessName || companyData.companyName || 'Business';
-  const description = companyData.description
+  const defaultDescription = companyData.description
     ? String(companyData.description).replace(/\s+/g, ' ').slice(0, 160)
     : `${name} — a verified business in ${companyData.district || 'Theni'} district. View profile, services, and reviews on THENIJOBS.`;
-  const logoUrl = companyData.logoUrl || undefined;
 
-  return {
-    title: name,
-    description,
-    openGraph: {
-      title: `${name} — THENIJOBS`,
-      description,
-      type: 'website',
-      url: `https://thenijobs.com/company/${slug}`,
-      ...(logoUrl ? { images: [{ url: logoUrl, width: 256, height: 256, alt: `${name} logo` }] } : {}),
-    },
-    twitter: {
-      card: 'summary',
-      title: `${name} — THENIJOBS`,
-      description,
-      ...(logoUrl ? { images: [logoUrl] } : {}),
-    },
+  // Parse plan and expiry status
+  const rawPlan = companyData.subscriptionPlan || (companyData.isPremium ? 'premium' : 'free');
+  
+  const toDateLocal = (value?: any) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'object') {
+      if (typeof value.toDate === 'function') return value.toDate();
+      if (typeof value.seconds === 'number') return new Date(value.seconds * 1000);
+    }
+    const d = new Date(String(value));
+    return isNaN(d.getTime()) ? null : d;
   };
+
+  const isExpired = (() => {
+    if (companyData.subscriptionEndsAt) {
+      const endsAt = toDateLocal(companyData.subscriptionEndsAt);
+      if (endsAt && endsAt < new Date()) {
+        return true;
+      }
+    }
+    return false;
+  })();
+
+  const activePlan = isExpired ? 'free' : rawPlan;
+
+  // Plan based SEO configuration
+  if (activePlan === 'free') {
+    // Free: standard basic SEO, no custom meta titles/descriptions
+    return {
+      title: name,
+      description: defaultDescription,
+    };
+  } else if (activePlan === 'basic') {
+    // Standard (basic): Enhanced SEO (custom seoTitle / seoDescription if available)
+    const title = companyData.customMetaTitle || companyData.seoTitle || name;
+    const description = companyData.customMetaDescription || companyData.seoDescription || defaultDescription;
+    return {
+      title,
+      description,
+    };
+  } else {
+    // Premium: Full SEO Optimization (custom title/description, full OpenGraph & Twitter tags)
+    const title = companyData.customMetaTitle || companyData.seoTitle || name;
+    const description = companyData.customMetaDescription || companyData.seoDescription || defaultDescription;
+    const logoUrl = companyData.logoUrl || undefined;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title: `${title} — THENIJOBS Premium Partner`,
+        description,
+        type: 'website',
+        url: `https://thenijobs.com/company/${slug}`,
+        ...(logoUrl ? { images: [{ url: logoUrl, width: 256, height: 256, alt: `${name} logo` }] } : {}),
+      },
+      twitter: {
+        card: 'summary',
+        title: `${title} — THENIJOBS Premium Partner`,
+        description,
+        ...(logoUrl ? { images: [logoUrl] } : {}),
+      },
+    };
+  }
 }
 
 export async function generateStaticParams() {
@@ -90,7 +137,33 @@ export default async function CompanyProfilePage({ params }: PageProps) {
   const { slug } = await params;
   const companyData = await getCompanyBySlug(slug);
 
-  const jsonLd = companyData ? {
+  const toDateLocal = (value?: any) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value === 'object') {
+      if (typeof value.toDate === 'function') return value.toDate();
+      if (typeof value.seconds === 'number') return new Date(value.seconds * 1000);
+    }
+    const d = new Date(String(value));
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const activePlan = (() => {
+    if (!companyData) return 'free';
+    const rawPlan = companyData.subscriptionPlan || (companyData.isPremium ? 'premium' : 'free');
+    if (companyData.subscriptionEndsAt) {
+      const endsAt = toDateLocal(companyData.subscriptionEndsAt);
+      if (endsAt && endsAt < new Date()) {
+        return 'free'; // Expired
+      }
+    }
+    return rawPlan;
+  })();
+
+  // Gate rich Schema markup (LocalBusiness) to Standard (basic) and Premium tiers only
+  const showSchema = activePlan === 'basic' || activePlan === 'premium';
+
+  const jsonLd = (companyData && showSchema) ? {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     'name': companyData.name,

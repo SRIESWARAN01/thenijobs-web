@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import React from 'react';
 import EmployerDashboard from '../app/employer/dashboard/page';
 import BusinessDashboardPage from '../app/business/dashboard/page';
@@ -132,7 +132,7 @@ describe('BusinessDashboard Page Component', () => {
   it('renders business dashboard elements', () => {
     render(<BusinessDashboardPage />);
 
-    expect(screen.getByText('Business Dashboard')).toBeDefined();
+    expect(screen.getByText('Real-Time Analytics Insights')).toBeDefined();
     expect(screen.getByText('Super Enterprises')).toBeDefined();
   });
 });
@@ -152,11 +152,15 @@ describe('AdminDashboard Page Component', () => {
       render(<AdminDashboard />);
     });
 
+    // Switch to Audit tab to see activity logs
+    const auditTabBtn = screen.getByRole('button', { name: /Audit Activities/i });
+    fireEvent.click(auditTabBtn);
+
     await waitFor(() => {
       expect(screen.getByText('User registered')).toBeDefined();
     });
 
-    expect(screen.getByText('Admin Dashboard')).toBeDefined();
-    expect(screen.getByText(/Live/)).toBeDefined();
+    expect(screen.getByText('BI Control Center')).toBeDefined();
+    expect(screen.getByText('Dashboard Overview')).toBeDefined();
   });
 });

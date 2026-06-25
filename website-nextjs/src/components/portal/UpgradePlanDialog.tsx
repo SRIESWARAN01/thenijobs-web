@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Crown, Zap, Check, Loader2, Sparkles, AlertCircle, ArrowRight } from 'lucide-react';
+import { X, Crown, Zap, Check, Loader2, Sparkles, AlertCircle, ArrowRight, Building2 } from 'lucide-react';
 import { useRazorpayCheckout } from '@/hooks/useRazorpayCheckout';
 import { useToast } from '@/hooks/useToast';
 import { YEARLY_SUBSCRIPTION_PLANS, type VisibleSubscriptionPlanSlug } from '@/lib/subscriptions';
@@ -38,6 +38,15 @@ const planMeta = {
     textColor: 'text-amber-400',
     badgeColor: 'bg-amber-500/20 text-amber-300',
   },
+  enterprise: {
+    icon: Building2,
+    gradient: 'from-violet-500 to-purple-600',
+    glowColor: 'rgba(139, 92, 246, 0.3)',
+    borderActive: 'border-violet-500/50',
+    bgActive: 'bg-violet-500/10',
+    textColor: 'text-violet-400',
+    badgeColor: 'bg-violet-500/20 text-violet-300',
+  },
 };
 
 export default function UpgradePlanDialog({
@@ -51,7 +60,7 @@ export default function UpgradePlanDialog({
   userPhone,
   onUpgradeComplete,
 }: UpgradePlanDialogProps) {
-  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'premium'>('premium');
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'premium' | 'enterprise'>('premium');
   const { initiatePayment, isProcessing, error, success, resetState } = useRazorpayCheckout();
   const { toast } = useToast();
 
@@ -59,9 +68,10 @@ export default function UpgradePlanDialog({
     (p) => p.slug !== 'free' && p.slug !== currentPlan,
   );
 
-  // If current plan is basic, only show premium
+  // If current plan is basic, show premium and enterprise. If premium, only show enterprise
   const availablePlans = upgradePlans.filter((p) => {
-    if (currentPlan === 'basic') return p.slug === 'premium';
+    if (currentPlan === 'basic') return p.slug === 'premium' || p.slug === 'enterprise';
+    if (currentPlan === 'premium') return p.slug === 'enterprise';
     return true;
   });
 
@@ -79,7 +89,7 @@ export default function UpgradePlanDialog({
         onSuccess: () => {
           toast({
             title: 'Upgrade Successful!',
-            description: `You're now on the ${selectedPlan === 'premium' ? 'Premium' : 'Basic'} plan. Enjoy your new features!`,
+            description: `You're now on the ${selectedPlan === 'enterprise' ? 'Enterprise' : selectedPlan === 'premium' ? 'Premium' : 'Standard'} plan. Enjoy your new features!`,
             variant: 'success',
           });
           onUpgradeComplete?.();
@@ -142,7 +152,7 @@ export default function UpgradePlanDialog({
               </div>
               <h3 className="text-xl font-bold font-outfit text-white">Upgrade Complete!</h3>
               <p className="text-sm text-gray-400 text-center">
-                Your {selectedPlan === 'premium' ? 'Premium' : 'Basic'} plan is now active.
+                Your {selectedPlan === 'premium' ? 'Premium' : selectedPlan === 'enterprise' ? 'Enterprise' : 'Basic'} plan is now active.
                 <br />Enjoy your new features!
               </p>
             </div>
@@ -153,7 +163,7 @@ export default function UpgradePlanDialog({
             <>
               <div className="space-y-3 mb-6">
                 {availablePlans.map((plan) => {
-                  if (plan.slug !== 'basic' && plan.slug !== 'premium') return null;
+                  if (plan.slug !== 'basic' && plan.slug !== 'premium' && plan.slug !== 'enterprise') return null;
                   const meta = planMeta[plan.slug];
                   const isSelected = selectedPlan === plan.slug;
                   const Icon = meta.icon;
@@ -161,7 +171,7 @@ export default function UpgradePlanDialog({
                   return (
                     <button
                       key={plan.slug}
-                      onClick={() => setSelectedPlan(plan.slug as 'basic' | 'premium')}
+                      onClick={() => setSelectedPlan(plan.slug as 'basic' | 'premium' | 'enterprise')}
                       disabled={isProcessing}
                       className={`w-full rounded-2xl border p-4 text-left transition-all duration-200 ${
                         isSelected

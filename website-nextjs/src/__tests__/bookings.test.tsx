@@ -167,7 +167,7 @@ describe('Local Service Bookings & Provider Dashboards Tests', () => {
 
       // Populate input fields
       const dateInput = screen.getByLabelText(/Date/i);
-      fireEvent.change(dateInput, { target: { value: '2026-06-25' } });
+      fireEvent.change(dateInput, { target: { value: '2026-06-27' } });
 
       const timeInput = screen.getByLabelText(/Preferred Time/i);
       fireEvent.change(timeInput, { target: { value: '14:30' } });

@@ -6,10 +6,12 @@ import { useCollection } from '@/hooks/useFirestore';
 import { where, orderBy } from 'firebase/firestore';
 import {
   Plus, Edit2, Trash2, Loader2, Search, Image as ImageIcon,
-  Tag, Box, Check, X, Sparkles, DollarSign, Eye, EyeOff, Upload
+  Tag, Box, Check, X, Sparkles, DollarSign, Eye, EyeOff, Upload,
+  Lock, ChevronRight, ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import { createProduct, updateProduct, deleteProduct } from '@/lib/firebase/shopService';
+import { useUploadFile } from '@/hooks/useStorage';
 
 interface ProductDoc {
   id: string;
@@ -26,13 +28,73 @@ interface ProductDoc {
   companyId: string;
 }
 
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          0.8
+        );
+      };
+      img.onerror = () => resolve(file);
+    };
+    reader.onerror = () => resolve(file);
+  });
+};
+
 export default function BusinessProductsPage() {
   const { user } = useAuth();
+  const { uploadFile } = useUploadFile();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   
+  // Upload State
+  const [imageUploading, setImageUploading] = useState(false);
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductDoc | null>(null);
@@ -57,12 +119,41 @@ export default function BusinessProductsPage() {
   const company = companies[0];
   const companyId = company?.id;
 
+  // Compute active subscription plan badge (free, basic / Standard, premium)
+  const subscriptionBadge = company ? (() => {
+    if (company.subscriptionEndsAt) {
+      let endsAt: Date | null = null;
+      const val = company.subscriptionEndsAt;
+      if (val instanceof Date) endsAt = val;
+      else if (val && typeof val === 'object' && (val as any).seconds) endsAt = new Date((val as any).seconds * 1000);
+      else if (val) endsAt = new Date(String(val));
+
+      if (endsAt && endsAt < new Date()) {
+        return 'free';
+      }
+    }
+    return company.subscriptionPlan || (company.isPremium ? 'premium' : 'free');
+  })() : 'free';
+
   // 2. Fetch products
   const { data: products, loading: productsLoading } = useCollection<any>('products', [
     where('companyId', '==', companyId || '')
   ], { skip: !companyId });
 
+  const getProductLimit = (planSlug: string) => {
+    if (planSlug === 'basic') return 3;
+    if (planSlug === 'premium') return 5;
+    if (planSlug === 'enterprise') return 10;
+    return 1;
+  };
+  const limit = getProductLimit(subscriptionBadge);
+  const reachedLimit = products.length >= limit;
+
   const handleOpenAddModal = () => {
+    if (reachedLimit) {
+      alert(`Product limit reached. Your ${subscriptionBadge === 'free' ? 'Free' : subscriptionBadge === 'basic' ? 'Standard' : subscriptionBadge === 'premium' ? 'Premium' : 'Enterprise'} plan allows a maximum of ${limit} product(s). Please delete existing products or upgrade.`);
+      return;
+    }
     setEditingProduct(null);
     setFormData({
       name: '',
@@ -79,9 +170,50 @@ export default function BusinessProductsPage() {
     setIsModalOpen(true);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      alert('Invalid file format. Please upload JPG, PNG, or WEBP images only.');
+      return;
+    }
+
+    const minSize = 10 * 1024;
+    const maxSize = 1 * 1024 * 1024;
+    if (file.size < minSize) {
+      alert('Image size is too small. Minimum size required is 10KB.');
+      return;
+    }
+    if (file.size > maxSize) {
+      alert('Image size exceeds 1MB limit. Maximum size allowed is 1MB.');
+      return;
+    }
+
+    setImageUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      const storagePath = `companies/${companyId}/products/product_${Date.now()}`;
+      const downloadUrl = await uploadFile(compressed, storagePath);
+      setFormData(prev => ({ ...prev, imageUrl: downloadUrl }));
+      alert('Image uploaded and optimized successfully!');
+    } catch (err: any) {
+      console.error('[Product Image Upload Error]:', err);
+      alert('Image upload failed: ' + err.message);
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !companyId) return;
+
+    if (products.length >= limit) {
+      alert(`Limit reached. You already have ${products.length} products (max ${limit} for your plan). Please delete existing products or upgrade.`);
+      return;
+    }
 
     setImporting(true);
     const reader = new FileReader();
@@ -113,6 +245,11 @@ export default function BusinessProductsPage() {
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (!line) continue;
+
+          if (products.length + successCount >= limit) {
+            alert(`Reached product limit of ${limit}. Stopped importing.`);
+            break;
+          }
 
           // Parse CSV line taking care of quoted columns
           const cols: string[] = [];
@@ -192,6 +329,15 @@ export default function BusinessProductsPage() {
     e.preventDefault();
     if (!companyId) return;
     
+    // Check Plan Limits
+    if (!editingProduct) {
+      if (products.length >= limit) {
+        const planName = subscriptionBadge === 'free' ? 'Free' : subscriptionBadge === 'basic' ? 'Standard' : subscriptionBadge === 'premium' ? 'Premium' : 'Enterprise';
+        alert(`Limit reached! Your ${planName} plan allows a maximum of ${limit} product(s). Please delete existing products or upgrade.`);
+        return;
+      }
+    }
+
     setActionLoading('save');
     try {
       const tags = formData.tagsString
@@ -278,6 +424,35 @@ export default function BusinessProductsPage() {
     );
   }
 
+  const planLabel = subscriptionBadge === 'free' ? 'Free Plan' : subscriptionBadge === 'basic' ? 'Standard Plan (Blue Tick)' : 'Premium Plan (Yellow/Gold Tick)';
+
+  if (subscriptionBadge === 'free') {
+    return (
+      <div className="space-y-6 font-outfit text-white">
+        <h1 className="text-2xl font-bold">Products & Services</h1>
+        <p className="text-sm text-gray-400 mt-1">E-Commerce storefront listing for your business</p>
+        
+        <div className="bg-gradient-to-br from-[#0e0a16] via-[#060814] to-[#04050a] border border-white/5 rounded-3xl p-8 max-w-2xl mx-auto text-center space-y-6 shadow-2xl relative overflow-hidden mt-8">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-amber-450">
+            <Lock size={28} />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-white">Products & Storefront Catalog Locked</h2>
+            <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+              Showcasing your product inventory and enabling WhatsApp checkout is exclusive to Standard (20 products) and Premium (100 products) subscribers.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link href="/employer/subscription" className="inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
+              Upgrade Subscription Plan <ChevronRight size={14} />
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in-up font-outfit text-white">
       {/* Page Header */}
@@ -285,6 +460,11 @@ export default function BusinessProductsPage() {
         <div>
           <h1 className="text-2xl font-bold">Products & Services</h1>
           <p className="text-sm text-gray-400 mt-1">Manage listings, prices, stock levels, and features</p>
+          {!loading && (
+            <p className="text-xs text-emerald-400 font-semibold mt-1">
+              Active: {products.length} / {limit} products showcase limit ({planLabel})
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <label className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-sm font-semibold hover:bg-white/[0.04] transition-all cursor-pointer">
@@ -300,12 +480,20 @@ export default function BusinessProductsPage() {
           </label>
           <button
             onClick={handleOpenAddModal}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+            className={`inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity ${reachedLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={reachedLimit}
           >
             <Plus size={16} /> Add Product / Service
           </button>
         </div>
       </div>
+
+      {reachedLimit && (
+        <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/10 text-xs text-amber-300 font-semibold flex items-center gap-2">
+          <ShieldAlert size={14} className="text-amber-400" />
+          Product limit reached ({products.length}/{limit}). Please delete existing products or upgrade to Premium.
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -522,14 +710,35 @@ export default function BusinessProductsPage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-semibold text-gray-400 block mb-1">Image URL</label>
-                  <input
-                    type="url"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData(p => ({ ...p, imageUrl: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <label className="text-xs font-semibold text-gray-400 block mb-1">Product Image</label>
+                  <div className="flex gap-3 items-center">
+                    <label className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.02] px-4 py-2.5 text-xs font-semibold hover:bg-white/[0.04] transition-all cursor-pointer">
+                      {imageUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                      {imageUploading ? 'Uploading...' : 'Upload Image (Max 1MB)'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={imageUploading}
+                      />
+                    </label>
+                    {formData.imageUrl && (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-slate-900 flex items-center justify-center">
+                        <img src={formData.imageUrl} alt="Preview" className="object-cover w-full h-full" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <span className="text-[10px] text-gray-500 block">Or paste image web link:</span>
+                    <input
+                      type="url"
+                      value={formData.imageUrl}
+                      onChange={(e) => setFormData(p => ({ ...p, imageUrl: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all mt-1"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
                 </div>
 
                 <div className="sm:col-span-2">

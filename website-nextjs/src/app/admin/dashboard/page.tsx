@@ -8,7 +8,7 @@ import {
   AlertTriangle, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, Building, BriefcaseBusiness, Star,
   ChevronRight, BadgeCheck, ShieldAlert, Globe, Loader2,
-  ShoppingBag, Package,
+  ShoppingBag, Package, Crown, Phone,
 } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/useRealtimeStats';
 import { useCollection } from '@/hooks/useFirestore';
@@ -95,6 +95,16 @@ export default function AdminDashboard() {
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [shopStats, setShopStats] = useState({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0 });
+  const [activeBiTab, setActiveBiTab] = useState('overview'); // overview, rankings, revenue, leads, audit
+
+  // Query all companies for rankings & tier counts
+  const { data: allCompanies, loading: allCompaniesLoading } = useCollection<any>('companies');
+
+  // Query payments for revenue dashboard
+  const { data: allPayments, loading: paymentsLoading } = useCollection<any>('payments');
+
+  // Query all leads for lead analytics
+  const { data: allLeads, loading: leadsLoading } = useCollection<any>('leads');
 
   // Pending companies for approval
   const { data: pendingCompanies, loading: companiesLoading } = useCollection<any>(
@@ -139,7 +149,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function loadActivities() {
       try {
-        const logs = await getActivityLogs(10);
+        const logs = await getActivityLogs(30); // fetch more logs for BI logs tab
         setActivities(logs);
       } catch (err) {
         console.error('Error loading activities:', err);
@@ -347,7 +357,12 @@ export default function AdminDashboard() {
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return 'Just now';
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    let date: Date;
+    if (timestamp?.seconds) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    }
     const diff = Date.now() - date.getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Just now';
@@ -357,293 +372,514 @@ export default function AdminDashboard() {
     return `${Math.floor(hours / 24)} days ago`;
   };
 
+  // BI Calculations: Subscriptions distribution
+  const subStats = useMemo(() => {
+    let free = 0, standard = 0, premium = 0, enterprise = 0;
+    allCompanies.forEach(c => {
+      const plan = c.subscriptionPlan || 'free';
+      if (plan === 'basic') standard++;
+      else if (plan === 'premium') premium++;
+      else if (plan === 'enterprise') enterprise++;
+      else free++;
+    });
+    return { free, standard, premium, enterprise };
+  }, [allCompanies]);
+
+  // BI Calculations: Rankings
+  const rankings = useMemo(() => {
+    const list = [...allCompanies];
+    const topPerforming = [...list].sort((a, b) => {
+      const valA = (a.visitCount || 0) + (a.whatsappClickCount || 0) * 3 + (a.callClickCount || 0) * 3;
+      const valB = (b.visitCount || 0) + (b.whatsappClickCount || 0) * 3 + (b.callClickCount || 0) * 3;
+      return valB - valA;
+    }).slice(0, 5);
+
+    const mostViewed = [...list].sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0)).slice(0, 5);
+    const mostContacted = [...list].sort((a, b) => {
+      const valA = (a.whatsappClickCount || 0) + (a.callClickCount || 0);
+      const valB = (b.whatsappClickCount || 0) + (b.callClickCount || 0);
+      return valB - valA;
+    }).slice(0, 5);
+
+    const mostReviewed = [...list].sort((a, b) => (b.reviewSubmitCount || 0) - (a.reviewSubmitCount || 0)).slice(0, 5);
+    const highestConversion = [...list].filter(c => (c.visitCount || 0) > 0).sort((a, b) => {
+      const rateA = (a.contactSubmitCount || 0) / a.visitCount;
+      const rateB = (b.contactSubmitCount || 0) / b.visitCount;
+      return rateB - rateA;
+    }).slice(0, 5);
+
+    return { topPerforming, mostViewed, mostContacted, mostReviewed, highestConversion };
+  }, [allCompanies]);
+
+  // BI Calculations: Revenue Breakdowns
+  const revenueStats = useMemo(() => {
+    let totalRevenue = 0;
+    let standardPlanRev = 0;
+    let premiumPlanRev = 0;
+    let enterprisePlanRev = 0;
+    const businessRevMap: Record<string, number> = {};
+
+    allPayments.forEach(p => {
+      const amt = Number(p.amount) || 0;
+      totalRevenue += amt;
+      const planSlug = normalizePlanSlug(p.plan || p.planSlug || 'free');
+      if (planSlug === 'basic') standardPlanRev += amt;
+      else if (planSlug === 'premium') premiumPlanRev += amt;
+      else if (planSlug === 'enterprise') enterprisePlanRev += amt;
+
+      const bizName = p.businessName || p.companyName || 'Personal / Seeker';
+      businessRevMap[bizName] = (businessRevMap[bizName] || 0) + amt;
+    });
+
+    const topBusinessesByRevenue = Object.entries(businessRevMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+    return {
+      totalRevenue,
+      standardPlanRev,
+      premiumPlanRev,
+      enterprisePlanRev,
+      topBusinessesByRevenue,
+      pendingRequestsAmount: pendingRequests.reduce((acc, r) => acc + (Number(r.amount) || 0), 0),
+    };
+  }, [allPayments, pendingRequests]);
+
+  // BI Calculations: Leads Analysis
+  const leadsStats = useMemo(() => {
+    const total = allLeads.length;
+    let whatsappLeads = 0;
+    let callLeads = 0;
+    let formLeads = 0;
+    
+    // Check fields on leads and group them
+    allLeads.forEach(l => {
+      if (l.source === 'whatsapp' || l.type === 'whatsapp') whatsappLeads++;
+      else if (l.source === 'call' || l.type === 'call') callLeads++;
+      else formLeads++;
+    });
+
+    return { total, whatsappLeads, callLeads, formLeads };
+  }, [allLeads]);
+
   const statsConfig = [
     { label: 'Total Active Jobs', value: stats.activeJobs, icon: Briefcase, color: 'emerald', prefix: '', href: '/admin/jobs' },
     { label: 'Total Companies', value: stats.totalCompanies, icon: Building2, color: 'cyan', prefix: '', href: '/admin/businesses' },
     { label: 'Total Employers', value: stats.totalEmployers, icon: Users, color: 'violet', prefix: '', href: '/admin/users' },
     { label: 'Total Job Seekers', value: stats.totalJobSeekers, icon: UserPlus, color: 'purple', prefix: '', href: '/admin/users' },
     { label: 'Total Applications', value: stats.totalApplications, icon: FileText, color: 'amber', prefix: '', href: '/admin/jobs' },
-    { label: 'Walk-In Registrations', value: stats.totalWalkInRegistrations, icon: Activity, color: 'rose', prefix: '', href: '/admin/jobs' },
+    { label: 'Total Revenue', value: revenueStats.totalRevenue, icon: CreditCard, color: 'rose', prefix: '₹', href: '#' },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-outfit text-white">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-outfit">Admin Dashboard</h1>
-          <p className="text-sm text-gray-400 mt-1">Platform overview and management</p>
+          <h1 className="text-3xl font-black text-white">BI Control Center</h1>
+          <p className="text-sm text-gray-400 mt-1">Platform analytics, user tracking, revenue auditing and rankings</p>
         </div>
       </div>
 
       {adminPendingOver7DaysCount > 0 && (
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15 animate-pulse-glow">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0 animate-pulse">
-            <AlertTriangle size={20} className="text-amber-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-300">Pending Applications Alert (Admin)</p>
-            <p className="text-xs text-gray-300 mt-0.5 font-medium">
-              There are <span className="text-amber-400 font-bold">{adminPendingOver7DaysCount}</span> applications pending across the platform for more than 7 days.
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15 animate-pulse">
+          <AlertTriangle size={20} className="text-amber-400" />
+          <div className="flex-1 text-xs">
+            <p className="font-semibold text-amber-300">Pending Applications Alert</p>
+            <p className="text-gray-300 mt-0.5 font-medium">
+              There are <span className="text-amber-400 font-bold">{adminPendingOver7DaysCount}</span> applications pending review for more than 7 days.
             </p>
           </div>
-          <Link href="/admin/jobs" className="text-xs text-amber-400 font-bold hover:text-amber-300 whitespace-nowrap bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors">
-            Manage Jobs →
+          <Link href="/admin/jobs" className="text-[10px] uppercase font-bold text-amber-400 whitespace-nowrap bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg transition-colors">
+            Manage Jobs
           </Link>
         </div>
       )}
 
-      {/* Stat Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {statsConfig.map((card, i) => (
-          <StatCard key={i} {...card} />
+      {/* BI Navigation Tabs */}
+      <div className="flex gap-1 overflow-x-auto pb-1 border-b border-white/[0.06] no-scrollbar">
+        {[
+          { id: 'overview', label: 'Dashboard Overview' },
+          { id: 'rankings', label: 'Business Rankings' },
+          { id: 'revenue', label: 'Revenue & Billing' },
+          { id: 'leads', label: 'Lead Intelligence' },
+          { id: 'audit', label: 'Audit Activities' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveBiTab(tab.id)}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              activeBiTab === tab.id
+                ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/25 border border-violet-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+            }`}
+          >
+            {tab.label}
+          </button>
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Pending Approvals */}
-        <div className="xl:col-span-2">
-          <div className="glass-card rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                  <Clock size={16} className="text-amber-400" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">Pending Approvals</h2>
-                  <p className="text-[10px] text-gray-500">Requires your action</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-bold">
-                {pendingApprovals.length}
-              </span>
-            </div>
-            {companiesLoading || jobsLoading ? (
-              <div className="p-5 space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white/[0.06] shimmer" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-2/3 bg-white/[0.06] rounded shimmer" />
-                      <div className="h-3 w-1/3 bg-white/[0.06] rounded shimmer" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : pendingApprovals.length === 0 ? (
-              <div className="p-8 text-center">
-                <CheckCircle size={32} className="text-emerald-400 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">All caught up! No pending approvals.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/[0.04]">
-                {pendingApprovals.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.type === 'business' ? 'bg-cyan-500/10' : item.type === 'job' ? 'bg-emerald-500/10' : 'bg-violet-500/10'}`}>
-                      {item.type === 'business' ? <Building size={18} className="text-cyan-400" /> : item.type === 'job' ? <BriefcaseBusiness size={18} className="text-emerald-400" /> : <CreditCard size={18} className="text-violet-400" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{item.name}</p>
-                      <p className="text-[11px] text-gray-500">
-                        {item.type === 'business' ? (item as any).category : (item as any).company} · {item.district} · {item.date}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {actionLoading === item.id ? (
-                        <Loader2 size={16} className="text-violet-400 animate-spin" />
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleApprove(item.id, item.type, (item as any).raw)}
-                            className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors cursor-pointer"
-                            title="Approve"
-                          >
-                            <CheckCircle size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleReject(item.id, item.type)}
-                            className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
-                            title="Reject"
-                          >
-                            <XCircle size={16} />
-                          </button>
-                          <Link
-                            href={item.type === 'business' ? `/admin/businesses?focus=${item.id}` : item.type === 'job' ? `/admin/jobs?focus=${item.id}` : `/admin/subscriptions`}
-                            className="p-2 rounded-lg bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] transition-colors"
-                            title="View Details"
-                          >
-                            <Eye size={16} />
-                          </Link>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="px-5 py-3 border-t border-white/[0.06]">
-              <Link href="/admin/businesses" className="text-xs text-violet-400 hover:text-violet-300 font-medium flex items-center gap-1">
-                View all approvals <ChevronRight size={14} />
-              </Link>
-            </div>
+      {/* 1. OVERVIEW TAB */}
+      {activeBiTab === 'overview' && (
+        <div className="space-y-6">
+          {/* Stat Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {statsConfig.map((card, i) => (
+              <StatCard key={i} {...card} />
+            ))}
           </div>
-        </div>
 
-        {/* Recent Activity */}
-        <div className="xl:col-span-1">
-          <div className="glass-card rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <Activity size={16} className="text-violet-400" />
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Pending Approvals Queue */}
+            <div className="xl:col-span-2 glass-card rounded-2xl overflow-hidden border border-white/[0.06]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] bg-white/[0.01]">
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Clock size={16} className="text-amber-400" /> Pending Approval Pipeline
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-black">
+                  {pendingApprovals.length}
+                </span>
+              </div>
+              {companiesLoading || jobsLoading ? (
+                <div className="p-5 space-y-3">
+                  <Loader2 size={24} className="text-violet-400 animate-spin mx-auto" />
                 </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
-                  <p className="text-[10px] text-gray-500">Platform events</p>
+              ) : pendingApprovals.length === 0 ? (
+                <div className="p-12 text-center">
+                  <CheckCircle size={32} className="text-emerald-400 mx-auto mb-3" />
+                  <p className="text-xs text-gray-400">All caught up! No items pending admin approvals.</p>
                 </div>
-              </div>
-            </div>
-            {activitiesLoading ? (
-              <div className="p-5 space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white/[0.06] shimmer" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 w-3/4 bg-white/[0.06] rounded shimmer" />
-                      <div className="h-3 w-1/2 bg-white/[0.06] rounded shimmer" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : activities.length === 0 ? (
-              <div className="p-8 text-center">
-                <Activity size={28} className="text-gray-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No activity yet. Actions will appear here as they happen.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/[0.04]">
-                {activities.map((activity: any) => {
-                  const Icon = getActivityIcon(activity.action || '');
-                  return (
-                    <div key={activity.id} className="flex items-start gap-3 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-                      <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Icon size={14} className="text-gray-400" />
+              ) : (
+                <div className="divide-y divide-white/[0.04]">
+                  {pendingApprovals.map((item) => (
+                    <div key={item.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/[0.04]`}>
+                        {item.type === 'business' ? <Building2 size={16} className="text-cyan-400" /> : item.type === 'job' ? <Briefcase size={16} className="text-emerald-400" /> : <CreditCard size={16} className="text-violet-400" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-400">{activity.action}</p>
-                        <p className="text-sm font-medium text-white truncate">{activity.target}</p>
-                        <p className="text-[10px] text-gray-600 mt-0.5">{formatTime(activity.timestamp)}</p>
+                        <p className="text-xs font-bold text-white truncate">{item.name}</p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">
+                          {item.type === 'business' ? (item as any).category : (item as any).company} · {item.district} · {item.date}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {actionLoading === item.id ? (
+                          <Loader2 size={14} className="text-violet-400 animate-spin" />
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleApprove(item.id, item.type, (item as any).raw)}
+                              className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                              title="Approve"
+                            >
+                              <CheckCircle size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleReject(item.id, item.type)}
+                              className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-colors"
+                              title="Reject"
+                            >
+                              <XCircle size={14} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Platform summary stats */}
+            <div className="glass-card rounded-2xl p-5 border border-white/[0.06] space-y-4">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <Activity size={16} className="text-violet-400" /> Platform Summary
+              </h2>
+              <div className="space-y-3.5">
+                {[
+                  { label: 'Registered Businesses', value: stats.totalBusinesses, color: 'text-cyan-400' },
+                  { label: 'Active Jobs', value: stats.activeJobs, color: 'text-emerald-400' },
+                  { label: 'Pending payment approvals', value: pendingRequests.length, color: 'text-amber-400' },
+                  { label: 'Total Job Applications', value: stats.totalApplications, color: 'text-purple-400' },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <span className="text-xs text-gray-400">{item.label}</span>
+                    <span className={`text-sm font-bold ${item.color}`}>{item.value}</span>
+                  </div>
+                ))}
               </div>
-            )}
-            <div className="px-5 py-3 border-t border-white/[0.06]">
-              <Link href="/admin/security" className="text-xs text-violet-400 hover:text-violet-300 font-medium flex items-center gap-1">
-                View all activity <ChevronRight size={14} />
-              </Link>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Platform Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Platform volume chart */}
-        <div className="lg:col-span-2">
-          <div className="glass-card rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-sm font-semibold text-white">Platform Volume Overview</h2>
-                <p className="text-[10px] text-gray-500 mt-0.5">Users, businesses, jobs, applications and leads</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xl font-bold text-white font-outfit">₹{stats.totalRevenue.toLocaleString('en-IN')}</p>
-                <p className="text-[10px] text-gray-500">Total active revenue</p>
-              </div>
+      {/* 2. RANKINGS TAB */}
+      {activeBiTab === 'rankings' && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Top Performing Businesses */}
+          <div className="glass-card rounded-2xl p-6 border border-white/[0.06] space-y-4 bg-gradient-to-br from-violet-500/5 to-transparent">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Crown size={15} className="text-yellow-400" /> Top Performing Businesses (Activity Rank)
+            </h3>
+            <div className="space-y-3">
+              {rankings.topPerforming.map((biz, idx) => (
+                <div key={biz.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                  <span className="text-xs font-black text-gray-500 w-5">#{idx + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-white truncate">{biz.name}</div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">{biz.category} · {biz.district}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs font-bold text-emerald-400">{(biz.visitCount || 0) + (biz.whatsappClickCount || 0) * 3 + (biz.callClickCount || 0) * 3} points</div>
+                    <div className="text-[9px] text-gray-600">Views: {biz.visitCount || 0}</div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="h-48 flex items-end justify-between gap-1 px-4">
-              {/* Simple bar chart visualization from stats */}
-              {[
-                { label: 'Users', value: stats.totalUsers, max: Math.max(stats.totalUsers, stats.totalBusinesses, stats.activeJobs, stats.totalApplications, stats.totalLeads, 1), color: 'from-violet-500 to-violet-600' },
-                { label: 'Business', value: stats.totalBusinesses, max: Math.max(stats.totalUsers, stats.totalBusinesses, stats.activeJobs, stats.totalApplications, stats.totalLeads, 1), color: 'from-cyan-500 to-cyan-600' },
-                { label: 'Jobs', value: stats.activeJobs, max: Math.max(stats.totalUsers, stats.totalBusinesses, stats.activeJobs, stats.totalApplications, stats.totalLeads, 1), color: 'from-emerald-500 to-emerald-600' },
-                { label: 'Apps', value: stats.totalApplications, max: Math.max(stats.totalUsers, stats.totalBusinesses, stats.activeJobs, stats.totalApplications, stats.totalLeads, 1), color: 'from-amber-500 to-amber-600' },
-                { label: 'Leads', value: stats.totalLeads, max: Math.max(stats.totalUsers, stats.totalBusinesses, stats.activeJobs, stats.totalApplications, stats.totalLeads, 1), color: 'from-rose-500 to-rose-600' },
-              ].map((bar) => {
-                const pct = bar.max > 0 ? Math.max((bar.value / bar.max) * 100, 5) : 5;
+          </div>
+
+          {/* Highest Lead Conversion Rate */}
+          <div className="glass-card rounded-2xl p-6 border border-white/[0.06] space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <TrendingUp size={15} className="text-emerald-400" /> Highest Lead Conversion Businesses
+            </h3>
+            <div className="space-y-3">
+              {rankings.highestConversion.map((biz, idx) => {
+                const rate = ((biz.contactSubmitCount || 0) / biz.visitCount * 100).toFixed(1);
                 return (
-                  <div key={bar.label} className="flex-1 flex flex-col items-center gap-2">
-                    <span className="text-[10px] text-gray-400 font-semibold">{bar.value}</span>
-                    <div
-                      className={`w-full rounded-t-lg bg-gradient-to-t ${bar.color} transition-all duration-1000`}
-                      style={{ height: `${pct}%`, minHeight: '8px' }}
-                    />
-                    <span className="text-[9px] text-gray-500">{bar.label}</span>
+                  <div key={biz.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                    <span className="text-xs font-black text-gray-500 w-5">#{idx + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-white truncate">{biz.name}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">Views: {biz.visitCount} · Enquiries: {biz.contactSubmitCount || 0}</div>
+                    </div>
+                    <span className="text-xs font-bold text-violet-400">{rate}% conv.</span>
                   </div>
                 );
               })}
             </div>
           </div>
-        </div>
 
-        {/* Platform Health */}
-        <div className="lg:col-span-1">
-          <div className="glass-card rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-white mb-4">Platform Summary</h2>
-            <div className="space-y-4">
-              {[
-                { label: 'Verified Businesses', value: stats.totalBusinesses.toString(), color: 'cyan' },
-                { label: 'Pending Businesses', value: stats.pendingBusinesses.toString(), color: stats.pendingBusinesses > 0 ? 'amber' : 'emerald' },
-                { label: 'Active Jobs', value: stats.activeJobs.toString(), color: 'emerald' },
-                { label: 'Pending Jobs', value: stats.pendingJobs.toString(), color: stats.pendingJobs > 0 ? 'amber' : 'emerald' },
-                { label: 'Unverified Users', value: stats.pendingUsers.toString(), color: stats.pendingUsers > 0 ? 'rose' : 'emerald' },
-              ].map((metric) => (
-                <div key={metric.label} className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400">{metric.label}</span>
-                  <span className={`text-sm font-bold ${colorMap[metric.color]?.text || 'text-white'}`}>{metric.value}</span>
+          {/* Most Viewed Businesses */}
+          <div className="glass-card rounded-2xl p-6 border border-white/[0.06] space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Eye size={15} className="text-cyan-400" /> Most Viewed Businesses
+            </h3>
+            <div className="space-y-3">
+              {rankings.mostViewed.map((biz, idx) => (
+                <div key={biz.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                  <span className="text-xs font-black text-gray-500 w-5">#{idx + 1}</span>
+                  <span className="text-xs font-bold text-white flex-1 truncate">{biz.name}</span>
+                  <span className="text-xs font-bold text-gray-400">{biz.visitCount || 0} views</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Most Contacted (Call + WhatsApp) */}
+          <div className="glass-card rounded-2xl p-6 border border-white/[0.06] space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Phone size={15} className="text-green-400" /> Most Contacted Businesses
+            </h3>
+            <div className="space-y-3">
+              {rankings.mostContacted.map((biz, idx) => (
+                <div key={biz.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                  <span className="text-xs font-black text-gray-500 w-5">#{idx + 1}</span>
+                  <span className="text-xs font-bold text-white flex-1 truncate">{biz.name}</span>
+                  <span className="text-xs font-bold text-green-400">
+                    {(biz.whatsappClickCount || 0) + (biz.callClickCount || 0)} clicks
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Status Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {stats.pendingBusinesses > 0 || stats.pendingJobs > 0 ? (
-          <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle size={20} className="text-amber-400" />
+      {/* 3. REVENUE TAB */}
+      {activeBiTab === 'revenue' && (
+        <div className="space-y-6">
+          {/* Revenue metrics row */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: 'Total Earnings', value: `₹${revenueStats.totalRevenue.toLocaleString()}`, color: 'text-emerald-400' },
+              { label: 'Standard Plan Revenue', value: `₹${revenueStats.standardPlanRev.toLocaleString()}`, color: 'text-cyan-400' },
+              { label: 'Premium Plan Revenue', value: `₹${revenueStats.premiumPlanRev.toLocaleString()}`, color: 'text-violet-400' },
+              { label: 'Pending Approval Payments', value: `₹${revenueStats.pendingRequestsAmount.toLocaleString()}`, color: 'text-amber-400' },
+            ].map(item => (
+              <div key={item.label} className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="text-xs text-gray-400 font-bold">{item.label}</div>
+                <div className={`mt-3 text-2xl font-black ${item.color}`}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Subscription Tiers Distribution */}
+            <div className="glass-card rounded-2xl p-6 border border-white/[0.06] space-y-4">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Users size={15} className="text-violet-400" /> Subscription Plan Tier Distribution
+              </h3>
+              <div className="space-y-3">
+                {[
+                  { label: 'Free Plan Users', count: subStats.free, percent: ((subStats.free / Math.max(1, allCompanies.length)) * 100).toFixed(0), color: 'bg-gray-500' },
+                  { label: 'Standard (Blue Tick) Users', count: subStats.standard, percent: ((subStats.standard / Math.max(1, allCompanies.length)) * 100).toFixed(0), color: 'bg-blue-500' },
+                  { label: 'Premium (Yellow Tick) Users', count: subStats.premium, percent: ((subStats.premium / Math.max(1, allCompanies.length)) * 100).toFixed(0), color: 'bg-yellow-500' },
+                  { label: 'Enterprise/Pro Users', count: subStats.enterprise, percent: ((subStats.enterprise / Math.max(1, allCompanies.length)) * 100).toFixed(0), color: 'bg-purple-500' },
+                ].map(tier => (
+                  <div key={tier.label} className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold text-white">
+                      <span>{tier.label}</span>
+                      <span>{tier.count} users ({tier.percent}%)</span>
+                    </div>
+                    <div className="w-full bg-white/[0.04] h-2 rounded-full overflow-hidden">
+                      <div className={`${tier.color} h-full`} style={{ width: `${tier.percent}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-300">
-                {stats.pendingBusinesses + stats.pendingJobs} Items Need Review
-              </p>
-              <p className="text-xs text-amber-400/60 mt-0.5">
-                {stats.pendingBusinesses} businesses and {stats.pendingJobs} jobs pending approval
-              </p>
+
+            {/* Top Revenue Contributing Businesses */}
+            <div className="glass-card rounded-2xl p-6 border border-white/[0.06] space-y-4">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <CreditCard size={15} className="text-emerald-400" /> Top Billing Contributions
+              </h3>
+              <div className="space-y-3">
+                {revenueStats.topBusinessesByRevenue.length > 0 ? (
+                  revenueStats.topBusinessesByRevenue.map((biz, idx) => (
+                    <div key={biz.name} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 font-bold">#{idx + 1}</span>
+                        <span className="font-bold text-white truncate max-w-[180px]">{biz.name}</span>
+                      </div>
+                      <span className="font-black text-emerald-400">₹{biz.value.toLocaleString('en-IN')}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-500 py-8 text-center">No billing contributions tracked.</p>
+                )}
+              </div>
             </div>
-            <Link href="/admin/businesses" className="text-xs text-amber-400 font-semibold hover:text-amber-300 whitespace-nowrap">
-              Review →
-            </Link>
           </div>
-        ) : null}
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-            <Globe size={20} className="text-emerald-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-emerald-300">Platform Connected to Firebase</p>
-            <p className="text-xs text-emerald-400/60 mt-0.5">All data is live and auto-updating in real-time</p>
-          </div>
-          <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold whitespace-nowrap">
-            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" /> Live
-          </span>
         </div>
-      </div>
+      )}
+
+      {/* 4. LEADS TAB */}
+      {activeBiTab === 'leads' && (
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-4">
+            {[
+              { label: 'Total Leads Generated', value: leadsStats.total, tone: 'text-violet-400' },
+              { label: 'WhatsApp Clicks', value: leadsStats.whatsappLeads, tone: 'text-green-400' },
+              { label: 'Phone Call Clicks', value: leadsStats.callLeads, tone: 'text-cyan-400' },
+              { label: 'RFQ Contact Submissions', value: leadsStats.formLeads, tone: 'text-amber-400' },
+            ].map(item => (
+              <div key={item.label} className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+                <span className="text-xs text-gray-400 font-medium block">{item.label}</span>
+                <span className={`text-2xl font-black block mt-2.5 ${item.tone}`}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Lead Details Breakdown Table */}
+          <div className="glass-card rounded-2xl border border-white/[0.06] overflow-hidden">
+            <div className="px-5 py-4 border-b border-white/[0.06] bg-white/[0.01]">
+              <h3 className="text-sm font-bold text-white">Direct Enquiry Leads Logs</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-gray-500 uppercase font-black tracking-wider bg-white/[0.01]">
+                    <th className="p-4">Customer Name</th>
+                    <th className="p-4">Phone Number</th>
+                    <th className="p-4">Interested In</th>
+                    <th className="p-4">Lead Source</th>
+                    <th className="p-4">Received Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {allLeads.length > 0 ? (
+                    allLeads.slice(0, 10).map((l: any) => (
+                      <tr key={l.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4 font-bold text-white">{l.customerName || 'Anonymous'}</td>
+                        <td className="p-4 text-gray-300">{l.customerPhone || 'N/A'}</td>
+                        <td className="p-4 text-emerald-400 font-semibold">{l.service || l.productName || 'General Inquiry'}</td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded font-bold uppercase text-[9px] ${
+                            l.source === 'whatsapp' || l.type === 'whatsapp' ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                            : l.source === 'call' || l.type === 'call' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                            : 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                          }`}>
+                            {l.source || l.type || 'Form'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-gray-500">
+                          {l.createdAt ? new Date(l.createdAt).toLocaleDateString() : 'Recent'}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-gray-500">No leads logs stored in platform.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. AUDIT TAB */}
+      {activeBiTab === 'audit' && (
+        <div className="glass-card rounded-2xl border border-white/[0.06] overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/[0.06] bg-white/[0.01] flex items-center justify-between">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Activity size={16} className="text-violet-400 animate-pulse" /> Platform Security & Audit Activity Logs
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-white/[0.06] text-gray-500 uppercase font-black tracking-wider bg-white/[0.01]">
+                  <th className="p-4">Action</th>
+                  <th className="p-4">Target Resource</th>
+                  <th className="p-4">Trigger Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {activitiesLoading ? (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center">
+                      <Loader2 size={20} className="text-violet-400 animate-spin mx-auto" />
+                    </td>
+                  </tr>
+                ) : activities.length > 0 ? (
+                  activities.map((act) => {
+                    const Icon = getActivityIcon(act.action || '');
+                    return (
+                      <tr key={act.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4 flex items-center gap-2 font-semibold text-gray-200">
+                          <Icon size={12} className="text-gray-500" />
+                          {act.action}
+                        </td>
+                        <td className="p-4 font-bold text-white">{act.target}</td>
+                        <td className="p-4 text-gray-500">{formatTime(act.timestamp)}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="p-8 text-center text-gray-500">No activity logs recorded.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

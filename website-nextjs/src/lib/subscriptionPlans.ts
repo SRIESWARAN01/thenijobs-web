@@ -78,14 +78,14 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   },
   {
     slug: 'basic',
-    name: 'Basic',
-    nameTA: 'அடிப்படை',
+    name: 'Standard',
+    nameTA: 'தரநிலை',
     tagline: 'Perfect for growing businesses',
     icon: '⚡',
     color: '#3b82f6',
     gradientFrom: 'from-blue-500',
     gradientTo: 'to-cyan-500',
-    pricing: { monthly: 499, quarterly: 1347, yearly: 4491 },
+    pricing: { monthly: 499, quarterly: 1347, yearly: 480 },
     features: [
       { label: 'Business Profile Page', included: true },
       { label: 'Post up to 10 Jobs', included: true, limit: '10 active jobs' },
@@ -120,7 +120,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     color: '#f59e0b',
     gradientFrom: 'from-amber-500',
     gradientTo: 'to-orange-500',
-    pricing: { monthly: 999, quarterly: 2697, yearly: 8991 },
+    pricing: { monthly: 999, quarterly: 2697, yearly: 1200 },
     features: [
       { label: 'Business Profile Page', included: true },
       { label: 'Post up to 50 Jobs', included: true, limit: '50 active jobs' },
@@ -155,7 +155,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     color: '#8b5cf6',
     gradientFrom: 'from-violet-500',
     gradientTo: 'to-purple-600',
-    pricing: { monthly: 2499, quarterly: 6747, yearly: 22491 },
+    pricing: { monthly: 2499, quarterly: 6747, yearly: 5000 },
     features: [
       { label: 'Business Profile Page', included: true },
       { label: 'Unlimited Job Postings', included: true },

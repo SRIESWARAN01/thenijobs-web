@@ -282,11 +282,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         setFirebaseUser(fbUser);
-        const profile = await fetchUserProfile(fbUser.uid);
+        let profile = await fetchUserProfile(fbUser.uid);
         if (auth.currentUser?.uid !== fbUser.uid) return;
 
         await syncVerifiedUserDocument(fbUser, profile);
         if (auth.currentUser?.uid !== fbUser.uid) return;
+
+        // If profile was null, it was just created/synced by syncVerifiedUserDocument. Re-fetch to populate state!
+        if (!profile) {
+          profile = await fetchUserProfile(fbUser.uid);
+          if (auth.currentUser?.uid !== fbUser.uid) return;
+        }
 
         if (profile) {
           const verifiedProfile = {

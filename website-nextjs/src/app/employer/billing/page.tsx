@@ -21,6 +21,7 @@ import {
   getEffectiveSubscriptionStatus,
   selectBestSubscription,
   toDate,
+  type VisibleSubscriptionPlanSlug,
 } from '@/lib/subscriptions';
 
 const iconMap = {
@@ -29,10 +30,11 @@ const iconMap = {
   Crown,
 };
 
-const colorMap = {
+const colorMap: Record<VisibleSubscriptionPlanSlug, string> = {
   free: 'border-white/10',
   basic: 'border-cyan-500/20',
   premium: 'border-amber-500/35 bg-gradient-to-b from-amber-500/10 to-transparent',
+  enterprise: 'border-purple-500/35 bg-gradient-to-b from-purple-500/10 to-transparent',
 };
 
 function formatDate(value?: unknown) {

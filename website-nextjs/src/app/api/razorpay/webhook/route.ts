@@ -23,8 +23,8 @@ export const dynamic = 'force-dynamic';
 
 // Plan config (mirrors functions/src/subscriptions.ts)
 const SERVER_PLAN_CONFIGS: Record<string, { price: number; name: string }> = {
-  basic: { price: 480, name: 'Basic Plan' },
-  premium: { price: 1200, name: 'Premium Plan' },
+  basic: { price: 499, name: 'Basic Plan' },
+  premium: { price: 999, name: 'Premium Plan' },
 };
 
 // ──────────────────────────────────────────────────────────────────

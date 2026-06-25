@@ -6,7 +6,8 @@ import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import {
   Plus, Edit2, Loader2, Search, Wrench, Check, X,
-  Sparkles, MapPin, ClipboardList, Info
+  Sparkles, MapPin, ClipboardList, Info,
+  Lock, ChevronRight, ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
@@ -56,12 +57,35 @@ export default function ServiceProviderServicesPage() {
   const company = companies[0];
   const companyId = company?.id;
 
+  // Compute active subscription plan badge (free, basic / Standard, premium)
+  const subscriptionBadge = company ? (() => {
+    if (company.subscriptionEndsAt) {
+      let endsAt: Date | null = null;
+      const val = company.subscriptionEndsAt;
+      if (val instanceof Date) endsAt = val;
+      else if (val && typeof val === 'object' && (val as any).seconds) endsAt = new Date((val as any).seconds * 1000);
+      else if (val) endsAt = new Date(String(val));
+
+      if (endsAt && endsAt < new Date()) {
+        return 'free';
+      }
+    }
+    return company.subscriptionPlan || (company.isPremium ? 'premium' : 'free');
+  })() : 'free';
+
   // 2. Fetch service provider's services
   const { data: services, loading: servicesLoading } = useCollection<any>('services', [
     where('providerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
 
+  const limit = subscriptionBadge === 'premium' ? 50 : subscriptionBadge === 'basic' ? 10 : 3;
+  const reachedLimit = services.length >= limit;
+
   const handleOpenAddModal = () => {
+    if (reachedLimit) {
+      alert(`Service limit reached. Your plan allows up to ${limit} services. Please upgrade your subscription.`);
+      return;
+    }
     setEditingService(null);
     setFormData({
       name: '',
@@ -88,6 +112,11 @@ export default function ServiceProviderServicesPage() {
   const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.uid) return;
+
+    if (!editingService && reachedLimit) {
+      alert(`Service limit reached! Your plan allows a maximum of ${limit} services. Please upgrade your subscription.`);
+      return;
+    }
 
     setActionLoading('save');
     try {
@@ -159,14 +188,27 @@ export default function ServiceProviderServicesPage() {
         <div>
           <h1 className="text-2xl font-bold">My Services</h1>
           <p className="text-sm text-gray-400 mt-1 font-outfit">Manage the services you offer to local clients in {LAUNCH_DISTRICT}</p>
+          {!loading && (
+            <p className="text-xs text-rose-455 font-semibold mt-1">
+              Active: {services.length} / {limit} services limit ({subscriptionBadge === 'free' ? 'Free Plan' : subscriptionBadge === 'basic' ? 'Standard Plan' : 'Premium Plan'})
+            </p>
+          )}
         </div>
         <button
           onClick={handleOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+          disabled={reachedLimit}
+          className={`inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity ${reachedLimit ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <Plus size={16} /> Add Service Listing
         </button>
       </div>
+
+      {reachedLimit && (
+        <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-550/10 text-xs text-amber-300 font-semibold flex items-center gap-2">
+          <ShieldAlert size={14} className="text-amber-400" />
+          Service listing limit reached ({services.length}/{limit}). Please delete existing services or upgrade your plan.
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">

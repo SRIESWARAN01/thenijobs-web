@@ -10,8 +10,9 @@ import * as helpers from './helpers';
 
 const SERVER_PLAN_CONFIGS = {
   free: { price: 0, name: 'Free Plan' },
-  basic: { price: 480, name: 'Basic Plan' },
-  premium: { price: 1200, name: 'Premium Plan' },
+  basic: { price: 499, name: 'Basic Plan' },
+  premium: { price: 999, name: 'Premium Plan' },
+  enterprise: { price: 5000, name: 'Enterprise Plan' },
 } as const;
 
 const {
@@ -132,8 +133,8 @@ export const createRazorpayOrder = onCall(
     const audience = getString(request.data?.audience) as 'seeker' | 'employer';
     const companyId = getString(request.data?.companyId);
 
-    if (planSlug !== 'basic' && planSlug !== 'premium') {
-      throw new HttpsError('invalid-argument', 'Invalid plan slug. Only basic and premium are supported.');
+    if (planSlug !== 'basic' && planSlug !== 'premium' && planSlug !== 'enterprise') {
+      throw new HttpsError('invalid-argument', 'Invalid plan slug. Only basic, premium, and enterprise are supported.');
     }
     if (audience !== 'seeker' && audience !== 'employer') {
       throw new HttpsError('invalid-argument', 'Invalid audience. Must be seeker or employer.');

@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import {
-  Building2, MapPin, Phone, Mail, Globe, FileText, Image,
+  Building2, MapPin, Phone, Mail, Globe, FileText, Image as ImageIcon,
   Video, Clock, ChevronRight, Check, ArrowLeft, ArrowRight,
-  Loader2, Upload, Plus, X, BadgeCheck
+  Loader2, Upload, Plus, X, BadgeCheck,
+  type LucideIcon
 } from 'lucide-react';
 import { BUSINESS_CATEGORIES, LAUNCH_DISTRICT, LAUNCH_STATE, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { Select } from '@/components/ui/Select';
@@ -16,10 +17,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
-const STEPS = [
+const STEPS: Array<{ id: number; label: string; icon: LucideIcon }> = [
   { id: 1, label: 'Basic Info', icon: Building2 },
   { id: 2, label: 'Contact & Location', icon: MapPin },
-  { id: 3, label: 'Media Upload', icon: Image },
+  { id: 3, label: 'Media Upload', icon: ImageIcon },
   { id: 4, label: 'Details & Social', icon: Globe },
   { id: 5, label: 'Services', icon: FileText },
   { id: 6, label: 'Preview & Submit', icon: Check },
@@ -310,7 +311,7 @@ export default function CompanyRegisterPage() {
           {step === 3 && (
             <div className="space-y-6">
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Image size={18} className="text-violet-400" /> Media Upload
+                <ImageIcon size={18} className="text-violet-400" /> Media Upload
               </h2>
               {[
                 { label: 'Company Logo', hint: 'PNG/JPG, Square, min 200×200px', accept: '.png,.jpg,.jpeg', icon: '🖼️' },

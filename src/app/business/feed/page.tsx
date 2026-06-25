@@ -186,11 +186,18 @@ export default function BusinessFeedPage() {
               <X size={14} />
             </button>
             {uploadLoading && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <div className="text-center">
-                  <Loader2 size={24} className="text-violet-400 animate-spin mx-auto mb-2" />
-                  <p className="text-xs text-white">{uploadProgress}%</p>
+              <div className="absolute inset-0 bg-slate-950/85 flex flex-col items-center justify-center p-4">
+                <Loader2 size={24} className="text-violet-400 animate-spin mb-2" />
+                <p className="text-xs text-white font-semibold">
+                  {uploadProgress <= 10 ? 'Preparing Media...' : uploadProgress < 90 ? 'Uploading to Cloud...' : 'Finishing Upload...'}
+                </p>
+                <div className="w-full max-w-[200px] bg-white/10 h-1.5 rounded-full overflow-hidden mt-2">
+                  <div 
+                    className="bg-gradient-to-r from-violet-500 to-indigo-500 h-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
                 </div>
+                <span className="text-[10px] text-gray-450 mt-1">{uploadProgress}%</span>
               </div>
             )}
           </div>

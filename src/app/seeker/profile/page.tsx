@@ -1312,10 +1312,10 @@ export default function SeekerProfilePage() {
         cropHeight={400}
         isCircular={true}
         title="Crop Profile Picture"
-        onCropComplete={async (croppedFile) => {
+        uploadPath={user?.uid ? `seekers/${user.uid}/avatar_${Date.now()}` : undefined}
+        onUploadComplete={async (url) => {
           try {
             if (!user?.uid) return;
-            const url = await uploadFile(croppedFile, `seekers/${user.uid}/avatar_${Date.now()}`);
             setProfile(p => ({ ...p, photoUrl: url }));
 
             // Save immediately to Firestore so it is stored permanently without requiring a full save profile click

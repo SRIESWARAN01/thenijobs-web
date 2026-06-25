@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ZoomIn, ZoomOut, Check, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, Check, RefreshCw, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { formatFileSize } from '@/lib/imageUtils';
+import { useUploadFile } from '@/hooks/useStorage';
 
 export interface ImageCropperModalProps {
   open: boolean;
@@ -12,7 +13,9 @@ export interface ImageCropperModalProps {
   aspectRatio: number; // width / height, e.g. 1 for square, 4 for banner (4:1)
   cropWidth: number;   // target output width (e.g. 400 or 1200)
   cropHeight: number;  // target output height (e.g. 400 or 300)
-  onCropComplete: (croppedFile: File) => void;
+  onCropComplete?: (croppedFile: File) => void;
+  onUploadComplete?: (url: string) => void; // New callback
+  uploadPath?: string; // New optional parameter. If provided, uploads internally
   title?: string;
   isCircular?: boolean; // visually displays a circle for logos/avatars
 }
@@ -25,6 +28,8 @@ export function ImageCropperModal({
   cropWidth,
   cropHeight,
   onCropComplete,
+  onUploadComplete,
+  uploadPath,
   title = 'Crop Image',
   isCircular = false,
 }: ImageCropperModalProps) {
@@ -33,6 +38,16 @@ export function ImageCropperModal({
   const [stage, setStage] = useState<'crop' | 'preview'>('crop');
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
+
+  // Dynamic aspect ratio states
+  const [currentAspectRatio, setCurrentAspectRatio] = useState(aspectRatio || 1);
+  const [targetWidth, setTargetWidth] = useState(cropWidth || 400);
+  const [targetHeight, setTargetHeight] = useState(cropHeight || 400);
+
+  // Upload States
+  const { uploadFile, progress: fireProgress, loading: fireLoading, error: fireError } = useUploadFile();
+  const [modalUploading, setModalUploading] = useState(false);
+  const [modalUploadError, setModalUploadError] = useState<string | null>(null);
 
   // Translation and zoom state
   const [zoom, setZoom] = useState(1);
@@ -53,6 +68,18 @@ export function ImageCropperModal({
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  // Sync aspect ratio props when they change
+  useEffect(() => {
+    if (aspectRatio) {
+      setCurrentAspectRatio(aspectRatio);
+    }
+  }, [aspectRatio]);
+
+  useEffect(() => {
+    if (cropWidth) setTargetWidth(cropWidth);
+    if (cropHeight) setTargetHeight(cropHeight);
+  }, [cropWidth, cropHeight]);
+
   // Read file as Data URL on load
   useEffect(() => {
     if (!file) {
@@ -70,6 +97,8 @@ export function ImageCropperModal({
       setCroppedBlob(null);
       setZoom(1);
       setOffset({ x: 0, y: 0 });
+      setModalUploadError(null);
+      setModalUploading(false);
     };
     reader.readAsDataURL(file);
   }, [file]);
@@ -80,7 +109,7 @@ export function ImageCropperModal({
       const rect = containerRef.current.getBoundingClientRect();
       setContainerSize({ width: rect.width, height: rect.height });
     }
-  }, [open, imageLoaded]);
+  }, [open, imageLoaded, currentAspectRatio]);
 
   // Calculate viewport size to fit nicely inside container
   const W = containerSize.width;
@@ -90,10 +119,10 @@ export function ImageCropperModal({
 
   if (W && H) {
     V_w = W * 0.85;
-    V_h = V_w / aspectRatio;
-    if (V_h > H * 0.85) {
-      V_h = H * 0.85;
-      V_w = V_h * aspectRatio;
+    V_h = V_w / currentAspectRatio;
+    if (V_h > H * 0.72) {
+      V_h = H * 0.72;
+      V_w = V_h * currentAspectRatio;
     }
   }
 
@@ -140,6 +169,39 @@ export function ImageCropperModal({
     const nextZoom = Math.max(minZoom, Math.min(newZoom, minZoom * 4));
     setZoom(nextZoom);
     setOffset((prev) => getBoundedOffset(prev.x, prev.y, nextZoom));
+  };
+
+  // Dynamic aspect ratio changes
+  const handleRatioChange = (ratio: number | 'original') => {
+    let newRatio = 1;
+    if (ratio === 'original') {
+      newRatio = imageInfo.width && imageInfo.height ? imageInfo.width / imageInfo.height : 1;
+    } else {
+      newRatio = ratio;
+    }
+    setCurrentAspectRatio(newRatio);
+    
+    // Adjust target width & height dynamically to preserve the ratio
+    const baseWidth = cropWidth || 400;
+    setTargetWidth(baseWidth);
+    setTargetHeight(Math.round(baseWidth / newRatio));
+
+    // Recalculate zoom boundaries for new ratio
+    if (W && H && imageInfo.width && imageInfo.height) {
+      let tempV_w = W * 0.85;
+      let tempV_h = tempV_w / newRatio;
+      if (tempV_h > H * 0.72) {
+        tempV_h = H * 0.72;
+        tempV_w = tempV_h * newRatio;
+      }
+      const scaleX = tempV_w / imageInfo.width;
+      const scaleY = tempV_h / imageInfo.height;
+      const calculatedMinZoom = Math.max(scaleX, scaleY);
+      
+      setMinZoom(calculatedMinZoom);
+      setZoom(calculatedMinZoom);
+      setOffset({ x: 0, y: 0 });
+    }
   };
 
   // Drag handlers
@@ -215,20 +277,20 @@ export function ImageCropperModal({
 
     const img = imgRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     // The scale of canvas resolution compared to display viewport
-    const resScale = cropWidth / V_w;
+    const resScale = targetWidth / V_w;
 
     // Calculate drawing parameters on canvas
     const drawWidth = imageInfo.width * zoom * resScale;
     const drawHeight = imageInfo.height * zoom * resScale;
-    const drawX = (cropWidth / 2) + (offset.x * resScale) - (drawWidth / 2);
-    const drawY = (cropHeight / 2) + (offset.y * resScale) - (drawHeight / 2);
+    const drawX = (targetWidth / 2) + (offset.x * resScale) - (drawWidth / 2);
+    const drawY = (targetHeight / 2) + (offset.y * resScale) - (drawHeight / 2);
 
     // Draw to canvas with antialiasing
     ctx.imageSmoothingEnabled = true;
@@ -248,19 +310,42 @@ export function ImageCropperModal({
           resolve();
         },
         'image/webp',
-        0.8
+        0.82
       );
     });
   };
 
-  const handleSave = () => {
-    if (croppedBlob && file) {
-      // Re-create a File object from the blob
-      const croppedFile = new File([croppedBlob], file.name.replace(/\.[^/.]+$/, '') + '_cropped.webp', {
-        type: 'image/webp',
-        lastModified: Date.now(),
-      });
-      onCropComplete(croppedFile);
+  const handleSave = async () => {
+    if (!croppedBlob || !file) return;
+
+    const fileExt = '.webp';
+    const baseName = file.name.replace(/\.[^/.]+$/, '');
+    const croppedFile = new File([croppedBlob], `${baseName}_cropped${fileExt}`, {
+      type: 'image/webp',
+      lastModified: Date.now(),
+    });
+
+    if (uploadPath) {
+      setModalUploading(true);
+      setModalUploadError(null);
+      try {
+        const downloadUrl = await uploadFile(croppedFile, uploadPath);
+        if (onUploadComplete) {
+          onUploadComplete(downloadUrl);
+        }
+        setTimeout(() => {
+          setModalUploading(false);
+          onClose();
+        }, 1000);
+      } catch (err: any) {
+        console.error('[Modal Upload Error]:', err);
+        setModalUploadError(err.message || 'Upload failed. Please try again.');
+        setModalUploading(false);
+      }
+    } else {
+      if (onCropComplete) {
+        onCropComplete(croppedFile);
+      }
       onClose();
     }
   };
@@ -274,20 +359,88 @@ export function ImageCropperModal({
     };
   }, [previewDataUrl]);
 
+  // Determine upload progress message
+  let uploadStatusText = 'Preparing Image...';
+  if (fireProgress > 10 && fireProgress <= 85) {
+    uploadStatusText = 'Uploading to Cloud...';
+  } else if (fireProgress > 85 && fireProgress < 100) {
+    uploadStatusText = 'Almost Done...';
+  } else if (fireProgress === 100) {
+    uploadStatusText = 'Upload Successful';
+  }
+
+  const aspectRatios = [
+    { label: 'Square (1:1)', value: 1 },
+    { label: 'Portrait (3:4)', value: 3 / 4 },
+    { label: 'Landscape (16:9)', value: 16 / 9 },
+    { label: 'Custom (Original)', value: 'original' as const },
+  ];
+
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={modalUploading ? () => {} : onClose}
       title={stage === 'crop' ? title : 'Confirm Crop'}
       size="md"
     >
-      <div className="flex flex-col h-[480px] font-outfit text-white">
+      <div className="relative flex flex-col h-[540px] font-outfit text-white">
+        
+        {/* Upload Overlay */}
+        {modalUploading && (
+          <div className="absolute inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center animate-fade-in rounded-xl">
+            <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mb-4" />
+            <h3 className="text-sm font-semibold text-white mb-2">{uploadStatusText}</h3>
+            <div className="w-full max-w-xs bg-white/10 h-2 rounded-full overflow-hidden mb-2">
+              <div 
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full transition-all duration-300"
+                style={{ width: `${fireProgress}%` }}
+              />
+            </div>
+            <span className="text-xs text-gray-400 font-medium">{fireProgress}%</span>
+          </div>
+        )}
+
+        {/* Error Overlay */}
+        {(modalUploadError || fireError) && (
+          <div className="absolute inset-0 z-50 bg-slate-950/98 flex flex-col items-center justify-center p-6 text-center rounded-xl">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-4">
+              <span className="text-rose-400 font-bold text-xl">!</span>
+            </div>
+            <h3 className="text-sm font-semibold text-white mb-2">Upload Failed</h3>
+            <p className="text-xs text-rose-400 mb-6 max-w-xs">{modalUploadError || fireError}</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setModalUploadError(null); }}
+                className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-gray-300 hover:bg-white/[0.08]"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={handleSave}
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Original File Metadata display */}
+        {imageLoaded && file && (
+          <div className="flex justify-between items-center px-3.5 py-2 bg-white/[0.02] border border-white/[0.05] rounded-xl mb-3 text-[11px] text-gray-400 shrink-0">
+            <span className="truncate max-w-[180px]">File: {file.name}</span>
+            <span className="shrink-0">
+              Size: <strong className="text-gray-300">{formatFileSize(file.size)}</strong> | Res: <strong className="text-gray-300">{imageInfo.width} × {imageInfo.height} px</strong>
+            </span>
+          </div>
+        )}
+
         {stage === 'crop' ? (
           <>
-            {/* Cropping Screen */}
+            {/* Cropping Workspace */}
             <div
               ref={containerRef}
-              className="flex-1 w-full bg-black/90 relative overflow-hidden select-none rounded-xl border border-white/[0.06] cursor-move"
+              className="flex-1 w-full bg-black/90 relative overflow-hidden select-none rounded-xl border border-white/[0.06] cursor-move shrink-0"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUpOrLeave}
@@ -331,17 +484,12 @@ export function ImageCropperModal({
                   />
                 </div>
               )}
-
-              {!imageLoaded && imgUrl && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
-                </div>
-              )}
             </div>
 
-            {/* Slider & Zoom Controls */}
+            {/* Zoom Slider & Aspect Ratios */}
             {imageLoaded && (
-              <div className="p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl mt-4 space-y-3">
+              <div className="p-3.5 bg-white/[0.01] border border-white/[0.04] rounded-xl mt-3 space-y-3 shrink-0">
+                {/* Zoom */}
                 <div className="flex items-center gap-3">
                   <ZoomOut className="w-4 h-4 text-gray-400 shrink-0" />
                   <input
@@ -355,15 +503,37 @@ export function ImageCropperModal({
                   />
                   <ZoomIn className="w-4 h-4 text-gray-400 shrink-0" />
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <span>Drag image to adjust position</span>
-                  <span className="font-semibold text-cyan-400">Zoom: {Math.round((zoom / minZoom) * 100)}%</span>
+
+                {/* Aspect Ratios Selector */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] text-gray-400">Aspect Ratio</span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {aspectRatios.map((ratio) => {
+                      const isSelected = ratio.value === 'original' 
+                        ? Math.abs(currentAspectRatio - (imageInfo.width / imageInfo.height)) < 0.01
+                        : Math.abs(currentAspectRatio - (ratio.value as number)) < 0.01;
+                      return (
+                        <button
+                          key={ratio.label}
+                          type="button"
+                          onClick={() => handleRatioChange(ratio.value)}
+                          className={`py-1.5 px-2 rounded-lg border text-[10px] font-semibold transition-all ${
+                            isSelected
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold'
+                              : 'bg-white/[0.02] border-white/[0.08] text-gray-400 hover:bg-white/[0.04]'
+                          }`}
+                        >
+                          {ratio.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Actions Footer */}
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="flex justify-end gap-3 mt-3 shrink-0">
               <button
                 onClick={onClose}
                 className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-gray-300 hover:bg-white/[0.08]"
@@ -373,7 +543,7 @@ export function ImageCropperModal({
               <button
                 disabled={!imageLoaded}
                 onClick={generateCrop}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-40 flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-40"
               >
                 Preview Crop
               </button>
@@ -382,7 +552,7 @@ export function ImageCropperModal({
         ) : (
           <>
             {/* Preview Screen */}
-            <div className="flex-1 w-full bg-black/95 border border-white/[0.06] rounded-xl overflow-hidden flex items-center justify-center p-6 relative">
+            <div className="flex-1 w-full bg-black/95 border border-white/[0.06] rounded-xl overflow-hidden flex items-center justify-center p-6 relative shrink-0">
               {previewDataUrl ? (
                 <div className="relative border border-white/10 rounded-xl overflow-hidden shadow-2xl max-w-full max-h-full">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -390,7 +560,7 @@ export function ImageCropperModal({
                     src={previewDataUrl}
                     alt="Cropped Preview"
                     className={`object-contain max-h-[300px] ${isCircular ? 'rounded-full aspect-square' : ''}`}
-                    style={{ aspectRatio: `${aspectRatio}` }}
+                    style={{ aspectRatio: `${currentAspectRatio}` }}
                   />
                 </div>
               ) : (
@@ -398,12 +568,12 @@ export function ImageCropperModal({
               )}
             </div>
 
-            <div className="mt-4 p-3 bg-cyan-500/5 border border-cyan-500/10 rounded-xl text-center text-xs text-cyan-300/80">
-              The image has been optimized and compressed for fast load speeds.
+            <div className="mt-3 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-center text-xs text-emerald-300/80 shrink-0">
+              Image optimized & converted to WebP for high performance uploads.
             </div>
 
             {/* Actions Footer */}
-            <div className="flex justify-between gap-3 mt-4">
+            <div className="flex justify-between gap-3 mt-3 shrink-0">
               <button
                 onClick={() => setStage('crop')}
                 className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-gray-300 hover:bg-white/[0.08] flex items-center gap-1.5"
@@ -419,7 +589,7 @@ export function ImageCropperModal({
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-xs font-semibold text-white hover:opacity-90 flex items-center gap-1.5"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-xs font-semibold text-white hover:opacity-90 flex items-center gap-1.5"
                 >
                   <Check className="w-4 h-4" /> Save & Upload
                 </button>
@@ -431,3 +601,5 @@ export function ImageCropperModal({
     </Modal>
   );
 }
+
+export default ImageCropperModal;

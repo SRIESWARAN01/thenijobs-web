@@ -689,21 +689,13 @@ export default function ProfileSetupPage() {
         cropHeight={cropType === 'logo' ? 400 : 300}
         isCircular={cropType === 'logo'}
         title={cropType === 'logo' ? 'Crop Company Logo' : 'Crop Cover Banner'}
-        onCropComplete={async (croppedFile) => {
-          try {
-            if (!user?.uid) return;
-            const uploadPath = cropType === 'logo'
-              ? `companies/${user.uid}/logo_${Date.now()}`
-              : `companies/${user.uid}/cover_${Date.now()}`;
-            const url = await uploadFile(croppedFile, uploadPath);
-            setBusinessForm(prev => ({
-              ...prev,
-              [cropType === 'logo' ? 'logoUrl' : 'coverUrl']: url
-            }));
-          } catch (err) {
-            console.error(err);
-            alert('Upload failed: ' + (err as Error).message);
-          }
+        uploadPath={user?.uid && cropType ? (cropType === 'logo' ? `companies/${user.uid}/logo_${Date.now()}` : `companies/${user.uid}/cover_${Date.now()}`) : undefined}
+        onUploadComplete={async (url) => {
+          if (!cropType) return;
+          setBusinessForm(prev => ({
+            ...prev,
+            [cropType === 'logo' ? 'logoUrl' : 'coverUrl']: url
+          }));
         }}
       />
     </div>

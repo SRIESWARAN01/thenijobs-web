@@ -97,8 +97,7 @@ export function isPublicJobVisible(job: {
   if (!isActiveJobSlot(job, now)) return false;
   if (job.companyDeleted === true) return false;
   if (job.companyIsActive === false) return false;
-  if (job.companyStatus && !['approved', 'verified', 'active'].includes(job.companyStatus)) return false;
-  if (job.companyVerificationStatus && job.companyVerificationStatus !== 'verified') return false;
+  if (job.companyStatus && !['approved', 'verified', 'active', 'pending'].includes(job.companyStatus)) return false;
   return true;
 }
 

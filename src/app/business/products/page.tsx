@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { createProduct, updateProduct, deleteProduct } from '@/lib/firebase/shopService';
 import { useUploadFile } from '@/hooks/useStorage';
+import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 
 interface ProductDoc {
   id: string;
@@ -98,6 +99,8 @@ export default function BusinessProductsPage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductDoc | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -180,30 +183,9 @@ export default function BusinessProductsPage() {
       return;
     }
 
-    const minSize = 10 * 1024;
-    const maxSize = 1 * 1024 * 1024;
-    if (file.size < minSize) {
-      alert('Image size is too small. Minimum size required is 10KB.');
-      return;
-    }
-    if (file.size > maxSize) {
-      alert('Image size exceeds 1MB limit. Maximum size allowed is 1MB.');
-      return;
-    }
-
-    setImageUploading(true);
-    try {
-      const compressed = await compressImage(file);
-      const storagePath = `companies/${companyId}/products/product_${Date.now()}`;
-      const downloadUrl = await uploadFile(compressed, storagePath);
-      setFormData(prev => ({ ...prev, imageUrl: downloadUrl }));
-      alert('Image uploaded and optimized successfully!');
-    } catch (err: any) {
-      console.error('[Product Image Upload Error]:', err);
-      alert('Image upload failed: ' + err.message);
-    } finally {
-      setImageUploading(false);
-    }
+    setCropFile(file);
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
   };
 
   const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -417,7 +399,7 @@ export default function BusinessProductsPage() {
         <Box size={48} className="text-gray-600 mb-4" />
         <h2 className="text-lg font-semibold">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to add and manage your products/services.</p>
-        <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:opacity-90">
+        <Link href="/business/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:opacity-90">
           Setup Company Profile
         </Link>
       </div>
@@ -790,6 +772,24 @@ export default function BusinessProductsPage() {
             </form>
           </div>
         </div>
+      )}
+      {showCropper && (
+        <ImageCropperModal
+          open={showCropper}
+          onClose={() => {
+            setShowCropper(false);
+            setCropFile(null);
+          }}
+          file={cropFile}
+          aspectRatio={4/3}
+          cropWidth={800}
+          cropHeight={600}
+          title="Crop Product Image"
+          uploadPath={companyId ? `companies/${companyId}/products/product_${Date.now()}` : undefined}
+          onUploadComplete={(url) => {
+            setFormData(prev => ({ ...prev, imageUrl: url }));
+          }}
+        />
       )}
     </div>
   );

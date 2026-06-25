@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { where } from 'firebase/firestore';
 import {
@@ -63,6 +64,9 @@ const loadRazorpayScript = () => {
 
 export default function EmployerBillingPage() {
   const { user } = useAuth();
+  const pathname = usePathname();
+  const isBusinessPortal = pathname ? pathname.startsWith('/business') : false;
+  const companyProfileUrl = isBusinessPortal ? '/business/company-profile' : '/employer/company-profile';
   const [requestingPlan, setRequestingPlan] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState<string | null>(null);
 
@@ -230,7 +234,7 @@ export default function EmployerBillingPage() {
         <p className="mt-2 max-w-sm text-sm text-gray-400">
           Please register your company profile first to view yearly plans and subscriptions.
         </p>
-        <Link href="/employer/company-profile" className="mt-4 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 px-5 py-2.5 font-semibold text-white hover:opacity-90">
+        <Link href={companyProfileUrl} className="mt-4 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 px-5 py-2.5 font-semibold text-white hover:opacity-90">
           Setup Company Profile
         </Link>
       </div>

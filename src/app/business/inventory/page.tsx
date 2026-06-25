@@ -62,7 +62,7 @@ export default function BusinessInventoryPage() {
         <Box size={48} className="text-gray-600 mb-4" />
         <h2 className="text-lg font-semibold animate-pulse">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to manage your catalog inventory.</p>
-        <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:opacity-90">
+        <Link href="/business/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:opacity-90">
           Setup Company Profile
         </Link>
       </div>

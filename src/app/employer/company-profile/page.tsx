@@ -1097,16 +1097,9 @@ export default function CompanyProfilePage() {
             ? 'Crop Cover Banner'
             : 'Crop Gallery Image'
         }
-        onCropComplete={async (croppedFile) => {
+        uploadPath={user?.uid && cropType ? (cropType === 'logo' ? `companies/${user.uid}/logo_${Date.now()}` : cropType === 'cover' ? `companies/${user.uid}/cover_${Date.now()}` : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`) : undefined}
+        onUploadComplete={async (url) => {
           try {
-            if (!user?.uid) return;
-            const uploadPath = cropType === 'logo'
-              ? `companies/${user.uid}/logo_${Date.now()}`
-              : cropType === 'cover'
-              ? `companies/${user.uid}/cover_${Date.now()}`
-              : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`;
-            
-            const url = await uploadFile(croppedFile, uploadPath);
             if (cropType === 'logo') {
               update('logoUrl', url);
             } else if (cropType === 'cover') {
@@ -1118,7 +1111,6 @@ export default function CompanyProfilePage() {
             }
           } catch (err) {
             console.error(err);
-            alert('Upload failed: ' + (err as Error).message);
           } finally {
             setGalleryCropIndex(null);
           }

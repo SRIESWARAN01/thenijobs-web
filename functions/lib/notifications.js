@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createNotification = void 0;
+exports.onJobCreated = exports.createNotification = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const config_1 = require("./config");
 const firestore_1 = require("firebase-admin/firestore");
@@ -91,4 +91,160 @@ exports.createNotification = (0, https_1.onCall)({ region: config_1.REGION, enfo
 // ============================================================
 // EXISTING: Scheduled Functions (preserved)
 // ============================================================
+const firestore_2 = require("firebase-functions/v2/firestore");
+exports.onJobCreated = (0, firestore_2.onDocumentCreated)({
+    document: 'jobs/{jobId}',
+    region: config_1.REGION,
+}, async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+        console.log('No data snapshot for job event.');
+        return;
+    }
+    const jobData = snapshot.data();
+    const jobId = event.params.jobId;
+    // Only notify if job is active/published
+    if (jobData.status !== 'active' && jobData.status !== 'approved' && jobData.isActive !== true) {
+        console.log(`Job ${jobId} is not active. Status: ${jobData.status}, isActive: ${jobData.isActive}. Skipping notification.`);
+        return;
+    }
+    console.log(`Processing notifications for new job: ${jobData.title} at ${jobData.companyName || 'Company'}`);
+    const notifiedSeekers = new Set();
+    // 1. Process match from Job Alerts collection
+    try {
+        const alertsSnap = await config_1.db.collection('jobAlerts').where('status', '==', 'active').get();
+        console.log(`Fetched ${alertsSnap.size} active job alerts to check matching.`);
+        for (const alertDoc of alertsSnap.docs) {
+            const alert = alertDoc.data();
+            const userId = alert.userId;
+            if (!userId)
+                continue;
+            // Check matching parameters:
+            // Alert Category matching Job Category (case-insensitive)
+            const matchCategory = !alert.category || alert.category.toLowerCase() === (jobData.category || '').toLowerCase();
+            // Alert Location matching Job location/district (case-insensitive)
+            const matchLocation = !alert.district ||
+                alert.district.toLowerCase() === (jobData.location || '').toLowerCase() ||
+                alert.district.toLowerCase() === (jobData.district || '').toLowerCase();
+            // Alert JobType matching Job jobType
+            const matchJobType = !alert.jobType ||
+                (jobData.jobType && alert.jobType.toLowerCase().replace(/[^a-z]/g, '') === jobData.jobType.toLowerCase().replace(/[^a-z]/g, ''));
+            if (matchCategory && matchLocation && matchJobType) {
+                notifiedSeekers.add(userId);
+            }
+        }
+    }
+    catch (err) {
+        console.error('Error matching active job alerts:', err);
+    }
+    // 2. Process match from Seeker Profiles preferences
+    try {
+        const seekersSnap = await config_1.db.collection('seekerProfiles').where('isOpenToWork', '==', true).get();
+        console.log(`Fetched ${seekersSnap.size} open-to-work seeker profiles to check matching.`);
+        for (const seekerDoc of seekersSnap.docs) {
+            const seeker = seekerDoc.data();
+            const userId = seekerDoc.id; // Seeker document ID is the userId
+            if (notifiedSeekers.has(userId))
+                continue;
+            const prefs = seeker.preferences || {};
+            // Match preferred Categories
+            let matchCategory = true;
+            if (prefs.categories && prefs.categories.length > 0) {
+                matchCategory = prefs.categories.some((cat) => cat.toLowerCase() === (jobData.category || '').toLowerCase());
+            }
+            // Match preferred Locations (towns)
+            let matchLocation = true;
+            if (prefs.locations && prefs.locations.length > 0) {
+                matchLocation = prefs.locations.some((loc) => loc.toLowerCase() === (jobData.location || '').toLowerCase() ||
+                    loc.toLowerCase() === (jobData.district || '').toLowerCase());
+            }
+            // Match preferred Job Types
+            let matchJobType = true;
+            if (prefs.jobTypes && prefs.jobTypes.length > 0) {
+                matchJobType = prefs.jobTypes.some((type) => jobData.jobType && type.toLowerCase().replace(/[^a-z]/g, '') === jobData.jobType.toLowerCase().replace(/[^a-z]/g, ''));
+            }
+            // Match expected salary (job max salary must be >= seeker preferred min salary)
+            let matchSalary = true;
+            if (prefs.salaryMin && jobData.salaryMax) {
+                const minPref = parseFloat(prefs.salaryMin);
+                const maxJob = parseFloat(jobData.salaryMax);
+                if (!isNaN(minPref) && !isNaN(maxJob) && maxJob < minPref) {
+                    matchSalary = false;
+                }
+            }
+            // Match skills (at least one overlapping skill)
+            let matchSkills = true;
+            if (jobData.skills && jobData.skills.length > 0 && seeker.skills && seeker.skills.length > 0) {
+                const jobSkillsLower = jobData.skills.map((s) => s.toLowerCase().trim());
+                const seekerSkillsLower = seeker.skills.map((s) => s.toLowerCase().trim());
+                matchSkills = seekerSkillsLower.some((s) => jobSkillsLower.includes(s));
+            }
+            if (matchCategory && matchLocation && matchJobType && matchSalary && matchSkills) {
+                notifiedSeekers.add(userId);
+            }
+        }
+    }
+    catch (err) {
+        console.error('Error matching seeker profiles preferences:', err);
+    }
+    console.log(`Sending notifications to ${notifiedSeekers.size} matched seekers.`);
+    // 3. Deliver notifications
+    const title = `Matching Job Posted!`;
+    const salaryStr = jobData.salaryMin ? `₹${Number(jobData.salaryMin).toLocaleString('en-IN')} - ₹${Number(jobData.salaryMax).toLocaleString('en-IN')}/month` : '';
+    const message = `${jobData.companyName || 'A company'} is hiring for ${jobData.title} in ${jobData.location || jobData.district || 'Theni'}.${salaryStr ? ` Salary: ${salaryStr}` : ''}`;
+    const actionUrl = `/jobs/${jobId}`;
+    const batch = config_1.db.batch();
+    for (const userId of notifiedSeekers) {
+        // Add In-App notification doc
+        const notificationRef = config_1.db.collection('notifications').doc();
+        batch.set(notificationRef, {
+            userId,
+            type: 'job_alert',
+            title: `${jobData.title} at ${jobData.companyName || 'Hiring Company'}`,
+            message,
+            link: actionUrl,
+            actionUrl,
+            read: false,
+            isRead: false,
+            createdAt: firestore_1.FieldValue.serverTimestamp(),
+            // Structured fields for UI display:
+            jobId,
+            jobTitle: jobData.title,
+            companyName: jobData.companyName || 'Company',
+            location: jobData.location || jobData.district || 'Theni',
+            salary: salaryStr || null
+        });
+        // Send Push Notification asynchronously
+        sendPushNotificationSafe(userId, title, `${jobData.title} at ${jobData.companyName || 'Hiring Company'}`, actionUrl);
+    }
+    if (notifiedSeekers.size > 0) {
+        await batch.commit();
+        console.log(`Successfully committed batch notification writes for ${notifiedSeekers.size} users.`);
+    }
+});
+// Helper function to send push notification safely without blocking or throwing function errors
+async function sendPushNotificationSafe(userId, title, body, actionUrl) {
+    try {
+        const userSnap = await config_1.db.collection('seekerProfiles').doc(userId).get();
+        const fcmToken = userSnap.data()?.fcmToken;
+        if (fcmToken) {
+            const { getMessaging } = await Promise.resolve().then(() => __importStar(require('firebase-admin/messaging')));
+            await getMessaging().send({
+                token: fcmToken,
+                notification: {
+                    title,
+                    body,
+                },
+                data: {
+                    type: 'job_alert',
+                    actionUrl,
+                },
+            });
+            console.log(`[FCM Push] Sent successfully to user ${userId}`);
+        }
+    }
+    catch (err) {
+        console.warn(`[FCM Push] Failed to send to user ${userId}:`, err);
+    }
+}
 //# sourceMappingURL=notifications.js.map

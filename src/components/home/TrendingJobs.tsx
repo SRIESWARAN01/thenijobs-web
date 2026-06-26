@@ -30,6 +30,7 @@ interface TrendingJob {
   isUrgent: boolean;
   isPremium: boolean;
   skills: string[];
+  isPromoted?: boolean;
 }
 
 const getCategoryIcon = (category?: string) => {
@@ -56,7 +57,16 @@ export default function TrendingJobs() {
   ]);
 
   const jobsList: TrendingJob[] = useMemo(() => {
-    return dbJobs
+    // Sort so promoted jobs appear first
+    const sorted = [...dbJobs].sort((a: any, b: any) => {
+      const aProm = a.isPromoted || false;
+      const bProm = b.isPromoted || false;
+      if (aProm && !bProm) return -1;
+      if (!aProm && bProm) return 1;
+      return 0; // maintain Firestore orderBy('createdAt', 'desc') sorting
+    });
+
+    return sorted
       .filter((d: any) => isPublicJobVisible(d))
       .slice(0, 6)
       .map((d: any) => {
@@ -76,6 +86,7 @@ export default function TrendingJobs() {
           isPremium: d.isPremium || false,
           category: d.category || '',
           skills: d.skills || [],
+          isPromoted: d.isPromoted || false,
         };
       });
   }, [dbJobs]);

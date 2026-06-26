@@ -8,7 +8,7 @@ import {
   Building2, ArrowRight, BadgeCheck, Loader2, CalendarCheck
 } from 'lucide-react';
 
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
@@ -172,17 +172,18 @@ export default function SeekerJobsPage() {
       setSavedJobs([]);
       return;
     }
-    async function loadSavedJobs() {
-      try {
-        const q = query(collection(db, 'savedJobs'), where('userId', '==', userId));
-        const snap = await getDocs(q);
+    const q = query(collection(db, 'savedJobs'), where('userId', '==', userId));
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
         const ids = snap.docs.map(doc => doc.data().jobId);
         setSavedJobs(ids);
-      } catch (err) {
-        console.error('Error loading saved jobs:', err);
+      },
+      (err) => {
+        console.error('Error loading saved jobs in real-time:', err);
       }
-    }
-    loadSavedJobs();
+    );
+    return () => unsubscribe();
   }, [user?.uid]);
 
   const toggleType = (t: string) => setSelectedTypes(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);

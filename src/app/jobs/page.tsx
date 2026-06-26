@@ -10,7 +10,7 @@ import {
   Building2, ArrowRight, BadgeCheck, Loader2, CalendarCheck, Bell
 } from 'lucide-react';
 
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
@@ -47,6 +47,7 @@ interface Job {
   companyDescription: string;
   openings: number;
   isWalkIn: boolean;
+  isPromoted?: boolean;
   companySlug?: string;
   createdAtMs: number;
   latitude?: number | null;
@@ -296,6 +297,7 @@ export default function JobsPage() {
             companyDescription: d.companyDescription || '',
             openings: d.openings ? Number(d.openings) : 1,
             isWalkIn: d.isWalkIn || !!d.walkInDate || !!d.walkIn?.date,
+            isPromoted: d.isPromoted || false,
             companySlug: d.companySlug || '',
             createdAtMs,
             latitude: d.latitude || null,
@@ -324,17 +326,18 @@ export default function JobsPage() {
       setSavedJobs([]);
       return;
     }
-    async function loadSavedJobs() {
-      try {
-        const q = query(collection(db, 'savedJobs'), where('userId', '==', userId));
-        const snap = await getDocs(q);
+    const q = query(collection(db, 'savedJobs'), where('userId', '==', userId));
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
         const ids = snap.docs.map(doc => doc.data().jobId);
         setSavedJobs(ids);
-      } catch (err) {
-        console.error('Error loading saved jobs:', err);
+      },
+      (err) => {
+        console.error('Error loading saved jobs in real-time:', err);
       }
-    }
-    loadSavedJobs();
+    );
+    return () => unsubscribe();
   }, [user?.uid]);
 
   const toggleType = (t: string) => setSelectedTypes(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
@@ -425,6 +428,10 @@ export default function JobsPage() {
     };
 
     return [...filtered].sort((a, b) => {
+      // Prioritize promoted jobs first
+      if (a.isPromoted && !b.isPromoted) return -1;
+      if (!a.isPromoted && b.isPromoted) return 1;
+
       if (sortBy === 'salary') {
         return (b.salaryMax || b.salaryMin || 0) - (a.salaryMax || a.salaryMin || 0);
       }

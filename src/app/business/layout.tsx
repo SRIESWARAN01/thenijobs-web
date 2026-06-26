@@ -36,6 +36,7 @@ const BUSINESS_NAV: SidebarItem[] = [
 
   // Growth module
   { label: 'Social Feed', tamilLabel: 'சமூக ஊட்டம்', icon: 'Rss', href: '/business/feed', section: 'Growth' },
+  { label: 'Advertisements', tamilLabel: 'விளம்பரங்கள்', icon: 'Megaphone', href: '/business/ads', section: 'Growth' },
   { label: 'Leads & Enquiries', tamilLabel: 'விசாரணைகள்', icon: 'TrendingUp', href: '/business/leads', section: 'Growth' },
   { label: 'Messages', tamilLabel: 'செய்திகள்', icon: 'MessageSquare', href: '/business/messages', section: 'Growth' },
   { label: 'Reports', tamilLabel: 'அறிக்கைகள்', icon: 'BarChart3', href: '/business/reports', section: 'Growth' },

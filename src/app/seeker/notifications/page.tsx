@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc, writeBatch, where, orderBy } from 'firebase/firestore';
-import { Bell, Check, Eye, Calendar, Star, Loader2 } from 'lucide-react';
+import { Bell, Check, Eye, Calendar, Star, Loader2, MapPin, Banknote } from 'lucide-react';
 import Link from 'next/link';
 
 interface NotificationItem {
@@ -13,16 +13,23 @@ interface NotificationItem {
   userId: string;
   title: string;
   message: string;
-  type: 'application' | 'interview' | 'alert' | 'system';
+  type: 'application' | 'interview' | 'alert' | 'system' | 'job_alert' | any;
   link?: string;
+  actionUrl?: string;
   isRead: boolean;
   createdAt: any;
+  jobId?: string;
+  jobTitle?: string;
+  companyName?: string;
+  location?: string;
+  salary?: string;
 }
 
-const typeIcons = {
+const typeIcons: Record<string, { icon: React.ElementType; color: string }> = {
   application: { icon: Eye, color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
   interview: { icon: Calendar, color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
   alert: { icon: Bell, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  job_alert: { icon: Bell, color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
   system: { icon: Star, color: 'text-violet-400 bg-violet-500/10 border-violet-500/20' },
 };
 
@@ -153,15 +160,48 @@ export default function SeekerNotificationsPage() {
                   </div>
                   <p className="text-xs text-gray-400 mt-1 leading-relaxed">{item.message}</p>
                   
-                  {item.link && (
-                    <div className="mt-3">
-                      <Link
-                        href={item.link}
-                        className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
-                      >
-                        View Details →
-                      </Link>
+                  {item.type === 'job_alert' ? (
+                    <div className="mt-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] space-y-2">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-white">{item.jobTitle || 'Job Position'}</span>
+                        <span className="text-[11px] text-gray-450">{item.companyName || 'Hiring Company'}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-500">
+                        <span className="flex items-center gap-1"><MapPin size={10} /> {item.location || 'Theni'}</span>
+                        {item.salary && (
+                          <span className="flex items-center gap-1"><Banknote size={10} /> {item.salary}</span>
+                        )}
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t border-white/[0.04]">
+                        {(item.link || item.actionUrl) && (
+                          <>
+                            <Link
+                              href={item.link || item.actionUrl || '#'}
+                              className="px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-[10px] font-semibold text-gray-300 hover:bg-white/[0.08]"
+                            >
+                              Quick View
+                            </Link>
+                            <Link
+                              href={item.link || item.actionUrl || '#'}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-[10px] font-semibold text-white transition-colors"
+                            >
+                              Apply Now
+                            </Link>
+                          </>
+                        )}
+                      </div>
                     </div>
+                  ) : (
+                    (item.link || item.actionUrl) && (
+                      <div className="mt-3">
+                        <Link
+                          href={item.link || item.actionUrl || '#'}
+                          className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
+                        >
+                          View Details →
+                        </Link>
+                      </div>
+                    )
                   )}
                 </div>
                 {!item.isRead && (

@@ -80,7 +80,7 @@ export function ImageCropperModal({
     if (cropHeight) setTargetHeight(cropHeight);
   }, [cropWidth, cropHeight]);
 
-  // Read file as Data URL on load
+  // Create Object URL on load for instant cropper loading
   useEffect(() => {
     if (!file) {
       setImgUrl(null);
@@ -88,19 +88,20 @@ export function ImageCropperModal({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImgUrl(reader.result as string);
-      setImageLoaded(false);
-      setStage('crop');
-      setPreviewDataUrl(null);
-      setCroppedBlob(null);
-      setZoom(1);
-      setOffset({ x: 0, y: 0 });
-      setModalUploadError(null);
-      setModalUploading(false);
+    const objectUrl = URL.createObjectURL(file);
+    setImgUrl(objectUrl);
+    setImageLoaded(false);
+    setStage('crop');
+    setPreviewDataUrl(null);
+    setCroppedBlob(null);
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+    setModalUploadError(null);
+    setModalUploading(false);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
     };
-    reader.readAsDataURL(file);
   }, [file]);
 
   // Measure container when modal opens or layout changes using ResizeObserver
@@ -108,6 +109,8 @@ export function ImageCropperModal({
     if (!open || !containerRef.current) return;
 
     const container = containerRef.current;
+    
+    // ResizeObserver for dynamic changes
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
@@ -118,8 +121,33 @@ export function ImageCropperModal({
     });
 
     resizeObserver.observe(container);
+
+    // Timeout-based retry loop to handle modal entrance transition animation delays
+    const measure = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setContainerSize({ width: rect.width, height: rect.height });
+          return true;
+        }
+      }
+      return false;
+    };
+
+    measure();
+    const t1 = setTimeout(measure, 50);
+    const t2 = setTimeout(measure, 150);
+    const t3 = setTimeout(measure, 350);
+    const t4 = setTimeout(measure, 600);
+    const t5 = setTimeout(measure, 1000);
+
     return () => {
       resizeObserver.disconnect();
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      clearTimeout(t5);
     };
   }, [open]);
 
@@ -143,6 +171,14 @@ export function ImageCropperModal({
     const naturalW = img.naturalWidth;
     const naturalH = img.naturalHeight;
     setImageInfo({ width: naturalW, height: naturalH });
+
+    // Fallback: If container size was not measured yet due to animation delay, measure it now
+    if (containerRef.current && (containerSize.width === 0 || containerSize.height === 0)) {
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    }
   };
 
   // Recalculate zoom and bounds when image metadata and layout are ready
@@ -311,7 +347,7 @@ export function ImageCropperModal({
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
 
-    // Convert canvas to compressed WebP
+    // Convert canvas to compressed WebP, fallback to JPEG if WebP is unsupported
     return new Promise<void>((resolve) => {
       canvas.toBlob(
         (blob) => {
@@ -320,8 +356,23 @@ export function ImageCropperModal({
             const dataUrl = URL.createObjectURL(blob);
             setPreviewDataUrl(dataUrl);
             setStage('preview');
+            resolve();
+          } else {
+            // Fallback to JPEG
+            canvas.toBlob(
+              (jpegBlob) => {
+                if (jpegBlob) {
+                  setCroppedBlob(jpegBlob);
+                  const dataUrl = URL.createObjectURL(jpegBlob);
+                  setPreviewDataUrl(dataUrl);
+                  setStage('preview');
+                }
+                resolve();
+              },
+              'image/jpeg',
+              0.85
+            );
           }
-          resolve();
         },
         'image/webp',
         0.82
@@ -332,10 +383,11 @@ export function ImageCropperModal({
   const handleSave = async () => {
     if (!croppedBlob || !file) return;
 
-    const fileExt = '.webp';
+    const isWebP = croppedBlob.type === 'image/webp';
+    const fileExt = isWebP ? '.webp' : '.jpg';
     const baseName = file.name.replace(/\.[^/.]+$/, '');
     const croppedFile = new File([croppedBlob], `${baseName}_cropped${fileExt}`, {
-      type: 'image/webp',
+      type: croppedBlob.type,
       lastModified: Date.now(),
     });
 
@@ -469,21 +521,29 @@ export function ImageCropperModal({
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             >
-              {imgUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  ref={imgRef}
-                  src={imgUrl}
-                  alt="Crop Source"
-                  onLoad={handleImageLoad}
-                  className="absolute origin-center max-w-none pointer-events-none"
-                  style={{
-                    left: '50%',
-                    top: '50%',
-                    transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-                    display: imageLoaded ? 'block' : 'none',
-                  }}
-                />
+               {imgUrl ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    ref={imgRef}
+                    src={imgUrl}
+                    alt="Crop Source"
+                    onLoad={handleImageLoad}
+                    className="absolute origin-center max-w-none pointer-events-none"
+                    style={{
+                      left: '50%',
+                      top: '50%',
+                      transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                      display: imageLoaded ? 'block' : 'none',
+                    }}
+                  />
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80">
+                      <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mb-2" />
+                      <span className="text-xs text-gray-400">Loading workspace...</span>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />

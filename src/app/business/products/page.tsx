@@ -776,7 +776,7 @@ export default function BusinessProductsPage() {
           cropWidth={800}
           cropHeight={600}
           title="Crop Product Image"
-          uploadPath={companyId ? `companies/${companyId}/products/product_${Date.now()}` : undefined}
+          uploadPath={companyId ? `products/${companyId}/product_${Date.now()}` : undefined}
           onUploadComplete={(url) => {
             setFormData(prev => ({ ...prev, imageUrl: url }));
           }}

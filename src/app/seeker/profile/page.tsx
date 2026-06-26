@@ -7,9 +7,10 @@ import {
   User, Phone, Mail, MapPin, Camera, Briefcase, GraduationCap,
   Plus, X, Check, Save,
   Globe, Award, Star, Zap,
-  CheckCircle, Circle, Languages, ExternalLink, Loader2
+  CheckCircle, Circle, Languages, ExternalLink, Loader2, Bell
 } from 'lucide-react';
 import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { JOB_CATEGORIES } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { useUploadFile } from '@/hooks/useStorage';
@@ -277,7 +278,7 @@ interface ProjectEntry {
   url: string;
 }
 
-type TabKey = 'personal' | 'education' | 'experience' | 'skills' | 'languages' | 'certifications' | 'portfolio' | 'projects' | 'achievements';
+type TabKey = 'personal' | 'education' | 'experience' | 'skills' | 'languages' | 'certifications' | 'portfolio' | 'projects' | 'achievements' | 'preferences';
 
 const DEFAULT_PROFILE = {
   name: '',
@@ -311,6 +312,14 @@ export default function SeekerProfilePage() {
   const [portfolio, setPortfolio] = useState<string[]>([]);
   const [projects, setProjects] = useState<ProjectEntry[]>([]);
   const [achievements, setAchievements] = useState<AchievementEntry[]>([]);
+  const [preferences, setPreferences] = useState({
+    categories: [] as string[],
+    locations: [] as string[],
+    jobTypes: [] as string[],
+    experienceLevel: '',
+    salaryMin: '',
+    salaryMax: '',
+  });
 
   const [newSkill, setNewSkill] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -370,6 +379,14 @@ export default function SeekerProfilePage() {
       setPortfolio(remoteProfile.portfolio || []);
       setProjects(remoteProfile.projects || []);
       setAchievements(remoteProfile.achievements || []);
+      setPreferences(remoteProfile.preferences || {
+        categories: [],
+        locations: [],
+        jobTypes: [],
+        experienceLevel: '',
+        salaryMin: '',
+        salaryMax: '',
+      });
       setTimeout(() => {
         isLoaded.current = true;
       }, 500);
@@ -380,6 +397,14 @@ export default function SeekerProfilePage() {
         email: user.email || '',
         phone: user.phone || ''
       }));
+      setPreferences({
+        categories: [],
+        locations: [],
+        jobTypes: [],
+        experienceLevel: '',
+        salaryMin: '',
+        salaryMax: '',
+      });
       setTimeout(() => {
         isLoaded.current = true;
       }, 500);
@@ -436,6 +461,7 @@ export default function SeekerProfilePage() {
           portfolio,
           projects,
           profileStrength,
+          preferences,
           updatedAt: serverTimestamp()
         };
 
@@ -472,7 +498,7 @@ export default function SeekerProfilePage() {
     };
   }, [
     profile, education, experience, skills, languages,
-    certifications, achievements, portfolio, projects, profileStrength, user?.uid
+    certifications, achievements, portfolio, projects, profileStrength, preferences, user?.uid
   ]);
 
   // ── Handlers ──
@@ -604,6 +630,7 @@ export default function SeekerProfilePage() {
         portfolio,
         projects,
         profileStrength,
+        preferences,
         updatedAt: serverTimestamp(),
         ...(candidateId ? { candidateId } : {})
       };
@@ -649,6 +676,7 @@ export default function SeekerProfilePage() {
     { key: 'achievements', label: 'Achievements', icon: Star },
     { key: 'portfolio', label: 'Portfolio', icon: Globe },
     { key: 'projects', label: 'Projects', icon: Briefcase },
+    { key: 'preferences', label: 'Job Preferences', icon: Bell },
   ];
 
   if (profileLoading) {
@@ -1401,6 +1429,156 @@ export default function SeekerProfilePage() {
             </div>
           </div>
         )}
+
+        {/* ── Job Preferences ── */}
+        {activeTab === 'preferences' && (
+          <div className="space-y-6">
+            <h2 className="font-semibold text-white text-sm flex items-center gap-2 mb-5">
+              <Bell size={15} className="text-emerald-400" /> Job Preferences
+            </h2>
+            
+            {/* Preferred Job Categories */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-400 block">Preferred Job Categories</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {JOB_CATEGORIES.map((cat) => {
+                  const isChecked = preferences.categories?.includes(cat);
+                  return (
+                    <label key={cat} className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
+                      isChecked 
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' 
+                        : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04]'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const list = preferences.categories || [];
+                          const next = e.target.checked 
+                            ? [...list, cat] 
+                            : list.filter(c => c !== cat);
+                          setPreferences(p => ({ ...p, categories: next }));
+                        }}
+                        className="hidden"
+                      />
+                      {isChecked ? <CheckCircle size={14} className="text-emerald-400 shrink-0" /> : <Circle size={14} className="text-gray-600 shrink-0" />}
+                      <span className="truncate">{cat}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Preferred Locations */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-gray-400 block">Preferred Locations (Towns in Theni)</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {THENI_LAUNCH_LOCATIONS.map((loc) => {
+                  const isChecked = preferences.locations?.includes(loc);
+                  return (
+                    <label key={loc} className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
+                      isChecked 
+                        ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300' 
+                        : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04]'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const list = preferences.locations || [];
+                          const next = e.target.checked 
+                            ? [...list, loc] 
+                            : list.filter(l => l !== loc);
+                          setPreferences(p => ({ ...p, locations: next }));
+                        }}
+                        className="hidden"
+                      />
+                      {isChecked ? <CheckCircle size={14} className="text-cyan-400 shrink-0" /> : <Circle size={14} className="text-gray-600 shrink-0" />}
+                      <span>{loc}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-6">
+              {/* Job Types */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold text-gray-400 block">Preferred Employment Types</label>
+                <div className="space-y-2">
+                  {['Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance'].map((type) => {
+                    const isChecked = preferences.jobTypes?.includes(type);
+                    return (
+                      <label key={type} className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
+                        isChecked 
+                          ? 'bg-violet-500/10 border-violet-500/30 text-violet-300' 
+                          : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:bg-white/[0.04]'
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const list = preferences.jobTypes || [];
+                            const next = e.target.checked 
+                              ? [...list, type] 
+                              : list.filter(t => t !== type);
+                            setPreferences(p => ({ ...p, jobTypes: next }));
+                          }}
+                          className="hidden"
+                        />
+                        {isChecked ? <CheckCircle size={14} className="text-violet-400 shrink-0" /> : <Circle size={14} className="text-gray-600 shrink-0" />}
+                        <span>{type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Experience Level & Salary Range */}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-400 block">Preferred Experience Level</label>
+                  <select
+                    value={preferences.experienceLevel || ''}
+                    onChange={(e) => setPreferences(p => ({ ...p, experienceLevel: e.target.value }))}
+                    className="search-input w-full px-3 py-2.5 text-sm bg-[#0e0e22]"
+                  >
+                    <option value="">Select Experience Level</option>
+                    <option value="Fresher">Fresher (No Experience)</option>
+                    <option value="1-2 Years">1-2 Years</option>
+                    <option value="3-5 Years">3-5 Years</option>
+                    <option value="5-10 Years">5-10 Years</option>
+                    <option value="10+ Years">10+ Years</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-400 block">Expected Monthly Salary Range (₹)</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <input
+                        type="number"
+                        placeholder="Min Salary"
+                        value={preferences.salaryMin || ''}
+                        onChange={(e) => setPreferences(p => ({ ...p, salaryMin: e.target.value }))}
+                        className="search-input w-full px-3 py-2.5 text-sm bg-[#0e0e22]"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        placeholder="Max Salary"
+                        value={preferences.salaryMax || ''}
+                        onChange={(e) => setPreferences(p => ({ ...p, salaryMax: e.target.value }))}
+                        className="search-input w-full px-3 py-2.5 text-sm bg-[#0e0e22]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ═══ Save Button ═══ */}
@@ -1464,7 +1642,8 @@ export default function SeekerProfilePage() {
               achievements,
               portfolio,
               projects,
-              profileStrength
+              profileStrength,
+              preferences
             };
 
             await setDoc(doc(db, 'publicProfiles', user.uid), {

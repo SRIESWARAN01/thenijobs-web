@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
@@ -16,6 +17,7 @@ import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 
 const STEPS: Array<{ id: number; label: string; icon: LucideIcon }> = [
   { id: 1, label: 'Basic Info', icon: Building2 },
@@ -47,7 +49,43 @@ export default function CompanyRegisterPage() {
     address: '', location: '', district: LAUNCH_DISTRICT, state: LAUNCH_STATE, country: 'India',
     facebook: '', instagram: '', linkedin: '', youtube: '',
     openFrom: '09:00 AM', openTo: '06:00 PM',
+    logoUrl: '', coverUrl: '',
   });
+
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const [cropType, setCropType] = useState<'logo' | 'cover' | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCropFile(file);
+    setCropType('logo');
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCropFile(file);
+    setCropType('cover');
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
+  };
+
+  const handleUploadComplete = (url: string) => {
+    if (cropType === 'logo') {
+      update('logoUrl', url);
+    } else if (cropType === 'cover') {
+      update('coverUrl', url);
+    }
+    setShowCropper(false);
+    setCropFile(null);
+    setCropType(null);
+  };
 
   const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
   const addService = () => { if (newService.trim()) { setServices(s => [...s, newService.trim()]); setNewService(''); } };
@@ -313,24 +351,77 @@ export default function CompanyRegisterPage() {
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                 <ImageIcon size={18} className="text-violet-400" /> Media Upload
               </h2>
-              {[
-                { label: 'Company Logo', hint: 'PNG/JPG, Square, min 200×200px', accept: '.png,.jpg,.jpeg', icon: '🖼️' },
-                { label: 'Cover Image', hint: 'JPG/PNG, Landscape 1200×400px recommended', accept: '.png,.jpg,.jpeg', icon: '🏞️' },
-              ].map(item => (
-                <div key={item.label}>
-                  <label className="text-xs text-gray-400 font-medium block mb-2">{item.label}</label>
+              
+              {/* Company Logo */}
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-2">Company Logo</label>
+                {form.logoUrl ? (
+                  <div className="relative w-32 h-32 rounded-2xl overflow-hidden border border-white/10 group mb-2 bg-black/40">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={form.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => update('logoUrl', '')}
+                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity duration-200"
+                    >
+                      Remove Logo
+                    </button>
+                  </div>
+                ) : (
                   <label className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-white/15 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all cursor-pointer group">
-                    <div className="text-4xl">{item.icon}</div>
+                    <div className="text-4xl">🖼️</div>
                     <div className="text-center">
                       <div className="flex items-center gap-2 text-sm font-medium text-white group-hover:text-violet-300 transition-colors">
                         <Upload size={14} /> Click to upload
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">{item.hint}</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG/JPG, Square, min 200×200px</p>
                     </div>
-                    <input type="file" accept={item.accept} className="hidden" />
+                    <input
+                      type="file"
+                      ref={logoInputRef}
+                      onChange={handleLogoChange}
+                      accept=".png,.jpg,.jpeg"
+                      className="hidden"
+                    />
                   </label>
-                </div>
-              ))}
+                )}
+              </div>
+
+              {/* Cover Image */}
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-2">Cover Image</label>
+                {form.coverUrl ? (
+                  <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-white/10 group mb-2 bg-black/40">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={form.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => update('coverUrl', '')}
+                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity duration-200"
+                    >
+                      Remove Cover
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-white/15 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all cursor-pointer group">
+                    <div className="text-4xl">🏞️</div>
+                    <div className="text-center">
+                      <div className="flex items-center gap-2 text-sm font-medium text-white group-hover:text-violet-300 transition-colors">
+                        <Upload size={14} /> Click to upload
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">JPG/PNG, Landscape 1200×400px recommended</p>
+                    </div>
+                    <input
+                      type="file"
+                      ref={coverInputRef}
+                      onChange={handleCoverChange}
+                      accept=".png,.jpg,.jpeg"
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+
               <div>
                 <label className="text-xs text-gray-400 font-medium block mb-2">Gallery Images (up to 10)</label>
                 <label className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-white/15 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all cursor-pointer group">
@@ -485,6 +576,24 @@ export default function CompanyRegisterPage() {
         </div>
       </div>
       <BottomNav />
+      {showCropper && cropFile && (
+        <ImageCropperModal
+          open={showCropper}
+          onClose={() => {
+            setShowCropper(false);
+            setCropFile(null);
+            setCropType(null);
+          }}
+          file={cropFile}
+          aspectRatio={cropType === 'logo' ? 1 : 3} // Square for logo, 3:1 for cover banner
+          cropWidth={cropType === 'logo' ? 400 : 1200}
+          cropHeight={cropType === 'logo' ? 400 : 400}
+          uploadPath={user ? `companies/${user.uid}/${cropType}/crop_${Date.now()}` : undefined}
+          onUploadComplete={handleUploadComplete}
+          title={cropType === 'logo' ? 'Crop Company Logo' : 'Crop Cover Banner'}
+          isCircular={cropType === 'logo'}
+        />
+      )}
     </main>
   );
 }

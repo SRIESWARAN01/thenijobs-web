@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitBusinessReview = exports.deleteSocialPost = exports.addSocialComment = exports.toggleSocialLike = exports.createSocialPost = exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.processSubscriptionAutomation = exports.validateSubscriptionAccess = exports.createNotification = exports.serverGetCandidateContact = exports.serverTalentSearch = exports.processJobAutomation = exports.createJobPosting = exports.serverUpdateApplicationStatus = exports.serverApplyToJob = exports.seedDemoAccounts = exports.healthCheck = exports.syncMobileVerification = exports.adminUpdateSubscription = exports.sendBroadcastNotification = exports.adminVerifyUser = exports.adminUpdateUserRole = exports.rejectJob = exports.approveJob = exports.adminVerifyCompany = exports.adminFeatureCompany = exports.rejectCompany = exports.approveCompany = void 0;
+exports.submitBusinessReview = exports.deleteSocialPost = exports.addSocialComment = exports.toggleSocialLike = exports.createSocialPost = exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.processSubscriptionAutomation = exports.validateSubscriptionAccess = exports.onJobCreated = exports.createNotification = exports.serverGetCandidateContact = exports.serverTalentSearch = exports.processJobAutomation = exports.createJobPosting = exports.serverUpdateApplicationStatus = exports.serverApplyToJob = exports.seedDemoAccounts = exports.healthCheck = exports.syncMobileVerification = exports.adminUpdateSubscription = exports.sendBroadcastNotification = exports.adminVerifyUser = exports.adminUpdateUserRole = exports.rejectJob = exports.approveJob = exports.adminVerifyCompany = exports.adminFeatureCompany = exports.rejectCompany = exports.approveCompany = void 0;
 require("./config"); // initializes app
 var admin_1 = require("./admin");
 Object.defineProperty(exports, "approveCompany", { enumerable: true, get: function () { return admin_1.approveCompany; } });
@@ -27,6 +27,7 @@ Object.defineProperty(exports, "serverTalentSearch", { enumerable: true, get: fu
 Object.defineProperty(exports, "serverGetCandidateContact", { enumerable: true, get: function () { return jobs_1.serverGetCandidateContact; } });
 var notifications_1 = require("./notifications");
 Object.defineProperty(exports, "createNotification", { enumerable: true, get: function () { return notifications_1.createNotification; } });
+Object.defineProperty(exports, "onJobCreated", { enumerable: true, get: function () { return notifications_1.onJobCreated; } });
 var subscriptions_1 = require("./subscriptions");
 Object.defineProperty(exports, "validateSubscriptionAccess", { enumerable: true, get: function () { return subscriptions_1.validateSubscriptionAccess; } });
 Object.defineProperty(exports, "processSubscriptionAutomation", { enumerable: true, get: function () { return subscriptions_1.processSubscriptionAutomation; } });

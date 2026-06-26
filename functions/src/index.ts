@@ -26,7 +26,7 @@ export {
   serverGetCandidateContact
 } from './jobs';
 
-export { createNotification } from './notifications';
+export { createNotification, onJobCreated } from './notifications';
 
 export {
   validateSubscriptionAccess,

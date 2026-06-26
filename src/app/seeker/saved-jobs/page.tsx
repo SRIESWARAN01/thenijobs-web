@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import {
   Banknote,
@@ -13,7 +14,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
-import { doc, deleteDoc, orderBy, where } from 'firebase/firestore';
+import { doc, deleteDoc, where } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
@@ -30,12 +31,24 @@ interface SavedJobDoc {
   salaryMax?: number;
   score?: number;
   skills?: string[];
-  expiresAt?: { seconds: number };
+  expiresAt?: Date | { seconds: number } | any;
+  savedAt?: Date | { seconds: number } | any;
 }
 
+const getExpiresDate = (item: SavedJobDoc) => {
+  if (!item.expiresAt) return null;
+  if (item.expiresAt instanceof Date) return item.expiresAt;
+  if (typeof item.expiresAt === 'object' && 'seconds' in (item.expiresAt as any)) {
+    return new Date((item.expiresAt as any).seconds * 1000);
+  }
+  if (typeof item.expiresAt === 'string') return new Date(item.expiresAt);
+  return null;
+};
+
 function isClosingSoon(item: SavedJobDoc, now: number, sevenDaysFromNow: number) {
-  if (!item.expiresAt?.seconds) return false;
-  const expiresMs = item.expiresAt.seconds * 1000;
+  const expiresDate = getExpiresDate(item);
+  if (!expiresDate) return false;
+  const expiresMs = expiresDate.getTime();
   return expiresMs > now && expiresMs <= sevenDaysFromNow;
 }
 
@@ -45,17 +58,31 @@ export default function SavedJobsPage() {
 
   const { data: savedJobs, loading } = useCollection<SavedJobDoc>('savedJobs', [
     where('userId', '==', uid || ''),
-    orderBy('savedAt', 'desc'),
   ], { skip: !uid });
+
+  const sortedSavedJobs = useMemo(() => {
+    if (!savedJobs) return [];
+    return [...savedJobs].sort((a, b) => {
+      const getMs = (val: any) => {
+        if (!val) return 0;
+        if (val instanceof Date) return val.getTime();
+        if (typeof val === 'object' && 'seconds' in val) return val.seconds * 1000;
+        if (typeof val === 'number') return val;
+        if (typeof val === 'string') return new Date(val).getTime();
+        return 0;
+      };
+      return getMs(b.savedAt) - getMs(a.savedAt);
+    });
+  }, [savedJobs]);
 
   const now = Date.now();
   const sevenDaysFromNow = now + 7 * 24 * 60 * 60 * 1000;
-  const closingSoonCount = savedJobs.filter((item) => isClosingSoon(item, now, sevenDaysFromNow)).length;
+  const closingSoonCount = sortedSavedJobs.filter((item) => isClosingSoon(item, now, sevenDaysFromNow)).length;
 
   const metrics = [
-    { label: 'Saved Jobs', value: savedJobs.length, description: 'Ready to apply', icon: Bookmark, color: 'violet' },
+    { label: 'Saved Jobs', value: sortedSavedJobs.length, description: 'Ready to apply', icon: Bookmark, color: 'violet' },
     { label: 'Closing Soon', value: closingSoonCount, description: 'Next 7 days', icon: Calendar, color: 'amber' },
-    { label: 'High Match', value: savedJobs.filter((job) => (job.score || 0) >= 80).length, description: '80% and above', icon: Star, color: 'emerald' },
+    { label: 'High Match', value: sortedSavedJobs.filter((job) => (job.score || 0) >= 80).length, description: '80% and above', icon: Star, color: 'emerald' },
     { label: 'Alerts Linked', value: 0, description: 'Matched alerts', icon: Bell, color: 'cyan' },
   ];
 
@@ -117,7 +144,7 @@ export default function SavedJobsPage() {
         })}
       </div>
 
-      {savedJobs.length === 0 ? (
+      {sortedSavedJobs.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/10">
             <Bookmark size={24} className="text-violet-400" />
@@ -133,9 +160,10 @@ export default function SavedJobsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {savedJobs.map((item) => {
-            const expiresDate = item.expiresAt?.seconds
-              ? new Date(item.expiresAt.seconds * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+          {sortedSavedJobs.map((item) => {
+            const expiresDateObj = getExpiresDate(item);
+            const expiresDate = expiresDateObj
+              ? expiresDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
               : null;
             const closingSoon = isClosingSoon(item, now, sevenDaysFromNow);
 

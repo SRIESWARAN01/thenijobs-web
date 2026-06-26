@@ -15,7 +15,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment, onSnapshot } from 'firebase/firestore';
 import { applyToJob, saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
 import { formatDate, formatJobType } from '@/lib/jobFormatters';
 import { isPublicJobVisible } from '@/lib/jobPolicy';
@@ -190,14 +190,20 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
   // 2. Check if job is saved & if already applied
   useEffect(() => {
     if (!uid || !id) return;
-    async function checkSavedAndApplied() {
-      try {
-        // Check saved
-        const qSaved = query(collection(db, 'savedJobs'), where('userId', '==', uid), where('jobId', '==', id));
-        const snapSaved = await getDocs(qSaved);
-        setSaved(!snapSaved.empty);
 
-        // Check applied
+    // Real-time listener for Saved Job status
+    const qSaved = query(collection(db, 'savedJobs'), where('userId', '==', uid), where('jobId', '==', id));
+    const unsubscribeSaved = onSnapshot(
+      qSaved,
+      (snapSaved) => {
+        setSaved(!snapSaved.empty);
+      },
+      (err) => console.error('Error listening to saved jobs:', err)
+    );
+
+    // Static check for Applied status
+    async function checkApplied() {
+      try {
         const qApplied = query(collection(db, 'jobApplications'), where('applicantId', '==', uid), where('jobId', '==', id));
         const snapApplied = await getDocs(qApplied);
         if (snapApplied.empty) {
@@ -213,7 +219,11 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
         console.error(err);
       }
     }
-    checkSavedAndApplied();
+    checkApplied();
+
+    return () => {
+      unsubscribeSaved();
+    };
   }, [uid, id]);
 
 

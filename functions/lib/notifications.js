@@ -92,22 +92,130 @@ exports.createNotification = (0, https_1.onCall)({ region: config_1.REGION, enfo
 // EXISTING: Scheduled Functions (preserved)
 // ============================================================
 const firestore_2 = require("firebase-functions/v2/firestore");
-exports.onJobCreated = (0, firestore_2.onDocumentCreated)({
+function matchesEducation(jobEducation, seekerEducation) {
+    if (!jobEducation || jobEducation.toLowerCase() === 'not specified' || jobEducation.toLowerCase() === 'any') {
+        return true;
+    }
+    if (!seekerEducation || seekerEducation.length === 0) {
+        return false;
+    }
+    const jobEduLower = jobEducation.toLowerCase();
+    const hasDegreeKeyword = (keyword) => seekerEducation.some(edu => edu.degree && edu.degree.toLowerCase().includes(keyword));
+    if (jobEduLower.includes('diploma')) {
+        return hasDegreeKeyword('diploma') || hasDegreeKeyword('degree') || hasDegreeKeyword('bachelor') || hasDegreeKeyword('master') || hasDegreeKeyword('b.') || hasDegreeKeyword('m.');
+    }
+    if (jobEduLower.includes('post graduate') || jobEduLower.includes('master') || jobEduLower.includes('pg')) {
+        return hasDegreeKeyword('master') || hasDegreeKeyword('m.') || hasDegreeKeyword('post graduate') || hasDegreeKeyword('mba') || hasDegreeKeyword('mca') || hasDegreeKeyword('msc') || hasDegreeKeyword('mcom') || hasDegreeKeyword('ma');
+    }
+    if (jobEduLower.includes('graduate') || jobEduLower.includes('degree') || jobEduLower.includes('bachelor') || jobEduLower.includes('ug')) {
+        return hasDegreeKeyword('bachelor') || hasDegreeKeyword('degree') || hasDegreeKeyword('b.') || hasDegreeKeyword('m.') || hasDegreeKeyword('master') || hasDegreeKeyword('graduate');
+    }
+    if (jobEduLower.includes('12') || jobEduLower.includes('hsc')) {
+        return hasDegreeKeyword('12') || hasDegreeKeyword('hsc') || hasDegreeKeyword('diploma') || hasDegreeKeyword('bachelor') || hasDegreeKeyword('degree') || hasDegreeKeyword('b.') || hasDegreeKeyword('m.');
+    }
+    if (jobEduLower.includes('10') || jobEduLower.includes('sslc')) {
+        return true;
+    }
+    // Fallback
+    const jobWords = jobEduLower.split(/[^a-z0-9]/).filter(w => w.length > 2);
+    for (const edu of seekerEducation) {
+        if (!edu.degree)
+            continue;
+        const degLower = edu.degree.toLowerCase();
+        if (jobWords.some(word => degLower.includes(word))) {
+            return true;
+        }
+    }
+    return false;
+}
+function matchesExperience(jobExperience, seekerExpLevel, seekerExpEntries) {
+    if (!jobExperience || jobExperience.toLowerCase() === 'not specified' || jobExperience.toLowerCase() === 'any') {
+        return true;
+    }
+    const jobLower = jobExperience.toLowerCase();
+    let minJobYears = 0;
+    let maxJobYears = 100;
+    if (jobLower.includes('fresher')) {
+        minJobYears = 0;
+        maxJobYears = 0;
+    }
+    else {
+        const numbers = jobLower.match(/\d+/g);
+        if (numbers && numbers.length > 0) {
+            if (numbers.length === 1) {
+                minJobYears = parseInt(numbers[0]);
+                if (jobLower.includes('+') || jobLower.includes('above') || jobLower.includes('more')) {
+                    maxJobYears = 100;
+                }
+                else {
+                    maxJobYears = minJobYears;
+                }
+            }
+            else {
+                minJobYears = parseInt(numbers[0]);
+                maxJobYears = parseInt(numbers[1]);
+            }
+        }
+    }
+    let seekerYears = 0;
+    if (seekerExpLevel) {
+        if (seekerExpLevel.toLowerCase().includes('fresher')) {
+            seekerYears = 0;
+        }
+        else if (seekerExpLevel.includes('1-2')) {
+            seekerYears = 1.5;
+        }
+        else if (seekerExpLevel.includes('3-5')) {
+            seekerYears = 4;
+        }
+        else if (seekerExpLevel.includes('5-10')) {
+            seekerYears = 7.5;
+        }
+        else if (seekerExpLevel.includes('10+')) {
+            seekerYears = 12;
+        }
+        else {
+            const numbers = seekerExpLevel.match(/\d+/g);
+            if (numbers && numbers.length > 0) {
+                seekerYears = parseFloat(numbers[0]);
+            }
+        }
+    }
+    else if (seekerExpEntries && seekerExpEntries.length > 0) {
+        let totalMs = 0;
+        for (const exp of seekerExpEntries) {
+            if (!exp.startDate)
+                continue;
+            const start = new Date(exp.startDate).getTime();
+            const end = exp.endDate ? new Date(exp.endDate).getTime() : Date.now();
+            if (!isNaN(start) && !isNaN(end)) {
+                totalMs += (end - start);
+            }
+        }
+        seekerYears = totalMs / (1000 * 60 * 60 * 24 * 365.25);
+    }
+    if (minJobYears === 0 && maxJobYears === 0) {
+        return seekerYears < 1.0;
+    }
+    return seekerYears >= minJobYears;
+}
+exports.onJobCreated = (0, firestore_2.onDocumentWritten)({
     document: 'jobs/{jobId}',
-    region: config_1.REGION,
 }, async (event) => {
-    const snapshot = event.data;
-    if (!snapshot) {
-        console.log('No data snapshot for job event.');
+    const beforeData = event.data?.before?.data();
+    const afterData = event.data?.after?.data();
+    if (!afterData) {
+        console.log('Job document was deleted. Skipping notification.');
         return;
     }
-    const jobData = snapshot.data();
+    const wasActiveBefore = beforeData && (beforeData.status === 'active' || beforeData.status === 'approved' || beforeData.isActive === true);
+    const isActiveNow = afterData.status === 'active' || afterData.status === 'approved' || afterData.isActive === true;
+    if (wasActiveBefore || !isActiveNow) {
+        console.log(`Job is either already processed as active or not active now. wasActiveBefore: ${wasActiveBefore}, isActiveNow: ${isActiveNow}. Skipping.`);
+        return;
+    }
+    const jobData = afterData;
     const jobId = event.params.jobId;
-    // Only notify if job is active/published
-    if (jobData.status !== 'active' && jobData.status !== 'approved' && jobData.isActive !== true) {
-        console.log(`Job ${jobId} is not active. Status: ${jobData.status}, isActive: ${jobData.isActive}. Skipping notification.`);
-        return;
-    }
     console.log(`Processing notifications for new job: ${jobData.title} at ${jobData.companyName || 'Company'}`);
     const notifiedSeekers = new Set();
     // 1. Process match from Job Alerts collection
@@ -179,7 +287,11 @@ exports.onJobCreated = (0, firestore_2.onDocumentCreated)({
                 const seekerSkillsLower = seeker.skills.map((s) => s.toLowerCase().trim());
                 matchSkills = seekerSkillsLower.some((s) => jobSkillsLower.includes(s));
             }
-            if (matchCategory && matchLocation && matchJobType && matchSalary && matchSkills) {
+            // Match Qualification (Education)
+            const matchEducation = matchesEducation(jobData.education || '', seeker.education || []);
+            // Match Experience
+            const matchExp = matchesExperience(jobData.experience || '', prefs.experienceLevel || seeker.experienceLevel || '', seeker.experience || []);
+            if (matchCategory && matchLocation && matchJobType && matchSalary && matchSkills && matchEducation && matchExp) {
                 notifiedSeekers.add(userId);
             }
         }

@@ -186,7 +186,6 @@ function matchesExperience(jobExperience: string, seekerExpLevel: string, seeker
 export const onJobCreated = onDocumentWritten(
   {
     document: 'jobs/{jobId}',
-    region: REGION,
   },
   async (event) => {
     const beforeData = event.data?.before?.data();

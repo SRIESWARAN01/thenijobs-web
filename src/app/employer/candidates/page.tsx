@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Users2, Search, Eye, Download, CheckCircle, XCircle,
   Calendar, Clock, Briefcase, Table, Grid3X3, Lock, Sparkles,
@@ -11,34 +11,45 @@ import Link from 'next/link';
 import { selectBestSubscription, planHasFeature } from '@/lib/subscriptions';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection } from '@/hooks/useFirestore';
+import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { updateApplicationStatus, createDocument, createNotification, startConversation } from '@/lib/firebase/firestoreService';
 import { where, orderBy } from 'firebase/firestore';
 
-type PipelineStatus = 'all' | 'applied' | 'pending_review' | 'shortlisted' | 'approved' | 'interview_scheduled' | 'walk_in_attended' | 'interview_attended' | 'selected' | 'rejected';
+type PipelineStatus = 'all' | 'applied' | 'under_review' | 'shortlisted' | 'walk_in_interview' | 'interview_scheduled' | 'interview_completed' | 'selected' | 'offer_sent' | 'joined' | 'rejected' | 'cancelled' | 'pending_review' | 'approved' | 'walk_in_attended' | 'interview_attended';
 
 const PIPELINE_TABS: { label: string; value: PipelineStatus; color: string }[] = [
   { label: 'All', value: 'all', color: 'gray' },
-  { label: 'New', value: 'applied', color: 'cyan' },
-  { label: 'Walk-In Review', value: 'pending_review', color: 'amber' },
+  { label: 'Applied', value: 'applied', color: 'cyan' },
+  { label: 'Under Review', value: 'under_review', color: 'indigo' },
   { label: 'Shortlisted', value: 'shortlisted', color: 'violet' },
-  { label: 'Approved', value: 'approved', color: 'cyan' },
-  { label: 'Interview', value: 'interview_scheduled', color: 'amber' },
-  { label: 'Walk-In Attended', value: 'walk_in_attended', color: 'emerald' },
-  { label: 'Selected / Hired', value: 'selected', color: 'emerald' },
+  { label: 'Walk-In Interview', value: 'walk_in_interview', color: 'amber' },
+  { label: 'Interview Scheduled', value: 'interview_scheduled', color: 'amber' },
+  { label: 'Interview Completed', value: 'interview_completed', color: 'blue' },
+  { label: 'Selected', value: 'selected', color: 'emerald' },
+  { label: 'Offer Sent', value: 'offer_sent', color: 'violet' },
+  { label: 'Joined', value: 'joined', color: 'emerald' },
   { label: 'Rejected', value: 'rejected', color: 'rose' },
+  { label: 'Cancelled', value: 'cancelled', color: 'gray' },
 ];
 
 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-  applied: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', label: 'New' },
-  pending_review: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Pending Review' },
+  applied: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', label: 'Applied' },
+  under_review: { bg: 'bg-indigo-500/10', text: 'text-indigo-400', label: 'Under Review' },
   shortlisted: { bg: 'bg-violet-500/10', text: 'text-violet-400', label: 'Shortlisted' },
-  approved: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', label: 'Approved' },
-  interview_scheduled: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Interview' },
-  interview_attended: { bg: 'bg-blue-500/10', text: 'text-blue-400', label: 'Attended' },
-  walk_in_attended: { bg: 'bg-emerald-500/10', text: 'text-emerald-300', label: 'Walk-In Attended' },
+  walk_in_interview: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Walk-In Interview' },
+  interview_scheduled: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Interview Scheduled' },
+  interview_completed: { bg: 'bg-blue-500/10', text: 'text-blue-400', label: 'Interview Completed' },
   selected: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Selected' },
+  offer_sent: { bg: 'bg-violet-500/10', text: 'text-violet-400', label: 'Offer Sent' },
+  joined: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Joined' },
   rejected: { bg: 'bg-rose-500/10', text: 'text-rose-400', label: 'Rejected' },
+  cancelled: { bg: 'bg-gray-500/10', text: 'text-gray-400', label: 'Cancelled' },
+  
+  // Legacy mappings for backwards compatibility
+  pending_review: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Under Review' },
+  approved: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', label: 'Walk-In Approved' },
+  interview_attended: { bg: 'bg-blue-500/10', text: 'text-blue-400', label: 'Interview Completed' },
+  walk_in_attended: { bg: 'bg-emerald-500/10', text: 'text-emerald-300', label: 'Interview Completed' },
 };
 
 function CandidateDetailPanel({
@@ -72,14 +83,71 @@ function CandidateDetailPanel({
 }) {
   const [savingNotes, setSavingNotes] = useState(false);
   const [localNotes, setLocalNotes] = useState(initialNotes || '');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   
-  // Interview Form State
+  // Expanded Interview Form State
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewTime, setInterviewTime] = useState('');
-  const [interviewMode, setInterviewMode] = useState('Phone');
+  const [interviewMode, setInterviewMode] = useState('Phone'); // Phone, Video, In-Person
+  const [interviewLocation, setInterviewLocation] = useState('');
+  const [googleMapsLink, setGoogleMapsLink] = useState('');
+  const [meetingLink, setMeetingLink] = useState('');
+  const [interviewerName, setInterviewerName] = useState('');
+  const [interviewerContact, setInterviewerContact] = useState('');
+  const [additionalInstructions, setAdditionalInstructions] = useState('');
   const [scheduling, setScheduling] = useState(false);
-  const seekerId = application?.seekerId || '';
+
+  const seekerId = application?.seekerId || application?.applicantId || '';
+  const { data: seekerProfile } = useDocument<any>('seekerProfiles', canContact && seekerId ? seekerId : null);
+
+  const handleDropdownStatusChange = async (newStatus: string) => {
+    setUpdatingStatus(true);
+    try {
+      await updateApplicationStatus(applicationId, newStatus);
+      onStatusUpdated(newStatus);
+      
+      // Notify candidate
+      let notifyMessage = '';
+      if (newStatus === 'under_review') {
+        notifyMessage = `Your application for "${jobTitle}" is now under review by the hiring manager.`;
+      } else if (newStatus === 'shortlisted') {
+        notifyMessage = `Congratulations! You have been shortlisted for "${jobTitle}".`;
+      } else if (newStatus === 'walk_in_interview') {
+        notifyMessage = `You are invited to a Walk-In Interview for "${jobTitle}".`;
+      } else if (newStatus === 'interview_scheduled') {
+        notifyMessage = `An interview has been scheduled for "${jobTitle}". Check details in the interviews section.`;
+      } else if (newStatus === 'interview_completed') {
+        notifyMessage = `Your interview for "${jobTitle}" has been completed. We will update you soon.`;
+      } else if (newStatus === 'selected') {
+        notifyMessage = `Great news! You have been selected for "${jobTitle}". Congratulations!`;
+      } else if (newStatus === 'offer_sent') {
+        notifyMessage = `An official job offer has been sent to you for "${jobTitle}".`;
+      } else if (newStatus === 'joined') {
+        notifyMessage = `Welcome aboard! Your status is updated to Joined for "${jobTitle}".`;
+      } else if (newStatus === 'rejected') {
+        notifyMessage = `Thank you for your interest in "${jobTitle}". Unfortunately, the company has decided to move forward with other candidates.`;
+      } else if (newStatus === 'cancelled') {
+        notifyMessage = `Your application process for "${jobTitle}" has been cancelled.`;
+      }
+
+      if (notifyMessage) {
+        await createNotification({
+          userId: seekerId,
+          type: 'application_update',
+          title: `Application Update: ${statusConfig[newStatus]?.label || newStatus.toUpperCase()}!`,
+          message: notifyMessage,
+          actionUrl: '/seeker/applications',
+        });
+      }
+      alert('Status updated successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
 
   const handleSaveNotes = async () => {
     setSavingNotes(true);
@@ -103,8 +171,7 @@ function CandidateDetailPanel({
     }
     setScheduling(true);
     try {
-      // Create Interview document
-      await createDocument('interviews', {
+      const interviewData = {
         companyId,
         companyName,
         seekerId,
@@ -114,19 +181,32 @@ function CandidateDetailPanel({
         date: interviewDate,
         time: interviewTime,
         mode: interviewMode,
+        location: interviewLocation,
+        googleMapsLink,
+        meetingLink,
+        interviewerName,
+        interviewerContact,
+        notes: additionalInstructions,
         status: 'scheduled',
-      });
+        createdAt: new Date().toISOString(),
+      };
+      
+      await createDocument('interviews', interviewData);
 
       // Update Application status
-      await updateApplicationStatus(applicationId, 'interview_scheduled');
+      const updateMsg = `Interview scheduled on ${interviewDate} at ${interviewTime} (${interviewMode}).`;
+      await updateApplicationStatus(applicationId, 'interview_scheduled', updateMsg);
       onStatusUpdated('interview_scheduled');
 
       // Create seeker notification
+      let detailsMessage = `An interview has been scheduled for "${jobTitle}" on ${interviewDate} at ${interviewTime} via ${interviewMode}.`;
+      if (interviewerName) detailsMessage += ` Interviewer: ${interviewerName}.`;
+      
       await createNotification({
         userId: seekerId,
         type: 'interview',
         title: 'Interview Scheduled! 📅',
-        message: `An interview has been scheduled for "${jobTitle}" on ${interviewDate} at ${interviewTime} via ${interviewMode}.`,
+        message: detailsMessage,
         actionUrl: '/seeker/interviews',
       });
 
@@ -140,14 +220,38 @@ function CandidateDetailPanel({
     }
   };
 
-  const email = application?.seekerEmail || application?.email || 'N/A';
-  const phone = application?.seekerPhone || application?.phone || 'N/A';
-  const experienceList = Array.isArray(application?.experience) ? application.experience : [];
-  const educationList = Array.isArray(application?.education) ? application.education : [];
-  const skillsList = Array.isArray(application?.skills) ? application.skills : [];
-  const district = application?.district || application?.location || 'Not available';
-  const portfolioLinks = Array.isArray(application?.portfolio) ? (application.portfolio as string[]) : [];
+  const email = application?.seekerEmail || application?.email || seekerProfile?.email || 'N/A';
+  const phone = application?.seekerPhone || application?.phone || seekerProfile?.phone || 'N/A';
+  
+  const rawExperience = Array.isArray(seekerProfile?.experience) && seekerProfile.experience.length > 0 
+    ? seekerProfile.experience 
+    : application?.experience;
+  const experienceList = Array.isArray(rawExperience) ? rawExperience : [];
+  
+  const rawEducation = Array.isArray(seekerProfile?.education) && seekerProfile.education.length > 0 
+    ? seekerProfile.education 
+    : application?.education;
+  const educationList = Array.isArray(rawEducation) ? rawEducation : [];
+  
+  const rawSkills = Array.isArray(seekerProfile?.skills) && seekerProfile.skills.length > 0 
+    ? seekerProfile.skills 
+    : application?.skills;
+  const skillsList = Array.isArray(rawSkills) ? rawSkills : [];
+  
+  const district = application?.district || application?.location || seekerProfile?.district || 'Not available';
+  
+  const rawPortfolio = Array.isArray(seekerProfile?.portfolio) && seekerProfile.portfolio.length > 0
+    ? seekerProfile.portfolio
+    : Array.isArray(seekerProfile?.portfolioLinks) && seekerProfile.portfolioLinks.length > 0
+      ? seekerProfile.portfolioLinks
+      : application?.portfolio;
+  const portfolioLinks = Array.isArray(rawPortfolio) ? (rawPortfolio as string[]) : [];
+  
   const walkIn = application?.walkIn || {};
+  const aboutMe = application?.aboutMe || seekerProfile?.aboutMe || seekerProfile?.summary || '';
+  const panelInitials = seekerName ? seekerName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'C';
+  const cleanPhone = phone.replace(/\D/g, '');
+  const whatsappNumber = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
 
   // Calculate profile strength
   const strengthItems = [
@@ -196,6 +300,29 @@ function CandidateDetailPanel({
             
             {canContact ? (
               <div className="space-y-2.5 text-xs">
+                {/* Profile Photo Header */}
+                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/5">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                    {application?.photoUrl ? (
+                      <img 
+                        src={application.photoUrl} 
+                        alt={seekerName} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs font-bold text-white">{panelInitials}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h5 className="text-xs font-bold text-white truncate">{seekerName}</h5>
+                    <p className="text-[10px] text-gray-400 truncate">{application?.currentRole || 'Job Seeker'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between py-1 border-b border-white/[0.02]">
+                  <span className="text-gray-500">Full Name</span>
+                  <span className="text-white font-bold">{seekerName}</span>
+                </div>
                 <div className="flex items-center justify-between py-1 border-b border-white/[0.02]">
                   <span className="text-gray-500">Gender</span>
                   <span className="text-gray-300 font-semibold">{application?.seekerGender || application?.gender || 'Not specified'}</span>
@@ -204,6 +331,41 @@ function CandidateDetailPanel({
                   <span className="text-gray-500">Date of Birth</span>
                   <span className="text-gray-300 font-semibold">{application?.seekerDob || application?.dob || 'Not specified'}</span>
                 </div>
+                <div className="flex items-center justify-between py-1 border-b border-white/[0.02]">
+                  <span className="text-gray-500">Applied Date</span>
+                  <span className="text-gray-300 font-semibold">
+                    {application?.appliedDate 
+                      ? new Date(application.appliedDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : application?.createdAt 
+                        ? new Date(application.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : 'Recently'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1.5 border-b border-white/[0.02] gap-2">
+                  <span className="text-gray-500">Status</span>
+                  {updatingStatus ? (
+                    <Loader2 size={12} className="text-cyan-400 animate-spin" />
+                  ) : (
+                    <select
+                      value={currentStatus}
+                      onChange={(e) => handleDropdownStatusChange(e.target.value)}
+                      className="bg-[#111124] border border-white/10 rounded px-1.5 py-0.5 text-[10px] text-white focus:outline-none focus:border-cyan-500/40"
+                    >
+                      <option value="applied">Applied</option>
+                      <option value="under_review">Under Review</option>
+                      <option value="shortlisted">Shortlisted</option>
+                      <option value="walk_in_interview">Walk-In Interview</option>
+                      <option value="interview_scheduled">Interview Scheduled</option>
+                      <option value="interview_completed">Interview Completed</option>
+                      <option value="selected">Selected</option>
+                      <option value="offer_sent">Offer Sent</option>
+                      <option value="joined">Joined</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  )}
+                </div>
+                
                 <div className="flex items-center gap-2.5 py-1 text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
                   <Phone size={13} />
                   <a href={`tel:${phone}`} className="font-semibold font-mono">{phone}</a>
@@ -212,13 +374,59 @@ function CandidateDetailPanel({
                   <Mail size={13} />
                   <a href={`mailto:${email}`} className="truncate font-semibold">{email}</a>
                 </div>
-                <div className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2 py-1.5 mt-2">
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-white/[0.03] px-2 py-1.5 mt-1">
                   <span className="text-gray-500">Location</span>
                   <span className="text-gray-300 truncate font-semibold">{district}</span>
+                </div>
+
+                {/* Quick Contact Action Buttons */}
+                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/5">
+                  <a
+                    href={`tel:${phone}`}
+                    className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/15 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold transition-all text-center"
+                  >
+                    <Phone size={14} />
+                    Call
+                  </a>
+                  <a
+                    href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hello ${seekerName}, I am contacting you regarding your application for "${jobTitle}" on THENIJOBS.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold transition-all text-center"
+                  >
+                    <MessageSquare size={14} />
+                    WhatsApp
+                  </a>
+                  <a
+                    href={`mailto:${email}?subject=${encodeURIComponent(`Regarding your application for ${jobTitle}`)}`}
+                    className="flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold transition-all text-center"
+                  >
+                    <Mail size={14} />
+                    Email
+                  </a>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
+                {/* Blurred Profile Photo Header */}
+                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/5">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center shrink-0 blur-[2px] select-none">
+                    {application?.photoUrl ? (
+                      <img 
+                        src={application.photoUrl} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs font-bold text-white">C</span>
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-white blur-[2.5px] select-none">••••••••</h5>
+                    <p className="text-[10px] text-gray-400">Job Seeker</p>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 text-xs text-gray-500 blur-[3px] select-none">
                   <Phone size={13} />
                   <span>+91 99999 99999</span>
@@ -236,6 +444,13 @@ function CandidateDetailPanel({
               </div>
             )}
           </div>
+
+          {aboutMe && (
+            <div className="glass-card rounded-xl p-4 space-y-2">
+              <h4 className="text-xs font-bold text-gray-400 tracking-wider uppercase border-b border-white/5 pb-2">About Candidate</h4>
+              <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-line">{aboutMe}</p>
+            </div>
+          )}
 
           {/* Employer Review Notes */}
           <div className="glass-card rounded-xl p-4">
@@ -296,11 +511,55 @@ function CandidateDetailPanel({
               </div>
             )}
           </div>
+
+          {/* Activity Timeline */}
+          <div className="pt-3 border-t border-white/[0.06] space-y-3">
+            <h4 className="text-xs font-bold text-gray-400 tracking-wider uppercase border-b border-white/5 pb-2 mb-2 flex items-center gap-1.5">
+              <Clock size={12} className="text-cyan-400" /> Activity Timeline
+            </h4>
+            <div className="space-y-3 pl-1 pt-1">
+              {Array.isArray(application.statusHistory) && application.statusHistory.length > 0 ? (
+                application.statusHistory.map((historyItem: any, idx: number) => {
+                  const itemConfig = statusConfig[historyItem.status] || { label: historyItem.status, text: 'text-gray-400', bg: 'bg-gray-500/10' };
+                  return (
+                    <div key={idx} className="flex gap-2.5 text-xs">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-2 h-2 rounded-full ${itemConfig.text.replace('text-', 'bg-')} shrink-0 mt-1`} />
+                        {idx < application.statusHistory.length - 1 && <div className="w-0.5 bg-white/10 grow mt-1 mb-1" />}
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="font-semibold text-white">{itemConfig.label}</p>
+                        <p className="text-[9px] text-gray-500">
+                          {new Date(historyItem.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        {historyItem.note && <p className="text-[10px] text-gray-400 italic">{historyItem.note}</p>}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex gap-2.5 text-xs">
+                  <div className="flex flex-col items-center">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 mt-1" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-white">Applied</p>
+                    <p className="text-[9px] text-gray-500">
+                      {application?.appliedDate 
+                        ? new Date(application.appliedDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                        : 'Recently'}
+                    </p>
+                    <p className="text-[10px] text-gray-400 italic">Application submitted.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ================= COLUMN 3: DOCUMENTS, PORTFOLIO & INTERVIEW ================= */}
         <div className="space-y-4">
-          <div className="glass-card rounded-xl p-4 space-y-3">
+          <div className="glass-card rounded-xl p-4 space-y-4">
             <h4 className="text-xs font-bold text-gray-400 tracking-wider uppercase border-b border-white/5 pb-2">Documents & Portfolios</h4>
             
             {/* Expected Salary */}
@@ -309,48 +568,125 @@ function CandidateDetailPanel({
               <span className="text-emerald-400 font-bold">{application?.expectedSalary ? `₹${application.expectedSalary} / mo` : 'Negotiable'}</span>
             </div>
 
-            {/* Resume & Portfolio Download */}
-            <div className="space-y-2 pt-1">
-              {application.resumeUrl && application.resumeUrl !== '#' && (
-                <a
-                  href={application.resumeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between w-full py-2 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs font-bold transition-all"
-                >
-                  <span className="flex items-center gap-1.5"><Download size={13} /> Seeker Resume</span>
-                  <span className="text-[10px] bg-emerald-500/20 px-1.5 py-0.5 rounded text-emerald-300">PDF</span>
-                </a>
-              )}
+            {/* Resume Embed & Download */}
+            {application.resumeUrl && application.resumeUrl !== '#' && (
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-300 uppercase tracking-wide">Candidate Resume</span>
+                  <div className="flex gap-2">
+                    <a
+                      href={application.resumeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 text-[11px] font-bold"
+                    >
+                      <Download size={12} /> Download
+                    </a>
+                    <button
+                      onClick={() => {
+                        const win = window.open(application.resumeUrl, '_blank');
+                        if (win) win.print();
+                      }}
+                      className="text-cyan-400 hover:text-cyan-300 text-[11px] font-bold"
+                    >
+                      Print
+                    </button>
+                  </div>
+                </div>
+                <div className="w-full h-64 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d1b]">
+                  <iframe
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(application.resumeUrl)}&embedded=true`}
+                    className="w-full h-full border-0"
+                    title="Resume PDF Viewer"
+                  />
+                </div>
+              </div>
+            )}
 
-              {/* Specific portfolio/linkedIn/website details */}
+            {/* Portfolio Integration */}
+            {application.website && (
+              <div className="space-y-2 pt-3 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-gray-300 uppercase tracking-wide">Portfolio Website</span>
+                  <a
+                    href={application.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+                  >
+                    Open <ExternalLink size={10} />
+                  </a>
+                </div>
+                <p className="text-[10px] text-gray-500 truncate">{application.website}</p>
+                <div className="w-full h-40 rounded-xl overflow-hidden border border-white/10 bg-[#0d0d1b] relative group">
+                  <iframe
+                    src={application.website}
+                    className="w-full h-full border-0 pointer-events-none opacity-80"
+                    title="Portfolio Preview"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
+                    <span className="text-[9px] text-gray-400">Live Website Preview</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LinkedIn & Other Portfolio links */}
+            <div className="space-y-1.5 pt-2">
               {application.linkedin && (
-                <a href={application.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-xs text-cyan-400 hover:underline py-1">
-                  <ExternalLink size={12} /> LinkedIn Profile
+                <a href={application.linkedin} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[11px] text-cyan-400 hover:underline py-0.5">
+                  <ExternalLink size={11} /> LinkedIn Profile
                 </a>
               )}
-              {application.website && (
-                <a href={application.website} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-xs text-cyan-400 hover:underline py-1">
-                  <ExternalLink size={12} /> Personal Website
-                </a>
-              )}
-
               {portfolioLinks.filter(p => p !== application.linkedin && p !== application.website).map((link: string, i: number) => (
-                <a key={i} href={link} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-xs text-gray-400 hover:underline py-1">
-                  <ExternalLink size={12} /> Link {i + 1}: {link.replace(/^https?:\/\/(www\.)?/, '').slice(0, 30)}...
+                <a key={i} href={link} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[11px] text-gray-400 hover:underline py-0.5">
+                  <ExternalLink size={11} /> Link {i + 1}: {link.replace(/^https?:\/\/(www\.)?/, '').slice(0, 25)}...
                 </a>
               ))}
             </div>
 
-            {/* Digital ID Link */}
+            {/* Digital ID & QR Code Verification */}
             {seekerId && (
-              <div className="pt-2 border-t border-white/5">
-                <Link
+              <div className="pt-3 border-t border-white/5 space-y-3">
+                <div className="flex items-center gap-1.5">
+                  <ShieldCheck size={13} className="text-indigo-400" />
+                  <span className="text-[11px] font-bold text-gray-300 uppercase tracking-wide">ID Card & Verification</span>
+                </div>
+                
+                <div className="flex items-center gap-3 bg-white/[0.02] border border-white/[0.04] p-2.5 rounded-xl">
+                  {/* Basic Info */}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-xs font-bold text-white truncate">{seekerName}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{application?.currentRole || seekerProfile?.currentRole || 'Job Seeker'}</p>
+                    <span className="inline-block text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mt-1">
+                      {seekerProfile?.candidateId || `TNI-${seekerId.slice(0, 8).toUpperCase()}`}
+                    </span>
+                  </div>
+                  
+                  {/* QR Code Verification */}
+                  <div className="shrink-0 flex flex-col items-center gap-1">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                        typeof window !== 'undefined' 
+                          ? `${window.location.origin}/id?uid=${seekerId}` 
+                          : `https://thenijobs.web.app/id?uid=${seekerId}`
+                      )}`} 
+                      alt="Candidate QR Code" 
+                      className="w-16 h-16 rounded border border-white/10 bg-white p-0.5" 
+                    />
+                    <span className="text-[8px] text-gray-500 font-mono">Scan Profile</span>
+                  </div>
+                </div>
+                
+                <a
                   href={`/id?uid=${seekerId}`}
-                  className="flex items-center gap-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-indigo-600/10 border border-indigo-500/25 hover:bg-indigo-600/20 text-indigo-400 text-xs font-bold transition-all"
                 >
-                  <ShieldCheck size={13} /> View Digital ID Card
-                </Link>
+                  <ExternalLink size={12} /> View Digital ID Card
+                </a>
               </div>
             )}
           </div>
@@ -388,53 +724,126 @@ function CandidateDetailPanel({
                   Schedule Interview
                 </button>
               ) : (
-                <form onSubmit={handleScheduleInterview} className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-2">
+                <form onSubmit={handleScheduleInterview} className="space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-1">
                     <span className="text-xs font-semibold text-amber-400">Schedule Interview</span>
                     <button type="button" onClick={() => setShowScheduleForm(false)} className="text-gray-500 hover:text-white">
                       <X size={14} />
                     </button>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] text-gray-500 mb-1">Date</label>
-                    <input
-                      type="date"
-                      required
-                      value={interviewDate}
-                      onChange={(e) => setInterviewDate(e.target.value)}
-                      className="w-full bg-[#111124] border border-white/10 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-cyan-500/40"
-                    />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[9px] text-gray-500 mb-0.5">Date</label>
+                      <input
+                        type="date"
+                        required
+                        value={interviewDate}
+                        onChange={(e) => setInterviewDate(e.target.value)}
+                        className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] text-gray-500 mb-0.5">Time</label>
+                      <input
+                        type="time"
+                        required
+                        value={interviewTime}
+                        onChange={(e) => setInterviewTime(e.target.value)}
+                        className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] text-gray-500 mb-1">Time</label>
-                    <input
-                      type="time"
-                      required
-                      value={interviewTime}
-                      onChange={(e) => setInterviewTime(e.target.value)}
-                      className="w-full bg-[#111124] border border-white/10 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-cyan-500/40"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-gray-500 mb-1">Mode</label>
+                    <label className="block text-[9px] text-gray-500 mb-0.5">Interview Type</label>
                     <select
                       value={interviewMode}
                       onChange={(e) => setInterviewMode(e.target.value)}
-                      className="w-full bg-[#111124] border border-white/10 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                      className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
                     >
                       <option value="Phone">Phone Call</option>
-                      <option value="Video">Video Call (Google Meet)</option>
-                      <option value="In-Person">In-Person Office Interview</option>
+                      <option value="Video">Online Video (Google Meet / Zoom)</option>
+                      <option value="In-Person">Walk-in / In-Person Interview</option>
                     </select>
+                  </div>
+
+                  {interviewMode === 'In-Person' && (
+                    <>
+                      <div>
+                        <label className="block text-[9px] text-gray-500 mb-0.5">Location Address</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 123 Office Road, Theni"
+                          value={interviewLocation}
+                          onChange={(e) => setInterviewLocation(e.target.value)}
+                          className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] text-gray-500 mb-0.5">Google Maps Link (Optional)</label>
+                        <input
+                          type="url"
+                          placeholder="https://maps.app.goo.gl/..."
+                          value={googleMapsLink}
+                          onChange={(e) => setGoogleMapsLink(e.target.value)}
+                          className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {interviewMode === 'Video' && (
+                    <div>
+                      <label className="block text-[9px] text-gray-500 mb-0.5">Meeting URL (Optional)</label>
+                      <input
+                        type="url"
+                        placeholder="https://meet.google.com/..."
+                        value={meetingLink}
+                        onChange={(e) => setMeetingLink(e.target.value)}
+                        className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[9px] text-gray-500 mb-0.5">Interviewer Name</label>
+                      <input
+                        type="text"
+                        placeholder="HR Manager"
+                        value={interviewerName}
+                        onChange={(e) => setInterviewerName(e.target.value)}
+                        className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] text-gray-500 mb-0.5">Interviewer Contact</label>
+                      <input
+                        type="tel"
+                        placeholder="Mobile Number"
+                        value={interviewerContact}
+                        onChange={(e) => setInterviewerContact(e.target.value)}
+                        className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] text-gray-500 mb-0.5">Instructions / Notes</label>
+                    <textarea
+                      placeholder="e.g. Please bring original certificates..."
+                      value={additionalInstructions}
+                      onChange={(e) => setAdditionalInstructions(e.target.value)}
+                      rows={2}
+                      className="w-full bg-[#111124] border border-white/10 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-cyan-500/40 resize-none"
+                    />
                   </div>
 
                   <button
                     type="submit"
                     disabled={scheduling}
-                    className="w-full py-2 rounded-lg bg-amber-500 text-white text-xs font-bold hover:bg-amber-400 transition-colors disabled:opacity-50"
+                    className="w-full py-2 rounded-lg bg-amber-500 text-white text-xs font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 mt-1"
                   >
                     {scheduling ? 'Scheduling...' : 'Confirm Date & Time'}
                   </button>
@@ -510,6 +919,16 @@ export default function CandidatesPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [qualificationFilter, setQualificationFilter] = useState('All');
   const [experienceFilter, setExperienceFilter] = useState('All');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const appId = params.get('appId') || params.get('applicationId');
+      if (appId) {
+        setExpandedId(appId);
+      }
+    }
+  }, [applications]);
 
   // Helper: get initials
   const getInitials = (name?: string) => {
@@ -596,14 +1015,13 @@ export default function CandidatesPage() {
       return;
     }
 
-    // CSV Headers matching details requested
     const headers = [
-      'Full Name', 'Phone', 'Email', 'District', 'Gender', 'DOB',
-      'Qualification / Degree', 'Specialization', 'Current Role', 
-      'Expected Salary', 'Skills', 'Work Experience History', 
-      'Education Details', 'LinkedIn Profile', 'Personal Website', 
-      'Resume Link', 'Applied Position', 'Application Date', 'Status'
+      'Applicant Name', 'Mobile Number', 'Email', 'Qualification', 'Experience',
+      'Skills', 'Resume Link', 'Digital ID Card Link', 'Profile Link', 'Applied Date',
+      'Application Status'
     ];
+
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.in';
 
     const rows = targetList.map((app: any) => {
       const expStr = Array.isArray(app.experience) 
@@ -613,39 +1031,30 @@ export default function CandidatesPage() {
         ? app.education.map((e: any) => `${e.degree} in ${e.field} from ${e.institution} (${e.year})`).join('; ') 
         : '';
       const skillsStr = Array.isArray(app.skills) ? app.skills.join(', ') : '';
-      
-      const highestEdu = Array.isArray(app.education) && app.education.length > 0 ? app.education[0] : null;
-      const degree = highestEdu?.degree || '';
-      const field = highestEdu?.field || '';
+      const seekerId = app.seekerId || app.applicantId || '';
 
       return [
         app.seekerName || '',
         app.seekerPhone || app.phone || '',
         app.seekerEmail || app.email || '',
-        app.district || app.location || '',
-        app.seekerGender || app.gender || '',
-        app.seekerDob || app.dob || '',
-        degree,
-        field,
-        app.currentRole || '',
-        app.expectedSalary || '',
-        skillsStr,
-        expStr,
-        eduStr,
-        app.linkedin || '',
-        app.website || '',
+        eduStr || 'Not shared',
+        expStr || 'Fresher',
+        skillsStr || '',
         app.resumeUrl || '',
-        app.jobTitle || '',
+        seekerId ? `${baseUrl}/id?uid=${seekerId}` : '',
+        seekerId ? `${baseUrl}/profile/${seekerId}` : '',
         app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-IN') : '',
         app.status || 'applied'
       ].map(val => `"${String(val).replace(/"/g, '""')}"`); // Escape quotes and wrap
     });
 
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = "\uFEFF" + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.href = URL.createObjectURL(blob);
     link.setAttribute("download", `THENIJOBS_Candidates_${mode}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
     document.body.removeChild(link);
   };
 
@@ -674,11 +1083,9 @@ export default function CandidatesPage() {
     }
 
     const headers = [
-      'Full Name', 'Phone', 'Email', 'District', 'Gender', 'DOB',
-      'Qualification / Degree', 'Specialization', 'Current Role', 
-      'Expected Salary', 'Skills', 'Work Experience History', 
-      'Education Details', 'LinkedIn Profile', 'Personal Website', 
-      'Resume Link', 'Applied Position', 'Application Date', 'Status'
+      'Applicant Name', 'Mobile Number', 'Email', 'Qualification', 'Experience',
+      'Skills', 'Resume Link', 'Digital ID Card Link', 'Profile Link', 'Applied Date',
+      'Application Status'
     ];
 
     const escapeXml = (unsafe: any) => {
@@ -704,6 +1111,8 @@ export default function CandidatesPage() {
     });
     xmlRows += '   </Row>\n';
 
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.in';
+
     // Data Rows
     targetList.forEach((app: any) => {
       const expStr = Array.isArray(app.experience) 
@@ -713,29 +1122,18 @@ export default function CandidatesPage() {
         ? app.education.map((e: any) => `${e.degree} in ${e.field} from ${e.institution} (${e.year})`).join('; ') 
         : '';
       const skillsStr = Array.isArray(app.skills) ? app.skills.join(', ') : '';
-      
-      const highestEdu = Array.isArray(app.education) && app.education.length > 0 ? app.education[0] : null;
-      const degree = highestEdu?.degree || '';
-      const field = highestEdu?.field || '';
+      const seekerId = app.seekerId || app.applicantId || '';
 
       const cells = [
         app.seekerName || '',
         app.seekerPhone || app.phone || '',
         app.seekerEmail || app.email || '',
-        app.district || app.location || '',
-        app.seekerGender || app.gender || '',
-        app.seekerDob || app.dob || '',
-        degree,
-        field,
-        app.currentRole || '',
-        app.expectedSalary || '',
-        skillsStr,
-        expStr,
-        eduStr,
-        app.linkedin || '',
-        app.website || '',
+        eduStr || 'Not shared',
+        expStr || 'Fresher',
+        skillsStr || '',
         app.resumeUrl || '',
-        app.jobTitle || '',
+        seekerId ? `${baseUrl}/id?uid=${seekerId}` : '',
+        seekerId ? `${baseUrl}/profile/${seekerId}` : '',
         app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-IN') : '',
         app.status || 'applied'
       ];
@@ -1049,8 +1447,16 @@ ${xmlRows}  </Table>
                       <div className="flex-1 flex flex-col lg:flex-row lg:items-center gap-4 min-w-0">
                         {/* Avatar + Info */}
                         <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0 border border-white/5">
-                            <span className="text-xs font-bold text-white">{getInitials(candidate.seekerName)}</span>
+                          <div className="w-11 h-11 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0 border border-white/5">
+                            {candidate.photoUrl ? (
+                              <img 
+                                src={candidate.photoUrl} 
+                                alt={candidate.seekerName} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-xs font-bold text-white">{getInitials(candidate.seekerName)}</span>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">

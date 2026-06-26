@@ -33,6 +33,8 @@ function BookServiceContent() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const initialServiceName = searchParams.get('serviceName') || '';
+
   useEffect(() => {
     if (user) {
       setCustomerName(user.displayName || '');
@@ -41,12 +43,14 @@ function BookServiceContent() {
   }, [user]);
 
   useEffect(() => {
-    if (company?.services && company.services.length > 0) {
+    if (initialServiceName) {
+      setServiceName(initialServiceName);
+    } else if (company?.services && company.services.length > 0) {
       setServiceName(company.services[0]);
     } else if (company?.category) {
       setServiceName(company.category);
     }
-  }, [company]);
+  }, [company, initialServiceName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

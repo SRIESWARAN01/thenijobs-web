@@ -248,7 +248,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('[AuthContext] Syncing user doc in Firestore:', fbUser.uid, dataToSave);
     }
     await setDoc(doc(db, 'users', fbUser.uid), dataToSave, { merge: true });
-  }, []);
+
+    if (!profile) {
+      await ensureFreeYearlySubscription({
+        uid: fbUser.uid,
+        displayName: dataToSave.displayName,
+        email: dataToSave.email,
+        phone: fbUser.phoneNumber || undefined,
+        role: dataToSave.role,
+      });
+    }
+  }, [ensureFreeYearlySubscription]);
 
   const rejectUnverifiedEmail = useCallback(async (fbUser: FirebaseUser) => {
     // Skip email verification check for phone/custom token OTP users who do not have an email
@@ -526,6 +536,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
     try {
       await signOut(auth);
+      await fetch('/api/auth/logout', { method: 'POST' }).catch((err) => {
+        console.warn('[AuthContext] Failed to clear server session cookie:', err);
+      });
       setUser(null);
       setFirebaseUser(null);
     } catch (err) {

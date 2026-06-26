@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { SocialPost, type SocialPostData } from '@/components/portal/SocialPost';
+import { compressImage } from '@/lib/imageUtils';
 
 const POST_TYPES = [
   { value: 'general', label: 'Update', icon: MessageCircle, color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -30,6 +31,7 @@ export default function BusinessFeedPage() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState('');
   const [likeLoadingId, setLikeLoadingId] = useState<string | null>(null);
 
@@ -49,12 +51,36 @@ export default function BusinessFeedPage() {
     orderBy('createdAt', 'desc')
   ], { skip: !company?.id });
 
-  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setMediaFile(file);
-    const url = URL.createObjectURL(file);
-    setMediaPreview(url);
+
+    setError('');
+    if (file.type.startsWith('image/')) {
+      setCompressing(true);
+      try {
+        const compressed = await compressImage(file, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.8,
+          outputType: 'image/webp',
+        });
+        setMediaFile(compressed);
+        const url = URL.createObjectURL(compressed);
+        setMediaPreview(url);
+      } catch (err: any) {
+        console.error('Image compression failed, using original file:', err);
+        setMediaFile(file);
+        const url = URL.createObjectURL(file);
+        setMediaPreview(url);
+      } finally {
+        setCompressing(false);
+      }
+    } else {
+      setMediaFile(file);
+      const url = URL.createObjectURL(file);
+      setMediaPreview(url);
+    }
   };
 
   const removeMedia = () => {
@@ -65,7 +91,7 @@ export default function BusinessFeedPage() {
   };
 
   const handlePost = async () => {
-    if (!content.trim() || !company) return;
+    if (!content.trim() || !company || compressing) return;
     setPosting(true);
     setError('');
 
@@ -172,19 +198,27 @@ export default function BusinessFeedPage() {
         </div>
 
         {/* Media Preview */}
-        {mediaPreview && (
+        {(mediaPreview || compressing) && (
           <div className="relative rounded-xl overflow-hidden bg-black/20">
-            {mediaFile?.type.startsWith('video/') ? (
-              <video src={mediaPreview} className="w-full max-h-60 object-contain" controls />
+            {compressing ? (
+              <div className="flex flex-col items-center justify-center p-12 text-center">
+                <Loader2 size={28} className="text-emerald-400 animate-spin mb-3" />
+                <p className="text-xs text-gray-300 font-semibold">Compressing Image...</p>
+                <p className="text-[10px] text-gray-500 mt-1">Resizing to high-performance dimensions</p>
+              </div>
+            ) : mediaFile?.type.startsWith('video/') ? (
+              <video src={mediaPreview!} className="w-full max-h-60 object-contain" controls />
             ) : (
-              <img src={mediaPreview} alt="Preview" className="w-full max-h-60 object-contain" />
+              <img src={mediaPreview!} alt="Preview" className="w-full max-h-60 object-contain" />
             )}
-            <button
-              onClick={removeMedia}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
-            >
-              <X size={14} />
-            </button>
+            {!compressing && (
+              <button
+                onClick={removeMedia}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            )}
             {uploadLoading && (
               <div className="absolute inset-0 bg-slate-950/85 flex flex-col items-center justify-center p-4">
                 <Loader2 size={24} className="text-violet-400 animate-spin mb-2" />
@@ -237,7 +271,8 @@ export default function BusinessFeedPage() {
             />
             <button
               onClick={() => fileRef.current?.click()}
-              className="p-2 rounded-lg text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+              disabled={posting || compressing}
+              className="p-2 rounded-lg text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30 disabled:pointer-events-none"
               title="Add Image"
             >
               <ImagePlus size={18} />
@@ -250,7 +285,8 @@ export default function BusinessFeedPage() {
                   fileRef.current.accept = 'image/*,video/*';
                 }
               }}
-              className="p-2 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+              disabled={posting || compressing}
+              className="p-2 rounded-lg text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all disabled:opacity-30 disabled:pointer-events-none"
               title="Add Video"
             >
               <Video size={18} />
@@ -259,7 +295,7 @@ export default function BusinessFeedPage() {
 
           <button
             onClick={handlePost}
-            disabled={posting || !content.trim()}
+            disabled={posting || compressing || !content.trim()}
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-xs hover:opacity-90 transition-opacity disabled:opacity-40 flex items-center gap-2"
           >
             {posting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}

@@ -258,8 +258,8 @@ export function usePlatformStats(skip = false) {
           getAggregateCount('users', [where('role', 'in', ['employer', 'business_owner'])]),
           getAggregateCount('users', [where('role', '==', 'job_seeker')]),
           getAggregateCount('jobs', [where('isActive', '==', true)]),
-          getAggregateCount('applications'),
-          getAggregateCount('applications', [where('applicationType', '==', 'walk_in')]),
+          getAggregateCount('jobApplications'),
+          getAggregateCount('jobApplications', [where('applicationType', '==', 'walk_in')]),
           getAggregateCount('leads'),
           getAggregateCount('companies', [where('verificationStatus', '==', 'pending')]),
           getAggregateCount('jobs', [where('isActive', '==', false)]),
@@ -322,24 +322,28 @@ export function usePlatformStats(skip = false) {
 export interface EmployerStatsData {
   activeJobs: number;
   totalApplications: number;
-  pendingReview: number;
+  applied: number;
+  underReview: number;
   shortlisted: number;
   interviewScheduled: number;
   interviews: number;
-  hired: number;
+  hired: number; //selected
   rejected: number;
+  joined: number;
 }
 
 export function useEmployerStats(companyId: string | undefined) {
   const [stats, setStats] = useState<EmployerStatsData>({
     activeJobs: 0,
     totalApplications: 0,
-    pendingReview: 0,
+    applied: 0,
+    underReview: 0,
     shortlisted: 0,
     interviewScheduled: 0,
     interviews: 0,
     hired: 0,
     rejected: 0,
+    joined: 0,
   });
   const [loading, setLoading] = useState(!!companyId);
 
@@ -352,7 +356,18 @@ export function useEmployerStats(companyId: string | undefined) {
     let cancelled = false;
     async function loadStats() {
       setLoading(true);
-      const [activeJobs, totalApplications, pendingReview, shortlisted, interviewScheduled, interviews, hired, rejected] = await Promise.all([
+      const [
+        activeJobs,
+        totalApplications,
+        applied,
+        underReview,
+        shortlisted,
+        interviewScheduled,
+        interviews,
+        hired,
+        rejected,
+        joined
+      ] = await Promise.all([
         getAggregateCount('jobs', [
           where('companyId', '==', companyId),
           where('isActive', '==', true),
@@ -360,7 +375,11 @@ export function useEmployerStats(companyId: string | undefined) {
         getAggregateCount('jobApplications', [where('employerId', '==', companyId)]),
         getAggregateCount('jobApplications', [
           where('employerId', '==', companyId),
-          where('status', 'in', ['applied', 'pending_review', 'under_review']),
+          where('status', '==', 'applied'),
+        ]),
+        getAggregateCount('jobApplications', [
+          where('employerId', '==', companyId),
+          where('status', 'in', ['under_review', 'pending_review', 'resume_viewed']),
         ]),
         getAggregateCount('jobApplications', [
           where('employerId', '==', companyId),
@@ -379,10 +398,25 @@ export function useEmployerStats(companyId: string | undefined) {
           where('employerId', '==', companyId),
           where('status', '==', 'rejected'),
         ]),
+        getAggregateCount('jobApplications', [
+          where('employerId', '==', companyId),
+          where('status', '==', 'joined'),
+        ]),
       ]);
 
       if (!cancelled) {
-        setStats({ activeJobs, totalApplications, pendingReview, shortlisted, interviewScheduled, interviews, hired, rejected });
+        setStats({
+          activeJobs,
+          totalApplications,
+          applied,
+          underReview,
+          shortlisted,
+          interviewScheduled,
+          interviews,
+          hired,
+          rejected,
+          joined,
+        });
         setLoading(false);
       }
     }

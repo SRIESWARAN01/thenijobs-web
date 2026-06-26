@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { db } from '@/lib/firebase/config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
@@ -18,21 +20,159 @@ import {
 } from 'lucide-react';
 import { FacebookIcon, InstagramIcon } from '@/components/ui/BrandIcons';
 import { trackAnalyticsEvent } from '@/lib/analytics';
+import { useAuth } from '@/hooks/useAuth';
+import { trackProductOrServiceAnalytics } from '@/lib/firebase/firestoreService';
+
+// ──────────────────────────────────────────────────────────────────
+// SERVICES SHOWCASE COMPONENT
+// ──────────────────────────────────────────────────────────────────
+function ServicesShowcaseSection({ company, services, currentTheme }: { company: any; services: any[]; currentTheme: any }) {
+  const { user } = useAuth();
+  
+  if (!services || services.length === 0) return null;
+
+  const handleServiceAction = async (service: any, eventType: 'whatsapp' | 'call' | 'email') => {
+    try {
+      const customerData = {
+        name: user?.displayName || (user as any)?.fullName || 'Anonymous Guest',
+        phone: user?.phone || '',
+        email: user?.email || '',
+      };
+
+      await trackProductOrServiceAnalytics(
+        service.id,
+        'service',
+        company.id || '',
+        eventType,
+        customerData
+      );
+    } catch (err) {
+      console.error('Error tracking service action:', err);
+    }
+
+    if (eventType === 'whatsapp') {
+      const priceStr = service.price ? `₹${service.price}` : 'Price on request';
+      const serviceUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/services/${service.id}`
+        : `https://thenijobs.com/services/${service.id}`;
+      
+      const text = `Hello, I'm interested in your service.
+
+Service: ${service.name}
+Price: ${priceStr}
+Service Link: ${serviceUrl}
+Company: ${company.name || 'Verified Business'}
+
+Please share more details.`;
+      
+      const rawNum = company.whatsapp || company.phone || '917094826586';
+      const cleanPhone = String(rawNum).replace(/\D/g, '');
+      const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      
+      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`, '_blank');
+    } else if (eventType === 'call') {
+      window.location.href = `tel:${company.phone || ''}`;
+    } else if (eventType === 'email') {
+      window.location.href = `mailto:${company.email || ''}?subject=Enquiry regarding ${encodeURIComponent(service.name)}`;
+    }
+  };
+
+  return (
+    <div className={`${currentTheme.card || 'bg-white/[0.02] border border-white/5'} rounded-3xl p-6 space-y-6`}>
+      <h3 className="text-sm font-bold text-white flex items-center gap-2 border-b border-white/5 pb-2">
+        <Briefcase size={16} className={currentTheme.accent || 'text-rose-400'} /> Our Services Showcase
+      </h3>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {services.map((service: any) => {
+          const priceText = service.price ? `Starting at ₹${service.price}` : 'Price on request';
+          const availability = service.availability || 'Available';
+          const imageUrl = service.imageUrl || '';
+
+          return (
+            <div key={service.id} className="p-4 rounded-2xl bg-slate-950/40 border border-white/5 hover:border-white/10 transition-all flex flex-col justify-between gap-4">
+              <div className="flex gap-4">
+                {imageUrl ? (
+                  <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-slate-900 border border-white/10">
+                    <img src={imageUrl} alt={service.name} className="object-cover w-full h-full" />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-xl shrink-0 bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500">
+                    <Briefcase size={24} />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-xs font-bold text-white truncate">{service.name}</h4>
+                  </div>
+                  {service.category && (
+                    <span className="text-[8px] text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded uppercase mt-1 inline-block">
+                      {service.category}
+                    </span>
+                  )}
+                  <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                    {service.description}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2 flex-wrap text-[9px] text-slate-500 font-medium">
+                    <span className="text-slate-300">{priceText}</span>
+                    <span>•</span>
+                    <span className="text-emerald-400">{availability}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-white/5">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleServiceAction(service, 'call')}
+                    className="flex-1 py-1.5 rounded-lg border border-white/10 text-[9px] font-bold uppercase tracking-wider text-slate-300 hover:bg-white/5 flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <Phone size={10} /> Call
+                  </button>
+                  <button
+                    onClick={() => handleServiceAction(service, 'whatsapp')}
+                    className="flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider text-white hover:opacity-90 flex items-center justify-center gap-1 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}
+                  >
+                    <MessageCircle size={10} /> WhatsApp
+                  </button>
+                  <button
+                    onClick={() => handleServiceAction(service, 'email')}
+                    className="flex-1 py-1.5 rounded-lg border border-white/10 text-[9px] font-bold uppercase tracking-wider text-slate-300 hover:bg-white/5 flex items-center justify-center gap-1 transition-colors"
+                  >
+                    <Mail size={10} /> Email
+                  </button>
+                </div>
+                
+                <Link
+                  href={`/services/${service.id}`}
+                  className="w-full py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[9px] font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1 border border-white/5 transition-all text-center"
+                >
+                  View Details <ChevronRight size={10} />
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const renderVerificationBadge = (level?: string, status?: string, size = 18) => {
-  const activeLevel = level || (status === 'verified' ? 'standard' : 'free');
+  const activeLevel = level || (status === 'verified' ? 'basic' : 'free');
   if (activeLevel === 'free') return null;
-  if (activeLevel === 'standard') {
+  if (activeLevel === 'basic' || activeLevel === 'standard') {
     return <span title="Standard Verified Business" className="shrink-0 inline-block align-middle ml-1.5 animate-fade-in"><BadgeCheck size={size} className="text-blue-400 fill-blue-400/10" /></span>;
   }
   if (activeLevel === 'premium') {
     return <span title="Premium Verified Business" className="shrink-0 inline-block align-middle ml-1.5 animate-fade-in"><BadgeCheck size={size} className="text-amber-400 fill-amber-400/10" /></span>;
   }
-  if (activeLevel === 'elite') {
+  if (activeLevel === 'enterprise' || activeLevel === 'elite') {
     return (
       <span className="inline-flex items-center gap-0.5 align-middle ml-1.5 shrink-0 animate-fade-in">
-        <span title="Elite Verified Business"><BadgeCheck size={size} className="text-violet-400 fill-violet-400/10" /></span>
-        <span className="text-xs text-violet-400 font-extrabold" style={{ fontSize: size * 0.65 }} title="Elite Crown VIP">👑</span>
+        <span title="Elite Enterprise Verified Business"><BadgeCheck size={size} className="text-violet-400 fill-violet-400/10" /></span>
+        <span className="text-xs text-violet-400 font-extrabold" style={{ fontSize: size * 0.65 }} title="Enterprise Crown VIP">👑</span>
       </span>
     );
   }
@@ -42,7 +182,7 @@ const renderVerificationBadge = (level?: string, status?: string, size = 18) => 
 export default function CompanyProfileClient({ company, jobs, reviews }: {
   company: any; jobs: any[]; reviews: any[];
 }) {
-  // Determine plan type: free, basic (Standard), premium
+  // Determine plan type: free, basic (Standard), premium, enterprise
   const plan = company.subscriptionBadge || 'free';
 
   useEffect(() => {
@@ -54,13 +194,108 @@ export default function CompanyProfileClient({ company, jobs, reviews }: {
     }
   }, [company?.id]);
 
-  if (plan === 'premium') {
+  if (plan === 'enterprise') {
+    return <TemplateEnterprise company={company} jobs={jobs} reviews={reviews} />;
+  } else if (plan === 'premium') {
     return <TemplatePremium company={company} jobs={jobs} reviews={reviews} />;
   } else if (plan === 'basic') {
     return <TemplateStandard company={company} jobs={jobs} reviews={reviews} />;
   } else {
     return <TemplateFree company={company} jobs={jobs} reviews={reviews} />;
   }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// MINI DIGITAL ID CARD COMPONENT
+// ──────────────────────────────────────────────────────────────────
+function MiniDigitalIDCard({ company, plan }: { company: any; plan: string }) {
+  const name = company.name || 'Business Partner';
+  const logoUrl = company.logoUrl || '';
+  const email = company.email || 'contact@business.com';
+  const phone = company.phone || 'N/A';
+  const category = company.category || 'Business Services';
+  const address = company.address || 'Tamil Nadu';
+  const uniqueId = `TNI-BUS-${company.id ? company.id.slice(0, 8).toUpperCase() : 'XXXX'}`;
+
+  // Theme configuration for the card preview
+  let cardBg = 'bg-gradient-to-br from-slate-900 to-slate-950 border-blue-900/10';
+  let badgeStyle = 'bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold px-2 py-0.5 text-[9px] rounded';
+  let badgeText = 'FREE TIER';
+  let borderStyle = 'border-slate-800';
+  let accentText = 'text-slate-400';
+  let borderLeft = 'border-slate-500';
+
+  if (plan === 'enterprise') {
+    cardBg = 'bg-gradient-to-br from-[#050b18] via-[#10192e] to-[#1a2d52] border-violet-400/40 shadow-[0_0_20px_rgba(139,92,246,0.3)]';
+    badgeStyle = 'bg-gradient-to-r from-violet-400 via-purple-500 to-indigo-500 text-white font-black px-2.5 py-0.5 text-[9px] rounded-full shadow-[0_0_12px_rgba(139,92,246,0.4)]';
+    badgeText = '👑 ENTERPRISE VIP';
+    borderStyle = 'border-violet-500/40';
+    accentText = 'text-violet-400';
+    borderLeft = 'border-violet-400';
+  } else if (plan === 'premium') {
+    cardBg = 'bg-gradient-to-br from-[#06060c] via-[#161208] to-[#2b1f09] border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.25)]';
+    badgeStyle = 'bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 text-[9px] rounded-full shadow-[0_0_10px_rgba(245,158,11,0.3)]';
+    badgeText = '👑 PREMIUM VIP';
+    borderStyle = 'border-amber-500/40';
+    accentText = 'text-amber-400';
+    borderLeft = 'border-amber-400';
+  } else if (plan === 'basic') {
+    cardBg = 'bg-gradient-to-br from-[#070b19] via-[#0b1433] to-[#142357] border-blue-500/20 shadow-[0_0_12px_rgba(59,130,246,0.15)]';
+    badgeStyle = 'bg-blue-500/25 border border-blue-400/30 text-white font-bold px-2 py-0.5 text-[9px] rounded-full';
+    badgeText = 'STANDARD';
+    borderStyle = 'border-blue-500/30';
+    accentText = 'text-blue-400';
+    borderLeft = 'border-blue-500';
+  }
+
+  return (
+    <Link href={`/id/company/${encodeURIComponent(company.slug)}`} className="block group">
+      <div className={`w-full rounded-2xl border p-4 flex flex-col justify-between min-h-[190px] relative overflow-hidden transition-all duration-300 hover:scale-[1.02] ${cardBg} ${borderStyle}`}>
+        {/* Top row */}
+        <div className="flex items-center justify-between z-10">
+          <div className={`flex flex-col border-l-2 pl-1.5 ${borderLeft}`}>
+            <span className="text-[8px] tracking-[0.2em] font-black text-slate-400 uppercase">THENIJOBS</span>
+            <span className="text-[9px] font-extrabold tracking-wide text-white uppercase">VERIFIED PARTNER</span>
+          </div>
+          <span className={badgeStyle}>{badgeText}</span>
+        </div>
+
+        {/* Middle details */}
+        <div className="my-3 flex gap-3 items-center z-10">
+          <div className={`relative h-12 w-12 overflow-hidden rounded-xl border bg-[#070714] shrink-0 flex items-center justify-center ${borderStyle}`}>
+            {logoUrl ? (
+              <img src={logoUrl} alt={name} className="object-cover w-full h-full" />
+            ) : (
+              <Building2 size={20} className={accentText} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-black text-white truncate leading-tight">{name}</h4>
+            <p className={`text-[10px] font-semibold truncate ${accentText}`}>{category}</p>
+            <div className="text-[9px] font-mono text-slate-400 mt-1 font-bold">
+              {uniqueId}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom row */}
+        <div className="border-t border-white/5 pt-2 flex flex-col gap-0.5 z-10 text-[9px] text-slate-300">
+          <div className="flex items-center gap-1.5 truncate">
+            <Phone size={9} className={accentText} />
+            <span className="truncate">{phone}</span>
+          </div>
+          <div className="flex items-center gap-1.5 truncate">
+            <Mail size={9} className={accentText} />
+            <span className="truncate">{email}</span>
+          </div>
+          <div className="flex items-center gap-1.5 truncate">
+            <MapPin size={9} className={accentText} />
+            <span className="truncate">{address}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────
@@ -88,7 +323,8 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
     { id: 'about', label: 'About' },
     { id: 'jobs', label: `Jobs (${jobs.length})` },
     { id: 'products', label: `Products (${company.products?.length || 0})` },
-    { id: 'locked_gallery', label: 'Gallery 🔒' },
+    { id: 'services', label: `Services (${company.services?.length || 0})` },
+    { id: 'gallery', label: `Gallery (${Math.min(company.galleryImages?.length || 0, 4)}/4)` },
     { id: 'locked_reviews', label: 'Reviews 🔒' },
   ];
 
@@ -154,11 +390,11 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                   <h3 className="text-sm font-semibold text-white mb-2">About the Company</h3>
                   <p className="text-xs text-slate-300 leading-relaxed">{company.description}</p>
                 </div>
-                {company.services?.length > 0 && (
+                {company.companyServicesTags?.length > 0 && (
                   <div className="pt-2">
                     <h4 className="text-xs font-semibold text-white mb-2">Services</h4>
                     <div className="flex flex-wrap gap-1.5">
-                      {company.services.map((svc: string) => (
+                      {company.companyServicesTags.map((svc: string) => (
                         <span key={svc} className="text-[10px] px-2 py-0.5 rounded bg-slate-850 border border-slate-800 text-slate-400">
                           {svc}
                         </span>
@@ -231,6 +467,35 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               </div>
             )}
 
+            {activeTab === 'services' && (
+              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
+                <ServicesShowcaseSection company={company} services={company.services} currentTheme={{ card: 'bg-transparent border-0 p-0', accent: 'text-slate-400' }} />
+              </div>
+            )}
+
+            {activeTab === 'gallery' && (
+              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-semibold text-white mb-2">Media Gallery</h3>
+                {company.galleryImages?.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {company.galleryImages.slice(0, 4).map((src: string, index: number) => (
+                      <div key={src || index} className="relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-850">
+                        <img src={src} alt="gallery" className="object-cover w-full h-full" />
+                      </div>
+                    ))}
+                    {company.galleryImages.length > 4 && (
+                      <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-850 flex flex-col items-center justify-center p-3 text-center border-dashed border-slate-750">
+                        <Lock size={14} className="text-slate-500 mb-1" />
+                        <span className="text-[8px] text-slate-500 leading-tight">Upgrade to Standard to see {company.galleryImages.length - 4} more</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 py-4 text-center">No gallery media uploaded.</p>
+                )}
+              </div>
+            )}
+
             {activeTab.startsWith('locked_') && (
               <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-8 text-center space-y-4">
                 <div className="w-12 h-12 rounded-full bg-slate-850 border border-slate-800 flex items-center justify-center mx-auto text-slate-400">
@@ -269,6 +534,12 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Digital ID Card Preview */}
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Digital Business ID Card</span>
+              <MiniDigitalIDCard company={company} plan="free" />
             </div>
 
             {/* Simple Lead Inquiry Form */}
@@ -316,7 +587,9 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
     window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const activeTheme = company.customTheme || 'classic_blue';
+  const activeTheme = company.customTheme && ['classic_blue', 'emerald_growth', 'royal_purple'].includes(company.customTheme)
+    ? company.customTheme
+    : 'classic_blue';
   
   const themeMap: Record<string, {
     bg: string;
@@ -467,11 +740,11 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                 </div>
 
                 {/* Services */}
-                {company.services?.length > 0 && (
+                {company.companyServicesTags?.length > 0 && (
                   <div className={`${currentTheme.card} rounded-2xl p-5`}>
                     <h2 className="text-sm font-semibold text-white mb-3">Listed Services</h2>
                     <div className="flex flex-wrap gap-1.5">
-                      {company.services.map((svc: string) => (
+                      {company.companyServicesTags.map((svc: string) => (
                         <span key={svc} className={`text-xs px-2.5 py-1 rounded-lg ${currentTheme.bullet}`}>
                           {svc}
                         </span>
@@ -498,6 +771,9 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                     <p className="text-xs text-slate-555 py-2 text-center">No active openings right now.</p>
                   )}
                 </div>
+
+                 {/* Services Showcase */}
+                 <ServicesShowcaseSection company={company} services={company.services} currentTheme={currentTheme} />
 
                  {/* Products */}
                 {company.products?.length > 0 && (
@@ -588,11 +864,11 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                       </div>
                     </div>
 
-                    {company.services?.length > 0 && (
+                    {company.companyServicesTags?.length > 0 && (
                       <div className={`${currentTheme.card} rounded-2xl p-5`}>
                         <h2 className="text-sm font-semibold text-white mb-3">Listed Services</h2>
                         <div className="flex flex-wrap gap-1.5">
-                          {company.services.map((svc: string) => (
+                          {company.companyServicesTags.map((svc: string) => (
                             <span key={svc} className={`text-xs px-2.5 py-1 rounded-lg ${currentTheme.bullet}`}>
                               {svc}
                             </span>
@@ -624,52 +900,61 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                 )}
 
                 {activeTab === 'products' && (
-                  <div className={`${currentTheme.card} rounded-2xl p-5`}>
-                    <h3 className="text-sm font-semibold text-white mb-4">Products & Services Showcase</h3>
-                    {company.products?.length > 0 ? (
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {company.products.map((product: any) => (
-                          <div key={product.id || product.name} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col sm:flex-row gap-4 hover:border-white/10 transition-colors">
-                            {product.images?.[0] && (
-                              <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-white/10">
-                                <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
-                              </div>
-                            )}
-                            <div className="flex-1 flex flex-col justify-between">
-                              <div>
-                                <div className="flex items-center justify-between gap-2">
-                                  <h4 className="text-xs font-bold text-white truncate max-w-[120px]">{product.name}</h4>
-                                  {product.price > 0 && <span className={`text-[10px] font-bold ${currentTheme.accent}`}>₹{product.price}</span>}
+                  <div className="space-y-6">
+                    <ServicesShowcaseSection company={company} services={company.services} currentTheme={currentTheme} />
+                    <div className={`${currentTheme.card} rounded-2xl p-5`}>
+                      <h3 className="text-sm font-semibold text-white mb-4">Products Showcase Catalogue</h3>
+                      {company.products?.length > 0 ? (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {company.products.map((product: any) => (
+                            <div key={product.id || product.name} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col sm:flex-row gap-4 hover:border-white/10 transition-colors">
+                              {product.images?.[0] && (
+                                <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-white/10">
+                                  <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
                                 </div>
-                                {product.category && <span className="text-[8px] text-gray-500 bg-white/[0.04] px-1.5 py-0.5 rounded uppercase mt-1 inline-block">{product.category}</span>}
-                                <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{product.description || product.detail}</p>
+                              )}
+                              <div className="flex-1 flex flex-col justify-between">
+                                <div>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <h4 className="text-xs font-bold text-white truncate max-w-[120px]">{product.name}</h4>
+                                    {product.price > 0 && <span className={`text-[10px] font-bold ${currentTheme.accent}`}>₹{product.price}</span>}
+                                  </div>
+                                  {product.category && <span className="text-[8px] text-gray-500 bg-white/[0.04] px-1.5 py-0.5 rounded uppercase mt-1 inline-block">{product.category}</span>}
+                                  <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{product.description || product.detail}</p>
+                                </div>
+                                <button
+                                  onClick={() => handleProductWhatsApp(product.name, product.id)}
+                                  className="mt-2.5 self-start flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-white/15 hover:bg-white/5 transition-colors text-white"
+                                >
+                                  <MessageCircle size={10} /> Enquire on WhatsApp
+                                </button>
                               </div>
-                              <button
-                                onClick={() => handleProductWhatsApp(product.name, product.id)}
-                                className="mt-2.5 self-start flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-white/15 hover:bg-white/5 transition-colors text-white"
-                              >
-                                <MessageCircle size={10} /> Enquire on WhatsApp
-                              </button>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 py-4 text-center">No products catalogue uploaded.</p>
-                    )}
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-500 py-4 text-center">No products catalogue uploaded.</p>
+                      )}
+                    </div>
                   </div>
                 )}
 
                 {activeTab === 'gallery' && (
                   <div className={`${currentTheme.card} rounded-2xl p-5`}>
-                    <h3 className="text-sm font-semibold text-white mb-4">Gallery Images</h3>
+                    <h3 className="text-sm font-semibold text-white mb-4">Gallery Images ({Math.min(company.galleryImages?.length || 0, 12)}/12)</h3>
                     {company.galleryImages?.length > 0 ? (
                       <div className="grid grid-cols-3 gap-2">
-                        {company.galleryImages.map((src: string, index: number) => (
+                        {company.galleryImages.slice(0, 12).map((src: string, index: number) => (
                           <div key={src || index} className="relative aspect-square rounded-xl overflow-hidden bg-slate-900 border border-white/5">
                             <Image src={src} alt="gallery" fill className="object-cover" />
                           </div>
                         ))}
+                        {company.galleryImages.length > 12 && (
+                          <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-900 border border-white/5 flex flex-col items-center justify-center p-3 text-center border-dashed border-slate-750">
+                            <Lock size={14} className="text-slate-500 mb-1" />
+                            <span className="text-[8px] text-slate-500 leading-tight">Upgrade to Premium to see {company.galleryImages.length - 12} more</span>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-xs text-slate-500 py-4 text-center">No gallery media uploaded.</p>
@@ -733,6 +1018,12 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
               </div>
             </div>
 
+            {/* Digital ID Card Preview */}
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Digital Business ID Card</span>
+              <MiniDigitalIDCard company={company} plan="basic" />
+            </div>
+
             {/* Leads Box */}
             <div className={`${currentTheme.card} rounded-2xl p-5 space-y-3`}>
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Business Enquiry</h3>
@@ -760,6 +1051,658 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
       </div>
 
       <BottomNav />
+    </main>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// FLAGSHIP ENTERPRISE LAYOUT
+// ──────────────────────────────────────────────────────────────────
+type EnterpriseThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'titanium_platinum';
+
+function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
+  const [activeTheme, setActiveTheme] = useState<EnterpriseThemeName>('titanium_platinum');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [enquirySent, setEnquirySent] = useState(false);
+  
+  // Form states
+  const [enquiryName, setEnquiryName] = useState('');
+  const [enquiryPhone, setEnquiryPhone] = useState('');
+  const [enquiryEmail, setEnquiryEmail] = useState('');
+  const [enquiryDesc, setEnquiryDesc] = useState('');
+  const [enquiryType, setEnquiryType] = useState('general');
+  const [submittingEnquiry, setSubmittingEnquiry] = useState(false);
+
+  // Theme styling map
+  const themeConfigs: Record<EnterpriseThemeName, {
+    bg: string;
+    accent: string;
+    border: string;
+    bgGlow: string;
+    badge: string;
+    gradient: string;
+    button: string;
+    bgText: string;
+    card: string;
+    textMuted: string;
+  }> = {
+    luxury_gold: {
+      bg: 'bg-[#070503]',
+      accent: 'text-amber-400',
+      border: 'border-amber-500/20 hover:border-amber-500/40',
+      bgGlow: 'bg-amber-500/10',
+      badge: 'bg-amber-400/15 border-amber-400/30 text-amber-300',
+      gradient: 'from-amber-400 via-orange-500 to-yellow-600',
+      button: 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-amber-500/20 hover:shadow-amber-500/30',
+      bgText: 'text-amber-400/80',
+      card: 'bg-[#120e0a]/60 border border-amber-950/30',
+      textMuted: 'text-amber-100/70',
+    },
+    midnight_purple: {
+      bg: 'bg-[#050307]',
+      accent: 'text-purple-400',
+      border: 'border-purple-500/20 hover:border-purple-500/40',
+      bgGlow: 'bg-purple-500/10',
+      badge: 'bg-purple-400/15 border-purple-400/30 text-purple-300',
+      gradient: 'from-violet-500 via-purple-600 to-indigo-650',
+      button: 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-purple-500/20 hover:shadow-purple-500/30',
+      bgText: 'text-purple-400/80',
+      card: 'bg-[#0e0a12]/60 border border-purple-950/30',
+      textMuted: 'text-purple-100/70',
+    },
+    mint_emerald: {
+      bg: 'bg-[#010503]',
+      accent: 'text-emerald-400',
+      border: 'border-emerald-500/20 hover:border-emerald-500/40',
+      bgGlow: 'bg-emerald-500/10',
+      badge: 'bg-emerald-400/15 border-emerald-400/30 text-emerald-300',
+      gradient: 'from-emerald-400 via-teal-500 to-cyan-500',
+      button: 'bg-gradient-to-r from-emerald-500 to-cyan-600 text-white shadow-emerald-500/20 hover:shadow-emerald-500/30',
+      bgText: 'text-emerald-400/80',
+      card: 'bg-[#06120c]/60 border border-emerald-950/30',
+      textMuted: 'text-emerald-100/70',
+    },
+    titanium_platinum: {
+      bg: 'bg-[#0a0a0d]',
+      accent: 'text-slate-200',
+      border: 'border-slate-400/20 hover:border-slate-400/40',
+      bgGlow: 'bg-slate-400/10',
+      badge: 'bg-slate-350/20 border-slate-350/30 text-slate-100',
+      gradient: 'from-slate-200 via-slate-400 to-slate-600',
+      button: 'bg-gradient-to-r from-slate-200 via-slate-400 to-slate-600 text-slate-950 shadow-slate-400/20 hover:shadow-slate-400/30 font-black',
+      bgText: 'text-slate-250',
+      card: 'bg-[#141418]/60 border border-slate-800/40 shadow-[0_0_15px_rgba(255,255,255,0.02)]',
+      textMuted: 'text-slate-300',
+    }
+  };
+
+  const currentTheme = themeConfigs[activeTheme] || themeConfigs.titanium_platinum;
+
+  const handleEnquirySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enquiryName || !enquiryPhone || !enquiryDesc) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+    setSubmittingEnquiry(true);
+    try {
+      await addDoc(collection(db, 'enquiries'), {
+        companyId: company.id,
+        companyName: company.name,
+        name: enquiryName,
+        mobile: enquiryPhone,
+        email: enquiryEmail || '',
+        description: enquiryDesc,
+        type: enquiryType,
+        createdAt: serverTimestamp(),
+        status: 'pending'
+      });
+
+      trackAnalyticsEvent({
+        companyId: company.id,
+        eventType: 'contact_submit',
+        targetName: 'Lead RFQ Form'
+      });
+
+      setEnquirySent(true);
+      setEnquiryName('');
+      setEnquiryPhone('');
+      setEnquiryEmail('');
+      setEnquiryDesc('');
+    } catch (error) {
+      console.error('Error logging enquiry:', error);
+      alert('Failed to submit enquiry. Please try again.');
+    } finally {
+      setSubmittingEnquiry(false);
+    }
+  };
+
+  const handleProductWhatsApp = (productName: string, productId?: string) => {
+    const text = `Hello, I saw your product "${productName}" on your Enterprise Page at THENIJOBS. Please share more details.`;
+    if (company.id) {
+      trackAnalyticsEvent({
+        companyId: company.id,
+        eventType: 'whatsapp_click',
+        targetId: productId || null,
+        targetName: productName
+      });
+    }
+    window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  // Mock Blog/News Data (or read from company if exists)
+  const blogs = company.blogs || [
+    {
+      id: 'blog-1',
+      title: 'Expanding Our Operations in Theni District',
+      excerpt: 'We are thrilled to announce new branches and services matching local demand...',
+      date: 'June 18, 2026',
+      readTime: '3 min read'
+    },
+    {
+      id: 'blog-2',
+      title: 'Our Commitment to Quality & Customer Trust',
+      excerpt: 'Discover the processes behind our verified badge and customer service levels...',
+      date: 'May 24, 2026',
+      readTime: '5 min read'
+    }
+  ];
+
+  // Testimonials Data
+  const testimonials = reviews.length > 0 ? reviews : [
+    {
+      id: 't-1',
+      name: 'Ramesh Kumar',
+      title: 'Managing Director, RK Exports',
+      content: 'Excellent service! Extremely professional team. Highly recommend their services.',
+      rating: 5,
+      date: 'June 10, 2026'
+    },
+    {
+      id: 't-2',
+      name: 'Deepa Rajan',
+      title: 'Founder, Eco Organic Farms',
+      content: 'Very reliable and prompt responses. Doing business with them has been a delight.',
+      rating: 5,
+      date: 'May 15, 2026'
+    }
+  ];
+
+  const tabs = [
+    { id: 'overview', label: 'Company Overview' },
+    { id: 'jobs', label: `Careers (${jobs.length})` },
+    { id: 'portfolio', label: 'Portfolio & News' },
+    { id: 'testimonials', label: 'Testimonials' },
+  ];
+
+  const whatsappText = company.whatsappMessageTemplate 
+    ? encodeURIComponent(company.whatsappMessageTemplate) 
+    : encodeURIComponent(`Hi! I saw your Enterprise Flagship page on THENIJOBS.`);
+  const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
+
+  return (
+    <main className={`min-h-screen ${currentTheme.bg} text-white overflow-x-hidden relative font-outfit pb-16`}>
+      <Header />
+
+      {/* Dynamic Background Glowing Circles */}
+      <div className={`absolute top-20 right-[-10%] w-[500px] h-[500px] rounded-full blur-[140px] transition-colors duration-1000 ${currentTheme.bgGlow} pointer-events-none`} />
+      <div className={`absolute bottom-20 left-[-10%] w-[500px] h-[500px] rounded-full blur-[140px] transition-colors duration-1000 ${currentTheme.bgGlow} pointer-events-none`} />
+
+      <section className="pt-24 pb-16 max-w-5xl mx-auto px-4 relative z-10">
+        {/* Dynamic Cover Block */}
+        <div className={`h-56 sm:h-72 relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br ${currentTheme.gradient} shadow-[0_20px_50px_rgba(0,0,0,0.5)] border ${currentTheme.border}`}>
+          {company.coverImageUrl && (
+            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-45 mix-blend-overlay" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+          
+          {/* Top Badge Panel */}
+          <div className="absolute top-6 right-6 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur-md px-4 py-1.5 text-xs font-black uppercase tracking-widest text-slate-100 border border-slate-700 shadow-xl animate-pulse">
+              👑 ENTERPRISE GOLD PARTNER
+            </span>
+          </div>
+
+          {/* Theme Selector Toggle (Memory-based) */}
+          <div className="absolute bottom-6 right-6 bg-black/75 backdrop-blur-md rounded-2xl p-2 border border-white/10 flex items-center gap-2 no-print">
+            <span className="text-[10px] font-black text-slate-300 px-1 uppercase tracking-wider">Themes:</span>
+            {(['luxury_gold', 'midnight_purple', 'mint_emerald', 'titanium_platinum'] as EnterpriseThemeName[]).map(t => (
+              <button
+                key={t}
+                onClick={() => setActiveTheme(t)}
+                className={`w-5 h-5 rounded-full border-2 transition-all duration-300 ${
+                  t === 'luxury_gold' ? 'bg-amber-400 border-amber-300'
+                  : t === 'midnight_purple' ? 'bg-purple-500 border-purple-400'
+                  : t === 'mint_emerald' ? 'bg-emerald-500 border-emerald-400'
+                  : 'bg-slate-300 border-slate-100'
+                } ${activeTheme === t ? 'scale-125 ring-2 ring-white/60' : 'opacity-70 hover:opacity-100'}`}
+                title={t.replace('_', ' ')}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Brand Details Block */}
+        <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-12 mb-10 relative z-20 px-8">
+          <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-[2rem] bg-[#05050a] border-2 border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.8)] flex items-center justify-center shrink-0 overflow-hidden group">
+            {company.logoUrl ? (
+              <Image src={company.logoUrl} alt={company.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
+            ) : (
+              <Building2 size={44} className={currentTheme.accent} />
+            )}
+          </div>
+          <div className="flex-1 pb-2">
+            <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center flex-wrap gap-2.5 tracking-tight">
+              {company.name}
+              {renderVerificationBadge('elite', company.verificationStatus, 28)}
+            </h1>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-sm text-slate-400">
+              <span className={`font-black uppercase tracking-widest text-xs px-2.5 py-1 rounded bg-white/[0.03] border border-white/5 ${currentTheme.accent}`}>{company.category}</span>
+              <span className="flex items-center gap-1.5"><MapPin size={14} className={currentTheme.accent} />{company.district}, {company.state}</span>
+              <span className="flex items-center gap-1 font-bold text-white bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                <Star size={13} className="fill-amber-400 text-amber-400" />
+                {company.rating} <span className="text-slate-400 font-normal">({reviews.length} reviews)</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Contact Ribbon */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <a href={`tel:${company.phone}`} className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider text-center transition-all hover:scale-[1.03] ${currentTheme.button}`}>
+            <Phone size={14} /> Call Provider
+          </a>
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider text-white text-center transition-all hover:scale-[1.03]" style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}>
+            <MessageCircle size={14} /> WhatsApp Chat
+          </a>
+          <a href={`mailto:${company.email}`} className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] text-center transition-all hover:scale-[1.03]">
+            <Mail size={14} /> Email Us
+          </a>
+          {company.website && (
+            <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] text-center transition-all hover:scale-[1.03]">
+              <Globe size={14} /> Visit Website
+            </a>
+          )}
+        </div>
+
+        {/* Main Grid Layout */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          
+          {/* Left / Middle: Core Content */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            {/* Tabs Row */}
+            <div className="flex gap-1 overflow-x-auto pb-1 border-b border-white/[0.06] no-print">
+              {tabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-5 py-3 rounded-2xl text-xs font-extrabold tracking-wider uppercase transition-all duration-300 ${
+                    activeTab === tab.id
+                      ? `bg-gradient-to-r ${currentTheme.gradient} text-white shadow-xl scale-[1.02]`
+                      : 'text-slate-400 hover:text-white hover:bg-white/[0.03]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Content Blocks */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                
+                {/* Promo Code Coupon block */}
+                <div className={`rounded-[2rem] border ${currentTheme.border} ${currentTheme.bgGlow} p-6 relative overflow-hidden group`}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/[0.02] rounded-full blur-2xl pointer-events-none" />
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                      <span className="rounded-full bg-white/10 px-2.5 py-1 text-[9px] font-black text-white uppercase tracking-widest inline-flex items-center gap-1">
+                        <Sparkles size={10} className="text-amber-400" /> FLAGSHIP SERVICE COMPLIMENT
+                      </span>
+                      <h3 className="text-sm font-black text-white mt-2">15% Exclusive Discount Code</h3>
+                      <p className="text-xs text-slate-350 mt-1">Get priority premium service quotes and discount rates immediately.</p>
+                    </div>
+                    <span className="bg-slate-900 border border-white/15 px-4 py-2 rounded-xl text-xs font-mono font-black text-slate-100 tracking-wider">
+                      TNI-ENT-DISC
+                    </span>
+                  </div>
+                </div>
+
+                {/* About Detail */}
+                <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <Building2 size={18} className={currentTheme.accent} /> Company Portfolio Profile
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line text-justify">{company.description}</p>
+                </div>
+
+                {/* Services/Specials List */}
+                {company.companyServicesTags?.length > 0 && (
+                  <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                      <Award size={18} className={currentTheme.accent} /> Listed Services & Core Specialties
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {company.companyServicesTags.map((svc: string) => (
+                        <div key={svc} className={`flex items-center gap-2.5 p-3 rounded-xl bg-white/[0.02] border border-white/5 transition-all hover:-translate-y-0.5 hover:bg-white/[0.04]`}>
+                          <BadgeCheck size={14} className={currentTheme.accent} />
+                          <span className="text-xs font-bold text-slate-200 truncate">{svc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Services showcase */}
+                <ServicesShowcaseSection company={company} services={company.services} currentTheme={currentTheme} />
+
+                {/* Products showcase */}
+                {company.products?.length > 0 && (
+                  <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-6`}>
+                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                      <ShoppingBag size={18} className={currentTheme.accent} /> Products Showcase Catalog
+                    </h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {company.products.map((product: any) => (
+                        <div key={product.id || product.name} className="p-4 rounded-2xl bg-slate-950/60 border border-white/5 hover:border-slate-500/20 transition-all flex flex-col gap-4">
+                          {product.images?.[0] && (
+                            <div className="relative w-full h-36 rounded-xl overflow-hidden bg-slate-900 border border-white/10">
+                              <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
+                            </div>
+                          )}
+                          <div className="flex-1 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between gap-2">
+                                <h4 className="text-xs font-bold text-white truncate">{product.name}</h4>
+                                {product.price > 0 && <span className={`text-[10px] font-black ${currentTheme.accent}`}>₹{product.price}</span>}
+                              </div>
+                              {product.category && <span className="text-[8px] text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded uppercase mt-1 inline-block">{product.category}</span>}
+                              <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{product.description || product.detail}</p>
+                            </div>
+                            <button
+                              onClick={() => handleProductWhatsApp(product.name, product.id)}
+                              className="mt-3 w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 text-white"
+                              style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}
+                            >
+                              <MessageCircle size={12} /> Contact on WhatsApp
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {activeTab === 'jobs' && (
+              <div className="space-y-4">
+                <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <Briefcase size={18} className={currentTheme.accent} /> Careers & Live Job Vacancies
+                  </h3>
+                  <p className="text-xs text-slate-400">Apply to open vacancies directly. Enterprise postings receive immediate review priority.</p>
+                  
+                  {jobs.length > 0 ? (
+                    <div className="space-y-3.5 pt-2">
+                      {jobs.map(job => (
+                        <Link key={job.id} href={`/jobs/${job.id}`}
+                          className={`flex items-center justify-between p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/20 transition-all group`}>
+                          <div>
+                            <div className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">{job.title}</div>
+                            <div className="text-[10px] text-slate-500 mt-2 flex gap-3">
+                              <span className="bg-white/[0.04] px-2 py-0.5 rounded text-slate-400 font-bold">{job.type}</span>
+                              <span className="flex items-center">{job.salary}</span>
+                              <span className="flex items-center font-bold text-slate-400">Openings: {job.openings}</span>
+                            </div>
+                          </div>
+                          <span className={`px-4 py-2 rounded-xl font-black text-xs uppercase ${currentTheme.button}`}>Apply Now</span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 py-8 text-center bg-white/[0.01] rounded-2xl border border-white/5">No active jobs posted currently. Check back soon!</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'portfolio' && (
+              <div className="space-y-6">
+                
+                {/* Video Embedding Area */}
+                {company.videoUrl && (
+                  <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                    <h3 className="text-base font-black text-white font-outfit">Featured Video Presentation</h3>
+                    <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-black relative">
+                      {company.videoUrl.includes('youtube.com') || company.videoUrl.includes('youtu.be') ? (
+                        <iframe
+                          src={`https://www.youtube.com/embed/${company.videoUrl.split('v=')[1] || company.videoUrl.split('/').pop()}`}
+                          title="YouTube video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full"
+                        />
+                      ) : (
+                        <video src={company.videoUrl} controls className="w-full h-full" />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Gallery showcase */}
+                {company.galleryImages?.length > 0 && (
+                  <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                    <h3 className="text-base font-black text-white">Media Portfolio Gallery</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {company.galleryImages.map((src: string, index: number) => (
+                        <div key={src || index} className="relative aspect-video rounded-xl overflow-hidden bg-slate-900 border border-white/5 group">
+                          <Image src={src} alt="portfolio gallery" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* News & Blogs Section */}
+                <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <Newspaper size={18} className={currentTheme.accent} /> Latest Announcements & Company Blog
+                  </h3>
+                  <div className="space-y-4 pt-2">
+                    {blogs.map((blog: any) => (
+                      <div key={blog.id} className="p-4 rounded-xl bg-white/[0.01] border border-white/5 hover:border-white/15 transition-all">
+                        <div className="flex justify-between items-center text-[10px] text-slate-550 mb-1.5 font-bold">
+                          <span>{blog.date}</span>
+                          <span>{blog.readTime}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-white hover:text-amber-300 transition-colors cursor-pointer">{blog.title}</h4>
+                        <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">{blog.excerpt}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {activeTab === 'testimonials' && (
+              <div className="space-y-4">
+                <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-6`}>
+                  <div className="border-b border-white/5 pb-4">
+                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                      <Quote size={18} className={currentTheme.accent} /> Testimonials & Client Endorsements
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">Verified reviews submitted by clients and partners.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {testimonials.map((test: any) => (
+                      <div key={test.id} className="bg-white/[0.01] border border-white/[0.04] rounded-2xl p-5 space-y-3 relative">
+                        <Quote size={24} className={`absolute top-4 right-4 opacity-5 ${currentTheme.accent}`} />
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-xs font-extrabold text-white block">{test.name}</span>
+                            <span className="text-[10px] text-slate-500 block mt-0.5">{test.title || 'Verified Partner'}</span>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {[1, 2, 3, 4, 5].map(i => (
+                              <Star key={i} size={11} className={i <= test.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs text-slate-350 leading-relaxed italic">&quot;{test.content}&quot;</p>
+                        <div className="flex items-center justify-between text-[9px] font-bold">
+                          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded uppercase">
+                            ✓ Verified Feedback
+                          </span>
+                          <span className="text-slate-500">{test.date}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+          {/* Right Column: Mini Digital Card, Enquiry Form, Verification metrics */}
+          <div className="space-y-6">
+            
+            {/* Embedded Digital ID Card Preview */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Digital Business Identity</h3>
+              <MiniDigitalIDCard company={company} plan="enterprise" />
+            </div>
+
+            {/* Enterprise Lead Generation / Contact CRM form */}
+            <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-4`}>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-white">Direct Enquiry Portal</h3>
+                <p className="text-[10px] text-slate-500 mt-1">Quotes write directly to Provider CRM database.</p>
+              </div>
+              <form onSubmit={handleEnquirySubmit} className="space-y-3">
+                <div>
+                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    placeholder="Your Name"
+                    value={enquiryName}
+                    onChange={(e) => setEnquiryName(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Mobile Number *</label>
+                  <input
+                    type="tel"
+                    placeholder="10 digit number"
+                    value={enquiryPhone}
+                    onChange={(e) => setEnquiryPhone(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="Email address"
+                    value={enquiryEmail}
+                    onChange={(e) => setEnquiryEmail(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Enquiry Type</label>
+                  <select
+                    value={enquiryType}
+                    onChange={(e) => setEnquiryType(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none cursor-pointer"
+                  >
+                    <option value="general">General Query</option>
+                    <option value="pricing">Get Price Quote</option>
+                    <option value="project">Project RFP / Partnership</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Requirement Details *</label>
+                  <textarea
+                    placeholder="Describe your requirement..."
+                    rows={3}
+                    value={enquiryDesc}
+                    onChange={(e) => setEnquiryDesc(e.target.value)}
+                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white resize-none focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingEnquiry}
+                  className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${currentTheme.button} disabled:opacity-50`}
+                >
+                  {submittingEnquiry ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
+                  ) : (
+                    <>
+                      <Send size={13} /> Submit Quote Request
+                    </>
+                  )}
+                </button>
+
+                {enquirySent && (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-[10px] text-emerald-300 text-center font-bold">
+                    Enquiry logged successfully in provider CRM database!
+                  </div>
+                )}
+              </form>
+            </div>
+
+            {/* Document Verifications Checklist */}
+            <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-4`}>
+              <h3 className="text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-2">
+                <ShieldCheck size={15} className="text-emerald-400" /> Trust Score Check
+              </h3>
+              <div className="space-y-2">
+                {[
+                  { label: 'Verified Email address', active: company.verificationBadges.emailVerified, icon: Mail },
+                  { label: 'GST Tax ID registered', active: company.verificationBadges.gstVerified, icon: FileCheck },
+                  { label: 'Business Ownership verify', active: company.verificationBadges.businessVerified, icon: Award },
+                ].map(({ label, active, icon: Icon }) => (
+                  <div key={label} className={`flex items-center gap-2.5 p-2 rounded-xl text-xs ${active ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/[0.02] opacity-40'}`}>
+                    <Icon size={12} />
+                    <span className="truncate">{label}</span>
+                    {active && <BadgeCheck size={13} className="ml-auto text-emerald-400" />}
+                  </div>
+                ))}
+              </div>
+              <div className="text-[10px] text-slate-500 text-center mt-2 italic">
+                Trust Index Score: {company.trustScore || '95'}%
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Flagship enterprise VIP footer */}
+      {!company.hideBranding && (
+        <div className="py-12 text-center border-t border-white/5 bg-black/40 mt-16">
+          <p className="text-xs text-slate-400 flex items-center justify-center gap-2">
+            <Crown size={14} className={currentTheme.accent} />
+            Powered by <Link href="/" className={`font-black tracking-widest hover:opacity-85 ${currentTheme.accent}`}>THENIJOBS</Link> · Enterprise Gold Partner VIP
+          </p>
+        </div>
+      )}
+
+      <BottomNav />
+      <FloatingWhatsApp number={company.whatsapp} />
     </main>
   );
 }
@@ -1160,13 +2103,13 @@ Please confirm my booking request. Thanks!`;
                     </div>
 
                     {/* Service Specialization Tag Grid */}
-                    {company.services?.length > 0 && (
+                    {company.companyServicesTags?.length > 0 && (
                       <div className="bg-white/[0.01] rounded-3xl border border-white/[0.06] p-6 space-y-4">
                         <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
                           <Award size={16} className={currentTheme.accent} /> Professional Services & Specializations
                         </h3>
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                          {company.services.map((svc: string) => (
+                          {company.companyServicesTags.map((svc: string) => (
                             <div key={svc} className={`flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.02] border ${currentTheme.border} transition-transform hover:-translate-y-0.5`}>
                               <Check size={12} className={currentTheme.accent} />
                               <span className="text-xs font-medium text-slate-200 truncate">{svc}</span>
@@ -1205,41 +2148,44 @@ Please confirm my booking request. Thanks!`;
                 )}
 
                 {activeTab === 'products' && (
-                  <div className="bg-white/[0.01] rounded-3xl border border-white/[0.06] p-6">
-                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
-                      <PackagePlus size={16} className={currentTheme.accent} /> Products & Services Catalogue
-                    </h3>
-                    {company.products?.length > 0 ? (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {company.products.map((product: any) => (
-                          <div key={product.id || product.name} className="p-4 rounded-2xl bg-[#0f0b07]/40 border border-white/5 hover:border-amber-500/20 transition-all flex flex-col sm:flex-row gap-4">
-                            {product.images?.[0] && (
-                              <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-[#0d0905] border border-white/10">
-                                <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
-                              </div>
-                            )}
-                            <div className="flex-1 flex flex-col justify-between">
-                              <div>
-                                <div className="flex items-center justify-between gap-2">
-                                  <h4 className="text-xs font-bold text-white truncate max-w-[120px]">{product.name}</h4>
-                                  {product.price > 0 && <span className={`text-[10px] font-bold ${currentTheme.accent}`}>₹{product.price}</span>}
+                  <div className="space-y-6">
+                    <ServicesShowcaseSection company={company} services={company.services} currentTheme={currentTheme} />
+                    <div className="bg-white/[0.01] rounded-3xl border border-white/[0.06] p-6">
+                      <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+                        <PackagePlus size={16} className={currentTheme.accent} /> Products Catalogue
+                      </h3>
+                      {company.products?.length > 0 ? (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {company.products.map((product: any) => (
+                            <div key={product.id || product.name} className="p-4 rounded-2xl bg-[#0f0b07]/40 border border-white/5 hover:border-amber-500/20 transition-all flex flex-col sm:flex-row gap-4">
+                              {product.images?.[0] && (
+                                <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-[#0d0905] border border-white/10">
+                                  <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
                                 </div>
-                                {product.category && <span className="text-[8px] text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded uppercase mt-1 inline-block">{product.category}</span>}
-                                <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{product.description || product.detail}</p>
+                              )}
+                              <div className="flex-1 flex flex-col justify-between">
+                                <div>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <h4 className="text-xs font-bold text-white truncate max-w-[120px]">{product.name}</h4>
+                                    {product.price > 0 && <span className={`text-[10px] font-bold ${currentTheme.accent}`}>₹{product.price}</span>}
+                                  </div>
+                                  {product.category && <span className="text-[8px] text-slate-500 bg-white/[0.04] px-1.5 py-0.5 rounded uppercase mt-1 inline-block">{product.category}</span>}
+                                  <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{product.description || product.detail}</p>
+                                </div>
+                                <button
+                                  onClick={() => handleProductWhatsApp(product.name, product.id)}
+                                  className="mt-2.5 self-start flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/15 hover:bg-white/5 transition-all text-white"
+                                >
+                                  <MessageCircle size={10} /> Buy / Inquire
+                                </button>
                               </div>
-                              <button
-                                onClick={() => handleProductWhatsApp(product.name, product.id)}
-                                className="mt-2.5 self-start flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg border border-white/15 hover:bg-white/5 transition-all text-white"
-                              >
-                                <MessageCircle size={10} /> Buy / Inquire
-                              </button>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-500 py-6 text-center">No catalogue items listed.</p>
-                    )}
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-500 py-6 text-center">No catalogue items listed.</p>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1314,11 +2260,11 @@ Please confirm my booking request. Thanks!`;
                   </h3>
                   <p className="text-xs text-slate-350 leading-relaxed whitespace-pre-line">{company.description}</p>
                   
-                  {company.services?.length > 0 && (
+                  {company.companyServicesTags?.length > 0 && (
                     <div className="pt-2">
                       <h4 className="text-xs font-semibold text-white mb-2">Our Specializations:</h4>
                       <div className="flex flex-wrap gap-1.5">
-                        {company.services.map((svc: string) => (
+                        {company.companyServicesTags.map((svc: string) => (
                           <span key={svc} className={`text-xs px-2.5 py-1 rounded-lg bg-white/[0.02] border ${currentTheme.border} text-slate-300`}>
                             {svc}
                           </span>
@@ -1327,6 +2273,9 @@ Please confirm my booking request. Thanks!`;
                     </div>
                   )}
                 </div>
+
+                {/* Services Showcase */}
+                <ServicesShowcaseSection company={company} services={company.services} currentTheme={currentTheme} />
 
                 {/* Products Grid */}
                 {company.products?.length > 0 && (
@@ -1734,13 +2683,11 @@ Please confirm my booking request. Thanks!`;
                 )}
               </div>
 
-              {/* Link to Digital Card */}
-              <Link
-                href={`/id/company/${encodeURIComponent(company.slug)}`}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold transition-opacity hover:opacity-90 ${currentTheme.button}`}
-              >
-                <Sparkles size={13} /> View Digital Business Card
-              </Link>
+              {/* Digital ID Card Preview */}
+              <div className="space-y-2 pt-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Digital Business ID Card</span>
+                <MiniDigitalIDCard company={company} plan="premium" />
+              </div>
             </div>
 
             {/* Leads Form */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Briefcase, Banknote, FileText, Users, Clock,
@@ -14,7 +14,7 @@ import { createJobPosting } from '@/lib/firebase/firestoreService';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import Link from 'next/link';
-import { normalizePlanSlug, planHasFeature, selectBestSubscription, getPlanRank } from '@/lib/subscriptions';
+import { normalizePlanSlug, planHasFeature, selectBestSubscription, getPlanRank, getCompanyActivePlan } from '@/lib/subscriptions';
 import { getJobPlanLimit, isActiveJobSlot } from '@/lib/jobPolicy';
 
 const STEPS = [
@@ -67,7 +67,10 @@ export default function PostJobPage() {
     where('companyId', '==', companyId || ''),
   ], { skip: !companyId });
   const activeSubscription = selectBestSubscription(subscriptions);
-  const currentPlan = normalizePlanSlug(activeSubscription?.plan || company?.subscriptionPlan || (company?.isPremium ? 'premium' : 'free'));
+  const currentPlan = useMemo(() => {
+    if (activeSubscription) return normalizePlanSlug(activeSubscription.plan);
+    return getCompanyActivePlan(company);
+  }, [company, activeSubscription]);
   const canPostJob = planHasFeature(currentPlan, 'job_posting');
   const maxActiveJobs = getJobPlanLimit(currentPlan);
   const activeJobCount = companyJobs.filter((job) => isActiveJobSlot(job)).length;
@@ -118,6 +121,12 @@ export default function PostJobPage() {
   });
 
   const update = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+
+  useEffect(() => {
+    if (currentPlan === 'free' && form.durationDays !== '30') {
+      setForm((f) => ({ ...f, durationDays: '30' }));
+    }
+  }, [currentPlan, form.durationDays]);
   
   const addSkill = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -414,15 +423,16 @@ export default function PostJobPage() {
               </div>
               <div>
                 <label className="text-xs text-gray-400 font-medium block mb-1.5">Job Post Duration *</label>
-                <select
+                 <select
                   value={form.durationDays}
                   onChange={(e) => update('durationDays', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all disabled:opacity-50"
+                  disabled={currentPlan === 'free'}
                 >
                   <option value="30">30 Days (Default)</option>
-                  <option value="60">60 Days</option>
-                  <option value="90">90 Days</option>
-                  <option value="custom">Custom Start & End Dates</option>
+                  {currentPlan !== 'free' && <option value="60">60 Days</option>}
+                  {currentPlan !== 'free' && <option value="90">90 Days</option>}
+                  {currentPlan !== 'free' && <option value="custom">Custom Start & End Dates</option>}
                 </select>
               </div>
               {form.durationDays === 'custom' ? (

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -49,14 +49,18 @@ function LoginPageContent() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [sessionId, setSessionId] = useState('');
   const [otpLoading, setOtpLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  // Clear errors on mount
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Clear errors and verification session on mount or method change
   useEffect(() => {
     clearError();
     setLocalError(null);
+    setOtpSent(false);
+    setOtp('');
+    setSessionId(null);
   }, [clearError, loginMethod]);
 
   // Role-based automatic redirect after successful login
@@ -85,19 +89,26 @@ function LoginPageContent() {
     setOtpLoading(true);
     setLocalError(null);
     try {
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      if (cleanPhone.length !== 10) {
+        throw new Error('Invalid phone number. Must be a 10-digit number.');
+      }
+
+      console.log('[OTP 2Factor Flow] Requesting OTP for phone:', cleanPhone);
       const res = await fetch('/api/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: cleanPhone }),
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to send OTP');
+        throw new Error(data.error || 'Failed to send OTP. Please try again.');
       }
+
       setSessionId(data.sessionId);
       setOtpSent(true);
     } catch (err: any) {
-      console.error(err);
+      console.error('[OTP 2Factor Flow] Send OTP error:', err);
       setLocalError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setOtpLoading(false);
@@ -106,31 +117,30 @@ function LoginPageContent() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!sessionId) {
+      setLocalError('Verification session expired. Please request a new OTP.');
+      return;
+    }
     setOtpLoading(true);
     setLocalError(null);
-    console.log('[OTP Login Flow] Starting verification for phone:', phone);
+    console.log('[OTP 2Factor Flow] Verifying OTP code...');
     try {
-      console.log('[OTP Login Flow] Sending OTP to verification endpoint. sessionId:', sessionId, 'otp:', otp);
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
       const res = await fetch('/api/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, sessionId, otp }),
+        body: JSON.stringify({ phone: cleanPhone, sessionId, otp }),
       });
       const data = await res.json();
       if (!res.ok) {
-        console.error('[OTP Login Flow] Verification endpoint failed:', data.error || 'Unknown error');
-        throw new Error(data.error || 'Failed to verify OTP');
+        throw new Error(data.error || 'Invalid or expired OTP. Please try again.');
       }
-      
-      console.log('[OTP Login Flow] 2Factor verification Success.');
-      console.log('[OTP Login Flow] UID:', data.uid, 'Role:', data.role, 'isNewUser:', data.isNewUser);
-      console.log('[OTP Login Flow] Authenticating with Firebase using Custom Token...');
-      
-      // Call Firebase sign in with custom token
+
+      console.log('[OTP 2Factor Flow] OTP Verified! Logging in with custom token...');
       await loginWithCustomToken(data.customToken);
-      console.log('[OTP Login Flow] Firebase sign-in successful! Session created.');
+      console.log('[OTP 2Factor Flow] Sign-in successful!');
     } catch (err: any) {
-      console.error('[OTP Login Flow] Error in OTP verification process:', err);
+      console.error('[OTP 2Factor Flow] Verification error:', err);
       setLocalError(err.message || 'Invalid or expired OTP. Please try again.');
     } finally {
       setOtpLoading(false);
@@ -257,6 +267,7 @@ function LoginPageContent() {
             </form>
           ) : (
             <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-4">
+              <div id="recaptcha-container" className="hidden"></div>
               {!otpSent ? (
                 <>
                   <div className="space-y-1">

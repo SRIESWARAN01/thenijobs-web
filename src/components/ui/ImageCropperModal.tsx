@@ -45,7 +45,7 @@ export function ImageCropperModal({
   const [targetHeight, setTargetHeight] = useState(cropHeight || 400);
 
   // Upload States
-  const { uploadFile, progress: fireProgress, loading: fireLoading, error: fireError } = useUploadFile();
+  const { uploadFile, progress: fireProgress, loading: fireLoading, error: fireError, clearError } = useUploadFile();
   const [modalUploading, setModalUploading] = useState(false);
   const [modalUploadError, setModalUploadError] = useState<string | null>(null);
 
@@ -103,13 +103,25 @@ export function ImageCropperModal({
     reader.readAsDataURL(file);
   }, [file]);
 
-  // Measure container when modal opens or layout changes
+  // Measure container when modal opens or layout changes using ResizeObserver
   useEffect(() => {
-    if (open && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setContainerSize({ width: rect.width, height: rect.height });
-    }
-  }, [open, imageLoaded, currentAspectRatio]);
+    if (!open || !containerRef.current) return;
+
+    const container = containerRef.current;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setContainerSize({ width, height });
+        }
+      }
+    });
+
+    resizeObserver.observe(container);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [open]);
 
   // Calculate viewport size to fit nicely inside container
   const W = containerSize.width;
@@ -131,11 +143,13 @@ export function ImageCropperModal({
     const naturalW = img.naturalWidth;
     const naturalH = img.naturalHeight;
     setImageInfo({ width: naturalW, height: naturalH });
+  };
 
-    if (V_w && V_h) {
-      // Calculate minZoom to cover the viewport fully
-      const scaleX = V_w / naturalW;
-      const scaleY = V_h / naturalH;
+  // Recalculate zoom and bounds when image metadata and layout are ready
+  useEffect(() => {
+    if (imageInfo.width && imageInfo.height && V_w && V_h && !imageLoaded) {
+      const scaleX = V_w / imageInfo.width;
+      const scaleY = V_h / imageInfo.height;
       const calculatedMinZoom = Math.max(scaleX, scaleY);
       
       setMinZoom(calculatedMinZoom);
@@ -143,7 +157,7 @@ export function ImageCropperModal({
       setOffset({ x: 0, y: 0 });
       setImageLoaded(true);
     }
-  };
+  }, [imageInfo, V_w, V_h, imageLoaded]);
 
   // Keep image aligned with bounds when zoom changes or resizing occurs
   const getBoundedOffset = useCallback(
@@ -410,13 +424,19 @@ export function ImageCropperModal({
             <p className="text-xs text-rose-400 mb-6 max-w-xs">{modalUploadError || fireError}</p>
             <div className="flex gap-3">
               <button
-                onClick={() => { setModalUploadError(null); }}
+                onClick={() => {
+                  setModalUploadError(null);
+                  clearError();
+                }}
                 className="px-4 py-2.5 rounded-xl border border-white/10 bg-white/[0.04] text-xs font-semibold text-gray-300 hover:bg-white/[0.08]"
               >
                 Go Back
               </button>
               <button
-                onClick={handleSave}
+                onClick={() => {
+                  clearError();
+                  handleSave();
+                }}
                 className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white transition-colors"
               >
                 Try Again

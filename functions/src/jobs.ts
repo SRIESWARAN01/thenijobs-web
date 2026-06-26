@@ -41,6 +41,7 @@ export const serverApplyToJob = onCall(
     resumeUrl?: unknown;
     resumeName?: unknown;
     coverLetter?: unknown;
+    aboutMe?: unknown;
     seekerDob?: unknown;
     seekerGender?: unknown;
     expectedSalary?: unknown;
@@ -75,8 +76,11 @@ export const serverApplyToJob = onCall(
     const applicationRef = db.doc(`jobApplications/${applicationId}`);
     const existing = await applicationRef.get();
     if (existing.exists) {
-      // Already applied - return success (idempotent)
-      return { success: true, applicationId, alreadyApplied: true };
+      const existingStatus = existing.data()?.status;
+      if (!['rejected', 'cancelled', 'withdrawn'].includes(existingStatus)) {
+        // Already applied and active - return success (idempotent)
+        return { success: true, applicationId, alreadyApplied: true };
+      }
     }
 
     const applicationType = getString(data.applicationType, 'job');
@@ -121,9 +125,17 @@ export const serverApplyToJob = onCall(
       resumeUrl: getString(data.resumeUrl),
       resumeName: getString(data.resumeName),
       coverLetter: getString(data.coverLetter),
+      aboutMe: getString(data.aboutMe),
       district: getString(data.district),
       location: getString(data.location),
       expectedSalary: getString(data.expectedSalary),
+      statusHistory: [
+        {
+          status,
+          updatedAt: new Date().toISOString(),
+          note: 'Application submitted.',
+        }
+      ],
       appliedDate: FieldValue.serverTimestamp(),
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),

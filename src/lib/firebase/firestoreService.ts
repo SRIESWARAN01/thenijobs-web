@@ -20,6 +20,7 @@ import {
   Timestamp,
   type DocumentData,
   type QueryConstraint,
+  arrayUnion,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './config';
@@ -106,7 +107,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     getCount('users'),
     getCount('companies', [where('verificationStatus', '==', 'verified')]),
     getCount('jobs', [where('isActive', '==', true)]),
-    getCount('applications'),
+    getCount('jobApplications'),
     getCount('leads'),
   ]);
 
@@ -398,6 +399,7 @@ export async function applyToJob(data: {
   resumeUrl?: string;
   resumeName?: string;
   coverLetter?: string;
+  aboutMe?: string;
   seekerDob?: string;
   seekerGender?: string;
   expectedSalary?: string;
@@ -421,6 +423,11 @@ export async function updateApplicationStatus(
   const updates: any = {
     status,
     updatedAt: serverTimestamp(),
+    statusHistory: arrayUnion({
+      status,
+      updatedAt: new Date().toISOString(),
+      note: note || '',
+    }),
   };
   if (note !== undefined) {
     updates.employerNote = note;
@@ -1071,6 +1078,97 @@ export async function updateRFQ(rfqId: string, data: any) {
     ...data,
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function trackProductOrServiceAnalytics(
+  id: string,
+  type: 'product' | 'service',
+  companyId: string,
+  eventType: 'view' | 'whatsapp' | 'call' | 'email' | 'share' | 'booking',
+  customerData?: { name?: string; phone?: string; email?: string }
+) {
+  try {
+    const docRef = doc(db, type === 'product' ? 'products' : 'services', id);
+    
+    // 1. Update counter fields atomically
+    const counterField = {
+      view: 'viewCount',
+      whatsapp: 'whatsappClickCount',
+      call: 'callClickCount',
+      email: 'emailClickCount',
+      share: 'shareCount',
+      booking: 'enquiryCount',
+    }[eventType];
+
+    if (counterField) {
+      // Check unique visitor for views
+      let isUnique = false;
+      if (eventType === 'view' && typeof window !== 'undefined') {
+        const storageKey = `visited_${type}_${id}`;
+        const lastVisit = localStorage.getItem(storageKey);
+        const today = new Date().toDateString();
+        if (lastVisit !== today) {
+          localStorage.setItem(storageKey, today);
+          isUnique = true;
+        }
+      }
+
+      await updateDoc(docRef, {
+        [counterField]: increment(1),
+        ...(isUnique ? { uniqueVisitorCount: increment(1) } : {}),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    // 2. Create Lead for contact/booking events
+    if (['whatsapp', 'call', 'email', 'booking'].includes(eventType)) {
+      const name = customerData?.name || 'Anonymous Guest';
+      const phone = customerData?.phone || 'N/A';
+      const email = customerData?.email || 'N/A';
+
+      // Load product/service name
+      const snap = await getDoc(docRef);
+      const targetName = snap.exists() ? snap.data().name : `${type.toUpperCase()} #${id}`;
+
+      const methodMap = {
+        whatsapp: 'WhatsApp',
+        call: 'Call',
+        email: 'Email',
+        booking: 'Booking',
+      };
+
+      await createDocument('leads', {
+        companyId,
+        customerName: name,
+        customerPhone: phone,
+        customerEmail: email,
+        contactName: name, // for security rules compatibility
+        contactPhone: phone.length >= 10 ? phone : 'N/A', // for security rules compatibility
+        type: type === 'product' ? 'business' : 'service', // for security rules compatibility
+        service: targetName,
+        message: `Contacted via ${methodMap[eventType as keyof typeof methodMap]}`,
+        status: 'new',
+        contactMethod: methodMap[eventType as keyof typeof methodMap],
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (err) {
+    console.error('Error tracking analytics or creating lead:', err);
+  }
+}
+
+export async function getActiveServices(): Promise<any[]> {
+  try {
+    const q = query(
+      collection(db, 'services'),
+      where('status', '==', 'active')
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...normaliseTimestamps(doc.data()) }));
+  } catch (err) {
+    console.error('Failed to fetch active services:', err);
+    return [];
+  }
 }
 
 export { fetchCollection, fetchDocument, getCount };

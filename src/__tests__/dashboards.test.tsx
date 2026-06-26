@@ -35,7 +35,7 @@ vi.mock('@/hooks/useFirestore', () => ({
         error: null,
       };
     }
-    if (collectionName === 'applications') {
+    if (collectionName === 'applications' || collectionName === 'jobApplications') {
       return {
         data: [{ id: 'app_1', seekerName: 'John Doe', status: 'applied', jobId: 'job_1', createdAt: '2026-06-15T10:00:00Z' }],
         loading: false,

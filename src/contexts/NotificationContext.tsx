@@ -75,6 +75,61 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => unsubscribe();
   }, [user?.uid]);
 
+  // FCM Token Registration
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid) return;
+    
+    async function registerFCM(targetUid: string) {
+      try {
+        if (typeof window === 'undefined') return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          console.warn('[FCM] Push notifications are not supported on this browser.');
+          return;
+        }
+
+        const { isSupported } = await import('firebase/messaging');
+        const supported = await isSupported();
+        if (!supported) {
+          console.warn('[FCM] Firebase messaging is not supported on this browser.');
+          return;
+        }
+
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.warn('[FCM] Permission for notifications was not granted:', permission);
+          return;
+        }
+
+        // Register the background service worker
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log('[FCM] Service worker registered successfully:', registration);
+
+        const { getMessaging, getToken } = await import('firebase/messaging');
+        const messaging = getMessaging();
+        
+        const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+        const fcmToken = await getToken(messaging, {
+          ...(vapidKey ? { vapidKey } : {}),
+          serviceWorkerRegistration: registration,
+        });
+
+        if (fcmToken) {
+          console.log('[FCM] Retrieved registration token:', fcmToken);
+          // Save fcmToken to firestore under seekerProfiles
+          const { doc, setDoc } = await import('firebase/firestore');
+          await setDoc(doc(db, 'seekerProfiles', targetUid), { fcmToken }, { merge: true });
+        }
+      } catch (err) {
+        console.error('[FCM] Error registering FCM messaging token:', err);
+      }
+    }
+
+    // Wait a brief moment for the page to settle before SW registration
+    const timer = setTimeout(() => registerFCM(uid), 3000);
+    return () => clearTimeout(timer);
+  }, [user?.uid]);
+
   const handleMarkAsRead = async (id: string) => {
     try {
       await markNotificationRead(id);

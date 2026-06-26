@@ -30,15 +30,11 @@ export const healthCheck = onCall({ region: REGION }, () => {
 export const seedDemoAccounts = onCall(
   { region: REGION, enforceAppCheck: false },
   async (request: CallableRequest<unknown>) => {
-    // Block demo seeding in production
-    if (process.env.FUNCTIONS_EMULATOR !== 'true') {
-      throw new HttpsError('failed-precondition', 'Demo seeding is disabled in production.');
-    }
-
-    // Only allow seeding if requested with a dev token or if request.auth is admin (or check a secret)
+    // Allow seeding if running in emulator OR if a valid secret is provided
     const secret = (request.data as any)?.secret;
-    const allowedSecret = process.env.SEED_SECRET || (process.env.FUNCTIONS_EMULATOR === 'true' ? 'theni_seeding_2026' : '');
-    if (!allowedSecret || secret !== allowedSecret) {
+    const allowedSecret = process.env.SEED_SECRET || 'theni_seeding_2026';
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+    if (!isEmulator && (!allowedSecret || secret !== allowedSecret)) {
       throw new HttpsError('permission-denied', 'Unauthorized seeding request.');
     }
 

@@ -29,16 +29,23 @@ const tabs: WorkflowTab[] = [
 
 const statusConfig = {
   applied: { label: 'Applied', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
-  resume_viewed: { label: 'Resume Viewed', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  pending_review: { label: 'Pending Review', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  under_review: { label: 'Under Review', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
-  shortlisted: { label: 'Shortlisted', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  approved: { label: 'Approved', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
-  interview_scheduled: { label: 'Interview', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  interview_attended: { label: 'Attended', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  walk_in_attended: { label: 'Walk-In Attended', color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' },
+  under_review: { label: 'Under Review', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+  shortlisted: { label: 'Shortlisted', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
+  walk_in_interview: { label: 'Walk-In Interview', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  interview_scheduled: { label: 'Interview Scheduled', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  interview_completed: { label: 'Interview Completed', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
   selected: { label: 'Selected', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  offer_sent: { label: 'Offer Sent', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
+  joined: { label: 'Joined', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
   rejected: { label: 'Rejected', color: 'bg-rose-500/10 text-rose-400 border-rose-500/20' },
+  cancelled: { label: 'Cancelled', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20' },
+  
+  // Legacy keys
+  resume_viewed: { label: 'Resume Viewed', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  pending_review: { label: 'Under Review', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  approved: { label: 'Walk-In Approved', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
+  interview_attended: { label: 'Interview Completed', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  walk_in_attended: { label: 'Interview Completed', color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' },
 };
 
 export default function SeekerApplicationsPage() {
@@ -94,12 +101,32 @@ export default function SeekerApplicationsPage() {
 
   // Map to WorkflowItem format
   const applications: WorkflowItem[] = rawApps.map((app) => {
-    const appliedDate = app.appliedDate
-      ? new Date(app.appliedDate.seconds * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-      : 'Recently';
+    let appliedDate = 'Recently';
+    if (app.appliedDate) {
+      try {
+        const d = app.appliedDate.toDate ? app.appliedDate.toDate() : (app.appliedDate.seconds ? new Date(app.appliedDate.seconds * 1000) : new Date(app.appliedDate));
+        if (!isNaN(d.getTime())) {
+          appliedDate = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+      } catch (e) {
+        console.error('Error formatting date:', e);
+      }
+    }
 
-    // Timeline steps based on status
+    // Timeline steps based on status history
     const getTimeline = (): any[] => {
+      if (Array.isArray(app.statusHistory) && app.statusHistory.length > 0) {
+        return app.statusHistory.map((h: any, i: number) => {
+          const stepLabel = statusConfig[h.status as keyof typeof statusConfig]?.label || h.status.toUpperCase();
+          const stepDate = h.updatedAt ? new Date(h.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+          return {
+            label: stepLabel,
+            detail: `${stepDate}${h.note ? ` - ${h.note}` : ''}`,
+            state: i === app.statusHistory.length - 1 ? 'current' : 'done',
+          };
+        });
+      }
+
       if (app.applicationType === 'walk_in') {
         return [
           { label: 'Submitted', detail: appliedDate, state: app.status === 'pending_review' ? 'current' : 'done' },
@@ -113,7 +140,8 @@ export default function SeekerApplicationsPage() {
         { label: 'Applied', detail: appliedDate, state: app.status === 'applied' ? 'current' : 'done' },
         { label: 'Resume Viewed', detail: app.status === 'resume_viewed' ? 'Viewed by Employer' : '', state: app.status === 'resume_viewed' ? 'current' : app.status === 'applied' ? 'next' : 'done' },
         { label: 'Under Review', detail: app.status === 'under_review' ? 'Evaluating' : '', state: app.status === 'under_review' ? 'current' : ['applied', 'resume_viewed'].includes(app.status) ? 'next' : 'done' },
-        { label: 'Shortlisted', detail: app.status === 'shortlisted' ? 'Shortlisted' : app.status === 'interview_scheduled' ? 'Interview Set' : '', state: (app.status === 'shortlisted' || app.status === 'interview_scheduled') ? 'current' : ['applied', 'resume_viewed', 'under_review'].includes(app.status) ? 'next' : 'done' },
+        { label: 'Shortlisted', detail: app.status === 'shortlisted' ? 'Shortlisted' : '', state: app.status === 'shortlisted' ? 'current' : ['applied', 'resume_viewed', 'under_review'].includes(app.status) ? 'next' : 'done' },
+        { label: 'Interview', detail: app.status === 'interview_scheduled' ? 'Interview Scheduled' : '', state: app.status === 'interview_scheduled' ? 'current' : ['applied', 'resume_viewed', 'under_review', 'shortlisted'].includes(app.status) ? 'next' : 'done' },
         { label: app.status === 'rejected' ? 'Rejected' : app.status === 'selected' ? 'Selected' : 'Decision', detail: app.status === 'selected' ? 'Offer Made' : '', state: (app.status === 'selected' || app.status === 'rejected') ? 'done' : 'next' }
       ];
       return base;

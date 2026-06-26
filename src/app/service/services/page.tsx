@@ -12,6 +12,8 @@ import {
 import Link from 'next/link';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { getCompanyActivePlan } from '@/lib/subscriptions';
+import { SUBSCRIPTION_PLANS } from '@/lib/subscriptionPlans';
 
 interface ServiceDoc {
   id: string;
@@ -24,6 +26,12 @@ interface ServiceDoc {
   status: 'pending' | 'active' | 'rejected';
   isFeatured: boolean;
   providerId: string;
+  viewCount?: number;
+  uniqueVisitorCount?: number;
+  whatsappClickCount?: number;
+  callClickCount?: number;
+  shareCount?: number;
+  enquiryCount?: number;
 }
 
 const STATUS_CONFIG = {
@@ -58,28 +66,15 @@ export default function ServiceProviderServicesPage() {
   const companyId = company?.id;
 
   // Compute active subscription plan badge (free, basic / Standard, premium)
-  const subscriptionBadge = company ? (() => {
-    if (company.subscriptionEndsAt) {
-      let endsAt: Date | null = null;
-      const val = company.subscriptionEndsAt;
-      if (val instanceof Date) endsAt = val;
-      else if (val && typeof val === 'object' && (val as any).seconds) endsAt = new Date((val as any).seconds * 1000);
-      else if (val) endsAt = new Date(String(val));
-
-      if (endsAt && endsAt < new Date()) {
-        return 'free';
-      }
-    }
-    return company.subscriptionPlan || (company.isPremium ? 'premium' : 'free');
-  })() : 'free';
+  const subscriptionBadge = getCompanyActivePlan(company);
 
   // 2. Fetch service provider's services
   const { data: services, loading: servicesLoading } = useCollection<any>('services', [
     where('providerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
 
-  const limit = subscriptionBadge === 'premium' ? 50 : subscriptionBadge === 'basic' ? 10 : 3;
-  const reachedLimit = services.length >= limit;
+  const limit = SUBSCRIPTION_PLANS.find(p => p.slug === subscriptionBadge)?.serviceLimit ?? 0;
+  const reachedLimit = limit !== -1 && services.length >= limit;
 
   const handleOpenAddModal = () => {
     if (reachedLimit) {
@@ -285,6 +280,22 @@ export default function ServiceProviderServicesPage() {
                           <span className="flex items-center gap-1"><MapPin size={12} className="text-rose-500" /> {service.location}, {service.district}</span>
                           <span className="flex items-center gap-1"><ClipboardList size={12} className="text-rose-500" /> Category: {service.category}</span>
                           <span className="text-sm font-bold text-white">Estimated cost: ₹{service.price}</span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] border-t border-white/5 pt-2 text-gray-400">
+                          <span>Views: <strong className="text-white">{service.viewCount || 0}</strong> ({service.uniqueVisitorCount || 0} unique)</span>
+                          <span>•</span>
+                          <span>WhatsApp Clicks: <strong className="text-green-400 font-bold">{service.whatsappClickCount || 0}</strong></span>
+                          <span>•</span>
+                          <span>Calls: <strong className="text-cyan-400 font-medium">{service.callClickCount || 0}</strong></span>
+                          <span>•</span>
+                          <span>Shares: <strong className="text-slate-300">{service.shareCount || 0}</strong></span>
+                          <span>•</span>
+                          <span>Bookings: <strong className="text-amber-400 font-bold">{service.enquiryCount || 0}</strong></span>
+                          <span>•</span>
+                          <span className="text-rose-400 font-bold">
+                            Conv. Rate: {(service.viewCount || 0) > 0 ? ((( (service.whatsappClickCount || 0) + (service.callClickCount || 0) + (service.enquiryCount || 0) ) / (service.viewCount || 1)) * 100).toFixed(1) : '0'}%
+                          </span>
                         </div>
                       </div>
 

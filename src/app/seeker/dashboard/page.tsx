@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Send, Bookmark, Calendar, Bell,
@@ -12,6 +12,7 @@ import { useCollection } from '@/hooks/useFirestore';
 import { useSeekerStats } from '@/hooks/useRealtimeStats';
 import { where, orderBy, limit } from 'firebase/firestore';
 import { formatJobType } from '@/lib/jobFormatters';
+import { isPublicJobVisible } from '@/lib/jobPolicy';
 
 // Animated counter
 function useCounter(target: number, duration = 1200) {
@@ -95,8 +96,12 @@ export default function SeekerDashboard() {
   const { data: jobs, loading: jobsLoading } = useCollection<any>('jobs', [
     where('isActive', '==', true),
     orderBy('createdAt', 'desc'),
-    limit(4)
+    limit(20)
   ]);
+
+  const visibleJobs = useMemo(() => {
+    return jobs.filter(j => isPublicJobVisible(j)).slice(0, 4);
+  }, [jobs]);
 
   const statsItems: StatItem[] = [
     { label: 'Applied Jobs', value: stats.appliedJobs, icon: Send, color: 'violet' },
@@ -173,10 +178,10 @@ export default function SeekerDashboard() {
                   </Link>
                 </div>
                 <div className="divide-y divide-white/[0.04]">
-                  {jobs.length === 0 ? (
+                  {visibleJobs.length === 0 ? (
                     <div className="p-8 text-center text-xs text-gray-500">No active jobs listed.</div>
                   ) : (
-                    jobs.map((job) => (
+                    visibleJobs.map((job) => (
                       <div key={job.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors">
                         <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0 border border-white/[0.06]">
                           <span className="text-xs font-bold text-white">{(job.companyName || 'JB').slice(0, 2).toUpperCase()}</span>

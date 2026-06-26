@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import Link from 'next/link';
 import {
   Briefcase, Calendar, Eye, TrendingUp,
@@ -19,6 +19,7 @@ import { getJobExpiryDate } from '@/lib/jobPolicy';
 
 export default function EmployerDashboard() {
   const { user } = useAuth();
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -35,7 +36,7 @@ export default function EmployerDashboard() {
   const { data: rawApplications, loading: appsLoading } = useCollection<any>('jobApplications', [
     where('employerId', '==', companyId || ''),
     orderBy('appliedDate', 'desc'),
-    limit(5)
+    limit(50)
   ], { skip: !companyId });
 
   const applications = useMemo(() => {
@@ -193,11 +194,13 @@ export default function EmployerDashboard() {
   const statItems = [
     { label: 'Active Jobs', value: stats.activeJobs, icon: Briefcase, color: 'cyan' },
     { label: 'Total Applications', value: stats.totalApplications, icon: FileText, color: 'violet' },
-    { label: 'Pending Review', value: stats.pendingReview, icon: Clock, color: 'amber' },
+    { label: 'Applied', value: stats.applied, icon: Clock, color: 'cyan' },
+    { label: 'Under Review', value: stats.underReview, icon: Eye, color: 'violet' },
     { label: 'Shortlisted', value: stats.shortlisted, icon: UserCheck, color: 'emerald' },
     { label: 'Interview Scheduled', value: stats.interviewScheduled, icon: Calendar, color: 'amber' },
     { label: 'Selected', value: stats.hired, icon: Star, color: 'purple' },
     { label: 'Rejected', value: stats.rejected, icon: XCircle, color: 'rose' },
+    { label: 'Joined', value: stats.joined, icon: CheckCircle, color: 'emerald' },
   ];
 
   const loading = companyLoading || statsLoading || appsLoading || jobsLoading || interviewsLoading || pendingAppsLoading;
@@ -257,7 +260,7 @@ export default function EmployerDashboard() {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-9 gap-4">
             {statItems.map((stat) => {
               const colors = colorMap[stat.color];
               const Icon = stat.icon;
@@ -620,33 +623,101 @@ export default function EmployerDashboard() {
                       <td colSpan={5} className="px-5 py-8 text-center text-xs text-gray-500">No active job listings.</td>
                     </tr>
                   ) : (
-                    activeJobs.map((job) => (
-                      <tr key={job.id} className="hover:bg-white/[0.02] transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-white">{job.title}</p>
-                            {job.isUrgent && (
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-rose-500/10 text-rose-400 uppercase">Urgent</span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-gray-500 mt-0.5">Posted {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Recently'}</p>
-                        </td>
-                        <td className="px-3 py-3.5 hidden sm:table-cell">
-                          <span className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 uppercase">{job.jobType || 'Full Time'}</span>
-                        </td>
-                        <td className="px-3 py-3.5 text-center">
-                          <span className="text-sm font-bold text-white">{job.applicationsCount || 0}</span>
-                        </td>
-                        <td className="px-3 py-3.5 text-center hidden md:table-cell">
-                          <span className="text-sm text-gray-400">{job.viewCount || 0}</span>
-                        </td>
-                        <td className="px-3 py-3.5 text-center">
-                          <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400">
-                            Active
-                          </span>
-                        </td>
-                      </tr>
-                    ))
+                    activeJobs.map((job) => {
+                      const isExpanded = expandedJobId === job.id;
+                      const jobApplicants = applications.filter((app: any) => app.jobId === job.id);
+                      const conversionRate = job.viewCount > 0
+                        ? `${Math.round(((job.applicationsCount || 0) / job.viewCount) * 100)}%`
+                        : '0%';
+
+                      return (
+                        <Fragment key={job.id}>
+                          <tr 
+                            onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                            className={`cursor-pointer transition-colors border-l-2 hover:bg-white/[0.02] ${
+                              isExpanded ? 'bg-white/[0.02] border-cyan-500' : 'border-transparent'
+                            }`}
+                          >
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-white hover:text-cyan-400 transition-colors">{job.title}</p>
+                                {job.isUrgent && (
+                                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-rose-500/10 text-rose-400 uppercase">Urgent</span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-500 mt-0.5">Posted {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Recently'}</p>
+                            </td>
+                            <td className="px-3 py-3.5 hidden sm:table-cell">
+                              <span className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 uppercase">{job.jobType || 'Full Time'}</span>
+                            </td>
+                            <td className="px-3 py-3.5 text-center">
+                              <span className="text-sm font-bold text-white">{job.applicationsCount || 0}</span>
+                            </td>
+                            <td className="px-3 py-3.5 text-center hidden md:table-cell">
+                              <span className="text-sm text-gray-400">{job.viewCount || 0}</span>
+                            </td>
+                            <td className="px-3 py-3.5 text-center">
+                              <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-500/10 text-emerald-400">
+                                Active
+                              </span>
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr className="bg-black/20">
+                              <td colSpan={5} className="px-5 py-4 border-t border-white/[0.04] border-b border-white/[0.04]">
+                                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 animate-fade-in text-left">
+                                    <div className="bg-white/[0.01] border border-white/[0.04] p-3.5 rounded-xl space-y-1">
+                                      <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">📞 Calls</span>
+                                      <p className="text-lg font-extrabold text-white">{job.callClickCount || 0}</p>
+                                    </div>
+                                    
+                                    <div className="bg-white/[0.01] border border-white/[0.04] p-3.5 rounded-xl space-y-1">
+                                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">💬 WhatsApp</span>
+                                      <p className="text-lg font-extrabold text-white">{job.whatsappClickCount || 0}</p>
+                                    </div>
+
+                                    <div className="bg-white/[0.01] border border-white/[0.04] p-3.5 rounded-xl space-y-1">
+                                      <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1">✉️ Emails</span>
+                                      <p className="text-lg font-extrabold text-white">{job.emailClickCount || 0}</p>
+                                    </div>
+                                    
+                                    <div className="bg-white/[0.01] border border-white/[0.04] p-3.5 rounded-xl space-y-1">
+                                      <span className="text-[10px] font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1">👥 Applications</span>
+                                      <p className="text-lg font-extrabold text-white">{job.applicationsCount || 0}</p>
+                                    </div>
+
+                                    <div className="bg-white/[0.01] border border-white/[0.04] p-3.5 rounded-xl space-y-1">
+                                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Views</span>
+                                      <p className="text-lg font-extrabold text-white">{job.viewCount || 0}</p>
+                                    </div>
+                                    
+                                    <div className="bg-white/[0.01] border border-white/[0.04] p-3.5 rounded-xl space-y-2">
+                                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block border-b border-white/5 pb-1">Recent Applicants</span>
+                                      <div className="space-y-1.5 max-h-[80px] overflow-y-auto">
+                                        {jobApplicants.length === 0 ? (
+                                          <span className="text-[10px] text-gray-500 italic block">No applications yet.</span>
+                                        ) : (
+                                          jobApplicants.slice(0, 3).map((app: any) => (
+                                            <div key={app.id} className="flex items-center justify-between gap-2 text-xs">
+                                              <span className="text-white truncate font-medium">{app.seekerName}</span>
+                                              <Link 
+                                                href={`/employer/candidates?appId=${app.id}`}
+                                                className="text-[10px] text-cyan-400 hover:text-cyan-300 font-semibold shrink-0 hover:underline"
+                                              >
+                                                View
+                                              </Link>
+                                            </div>
+                                          ))
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

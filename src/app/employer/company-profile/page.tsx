@@ -1212,7 +1212,7 @@ export default function CompanyProfilePage() {
          uploadPath={user?.uid && cropType ? (cropType === 'logo' ? `companies/${user.uid}/logo_${Date.now()}` : cropType === 'cover' ? `companies/${user.uid}/cover_${Date.now()}` : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`) : undefined}
          onUploadComplete={async (url) => {
            try {
-             let nextCompany = { ...company };
+             const nextCompany = { ...company };
              if (cropType === 'logo') {
                nextCompany.logoUrl = url;
              } else if (cropType === 'cover') {

@@ -68,25 +68,39 @@ export default function SeekerInterviewsPage() {
 
     const getActions = () => {
       const actions: any[] = [];
-      if (mode.toLowerCase() === 'video' && int.meetingLink) {
+      const modeStr = (mode || '').toLowerCase();
+      const isOnline = modeStr === 'video' || modeStr === 'online';
+      const isWalkIn = modeStr === 'in-person' || modeStr === 'walk-in' || modeStr === 'walk_in';
+
+      if (isOnline && int.meetingLink) {
         actions.push({ label: 'Join Meet', icon: ExternalLink, href: int.meetingLink, tone: 'success' });
-      } else if (mode.toLowerCase() === 'in-person' && int.location) {
-        actions.push({ label: 'Directions', icon: MapPin, href: `https://maps.google.com/?q=${encodeURIComponent(int.location)}`, tone: 'primary' });
+      } else if (isWalkIn) {
+        const mapUrl = int.googleMapsLink || (int.location ? `https://maps.google.com/?q=${encodeURIComponent(int.location)}` : '');
+        if (mapUrl) {
+          actions.push({ label: 'Directions', icon: MapPin, href: mapUrl, tone: 'primary' });
+        }
       }
       
-      if (int.phone) {
-        actions.push({ label: 'Call', icon: Phone, href: `tel:${int.phone}`, tone: 'neutral' });
+      const phoneNum = int.interviewerContact || int.phone;
+      if (phoneNum) {
+        actions.push({ label: 'Call', icon: Phone, href: `tel:${phoneNum}`, tone: 'neutral' });
       }
       
       actions.push({ label: 'Messages', icon: MessageSquare, href: '/seeker/messages', tone: 'neutral' });
       return actions;
     };
 
+    const descParts: string[] = [];
+    if (int.interviewerName) descParts.push(`Interviewer: ${int.interviewerName}`);
+    if (int.location) descParts.push(`Location: ${int.location}`);
+    if (int.notes) descParts.push(`Instructions: ${int.notes}`);
+    const descriptionText = descParts.join(' | ') || 'No notes provided by employer.';
+
     return {
       id: int.id,
       title: `${int.jobTitle || 'Job'} Interview`,
       subtitle: int.companyName || 'Company Name',
-      description: int.notes || 'No notes provided by employer.',
+      description: descriptionText,
       status: int.status || 'scheduled',
       meta: [
         formattedDate,

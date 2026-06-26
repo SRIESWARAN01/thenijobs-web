@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { browserLocalPersistence, setPersistence, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/config';
+import { httpsCallable } from 'firebase/functions';
+import { auth, db, functions } from '@/lib/firebase/config';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -58,6 +59,14 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
     try {
+      // Seed demo accounts via Cloud Function
+      try {
+        const seedFunc = httpsCallable(functions, 'seedDemoAccounts');
+        await seedFunc({ secret: 'theni_seeding_2026' });
+      } catch (seedErr) {
+        console.warn('Demo seeding failed or was already completed:', seedErr);
+      }
+
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
       const userDoc = await getDoc(doc(db, 'users', cred.user.uid));

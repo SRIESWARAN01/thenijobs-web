@@ -15,7 +15,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, increment } from 'firebase/firestore';
 import { applyToJob, saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
 import { formatDate, formatJobType } from '@/lib/jobFormatters';
 import { isPublicJobVisible } from '@/lib/jobPolicy';
@@ -81,6 +81,27 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
   const [shareCopied, setShareCopied] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const handleCloseSuccess = useCallback(() => setShowSuccess(false), []);
+
+  const trackJobAnalytics = async (jobId: string, eventType: 'call_click' | 'whatsapp_click' | 'email_click') => {
+    try {
+      const jobRef = doc(db, 'jobs', jobId);
+      const updateData: any = {};
+      if (eventType === 'call_click') updateData.callClickCount = increment(1);
+      if (eventType === 'whatsapp_click') updateData.whatsappClickCount = increment(1);
+      if (eventType === 'email_click') updateData.emailClickCount = increment(1);
+      await updateDoc(jobRef, updateData);
+
+      if (job?.companyId) {
+        const companyRef = doc(db, 'companies', job.companyId);
+        const companyUpdateData: any = {};
+        if (eventType === 'call_click') companyUpdateData.callClickCount = increment(1);
+        if (eventType === 'whatsapp_click') companyUpdateData.whatsappClickCount = increment(1);
+        await updateDoc(companyRef, companyUpdateData).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Failed to track job analytics:', err);
+    }
+  };
 
   const renderVerificationBadge = (level?: string, isVerified?: boolean) => {
     const activeLevel = level || (isVerified ? 'standard' : 'free');
@@ -179,7 +200,15 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
         // Check applied
         const qApplied = query(collection(db, 'jobApplications'), where('applicantId', '==', uid), where('jobId', '==', id));
         const snapApplied = await getDocs(qApplied);
-        setHasApplied(!snapApplied.empty);
+        if (snapApplied.empty) {
+          setHasApplied(false);
+        } else {
+          const activeApp = snapApplied.docs.find(doc => {
+            const status = doc.data().status;
+            return !['rejected', 'cancelled', 'withdrawn'].includes(status);
+          });
+          setHasApplied(!!activeApp);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -284,6 +313,7 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
         resumeUrl: seekerProfile?.resumeUrl || '',
         resumeName: seekerProfile?.resumeName || '',
         coverLetter: '',
+        aboutMe: seekerProfile?.aboutMe || seekerProfile?.summary || '',
         seekerDob: seekerProfile?.dob || '',
         seekerGender: seekerProfile?.gender || 'Male',
         expectedSalary: seekerProfile?.expectedSalary || '',
@@ -460,119 +490,134 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
                 </div>
 
                 {/* Direct HR Call, WhatsApp & Email actions */}
-                {hasApplied ? (
-                  (job.phone || whatsappNumber || job.email || job.walkIn?.contactMobile) && (
-                    <div className="grid grid-cols-3 gap-3">
+                {(job.phone || whatsappNumber || job.email || job.walkIn?.contactMobile) && (
+                  <div className="space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">📞 Contact Employer</h4>
+                    <div className="grid grid-cols-1 gap-2">
                       {(job.phone || job.walkIn?.contactMobile) && (
-                        <a
-                          href={`tel:${job.phone || job.walkIn?.contactMobile}`}
-                          className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15 transition-all"
-                          title="Call HR Mobile"
-                        >
-                          <Phone size={16} />
-                          <span className="text-[10px] font-bold tracking-wide uppercase">Call HR</span>
-                        </a>
+                        <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Phone size={14} className="text-cyan-400 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-[9px] text-gray-500 uppercase tracking-wide">Call Phone</p>
+                              <p className="text-xs font-semibold text-white select-all">{job.phone || job.walkIn?.contactMobile}</p>
+                            </div>
+                          </div>
+                          <a
+                            href={`tel:${job.phone || job.walkIn?.contactMobile}`}
+                            onClick={() => trackJobAnalytics(job.id, 'call_click')}
+                            className="px-3 py-1.5 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold transition-all shrink-0"
+                          >
+                            Call
+                          </a>
+                        </div>
                       )}
                       {whatsappNumber && (
-                        <a
-                          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I am interested in the "${job.title}" position posted on THENIJOBS.`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/15 transition-all"
-                          title="WhatsApp HR Chat"
-                        >
-                          <MessageCircle size={16} />
-                          <span className="text-[10px] font-bold tracking-wide uppercase">WhatsApp</span>
-                        </a>
+                        <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <MessageCircle size={14} className="text-emerald-400 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-[9px] text-gray-500 uppercase tracking-wide">WhatsApp Chat</p>
+                              <p className="text-xs font-semibold text-white select-all">{job.phone || job.walkIn?.contactMobile}</p>
+                            </div>
+                          </div>
+                          <a
+                            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi, I am interested in the "${job.title}" position posted on THENIJOBS.`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => trackJobAnalytics(job.id, 'whatsapp_click')}
+                            className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shrink-0"
+                          >
+                            Chat
+                          </a>
+                        </div>
                       )}
                       {job.email && (
-                        <a
-                          href={`mailto:${job.email}?subject=${encodeURIComponent(`Job Application: ${job.title}`)}&body=${encodeURIComponent(`Hi HR Team,\n\nI am interested in applying for the "${job.title}" position at ${job.companyName} listed on THENIJOBS.\n\nPlease find my application details on the platform.`)}`}
-                          className="flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15 transition-all"
-                          title="Email HR Address"
-                        >
-                          <Mail size={16} />
-                          <span className="text-[10px] font-bold tracking-wide uppercase">Email HR</span>
-                        </a>
+                        <div className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Mail size={14} className="text-indigo-400 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-[9px] text-gray-500 uppercase tracking-wide">Email HR</p>
+                              <p className="text-xs font-semibold text-white select-all truncate">{job.email}</p>
+                            </div>
+                          </div>
+                          <a
+                            href={`mailto:${job.email}?subject=${encodeURIComponent(`Job Application: ${job.title}`)}`}
+                            onClick={() => trackJobAnalytics(job.id, 'email_click')}
+                            className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shrink-0"
+                          >
+                            Email
+                          </a>
+                        </div>
                       )}
                     </div>
-                  )
-                ) : (
-                  <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-center space-y-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 mx-auto">
-                      <Users size={16} />
-                    </div>
-                    <h4 className="text-xs font-bold text-white">Contact Info Protected 🔒</h4>
-                    <p className="text-[10px] text-gray-500 leading-relaxed max-w-md mx-auto">
-                      Employer Contact Information (HR Phone, WhatsApp, and Email) is hidden. 
-                      Successfully apply to this job to unlock direct contact buttons.
-                    </p>
                   </div>
                 )}
-
-                {/* View Company Profile & Call Company */}
-                <div className="flex gap-3">
-                  {job.companySlug && (
-                    <Link
-                      href={`/company/${job.companySlug}`}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-violet-500/20 bg-violet-500/5 text-violet-400 hover:bg-violet-500/15 transition-all text-sm font-semibold"
-                    >
-                      <Eye size={15} />
-                      View Company Profile
-                    </Link>
-                  )}
-                  {(job.phone || job.walkIn?.contactMobile) && hasApplied && (
-                    <a
-                      href={`tel:${job.phone || job.walkIn?.contactMobile}`}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15 transition-all text-sm font-semibold"
-                    >
-                      <Phone size={15} />
-                      Call Company
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick specifications */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: 'Experience', value: job.experience, icon: '💼' },
-                { label: 'Education', value: job.education, icon: '🎓' },
-                { label: 'Openings', value: `${job.openings} post${job.openings > 1 ? 's' : ''}`, icon: '👥' },
-                { label: 'Deadline', value: job.deadline, icon: '📅' },
-              ].map(({ label, value, icon }) => (
-                <div key={label} className="glass-card rounded-2xl p-4 text-center">
-                  <div className="text-xl mb-1">{icon}</div>
-                  <div className="text-xs text-gray-500 mb-0.5">{label}</div>
-                  <div className="text-sm font-semibold text-white truncate">{value}</div>
-                </div>
-              ))}
-            </div>
-
-            {job.isWalkIn && (
-              <div className="glass-card rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
-                <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-white">
-                  <CalendarCheck size={16} className="text-emerald-400" />
-                  Walk-In Interview
-                </h2>
-                <div className="grid gap-3 text-sm text-gray-300 sm:grid-cols-2">
-                  <div className="rounded-xl bg-white/[0.03] p-3">
-                    <p className="text-xs font-semibold text-gray-500">Date & Time</p>
-                    <p className="mt-1 font-medium text-white">{job.walkIn?.date || 'To be confirmed'} at {job.walkIn?.time || 'To be confirmed'}</p>
+ 
+                 {/* View Company Profile & Call Company */}
+                 <div className="flex gap-3">
+                   {job.companySlug && (
+                     <Link
+                       href={`/company/${job.companySlug}`}
+                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-violet-500/20 bg-violet-500/5 text-violet-400 hover:bg-violet-500/15 transition-all text-sm font-semibold"
+                     >
+                       <Eye size={15} />
+                       View Company Profile
+                     </Link>
+                   )}
+                   {(job.phone || job.walkIn?.contactMobile) && (
+                     <a
+                       href={`tel:${job.phone || job.walkIn?.contactMobile}`}
+                       onClick={() => trackJobAnalytics(job.id, 'call_click')}
+                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 hover:bg-cyan-500/15 transition-all text-sm font-semibold"
+                     >
+                       <Phone size={15} />
+                       Call Company
+                     </a>
+                   )}
+                 </div>
+               </div>
+             </div>
+ 
+             {/* Quick specifications */}
+             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+               {[
+                 { label: 'Experience', value: job.experience, icon: '💼' },
+                 { label: 'Education', value: job.education, icon: '🎓' },
+                 { label: 'Openings', value: `${job.openings} post${job.openings > 1 ? 's' : ''}`, icon: '👥' },
+                 { label: 'Deadline', value: job.deadline, icon: '📅' },
+               ].map(({ label, value, icon }) => (
+                 <div key={label} className="glass-card rounded-2xl p-4 text-center">
+                   <div className="text-xl mb-1">{icon}</div>
+                   <div className="text-xs text-gray-500 mb-0.5">{label}</div>
+                   <div className="text-sm font-semibold text-white truncate">{value}</div>
+                 </div>
+               ))}
+             </div>
+ 
+             {job.isWalkIn && (
+               <div className="glass-card rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
+                 <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-white">
+                   <CalendarCheck size={16} className="text-emerald-400" />
+                   Walk-In Interview
+                 </h2>
+                 <div className="grid gap-3 text-sm text-gray-300 sm:grid-cols-2">
+                   <div className="rounded-xl bg-white/[0.03] p-3">
+                     <p className="text-xs font-semibold text-gray-500">Date & Time</p>
+                     <p className="mt-1 font-medium text-white">{job.walkIn?.date || 'To be confirmed'} at {job.walkIn?.time || 'To be confirmed'}</p>
+                   </div>
+                   <div className="rounded-xl bg-white/[0.03] p-3">
+                     <p className="text-xs font-semibold text-gray-500">Contact Person</p>
+                     <p className="mt-1 font-medium text-white">{job.walkIn?.contactPerson || 'HR Team'}</p>
+                     {job.walkIn?.contactMobile && <p className="text-xs text-gray-400">Mobile: {job.walkIn.contactMobile}</p>}
+                   </div>
+                   <div className="rounded-xl bg-white/[0.03] p-3 sm:col-span-2">
+                     <p className="text-xs font-semibold text-gray-500">Venue</p>
+                     <p className="mt-1 font-medium text-white">{job.walkIn?.venue || job.location}</p>
+                   </div>
                   </div>
-                  <div className="rounded-xl bg-white/[0.03] p-3">
-                    <p className="text-xs font-semibold text-gray-500">Contact Person</p>
-                    <p className="mt-1 font-medium text-white">{job.walkIn?.contactPerson || 'HR Team'}</p>
-                    {job.walkIn?.contactMobile && <p className="text-xs text-gray-400">Mobile: {hasApplied ? job.walkIn.contactMobile : 'Protected (Apply to Unlock)'}</p>}
-                  </div>
-                  <div className="rounded-xl bg-white/[0.03] p-3 sm:col-span-2">
-                    <p className="text-xs font-semibold text-gray-500">Venue</p>
-                    <p className="mt-1 font-medium text-white">{job.walkIn?.venue || job.location}</p>
-                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Job Description */}
             <div className="glass-card rounded-2xl p-6">
@@ -656,10 +701,11 @@ export default function JobDetailPageClient({ id, hideNav = false }: { id: strin
                   {applying ? 'Applying...' : job.isWalkIn ? 'Submit Walk-In Application' : 'Apply Now'}
                 </button>
               )}
-              {hasApplied && job.phone && (
+              {job.phone && (
                 <a
                   href={`tel:${job.phone}`}
-                  className="w-full btn-outline-glass py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 mb-2"
+                  onClick={() => trackJobAnalytics(job.id, 'call_click')}
+                  className="w-full btn-outline-glass py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 mb-2 hover:bg-white/5 transition-all"
                 >
                   📞 Call HR
                 </a>

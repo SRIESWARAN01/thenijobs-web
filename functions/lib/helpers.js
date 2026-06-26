@@ -152,9 +152,9 @@ async function seekerHasApplicationWithCompanyOwner(seekerId, ownerId) {
     const companyIds = companySnap.docs.map((company) => company.id);
     if (companyIds.length === 0)
         return false;
-    const applicationSnap = await config_1.db.collection('applications')
-        .where('seekerId', '==', seekerId)
-        .where('companyId', 'in', companyIds)
+    const applicationSnap = await config_1.db.collection('jobApplications')
+        .where('applicantId', '==', seekerId)
+        .where('employerId', 'in', companyIds)
         .limit(1)
         .get();
     return !applicationSnap.empty;
@@ -167,11 +167,11 @@ async function companyOwnerHasCandidateRelationship(ownerId, seekerId) {
     const companyIds = new Set(companySnap.docs.map((company) => company.id));
     if (companyIds.size === 0)
         return false;
-    const applicationSnap = await config_1.db.collection('applications')
-        .where('seekerId', '==', seekerId)
+    const applicationSnap = await config_1.db.collection('jobApplications')
+        .where('applicantId', '==', seekerId)
         .limit(50)
         .get();
-    if (applicationSnap.docs.some((application) => companyIds.has(getString(application.data().companyId)))) {
+    if (applicationSnap.docs.some((application) => companyIds.has(getString(application.data().employerId)))) {
         return true;
     }
     const interviewSnap = await config_1.db.collection('interviews')

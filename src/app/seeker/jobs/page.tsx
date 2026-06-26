@@ -102,7 +102,6 @@ export default function SeekerJobsPage() {
       setLoading(true);
       const constraints: any[] = [
         where('isActive', '==', true),
-        where('district', '==', LAUNCH_DISTRICT),
         orderBy('createdAt', 'desc')
       ];
 
@@ -229,7 +228,7 @@ export default function SeekerJobsPage() {
     ]);
     const matchLoc = !location ||
       j.location.toLowerCase().includes(loc) ||
-      (location === LAUNCH_DISTRICT && j.district === LAUNCH_DISTRICT);
+      j.district.toLowerCase().includes(loc);
     const matchType = selectedTypes.length === 0 || selectedTypes.includes(j.type);
     const matchCat = selectedCategories.length === 0 || selectedCategories.includes(j.category);
     return matchSearch && matchLoc && matchType && matchCat;

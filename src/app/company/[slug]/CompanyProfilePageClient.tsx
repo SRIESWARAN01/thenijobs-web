@@ -4,15 +4,18 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CompanyProfileClient from './CompanyProfileClient';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, onSnapshot } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { formatDate, formatJobType } from '@/lib/jobFormatters';
+import { isPublicJobVisible } from '@/lib/jobPolicy';
+import { getCompanyActivePlan } from '@/lib/subscriptions';
 
 export default function CompanyProfilePageClient({ slug }: { slug: string }) {
   const [company, setCompany] = useState<any | null>(null);
   const [jobs, setJobs] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
 
@@ -69,20 +72,22 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
           where('isActive', '==', true)
         );
         const snapJobs = await getDocs(qJobs);
-        const jobsData = snapJobs.docs.map(doc => {
-          const d = doc.data();
-          const salaryStr = d.salaryMin && d.salaryMax
-            ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}`
-            : 'Salary Negotiable';
-          return {
-            id: doc.id,
-            title: d.title || '',
-            type: formatJobType(d.jobType),
-            salary: salaryStr,
-            openings: d.openings ? Number(d.openings) : 1,
-            posted: formatDate(d.createdAt)
-          };
-        });
+        const jobsData = snapJobs.docs
+          .filter(doc => isPublicJobVisible(doc.data()))
+          .map(doc => {
+            const d = doc.data();
+            const salaryStr = d.salaryMin && d.salaryMax
+              ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}`
+              : 'Salary Negotiable';
+            return {
+              id: doc.id,
+              title: d.title || '',
+              type: formatJobType(d.jobType),
+              salary: salaryStr,
+              openings: d.openings ? Number(d.openings) : 1,
+              posted: formatDate(d.createdAt)
+            };
+          });
         setJobs(jobsData);
 
         // 3. Fetch reviews
@@ -107,26 +112,55 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
           };
         });
         setReviews(reviewsData);
-
-        // 4. Fetch products
-        const qProducts = query(
-          collection(db, 'products'),
-          where('companyId', '==', companyId),
-          where('isActive', '==', true)
-        );
-        const snapProducts = await getDocs(qProducts);
-        const productsData = snapProducts.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setProducts(productsData);
       } catch (err) {
-        console.error('Error fetching jobs/reviews/products:', err);
+        console.error('Error fetching jobs/reviews:', err);
       }
     }
 
     loadCompanyData();
   }, [slug]);
+
+  // Set up real-time products and services listeners
+  useEffect(() => {
+    if (!company?.id) return;
+
+    // Listen to products in real time
+    const qProducts = query(
+      collection(db, 'products'),
+      where('companyId', '==', company.id),
+      where('isActive', '==', true)
+    );
+    const unsubscribeProducts = onSnapshot(qProducts, (snapshot) => {
+      const productsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setProducts(productsData);
+    }, (err) => {
+      console.error('Error listening to products:', err);
+    });
+
+    // Listen to services in real time
+    const qServices = query(
+      collection(db, 'services'),
+      where('providerId', '==', company.ownerId || ''),
+      where('status', '==', 'active')
+    );
+    const unsubscribeServices = onSnapshot(qServices, (snapshot) => {
+      const servicesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setServices(servicesData);
+    }, (err) => {
+      console.error('Error listening to services:', err);
+    });
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeServices();
+    };
+  }, [company?.id, company?.ownerId]);
 
   if (loading) {
     return (
@@ -174,7 +208,8 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
     galleryImages: company.galleryImages || company.gallery || [],
     galleryVideos: company.galleryVideos || [],
     posts: company.posts || [],
-    services: company.services || [],
+    services: services,
+    companyServicesTags: company.services || [],
     verificationBadges: visibleVerificationBadges,
     products: products,
     viewCount: company.viewCount || 0,
@@ -184,7 +219,7 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
     reviewCount: reviews.length,
     trustScore: company.trustScore || Math.round((verifiedBadgeCount / 3) * 100),
     responseTime: company.responseTime || 'Not set',
-    subscriptionBadge: company.subscriptionPlan || (company.isPremium ? 'premium' : 'free'),
+    subscriptionBadge: getCompanyActivePlan(company),
   };
 
   return <CompanyProfileClient company={processedCompany} jobs={jobs} reviews={reviews} />;

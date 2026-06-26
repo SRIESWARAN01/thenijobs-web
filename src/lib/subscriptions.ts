@@ -250,6 +250,18 @@ export function normalizePlanSlug(value?: string | null): VisibleSubscriptionPla
   return 'free';
 }
 
+export function getCompanyActivePlan(company?: any): VisibleSubscriptionPlanSlug {
+  if (!company) return 'free';
+  const rawPlan = company.subscriptionPlan || (company.isPremium ? 'premium' : 'free');
+  if (company.subscriptionEndsAt) {
+    const endsAt = toDate(company.subscriptionEndsAt);
+    if (endsAt && endsAt < new Date()) {
+      return 'free';
+    }
+  }
+  return normalizePlanSlug(rawPlan);
+}
+
 export function isVisiblePlanSlug(value: SubscriptionPlanSlug): value is VisibleSubscriptionPlanSlug {
   return value === 'free' || value === 'basic' || value === 'premium' || value === 'enterprise';
 }

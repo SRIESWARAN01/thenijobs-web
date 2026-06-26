@@ -84,7 +84,7 @@ const DISTRICTS_OPTIONS = DISTRICTS.map((d) => ({ value: d, label: d }));
 export default function JobsPage() {
   const { user: currentUser } = useAuth();
   const { data: jobs, loading } = useCollection<JobDoc>('jobs');
-  const { data: applications } = useCollection<any>('applications');
+  const { data: applications } = useCollection<any>('jobApplications');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('All');
   const [typeFilter, setTypeFilter] = useState('All Types');

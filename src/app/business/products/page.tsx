@@ -13,6 +13,8 @@ import Link from 'next/link';
 import { createProduct, updateProduct, deleteProduct } from '@/lib/firebase/shopService';
 import { useUploadFile } from '@/hooks/useStorage';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
+import { getCompanyActivePlan } from '@/lib/subscriptions';
+import { SUBSCRIPTION_PLANS } from '@/lib/subscriptionPlans';
 
 interface ProductDoc {
   id: string;
@@ -123,36 +125,21 @@ export default function BusinessProductsPage() {
   const companyId = company?.id;
 
   // Compute active subscription plan badge (free, basic / Standard, premium)
-  const subscriptionBadge = company ? (() => {
-    if (company.subscriptionEndsAt) {
-      let endsAt: Date | null = null;
-      const val = company.subscriptionEndsAt;
-      if (val instanceof Date) endsAt = val;
-      else if (val && typeof val === 'object' && (val as any).seconds) endsAt = new Date((val as any).seconds * 1000);
-      else if (val) endsAt = new Date(String(val));
-
-      if (endsAt && endsAt < new Date()) {
-        return 'free';
-      }
-    }
-    return company.subscriptionPlan || (company.isPremium ? 'premium' : 'free');
-  })() : 'free';
+  const subscriptionBadge = getCompanyActivePlan(company);
 
   // 2. Fetch products
   const { data: products, loading: productsLoading } = useCollection<any>('products', [
     where('companyId', '==', companyId || '')
   ], { skip: !companyId });
 
-  const getProductLimit = (planSlug: string) => {
-    if (planSlug === 'basic') return 3;
-    if (planSlug === 'premium') return 5;
-    if (planSlug === 'enterprise') return 10;
-    return 1;
-  };
-  const limit = getProductLimit(subscriptionBadge);
-  const reachedLimit = products.length >= limit;
+  const limit = SUBSCRIPTION_PLANS.find(p => p.slug === subscriptionBadge)?.productLimit ?? 0;
+  const reachedLimit = limit !== -1 && products.length >= limit;
 
   const handleOpenAddModal = () => {
+    if (limit === 0) {
+      alert('Product Catalog is not available on the Free plan. Please upgrade to a Standard or Premium plan to add products.');
+      return;
+    }
     if (reachedLimit) {
       alert(`Product limit reached. Your ${subscriptionBadge === 'free' ? 'Free' : subscriptionBadge === 'basic' ? 'Standard' : subscriptionBadge === 'premium' ? 'Premium' : 'Enterprise'} plan allows a maximum of ${limit} product(s). Please delete existing products or upgrade.`);
       return;
@@ -192,7 +179,11 @@ export default function BusinessProductsPage() {
     const file = e.target.files?.[0];
     if (!file || !companyId) return;
 
-    if (products.length >= limit) {
+    if (limit === 0) {
+      alert('Product Catalog is not available on the Free plan. Please upgrade to a Standard or Premium plan to import products.');
+      return;
+    }
+    if (reachedLimit) {
       alert(`Limit reached. You already have ${products.length} products (max ${limit} for your plan). Please delete existing products or upgrade.`);
       return;
     }

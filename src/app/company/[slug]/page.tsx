@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
     };
-  } else {
+  } else if (activePlan === 'premium') {
     // Premium: Full SEO Optimization (custom title/description, full OpenGraph & Twitter tags)
     const title = companyData.customMetaTitle || companyData.seoTitle || name;
     const description = companyData.customMetaDescription || companyData.seoDescription || defaultDescription;
@@ -102,6 +102,43 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       twitter: {
         card: 'summary',
         title: `${title} — THENIJOBS Premium Partner`,
+        description,
+        ...(logoUrl ? { images: [logoUrl] } : {}),
+      },
+    };
+  } else {
+    // Enterprise: Ultra Premium SEO Optimization & Structured Data
+    const title = companyData.customMetaTitle || companyData.seoTitle || name;
+    const description = companyData.customMetaDescription || companyData.seoDescription || defaultDescription;
+    const logoUrl = companyData.logoUrl || undefined;
+
+    return {
+      title,
+      description,
+      alternates: {
+        canonical: `https://thenijobs.in/company/${slug}`
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+      openGraph: {
+        title: `${title} — THENIJOBS Enterprise VIP Partner`,
+        description,
+        type: 'website',
+        url: `https://thenijobs.in/company/${slug}`,
+        ...(logoUrl ? { images: [{ url: logoUrl, width: 256, height: 256, alt: `${name} logo` }] } : {}),
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: `${title} — THENIJOBS Enterprise VIP Partner`,
         description,
         ...(logoUrl ? { images: [logoUrl] } : {}),
       },
@@ -160,34 +197,51 @@ export default async function CompanyProfilePage({ params }: PageProps) {
     return rawPlan;
   })();
 
-  // Gate rich Schema markup (LocalBusiness) to Standard (basic) and Premium tiers only
-  const showSchema = activePlan === 'basic' || activePlan === 'premium';
+  // Gate rich Schema markup to Standard (basic), Premium and Enterprise tiers
+  const showSchema = activePlan === 'basic' || activePlan === 'premium' || activePlan === 'enterprise';
 
-  const jsonLd = (companyData && showSchema) ? {
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    'name': companyData.name,
-    'description': companyData.description || 'Local business in Theni',
-    'image': companyData.logoUrl || undefined,
-    'telephone': companyData.phone || undefined,
-    'email': companyData.email || undefined,
-    'address': {
-      '@type': 'PostalAddress',
-      'streetAddress': companyData.address || undefined,
-      'addressLocality': companyData.district || 'Theni',
-      'addressRegion': 'Tamil Nadu',
-      'addressCountry': 'IN'
-    }
-  } : null;
+  const jsonLdList = (companyData && showSchema) ? [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      'name': companyData.name,
+      'description': companyData.description || 'Local business in Theni',
+      'image': companyData.logoUrl || undefined,
+      'telephone': companyData.phone || undefined,
+      'email': companyData.email || undefined,
+      'address': {
+        '@type': 'PostalAddress',
+        'streetAddress': companyData.address || undefined,
+        'addressLocality': companyData.district || 'Theni',
+        'addressRegion': 'Tamil Nadu',
+        'addressCountry': 'IN'
+      }
+    },
+    ...(activePlan === 'enterprise' ? [{
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      'name': companyData.name,
+      'description': companyData.description || 'Verified Enterprise Organization in Theni',
+      'logo': companyData.logoUrl || undefined,
+      'url': `https://thenijobs.in/company/${slug}`,
+      'sameAs': [
+        companyData.website || undefined,
+        companyData.facebook || undefined,
+        companyData.instagram || undefined,
+        companyData.linkedin || undefined,
+      ].filter(Boolean)
+    }] : [])
+  ] : null;
 
   return (
     <>
-      {jsonLd && (
+      {jsonLdList && jsonLdList.map((ld, index) => (
         <script
+          key={index}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
         />
-      )}
+      ))}
       <CompanyProfilePageClient slug={slug} />
     </>
   );

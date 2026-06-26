@@ -36,7 +36,9 @@ import { WHATSAPP_BUSINESS_NUMBER } from '@/lib/types';
 import type { Product, ProductReview } from '@/lib/types';
 import StarRating from '@/components/shop/StarRating';
 import { useShopAuth } from '@/hooks/useShopAuth';
-import { createRFQ } from '@/lib/firebase/firestoreService';
+import { createRFQ, trackProductOrServiceAnalytics } from '@/lib/firebase/firestoreService';
+import { db } from '@/lib/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeleton shimmer
@@ -309,6 +311,38 @@ export default function ProductDetailPageClient({
   const [loadingProduct, setLoadingProduct] = useState(true);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [company, setCompany] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!product?.companyId) return;
+    let cancelled = false;
+
+    getDoc(doc(db, 'companies', product.companyId))
+      .then((snap) => {
+        if (!cancelled && snap.exists()) {
+          setCompany({ id: snap.id, ...snap.data() });
+        }
+      })
+      .catch((err) => {
+        console.error('[ProductDetailPage] fetch company error:', err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [product?.companyId]);
+
+  useEffect(() => {
+    if (!product?.id || !product?.companyId) return;
+    
+    // Track view event
+    trackProductOrServiceAnalytics(
+      product.id,
+      'product',
+      product.companyId,
+      'view'
+    );
+  }, [product?.id, product?.companyId]);
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -467,12 +501,42 @@ export default function ProductDetailPageClient({
 
   const handleWhatsApp = useCallback(() => {
     if (!product) return;
-    const total = (product.price * quantity).toLocaleString('en-IN');
-    const text = encodeURIComponent(
-      `Hi! I'd like to buy: ${product.name} (x${quantity}) - ₹${total}`,
+    const priceStr = product.price ? `₹${product.price}` : 'Price on request';
+    const productUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/shop/products/${product.id}`
+      : `https://thenijobs.in/shop/products/${product.id}`;
+    
+    const text = `Hello, I'm interested in your product.
+
+Product: ${product.name}
+Price: ${priceStr}
+Quantity: ${quantity}
+Product Link: ${productUrl}
+Company: ${company?.name || 'Verified Business'}
+
+Please share more details.`;
+
+    const rawNum = company?.whatsapp || company?.phone || WHATSAPP_BUSINESS_NUMBER || '917094826586';
+    const cleanPhone = String(rawNum).replace(/\D/g, '');
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+    // Track analytics & create lead document
+    const customerData = {
+      name: shopUserProfile?.fullName || shopUser?.displayName || 'Anonymous Guest',
+      phone: shopUserProfile?.phone || shopUser?.phoneNumber || '',
+      email: shopUser?.email || '',
+    };
+
+    trackProductOrServiceAnalytics(
+      product.id,
+      'product',
+      product.companyId || '',
+      'whatsapp',
+      customerData
     );
-    window.open(`https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${text}`, '_blank');
-  }, [product, quantity]);
+
+    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`, '_blank');
+  }, [product, quantity, company, shopUser, shopUserProfile]);
 
   const handleReviewSuccess = useCallback(() => {
     showToast(

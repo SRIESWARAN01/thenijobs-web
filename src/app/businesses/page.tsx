@@ -9,7 +9,7 @@ import {
   Briefcase, SlidersHorizontal, ArrowRight, Building2,
   Navigation, MessageCircle, Phone, Loader2
 } from 'lucide-react';
-import { getPublicCompanies } from '@/lib/firebase/firestoreService';
+import { getPublicCompanies, getActiveServices } from '@/lib/firebase/firestoreService';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
@@ -68,32 +68,44 @@ export default function BusinessesPage() {
 
     async function loadBusinesses() {
       try {
-        const companies = await getPublicCompanies();
+        const [companies, activeServices] = await Promise.all([
+          getPublicCompanies(),
+          getActiveServices()
+        ]);
+
         const data = companies
           .filter((company) => (company.district || LAUNCH_DISTRICT) === LAUNCH_DISTRICT)
           .map(company => {
-          const d = company;
-          return {
-            id: d.id,
-            slug: d.slug || d.id,
-            name: d.name || '',
-            category: d.category || '',
-            description: d.description || '',
-            services: Array.isArray(d.services) ? d.services : [],
-            district: d.district || LAUNCH_DISTRICT,
-            location: d.location || d.locality || d.town || d.district || LAUNCH_DISTRICT,
-            rating: d.rating || 0,
-            reviews: d.reviewCount || 0,
-            jobs: d.jobCount || 0,
-            isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || d.verificationBadges?.businessVerified || false,
-            isPremium: d.isPremium || d.isFeatured || false,
-            tagline: d.tagline || d.description?.substring(0, 80) || '',
-            logo: d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'B',
-            isNew: d.createdAt ? (Date.now() - d.createdAt?.toMillis?.() < 7 * 24 * 60 * 60 * 1000) : false,
-            phone: d.phone || '',
-            whatsapp: d.whatsapp || d.phone || '',
-          } as Business;
-        });
+            const d = company;
+            // Get dynamically approved services for this company
+            const dbServices = activeServices
+              .filter((s: any) => s.providerId === company.ownerId)
+              .map((s: any) => s.name);
+            
+            const legacyServices = Array.isArray(d.services) ? d.services : [];
+            const mergedServices = Array.from(new Set([...dbServices, ...legacyServices]));
+
+            return {
+              id: d.id,
+              slug: d.slug || d.id,
+              name: d.name || '',
+              category: d.category || '',
+              description: d.description || '',
+              services: mergedServices,
+              district: d.district || LAUNCH_DISTRICT,
+              location: d.location || d.locality || d.town || d.district || LAUNCH_DISTRICT,
+              rating: d.rating || 0,
+              reviews: d.reviewCount || 0,
+              jobs: d.jobCount || 0,
+              isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || d.verificationBadges?.businessVerified || false,
+              isPremium: d.isPremium || d.isFeatured || false,
+              tagline: d.tagline || d.description?.substring(0, 80) || '',
+              logo: d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'B',
+              isNew: d.createdAt ? (Date.now() - d.createdAt?.toMillis?.() < 7 * 24 * 60 * 60 * 1000) : false,
+              phone: d.phone || '',
+              whatsapp: d.whatsapp || d.phone || '',
+            } as Business;
+          });
         setBusinesses(data);
       } catch (err) {
         console.error('Error loading businesses:', err);

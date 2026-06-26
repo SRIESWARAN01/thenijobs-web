@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { where, limit } from 'firebase/firestore';
-import { toDate } from '@/lib/subscriptions';
+import { toDate, getCompanyActivePlan } from '@/lib/subscriptions';
 
 interface CompanyData {
   id: string;
@@ -41,7 +41,7 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
-type CardThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald';
+type CardThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'titanium_platinum';
 
 export default function CompanyDigitalCardPageClient({
   slug,
@@ -69,15 +69,14 @@ export default function CompanyDigitalCardPageClient({
   }, [slug]);
 
   const plan = useMemo(() => {
-    if (!company) return 'free';
-    if (company.subscriptionEndsAt) {
-      const endsAt = toDate(company.subscriptionEndsAt);
-      if (endsAt && endsAt < new Date()) {
-        return 'free'; // Expired
-      }
-    }
-    return company.subscriptionPlan || (company.isPremium ? 'premium' : 'free');
+    return getCompanyActivePlan(company);
   }, [company]);
+
+  useEffect(() => {
+    if (plan === 'enterprise') {
+      setActiveTheme('titanium_platinum');
+    }
+  }, [plan]);
 
   if (dbLoading && !company) {
     return (
@@ -109,7 +108,7 @@ export default function CompanyDigitalCardPageClient({
   const description = company.description || 'Verified Business Partner listing on THENIJOBS.';
   const tagline = company.tagline || 'Verified Local Partner';
 
-  const isPremium = plan === 'premium';
+  const isPremium = plan === 'premium' || plan === 'enterprise';
   const isVerified = plan !== 'free' || company.verificationStatus === 'verified';
   
   const uniqueId = `TNI-BUS-${company.id.slice(0, 8).toUpperCase()}`;
@@ -143,6 +142,13 @@ export default function CompanyDigitalCardPageClient({
       accent: 'text-emerald-400',
       badge: 'bg-emerald-400/15 border-emerald-400/30 text-emerald-300',
       border: 'border-emerald-500/30'
+    },
+    titanium_platinum: {
+      frontBg: 'from-[#111116] via-[#1e1e24] to-[#2c2c35] border-slate-400/30',
+      backBg: 'from-[#09090b] via-[#141418] to-[#1b1b22] border-slate-400/30',
+      accent: 'text-slate-200',
+      badge: 'bg-slate-500/10 border-slate-400/30 text-slate-200',
+      border: 'border-slate-400/30 shadow-[0_0_15px_rgba(200,200,200,0.15)]'
     }
   };
 
@@ -336,10 +342,10 @@ export default function CompanyDigitalCardPageClient({
           </p>
 
           {/* Premium Theme Switcher for Premium card holders */}
-          {plan === 'premium' && (
+          {isPremium && (
             <div className="mt-4 inline-flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-2xl p-1 px-3">
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Premium Card Themes:</span>
-              {(['luxury_gold', 'midnight_purple', 'mint_emerald'] as CardThemeName[]).map(t => (
+              {(['luxury_gold', 'midnight_purple', 'mint_emerald', 'titanium_platinum'] as CardThemeName[]).map(t => (
                 <button
                   key={t}
                   onClick={() => setActiveTheme(t)}
@@ -361,7 +367,7 @@ export default function CompanyDigitalCardPageClient({
           <section
             id="business-card-front"
             className={`id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit ${
-              plan === 'premium'
+              plan === 'enterprise' || plan === 'premium'
                 ? `bg-gradient-to-br ${currentCardTheme.frontBg} ${currentCardTheme.border}`
                 : plan === 'basic'
                   ? 'bg-gradient-to-br from-[#0e1633] via-[#111c44] to-[#1c2e6f] border-blue-500/30'
@@ -372,7 +378,7 @@ export default function CompanyDigitalCardPageClient({
             {plan !== 'free' && (
               <>
                 <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-colors duration-1000 ${
-                  plan === 'premium' ? 'bg-amber-500/5 group-hover:bg-amber-500/10' : 'bg-blue-500/5 group-hover:bg-blue-500/10'
+                  plan === 'enterprise' ? 'bg-slate-200/5 group-hover:bg-slate-200/10' : plan === 'premium' ? 'bg-amber-500/5 group-hover:bg-amber-500/10' : 'bg-blue-500/5 group-hover:bg-blue-500/10'
                 }`} />
                 <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
               </>
@@ -381,7 +387,7 @@ export default function CompanyDigitalCardPageClient({
             {/* Top Row */}
             <div className="flex items-center justify-between z-10">
               <div className={`flex flex-col border-l-2 pl-2 ${
-                plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-blue-400' : 'border-slate-500'
+                plan === 'enterprise' ? 'border-slate-350' : plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-blue-400' : 'border-slate-500'
               }`}>
                 <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 uppercase">THENIJOBS</span>
                 <span className="text-xs font-extrabold tracking-wide text-white uppercase flex items-center gap-1">
@@ -389,7 +395,11 @@ export default function CompanyDigitalCardPageClient({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {plan === 'premium' ? (
+                {plan === 'enterprise' ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-200 to-slate-400 border border-slate-300 px-2.5 py-0.5 text-[9px] font-black text-slate-950 uppercase shadow-xl animate-pulse">
+                    👑 ENTERPRISE VIP
+                  </span>
+                ) : plan === 'premium' ? (
                   <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase shadow-lg ${currentCardTheme.badge}`}>
                     <Crown size={10} className="animate-bounce" /> PREMIUM VERIFIED
                   </span>
@@ -409,29 +419,29 @@ export default function CompanyDigitalCardPageClient({
             <div className="my-5 flex gap-5 items-center z-10">
               <div className="relative">
                 <div className={`relative h-24 w-24 overflow-hidden rounded-2xl border bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center ${
-                  plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
+                  plan === 'enterprise' ? 'border-slate-300' : plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
                 }`}>
                   {logoUrl ? (
                     <img src={logoUrl} alt={name} className="object-cover w-full h-full" />
                   ) : (
-                    <Building2 size={36} className={plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
+                    <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
                   )}
                 </div>
                 {isVerified && (
                   <div className={`absolute -bottom-2 -right-2 rounded-full p-1 border-2 border-[#15152d] shadow-md ${
-                    plan === 'premium' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'
+                    plan === 'enterprise' ? 'bg-slate-200 text-slate-950' : plan === 'premium' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'
                   }`}>
                     <BadgeCheck size={16} className="fill-current" />
                   </div>
                 )}
               </div>
-
+ 
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-black text-white leading-tight truncate">
                   {name}
                 </h2>
                 <p className={`text-xs font-semibold truncate mt-0.5 ${
-                  plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-400'
+                  plan === 'enterprise' ? 'text-slate-200 font-bold' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-400'
                 }`}>{category}</p>
                 <div className="mt-3 font-mono text-sm tracking-wider font-bold text-slate-350">
                   {uniqueId.split('-').slice(0, 2).join('-') + ' - ' + uniqueId.split('-')[2]}
@@ -442,15 +452,15 @@ export default function CompanyDigitalCardPageClient({
             {/* Bottom Row */}
             <div className="border-t border-white/5 pt-3 flex flex-col gap-1 z-10 text-xs text-slate-300">
               <div className="flex items-center gap-1.5 min-w-0">
-                <Phone size={11} className={`shrink-0 ${plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                <Phone size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{phone}</span>
               </div>
               <div className="flex items-center gap-1.5 min-w-0">
-                <Mail size={11} className={`shrink-0 ${plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                <Mail size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{email}</span>
               </div>
               <div className="flex items-center gap-1.5 min-w-0">
-                <MapPin size={11} className={`shrink-0 ${plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                <MapPin size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{address}</span>
               </div>
             </div>
@@ -460,7 +470,7 @@ export default function CompanyDigitalCardPageClient({
           <section
             id="business-card-back"
             className={`id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-purple-500/30 font-outfit ${
-              plan === 'premium'
+              plan === 'enterprise' || plan === 'premium'
                 ? `bg-gradient-to-br ${currentCardTheme.backBg} ${currentCardTheme.border}`
                 : plan === 'basic'
                   ? 'bg-gradient-to-br from-[#0a0f24] via-[#0d1538] to-[#142252] border-blue-500/30'

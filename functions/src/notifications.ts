@@ -42,6 +42,29 @@ export const createNotification = onCall(
       createdAt: FieldValue.serverTimestamp(),
     });
 
+    // Send push notification via FCM if user has a registered token
+    try {
+      const { getMessaging } = await import('firebase-admin/messaging');
+      const userSnap = await db.collection('seekerProfiles').doc(userId).get();
+      const fcmToken = userSnap.data()?.fcmToken;
+      if (fcmToken) {
+        await getMessaging().send({
+          token: fcmToken,
+          notification: {
+            title,
+            body: message,
+          },
+          data: {
+            type,
+            actionUrl: actionUrl || '',
+          },
+        });
+        console.log(`[FCM] Push notification sent successfully to user ${userId}`);
+      }
+    } catch (fcmErr) {
+      console.warn(`[FCM] Failed to send push notification to user ${userId}:`, fcmErr);
+    }
+
     return { ok: true, notificationId: notificationRef.id };
   },
 );

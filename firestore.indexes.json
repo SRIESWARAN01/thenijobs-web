@@ -113,6 +113,38 @@
       ]
     },
     {
+      "collectionGroup": "jobApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "applicantId", "order": "ASCENDING" },
+        { "fieldPath": "appliedDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "jobApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "employerId", "order": "ASCENDING" },
+        { "fieldPath": "appliedDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "jobApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "employerId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "jobApplications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "jobId", "order": "ASCENDING" },
+        { "fieldPath": "applicantId", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "savedJobs",
       "queryScope": "COLLECTION",
       "fields": [

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import adminApp, { adminDb } from '@/lib/firebaseAdmin';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
@@ -159,6 +160,16 @@ export async function POST(request: Request) {
 
     // 3. Generate Firebase custom token for clients to sign in
     const customToken = await auth.createCustomToken(uid, { role: userRole });
+
+    // Establish a secure authenticated session using an HTTP-only cookie
+    const cookieStore = await cookies();
+    cookieStore.set('session', customToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: '/',
+    });
 
     return NextResponse.json({
       success: true,

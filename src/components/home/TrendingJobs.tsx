@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -13,8 +14,9 @@ import {
   Zap,
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
-import { where, limit } from 'firebase/firestore';
+import { where, limit, orderBy } from 'firebase/firestore';
 import { formatJobType, formatRelativeTime } from '@/lib/jobFormatters';
+import { isPublicJobVisible } from '@/lib/jobPolicy';
 
 interface TrendingJob {
   id: string;
@@ -48,29 +50,35 @@ const getCategoryIcon = (category?: string) => {
 
 export default function TrendingJobs() {
   const { data: dbJobs, loading } = useCollection<any>('jobs', [
-    where('status', 'in', ['active', 'approved']),
-    limit(6)
+    where('isActive', '==', true),
+    orderBy('createdAt', 'desc'),
+    limit(20)
   ]);
 
-  const jobsList: TrendingJob[] = dbJobs.map((d: any) => {
-    const salaryStr = d.salaryMin && d.salaryMax
-      ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}`
-      : 'Salary Negotiable';
+  const jobsList: TrendingJob[] = useMemo(() => {
+    return dbJobs
+      .filter((d: any) => isPublicJobVisible(d))
+      .slice(0, 6)
+      .map((d: any) => {
+        const salaryStr = d.salaryMin && d.salaryMax
+          ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}`
+          : 'Salary Negotiable';
 
-    return {
-      id: d.id,
-      title: d.title || '',
-      company: d.companyName || 'Verified Employer',
-      location: d.location || d.district || 'Theni',
-      salary: salaryStr,
-      type: formatJobType(d.jobType),
-      posted: formatRelativeTime(d.createdAt),
-      isUrgent: d.isUrgent || false,
-      isPremium: d.isPremium || false,
-      category: d.category || '',
-      skills: d.skills || [],
-    };
-  });
+        return {
+          id: d.id,
+          title: d.title || '',
+          company: d.companyName || 'Verified Employer',
+          location: d.location || d.district || 'Theni',
+          salary: salaryStr,
+          type: formatJobType(d.jobType),
+          posted: formatRelativeTime(d.createdAt),
+          isUrgent: d.isUrgent || false,
+          isPremium: d.isPremium || false,
+          category: d.category || '',
+          skills: d.skills || [],
+        };
+      });
+  }, [dbJobs]);
 
   return (
     <section className="px-4 py-10 sm:px-6">

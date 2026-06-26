@@ -27,6 +27,7 @@ export interface UseUploadFileReturn {
   url: string | null;
   loading: boolean;
   error: string | null;
+  clearError: () => void;
 }
 
 export interface UseDeleteFileReturn {
@@ -40,10 +41,13 @@ export interface UseDeleteFileReturn {
 
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
+// Client-side cache to prevent duplicate uploads of the same file to the same path
+const uploadCache = new Map<string, string>();
+
 // ───────────────────────────── useUploadFile ─────────────────────
 
 /**
- * Upload a file to Firebase Cloud Storage with progress tracking.
+ * Upload a file to Firebase Cloud Storage with progress tracking, caching, and automatic retry.
  *
  * @example
  * ```tsx
@@ -81,50 +85,91 @@ export function useUploadFile(): UseUploadFileReturn {
         throw new Error(msg);
       }
 
+      // ── Check client-side upload cache ───────────────────────
+      const fileKey = `${file.name}_${file.size}_${path}`;
+      if (uploadCache.has(fileKey)) {
+        const cachedUrl = uploadCache.get(fileKey)!;
+        setProgress(100);
+        setUrl(cachedUrl);
+        setLoading(false);
+        setError(null);
+        return cachedUrl;
+      }
+
       setLoading(true);
       setError(null);
       setProgress(0);
       setUrl(null);
 
-      return new Promise<string>((resolve, reject) => {
-        const storageRef = ref(storage, path);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+      const MAX_RETRIES = 3;
+      let attempt = 0;
 
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            const pct = Math.round(
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
-            );
-            setProgress(pct);
-          },
-          (err) => {
-            const message = err.message || 'Upload failed';
-            setError(message);
-            setLoading(false);
-            reject(err);
-          },
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              setUrl(downloadURL);
-              setLoading(false);
-              resolve(downloadURL);
-            } catch (err) {
-              const message =
-                err instanceof Error ? err.message : 'Failed to get download URL';
-              setError(message);
-              setLoading(false);
-              reject(err);
-            }
-          },
-        );
-      });
+      const runUpload = (): Promise<string> => {
+        attempt++;
+        return new Promise<string>((resolve, reject) => {
+          const storageRef = ref(storage, path);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const pct = Math.round(
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+              );
+              setProgress(pct);
+            },
+            async (err) => {
+              console.warn(`Upload attempt ${attempt} failed: ${err.message}`);
+              if (attempt < MAX_RETRIES) {
+                const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s
+                setTimeout(() => {
+                  runUpload().then(resolve).catch(reject);
+                }, delay);
+              } else {
+                const message = err.message || 'Upload failed after maximum retries';
+                setError(message);
+                setLoading(false);
+                reject(err);
+              }
+            },
+            async () => {
+              try {
+                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                // Save to cache
+                uploadCache.set(fileKey, downloadURL);
+                setUrl(downloadURL);
+                setLoading(false);
+                resolve(downloadURL);
+              } catch (err) {
+                console.warn(`Failed to get download URL on attempt ${attempt}:`, err);
+                if (attempt < MAX_RETRIES) {
+                  const delay = Math.pow(2, attempt) * 1000;
+                  setTimeout(() => {
+                    runUpload().then(resolve).catch(reject);
+                  }, delay);
+                } else {
+                  const message =
+                    err instanceof Error ? err.message : 'Failed to get download URL';
+                  setError(message);
+                  setLoading(false);
+                  reject(err);
+                }
+              }
+            },
+          );
+        });
+      };
+
+      return runUpload();
     },
     [],
   );
 
-  return { uploadFile, progress, url, loading, error };
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return { uploadFile, progress, url, loading, error, clearError };
 }
 
 // ───────────────────────────── useDeleteFile ─────────────────────

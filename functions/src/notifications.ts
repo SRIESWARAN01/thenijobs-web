@@ -73,7 +73,7 @@ export const createNotification = onCall(
 // EXISTING: Scheduled Functions (preserved)
 // ============================================================
 
-import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import * as functions from 'firebase-functions/v1';
 
 function matchesEducation(jobEducation: string, seekerEducation: any[]): boolean {
   if (!jobEducation || jobEducation.toLowerCase() === 'not specified' || jobEducation.toLowerCase() === 'any') {
@@ -183,13 +183,11 @@ function matchesExperience(jobExperience: string, seekerExpLevel: string, seeker
   return seekerYears >= minJobYears;
 }
 
-export const onJobCreated = onDocumentWritten(
-  {
-    document: 'jobs/{jobId}',
-  },
-  async (event) => {
-    const beforeData = event.data?.before?.data();
-    const afterData = event.data?.after?.data();
+export const onJobCreated = functions.firestore
+  .document('jobs/{jobId}')
+  .onWrite(async (change, context) => {
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
 
     if (!afterData) {
       console.log('Job document was deleted. Skipping notification.');
@@ -205,7 +203,7 @@ export const onJobCreated = onDocumentWritten(
     }
 
     const jobData = afterData;
-    const jobId = event.params.jobId;
+    const jobId = context.params.jobId;
 
     console.log(`Processing notifications for new job: ${jobData.title} at ${jobData.companyName || 'Company'}`);
 

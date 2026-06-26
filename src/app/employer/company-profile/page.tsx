@@ -52,6 +52,10 @@ const DEFAULT_COMPANY = {
   customCtaLabel: '',
   customCtaUrl: '',
   hideBranding: false,
+  gstNumber: '',
+  businessRegNumber: '',
+  verificationDocUrl: '',
+  verificationDocName: '',
 };
 
 function calcCompletion(data: typeof DEFAULT_COMPANY): number {
@@ -82,7 +86,7 @@ export default function CompanyProfilePage() {
   const activeSubscription = selectBestSubscription(subscriptions);
   const currentPlan = normalizePlanSlug(activeSubscription?.plan || resolvedCompany?.subscriptionPlan || (resolvedCompany?.isPremium ? 'premium' : 'free'));
 
-  const [activeFormTab, setActiveFormTab] = useState<'info' | 'branding' | 'seo'>('info');
+  const [activeFormTab, setActiveFormTab] = useState<'info' | 'branding' | 'seo' | 'verification'>('info');
 
   const [company, setCompany] = useState(DEFAULT_COMPANY);
   const [charCount, setCharCount] = useState(0);
@@ -191,6 +195,10 @@ export default function CompanyProfilePage() {
           customCtaLabel: updatedCompanyData.customCtaLabel || '',
           customCtaUrl: updatedCompanyData.customCtaUrl || '',
           hideBranding: updatedCompanyData.hideBranding || false,
+          gstNumber: updatedCompanyData.gstNumber || '',
+          businessRegNumber: updatedCompanyData.businessRegNumber || '',
+          verificationDocUrl: updatedCompanyData.verificationDocUrl || '',
+          verificationDocName: updatedCompanyData.verificationDocName || '',
           updatedAt: new Date()
         };
         await updateDocument('companies', resolvedCompany.id, docData);
@@ -326,6 +334,10 @@ export default function CompanyProfilePage() {
         customCtaLabel: company.customCtaLabel || '',
         customCtaUrl: company.customCtaUrl || '',
         hideBranding: company.hideBranding || false,
+        gstNumber: company.gstNumber || '',
+        businessRegNumber: company.businessRegNumber || '',
+        verificationDocUrl: company.verificationDocUrl || '',
+        verificationDocName: company.verificationDocName || '',
         updatedAt: new Date()
       };
 
@@ -424,6 +436,7 @@ export default function CompanyProfilePage() {
           { id: 'info', label: 'Basic Info', Icon: Building2 },
           { id: 'branding', label: 'Branding & Design', Icon: Camera },
           { id: 'seo', label: 'SEO & Marketing', Icon: Globe },
+          { id: 'verification', label: 'Verification Docs', Icon: Shield },
         ].map((t) => {
           const Icon = t.Icon;
           return (
@@ -1100,6 +1113,102 @@ export default function CompanyProfilePage() {
                </div>
              </div>
            )}
+ 
+            {/* BUSINESS VERIFICATION DOCUMENTS TAB */}
+            {activeFormTab === 'verification' && (
+              <div className="space-y-6">
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Shield size={16} className="text-cyan-400" />
+                    GST & Registration Details
+                  </h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-400 font-medium block mb-1.5">GST Number</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 33AAAAA1111A1Z1"
+                        value={company.gstNumber || ''}
+                        onChange={(e) => update('gstNumber', e.target.value.toUpperCase())}
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 font-medium block mb-1.5">Business Registration Number / PAN</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. AAABC1111A"
+                        value={company.businessRegNumber || ''}
+                        onChange={(e) => update('businessRegNumber', e.target.value.toUpperCase())}
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+ 
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <FileText size={16} className="text-cyan-400" />
+                    Verification Document Upload
+                  </h3>
+                  <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+                    Upload a scanned image or PDF copy of your registration certificate, GST receipt, incorporation certificate, or license.
+                    Our administrators will review the submitted document to verify your business listing.
+                  </p>
+ 
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-bold text-gray-300 hover:bg-white/[0.08] hover:text-white cursor-pointer transition-all">
+                        <Upload size={14} />
+                        Select File (PDF, PNG, JPG)
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file || !user?.uid) return;
+                            try {
+                              const url = await uploadFile(file, `companies/${user.uid}/verification_doc_${Date.now()}`, {
+                                allowedTypes: ['application/pdf', 'image/jpeg', 'image/png'],
+                                maxSizeBytes: 10 * 1024 * 1024
+                              });
+                              setCompany(prev => {
+                                const next = {
+                                  ...prev,
+                                  verificationDocUrl: url,
+                                  verificationDocName: file.name
+                                };
+                                triggerAutoSave(next);
+                                return next;
+                              });
+                              alert('Verification document uploaded successfully! Press Save to commit all changes.');
+                            } catch (err: any) {
+                              console.error(err);
+                              alert(err?.message || 'Failed to upload document.');
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                      {company.verificationDocUrl && (
+                        <a
+                          href={company.verificationDocUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-cyan-400 hover:underline flex items-center gap-1.5"
+                        >
+                          <CheckCircle size={14} className="text-emerald-400" />
+                          View Uploaded Document ({company.verificationDocName || 'File'})
+                        </a>
+                      )}
+                    </div>
+                    {!company.verificationDocUrl && (
+                      <p className="text-[10px] text-yellow-500/80">No verification document has been uploaded yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
  
            {/* Save Button */}
            <button

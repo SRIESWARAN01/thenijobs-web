@@ -10,6 +10,7 @@ import {
   getDocs,
   getCountFromServer,
   type QueryConstraint,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
@@ -353,80 +354,63 @@ export function useEmployerStats(companyId: string | undefined) {
       return;
     }
 
-    let cancelled = false;
-    async function loadStats() {
-      setLoading(true);
-      const [
-        activeJobs,
-        totalApplications,
+    setLoading(true);
+
+    // 1. Listen to jobs count (active)
+    const qJobs = query(collection(db, 'jobs'), where('companyId', '==', companyId), where('isActive', '==', true));
+    const unsubJobs = onSnapshot(qJobs, (snap) => {
+      setStats(prev => ({ ...prev, activeJobs: snap.size }));
+    }, (err) => console.error('useEmployerStats Jobs error:', err));
+
+    // 2. Listen to jobApplications (all for this company)
+    const qApps = query(collection(db, 'jobApplications'), where('employerId', '==', companyId));
+    const unsubApps = onSnapshot(qApps, (snap) => {
+      let applied = 0;
+      let underReview = 0;
+      let shortlisted = 0;
+      let interviewScheduled = 0;
+      let hired = 0;
+      let rejected = 0;
+      let joined = 0;
+
+      snap.docs.forEach(doc => {
+        const status = doc.data().status;
+        if (status === 'applied') applied++;
+        else if (['under_review', 'pending_review', 'resume_viewed'].includes(status)) underReview++;
+        else if (status === 'shortlisted') shortlisted++;
+        else if (status === 'interview_scheduled') interviewScheduled++;
+        else if (status === 'selected' || status === 'hired') hired++;
+        else if (status === 'rejected') rejected++;
+        else if (status === 'joined') joined++;
+      });
+
+      setStats(prev => ({
+        ...prev,
+        totalApplications: snap.size,
         applied,
         underReview,
         shortlisted,
         interviewScheduled,
-        interviews,
         hired,
         rejected,
         joined
-      ] = await Promise.all([
-        getAggregateCount('jobs', [
-          where('companyId', '==', companyId),
-          where('isActive', '==', true),
-        ]),
-        getAggregateCount('jobApplications', [where('employerId', '==', companyId)]),
-        getAggregateCount('jobApplications', [
-          where('employerId', '==', companyId),
-          where('status', '==', 'applied'),
-        ]),
-        getAggregateCount('jobApplications', [
-          where('employerId', '==', companyId),
-          where('status', 'in', ['under_review', 'pending_review', 'resume_viewed']),
-        ]),
-        getAggregateCount('jobApplications', [
-          where('employerId', '==', companyId),
-          where('status', '==', 'shortlisted'),
-        ]),
-        getAggregateCount('jobApplications', [
-          where('employerId', '==', companyId),
-          where('status', '==', 'interview_scheduled'),
-        ]),
-        getAggregateCount('interviews', [where('companyId', '==', companyId)]),
-        getAggregateCount('jobApplications', [
-          where('employerId', '==', companyId),
-          where('status', '==', 'selected'),
-        ]),
-        getAggregateCount('jobApplications', [
-          where('employerId', '==', companyId),
-          where('status', '==', 'rejected'),
-        ]),
-        getAggregateCount('jobApplications', [
-          where('employerId', '==', companyId),
-          where('status', '==', 'joined'),
-        ]),
-      ]);
+      }));
+    }, (err) => console.error('useEmployerStats Apps error:', err));
 
-      if (!cancelled) {
-        setStats({
-          activeJobs,
-          totalApplications,
-          applied,
-          underReview,
-          shortlisted,
-          interviewScheduled,
-          interviews,
-          hired,
-          rejected,
-          joined,
-        });
-        setLoading(false);
-      }
-    }
-
-    loadStats().catch(() => {
-      if (!cancelled) setLoading(false);
+    // 3. Listen to interviews count
+    const qInterviews = query(collection(db, 'interviews'), where('companyId', '==', companyId));
+    const unsubInterviews = onSnapshot(qInterviews, (snap) => {
+      setStats(prev => ({ ...prev, interviews: snap.size }));
+      setLoading(false);
+    }, (err) => {
+      console.error('useEmployerStats Interviews error:', err);
+      setLoading(false);
     });
 
     return () => {
-      cancelled = true;
+      unsubJobs();
+      unsubApps();
+      unsubInterviews();
     };
   }, [companyId]);
 
@@ -459,36 +443,43 @@ export function useSeekerStats(seekerId: string | undefined) {
       return;
     }
 
-    const currentSeekerId = seekerId;
-    let cancelled = false;
-    async function loadStats() {
-      setLoading(true);
-      const [appliedJobs, savedJobs, interviews] = await Promise.all([
-        getAggregateCount('jobApplications', [where('applicantId', '==', currentSeekerId)]),
-        getAggregateCount('savedJobs', [where('userId', '==', currentSeekerId)]),
-        getAggregateCount('interviews', [where('seekerId', '==', currentSeekerId)]),
-      ]);
+    setLoading(true);
 
-      let profileViews = 0;
-      try {
-        const profileSnap = await getDoc(doc(db, 'seekerProfiles', currentSeekerId));
-        profileViews = Number(profileSnap.data()?.viewCount) || 0;
-      } catch {
-        profileViews = 0;
+    // 1. Listen to jobApplications count
+    const qApps = query(collection(db, 'jobApplications'), where('applicantId', '==', seekerId));
+    const unsubApps = onSnapshot(qApps, (snap) => {
+      setStats(prev => ({ ...prev, appliedJobs: snap.size }));
+    }, (err) => console.error('useSeekerStats Apps error:', err));
+
+    // 2. Listen to savedJobs count
+    const qSaved = query(collection(db, 'savedJobs'), where('userId', '==', seekerId));
+    const unsubSaved = onSnapshot(qSaved, (snap) => {
+      setStats(prev => ({ ...prev, savedJobs: snap.size }));
+    }, (err) => console.error('useSeekerStats Saved error:', err));
+
+    // 3. Listen to interviews count
+    const qInterviews = query(collection(db, 'interviews'), where('seekerId', '==', seekerId));
+    const unsubInterviews = onSnapshot(qInterviews, (snap) => {
+      setStats(prev => ({ ...prev, interviews: snap.size }));
+    }, (err) => console.error('useSeekerStats Interviews error:', err));
+
+    // 4. Listen to seekerProfile viewCount
+    const profileRef = doc(db, 'seekerProfiles', seekerId);
+    const unsubProfile = onSnapshot(profileRef, (snap) => {
+      if (snap.exists()) {
+        setStats(prev => ({ ...prev, profileViews: Number(snap.data()?.viewCount) || 0 }));
       }
-
-      if (!cancelled) {
-        setStats({ appliedJobs, savedJobs, interviews, profileViews });
-        setLoading(false);
-      }
-    }
-
-    loadStats().catch(() => {
-      if (!cancelled) setLoading(false);
+      setLoading(false);
+    }, (err) => {
+      console.error('useSeekerStats Profile error:', err);
+      setLoading(false);
     });
 
     return () => {
-      cancelled = true;
+      unsubApps();
+      unsubSaved();
+      unsubInterviews();
+      unsubProfile();
     };
   }, [seekerId]);
 

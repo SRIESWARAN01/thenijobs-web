@@ -198,6 +198,11 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
   };
   const verifiedBadgeCount = Object.values(visibleVerificationBadges).filter(Boolean).length;
 
+  // Compute average rating from reviews
+  const averageRating = reviews.length > 0
+    ? Math.round((reviews.reduce((sum, r) => sum + (r.rating || 5), 0) / reviews.length) * 10) / 10
+    : company.rating || 0;
+
   const processedCompany = {
     ...company,
     category: company.category || 'Business',
@@ -212,14 +217,26 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
     companyServicesTags: company.services || [],
     verificationBadges: visibleVerificationBadges,
     products: products,
-    viewCount: company.viewCount || 0,
-    enquiryCount: company.enquiryCount || 0,
+    viewCount: company.viewCount || company.visitCount || 0,
+    enquiryCount: company.enquiryCount || company.contactSubmitCount || 0,
     followerCount: company.followerCount || 0,
-    rating: company.rating || 5,
+    rating: averageRating,
     reviewCount: reviews.length,
+    totalJobsPosted: company.totalJobsPosted || jobs.length,
+    totalProducts: products.length,
+    joinedDate: company.createdAt || company.registeredAt || null,
+    totalVisitors: company.visitCount || company.viewCount || 0,
     trustScore: company.trustScore || Math.round((verifiedBadgeCount / 3) * 100),
     responseTime: company.responseTime || 'Not set',
     subscriptionBadge: getCompanyActivePlan(company),
+    // Social / bio fields
+    mission: company.mission || '',
+    vision: company.vision || '',
+    workingHours: company.workingHours || '',
+    experience: company.experience || company.yearEstablished || '',
+    teamSize: company.teamSize || '',
+    brochureUrl: company.brochureUrl || '',
+    twitter: company.twitter || '',
   };
 
   return <CompanyProfileClient company={processedCompany} jobs={jobs} reviews={reviews} />;

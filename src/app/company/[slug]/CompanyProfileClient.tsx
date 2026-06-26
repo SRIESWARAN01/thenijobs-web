@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { db } from '@/lib/firebase/config';
@@ -8,6 +8,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
+import ShareModal from '@/components/ui/ShareModal';
 import {
   MapPin, Phone, Mail, Globe, MessageCircle, Share2, Heart,
   Star, BadgeCheck, Clock, Users, Eye, TrendingUp, ChevronRight,
@@ -16,12 +17,14 @@ import {
   BellRing, Send, Quote, Newspaper, PackagePlus, Crown, UserCheck,
   Lock, Sparkles, Copy, Check, ShieldAlert,
   Calendar, ShoppingBag, Filter, ShoppingCart,
-  Image as ImageIcon
+  Image as ImageIcon, FileDown, ThumbsUp, UserPlus, UserMinus, BarChart3, Loader2
 } from 'lucide-react';
-import { FacebookIcon, InstagramIcon } from '@/components/ui/BrandIcons';
+import { FacebookIcon, InstagramIcon, LinkedinIcon, YoutubeIcon } from '@/components/ui/BrandIcons';
 import { trackAnalyticsEvent } from '@/lib/analytics';
 import { useAuth } from '@/hooks/useAuth';
 import { trackProductOrServiceAnalytics } from '@/lib/firebase/firestoreService';
+import { followCompany, unfollowCompany, useIsFollowing, useFollowerCount } from '@/lib/firebase/followService';
+import { likeProduct, unlikeProduct, useUserProductLikes } from '@/lib/firebase/likeService';
 
 // ──────────────────────────────────────────────────────────────────
 // SERVICES SHOWCASE COMPONENT
@@ -179,6 +182,430 @@ const renderVerificationBadge = (level?: string, status?: string, size = 18) => 
   return null;
 };
 
+// ──────────────────────────────────────────────────────────────────
+// SUBSCRIPTION PLAN BADGE
+// ──────────────────────────────────────────────────────────────────
+function SubscriptionPlanBadge({ plan }: { plan: string }) {
+  const config: Record<string, { label: string; emoji: string; style: string }> = {
+    free: { label: 'Free', emoji: '🟢', style: 'bg-slate-800/60 border-slate-700 text-slate-400' },
+    basic: { label: 'Standard', emoji: '🔵', style: 'bg-blue-500/10 border-blue-400/30 text-blue-300' },
+    premium: { label: 'Premium', emoji: '🟡', style: 'bg-amber-500/10 border-amber-400/30 text-amber-300' },
+    enterprise: { label: 'Enterprise', emoji: '🟣', style: 'bg-violet-500/10 border-violet-400/30 text-violet-300' },
+  };
+  const c = config[plan] || config.free;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${c.style}`}>
+      <span>{c.emoji}</span> {c.label}
+    </span>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// COMPANY STATS BAR
+// ──────────────────────────────────────────────────────────────────
+function CompanyStatsBar({ company, jobs, reviews, accentColor = 'text-cyan-400' }: { company: any; jobs: any[]; reviews: any[]; accentColor?: string }) {
+  const formatJoinDate = (dateVal: any) => {
+    if (!dateVal) return 'Recently';
+    let d: Date;
+    if (dateVal instanceof Date) d = dateVal;
+    else if (typeof dateVal === 'object' && dateVal.seconds) d = new Date(dateVal.seconds * 1000);
+    else if (typeof dateVal === 'object' && typeof dateVal.toDate === 'function') d = dateVal.toDate();
+    else d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'Recently';
+    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  };
+
+  const stats = [
+    { label: 'Jobs', value: company.totalJobsPosted || jobs.length, icon: <Briefcase size={13} /> },
+    { label: 'Products', value: company.totalProducts || company.products?.length || 0, icon: <ShoppingBag size={13} /> },
+    { label: 'Followers', value: company.followerCount || 0, icon: <Users size={13} /> },
+    { label: 'Reviews', value: company.reviewCount || reviews.length, icon: <Star size={13} /> },
+    { label: 'Rating', value: company.rating > 0 ? `${company.rating}★` : 'N/A', icon: <ThumbsUp size={13} /> },
+    { label: 'Visitors', value: company.totalVisitors || 0, icon: <Eye size={13} /> },
+    { label: 'Joined', value: formatJoinDate(company.joinedDate), icon: <Calendar size={13} /> },
+  ];
+
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+      {stats.map(s => (
+        <div key={s.label} className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-white/[0.02] border border-white/5">
+          <span className={`${accentColor}`}>{s.icon}</span>
+          <span className="text-sm font-bold text-white">{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</span>
+          <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wider">{s.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// FOLLOW BUTTON
+// ──────────────────────────────────────────────────────────────────
+function FollowButton({ companyId, accentStyle = '' }: { companyId: string; accentStyle?: string }) {
+  const { user } = useAuth();
+  const { following, loading } = useIsFollowing(user?.uid, companyId);
+  const followerCount = useFollowerCount(companyId);
+  const [busy, setBusy] = useState(false);
+
+  const handleToggle = async () => {
+    if (!user?.uid) {
+      alert('Please login to follow this company.');
+      return;
+    }
+    setBusy(true);
+    try {
+      if (following) {
+        await unfollowCompany(user.uid, companyId);
+      } else {
+        await followCompany(user.uid, companyId);
+      }
+    } catch (err) {
+      console.error('Follow toggle error:', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={busy || loading}
+      className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 disabled:opacity-50 ${
+        following
+          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-300'
+          : `border-white/10 hover:bg-white/5 text-white ${accentStyle}`
+      }`}
+    >
+      {busy ? (
+        <Loader2 size={13} className="animate-spin" />
+      ) : following ? (
+        <UserMinus size={13} />
+      ) : (
+        <UserPlus size={13} />
+      )}
+      {following ? 'Following' : 'Follow'}
+      {followerCount > 0 && <span className="text-[10px] opacity-70">({followerCount.toLocaleString()})</span>}
+    </button>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// PRODUCT LIKE BUTTON (inline, for product cards)
+// ──────────────────────────────────────────────────────────────────
+function ProductLikeButton({ productId, companyId, likeCount = 0, isLiked, accentColor = 'text-rose-400' }: {
+  productId: string; companyId: string; likeCount?: number; isLiked: boolean; accentColor?: string;
+}) {
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
+
+  const handleToggle = async () => {
+    if (!user?.uid) {
+      alert('Please login to like products.');
+      return;
+    }
+    setBusy(true);
+    try {
+      if (isLiked) {
+        await unlikeProduct(user.uid, productId);
+      } else {
+        await likeProduct(user.uid, productId, companyId);
+      }
+    } catch (err) {
+      console.error('Like toggle error:', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={busy}
+      className={`flex items-center gap-1 text-[10px] font-bold transition-all disabled:opacity-50 ${
+        isLiked ? accentColor : 'text-slate-500 hover:text-rose-400'
+      }`}
+    >
+      <Heart size={13} className={isLiked ? 'fill-current' : ''} />
+      {(likeCount || 0) > 0 && <span>{likeCount}</span>}
+    </button>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// REVIEW SUBMIT FORM
+// ──────────────────────────────────────────────────────────────────
+function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400', btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500' }: {
+  companyId: string; companyName: string; accentColor?: string; btnStyle?: string;
+}) {
+  const { user } = useAuth();
+  const [rating, setRating] = useState(5);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.uid) {
+      alert('Please login to submit a review.');
+      return;
+    }
+    if (!content.trim()) {
+      alert('Please write your review.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'reviews'), {
+        companyId,
+        companyName,
+        userId: user.uid,
+        userName: user.displayName || (user as any).fullName || 'Anonymous',
+        userPhoto: user.photoURL || '',
+        rating,
+        title: title.trim() || 'Review',
+        comment: content.trim(),
+        type: 'customer',
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+      trackAnalyticsEvent({ companyId, eventType: 'review_submit' });
+      setSubmitted(true);
+      setTitle('');
+      setContent('');
+      setRating(5);
+    } catch (err) {
+      console.error('Review submit error:', err);
+      alert('Failed to submit review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-6 space-y-2">
+        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
+          <Check size={20} className="text-emerald-400" />
+        </div>
+        <p className="text-xs text-emerald-400 font-bold">Review submitted successfully!</p>
+        <p className="text-[10px] text-slate-500">Your review will appear after admin approval.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div>
+        <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">Your Rating</label>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map(n => (
+            <button key={n} type="button" onClick={() => setRating(n)} className="transition-transform hover:scale-110">
+              <Star size={20} className={n <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
+            </button>
+          ))}
+        </div>
+      </div>
+      <input
+        type="text"
+        placeholder="Review title (optional)"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none"
+      />
+      <textarea
+        placeholder="Write your review..."
+        value={content}
+        onChange={e => setContent(e.target.value)}
+        rows={3}
+        required
+        className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none resize-none"
+      />
+      <button
+        type="submit"
+        disabled={submitting}
+        className={`w-full py-2.5 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-40 ${btnStyle}`}
+      >
+        {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+        {submitting ? 'Submitting...' : 'Submit Review'}
+      </button>
+    </form>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// ENHANCED ENQUIRY FORM
+// ──────────────────────────────────────────────────────────────────
+function EnhancedEnquiryForm({ companyId, companyName, btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500' }: {
+  companyId: string; companyName: string; btnStyle?: string;
+}) {
+  const [name, setName] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [type, setType] = useState('general');
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !mobile.trim() || !message.trim()) {
+      alert('Please fill out Name, Mobile, and Message.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await addDoc(collection(db, 'enquiries'), {
+        companyId,
+        companyName,
+        name: name.trim(),
+        mobile: mobile.trim(),
+        email: email.trim(),
+        description: message.trim(),
+        type,
+        createdAt: serverTimestamp(),
+        status: 'pending',
+      });
+      trackAnalyticsEvent({ companyId, eventType: 'contact_submit', targetName: 'Enhanced Enquiry Form' });
+      setSent(true);
+      setName(''); setMobile(''); setEmail(''); setMessage('');
+    } catch (err) {
+      console.error('Enquiry submit error:', err);
+      alert('Failed to send enquiry. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <div className="text-center py-6 space-y-2">
+        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto animate-bounce">
+          <Check size={20} className="text-emerald-400" />
+        </div>
+        <p className="text-xs text-emerald-400 font-bold">Enquiry sent successfully!</p>
+        <p className="text-[10px] text-slate-500">The business will contact you soon.</p>
+        <button onClick={() => setSent(false)} className="text-[10px] text-cyan-400 underline mt-2">Send another enquiry</button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-2.5">
+      <select
+        value={type}
+        onChange={e => setType(e.target.value)}
+        className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white focus:border-white/20 outline-none appearance-none cursor-pointer"
+      >
+        <option value="general">General Enquiry</option>
+        <option value="product">Product Enquiry</option>
+        <option value="service">Service Enquiry</option>
+        <option value="job">Job Application</option>
+        <option value="partnership">Partnership</option>
+      </select>
+      <input type="text" placeholder="Your Name *" value={name} onChange={e => setName(e.target.value)} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none" />
+      <input type="tel" placeholder="Mobile Number *" value={mobile} onChange={e => setMobile(e.target.value)} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none" />
+      <input type="email" placeholder="Email (optional)" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none" />
+      <textarea placeholder="Your requirement *" value={message} onChange={e => setMessage(e.target.value)} rows={2} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none resize-none" />
+      <button type="submit" disabled={submitting} className={`w-full py-2.5 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-40 ${btnStyle}`}>
+        {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+        {submitting ? 'Sending...' : 'Send Enquiry'}
+      </button>
+    </form>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// SOCIAL MEDIA LINKS
+// ──────────────────────────────────────────────────────────────────
+function SocialMediaLinks({ company, accentColor = 'text-cyan-400' }: { company: any; accentColor?: string }) {
+  const links = [
+    { key: 'facebook', url: company.facebook, icon: <FacebookIcon size={16} />, label: 'Facebook' },
+    { key: 'instagram', url: company.instagram, icon: <InstagramIcon size={16} />, label: 'Instagram' },
+    { key: 'linkedin', url: company.linkedin, icon: <LinkedinIcon size={16} />, label: 'LinkedIn' },
+    { key: 'youtube', url: company.youtube, icon: <YoutubeIcon size={16} />, label: 'YouTube' },
+    { key: 'twitter', url: company.twitter, icon: <span className="text-xs font-black">𝕏</span>, label: 'X / Twitter' },
+    { key: 'website', url: company.website, icon: <Globe size={16} />, label: 'Website' },
+  ].filter(l => !!l.url);
+
+  if (links.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {links.map(l => (
+        <a
+          key={l.key}
+          href={l.url.startsWith('http') ? l.url : `https://${l.url}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={l.label}
+          className={`w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.02] flex items-center justify-center ${accentColor} hover:bg-white/[0.06] transition-all`}
+        >
+          {l.icon}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// VERIFIED DOCUMENT BADGES
+// ──────────────────────────────────────────────────────────────────
+function VerifiedDocBadges({ company }: { company: any }) {
+  const badges = [
+    { key: 'businessVerified', label: 'Business Verified', verified: company.verificationBadges?.businessVerified },
+    { key: 'gstVerified', label: 'GST Verified', verified: company.verificationBadges?.gstVerified },
+    { key: 'emailVerified', label: 'Email Verified', verified: company.verificationBadges?.emailVerified },
+    { key: 'mobileVerified', label: 'Mobile Verified', verified: company.verificationBadges?.mobileVerified || !!company.phone },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {badges.map(b => (
+        <span
+          key={b.key}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border ${
+            b.verified
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-white/[0.02] border-white/[0.06] text-slate-600'
+          }`}
+        >
+          {b.verified ? <Check size={10} /> : <Lock size={10} />}
+          {b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────
+// COMPANY BIO SECTION (Mission, Vision, Working Hours, etc.)
+// ──────────────────────────────────────────────────────────────────
+function CompanyBioSection({ company, cardStyle = '' }: { company: any; cardStyle?: string }) {
+  const sections = [
+    { key: 'mission', label: 'Our Mission', value: company.mission, icon: <Navigation size={14} /> },
+    { key: 'vision', label: 'Our Vision', value: company.vision, icon: <Eye size={14} /> },
+    { key: 'workingHours', label: 'Working Hours', value: company.workingHours, icon: <Clock size={14} /> },
+    { key: 'experience', label: 'Experience', value: company.experience, icon: <Award size={14} /> },
+    { key: 'teamSize', label: 'Team Size', value: company.teamSize, icon: <Users size={14} /> },
+  ].filter(s => !!s.value);
+
+  if (sections.length === 0) return null;
+
+  return (
+    <div className={`${cardStyle} rounded-2xl p-5 space-y-4`}>
+      {sections.map(s => (
+        <div key={s.key}>
+          <h4 className="text-xs font-bold text-white flex items-center gap-1.5 mb-1">
+            <span className="text-slate-500">{s.icon}</span> {s.label}
+          </h4>
+          <p className="text-[11px] text-slate-300 leading-relaxed">{s.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CompanyProfileClient({ company, jobs, reviews }: {
   company: any; jobs: any[]; reviews: any[];
 }) {
@@ -303,8 +730,9 @@ function MiniDigitalIDCard({ company, plan }: { company: any; plan: string }) {
 // ──────────────────────────────────────────────────────────────────
 function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
   const [activeTab, setActiveTab] = useState('about');
-  const [saved, setSaved] = useState(false);
-  const [enquirySent, setEnquirySent] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const { user } = useAuth();
+  const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
     const text = `Hello, I viewed your product ${productName} on THENIJOBS and would like more details.`;
@@ -319,13 +747,15 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
     window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
+  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
+
   const tabs = [
     { id: 'about', label: 'About' },
     { id: 'jobs', label: `Jobs (${jobs.length})` },
     { id: 'products', label: `Products (${company.products?.length || 0})` },
     { id: 'services', label: `Services (${company.services?.length || 0})` },
     { id: 'gallery', label: `Gallery (${Math.min(company.galleryImages?.length || 0, 4)}/4)` },
-    { id: 'locked_reviews', label: 'Reviews 🔒' },
+    { id: 'reviews', label: `Reviews (${reviews.length})` },
   ];
 
   return (
@@ -336,13 +766,13 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
         {/* Simple Cover Header */}
         <div className="h-40 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800">
           <div className="absolute inset-0 bg-gradient-to-r from-slate-800 to-slate-900" />
-          <div className="absolute top-3 right-3 bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold">
-            FREE PROFILE
+          <div className="absolute top-3 right-3">
+            <SubscriptionPlanBadge plan="free" />
           </div>
         </div>
 
         {/* Basic Brand Details */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-6 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-6 mb-4">
           <div className="relative w-16 h-16 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
             {company.logoUrl ? (
               <Image src={company.logoUrl} alt={company.name} fill className="object-cover rounded-xl" />
@@ -350,7 +780,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               <Building2 size={24} className="text-slate-500" />
             )}
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-bold text-white flex items-center flex-wrap gap-1">
               {company.name}
               {renderVerificationBadge(company.verificationLevel, company.verificationStatus, 16)}
@@ -358,8 +788,29 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
             <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
               <span className="text-slate-300 font-medium">{company.category}</span> · 
               <span className="flex items-center gap-1"><MapPin size={10} />{company.district}</span>
+              {company.rating > 0 && (
+                <span className="flex items-center gap-0.5"><Star size={10} className="fill-amber-400 text-amber-400" />{company.rating}</span>
+              )}
             </p>
           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <FollowButton companyId={company.id} />
+          <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
+            <Share2 size={13} /> Share
+          </button>
+          {company.brochureUrl && (
+            <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
+              <FileDown size={13} /> Brochure
+            </a>
+          )}
+        </div>
+
+        {/* Company Stats */}
+        <div className="mb-6">
+          <CompanyStatsBar company={company} jobs={jobs} reviews={reviews} accentColor="text-slate-400" />
         </div>
 
         {/* Main Layout Grid */}
@@ -496,20 +947,37 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               </div>
             )}
 
-            {activeTab.startsWith('locked_') && (
-              <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-8 text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-slate-850 border border-slate-800 flex items-center justify-center mx-auto text-slate-400">
-                  <Lock size={20} />
+            {activeTab === 'reviews' && (
+              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-semibold text-white mb-2">Customer Reviews</h3>
+                {reviews.length > 0 ? (
+                  <div className="space-y-3">
+                    {reviews.map((review: any) => (
+                      <div key={review.id} className="p-3 rounded-lg bg-slate-950 border border-slate-850">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="flex gap-0.5">
+                            {[1,2,3,4,5].map(n => <Star key={n} size={11} className={n <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />)}
+                          </div>
+                          <span className="text-[10px] text-slate-500">{review.date}</span>
+                        </div>
+                        <p className="text-xs font-bold text-white">{review.title || review.name}</p>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{review.content}</p>
+                        {review.ownerReply && (
+                          <div className="mt-2 ml-3 pl-3 border-l-2 border-slate-800">
+                            <p className="text-[10px] text-slate-500 font-bold">Owner Reply:</p>
+                            <p className="text-[10px] text-slate-400">{review.ownerReply}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 py-4 text-center">No reviews yet. Be the first!</p>
+                )}
+                <div className="pt-4 border-t border-slate-850">
+                  <h4 className="text-xs font-bold text-white mb-3">Write a Review</h4>
+                  <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-700" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">Branding Feature Locked</h3>
-                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-                    Products & Services, Gallery, and customer reviews are exclusive to Standard or Premium subscribers.
-                  </p>
-                </div>
-                <Link href="/pricing" className="inline-flex items-center gap-1.5 bg-white text-slate-950 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-200 transition-colors">
-                  Upgrade Subscription <ChevronRight size={12} />
-                </Link>
               </div>
             )}
           </div>
@@ -542,23 +1010,28 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               <MiniDigitalIDCard company={company} plan="free" />
             </div>
 
-            {/* Simple Lead Inquiry Form */}
+            {/* Enhanced Enquiry Form */}
             <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-3">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Send Enquiry</h3>
-              <input type="text" placeholder="Name" className="w-full bg-slate-950 border border-slate-850 px-3 py-2 text-xs rounded-lg text-white" />
-              <input type="tel" placeholder="Mobile" className="w-full bg-slate-950 border border-slate-850 px-3 py-2 text-xs rounded-lg text-white" />
-              <textarea placeholder="Your requirement" rows={2} className="w-full bg-slate-950 border border-slate-850 px-3 py-2 text-xs rounded-lg text-white resize-none" />
-              <button onClick={() => setEnquirySent(true)} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs transition-colors">
-                Send Inquiry
-              </button>
-              {enquirySent && (
-                <p className="text-[10px] text-emerald-400 text-center">Inquiry sent successfully.</p>
-              )}
+              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-700" />
+            </div>
+
+            {/* Verified Badges */}
+            <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-3">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Trust & Verification</h3>
+              <VerifiedDocBadges company={company} />
+            </div>
+
+            {/* Social Media Links */}
+            <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-3">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Connect With Us</h3>
+              <SocialMediaLinks company={company} accentColor="text-slate-400" />
             </div>
           </div>
         </div>
       </section>
 
+      <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} url={portfolioUrl} title={company.name} description={company.description} />
       <BottomNav />
     </main>
   );
@@ -569,10 +1042,11 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 // ──────────────────────────────────────────────────────────────────
 function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
   const [activeTab, setActiveTab] = useState('about');
-  const [saved, setSaved] = useState(false);
-  const [followed, setFollowed] = useState(false);
-  const [enquirySent, setEnquirySent] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [reviewType, setReviewType] = useState('company');
+  const { user } = useAuth();
+  const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
+  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
     const text = `Hello, I viewed your product ${productName} on THENIJOBS and would like more details.`;
@@ -661,8 +1135,8 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
             <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-65 mix-blend-overlay" />
           )}
           <div className="absolute inset-0 bg-black/10" />
-          <div className={`absolute top-4 right-4 ${currentTheme.badge} px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1`}>
-            <BadgeCheck size={12} className={`fill-white/10 ${currentTheme.accent}`} /> Standard Partner
+          <div className="absolute top-4 right-4">
+            <SubscriptionPlanBadge plan="basic" />
           </div>
         </div>
 
@@ -706,9 +1180,20 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
               <Sparkles size={13} /> {company.customCtaLabel}
             </a>
           )}
-          <button onClick={() => setFollowed(!followed)} className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors ${followed ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'border-white/10 hover:bg-white/5'}`}>
-            {followed ? '✓ Following' : 'Follow'}
+          <FollowButton companyId={company.id} />
+          <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
+            <Share2 size={13} /> Share
           </button>
+          {company.brochureUrl && (
+            <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
+              <FileDown size={13} /> Brochure
+            </a>
+          )}
+        </div>
+
+        {/* Company Stats */}
+        <div className="mb-6">
+          <CompanyStatsBar company={company} jobs={jobs} reviews={reviews} accentColor={currentTheme.accent} />
         </div>
 
         {/* Main Grid Layout */}
@@ -967,10 +1452,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                     {/* Write Review Form */}
                     <div className={`${currentTheme.card} rounded-2xl p-5`}>
                       <h3 className="text-xs font-bold text-white mb-3">Submit a Verified Review</h3>
-                      <textarea rows={2} placeholder="Write your review comments here..." className="w-full bg-slate-950 border border-white/10 p-2.5 text-xs rounded-xl text-white resize-none" />
-                      <button className={`mt-2 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors ${currentTheme.btn}`}>
-                        Submit Verified Review
-                      </button>
+                      <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle={currentTheme.btn} />
                     </div>
 
                     {reviews.map(review => (
@@ -984,6 +1466,12 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                           </div>
                         </div>
                         <p className="text-[11px] text-slate-400 leading-relaxed">{review.content}</p>
+                        {review.ownerReply && (
+                          <div className="mt-2 ml-3 pl-3 border-l-2 border-white/10">
+                            <p className="text-[10px] text-slate-500 font-bold">Owner Reply:</p>
+                            <p className="text-[10px] text-slate-400">{review.ownerReply}</p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1024,20 +1512,24 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
               <MiniDigitalIDCard company={company} plan="basic" />
             </div>
 
-            {/* Leads Box */}
+            {/* Enhanced Business Enquiry */}
             <div className={`${currentTheme.card} rounded-2xl p-5 space-y-3`}>
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Business Enquiry</h3>
               <p className="text-[10px] text-slate-500">Quotes are directly routed to provider dashboard CRM.</p>
-              <input type="text" placeholder="Full Name" className="w-full bg-slate-950 border border-white/10 px-3 py-2 text-xs rounded-xl text-white" />
-              <input type="tel" placeholder="Mobile Number" className="w-full bg-slate-950 border border-white/10 px-3 py-2 text-xs rounded-xl text-white" />
-              <textarea placeholder="Describe your requirement..." rows={2} className="w-full bg-slate-950 border border-white/10 px-3 py-2 text-xs rounded-xl text-white resize-none" />
-              <button onClick={() => { setEnquirySent(true); trackAnalyticsEvent({ companyId: company.id, eventType: 'contact_submit' }); }} className={`w-full text-white font-bold py-2.5 rounded-xl text-xs transition-colors ${currentTheme.btn}`}>
-                Send Enquiry
-              </button>
-              {enquirySent && (
-                <p className="text-[10px] text-emerald-400 text-center font-bold">Enquiry created successfully!</p>
-              )}
+              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle={currentTheme.btn} />
             </div>
+
+            {/* Verified Badges */}
+            <div className={`${currentTheme.card} rounded-2xl p-5 space-y-3`}>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Trust & Verification</h3>
+              <VerifiedDocBadges company={company} />
+            </div>
+
+            {/* Social Media Links */}
+            <SocialMediaLinks company={company} accentColor={currentTheme.accent} />
+
+            {/* Bio Section */}
+            <CompanyBioSection company={company} cardStyle={currentTheme.card} />
           </div>
         </div>
       </section>
@@ -1050,6 +1542,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
         </p>
       </div>
 
+      <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} url={portfolioUrl} title={company.name} description={company.description} />
       <BottomNav />
     </main>
   );
@@ -1063,15 +1556,10 @@ type EnterpriseThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 
 function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
   const [activeTheme, setActiveTheme] = useState<EnterpriseThemeName>('titanium_platinum');
   const [activeTab, setActiveTab] = useState('overview');
-  const [enquirySent, setEnquirySent] = useState(false);
-  
-  // Form states
-  const [enquiryName, setEnquiryName] = useState('');
-  const [enquiryPhone, setEnquiryPhone] = useState('');
-  const [enquiryEmail, setEnquiryEmail] = useState('');
-  const [enquiryDesc, setEnquiryDesc] = useState('');
-  const [enquiryType, setEnquiryType] = useState('general');
-  const [submittingEnquiry, setSubmittingEnquiry] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const { user } = useAuth();
+  const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
+  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
 
   // Theme styling map
   const themeConfigs: Record<EnterpriseThemeName, {
@@ -1137,45 +1625,6 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
   };
 
   const currentTheme = themeConfigs[activeTheme] || themeConfigs.titanium_platinum;
-
-  const handleEnquirySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!enquiryName || !enquiryPhone || !enquiryDesc) {
-      alert('Please fill out all required fields.');
-      return;
-    }
-    setSubmittingEnquiry(true);
-    try {
-      await addDoc(collection(db, 'enquiries'), {
-        companyId: company.id,
-        companyName: company.name,
-        name: enquiryName,
-        mobile: enquiryPhone,
-        email: enquiryEmail || '',
-        description: enquiryDesc,
-        type: enquiryType,
-        createdAt: serverTimestamp(),
-        status: 'pending'
-      });
-
-      trackAnalyticsEvent({
-        companyId: company.id,
-        eventType: 'contact_submit',
-        targetName: 'Lead RFQ Form'
-      });
-
-      setEnquirySent(true);
-      setEnquiryName('');
-      setEnquiryPhone('');
-      setEnquiryEmail('');
-      setEnquiryDesc('');
-    } catch (error) {
-      console.error('Error logging enquiry:', error);
-      alert('Failed to submit enquiry. Please try again.');
-    } finally {
-      setSubmittingEnquiry(false);
-    }
-  };
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
     const text = `Hello, I saw your product "${productName}" on your Enterprise Page at THENIJOBS. Please share more details.`;
@@ -1258,9 +1707,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
           
           {/* Top Badge Panel */}
           <div className="absolute top-6 right-6 flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 backdrop-blur-md px-4 py-1.5 text-xs font-black uppercase tracking-widest text-slate-100 border border-slate-700 shadow-xl animate-pulse">
-              👑 ENTERPRISE GOLD PARTNER
-            </span>
+            <SubscriptionPlanBadge plan="enterprise" />
           </div>
 
           {/* Theme Selector Toggle (Memory-based) */}
@@ -1323,6 +1770,24 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
               <Globe size={14} /> Visit Website
             </a>
           )}
+        </div>
+
+        {/* Follow, Share & Brochure Actions */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <FollowButton companyId={company.id} accentStyle={currentTheme.button} />
+          <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
+            <Share2 size={13} /> Share
+          </button>
+          {company.brochureUrl && (
+            <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
+              <FileDown size={13} /> Download Brochure
+            </a>
+          )}
+        </div>
+
+        {/* Company Stats */}
+        <div className="mb-8">
+          <CompanyStatsBar company={company} jobs={jobs} reviews={reviews} accentColor={currentTheme.accent} />
         </div>
 
         {/* Main Grid Layout */}
@@ -1585,84 +2050,17 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
                 <h3 className="text-xs font-black uppercase tracking-wider text-white">Direct Enquiry Portal</h3>
                 <p className="text-[10px] text-slate-500 mt-1">Quotes write directly to Provider CRM database.</p>
               </div>
-              <form onSubmit={handleEnquirySubmit} className="space-y-3">
-                <div>
-                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Full Name *</label>
-                  <input
-                    type="text"
-                    placeholder="Your Name"
-                    value={enquiryName}
-                    onChange={(e) => setEnquiryName(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Mobile Number *</label>
-                  <input
-                    type="tel"
-                    placeholder="10 digit number"
-                    value={enquiryPhone}
-                    onChange={(e) => setEnquiryPhone(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    placeholder="Email address"
-                    value={enquiryEmail}
-                    onChange={(e) => setEnquiryEmail(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Enquiry Type</label>
-                  <select
-                    value={enquiryType}
-                    onChange={(e) => setEnquiryType(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none cursor-pointer"
-                  >
-                    <option value="general">General Query</option>
-                    <option value="pricing">Get Price Quote</option>
-                    <option value="project">Project RFP / Partnership</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[9px] uppercase font-bold text-slate-400 block mb-1">Requirement Details *</label>
-                  <textarea
-                    placeholder="Describe your requirement..."
-                    rows={3}
-                    value={enquiryDesc}
-                    onChange={(e) => setEnquiryDesc(e.target.value)}
-                    className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white resize-none focus:outline-none"
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submittingEnquiry}
-                  className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${currentTheme.button} disabled:opacity-50`}
-                >
-                  {submittingEnquiry ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
-                  ) : (
-                    <>
-                      <Send size={13} /> Submit Quote Request
-                    </>
-                  )}
-                </button>
-
-                {enquirySent && (
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-[10px] text-emerald-300 text-center font-bold">
-                    Enquiry logged successfully in provider CRM database!
-                  </div>
-                )}
-              </form>
+              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle={currentTheme.button} />
             </div>
+
+            {/* Social Media Links */}
+            <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-3`}>
+              <h3 className="text-xs font-black uppercase tracking-wider text-white">Connect With Us</h3>
+              <SocialMediaLinks company={company} accentColor={currentTheme.accent} />
+            </div>
+
+            {/* Company Bio */}
+            <CompanyBioSection company={company} cardStyle={`${currentTheme.card} rounded-[2rem]`} />
 
             {/* Document Verifications Checklist */}
             <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-4`}>
@@ -1701,6 +2099,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
         </div>
       )}
 
+      <ShareModal isOpen={shareOpen} onClose={() => setShareOpen(false)} url={portfolioUrl} title={company.name} description={company.description} />
       <BottomNav />
       <FloatingWhatsApp number={company.whatsapp} />
     </main>
@@ -1711,10 +2110,12 @@ type PremiumThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'su
 
 function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
   const [activeTab, setActiveTab] = useState('about');
-  const [followed, setFollowed] = useState(false);
-  const [enquirySent, setEnquirySent] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [copiedCoupon, setCopiedCoupon] = useState(false);
   const [reviewType, setReviewType] = useState('company');
+  const { user } = useAuth();
+  const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
+  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
 
   // E-Commerce specific states
   const [productSearch, setProductSearch] = useState('');
@@ -1951,9 +2352,7 @@ Please confirm my booking request. Thanks!`;
           
           {/* Top Badge Panel */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider shadow-lg ${currentTheme.badge}`}>
-              <Crown size={12} className="animate-bounce text-yellow-350" /> PREMIUM VERIFIED
-            </span>
+            <SubscriptionPlanBadge plan="premium" />
           </div>
 
           {/* Theme Selector (Unique Premium Theme Selection) */}
@@ -2025,6 +2424,15 @@ Please confirm my booking request. Thanks!`;
                   <ExternalLink size={13} className={currentTheme.accent} /> {company.customCtaLabel}
                 </a>
               )}
+              <FollowButton companyId={company.id} />
+              <button onClick={() => setShareOpen(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs border border-white/10 hover:bg-white/5 transition-colors">
+                <Share2 size={13} /> Share
+              </button>
+              {company.brochureUrl && (
+                <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs border border-white/10 hover:bg-white/5 transition-colors">
+                  <FileDown size={13} /> Brochure
+                </a>
+              )}
             </div>
           </div>
 
@@ -2050,6 +2458,11 @@ Please confirm my booking request. Thanks!`;
             </div>
             <span className="text-[10px] text-slate-500 italic block text-right mt-1">Updates live daily</span>
           </div>
+        </div>
+
+        {/* Company Stats */}
+        <div className="mb-6">
+          <CompanyStatsBar company={company} jobs={jobs} reviews={reviews} accentColor={currentTheme.accent} />
         </div>
 
         {/* Dynamic Layout Template Switcher */}
@@ -2670,17 +3083,8 @@ Please confirm my booking request. Thanks!`;
               </div>
 
               {/* Social Channels */}
-              <div className="flex gap-2 pt-3 border-t border-white/5">
-                {company.facebook && (
-                  <a href={company.facebook} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-xl bg-white/[0.03] hover:bg-blue-500/20 border border-white/10 flex items-center justify-center text-slate-400 hover:text-blue-400 transition-all">
-                    <FacebookIcon size={14} />
-                  </a>
-                )}
-                {company.instagram && (
-                  <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-xl bg-white/[0.03] hover:bg-pink-500/20 border border-white/10 flex items-center justify-center text-slate-400 hover:text-pink-400 transition-all">
-                    <InstagramIcon size={14} />
-                  </a>
-                )}
+              <div className="pt-3 border-t border-white/5">
+                <SocialMediaLinks company={company} accentColor={currentTheme.accent} />
               </div>
 
               {/* Digital ID Card Preview */}
@@ -2690,46 +3094,25 @@ Please confirm my booking request. Thanks!`;
               </div>
             </div>
 
-            {/* Leads Form */}
+            {/* Enhanced Lead Form */}
             <div className="bg-white/[0.01] backdrop-blur-md rounded-3xl border border-white/[0.06] p-5 space-y-4 bg-gradient-to-br from-white/[0.01] to-transparent">
               <div>
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">Premium RFQ Lead Capture</h3>
                 <p className="text-[10px] text-slate-550 mt-1">Get custom pricing quotes directly from our sales desks.</p>
               </div>
-              <div className="space-y-2.5">
-                <input type="text" placeholder="Full Name" className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none" />
-                <input type="tel" placeholder="Mobile Number" className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white focus:outline-none" />
-                <textarea placeholder="Tell us your requirements..." rows={3} className="w-full bg-slate-950 border border-white/10 px-3 py-2.5 text-xs rounded-xl text-white resize-none focus:outline-none" />
-                <button onClick={() => setEnquirySent(true)} className={`w-full py-2.5 rounded-xl text-xs font-bold transition-opacity hover:opacity-90 flex items-center justify-center gap-2 ${currentTheme.button}`}>
-                  <Send size={13} /> Request Quotes
-                </button>
-                {enquirySent && (
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-[10px] text-emerald-300 text-center font-bold">
-                    Enquiry logged successfully!
-                  </div>
-                )}
-              </div>
+              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle={currentTheme.button} />
             </div>
 
-            {/* Document Verifications Checklist */}
+            {/* Trust & Verification Badges */}
             <div className="bg-white/[0.01] backdrop-blur-md rounded-3xl border border-white/[0.06] p-5 space-y-3">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-2">
                 <ShieldCheck size={14} className="text-emerald-400" /> Trust Score Check
               </h3>
-              <div className="space-y-2">
-                {[
-                  { label: 'Verified Email address', active: company.verificationBadges.emailVerified, icon: Mail },
-                  { label: 'GST Tax ID registered', active: company.verificationBadges.gstVerified, icon: FileCheck },
-                  { label: 'Business Ownership verify', active: company.verificationBadges.businessVerified, icon: Award },
-                ].map(({ label, active, icon: Icon }) => (
-                  <div key={label} className={`flex items-center gap-2.5 p-2 rounded-xl text-xs ${active ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/[0.02] opacity-40'}`}>
-                    <Icon size={12} />
-                    <span className="truncate">{label}</span>
-                    {active && <BadgeCheck size={13} className="ml-auto text-emerald-400" />}
-                  </div>
-                ))}
-              </div>
+              <VerifiedDocBadges company={company} />
             </div>
+
+            {/* Company Bio */}
+            <CompanyBioSection company={company} cardStyle="bg-white/[0.01] backdrop-blur-md rounded-3xl border border-white/[0.06]" />
           </div>
         </div>
       </section>

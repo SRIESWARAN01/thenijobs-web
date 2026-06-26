@@ -52,6 +52,7 @@ export default function CompanyDigitalCardPageClient({
 }) {
   const [exporting, setExporting] = useState<string | null>(null);
   const [activeTheme, setActiveTheme] = useState<CardThemeName>('luxury_gold');
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const { data: companies, loading: dbLoading } = useCollection<any>(
     'companies',
@@ -362,7 +363,220 @@ export default function CompanyDigitalCardPageClient({
           )}
         </header>
 
-        <div id="id-card-print-area" className="grid gap-8 lg:grid-cols-2 justify-center">
+        {/* Interactive Screen 3D Flip Card Preview (Hidden on Print) */}
+        <div className="no-print flex flex-col items-center gap-6">
+          <div 
+            className="w-full max-w-[460px] min-h-[290px] [perspective:1000px] cursor-pointer"
+            onClick={() => setIsFlipped(!isFlipped)}
+          >
+            <div className={`relative w-full min-h-[290px] transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+              
+              {/* Front Side */}
+              <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [webkit-backface-visibility:hidden]">
+                <div
+                  className={`w-full h-full min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group font-outfit ${
+                    plan === 'enterprise' || plan === 'premium'
+                      ? `bg-gradient-to-br ${currentCardTheme.frontBg} ${currentCardTheme.border}`
+                      : plan === 'basic'
+                        ? 'bg-gradient-to-br from-[#0e1633] via-[#111c44] to-[#1c2e6f] border-blue-500/30'
+                        : 'bg-slate-900 border-slate-800'
+                  }`}
+                >
+                  {/* Background elements */}
+                  {plan !== 'free' && (
+                    <>
+                      <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-colors duration-1000 ${
+                        plan === 'enterprise' ? 'bg-slate-200/5 group-hover:bg-slate-200/10' : plan === 'premium' ? 'bg-amber-500/5 group-hover:bg-amber-500/10' : 'bg-blue-500/5 group-hover:bg-blue-500/10'
+                      }`} />
+                      <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+                    </>
+                  )}
+
+                  {/* Top Row */}
+                  <div className="flex items-center justify-between z-10">
+                    <div className={`flex flex-col border-l-2 pl-2 ${
+                      plan === 'enterprise' ? 'border-slate-350' : plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-blue-400' : 'border-slate-500'
+                    }`}>
+                      <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 uppercase">THENIJOBS</span>
+                      <span className="text-xs font-extrabold tracking-wide text-white uppercase flex items-center gap-1">
+                        VERIFIED PARTNER
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {plan === 'enterprise' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-200 to-slate-400 border border-slate-300 px-2.5 py-0.5 text-[9px] font-black text-slate-950 uppercase shadow-xl animate-pulse">
+                          👑 ENTERPRISE VIP
+                        </span>
+                      ) : plan === 'premium' ? (
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase shadow-lg ${currentCardTheme.badge}`}>
+                          <Crown size={10} className="animate-bounce" /> PREMIUM VERIFIED
+                        </span>
+                      ) : plan === 'basic' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-bold text-blue-300 uppercase">
+                          Standard
+                        </span>
+                      ) : (
+                        <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-slate-400 border border-white/5">
+                          FREE TIER
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Logo & Info */}
+                  <div className="my-5 flex gap-5 items-center z-10 text-left">
+                    <div className="relative">
+                      <div className={`relative h-24 w-24 overflow-hidden rounded-2xl border bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center ${
+                        plan === 'enterprise' ? 'border-slate-300' : plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
+                      }`}>
+                        {logoUrl ? (
+                          <img src={logoUrl} alt={name} className="object-cover w-full h-full" />
+                        ) : (
+                          <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
+                        )}
+                      </div>
+                      {isVerified && (
+                        <div className={`absolute -bottom-2 -right-2 rounded-full p-1 border-2 border-[#15152d] shadow-md ${
+                          plan === 'enterprise' ? 'bg-slate-200 text-slate-950' : plan === 'premium' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'
+                        }`}>
+                          <BadgeCheck size={16} className="fill-current" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-lg font-black text-white leading-tight truncate">
+                        {name}
+                      </h2>
+                      <p className={`text-xs font-semibold truncate mt-0.5 ${
+                        plan === 'enterprise' ? 'text-slate-200 font-bold' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-400'
+                      }`}>{category}</p>
+                      <div className="mt-3 font-mono text-sm tracking-wider font-bold text-slate-350">
+                        {uniqueId.split('-').slice(0, 2).join('-') + ' - ' + uniqueId.split('-')[2]}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Row */}
+                  <div className="border-t border-white/5 pt-3 flex flex-col gap-1 z-10 text-xs text-slate-305 text-left">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Phone size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                      <span className="truncate">{phone}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Mail size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                      <span className="truncate">{email}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <MapPin size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                      <span className="truncate">{address}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Back Side */}
+              <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [webkit-backface-visibility:hidden] [transform:rotateY(180deg)]">
+                <div
+                  className={`w-full h-full min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group font-outfit ${
+                    plan === 'enterprise' || plan === 'premium'
+                      ? `bg-gradient-to-br ${currentCardTheme.backBg} ${currentCardTheme.border}`
+                      : plan === 'basic'
+                        ? 'bg-gradient-to-br from-[#0a0f24] via-[#0d1538] to-[#142252] border-blue-500/30'
+                        : 'bg-slate-900 border-slate-800'
+                  }`}
+                >
+                  {/* Background design */}
+                  <div className="absolute top-0 left-0 w-32 h-32 bg-white/[0.01] rounded-full blur-2xl pointer-events-none" />
+
+                  {/* Top logo header */}
+                  <div className="flex justify-between items-start border-b border-white/5 pb-3">
+                    <div>
+                      <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 block uppercase">THENIJOBS</span>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 block">VERIFIED LISTING</span>
+                    </div>
+                    <Building2 size={16} className="text-slate-500" />
+                  </div>
+
+                  {/* Mid Section: QR Code & Summary */}
+                  <div className="my-4 flex items-center gap-6 justify-between z-10 text-left">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <p className="text-xs font-bold text-white uppercase tracking-wider">About Company</p>
+                      <p className="text-[11px] text-slate-350 leading-relaxed line-clamp-3">
+                        {description}
+                      </p>
+                      {tagline && (
+                        <p className="text-[10px] text-slate-500 italic truncate mt-1">&quot;{tagline}&quot;</p>
+                      )}
+                      <div className="pt-1 flex flex-wrap gap-1.5 text-[9px] font-bold text-slate-400">
+                        <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">{district}</span>
+                        <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">1 Year Validity</span>
+                      </div>
+                    </div>
+
+                    {/* QR Code with Centered Logo Overlay (Premium Scan Asset) */}
+                    <div className="shrink-0 flex flex-col items-center gap-1.5">
+                      <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white p-1 shadow-lg flex items-center justify-center">
+                        <Image src={qrUrl} alt="QR Verification Link" fill sizes="96px" className="object-contain" />
+                        {/* Central Logo Overlay */}
+                        <div className="absolute w-6 h-6 rounded bg-white p-0.5 border border-slate-200 flex items-center justify-center shadow-md">
+                          {logoUrl ? (
+                            <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" />
+                          ) : (
+                            <Building2 className="text-purple-600 w-full h-full p-0.5" />
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <QrCode size={8} /> Scan to verify
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Footer link & Powered branding details */}
+                  <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[10px] text-slate-500 text-left">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <div className="flex items-center gap-1 text-slate-400 font-semibold truncate max-w-[240px]">
+                        <ExternalLink size={10} />
+                        <span className="truncate">{profileUrl.replace(/^https?:\/\//, '')}</span>
+                      </div>
+                      <span className="text-[8px] text-slate-600 block">Powered by THENIJOBS.in · Support: +91 98765 43210</span>
+                    </div>
+                    <span className="font-bold tracking-widest text-[8px] text-slate-600">THENIJOBS</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Toggle buttons */}
+          <div className="flex gap-3 bg-white/[0.02] border border-white/10 rounded-2xl p-1 shadow-inner">
+            <button
+              onClick={() => setIsFlipped(false)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-wider ${
+                !isFlipped
+                  ? 'bg-purple-600/90 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              View Front
+            </button>
+            <button
+              onClick={() => setIsFlipped(true)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-wider ${
+                isFlipped
+                  ? 'bg-purple-600/90 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              View Back
+            </button>
+          </div>
+        </div>
+
+        {/* Hidden Static Cards for PDF/PNG Generation and Printing */}
+        <div id="id-card-print-area" className="hidden print:grid lg:grid lg:opacity-0 lg:absolute lg:-left-[9999px] lg:top-0 gap-8 justify-center">
           {/* Card Front */}
           <section
             id="business-card-front"
@@ -416,7 +630,7 @@ export default function CompanyDigitalCardPageClient({
             </div>
 
             {/* Logo & Info */}
-            <div className="my-5 flex gap-5 items-center z-10">
+            <div className="my-5 flex gap-5 items-center z-10 text-left">
               <div className="relative">
                 <div className={`relative h-24 w-24 overflow-hidden rounded-2xl border bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center ${
                   plan === 'enterprise' ? 'border-slate-300' : plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
@@ -435,7 +649,7 @@ export default function CompanyDigitalCardPageClient({
                   </div>
                 )}
               </div>
- 
+
               <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-black text-white leading-tight truncate">
                   {name}
@@ -450,7 +664,7 @@ export default function CompanyDigitalCardPageClient({
             </div>
 
             {/* Bottom Row */}
-            <div className="border-t border-white/5 pt-3 flex flex-col gap-1 z-10 text-xs text-slate-300">
+            <div className="border-t border-white/5 pt-3 flex flex-col gap-1 z-10 text-xs text-slate-303 text-left">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Phone size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{phone}</span>
@@ -490,7 +704,7 @@ export default function CompanyDigitalCardPageClient({
             </div>
 
             {/* Mid Section: QR Code & Summary */}
-            <div className="my-4 flex items-center gap-6 justify-between z-10">
+            <div className="my-4 flex items-center gap-6 justify-between z-10 text-left">
               <div className="flex-1 min-w-0 space-y-2">
                 <p className="text-xs font-bold text-white uppercase tracking-wider">About Company</p>
                 <p className="text-[11px] text-slate-350 leading-relaxed line-clamp-3">
@@ -525,7 +739,7 @@ export default function CompanyDigitalCardPageClient({
             </div>
 
             {/* Footer link & Powered branding details */}
-            <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[10px] text-slate-500">
+            <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[10px] text-slate-500 text-left">
               <div className="flex flex-col gap-0.5 min-w-0">
                 <div className="flex items-center gap-1 text-slate-400 font-semibold truncate max-w-[240px]">
                   <ExternalLink size={10} />

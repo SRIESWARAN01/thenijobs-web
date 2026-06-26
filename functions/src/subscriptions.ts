@@ -406,3 +406,254 @@ export const verifyRazorpayPayment = onCall(
     }
   }
 );
+
+export const createAdOrder = onCall(
+  { region: REGION, enforceAppCheck: false },
+  async (request: CallableRequest<any>) => {
+    const uid = requireUid(request);
+    await checkRateLimit(uid, 'ad_order_create', 5, 10);
+    
+    const planId = getString(request.data?.planId);
+    const targetId = getString(request.data?.targetId);
+    const placement = getString(request.data?.placement) as 'job' | 'product' | 'service';
+    const companyId = getString(request.data?.companyId);
+
+    if (!planId || !targetId || !placement) {
+      throw new HttpsError('invalid-argument', 'Missing required parameters.');
+    }
+
+    // Resolve plan pricing
+    let amount = 100;
+    if (planId === 'ad_premium') {
+      amount = 250;
+    } else if (planId === 'ad_featured') {
+      amount = 500;
+    }
+
+    const keyId = process.env.RAZORPAY_KEY_ID || '';
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+    // If Razorpay keys are not configured, run in mock mode
+    if (!keyId || !keySecret || keyId === 'mock_key_id') {
+      const mockOrderId = `order_mock_ad_${Math.random().toString(36).substring(2, 11)}`;
+      logger.info(`[MOCK AD] Creating order for user ${uid}, plan ${planId}`);
+
+      await db.doc(`razorpayOrders/${mockOrderId}`).set({
+        orderId: mockOrderId,
+        userId: uid,
+        planId,
+        targetId,
+        placement,
+        amount: amount * 100,
+        currency: 'INR',
+        status: 'created',
+        mockMode: true,
+        type: 'advertisement',
+        ...(companyId ? { companyId } : {}),
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      return {
+        orderId: mockOrderId,
+        amount: amount * 100,
+        currency: 'INR',
+        keyId: 'mock_key_id',
+        mockMode: true,
+      };
+    }
+
+    try {
+      const razorpay = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
+
+      const receiptId = `rcpt_ad_${uid.substring(0, 5)}_${Date.now()}`;
+      const order = await razorpay.orders.create({
+        amount: amount * 100,
+        currency: 'INR',
+        receipt: receiptId,
+      });
+
+      await db.doc(`razorpayOrders/${order.id}`).set({
+        orderId: order.id,
+        userId: uid,
+        planId,
+        targetId,
+        placement,
+        amount: order.amount,
+        currency: order.currency as string,
+        receipt: receiptId,
+        status: 'created',
+        mockMode: false,
+        type: 'advertisement',
+        ...(companyId ? { companyId } : {}),
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      return {
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId,
+        mockMode: false,
+      };
+    } catch (err: any) {
+      logger.error('Error creating Ad Razorpay order:', err);
+      throw new HttpsError('internal', err?.message || 'Error creating Razorpay order');
+    }
+  }
+);
+
+export const verifyAdPayment = onCall(
+  { region: REGION, enforceAppCheck: false },
+  async (request: CallableRequest<any>) => {
+    const uid = requireUid(request);
+    await checkRateLimit(uid, 'ad_payment_verify', 3, 5);
+
+    const paymentId = getString(request.data?.razorpay_payment_id);
+    const orderId = getString(request.data?.razorpay_order_id);
+    const signature = getString(request.data?.razorpay_signature);
+    const planId = getString(request.data?.planId);
+    const targetId = getString(request.data?.targetId);
+    const placement = getString(request.data?.placement) as 'job' | 'product' | 'service';
+    const companyId = getString(request.data?.companyId);
+
+    if (!paymentId || !orderId || (!signature && !orderId.startsWith('order_mock_ad_'))) {
+      throw new HttpsError('invalid-argument', 'Missing signature parameters.');
+    }
+
+    const isMock = orderId.startsWith('order_mock_ad_');
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+
+    if (!isMock) {
+      if (!keySecret) {
+        throw new HttpsError('failed-precondition', 'Razorpay signature verification is misconfigured.');
+      }
+      const hmac = crypto.createHmac('sha256', keySecret);
+      hmac.update(`${orderId}|${paymentId}`);
+      const generated_signature = hmac.digest('hex');
+
+      if (generated_signature !== signature) {
+        throw new HttpsError('permission-denied', 'Payment signature verification failed.');
+      }
+    }
+
+    try {
+      const result = await db.runTransaction(async (transaction) => {
+        const orderRef = db.doc(`razorpayOrders/${orderId}`);
+        const orderSnap = await transaction.get(orderRef);
+        const orderData = orderSnap.data();
+
+        if (orderData && orderData.status === 'paid') {
+          return { success: true, alreadyProcessed: true };
+        }
+
+        // Mark order as paid
+        transaction.set(orderRef, { status: 'paid', paymentId }, { merge: true });
+
+        // Resolve plan days
+        let days = 7;
+        let amount = 100;
+        if (planId === 'ad_premium') {
+          days = 30;
+          amount = 250;
+        } else if (planId === 'ad_featured') {
+          days = 90;
+          amount = 500;
+        }
+
+        const now = new Date();
+        const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+        // Fetch company name
+        let companyName = 'My Business';
+        if (companyId) {
+          const companyRef = db.doc(`companies/${companyId}`);
+          const companySnap = await transaction.get(companyRef);
+          if (companySnap.exists) {
+            companyName = companySnap.data()?.name || companyName;
+          }
+        }
+
+        // Resolve target document titles and names
+        let targetTitle = '';
+        let collectionName = '';
+        if (placement === 'job') {
+          const ref = db.doc(`jobs/${targetId}`);
+          const snap = await transaction.get(ref);
+          targetTitle = snap.data()?.title || 'Job Post';
+          collectionName = 'jobs';
+        } else if (placement === 'product') {
+          const ref = db.doc(`products/${targetId}`);
+          const snap = await transaction.get(ref);
+          targetTitle = snap.data()?.name || 'Product';
+          collectionName = 'products';
+        } else {
+          const ref = db.doc(`services/${targetId}`);
+          const snap = await transaction.get(ref);
+          targetTitle = snap.data()?.title || 'Service';
+          collectionName = 'services';
+        }
+
+        // Update target listing document
+        if (collectionName) {
+          const ref = db.doc(`${collectionName}/${targetId}`);
+          transaction.update(ref, {
+            isPromoted: true,
+            promotedUntil: Timestamp.fromDate(endDate),
+            promotedAt: FieldValue.serverTimestamp(),
+            promotionScore: planId === 'ad_featured' ? 300 : planId === 'ad_premium' ? 200 : 100
+          });
+        }
+
+        // Create transaction history document
+        const transactionRef = db.collection('adTransactions').doc();
+        transaction.set(transactionRef, {
+          userId: uid,
+          companyId: companyId || '',
+          companyName,
+          title: targetTitle,
+          targetId,
+          placement,
+          planId,
+          amount,
+          orderId,
+          paymentId,
+          status: 'success',
+          startDate: Timestamp.fromDate(now),
+          endDate: Timestamp.fromDate(endDate),
+          createdAt: FieldValue.serverTimestamp(),
+        });
+
+        // Add to advertisements collection
+        const adRef = db.collection('advertisements').doc();
+        transaction.set(adRef, {
+          companyId: companyId || '',
+          companyName,
+          title: targetTitle,
+          targetId,
+          type: planId === 'ad_featured' ? 'Featured' : planId === 'ad_premium' ? 'Premium' : 'Sponsored',
+          placement,
+          status: 'active',
+          startDate: Timestamp.fromDate(now),
+          endDate: Timestamp.fromDate(endDate),
+          impressions: 0,
+          clicks: 0,
+          contactClicks: 0,
+          applicationsGenerated: 0,
+          amount,
+          createdAt: FieldValue.serverTimestamp(),
+        });
+
+        return { success: true };
+      });
+
+      return result;
+    } catch (err: any) {
+      logger.error('Error verifying Ad payment:', err);
+      throw new HttpsError('internal', err?.message || 'Error verifying Ad payment');
+    }
+  }
+);
+

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitBusinessReview = exports.deleteSocialPost = exports.addSocialComment = exports.toggleSocialLike = exports.createSocialPost = exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.processSubscriptionAutomation = exports.validateSubscriptionAccess = exports.onJobCreated = exports.createNotification = exports.serverGetCandidateContact = exports.serverTalentSearch = exports.processJobAutomation = exports.createJobPosting = exports.serverUpdateApplicationStatus = exports.serverApplyToJob = exports.seedDemoAccounts = exports.healthCheck = exports.syncMobileVerification = exports.adminUpdateSubscription = exports.sendBroadcastNotification = exports.adminVerifyUser = exports.adminUpdateUserRole = exports.rejectJob = exports.approveJob = exports.adminVerifyCompany = exports.adminFeatureCompany = exports.rejectCompany = exports.approveCompany = void 0;
+exports.submitBusinessReview = exports.deleteSocialPost = exports.addSocialComment = exports.toggleSocialLike = exports.createSocialPost = exports.verifyAdPayment = exports.createAdOrder = exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.processSubscriptionAutomation = exports.validateSubscriptionAccess = exports.onJobCreated = exports.createNotification = exports.serverGetCandidateContact = exports.serverTalentSearch = exports.processJobAutomation = exports.createJobPosting = exports.serverUpdateApplicationStatus = exports.serverApplyToJob = exports.seedDemoAccounts = exports.healthCheck = exports.syncMobileVerification = exports.adminUpdateSubscription = exports.sendBroadcastNotification = exports.adminVerifyUser = exports.adminUpdateUserRole = exports.rejectJob = exports.approveJob = exports.adminVerifyCompany = exports.adminFeatureCompany = exports.rejectCompany = exports.approveCompany = void 0;
 require("./config"); // initializes app
 var admin_1 = require("./admin");
 Object.defineProperty(exports, "approveCompany", { enumerable: true, get: function () { return admin_1.approveCompany; } });
@@ -33,6 +33,8 @@ Object.defineProperty(exports, "validateSubscriptionAccess", { enumerable: true,
 Object.defineProperty(exports, "processSubscriptionAutomation", { enumerable: true, get: function () { return subscriptions_1.processSubscriptionAutomation; } });
 Object.defineProperty(exports, "createRazorpayOrder", { enumerable: true, get: function () { return subscriptions_1.createRazorpayOrder; } });
 Object.defineProperty(exports, "verifyRazorpayPayment", { enumerable: true, get: function () { return subscriptions_1.verifyRazorpayPayment; } });
+Object.defineProperty(exports, "createAdOrder", { enumerable: true, get: function () { return subscriptions_1.createAdOrder; } });
+Object.defineProperty(exports, "verifyAdPayment", { enumerable: true, get: function () { return subscriptions_1.verifyAdPayment; } });
 var social_1 = require("./social");
 Object.defineProperty(exports, "createSocialPost", { enumerable: true, get: function () { return social_1.createSocialPost; } });
 Object.defineProperty(exports, "toggleSocialLike", { enumerable: true, get: function () { return social_1.toggleSocialLike; } });

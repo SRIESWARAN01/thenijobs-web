@@ -210,6 +210,7 @@ export default function ResumeBuilderPage() {
   const portfolio = profile.portfolio || [];
   const summary = profile.aboutMe || profile.summary || '';
   const initials = profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const photoUrl = profile.photoUrl || profile.profilePhotoUrl || profile.photoURL || '';
 
   const strengthItems = [
     { label: 'Photo uploaded', done: !!(profile.photoUrl || profile.profilePhotoUrl) },
@@ -400,9 +401,9 @@ export default function ResumeBuilderPage() {
                           {(profile.gender || profile.seekerGender) && <span className="capitalize">Gender: {profile.gender || profile.seekerGender}</span>}
                         </div>
                       </div>
-                      {(profile.photoUrl || profile.profilePhotoUrl) && (
+                      {photoUrl && (
                         <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 flex-shrink-0">
-                          <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                          <img src={photoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                         </div>
                       )}
                     </div>
@@ -532,8 +533,8 @@ export default function ResumeBuilderPage() {
                         <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
                         <div className="flex items-center gap-3">
                           <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/20 bg-slate-900/50 relative flex-shrink-0">
-                            {profile.photoUrl || profile.profilePhotoUrl ? (
-                              <img src={profile.photoUrl || profile.profilePhotoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                            {photoUrl ? (
+                              <img src={photoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-lg font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
                                 {initials}
@@ -577,8 +578,8 @@ export default function ResumeBuilderPage() {
                       {/* Name & Photo Initials */}
                       <div className="text-center">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-xl font-bold flex items-center justify-center mx-auto mb-3 shadow overflow-hidden">
-                          {profile.photoUrl || profile.profilePhotoUrl ? (
-                            <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                          {photoUrl ? (
+                            <img src={photoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                           ) : (
                             initials
                           )}
@@ -740,8 +741,8 @@ export default function ResumeBuilderPage() {
                         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
                         <div className="flex items-center gap-3">
                           <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/20 bg-slate-900/50 relative flex-shrink-0">
-                            {profile.photoUrl || profile.profilePhotoUrl ? (
-                              <img src={profile.photoUrl || profile.profilePhotoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                            {photoUrl ? (
+                              <img src={photoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-lg font-black bg-gradient-to-br from-slate-800 to-slate-950 text-indigo-400 uppercase">
                                 {initials}
@@ -791,9 +792,9 @@ export default function ResumeBuilderPage() {
                         <p>{profile.phone}</p>
                         {profile.address && <p>{profile.district}</p>}
                       </div>
-                      {(profile.photoUrl || profile.profilePhotoUrl) && (
+                      {photoUrl && (
                         <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-200">
-                          <img src={profile.photoUrl || profile.profilePhotoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                          <img src={photoUrl} alt="Avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                         </div>
                       )}
                     </div>
@@ -950,8 +951,8 @@ export default function ResumeBuilderPage() {
                         <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
                         <div className="flex items-center gap-3">
                           <div className="h-12 w-12 rounded-xl overflow-hidden border border-white/20 bg-slate-900/50 relative flex-shrink-0">
-                            {profile.photoUrl || profile.profilePhotoUrl ? (
-                              <img src={profile.photoUrl || profile.profilePhotoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                            {photoUrl ? (
+                              <img src={photoUrl} alt={profile.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-lg font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
                                 {initials}

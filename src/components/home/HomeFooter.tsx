@@ -126,6 +126,7 @@ export default function HomeFooter() {
         <div className="mt-10 flex flex-col gap-3 border-t border-slate-200 pt-6 text-xs font-semibold text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>Copyright 2026 THENIJOBS. All rights reserved.</p>
           <div className="flex flex-wrap gap-4">
+            <Link href="/about" className="hover:text-teal-700">About Us</Link>
             <Link href="/privacy" className="hover:text-teal-700">Privacy</Link>
             <Link href="/terms" className="hover:text-teal-700">Terms</Link>
             <Link href="/sitemap.xml" className="hover:text-teal-700">Sitemap</Link>

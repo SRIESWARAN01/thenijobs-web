@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className="font-sans antialiased bg-background text-foreground">
+      <body className="font-sans antialiased bg-[#0a0a1a] text-white">
         <ToastProvider>
           <PreferencesProvider>
             <AuthProvider>

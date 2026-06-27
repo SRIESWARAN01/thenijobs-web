@@ -113,7 +113,7 @@ export default function CompanyDigitalCardPageClient({
   const isVerified = plan !== 'free' || company.verificationStatus === 'verified';
   
   const uniqueId = `TNI-BUS-${company.id.slice(0, 8).toUpperCase()}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profileUrl)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(profileUrl)}`;
 
   // Premium themes config for visiting card background
   const themeGradients: Record<CardThemeName, {
@@ -163,7 +163,7 @@ export default function CompanyDigitalCardPageClient({
       if (!element) return;
 
       const canvas = await html2canvas(element, {
-        scale: 3, // High resolution
+        scale: 4, // 300+ DPI at CR80 card size
         useCORS: true,
         backgroundColor: null,
         logging: false,
@@ -171,7 +171,7 @@ export default function CompanyDigitalCardPageClient({
 
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `${name.replace(/\s+/g, '_')}_BusinessCard_${side.toUpperCase()}.png`;
+      link.download = `${name.replace(/\s+/g, '_')}_IDCard_${side.toUpperCase()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (error) {
@@ -193,7 +193,7 @@ export default function CompanyDigitalCardPageClient({
       if (!frontElement || !backElement) return;
 
       const canvasFront = await html2canvas(frontElement, {
-        scale: 3,
+        scale: 4,
         useCORS: true,
         backgroundColor: null,
         logging: false,
@@ -201,7 +201,7 @@ export default function CompanyDigitalCardPageClient({
       const imgFront = canvasFront.toDataURL('image/png');
 
       const canvasBack = await html2canvas(backElement, {
-        scale: 3,
+        scale: 4,
         useCORS: true,
         backgroundColor: null,
         logging: false,
@@ -225,28 +225,29 @@ export default function CompanyDigitalCardPageClient({
       pdf.text(`Verified Business ID: ${uniqueId}`, 105, 38, { align: 'center' });
       pdf.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, 105, 43, { align: 'center' });
 
-      const cardWidth = 120;
-      const cardHeight = 76;
-      const x = 45;
+      // Card dimensions on PDF: Standard CR80 Size (85.60 mm x 53.98 mm)
+      const cardWidth = 85.6;
+      const cardHeight = 53.98;
+      const x = 62.2; // Center card (210 - 85.6) / 2 = 62.2
 
-      // Front
+      // Draw Front Card
       pdf.addImage(imgFront, 'PNG', x, 60, cardWidth, cardHeight);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(9);
       pdf.setTextColor(148, 163, 184); // slate-400
-      pdf.text('FRONT SIDE', 105, 142, { align: 'center' });
+      pdf.text('FRONT SIDE', 105, 122, { align: 'center' });
 
-      // Back
-      pdf.addImage(imgBack, 'PNG', x, 155, cardWidth, cardHeight);
-      pdf.text('BACK SIDE / NETWORKING QR', 105, 237, { align: 'center' });
+      // Draw Back Card
+      pdf.addImage(imgBack, 'PNG', x, 140, cardWidth, cardHeight);
+      pdf.text('BACK SIDE / NETWORKING QR', 105, 202, { align: 'center' });
 
       // Footers
       pdf.setFont('helvetica', 'italic');
       pdf.setFontSize(8);
-      pdf.text('Scan the QR code to view public SEO profile and products.', 105, 265, { align: 'center' });
-      pdf.text('Verified Business Listing issued by thenijobs.in.', 105, 270, { align: 'center' });
+      pdf.text('Scan the QR code to view public SEO profile and products.', 105, 230, { align: 'center' });
+      pdf.text('Verified Business Listing issued by thenijobs.in.', 105, 235, { align: 'center' });
 
-      pdf.save(`${name.replace(/\s+/g, '_')}_BusinessCard.pdf`);
+      pdf.save(`${name.replace(/\s+/g, '_')}_IDCard.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF document. Please try again.');
@@ -395,7 +396,7 @@ export default function CompanyDigitalCardPageClient({
                   {/* Top Row */}
                   <div className="flex items-center justify-between z-10">
                     <div className={`flex flex-col border-l-2 pl-2 ${
-                      plan === 'enterprise' ? 'border-slate-350' : plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-blue-400' : 'border-slate-500'
+                      plan === 'enterprise' ? 'border-slate-200' : plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-slate-450' : 'border-slate-600'
                     }`}>
                       <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 uppercase">THENIJOBS</span>
                       <span className="text-xs font-extrabold tracking-wide text-white uppercase flex items-center gap-1">
@@ -404,20 +405,20 @@ export default function CompanyDigitalCardPageClient({
                     </div>
                     <div className="flex items-center gap-2">
                       {plan === 'enterprise' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-200 to-slate-400 border border-slate-300 px-2.5 py-0.5 text-[9px] font-black text-slate-950 uppercase shadow-xl animate-pulse">
-                          👑 ENTERPRISE VIP
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-100 to-slate-300 border border-white px-2.5 py-0.5 text-[9px] font-black text-slate-950 uppercase shadow-xl animate-pulse">
+                          👑 PLATINUM VIP
                         </span>
                       ) : plan === 'premium' ? (
                         <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase shadow-lg ${currentCardTheme.badge}`}>
-                          <Crown size={10} className="animate-bounce" /> PREMIUM VERIFIED
+                          <Crown size={10} className="animate-bounce" /> 🥇 GOLD VERIFIED
                         </span>
                       ) : plan === 'basic' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-bold text-blue-300 uppercase">
-                          Standard
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-400/15 border border-slate-400/30 px-2.5 py-0.5 text-[9px] font-bold text-slate-300 uppercase">
+                          🥈 SILVER VERIFIED
                         </span>
                       ) : (
-                        <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-slate-400 border border-white/5">
-                          FREE TIER
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-bold text-blue-300 uppercase">
+                          🌱 BASIC MEMBER
                         </span>
                       )}
                     </div>
@@ -430,14 +431,14 @@ export default function CompanyDigitalCardPageClient({
                         plan === 'enterprise' ? 'border-slate-300' : plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
                       }`}>
                         {logoUrl ? (
-                          <img src={logoUrl} alt={name} className="object-cover w-full h-full" />
+                          <img src={logoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
                         ) : (
                           <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
                         )}
                       </div>
                       {isVerified && (
                         <div className={`absolute -bottom-2 -right-2 rounded-full p-1 border-2 border-[#15152d] shadow-md ${
-                          plan === 'enterprise' ? 'bg-slate-200 text-slate-950' : plan === 'premium' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'
+                          plan === 'enterprise' ? 'bg-gradient-to-r from-slate-200 to-slate-400 text-slate-950' : plan === 'premium' ? 'bg-amber-400 text-slate-950' : plan === 'basic' ? 'bg-slate-300 text-slate-950' : 'bg-blue-500 text-white'
                         }`}>
                           <BadgeCheck size={16} className="fill-current" />
                         </div>
@@ -516,19 +517,19 @@ export default function CompanyDigitalCardPageClient({
 
                     {/* QR Code with Centered Logo Overlay (Premium Scan Asset) */}
                     <div className="shrink-0 flex flex-col items-center gap-1.5">
-                      <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white p-1 shadow-lg flex items-center justify-center">
-                        <Image src={qrUrl} alt="QR Verification Link" fill sizes="96px" className="object-contain" />
+                      <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
+                        <img src={qrUrl} alt="QR Verification Link" className="object-contain w-full h-full" crossOrigin="anonymous" />
                         {/* Central Logo Overlay */}
                         <div className="absolute w-6 h-6 rounded bg-white p-0.5 border border-slate-200 flex items-center justify-center shadow-md">
                           {logoUrl ? (
-                            <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" />
+                            <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" crossOrigin="anonymous" />
                           ) : (
                             <Building2 className="text-purple-600 w-full h-full p-0.5" />
                           )}
                         </div>
                       </div>
-                      <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <QrCode size={8} /> Scan to verify
+                      <span className="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 text-center">
+                        <QrCode size={8} /> Scan to View Company Profile
                       </span>
                     </div>
                   </div>
@@ -601,7 +602,7 @@ export default function CompanyDigitalCardPageClient({
             {/* Top Row */}
             <div className="flex items-center justify-between z-10">
               <div className={`flex flex-col border-l-2 pl-2 ${
-                plan === 'enterprise' ? 'border-slate-350' : plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-blue-400' : 'border-slate-500'
+                plan === 'enterprise' ? 'border-slate-200' : plan === 'premium' ? 'border-amber-400' : plan === 'basic' ? 'border-slate-450' : 'border-slate-600'
               }`}>
                 <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 uppercase">THENIJOBS</span>
                 <span className="text-xs font-extrabold tracking-wide text-white uppercase flex items-center gap-1">
@@ -610,20 +611,20 @@ export default function CompanyDigitalCardPageClient({
               </div>
               <div className="flex items-center gap-2">
                 {plan === 'enterprise' ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-200 to-slate-400 border border-slate-300 px-2.5 py-0.5 text-[9px] font-black text-slate-950 uppercase shadow-xl animate-pulse">
-                    👑 ENTERPRISE VIP
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-slate-100 to-slate-300 border border-white px-2.5 py-0.5 text-[9px] font-black text-slate-950 uppercase shadow-xl animate-pulse">
+                    👑 PLATINUM VIP
                   </span>
                 ) : plan === 'premium' ? (
                   <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase shadow-lg ${currentCardTheme.badge}`}>
-                    <Crown size={10} className="animate-bounce" /> PREMIUM VERIFIED
+                    <Crown size={10} className="animate-bounce" /> 🥇 GOLD VERIFIED
                   </span>
                 ) : plan === 'basic' ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-bold text-blue-300 uppercase">
-                    Standard
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-400/15 border border-slate-400/30 px-2.5 py-0.5 text-[9px] font-bold text-slate-300 uppercase">
+                    🥈 SILVER VERIFIED
                   </span>
                 ) : (
-                  <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-slate-400 border border-white/5">
-                    FREE TIER
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[9px] font-bold text-blue-300 uppercase">
+                    🌱 BASIC MEMBER
                   </span>
                 )}
               </div>
@@ -636,14 +637,14 @@ export default function CompanyDigitalCardPageClient({
                   plan === 'enterprise' ? 'border-slate-300' : plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
                 }`}>
                   {logoUrl ? (
-                    <img src={logoUrl} alt={name} className="object-cover w-full h-full" />
+                    <img src={logoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
                   ) : (
                     <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
                   )}
                 </div>
                 {isVerified && (
                   <div className={`absolute -bottom-2 -right-2 rounded-full p-1 border-2 border-[#15152d] shadow-md ${
-                    plan === 'enterprise' ? 'bg-slate-200 text-slate-950' : plan === 'premium' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'
+                    plan === 'enterprise' ? 'bg-gradient-to-r from-slate-200 to-slate-400 text-slate-950' : plan === 'premium' ? 'bg-amber-400 text-slate-950' : plan === 'basic' ? 'bg-slate-300 text-slate-950' : 'bg-blue-500 text-white'
                   }`}>
                     <BadgeCheck size={16} className="fill-current" />
                   </div>
@@ -721,19 +722,19 @@ export default function CompanyDigitalCardPageClient({
 
               {/* QR Code with Centered Logo Overlay (Premium Scan Asset) */}
               <div className="shrink-0 flex flex-col items-center gap-1.5">
-                <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-white/15 bg-white p-1 shadow-lg flex items-center justify-center">
-                  <Image src={qrUrl} alt="QR Verification Link" fill sizes="96px" className="object-contain" />
+                <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
+                  <img src={qrUrl} alt="QR Verification Link" className="object-contain w-full h-full" crossOrigin="anonymous" />
                   {/* Central Logo Overlay */}
                   <div className="absolute w-6 h-6 rounded bg-white p-0.5 border border-slate-200 flex items-center justify-center shadow-md">
                     {logoUrl ? (
-                      <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" />
+                      <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" crossOrigin="anonymous" />
                     ) : (
                       <Building2 className="text-purple-600 w-full h-full p-0.5" />
                     )}
                   </div>
                 </div>
-                <span className="text-[8px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <QrCode size={8} /> Scan to verify
+                <span className="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 text-center">
+                  <QrCode size={8} /> Scan to View Company Profile
                 </span>
               </div>
             </div>

@@ -46,7 +46,7 @@ const iconTintMap: Record<string, string> = {
 
 export default function RoleSelectionPage() {
   const router = useRouter();
-  const { user, loading: authLoading, loginWithCustomToken } = useAuth();
+  const { user, firebaseUser, loading: authLoading, loginWithCustomToken } = useAuth();
   
   const [role, setRole] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -81,9 +81,13 @@ export default function RoleSelectionPage() {
     setError(null);
 
     try {
+      const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
       const res = await fetch('/api/auth/select-role', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {})
+        },
         body: JSON.stringify({ uid: user.uid, role }),
       });
 

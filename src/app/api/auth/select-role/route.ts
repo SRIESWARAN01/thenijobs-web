@@ -12,6 +12,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'UID and role are required' }, { status: 400 });
     }
 
+    // Verify token & secure role selection
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+    const token = authHeader.substring(7);
+    const auth = getAuth(adminApp);
+    const decodedToken = await auth.verifyIdToken(token);
+    const authenticatedUid = decodedToken.uid;
+
+    if (authenticatedUid !== uid) {
+      return NextResponse.json({ error: 'Unauthorized: UID mismatch' }, { status: 403 });
+    }
+
     if (role !== 'job_seeker' && role !== 'business') {
       return NextResponse.json({ error: 'Invalid role. Must be job_seeker or business.' }, { status: 400 });
     }
@@ -109,7 +123,6 @@ export async function POST(request: Request) {
     }
 
     // 4. Update Custom Claims in Firebase Auth
-    const auth = getAuth(adminApp);
     await auth.setCustomUserClaims(uid, { role });
 
     // 5. Generate a new Custom Token with the claims

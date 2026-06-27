@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   Briefcase,
   Building2,
+  LayoutDashboard,
   Menu,
   PlusCircle,
   Search,
@@ -19,7 +20,7 @@ import PreferenceControls from '@/components/navigation/PreferenceControls';
 import { usePreferences } from '@/contexts/PreferencesContext';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { getSafePostLoginRedirect } from '@/lib/access';
 
 const navItems = [
   { label: 'Jobs', tamilLabel: 'வேலைகள்', href: '/jobs', icon: Briefcase },
@@ -34,22 +35,11 @@ export default function Header() {
   const { language } = usePreferences();
   const pathname = usePathname();
   const { user, isSeeker, isBusiness, isAdmin } = useAuth();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (user) {
-      const publicPaths = ['/', '/jobs', '/businesses', '/services', '/pricing', '/login'];
-      if (publicPaths.includes(pathname)) {
-        if (isAdmin) {
-          router.replace('/admin/dashboard');
-        } else if (isBusiness) {
-          router.replace('/business/dashboard');
-        } else if (isSeeker) {
-          router.replace('/seeker/dashboard');
-        }
-      }
-    }
-  }, [user, isSeeker, isBusiness, isAdmin, pathname, router]);
+  // Get the correct dashboard URL for the logged-in user
+  const dashboardUrl = user
+    ? getSafePostLoginRedirect('', user.role)
+    : '/login';
 
   useEffect(() => {
     setMenuOpen(false);
@@ -108,15 +98,25 @@ export default function Header() {
           >
             <Search size={18} />
           </Link>
+          {user ? (
+            <Link
+              href={dashboardUrl}
+              className="flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 transition-colors hover:bg-teal-100"
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
+            >
+              <User size={16} />
+              Login
+            </Link>
+          )}
           <Link
-            href="/login"
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
-          >
-            <User size={16} />
-            Login
-          </Link>
-          <Link
-            href="/business/post-job"
+            href={user ? '/business/post-job' : '/login?redirect=/business/post-job'}
             className="flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-800"
           >
             <PlusCircle size={16} />
@@ -156,13 +156,23 @@ export default function Header() {
               <PreferenceControls />
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2">
-              <Link
-                href="/login"
-                onClick={() => setMenuOpen(false)}
-                className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-bold text-slate-700"
-              >
-                Login
-              </Link>
+              {user ? (
+                <Link
+                  href={dashboardUrl}
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3 text-center text-sm font-bold text-teal-800"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm font-bold text-slate-700"
+                >
+                  Login
+                </Link>
+              )}
               <Link
                 href="/company/register"
                 onClick={() => setMenuOpen(false)}

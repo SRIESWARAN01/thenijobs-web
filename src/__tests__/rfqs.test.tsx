@@ -71,6 +71,7 @@ vi.mock('@/lib/firebase/firestoreService', () => ({
   createRFQ: vi.fn().mockResolvedValue({ id: 'rfq_abc' }),
   updateRFQ: vi.fn().mockResolvedValue(undefined),
   updateLeadStatus: vi.fn().mockResolvedValue(undefined),
+  trackProductOrServiceAnalytics: vi.fn(),
 }));
 
 // Mock components

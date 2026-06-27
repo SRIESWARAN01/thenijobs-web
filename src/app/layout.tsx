@@ -5,6 +5,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ToastProvider } from "@/components/ui/Toaster";
 import SplashIntro from "@/components/ui/SplashIntro";
+import OfflineBanner from "@/components/ui/OfflineBanner";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PreferencesProvider>
             <AuthProvider>
               <NotificationProvider>
+                <OfflineBanner />
                 <SplashIntro />
                 {children}
               </NotificationProvider>

@@ -694,7 +694,7 @@ export default function CompanyProfilePage() {
           { id: 'branding', label: 'Branding & Design', Icon: Camera },
           { id: 'seo', label: 'SEO & Marketing', Icon: Globe },
           { id: 'verification', label: 'Verification Docs', Icon: Shield },
-          ...(currentPlan === 'enterprise' ? [{ id: 'enterprise', label: 'Enterprise & Founder', Icon: Crown }] : []),
+          ...(getPlanRank(currentPlan) >= 2 ? [{ id: 'enterprise', label: 'Corporate & Leadership', Icon: Crown }] : []),
         ].map((t) => {
           const Icon = t.Icon;
           return (
@@ -1612,7 +1612,14 @@ export default function CompanyProfilePage() {
             {activeFormTab === 'enterprise' && (
               <div className="space-y-6">
                 {/* CEO / Founder Profile */}
-                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden min-h-[220px]">
+                  {currentPlan !== 'enterprise' && (
+                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center text-center p-4">
+                      <Lock size={20} className="text-amber-500 mb-2" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">Enterprise Feature</span>
+                      <span className="text-[10px] text-gray-400 mt-1 max-w-[280px]">CEO Biography is available on the Enterprise Plan. Upgrade to publish CEO details and messages.</span>
+                    </div>
+                  )}
                   <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                     <Crown size={16} className="text-cyan-400" />
                     CEO / Founder Biography & Profile
@@ -1721,7 +1728,14 @@ export default function CompanyProfilePage() {
                 </div>
 
                 {/* Milestones / Timeline */}
-                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden min-h-[220px]">
+                  {currentPlan !== 'enterprise' && (
+                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center text-center p-4">
+                      <Lock size={20} className="text-amber-500 mb-2" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">Enterprise Feature</span>
+                      <span className="text-[10px] text-gray-400 mt-1 max-w-[280px]">Company Journey Timeline is available on the Enterprise Plan. Upgrade to add achievements timeline.</span>
+                    </div>
+                  )}
                   <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                     <TrendingUp size={16} className="text-cyan-400" />
                     Company History Milestones Timeline
@@ -1818,7 +1832,16 @@ export default function CompanyProfilePage() {
                         className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
                       />
                     </div>
-                    <div>
+                    
+                    <div className="relative">
+                      {currentPlan !== 'enterprise' && (
+                        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-xl border border-white/5">
+                          <div className="flex items-center gap-1.5 bg-slate-900/90 px-3 py-1 rounded-lg border border-white/10">
+                            <Lock size={12} className="text-amber-500" />
+                            <span className="text-[10px] font-bold text-white">CSR Activities (Enterprise Only)</span>
+                          </div>
+                        </div>
+                      )}
                       <label className="text-xs text-gray-400 font-medium block mb-1.5">Corporate Social Responsibility (CSR) Activities</label>
                       <textarea
                         rows={2}
@@ -1828,6 +1851,7 @@ export default function CompanyProfilePage() {
                         className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
                       />
                     </div>
+
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs text-gray-400 font-medium block mb-1.5">Custom Careers Section Introduction Text</label>
@@ -1901,7 +1925,14 @@ export default function CompanyProfilePage() {
                         </div>
                       </div>
 
-                      <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-3">
+                      <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-3 relative overflow-hidden">
+                        {currentPlan !== 'enterprise' && (
+                          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center text-center p-4">
+                            <Lock size={14} className="text-amber-500 mb-1" />
+                            <span className="text-[10px] font-bold text-white uppercase">Enterprise Feature</span>
+                            <span className="text-[8px] text-gray-400">Partner logos showcase is available on Enterprise.</span>
+                          </div>
+                        )}
                         <p className="text-xs font-bold text-gray-300">Add Partner Logo (URL Link)</p>
                         <div className="flex gap-2">
                           <input

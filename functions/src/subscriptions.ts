@@ -143,9 +143,9 @@ export const createRazorpayOrder = onCall(
     }
 
     const planConfig = SERVER_PLAN_CONFIGS[planSlug as keyof typeof SERVER_PLAN_CONFIGS];
-    const originalAmount = planConfig.price;
-    let amount = originalAmount;
-    let discountAmount = 0;
+    const originalAmount: number = planConfig.price;
+    let amount: number = originalAmount;
+    let discountAmount: number = 0;
 
     if (couponCode) {
       const couponQuery = await db.collection('coupons')

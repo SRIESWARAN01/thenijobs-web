@@ -103,7 +103,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         // Register the background service worker
         const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        console.log('[FCM] Service worker registered successfully:', registration);
 
         const { getMessaging, getToken } = await import('firebase/messaging');
         const messaging = getMessaging();
@@ -115,7 +114,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         });
 
         if (fcmToken) {
-          console.log('[FCM] Retrieved registration token:', fcmToken);
           // Save fcmToken to firestore under seekerProfiles
           const { doc, setDoc } = await import('firebase/firestore');
           await setDoc(doc(db, 'seekerProfiles', targetUid), { fcmToken }, { merge: true });

@@ -77,8 +77,12 @@ export default function ServiceProviderServicesPage() {
   const reachedLimit = limit !== -1 && services.length >= limit;
 
   const handleOpenAddModal = () => {
+    if (limit === 0) {
+      alert('Service Catalogue is not available on the Free plan. Please upgrade to a Standard or Premium plan to add services.');
+      return;
+    }
     if (reachedLimit) {
-      alert(`Service limit reached. Your plan allows up to ${limit} services. Please upgrade your subscription.`);
+      alert(`Service limit reached. Your ${subscriptionBadge === 'free' ? 'Free' : subscriptionBadge === 'basic' ? 'Standard' : subscriptionBadge === 'premium' ? 'Premium' : 'Enterprise'} plan allows a maximum of ${limit} service(s). Please delete existing services or upgrade.`);
       return;
     }
     setEditingService(null);

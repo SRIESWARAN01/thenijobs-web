@@ -11,6 +11,7 @@ import FeaturedBusinesses from '@/components/home/FeaturedBusinesses';
 import BusinessUpdates from '@/components/home/BusinessUpdates';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import HomeFooter from '@/components/home/HomeFooter';
+import AdvertisementsBanner from '@/components/home/AdvertisementsBanner';
 
 export const metadata: Metadata = {
   title: 'THENIJOBS - Theni Jobs, Businesses & Services',
@@ -25,6 +26,7 @@ export default function HomePage() {
       <HeroSection />
       <SearchHub />
       <StatsSection />
+      <AdvertisementsBanner />
       <CategoriesSection />
       <TrendingJobs />
       <FeaturedBusinesses />

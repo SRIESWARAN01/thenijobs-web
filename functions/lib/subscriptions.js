@@ -139,6 +139,7 @@ exports.createRazorpayOrder = (0, https_1.onCall)({ region: config_1.REGION, enf
     const planSlug = getString(request.data?.planSlug);
     const audience = getString(request.data?.audience);
     const companyId = getString(request.data?.companyId);
+    const couponCode = getString(request.data?.couponCode)?.toUpperCase().trim();
     if (planSlug !== 'basic' && planSlug !== 'premium' && planSlug !== 'enterprise') {
         throw new https_1.HttpsError('invalid-argument', 'Invalid plan slug. Only basic, premium, and enterprise are supported.');
     }
@@ -146,12 +147,55 @@ exports.createRazorpayOrder = (0, https_1.onCall)({ region: config_1.REGION, enf
         throw new https_1.HttpsError('invalid-argument', 'Invalid audience. Must be seeker or employer.');
     }
     const planConfig = SERVER_PLAN_CONFIGS[planSlug];
-    const amount = planConfig.price;
+    const originalAmount = planConfig.price;
+    let amount = originalAmount;
+    let discountAmount = 0;
+    if (couponCode) {
+        const couponQuery = await config_1.db.collection('coupons')
+            .where('code', '==', couponCode)
+            .where('isActive', '==', true)
+            .limit(1)
+            .get();
+        if (couponQuery.empty) {
+            throw new https_1.HttpsError('invalid-argument', 'Coupon code is invalid or inactive.');
+        }
+        const couponDoc = couponQuery.docs[0];
+        const couponData = couponDoc.data();
+        // Check dates
+        const now = new Date();
+        if (couponData.validFrom && new Date(couponData.validFrom) > now) {
+            throw new https_1.HttpsError('invalid-argument', 'Coupon code is not yet active.');
+        }
+        if (couponData.validUntil && new Date(couponData.validUntil) < now) {
+            throw new https_1.HttpsError('invalid-argument', 'Coupon code has expired.');
+        }
+        // Check usage limits
+        const usedCount = couponData.usedCount || 0;
+        const usageLimit = couponData.usageLimit || 0;
+        if (usedCount >= usageLimit) {
+            throw new https_1.HttpsError('resource-exhausted', 'Coupon usage limit reached.');
+        }
+        // Check plan applicability
+        const applicablePlans = couponData.applicablePlans || [];
+        if (applicablePlans.length > 0 && !applicablePlans.includes(planSlug)) {
+            throw new https_1.HttpsError('invalid-argument', 'Coupon code is not applicable for this plan.');
+        }
+        // Apply discount
+        if (couponData.type === 'percentage') {
+            discountAmount = Math.round(originalAmount * (couponData.value / 100));
+        }
+        else {
+            discountAmount = couponData.value;
+        }
+        amount = Math.max(0, originalAmount - discountAmount);
+    }
     const keyId = process.env.RAZORPAY_KEY_ID || '';
     const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
-    if (!keyId || !keySecret || keyId === 'mock_key_id') {
-        const mockOrderId = `order_mock_${Math.random().toString(36).substring(2, 11)}`;
-        firebase_functions_1.logger.info(`Running createRazorpayOrder in MOCK mode for user ${uid}, plan ${planSlug}`);
+    // If final amount is 0, simulate/create a zero order directly
+    if (amount === 0 || !keyId || !keySecret || keyId === 'mock_key_id') {
+        const isZero = amount === 0;
+        const mockOrderId = isZero ? `order_zero_${Math.random().toString(36).substring(2, 11)}` : `order_mock_${Math.random().toString(36).substring(2, 11)}`;
+        firebase_functions_1.logger.info(`Running createRazorpayOrder in MOCK/ZERO mode for user ${uid}, plan ${planSlug}, amount: ${amount}`);
         // Persist order metadata so webhook can resolve context
         await config_1.db.doc(`razorpayOrders/${mockOrderId}`).set({
             orderId: mockOrderId,
@@ -160,6 +204,9 @@ exports.createRazorpayOrder = (0, https_1.onCall)({ region: config_1.REGION, enf
             audience,
             ...(companyId ? { companyId } : {}),
             amount: amount * 100,
+            originalAmount,
+            discountAmount,
+            couponCode: couponCode || null,
             currency: 'INR',
             status: 'created',
             mockMode: true,
@@ -192,6 +239,9 @@ exports.createRazorpayOrder = (0, https_1.onCall)({ region: config_1.REGION, enf
             audience,
             ...(companyId ? { companyId } : {}),
             amount: order.amount,
+            originalAmount,
+            discountAmount,
+            couponCode: couponCode || null,
             currency: order.currency,
             receipt: receiptId,
             status: 'created',
@@ -253,12 +303,25 @@ exports.verifyRazorpayPayment = (0, https_1.onCall)({ region: config_1.REGION, e
     try {
         const planName = planConfig.name;
         const subscriptionId = companyId ? `${companyId}_${planSlug}` : `${uid}_${planSlug}`;
+        // Get order details first to inspect coupon application
+        const orderRef = config_1.db.doc(`razorpayOrders/${orderId}`);
+        const orderSnap = await orderRef.get();
+        const orderData = orderSnap.data() || {};
+        let couponDocRef = null;
+        if (orderData?.couponCode) {
+            const couponQuery = await config_1.db.collection('coupons')
+                .where('code', '==', orderData.couponCode)
+                .limit(1)
+                .get();
+            if (!couponQuery.empty) {
+                couponDocRef = couponQuery.docs[0].ref;
+            }
+        }
         const result = await config_1.db.runTransaction(async (transaction) => {
-            const orderRef = config_1.db.doc(`razorpayOrders/${orderId}`);
-            const orderSnap = await transaction.get(orderRef);
-            const orderData = orderSnap.data();
+            const orderTxSnap = await transaction.get(orderRef);
+            const orderTxData = orderTxSnap.data();
             // If order already processed, return success (idempotent)
-            if (orderData && orderData.status === 'paid') {
+            if (orderTxData && orderTxData.status === 'paid') {
                 return { success: true, alreadyProcessed: true };
             }
             const userRef = config_1.db.doc(`users/${uid}`);
@@ -279,6 +342,11 @@ exports.verifyRazorpayPayment = (0, https_1.onCall)({ region: config_1.REGION, e
             const now = new Date();
             const endDate = new Date(now);
             endDate.setFullYear(now.getFullYear() + 1);
+            // Get paid amount from order data, fallback to standard plan price
+            const paidAmount = orderData.amount !== undefined ? orderData.amount / 100 : amount;
+            const originalAmount = orderData.originalAmount !== undefined ? orderData.originalAmount : amount;
+            const discountAmount = orderData.discountAmount || 0;
+            const couponCodeUsed = orderData.couponCode || null;
             const subscriptionRef = config_1.db.doc(`subscriptions/${subscriptionId}`);
             transaction.set(subscriptionRef, {
                 userId: uid,
@@ -291,7 +359,10 @@ exports.verifyRazorpayPayment = (0, https_1.onCall)({ region: config_1.REGION, e
                 mobile,
                 plan: planSlug,
                 planName,
-                amount,
+                amount: paidAmount,
+                originalAmount,
+                discountAmount,
+                couponCode: couponCodeUsed,
                 period: 'year',
                 status: 'active',
                 startDate: firestore_1.Timestamp.fromDate(now),
@@ -316,7 +387,10 @@ exports.verifyRazorpayPayment = (0, https_1.onCall)({ region: config_1.REGION, e
                 planSlug,
                 period: 'year',
                 paymentMethod: isMock ? 'mock_razorpay' : 'razorpay',
-                amount,
+                amount: paidAmount,
+                originalAmount,
+                discountAmount,
+                couponCode: couponCodeUsed,
                 status: 'approved',
                 paymentRequestId: paymentId,
                 createdAt: firestore_1.FieldValue.serverTimestamp(),
@@ -342,6 +416,12 @@ exports.verifyRazorpayPayment = (0, https_1.onCall)({ region: config_1.REGION, e
                     subscriptionStatus: 'active',
                     updatedAt: firestore_1.FieldValue.serverTimestamp(),
                 }, { merge: true });
+            }
+            // Increment coupon count if a coupon was used
+            if (couponDocRef) {
+                transaction.update(couponDocRef, {
+                    usedCount: firestore_1.FieldValue.increment(1)
+                });
             }
             // Update the order doc status to paid
             transaction.set(orderRef, {

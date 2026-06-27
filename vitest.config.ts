@@ -9,6 +9,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    teardownTimeout: 3000,
+    pool: 'forks',
   },
   resolve: {
     alias: {

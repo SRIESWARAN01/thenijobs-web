@@ -97,14 +97,23 @@ export default function AdminDashboard() {
   const [shopStats, setShopStats] = useState({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0 });
   const [activeBiTab, setActiveBiTab] = useState('overview'); // overview, rankings, revenue, leads, audit
 
-  // Query all companies for rankings & tier counts
-  const { data: allCompanies, loading: allCompaniesLoading } = useCollection<any>('companies');
+  // Query companies for rankings & tier counts (capped at 500 most recent)
+  const { data: allCompanies, loading: allCompaniesLoading } = useCollection<any>('companies', [
+    orderBy('createdAt', 'desc'),
+    limit(500),
+  ]);
 
-  // Query payments for revenue dashboard
-  const { data: allPayments, loading: paymentsLoading } = useCollection<any>('payments');
+  // Query payments for revenue dashboard (capped at 500 most recent)
+  const { data: allPayments, loading: paymentsLoading } = useCollection<any>('payments', [
+    orderBy('createdAt', 'desc'),
+    limit(500),
+  ]);
 
-  // Query all leads for lead analytics
-  const { data: allLeads, loading: leadsLoading } = useCollection<any>('leads');
+  // Query all leads for lead analytics (capped at 500 most recent)
+  const { data: allLeads, loading: leadsLoading } = useCollection<any>('leads', [
+    orderBy('createdAt', 'desc'),
+    limit(500),
+  ]);
 
   // Pending companies for approval
   const { data: pendingCompanies, loading: companiesLoading } = useCollection<any>(

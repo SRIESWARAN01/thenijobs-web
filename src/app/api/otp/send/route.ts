@@ -13,7 +13,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid phone number. Must be a 10-digit number.' }, { status: 400 });
     }
 
-    const apiKey = 'c97e4a9d-65fa-11f1-8f15-0200cd936042';
+    const apiKey = process.env.TWOFACTOR_API_KEY;
+    if (!apiKey) {
+      console.error('[OTP Send] TWOFACTOR_API_KEY environment variable is not set');
+      return NextResponse.json({ error: 'OTP service is not configured' }, { status: 500 });
+    }
     // 2factor.in Send OTP URL
     // Format: https://2factor.in/API/V1/{api_key}/SMS/{phone_number}/AUTOGEN
     // We prefix with 91 for Indian mobile numbers

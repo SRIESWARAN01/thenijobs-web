@@ -25,7 +25,7 @@ export default function BottomNav() {
     { href: '/jobs', label: 'Jobs', icon: Briefcase },
     { href: '/businesses', label: 'Business', icon: Building2 },
     { href: '/services', label: 'Services', icon: Store },
-    { href: '/profile', label: 'Profile', icon: User },
+    { href: '/login', label: 'Profile', icon: User },
   ];
 
   if (user) {

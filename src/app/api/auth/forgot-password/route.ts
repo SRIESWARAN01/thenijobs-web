@@ -83,7 +83,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true });
     }
 
-    console.log('[Password Reset] Email sent successfully to:', trimmedEmail);
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error('[Password Reset Exception]:', err);

@@ -9,7 +9,6 @@ export function useAnalytics() {
       const analyticsInstance = await analytics();
       if (analyticsInstance) {
         logEvent(analyticsInstance, eventName, params);
-        console.log(`[Analytics] Event logged: ${eventName}`, params);
       }
     } catch (err) {
       console.warn(`[Analytics] Failed to log event ${eventName}:`, err);

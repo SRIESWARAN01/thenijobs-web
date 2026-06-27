@@ -20,3 +20,10 @@ const originalUse = (React as any).use;
   }
   return originalUse ? originalUse.call(React, promise) : promise;
 };
+
+import { afterAll } from 'vitest';
+afterAll(() => {
+  if (originalUse) {
+    (React as any).use = originalUse;
+  }
+});

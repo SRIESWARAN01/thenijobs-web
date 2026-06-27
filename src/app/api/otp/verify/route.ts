@@ -17,7 +17,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 });
     }
 
-    const apiKey = 'c97e4a9d-65fa-11f1-8f15-0200cd936042';
+    const apiKey = process.env.TWOFACTOR_API_KEY;
+    if (!apiKey) {
+      console.error('[OTP Verify] TWOFACTOR_API_KEY environment variable is not set');
+      return NextResponse.json({ error: 'OTP service is not configured' }, { status: 500 });
+    }
     const phoneNumberWithCode = `+91${cleanPhone}`;
 
     // 1. Verify OTP with 2factor.in

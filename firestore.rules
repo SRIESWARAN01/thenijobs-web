@@ -667,7 +667,17 @@ service cloud.firestore {
     match /enquiries/{enquiryId} {
       allow read: if isAdmin()
         || (isAuthenticated() && isCompanyOwner(resource.data.companyId));
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasAll(['name', 'phone', 'companyId', 'message'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() >= 10
+        && request.resource.data.phone.size() <= 15
+        && request.resource.data.companyId is string
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.keys().size() <= 10;
       allow update: if isAdmin()
         || (isAuthenticated() && isCompanyOwner(resource.data.companyId));
       allow delete: if isAdmin();
@@ -677,7 +687,11 @@ service cloud.firestore {
     match /analyticsEvents/{eventId} {
       allow read: if isAdmin()
         || (isAuthenticated() && isCompanyOwner(resource.data.companyId));
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasAll(['eventType', 'companyId'])
+        && request.resource.data.eventType is string
+        && request.resource.data.eventType.size() <= 50
+        && request.resource.data.companyId is string
+        && request.resource.data.keys().size() <= 15;
       allow update, delete: if false;
     }
 

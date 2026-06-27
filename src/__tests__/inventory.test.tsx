@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import React from 'react';
 import BusinessInventoryPage from '../app/business/inventory/page';
 import { updateProduct } from '@/lib/firebase/shopService';
@@ -135,21 +135,24 @@ describe('BusinessInventoryPage Component', () => {
   it('triggers updateProduct when clicking increment and decrement stock adjustments', async () => {
     render(<BusinessInventoryPage />);
 
-    // Find increment button (+) for product 1 (index 0)
-    // The buttons have Minus and Plus icons inside, let's find the buttons
-    const incrementButtons = screen.getAllByRole('button');
-    // First product decrement button is index 0, increment is index 1
-    // Second product decrement button is index 2, increment is index 3
+    // Scope queries to the specific product rows
+    const coconutRow = screen.getByText('Cold Pressed Coconut Oil').closest('tr')!;
+    const coconutButtons = within(coconutRow).getAllByRole('button');
+    // coconutButtons[0] is decrement (-), coconutButtons[1] is increment (+)
     
     // Increment Coconut Oil (from 15 to 16)
     await act(async () => {
-      fireEvent.click(incrementButtons[1]);
+      fireEvent.click(coconutButtons[1]);
     });
     expect(updateProduct).toHaveBeenCalledWith('prod_1', { stock: 16 });
 
     // Decrement Sesame Oil (from 3 to 2)
+    const sesameRow = screen.getByText('Pure Sesame Oil').closest('tr')!;
+    const sesameButtons = within(sesameRow).getAllByRole('button');
+    // sesameButtons[0] is decrement (-), sesameButtons[1] is increment (+)
+
     await act(async () => {
-      fireEvent.click(incrementButtons[2]);
+      fireEvent.click(sesameButtons[0]);
     });
     expect(updateProduct).toHaveBeenCalledWith('prod_2', { stock: 2 });
   });

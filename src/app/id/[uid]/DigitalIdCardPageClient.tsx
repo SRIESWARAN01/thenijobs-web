@@ -125,7 +125,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
   const isVerified = !!profile.candidateId;
   const uniqueId = profile.candidateId || `TNI-${uid.slice(0, 8).toUpperCase()}`;
   const isPremium = profile.isPremium !== false; // Display Premium styling
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(portfolioUrl)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(portfolioUrl)}`;
   
   const downloadPng = async (side: 'front' | 'back') => {
     setExporting(side === 'front' ? 'png-front' : 'png-back');
@@ -135,7 +135,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
       if (!element) return;
       
       const canvas = await html2canvas(element, {
-        scale: 3, // High quality
+        scale: 4, // 300+ DPI at CR80 card size (85.6mm × 53.98mm)
         useCORS: true,
         backgroundColor: null, // Transparent background
         logging: false
@@ -143,7 +143,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
       
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `${name.replace(/\s+/g, '_')}_ID_${side.toUpperCase()}.png`;
+      link.download = `${name.replace(/\s+/g, '_')}_IDCard_${side.toUpperCase()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (error) {
@@ -201,30 +201,30 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
       pdf.text(`Verified Member Profile ID: ${uniqueId}`, 105, 38, { align: 'center' });
       pdf.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, 105, 43, { align: 'center' });
       
-      // Card dimensions on PDF
-      const cardWidth = 120;
-      const cardHeight = 76; // (460/290 = ~1.58 -> 120 / 1.58 = 76)
-      const x = 45; // Center card (210 - 120) / 2 = 45
+      // Card dimensions on PDF: Standard CR80 Size (85.60 mm x 53.98 mm)
+      const cardWidth = 85.6;
+      const cardHeight = 53.98;
+      const x = 62.2; // Center card (210 - 85.6) / 2 = 62.2
       
       // Draw Front Card
       pdf.addImage(imgFront, 'PNG', x, 60, cardWidth, cardHeight);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(9);
       pdf.setTextColor(148, 163, 184); // slate-400
-      pdf.text('FRONT SIDE', 105, 142, { align: 'center' });
+      pdf.text('FRONT SIDE', 105, 122, { align: 'center' });
       
       // Draw Back Card
-      pdf.addImage(imgBack, 'PNG', x, 155, cardWidth, cardHeight);
-      pdf.text('BACK SIDE / VERIFICATION', 105, 237, { align: 'center' });
+      pdf.addImage(imgBack, 'PNG', x, 140, cardWidth, cardHeight);
+      pdf.text('BACK SIDE / VERIFICATION', 105, 202, { align: 'center' });
       
       // Add footer notes
       pdf.setFont('helvetica', 'italic');
       pdf.setFontSize(8);
       pdf.setTextColor(148, 163, 184);
-      pdf.text('Scan the QR code on the back of the card to verify this profile.', 105, 265, { align: 'center' });
-      pdf.text('This is a verified document issued by thenijobs.in hiring platform.', 105, 270, { align: 'center' });
+      pdf.text('Scan the QR code on the back of the card to verify this profile.', 105, 230, { align: 'center' });
+      pdf.text('This is a verified document issued by thenijobs.in hiring platform.', 105, 235, { align: 'center' });
       
-      pdf.save(`${name.replace(/\s+/g, '_')}_Digital_ID.pdf`);
+      pdf.save(`${name.replace(/\s+/g, '_')}_IDCard.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF document. Please try again.');
@@ -354,7 +354,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
               <div className="relative">
                 <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
                   {photoUrl ? (
-                    <Image src={photoUrl} alt={name} fill sizes="96px" className="object-cover" />
+                    <img src={photoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-4xl font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
                       {name.slice(0, 1)}
@@ -438,11 +438,11 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
             <div className="my-3 grid grid-cols-12 gap-4 items-center z-10">
               {/* QR Code Left Column */}
               <div className="col-span-5 flex flex-col items-center justify-center text-center">
-                <div className="relative bg-white p-2 rounded-xl border border-white/10 shadow-lg">
-                  <Image src={qrUrl} alt="Portfolio QR code" width={100} height={100} className="w-[100px] h-[100px]" />
+                <div className="relative bg-white p-3 rounded-xl border border-white/10 shadow-lg h-32 w-32 flex items-center justify-center">
+                  <img src={qrUrl} alt="Portfolio QR code" className="w-full h-full object-contain" crossOrigin="anonymous" />
                 </div>
-                <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[8px] font-bold text-emerald-400 uppercase">
-                  <QrCode size={8} /> SCAN TO VERIFY
+                <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[7.5px] font-bold text-emerald-400 uppercase text-center">
+                  <QrCode size={8} /> SCAN TO VIEW PROFILE
                 </span>
               </div>
 

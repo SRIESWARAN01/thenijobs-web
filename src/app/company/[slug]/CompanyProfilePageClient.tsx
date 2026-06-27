@@ -197,12 +197,50 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
     gstVerified: verificationBadges.gstVerified || false,
     businessVerified: verificationBadges.businessVerified || false,
   };
-  const verifiedBadgeCount = Object.values(visibleVerificationBadges).filter(Boolean).length;
-
   // Compute average rating from reviews
   const averageRating = reviews.length > 0
     ? Math.round((reviews.reduce((sum, r) => sum + (r.rating || 5), 0) / reviews.length) * 10) / 10
     : company.rating || 0;
+
+  // Dynamic LinkedIn-style Business Trust Score Calculation
+  const computedTrustScore = (() => {
+    let score = 0;
+    
+    // 1. Profile Completion (Max 30 points)
+    if (company.logoUrl) score += 5;
+    if (company.coverUrl || company.coverImageUrl) score += 5;
+    if (company.description && company.description.length > 100) score += 5;
+    if (company.phone && company.email) score += 5;
+    if (company.address && company.location) score += 5;
+    if (company.website || company.facebook || company.instagram || company.linkedin || company.youtube || company.twitter) score += 5;
+    
+    // 2. GST & Business Verification (Max 30 points)
+    const gstOk = !!(company.verification?.gst || visibleVerificationBadges.gstVerified || company.gstNumber);
+    const bizOk = company.verificationStatus === 'verified' || !!company.verification?.business || !!visibleVerificationBadges.businessVerified;
+    if (gstOk) score += 15;
+    if (bizOk) score += 15;
+    
+    // 3. Active Listings (Max 15 points)
+    if (jobs.length > 0) score += 5;
+    if (products.length > 0) score += 5;
+    if (services.length > 0) score += 5;
+    
+    // 4. Customer Reviews & Ratings (Max 15 points)
+    if (reviews.length > 0) {
+      score += 5;
+      if (averageRating >= 4.0) score += 10;
+      else if (averageRating >= 3.0) score += 5;
+    }
+    
+    // 5. Response Speed (Max 10 points)
+    if (company.responseTime && company.responseTime !== 'Not set') {
+      score += 10;
+    } else {
+      score += 5; // Default baseline points
+    }
+    
+    return Math.min(score, 100);
+  })();
 
   const processedCompany = {
     ...company,
@@ -227,7 +265,7 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
     totalProducts: products.length,
     joinedDate: company.createdAt || company.registeredAt || null,
     totalVisitors: company.visitCount || company.viewCount || 0,
-    trustScore: company.trustScore || Math.round((verifiedBadgeCount / 3) * 100),
+    trustScore: company.trustScore || computedTrustScore,
     responseTime: company.responseTime || 'Not set',
     subscriptionBadge: getCompanyActivePlan(company),
     // Social / bio fields

@@ -26,6 +26,9 @@ import { trackProductOrServiceAnalytics } from '@/lib/firebase/firestoreService'
 import { followCompany, unfollowCompany, useIsFollowing, useFollowerCount } from '@/lib/firebase/followService';
 import { likeProduct, unlikeProduct, useUserProductLikes } from '@/lib/firebase/likeService';
 import { getCompanyActivePlan } from '@/lib/subscriptions';
+import { downloadVCard } from '@/lib/vcf';
+import { downloadCompanyPdf } from '@/lib/companyPdf';
+import TrustScoreBadge from '@/components/company/TrustScoreBadge';
 
 
 // ──────────────────────────────────────────────────────────────────
@@ -75,9 +78,9 @@ function ServicesShowcaseSection({ company, services, currentTheme }: { company:
       
       window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`, '_blank');
     } else if (eventType === 'call') {
-      window.location.href = `tel:${company.phone || ''}`;
+      window.location.assign(`tel:${company.phone || ''}`);
     } else if (eventType === 'email') {
-      window.location.href = `mailto:${company.email || ''}?subject=Enquiry regarding ${encodeURIComponent(service.name)}`;
+      window.location.assign(`mailto:${company.email || ''}?subject=Enquiry regarding ${encodeURIComponent(service.name)}`);
     }
   };
 
@@ -595,8 +598,26 @@ function VerifiedDocBadges({ company }: { company: any }) {
   const responseRate = company.responseRate || '95%';
   const responseTime = company.responseTime || 'Under 1 hour';
 
+  const score = company.trustScore || 50;
+  const scoreColor = score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-rose-400';
+  const progressBg = score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500';
+
   return (
     <div className="space-y-4">
+      {/* Dynamic Trust Score Progress Bar */}
+      <div className="bg-slate-950/50 p-3 rounded-2xl border border-white/5 space-y-2">
+        <div className="flex items-center justify-between text-xs font-bold text-white">
+          <span className="flex items-center gap-1">🛡️ Trust Index</span>
+          <span className={`font-mono ${scoreColor}`}>{score}/100</span>
+        </div>
+        <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+          <div className={`h-full ${progressBg} transition-all duration-500`} style={{ width: `${score}%` }} />
+        </div>
+        <p className="text-[9px] text-slate-500 leading-normal">
+          Verified through profile completion, GST documents, client reviews, and response benchmarks.
+        </p>
+      </div>
+
       <div className="flex flex-wrap gap-1.5">
         {trustItems.map(b => (
           <span
@@ -899,11 +920,22 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
           <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
             <Share2 size={13} className="text-slate-500" /> Share
           </button>
+          <button onClick={() => downloadVCard({ name: company.name || 'Business', organization: company.name, phone: company.phone, whatsapp: company.whatsapp, email: company.email, website: company.website, address: company.address, district: company.district, category: company.category })} className="px-4 py-2 rounded-xl text-xs font-bold border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 text-emerald-700 shadow-sm">
+            <UserPlus size={13} className="text-emerald-600" /> Save Contact
+          </button>
           {company.brochureUrl && (
             <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
               <FileDown size={13} className="text-slate-500" /> Brochure
             </a>
           )}
+          <button onClick={() => downloadCompanyPdf(company.name || 'Business')} className="px-4 py-2 rounded-xl text-xs font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center gap-1.5 text-blue-700 shadow-sm">
+            <FileDown size={13} className="text-blue-600" /> Save PDF
+          </button>
+        </div>
+
+        {/* Trust Score */}
+        <div className="mb-4">
+          <TrustScoreBadge company={company} variant="badge" />
         </div>
 
         {/* Company Stats */}
@@ -1123,9 +1155,9 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
     window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const activeTheme = company.customTheme && ['indigo_modern', 'classic_blue', 'emerald_growth', 'royal_purple'].includes(company.customTheme)
+  const activeTheme = company.customTheme && ['corporate_blue', 'green_business', 'orange_startup', 'purple_modern', 'dark_classic'].includes(company.customTheme)
     ? company.customTheme
-    : 'indigo_modern';
+    : 'corporate_blue';
   
   const themeMap: Record<string, {
     bg: string;
@@ -1137,27 +1169,17 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
     bullet: string;
     gradient: string;
   }> = {
-    indigo_modern: {
-      bg: 'bg-[#05060f]',
-      accent: 'text-indigo-400',
-      border: 'border-indigo-900/30',
-      btn: 'bg-gradient-to-r from-indigo-650 to-violet-650 hover:opacity-90 text-white shadow-indigo-500/10',
-      badge: 'bg-indigo-500/10 border-indigo-400/30 text-indigo-300',
-      card: 'bg-[#090b1c]/40 border border-indigo-900/20',
-      bullet: 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20',
-      gradient: 'from-indigo-700/80 via-violet-900 to-[#05060f]',
-    },
-    classic_blue: {
+    corporate_blue: {
       bg: 'bg-[#070b19]',
       accent: 'text-blue-400',
       border: 'border-blue-900/30',
-      btn: 'bg-gradient-to-r from-blue-600 to-indigo-650 hover:opacity-90 text-white shadow-blue-500/10',
+      btn: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white shadow-blue-500/10',
       badge: 'bg-blue-500/10 border-blue-400/30 text-blue-300',
       card: 'bg-[#0b1433]/40 border border-blue-900/20',
       bullet: 'bg-blue-500/10 text-blue-300 border border-blue-500/20',
       gradient: 'from-blue-700/80 via-indigo-900 to-[#070b19]',
     },
-    emerald_growth: {
+    green_business: {
       bg: 'bg-[#030d08]',
       accent: 'text-emerald-400',
       border: 'border-emerald-900/30',
@@ -1167,7 +1189,17 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
       bullet: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20',
       gradient: 'from-emerald-700/80 via-teal-900 to-[#030d08]',
     },
-    royal_purple: {
+    orange_startup: {
+      bg: 'bg-[#0b0905]',
+      accent: 'text-orange-400',
+      border: 'border-orange-900/30',
+      btn: 'bg-gradient-to-r from-orange-500 to-amber-600 hover:opacity-90 text-white shadow-orange-500/10',
+      badge: 'bg-orange-500/10 border-orange-400/30 text-orange-355',
+      card: 'bg-[#1c150a]/40 border border-orange-900/20',
+      bullet: 'bg-orange-500/10 text-orange-300 border border-orange-500/20',
+      gradient: 'from-orange-700/80 via-amber-900 to-[#0b0905]',
+    },
+    purple_modern: {
       bg: 'bg-[#0b0312]',
       accent: 'text-purple-400',
       border: 'border-purple-900/30',
@@ -1176,10 +1208,20 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
       card: 'bg-[#140620]/40 border border-purple-900/20',
       bullet: 'bg-purple-500/10 text-purple-300 border border-purple-500/20',
       gradient: 'from-purple-700/80 via-violet-900 to-[#0b0312]',
+    },
+    dark_classic: {
+      bg: 'bg-[#09090b]',
+      accent: 'text-zinc-300',
+      border: 'border-zinc-800',
+      btn: 'bg-gradient-to-r from-zinc-700 to-zinc-800 hover:opacity-90 text-white shadow-zinc-550/10',
+      badge: 'bg-zinc-800 border border-zinc-700 text-zinc-300',
+      card: 'bg-[#18181b]/50 border border-zinc-800',
+      bullet: 'bg-zinc-850 text-zinc-300 border border-zinc-850',
+      gradient: 'from-zinc-800 via-zinc-900 to-[#09090b]',
     }
   };
   
-  const currentTheme = themeMap[activeTheme] || themeMap.indigo_modern;
+  const currentTheme = themeMap[activeTheme] || themeMap.corporate_blue;
 
   const isModern = company.websiteTemplate === 'modern';
 
@@ -1628,10 +1670,25 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
 // ──────────────────────────────────────────────────────────────────
 // FLAGSHIP ENTERPRISE LAYOUT
 // ──────────────────────────────────────────────────────────────────
-type EnterpriseThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'titanium_platinum';
+type EnterpriseThemeName = 
+  | 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'sunset_amber' | 'classic_blue'
+  | 'glass_ui' | 'neo_corporate' | 'elegant_black' | 'creative_agency' | 'tech_startup'
+  | 'medical_clinic' | 'education_academy' | 'retail_shop' | 'industrial_plant' | 'real_estate'
+  | 'food_beverage' | 'fashion_studio' | 'wealth_management' | 'high_luxury' | 'titanium_platinum';
 
 function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
-  const [activeTheme, setActiveTheme] = useState<EnterpriseThemeName>('luxury_gold');
+  const [activeTheme, setActiveTheme] = useState<EnterpriseThemeName>(() => {
+    const defaultTheme = company.customTheme as EnterpriseThemeName;
+    if ([
+      'luxury_gold', 'midnight_purple', 'mint_emerald', 'sunset_amber', 'classic_blue',
+      'glass_ui', 'neo_corporate', 'elegant_black', 'creative_agency', 'tech_startup',
+      'medical_clinic', 'education_academy', 'retail_shop', 'industrial_plant', 'real_estate',
+      'food_beverage', 'fashion_studio', 'wealth_management', 'high_luxury', 'titanium_platinum'
+    ].includes(defaultTheme)) {
+      return defaultTheme;
+    }
+    return 'titanium_platinum';
+  });
   const [activeTab, setActiveTab] = useState('overview');
   const [shareOpen, setShareOpen] = useState(false);
   const { user } = useAuth();
@@ -1698,7 +1755,199 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
       bgText: 'text-slate-250',
       card: 'bg-[#141418]/60 border border-slate-800/40 shadow-[0_0_15px_rgba(255,255,255,0.02)]',
       textMuted: 'text-slate-300',
-    }
+    },
+    sunset_amber: {
+      bg: 'bg-[#070301]',
+      accent: 'text-orange-400',
+      border: 'border-orange-500/20 hover:border-orange-500/40',
+      bgGlow: 'bg-orange-500/10',
+      badge: 'bg-orange-400/15 border-orange-400/30 text-orange-300',
+      gradient: 'from-orange-500 via-amber-500 to-red-650',
+      button: 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-orange-500/20 hover:shadow-orange-500/30',
+      bgText: 'text-orange-400/80',
+      card: 'bg-[#120a06]/60 border border-orange-950/30',
+      textMuted: 'text-orange-100/70',
+    },
+    classic_blue: {
+      bg: 'bg-[#010307]',
+      accent: 'text-blue-400',
+      border: 'border-blue-500/20 hover:border-blue-500/40',
+      bgGlow: 'bg-blue-500/10',
+      badge: 'bg-blue-400/15 border-blue-400/30 text-blue-300',
+      gradient: 'from-blue-500 via-indigo-650 to-sky-500',
+      button: 'bg-gradient-to-r from-blue-600 to-sky-600 text-white shadow-blue-500/20 hover:shadow-blue-500/30',
+      bgText: 'text-blue-400/80',
+      card: 'bg-[#060b14]/60 border border-blue-950/30',
+      textMuted: 'text-blue-100/70',
+    },
+    glass_ui: {
+      bg: 'bg-[#030712]',
+      accent: 'text-white',
+      border: 'border-white/10 hover:border-white/20',
+      bgGlow: 'bg-white/5',
+      badge: 'bg-white/15 border-white/20 text-white',
+      gradient: 'from-slate-800 via-slate-700 to-slate-900',
+      button: 'bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md shadow-white/5',
+      bgText: 'text-white/80',
+      card: 'bg-white/[0.03] backdrop-blur-md border border-white/10',
+      textMuted: 'text-white/60',
+    },
+    neo_corporate: {
+      bg: 'bg-[#0b0f19]',
+      accent: 'text-indigo-400',
+      border: 'border-indigo-500/15 hover:border-indigo-500/30',
+      bgGlow: 'bg-indigo-500/5',
+      badge: 'bg-indigo-400/10 border-indigo-400/20 text-indigo-300',
+      gradient: 'from-indigo-650 via-slate-700 to-cyan-700',
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-550/15',
+      bgText: 'text-indigo-300/80',
+      card: 'bg-[#121929]/75 border border-indigo-950/40',
+      textMuted: 'text-slate-400',
+    },
+    elegant_black: {
+      bg: 'bg-[#09090b]',
+      accent: 'text-rose-300',
+      border: 'border-zinc-800 hover:border-zinc-700',
+      bgGlow: 'bg-rose-500/5',
+      badge: 'bg-rose-950/30 border-rose-800/40 text-rose-300',
+      gradient: 'from-zinc-900 via-black to-zinc-800',
+      button: 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 shadow-lg',
+      bgText: 'text-rose-300/80',
+      card: 'bg-[#18181b]/70 border border-zinc-850',
+      textMuted: 'text-zinc-400',
+    },
+    creative_agency: {
+      bg: 'bg-[#080205]',
+      accent: 'text-pink-400',
+      border: 'border-pink-500/15 hover:border-pink-500/30',
+      bgGlow: 'bg-pink-550/5',
+      badge: 'bg-pink-400/10 border-pink-400/20 text-pink-300',
+      gradient: 'from-pink-500 via-purple-700 to-orange-500',
+      button: 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-pink-500/20',
+      bgText: 'text-pink-450/80',
+      card: 'bg-[#14060d]/70 border border-pink-950/40',
+      textMuted: 'text-pink-100/60',
+    },
+    tech_startup: {
+      bg: 'bg-[#01080e]',
+      accent: 'text-cyan-400',
+      border: 'border-cyan-500/15 hover:border-cyan-500/30',
+      bgGlow: 'bg-cyan-500/5',
+      badge: 'bg-cyan-450/10 border-cyan-400/20 text-cyan-300',
+      gradient: 'from-cyan-500 via-blue-750 to-indigo-800',
+      button: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-cyan-500/20',
+      bgText: 'text-cyan-300/80',
+      card: 'bg-[#031524]/75 border border-cyan-950/40',
+      textMuted: 'text-cyan-100/60',
+    },
+    medical_clinic: {
+      bg: 'bg-[#030c0c]',
+      accent: 'text-teal-400',
+      border: 'border-teal-500/15 hover:border-teal-500/30',
+      bgGlow: 'bg-teal-500/5',
+      badge: 'bg-teal-400/10 border-teal-400/20 text-teal-300',
+      gradient: 'from-teal-500 via-emerald-600 to-cyan-600',
+      button: 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-550/15',
+      bgText: 'text-teal-300/80',
+      card: 'bg-[#071919]/70 border border-teal-950/40',
+      textMuted: 'text-teal-100/60',
+    },
+    education_academy: {
+      bg: 'bg-[#050814]',
+      accent: 'text-sky-400',
+      border: 'border-sky-500/15 hover:border-sky-500/30',
+      bgGlow: 'bg-sky-500/5',
+      badge: 'bg-sky-400/10 border-sky-400/20 text-sky-300',
+      gradient: 'from-sky-500 via-blue-700 to-indigo-900',
+      button: 'bg-blue-650 hover:bg-blue-700 text-white shadow-blue-500/15',
+      bgText: 'text-sky-300/80',
+      card: 'bg-[#0c142e]/70 border border-sky-950/40',
+      textMuted: 'text-sky-100/60',
+    },
+    retail_shop: {
+      bg: 'bg-[#0a0403]',
+      accent: 'text-red-400',
+      border: 'border-red-500/15 hover:border-red-500/30',
+      bgGlow: 'bg-red-500/5',
+      badge: 'bg-red-400/10 border-red-400/20 text-red-300',
+      gradient: 'from-red-500 via-orange-655 to-amber-600',
+      button: 'bg-red-600 hover:bg-red-700 text-white shadow-red-550/15',
+      bgText: 'text-red-350/80',
+      card: 'bg-[#190b08]/70 border border-red-950/40',
+      textMuted: 'text-red-100/60',
+    },
+    industrial_plant: {
+      bg: 'bg-[#0c0c0e]',
+      accent: 'text-amber-500',
+      border: 'border-slate-800 hover:border-slate-700',
+      bgGlow: 'bg-amber-550/5',
+      badge: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
+      gradient: 'from-slate-700 via-zinc-800 to-slate-900',
+      button: 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold',
+      bgText: 'text-amber-450/80',
+      card: 'bg-[#18181c]/70 border border-zinc-800',
+      textMuted: 'text-slate-400',
+    },
+    real_estate: {
+      bg: 'bg-[#0a0a0f]',
+      accent: 'text-yellow-500',
+      border: 'border-yellow-500/15 hover:border-yellow-500/30',
+      bgGlow: 'bg-yellow-500/5',
+      badge: 'bg-yellow-500/10 border-yellow-550/20 text-yellow-355',
+      gradient: 'from-slate-800 via-[#1d1d29] to-yellow-600',
+      button: 'bg-yellow-550 hover:bg-yellow-600 text-slate-950 font-bold',
+      bgText: 'text-yellow-450/80',
+      card: 'bg-[#13131f]/75 border border-yellow-950/30',
+      textMuted: 'text-slate-400',
+    },
+    food_beverage: {
+      bg: 'bg-[#0f0302]',
+      accent: 'text-orange-500',
+      border: 'border-orange-500/15 hover:border-orange-500/30',
+      bgGlow: 'bg-orange-555/5',
+      badge: 'bg-orange-500/10 border-orange-550/20 text-orange-355',
+      gradient: 'from-red-600 via-orange-600 to-yellow-550',
+      button: 'bg-orange-600 hover:bg-orange-700 text-white font-bold',
+      bgText: 'text-orange-450/80',
+      card: 'bg-[#210906]/75 border border-orange-950/30',
+      textMuted: 'text-orange-100/60',
+    },
+    fashion_studio: {
+      bg: 'bg-[#0f020a]',
+      accent: 'text-pink-400',
+      border: 'border-pink-500/15 hover:border-pink-500/30',
+      bgGlow: 'bg-pink-550/5',
+      badge: 'bg-pink-400/10 border-pink-400/20 text-pink-300',
+      gradient: 'from-pink-500 via-rose-600 to-purple-800',
+      button: 'bg-gradient-to-r from-pink-500 to-purple-650 text-white font-bold',
+      bgText: 'text-pink-455/80',
+      card: 'bg-[#210617]/75 border border-pink-950/30',
+      textMuted: 'text-pink-100/60',
+    },
+    wealth_management: {
+      bg: 'bg-[#020806]',
+      accent: 'text-emerald-400',
+      border: 'border-emerald-500/15 hover:border-emerald-500/30',
+      bgGlow: 'bg-emerald-555/5',
+      badge: 'bg-emerald-400/10 border-emerald-400/20 text-emerald-300',
+      gradient: 'from-[#0a2f1d] via-[#103a24] to-[#041a0f]',
+      button: 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold',
+      bgText: 'text-emerald-450/80',
+      card: 'bg-[#04170f]/75 border border-emerald-950/30',
+      textMuted: 'text-emerald-100/60',
+    },
+    high_luxury: {
+      bg: 'bg-[#050505]',
+      accent: 'text-slate-100',
+      border: 'border-zinc-800 hover:border-zinc-700',
+      bgGlow: 'bg-white/5',
+      badge: 'bg-zinc-800 border border-zinc-700 text-slate-100',
+      gradient: 'from-black via-zinc-900 to-zinc-950',
+      button: 'bg-white hover:bg-slate-200 text-black font-black uppercase tracking-widest',
+      bgText: 'text-slate-200/80',
+      card: 'bg-zinc-950/70 border border-zinc-900 shadow-xl',
+      textMuted: 'text-zinc-500',
+    },
   };
 
   const currentTheme = themeConfigs[activeTheme] || themeConfigs.titanium_platinum;
@@ -1800,21 +2049,47 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
           </div>
 
           {/* Theme Selector Toggle (Memory-based) */}
-          <div className="absolute bottom-6 right-6 bg-black/75 backdrop-blur-md rounded-2xl p-2 border border-white/10 flex items-center gap-2 no-print">
-            <span className="text-[10px] font-black text-slate-300 px-1 uppercase tracking-wider">Themes:</span>
-            {(['luxury_gold', 'midnight_purple', 'mint_emerald', 'titanium_platinum'] as EnterpriseThemeName[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setActiveTheme(t)}
-                className={`w-5 h-5 rounded-full border-2 transition-all duration-300 ${
-                  t === 'luxury_gold' ? 'bg-amber-400 border-amber-300'
-                  : t === 'midnight_purple' ? 'bg-purple-500 border-purple-400'
-                  : t === 'mint_emerald' ? 'bg-emerald-500 border-emerald-400'
-                  : 'bg-slate-300 border-slate-100'
-                } ${activeTheme === t ? 'scale-125 ring-2 ring-white/60' : 'opacity-70 hover:opacity-100'}`}
-                title={t.replace('_', ' ')}
-              />
-            ))}
+          <div className="absolute bottom-6 right-6 bg-black/75 backdrop-blur-md rounded-2xl p-2 border border-white/10 flex flex-col gap-1.5 max-w-[200px] sm:max-w-[280px] no-print z-30">
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block border-b border-white/5 pb-1">Live Theme Designer</span>
+            <div className="flex flex-wrap gap-1">
+              {([
+                'luxury_gold', 'midnight_purple', 'mint_emerald', 'sunset_amber', 'classic_blue',
+                'glass_ui', 'neo_corporate', 'elegant_black', 'creative_agency', 'tech_startup',
+                'medical_clinic', 'education_academy', 'retail_shop', 'industrial_plant', 'real_estate',
+                'food_beverage', 'fashion_studio', 'wealth_management', 'high_luxury', 'titanium_platinum'
+              ] as EnterpriseThemeName[]).map(t => {
+                let colorClass = 'bg-blue-500 border-blue-450';
+                if (t === 'luxury_gold') colorClass = 'bg-amber-400 border-amber-300';
+                else if (t === 'midnight_purple') colorClass = 'bg-purple-500 border-purple-400';
+                else if (t === 'mint_emerald') colorClass = 'bg-emerald-500 border-emerald-400';
+                else if (t === 'sunset_amber') colorClass = 'bg-orange-500 border-orange-400';
+                else if (t === 'classic_blue') colorClass = 'bg-blue-500 border-blue-400';
+                else if (t === 'glass_ui') colorClass = 'bg-slate-300 border-white';
+                else if (t === 'neo_corporate') colorClass = 'bg-indigo-600 border-indigo-400';
+                else if (t === 'elegant_black') colorClass = 'bg-zinc-950 border-rose-450';
+                else if (t === 'creative_agency') colorClass = 'bg-pink-500 border-pink-400';
+                else if (t === 'tech_startup') colorClass = 'bg-cyan-400 border-cyan-300';
+                else if (t === 'medical_clinic') colorClass = 'bg-teal-500 border-teal-400';
+                else if (t === 'education_academy') colorClass = 'bg-sky-500 border-sky-400';
+                else if (t === 'retail_shop') colorClass = 'bg-red-650 border-red-400';
+                else if (t === 'industrial_plant') colorClass = 'bg-slate-500 border-slate-400';
+                else if (t === 'real_estate') colorClass = 'bg-yellow-600 border-yellow-450';
+                else if (t === 'food_beverage') colorClass = 'bg-orange-600 border-orange-500';
+                else if (t === 'fashion_studio') colorClass = 'bg-pink-650 border-pink-450';
+                else if (t === 'wealth_management') colorClass = 'bg-emerald-600 border-emerald-450';
+                else if (t === 'high_luxury') colorClass = 'bg-zinc-200 border-zinc-400';
+                else if (t === 'titanium_platinum') colorClass = 'bg-slate-300 border-slate-100';
+
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTheme(t)}
+                    className={`w-3.5 h-3.5 rounded-full border transition-all duration-300 cursor-pointer ${colorClass} ${activeTheme === t ? 'scale-125 ring-2 ring-white/50' : 'opacity-70 hover:opacity-100'}`}
+                    title={t.replace('_', ' ')}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -2366,7 +2641,11 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
   );
 }
 
-type PremiumThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'sunset_amber' | 'classic_blue';
+type PremiumThemeName = 
+  | 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'sunset_amber' | 'classic_blue'
+  | 'glass_ui' | 'neo_corporate' | 'elegant_black' | 'creative_agency' | 'tech_startup'
+  | 'medical_clinic' | 'education_academy' | 'retail_shop' | 'industrial_plant' | 'real_estate'
+  | 'food_beverage' | 'fashion_studio' | 'wealth_management' | 'high_luxury';
 
 function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
   const [activeTab, setActiveTab] = useState('about');
@@ -2393,7 +2672,12 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
   // Initialize theme from company settings or fallback
   const [activeTheme, setActiveTheme] = useState<PremiumThemeName>(() => {
     const defaultTheme = company.customTheme as PremiumThemeName;
-    if (['luxury_gold', 'midnight_purple', 'mint_emerald', 'sunset_amber', 'classic_blue'].includes(defaultTheme)) {
+    if ([
+      'luxury_gold', 'midnight_purple', 'mint_emerald', 'sunset_amber', 'classic_blue',
+      'glass_ui', 'neo_corporate', 'elegant_black', 'creative_agency', 'tech_startup',
+      'medical_clinic', 'education_academy', 'retail_shop', 'industrial_plant', 'real_estate',
+      'food_beverage', 'fashion_studio', 'wealth_management', 'high_luxury'
+    ].includes(defaultTheme)) {
       return defaultTheme;
     }
     return 'classic_blue';
@@ -2530,6 +2814,174 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
       card: 'bg-[#060b14]/60 border border-blue-950/30',
       textMuted: 'text-blue-100/70',
     },
+    glass_ui: {
+      bg: 'bg-[#030712]',
+      accent: 'text-white',
+      border: 'border-white/10 hover:border-white/20',
+      bgGlow: 'bg-white/5',
+      badge: 'bg-white/15 border-white/20 text-white',
+      gradient: 'from-slate-800 via-slate-700 to-slate-900',
+      button: 'bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md shadow-white/5',
+      bgText: 'text-white/80',
+      card: 'bg-white/[0.03] backdrop-blur-md border border-white/10',
+      textMuted: 'text-white/60',
+    },
+    neo_corporate: {
+      bg: 'bg-[#0b0f19]',
+      accent: 'text-indigo-400',
+      border: 'border-indigo-500/15 hover:border-indigo-500/30',
+      bgGlow: 'bg-indigo-500/5',
+      badge: 'bg-indigo-400/10 border-indigo-400/20 text-indigo-300',
+      gradient: 'from-indigo-650 via-slate-700 to-cyan-700',
+      button: 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-550/15',
+      bgText: 'text-indigo-300/80',
+      card: 'bg-[#121929]/75 border border-indigo-950/40',
+      textMuted: 'text-slate-400',
+    },
+    elegant_black: {
+      bg: 'bg-[#09090b]',
+      accent: 'text-rose-300',
+      border: 'border-zinc-800 hover:border-zinc-700',
+      bgGlow: 'bg-rose-500/5',
+      badge: 'bg-rose-950/30 border-rose-800/40 text-rose-300',
+      gradient: 'from-zinc-900 via-black to-zinc-800',
+      button: 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 shadow-lg',
+      bgText: 'text-rose-300/80',
+      card: 'bg-[#18181b]/70 border border-zinc-850',
+      textMuted: 'text-zinc-400',
+    },
+    creative_agency: {
+      bg: 'bg-[#080205]',
+      accent: 'text-pink-400',
+      border: 'border-pink-500/15 hover:border-pink-500/30',
+      bgGlow: 'bg-pink-550/5',
+      badge: 'bg-pink-400/10 border-pink-400/20 text-pink-300',
+      gradient: 'from-pink-500 via-purple-700 to-orange-500',
+      button: 'bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-pink-500/20',
+      bgText: 'text-pink-450/80',
+      card: 'bg-[#14060d]/70 border border-pink-950/40',
+      textMuted: 'text-pink-100/60',
+    },
+    tech_startup: {
+      bg: 'bg-[#01080e]',
+      accent: 'text-cyan-400',
+      border: 'border-cyan-500/15 hover:border-cyan-500/30',
+      bgGlow: 'bg-cyan-500/5',
+      badge: 'bg-cyan-450/10 border-cyan-400/20 text-cyan-300',
+      gradient: 'from-cyan-500 via-blue-750 to-indigo-800',
+      button: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-cyan-500/20',
+      bgText: 'text-cyan-300/80',
+      card: 'bg-[#031524]/75 border border-cyan-950/40',
+      textMuted: 'text-cyan-100/60',
+    },
+    medical_clinic: {
+      bg: 'bg-[#030c0c]',
+      accent: 'text-teal-400',
+      border: 'border-teal-500/15 hover:border-teal-500/30',
+      bgGlow: 'bg-teal-500/5',
+      badge: 'bg-teal-400/10 border-teal-400/20 text-teal-300',
+      gradient: 'from-teal-500 via-emerald-600 to-cyan-600',
+      button: 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-550/15',
+      bgText: 'text-teal-300/80',
+      card: 'bg-[#071919]/70 border border-teal-950/40',
+      textMuted: 'text-teal-100/60',
+    },
+    education_academy: {
+      bg: 'bg-[#050814]',
+      accent: 'text-sky-400',
+      border: 'border-sky-500/15 hover:border-sky-500/30',
+      bgGlow: 'bg-sky-500/5',
+      badge: 'bg-sky-400/10 border-sky-400/20 text-sky-300',
+      gradient: 'from-sky-500 via-blue-700 to-indigo-900',
+      button: 'bg-blue-650 hover:bg-blue-700 text-white shadow-blue-500/15',
+      bgText: 'text-sky-300/80',
+      card: 'bg-[#0c142e]/70 border border-sky-950/40',
+      textMuted: 'text-sky-100/60',
+    },
+    retail_shop: {
+      bg: 'bg-[#0a0403]',
+      accent: 'text-red-400',
+      border: 'border-red-500/15 hover:border-red-500/30',
+      bgGlow: 'bg-red-500/5',
+      badge: 'bg-red-400/10 border-red-400/20 text-red-300',
+      gradient: 'from-red-500 via-orange-655 to-amber-600',
+      button: 'bg-red-600 hover:bg-red-700 text-white shadow-red-550/15',
+      bgText: 'text-red-350/80',
+      card: 'bg-[#190b08]/70 border border-red-950/40',
+      textMuted: 'text-red-100/60',
+    },
+    industrial_plant: {
+      bg: 'bg-[#0c0c0e]',
+      accent: 'text-amber-500',
+      border: 'border-slate-800 hover:border-slate-700',
+      bgGlow: 'bg-amber-550/5',
+      badge: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
+      gradient: 'from-slate-700 via-zinc-800 to-slate-900',
+      button: 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold',
+      bgText: 'text-amber-450/80',
+      card: 'bg-[#18181c]/70 border border-zinc-800',
+      textMuted: 'text-slate-400',
+    },
+    real_estate: {
+      bg: 'bg-[#0a0a0f]',
+      accent: 'text-yellow-500',
+      border: 'border-yellow-500/15 hover:border-yellow-500/30',
+      bgGlow: 'bg-yellow-500/5',
+      badge: 'bg-yellow-500/10 border-yellow-550/20 text-yellow-355',
+      gradient: 'from-slate-800 via-[#1d1d29] to-yellow-600',
+      button: 'bg-yellow-550 hover:bg-yellow-600 text-slate-950 font-bold',
+      bgText: 'text-yellow-450/80',
+      card: 'bg-[#13131f]/75 border border-yellow-950/30',
+      textMuted: 'text-slate-400',
+    },
+    food_beverage: {
+      bg: 'bg-[#0f0302]',
+      accent: 'text-orange-500',
+      border: 'border-orange-500/15 hover:border-orange-500/30',
+      bgGlow: 'bg-orange-555/5',
+      badge: 'bg-orange-500/10 border-orange-550/20 text-orange-355',
+      gradient: 'from-red-600 via-orange-600 to-yellow-550',
+      button: 'bg-orange-600 hover:bg-orange-700 text-white font-bold',
+      bgText: 'text-orange-450/80',
+      card: 'bg-[#210906]/75 border border-orange-950/30',
+      textMuted: 'text-orange-100/60',
+    },
+    fashion_studio: {
+      bg: 'bg-[#0f020a]',
+      accent: 'text-pink-400',
+      border: 'border-pink-500/15 hover:border-pink-500/30',
+      bgGlow: 'bg-pink-550/5',
+      badge: 'bg-pink-400/10 border-pink-400/20 text-pink-300',
+      gradient: 'from-pink-500 via-rose-600 to-purple-800',
+      button: 'bg-gradient-to-r from-pink-500 to-purple-650 text-white font-bold',
+      bgText: 'text-pink-455/80',
+      card: 'bg-[#210617]/75 border border-pink-950/30',
+      textMuted: 'text-pink-100/60',
+    },
+    wealth_management: {
+      bg: 'bg-[#020806]',
+      accent: 'text-emerald-400',
+      border: 'border-emerald-500/15 hover:border-emerald-500/30',
+      bgGlow: 'bg-emerald-555/5',
+      badge: 'bg-emerald-400/10 border-emerald-400/20 text-emerald-300',
+      gradient: 'from-[#0a2f1d] via-[#103a24] to-[#041a0f]',
+      button: 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold',
+      bgText: 'text-emerald-450/80',
+      card: 'bg-[#04170f]/75 border border-emerald-950/30',
+      textMuted: 'text-emerald-100/60',
+    },
+    high_luxury: {
+      bg: 'bg-[#050505]',
+      accent: 'text-slate-100',
+      border: 'border-zinc-800 hover:border-zinc-700',
+      bgGlow: 'bg-white/5',
+      badge: 'bg-zinc-800 border border-zinc-700 text-slate-100',
+      gradient: 'from-black via-zinc-900 to-zinc-950',
+      button: 'bg-white hover:bg-slate-200 text-black font-black uppercase tracking-widest',
+      bgText: 'text-slate-200/80',
+      card: 'bg-zinc-950/70 border border-zinc-900 shadow-xl',
+      textMuted: 'text-zinc-500',
+    },
   };
 
   const currentTheme = themeConfigs[activeTheme] || themeConfigs.luxury_gold;
@@ -2628,22 +3080,46 @@ Please confirm my booking request. Thanks!`;
           </div>
 
           {/* Theme Selector (Unique Premium Theme Selection) */}
-          <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md rounded-xl p-1.5 border border-white/10 flex items-center gap-1.5 no-print">
-            <span className="text-[9px] font-bold text-slate-300 px-1 uppercase">Themes:</span>
-            {(['luxury_gold', 'midnight_purple', 'mint_emerald', 'sunset_amber', 'classic_blue'] as PremiumThemeName[]).map(t => (
-              <button
-                key={t}
-                onClick={() => setActiveTheme(t)}
-                className={`w-4 h-4 rounded-full border transition-all duration-300 ${
-                  t === 'luxury_gold' ? 'bg-amber-400 border-amber-300'
-                  : t === 'midnight_purple' ? 'bg-purple-500 border-purple-400'
-                  : t === 'mint_emerald' ? 'bg-emerald-500 border-emerald-400'
-                  : t === 'sunset_amber' ? 'bg-orange-500 border-orange-400'
-                  : 'bg-blue-500 border-blue-400'
-                } ${activeTheme === t ? 'scale-125 ring-2 ring-white/50' : 'opacity-70 hover:opacity-100'}`}
-                title={t.replace('_', ' ')}
-              />
-            ))}
+          <div className="absolute bottom-4 right-4 bg-black/75 backdrop-blur-md rounded-2xl p-2 border border-white/10 flex flex-col gap-1.5 max-w-[200px] sm:max-w-[280px] no-print z-30">
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block border-b border-white/5 pb-1">Live Theme Designer</span>
+            <div className="flex flex-wrap gap-1">
+              {([
+                'luxury_gold', 'midnight_purple', 'mint_emerald', 'sunset_amber', 'classic_blue',
+                'glass_ui', 'neo_corporate', 'elegant_black', 'creative_agency', 'tech_startup',
+                'medical_clinic', 'education_academy', 'retail_shop', 'industrial_plant', 'real_estate',
+                'food_beverage', 'fashion_studio', 'wealth_management', 'high_luxury'
+              ] as PremiumThemeName[]).map(t => {
+                let colorClass = 'bg-blue-500 border-blue-450';
+                if (t === 'luxury_gold') colorClass = 'bg-amber-400 border-amber-300';
+                else if (t === 'midnight_purple') colorClass = 'bg-purple-500 border-purple-400';
+                else if (t === 'mint_emerald') colorClass = 'bg-emerald-500 border-emerald-400';
+                else if (t === 'sunset_amber') colorClass = 'bg-orange-500 border-orange-400';
+                else if (t === 'classic_blue') colorClass = 'bg-blue-500 border-blue-400';
+                else if (t === 'glass_ui') colorClass = 'bg-slate-300 border-white';
+                else if (t === 'neo_corporate') colorClass = 'bg-indigo-600 border-indigo-400';
+                else if (t === 'elegant_black') colorClass = 'bg-zinc-950 border-rose-450';
+                else if (t === 'creative_agency') colorClass = 'bg-pink-500 border-pink-400';
+                else if (t === 'tech_startup') colorClass = 'bg-cyan-400 border-cyan-300';
+                else if (t === 'medical_clinic') colorClass = 'bg-teal-500 border-teal-400';
+                else if (t === 'education_academy') colorClass = 'bg-sky-500 border-sky-400';
+                else if (t === 'retail_shop') colorClass = 'bg-red-650 border-red-400';
+                else if (t === 'industrial_plant') colorClass = 'bg-slate-500 border-slate-400';
+                else if (t === 'real_estate') colorClass = 'bg-yellow-600 border-yellow-450';
+                else if (t === 'food_beverage') colorClass = 'bg-orange-600 border-orange-500';
+                else if (t === 'fashion_studio') colorClass = 'bg-pink-650 border-pink-450';
+                else if (t === 'wealth_management') colorClass = 'bg-emerald-600 border-emerald-450';
+                else if (t === 'high_luxury') colorClass = 'bg-zinc-200 border-zinc-400';
+
+                return (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTheme(t)}
+                    className={`w-3.5 h-3.5 rounded-full border transition-all duration-300 cursor-pointer ${colorClass} ${activeTheme === t ? 'scale-125 ring-2 ring-white/50' : 'opacity-70 hover:opacity-100'}`}
+                    title={t.replace('_', ' ')}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
 

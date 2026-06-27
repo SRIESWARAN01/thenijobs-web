@@ -77,7 +77,6 @@ function LoginPageContent() {
     try {
       await signInWithEmail(email, password);
     } catch (err: any) {
-      console.error(err);
       setLocalError(mapAuthError(err));
     } finally {
       setLoading(false);
@@ -94,7 +93,7 @@ function LoginPageContent() {
         throw new Error('Invalid phone number. Must be a 10-digit number.');
       }
 
-      console.log('[OTP 2Factor Flow] Requesting OTP for phone:', cleanPhone);
+
       const res = await fetch('/api/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,7 +107,6 @@ function LoginPageContent() {
       setSessionId(data.sessionId);
       setOtpSent(true);
     } catch (err: any) {
-      console.error('[OTP 2Factor Flow] Send OTP error:', err);
       setLocalError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setOtpLoading(false);
@@ -123,7 +121,7 @@ function LoginPageContent() {
     }
     setOtpLoading(true);
     setLocalError(null);
-    console.log('[OTP 2Factor Flow] Verifying OTP code...');
+
     try {
       const cleanPhone = phone.replace(/\D/g, '').slice(-10);
       const res = await fetch('/api/otp/verify', {
@@ -136,11 +134,8 @@ function LoginPageContent() {
         throw new Error(data.error || 'Invalid or expired OTP. Please try again.');
       }
 
-      console.log('[OTP 2Factor Flow] OTP Verified! Logging in with custom token...');
       await loginWithCustomToken(data.customToken);
-      console.log('[OTP 2Factor Flow] Sign-in successful!');
     } catch (err: any) {
-      console.error('[OTP 2Factor Flow] Verification error:', err);
       setLocalError(err.message || 'Invalid or expired OTP. Please try again.');
     } finally {
       setOtpLoading(false);
@@ -153,32 +148,13 @@ function LoginPageContent() {
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      console.error(err);
       setLocalError(mapAuthError(err));
     } finally {
       setLoading(false);
     }
   };
 
-  const DEMO_ACCOUNTS = [
-    { label: 'Demo Seeker', email: 'seeker@thenijobs.com', password: 'demo@123', icon: '👤', span: true },
-    { label: 'Demo Business', email: 'business@thenijobs.com', password: 'demo@123', icon: '🏢', span: true },
-  ];
 
-  const handleDemoLogin = async (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setLoading(true);
-    setLocalError(null);
-    try {
-      await signInWithEmail(demoEmail, demoPass);
-    } catch (err: any) {
-      console.error(err);
-      setLocalError(mapAuthError(err));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const activeError = localError || authError;
 
@@ -342,27 +318,7 @@ function LoginPageContent() {
             Continue with Google
           </button>
 
-          {/* Quick Demo Login Grid */}
-          <div className="mt-6 pt-5 border-t border-white/10">
-            <p className="text-[10px] font-bold tracking-wider uppercase text-gray-500 mb-3 text-center">Quick Demo Login</p>
-            <div className="grid grid-cols-2 gap-2">
-              {DEMO_ACCOUNTS.map((account) => (
-                <button
-                  key={account.label}
-                  type="button"
-                  onClick={() => handleDemoLogin(account.email, account.password)}
-                  disabled={loading}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/10 text-left transition-all group ${account.span ? 'col-span-2' : 'col-span-1'}`}
-                >
-                  <span className="text-base group-hover:scale-110 transition-transform">{account.icon}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-bold text-gray-300 group-hover:text-white transition-colors truncate">{account.label}</p>
-                    <p className="text-[9px] text-gray-500 truncate">{account.email}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Don&apos;t have an account?{' '}

@@ -504,13 +504,13 @@ export default function AboutPageClient() {
             <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 overflow-hidden hover:border-teal-500/25 transition-all shadow-xl group">
               <div 
                 onClick={() => setSelectedPhoto({ src: '/eswaran.jpeg', name: 'Eswaran P' })}
-                className="relative w-full aspect-[4/5] bg-slate-950 cursor-zoom-in group/photo overflow-hidden border-b border-slate-900"
+                className="relative w-full aspect-[3/4] bg-slate-950 cursor-zoom-in group/photo overflow-hidden border-b border-slate-900"
               >
                 <Image
                   src="/eswaran.jpeg"
                   alt="Eswaran P"
                   fill
-                  className="object-contain transition-transform duration-500 group-hover:scale-105"
+                  className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 500px"
                   priority
                 />
@@ -547,13 +547,13 @@ export default function AboutPageClient() {
             <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 overflow-hidden hover:border-blue-500/25 transition-all shadow-xl group">
               <div 
                 onClick={() => setSelectedPhoto({ src: '/anbu.jpeg', name: 'Anbarasan S' })}
-                className="relative w-full aspect-[4/5] bg-slate-950 cursor-zoom-in group/photo overflow-hidden border-b border-slate-900"
+                className="relative w-full aspect-[3/4] bg-slate-950 cursor-zoom-in group/photo overflow-hidden border-b border-slate-900"
               >
                 <Image
                   src="/anbu.jpeg"
                   alt="Anbarasan S"
                   fill
-                  className="object-contain transition-transform duration-500 group-hover:scale-105"
+                  className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 500px"
                   priority
                 />

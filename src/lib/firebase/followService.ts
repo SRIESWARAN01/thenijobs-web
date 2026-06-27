@@ -32,6 +32,7 @@ export async function followCompany(userId: string, companyId: string) {
   // Increment follower count on company
   await updateDoc(doc(db, 'companies', companyId), {
     followerCount: increment(1),
+    newFollowers: increment(1),
   }).catch(() => {});
 }
 
@@ -39,9 +40,10 @@ export async function followCompany(userId: string, companyId: string) {
 export async function unfollowCompany(userId: string, companyId: string) {
   const docId = followDocId(userId, companyId);
   await deleteDoc(doc(db, 'companyFollows', docId));
-  // Decrement follower count on company
+  // Decrement follower count and increment unfollow count on company
   await updateDoc(doc(db, 'companies', companyId), {
     followerCount: increment(-1),
+    unfollowCount: increment(1),
   }).catch(() => {});
 }
 

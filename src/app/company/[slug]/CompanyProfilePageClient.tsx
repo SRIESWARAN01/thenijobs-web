@@ -103,6 +103,7 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
             id: doc.id,
             companyId: d.companyId,
             name: d.userName || 'Anonymous',
+            photoURL: d.userPhoto || d.photoURL || '',
             rating: d.rating || 5,
             title: d.title || 'Review',
             content: d.comment || '',

@@ -7,7 +7,8 @@ import {
   Link2, Heart, Briefcase as LinkedinIcon, Play, Plus, Save,
   CheckCircle, AlertCircle, Shield, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2,
-  Lock, Sparkles, Crown, Laptop, Tablet, Smartphone, Check, TrendingUp
+  Lock, Sparkles, Crown, Laptop, Tablet, Smartphone, Check, TrendingUp,
+  Calendar, Clock
 } from 'lucide-react';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,7 @@ import { where } from 'firebase/firestore';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 import { normalizePlanSlug, selectBestSubscription, getPlanRank } from '@/lib/subscriptions';
 import CompanyProfileClient from '@/app/company/[slug]/CompanyProfileClient';
+import { useLocations } from '@/hooks/useLocations';
 
 const DEFAULT_COMPANY = {
   name: '',
@@ -32,6 +34,11 @@ const DEFAULT_COMPANY = {
   address: '',
   location: '',
   district: LAUNCH_DISTRICT,
+  state: 'Tamil Nadu',
+  establishedYear: '',
+  workingHours: '',
+  googleMapsLink: '',
+  googleMapsEmbedUrl: '',
   facebook: '',
   instagram: '',
   linkedin: '',
@@ -102,6 +109,7 @@ function calcCompletion(data: typeof DEFAULT_COMPANY): number {
 
 export default function CompanyProfilePage() {
   const { user } = useAuth();
+  const { states, getDistricts, getAreas } = useLocations();
   
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -214,6 +222,11 @@ export default function CompanyProfilePage() {
           address: updatedCompanyData.address,
           location: updatedCompanyData.location,
           district: updatedCompanyData.district,
+          state: updatedCompanyData.state || 'Tamil Nadu',
+          establishedYear: updatedCompanyData.establishedYear || '',
+          workingHours: updatedCompanyData.workingHours || '',
+          googleMapsLink: updatedCompanyData.googleMapsLink || '',
+          googleMapsEmbedUrl: updatedCompanyData.googleMapsEmbedUrl || '',
           facebook: updatedCompanyData.facebook,
           instagram: updatedCompanyData.instagram,
           linkedin: updatedCompanyData.linkedin,
@@ -855,9 +868,61 @@ export default function CompanyProfilePage() {
                   <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
                   <input
                     type="url"
-                    placeholder="https://www.example.com"
+                    placeholder="https://company.com"
                     value={company.website}
                     onChange={(e) => update('website', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Established Year</label>
+                <div className="relative">
+                  <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="e.g. 2018"
+                    value={company.establishedYear || ''}
+                    onChange={(e) => update('establishedYear', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Working Hours</label>
+                <div className="relative">
+                  <Clock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="e.g. 9:00 AM - 6:00 PM"
+                    value={company.workingHours || ''}
+                    onChange={(e) => update('workingHours', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Google Maps Link</label>
+                <div className="relative">
+                  <Link2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="url"
+                    placeholder="https://maps.google.com/..."
+                    value={company.googleMapsLink || ''}
+                    onChange={(e) => update('googleMapsLink', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Google Maps Embed URL (Optional)</label>
+                <div className="relative">
+                  <MapPin size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="https://www.google.com/maps/embed?pb=..."
+                    value={company.googleMapsEmbedUrl || ''}
+                    onChange={(e) => update('googleMapsEmbedUrl', e.target.value)}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
@@ -882,27 +947,48 @@ export default function CompanyProfilePage() {
                   className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">District</label>
-                  <input
-                    type="text"
-                    value={company.district}
-                    readOnly
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-sm text-gray-300 outline-none opacity-80"
-                  />
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">State *</label>
+                  <select
+                    value={company.state || 'Tamil Nadu'}
+                    onChange={(e) => {
+                      update('state', e.target.value);
+                      const dists = getDistricts(e.target.value);
+                      const defaultDist = dists[0] || '';
+                      update('district', defaultDist);
+                      const areas = getAreas(e.target.value, defaultDist);
+                      update('location', areas[0] || '');
+                    }}
+                    className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all cursor-pointer"
+                  >
+                    {states.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Area / Town *</label>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">District *</label>
+                  <select
+                    value={company.district}
+                    onChange={(e) => {
+                      update('district', e.target.value);
+                      const areas = getAreas(company.state || 'Tamil Nadu', e.target.value);
+                      update('location', areas[0] || '');
+                    }}
+                    className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="">Select district</option>
+                    {getDistricts(company.state || 'Tamil Nadu').map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Area / Village *</label>
                   <select
                     value={company.location}
                     onChange={(e) => update('location', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all cursor-pointer"
                   >
                     <option value="">Select area</option>
-                    {THENI_LAUNCH_LOCATIONS.map((area) => (
-                      <option key={area} value={area}>{area}</option>
-                    ))}
+                    {getAreas(company.state || 'Tamil Nadu', company.district).map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
                 </div>
               </div>

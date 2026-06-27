@@ -29,6 +29,7 @@ export function isEmployerPortalRole(role?: UserRole | null) {
 }
 
 export function getDashboardPathForRole(role?: UserRole | null) {
+  if (!role) return '/role-selection';
   if (isAdminRole(role)) return '/admin/dashboard';
   if (isBusinessRole(role)) return '/business/dashboard';
   return '/seeker/dashboard';
@@ -38,6 +39,7 @@ export function getSafePostLoginRedirect(
   requestedPath: string | null | undefined,
   role?: UserRole | null,
 ) {
+  if (!role) return '/role-selection';
   const dashboardPath = getDashboardPathForRole(role);
   if (!requestedPath || !requestedPath.startsWith('/')) return dashboardPath;
   if (requestedPath.startsWith('//')) return dashboardPath;

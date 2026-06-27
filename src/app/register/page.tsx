@@ -105,11 +105,23 @@ export default function RegisterPage() {
       setLoading(true);
       try {
         const normalizedPhone = form.phone ? `+91${form.phone}` : undefined;
+
+        // Verify uniqueness with Firestore backend
+        const checkRes = await fetch('/api/auth/check-unique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: form.email, phone: form.phone }),
+        });
+        const checkData = await checkRes.json();
+        if (!checkRes.ok || !checkData.unique) {
+          throw new Error(`An account with this ${checkData.exists || 'email/phone'} already exists. Please choose a different one or Contact Admin.`);
+        }
+
         await createAccount(form.email, form.password, form.name, role as UserRole, normalizedPhone);
         setSuccessMessage('Account created. Please verify your email using the link we sent, then sign in.');
       } catch (err: any) {
         console.error(err);
-        setLocalError(mapAuthError(err));
+        setLocalError(err.message || mapAuthError(err));
       } finally {
         setLoading(false);
       }
@@ -172,9 +184,22 @@ export default function RegisterPage() {
           </div>
 
           {activeError && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/15 mb-5">
-              <AlertCircle size={14} className="text-rose-400 flex-shrink-0" />
-              <p className="text-[11px] text-rose-300">{activeError}</p>
+            <div className="space-y-3 mb-5">
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/15">
+                <AlertCircle size={14} className="text-rose-400 flex-shrink-0" />
+                <p className="text-[11px] text-rose-300">{activeError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const errorMsg = typeof activeError === 'string' ? activeError : 'Registration conflict';
+                  const text = `Hi Admin, I am facing an issue with registration on TheniJobs. Phone: ${form.phone || 'N/A'}, Email: ${form.email || 'N/A'}. Error: ${errorMsg}`;
+                  window.open(`https://wa.me/917094826586?text=${encodeURIComponent(text)}`, '_blank');
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors"
+              >
+                Contact Admin (WhatsApp)
+              </button>
             </div>
           )}
 

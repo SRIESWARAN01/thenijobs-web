@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
 import adminApp, { adminDb } from '@/lib/firebaseAdmin';
 import { cookies } from 'next/headers';
 
@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     }
 
     const apiKey = 'c97e4a9d-65fa-11f1-8f15-0200cd936042';
+    const phoneNumberWithCode = `+91${cleanPhone}`;
 
     // 1. Verify OTP with 2factor.in
     const response = await fetch(`https://2factor.in/API/V1/${apiKey}/SMS/VERIFY/${sessionId}/${otp}`, {
@@ -30,138 +31,97 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: data.Details || 'Invalid OTP' }, { status: 400 });
     }
 
-    // 2. OTP is verified! Manage Firebase Authentication
+    // 2. OTP is verified! Search for existing user mapping in Firestore
     const auth = getAuth(adminApp);
-    const phoneNumberWithCode = `+91${cleanPhone}`;
-
-    let userRecord;
+    let resolvedUid: string | null = null;
+    let userRole: string | null = null;
     let isNewUser = false;
 
-    try {
-      userRecord = await auth.getUserByPhoneNumber(phoneNumberWithCode);
-    } catch (err: any) {
-      if (err.code === 'auth/user-not-found') {
-        // Create new user in Firebase Auth
-        userRecord = await auth.createUser({
-          phoneNumber: phoneNumberWithCode,
-          displayName: 'User',
-        });
-        isNewUser = true;
-      } else {
-        console.error('[Auth Error Search By Phone]:', err);
-        return NextResponse.json({ error: 'Failed to query user records' }, { status: 500 });
-      }
+    // Search Firestore by phone or mobileNumber to support mapping Google accounts with same phone
+    const userQueryByPhone = await adminDb.collection('users')
+      .where('phone', '==', phoneNumberWithCode)
+      .get();
+
+    let userQueryByMobile = { empty: true, docs: [] as any[] };
+    if (userQueryByPhone.empty) {
+      userQueryByMobile = await adminDb.collection('users')
+        .where('mobileNumber', '==', phoneNumberWithCode)
+        .get();
     }
 
-    const uid = userRecord.uid;
-    const userRef = adminDb.doc(`users/${uid}`);
-    const userSnap = await userRef.get();
+    const matchedDoc = !userQueryByPhone.empty 
+      ? userQueryByPhone.docs[0] 
+      : (!userQueryByMobile.empty ? userQueryByMobile.docs[0] : null);
 
-    let userRole = 'job_seeker';
-    
-    if (userSnap.exists) {
-      const userData = userSnap.data();
-      userRole = userData?.role || 'job_seeker';
-      
-      // Update last login
-      await userRef.update({
+    if (matchedDoc) {
+      resolvedUid = matchedDoc.id;
+      const userData = matchedDoc.data();
+      userRole = userData.role || null;
+      isNewUser = !userRole; // If no role has been chosen yet, they are still considered a new user flow
+
+      // Update login timestamps
+      await matchedDoc.ref.update({
         lastLoginAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
     } else {
-      // Create user doc if it doesn't exist
-      await userRef.set({
-        phone: phoneNumberWithCode,
-        mobileNumber: phoneNumberWithCode, // Supported for OTP sign in
-        email: '',
-        displayName: 'User',
-        photoURL: '',
-        role: 'job_seeker',
-        isVerified: true,
-        emailVerified: false,
-        createdAt: FieldValue.serverTimestamp(),
-        lastLoginAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-      isNewUser = true;
-    }
+      // If not in Firestore, check if they exist in Firebase Auth
+      let authUser;
+      try {
+        authUser = await auth.getUserByPhoneNumber(phoneNumberWithCode);
+        resolvedUid = authUser.uid;
+      } catch (err: any) {
+        if (err.code === 'auth/user-not-found') {
+          // Create new user in Firebase Auth
+          authUser = await auth.createUser({
+            phoneNumber: phoneNumberWithCode,
+            displayName: 'User',
+          });
+          resolvedUid = authUser.uid;
+        } else {
+          console.error('[Auth Error Search By Phone]:', err);
+          return NextResponse.json({ error: 'Failed to query user records' }, { status: 500 });
+        }
+      }
 
-    // Create seeker profile & free subscription if it's a new user or profile doesn't exist
-    if (isNewUser) {
-      const seekerRef = adminDb.doc(`seekerProfiles/${uid}`);
-      const seekerSnap = await seekerRef.get();
-      if (!seekerSnap.exists) {
-        await seekerRef.set({
-          uid,
-          name: 'User',
+      // Check if a user doc somehow exists for this auth UID
+      const userRef = adminDb.doc(`users/${resolvedUid}`);
+      const userSnap = await userRef.get();
+
+      if (userSnap.exists) {
+        const userData = userSnap.data();
+        userRole = userData?.role || null;
+        isNewUser = !userRole;
+
+        await userRef.update({
           phone: phoneNumberWithCode,
+          mobileNumber: phoneNumberWithCode,
+          lastLoginAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Create user document with role: null
+        await userRef.set({
+          phone: phoneNumberWithCode,
+          mobileNumber: phoneNumberWithCode,
           email: '',
-          photoUrl: '',
-          address: '',
-          district: '',
-          state: 'Tamil Nadu',
-          skills: [],
-          experience: [],
-          education: [],
-          jobTypePreference: [],
-          isOpenToWork: true,
-          profileStrength: 10,
+          displayName: 'User',
+          photoURL: '',
+          role: null,
+          isVerified: true,
+          emailVerified: false,
           createdAt: FieldValue.serverTimestamp(),
+          lastLoginAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
         });
-      }
-
-      const publicProfileRef = adminDb.doc(`publicProfiles/${uid}`);
-      const publicSnap = await publicProfileRef.get();
-      if (!publicSnap.exists) {
-        await publicProfileRef.set({
-          uid,
-          name: 'User',
-          role: 'job_seeker',
-          photoUrl: '',
-          skills: [],
-          district: '',
-          isOpenToWork: true,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
-      }
-
-      const subRef = adminDb.doc(`subscriptions/${uid}_free`);
-      const subSnap = await subRef.get();
-      if (!subSnap.exists) {
-        const now = new Date();
-        const oneYear = new Date();
-        oneYear.setFullYear(now.getFullYear() + 1);
-
-        await subRef.set({
-          userId: uid,
-          audience: 'seeker',
-          userName: 'User',
-          email: '',
-          mobile: phoneNumberWithCode,
-          companyName: '',
-          plan: 'free',
-          planName: 'Free Plan',
-          amount: 0,
-          period: 'year',
-          status: 'active',
-          startDate: Timestamp.fromDate(now),
-          endDate: Timestamp.fromDate(oneYear),
-          paymentDate: null,
-          autoRenew: false,
-          paymentMethod: 'free',
-          expiryReminderDaysSent: [],
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-        });
+        isNewUser = true;
       }
     }
 
-    // 3. Generate Firebase custom token for clients to sign in
-    const customToken = await auth.createCustomToken(uid, { role: userRole });
+    // 3. Generate custom token for resolvedUid
+    const customToken = await auth.createCustomToken(resolvedUid as string, userRole ? { role: userRole } : undefined);
 
-    // Establish a secure authenticated session using an HTTP-only cookie
+    // 4. Set session cookie
     const cookieStore = await cookies();
     cookieStore.set('session', customToken, {
       httpOnly: true,
@@ -174,7 +134,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       customToken,
-      uid,
+      uid: resolvedUid,
       role: userRole,
       isNewUser,
     });

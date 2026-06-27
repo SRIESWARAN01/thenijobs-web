@@ -985,6 +985,9 @@ export async function createPaymentRequest(data: {
   plan: string;
   planName: string;
   amount: number;
+  originalAmount?: number;
+  couponCode?: string | null;
+  discountAmount?: number;
   period: string;
   businessName?: string;
   companyName?: string;

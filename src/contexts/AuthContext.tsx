@@ -233,11 +233,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     if (!profile) {
-      dataToSave.role = 'job_seeker';
+      dataToSave.role = null;
       dataToSave.createdAt = serverTimestamp();
     } else {
-      if (!profile.role) {
-        dataToSave.role = 'job_seeker';
+      if (profile.role === undefined) {
+        dataToSave.role = null;
       }
       if (!profile.createdAt) {
         dataToSave.createdAt = serverTimestamp();
@@ -249,7 +249,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     await setDoc(doc(db, 'users', fbUser.uid), dataToSave, { merge: true });
 
-    if (!profile) {
+    // Only ensure free yearly subscription if the user already has a role chosen
+    if (!profile && dataToSave.role) {
       await ensureFreeYearlySubscription({
         uid: fbUser.uid,
         displayName: dataToSave.displayName,
@@ -377,91 +378,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
-        const existingProfile = await fetchUserProfile(fbUser.uid);
-        const displayName = fbUser.displayName || fbUser.email?.split('@')[0] || 'User';
-        const email = fbUser.email || '';
-        const phone = fbUser.phoneNumber || phoneParam || undefined;
-        let resolvedProfile: User | null = existingProfile;
-
-        if (!existingProfile) {
-          const newUser: Omit<User, 'uid'> = {
-            email,
-            displayName,
-            photoURL: fbUser.photoURL || '',
-            role,
-            isVerified: true,
-            emailVerified: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            ...(phone ? { phone } : {}),
-          };
-
-          await setDoc(doc(db, 'users', fbUser.uid), {
-            ...newUser,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-
-          await ensureFreeYearlySubscription({
-            uid: fbUser.uid,
-            displayName,
-            email,
-            phone,
-            role,
-          });
-
-          await ensureSeekerProfile({
-            uid: fbUser.uid,
-            displayName,
-            email,
-            phone,
-            role,
-          });
-
-          resolvedProfile = { uid: fbUser.uid, ...newUser };
-        } else {
-          await syncVerifiedUserDocument(fbUser, existingProfile);
-          await ensureFreeYearlySubscription({
-            uid: fbUser.uid,
-            displayName: existingProfile.displayName || displayName,
-            email: existingProfile.email || email,
-            phone: existingProfile.phone || phone,
-            role: existingProfile.role,
-          });
-          await ensureSeekerProfile({
-            uid: fbUser.uid,
-            displayName: existingProfile.displayName || displayName,
-            email: existingProfile.email || email,
-            phone: existingProfile.phone || phone,
-            role: existingProfile.role,
-          });
+        // Send Google credential to backend for account mapping & verification
+        const idToken = await fbUser.getIdToken(true);
+        const res = await fetch('/api/auth/google-signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to map Google account securely.');
         }
 
-        setFirebaseUser(fbUser);
-        setUser(resolvedProfile
-          ? {
-              ...resolvedProfile,
-              displayName: resolvedProfile.displayName || displayName,
-              email: resolvedProfile.email || email,
-              photoURL: fbUser.photoURL || resolvedProfile.photoURL,
-              emailVerified: fbUser.emailVerified,
-              isVerified: fbUser.emailVerified,
-            }
-          : null);
+        // Sign client into the mapped UID using the backend custom token
+        if (data.customToken) {
+          await signInWithCustomToken(auth, data.customToken);
+        }
+
+        const profile = await fetchUserProfile(data.uid);
+        if (profile) {
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+        
         setLoading(false);
       } catch (err) {
         setLoading(false);
         handleError(err, 'Failed to sign in with Google.');
       }
     },
-    [
-      ensureFreeYearlySubscription,
-      ensureSeekerProfile,
-      fetchUserProfile,
-      handleError,
-      rejectUnverifiedEmail,
-      syncVerifiedUserDocument,
-    ],
+    [fetchUserProfile, handleError, rejectUnverifiedEmail],
   );
 
   const createAccount = useCallback(

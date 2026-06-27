@@ -195,9 +195,22 @@ function LoginPageContent() {
           <p className="text-gray-400 text-sm text-center mb-7">Sign in to your account</p>
 
           {activeError && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/15 mb-4">
-              <AlertCircle size={14} className="text-rose-400 flex-shrink-0" />
-              <p className="text-[11px] text-rose-300">{activeError}</p>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/15">
+                <AlertCircle size={14} className="text-rose-400 flex-shrink-0" />
+                <p className="text-[11px] text-rose-300">{activeError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const errorMsg = typeof activeError === 'string' ? activeError : 'Login conflict';
+                  const text = `Hi Admin, I am facing an issue with login on TheniJobs. Phone: ${phone || 'N/A'}, Email: ${email || 'N/A'}. Error: ${errorMsg}`;
+                  window.open(`https://wa.me/917094826586?text=${encodeURIComponent(text)}`, '_blank');
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors"
+              >
+                Contact Admin (WhatsApp)
+              </button>
             </div>
           )}
 

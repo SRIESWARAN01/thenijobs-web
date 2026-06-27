@@ -73,4 +73,5 @@ export interface CreateRazorpayOrderData {
   planSlug?: unknown;
   audience?: unknown;
   companyId?: unknown;
+  couponCode?: unknown;
 }

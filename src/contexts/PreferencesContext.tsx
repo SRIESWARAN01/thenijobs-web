@@ -20,8 +20,8 @@ const THEME_KEY = 'thenijobs.theme';
 const LANGUAGE_KEY = 'thenijobs.language';
 
 function getStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'dark';
-  return window.localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+  if (typeof window === 'undefined') return 'light';
+  return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
 }
 
 function getStoredLanguage(): LanguageCode {
@@ -37,7 +37,7 @@ function applyPreferences(theme: ThemeMode, language: LanguageCode) {
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>('dark');
+  const [theme, setThemeState] = useState<ThemeMode>('light');
   const [language, setLanguageState] = useState<LanguageCode>('en');
 
   useEffect(() => {

@@ -15,6 +15,7 @@ import {
   Store,
   User,
   X,
+  Info,
 } from 'lucide-react';
 import PreferenceControls from '@/components/navigation/PreferenceControls';
 import { usePreferences } from '@/contexts/PreferencesContext';
@@ -27,6 +28,7 @@ const navItems = [
   { label: 'Businesses', tamilLabel: 'நிறுவனங்கள்', href: '/businesses', icon: Building2 },
   { label: 'Services', tamilLabel: 'சேவைகள்', href: '/services', icon: Store },
   { label: 'Pricing', tamilLabel: 'திட்டங்கள்', href: '/pricing', icon: ShieldCheck },
+  { label: 'About', tamilLabel: 'பற்றி', href: '/about', icon: Info },
 ];
 
 export default function Header() {

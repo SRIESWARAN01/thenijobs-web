@@ -9,7 +9,7 @@ import {
   Lightbulb, Rocket, Users2, TrendingUp, Award, Heart, Check, 
   Plus, Minus, Globe, FileText, Cpu, HeartHandshake,
   MapPin, ChevronRight, Zap, Laptop, MessageSquare, Shield,
-  QrCode, UserPlus, FileDown, Eye
+  QrCode, UserPlus, FileDown, Eye, X
 } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
@@ -20,6 +20,7 @@ type EcosystemNode = 'career' | 'business' | 'freelancer' | 'networking' | 'ai';
 export default function AboutPageClient() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [selectedNode, setSelectedNode] = useState<EcosystemNode>('ai');
+  const [selectedPhoto, setSelectedPhoto] = useState<{ src: string; name: string } | null>(null);
 
   const ecosystemNodes = {
     ai: {
@@ -502,7 +503,10 @@ export default function AboutPageClient() {
             {/* CEO Eswaran */}
             <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 p-6 sm:p-8 hover:border-teal-500/25 transition-all shadow-xl group">
               <div className="flex items-center gap-4 mb-6">
-                <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 shrink-0">
+                <div 
+                  onClick={() => setSelectedPhoto({ src: '/eswaran.jpeg', name: 'Eswaran P' })}
+                  className="relative h-20 w-20 overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 shrink-0 cursor-zoom-in group/photo"
+                >
                   <Image
                     src="/eswaran.jpeg"
                     alt="Eswaran P"
@@ -510,6 +514,9 @@ export default function AboutPageClient() {
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="80px"
                   />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white">
+                    <Eye size={16} />
+                  </div>
                 </div>
                 <div>
                   <h3 className="font-outfit text-xl font-black text-white leading-tight">Eswaran P</h3>
@@ -540,7 +547,10 @@ export default function AboutPageClient() {
             {/* Developer Anbarasan */}
             <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 p-6 sm:p-8 hover:border-blue-500/25 transition-all shadow-xl group">
               <div className="flex items-center gap-4 mb-6">
-                <div className="relative h-20 w-20 overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 shrink-0">
+                <div 
+                  onClick={() => setSelectedPhoto({ src: '/anbu.jpeg', name: 'Anbarasan S' })}
+                  className="relative h-20 w-20 overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 shrink-0 cursor-zoom-in group/photo"
+                >
                   <Image
                     src="/anbu.jpeg"
                     alt="Anbarasan S"
@@ -548,6 +558,9 @@ export default function AboutPageClient() {
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="80px"
                   />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white">
+                    <Eye size={16} />
+                  </div>
                 </div>
                 <div>
                   <h3 className="font-outfit text-xl font-black text-white leading-tight">Anbarasan S</h3>
@@ -688,6 +701,44 @@ export default function AboutPageClient() {
           </div>
         </div>
       </section>
+
+      {/* Lightbox / Full Photo View Modal */}
+      <AnimatePresence>
+        {selectedPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedPhoto(null)}
+            className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4 cursor-zoom-out backdrop-blur-md"
+          >
+            <button 
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-colors cursor-pointer"
+              aria-label="Close full view"
+            >
+              <X size={20} />
+            </button>
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-lg w-full aspect-square md:aspect-[3/4] rounded-3xl overflow-hidden border border-white/10 bg-slate-950 shadow-2xl"
+            >
+              <Image
+                src={selectedPhoto.src}
+                alt={selectedPhoto.name}
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 600px"
+                priority
+              />
+            </motion.div>
+            <p className="mt-4 text-sm font-bold text-white tracking-wide">{selectedPhoto.name}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <HomeFooter />
       <BottomNav />

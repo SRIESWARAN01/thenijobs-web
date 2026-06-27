@@ -56,19 +56,18 @@ function ServicesShowcaseSection({ company, services, currentTheme }: { company:
     }
 
     if (eventType === 'whatsapp') {
-      const priceStr = service.price ? `₹${service.price}` : 'Price on request';
       const serviceUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/services/${service.id}`
-        : `https://thenijobs.com/services/${service.id}`;
+        ? `${window.location.origin}/company/${company.slug}#services`
+        : `https://thenijobs.com/company/${company.slug}`;
+      const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
       
-      const text = `Hello, I'm interested in your service.
-
-Service: ${service.name}
-Price: ${priceStr}
-Service Link: ${serviceUrl}
-Company: ${company.name || 'Verified Business'}
-
-Please share more details.`;
+      const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
+        visitorName: visitor,
+        companyName: company.name || 'Verified Business',
+        portfolioLink: serviceUrl,
+        productServiceName: service.name,
+        enquiryMessage: `I am interested in your service: ${service.name}. Please share details.`
+      });
       
       const rawNum = company.whatsapp || company.phone || '917094826586';
       const cleanPhone = String(rawNum).replace(/\D/g, '');
@@ -663,6 +662,36 @@ function CompanyBioSection({ company, cardStyle = '' }: { company: any; cardStyl
   );
 }
 
+function formatWhatsAppMessage(
+  templateString: string | undefined, 
+  context: {
+    visitorName?: string;
+    companyName: string;
+    portfolioLink: string;
+    productServiceName?: string;
+    enquiryMessage?: string;
+  }
+): string {
+  const visitor = context.visitorName || 'Visitor';
+  const companyName = context.companyName || 'this company';
+  const link = context.portfolioLink;
+  const item = context.productServiceName || 'General Enquiry';
+  const msg = context.enquiryMessage || 'I would like to enquire about your products and services.';
+
+  // Default template if none configured
+  let tpl = templateString;
+  if (!tpl) {
+    tpl = `Hello, my name is {{visitorName}}. I am interested in {{productServiceName}} from {{companyName}}.\nLink: {{portfolioLink}}\nEnquiry: {{enquiryMessage}}`;
+  }
+
+  return tpl
+    .replace(/\{\{visitorName\}\}/g, visitor)
+    .replace(/\{\{companyName\}\}/g, companyName)
+    .replace(/\{\{portfolioLink\}\}/g, link)
+    .replace(/\{\{productServiceName\}\}/g, item)
+    .replace(/\{\{enquiryMessage\}\}/g, msg);
+}
+
 export default function CompanyProfileClient({ company, jobs, reviews }: {
   company: any; jobs: any[]; reviews: any[];
 }) {
@@ -792,7 +821,14 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const text = `Hello, I viewed your product ${productName} on THENIJOBS and would like more details.`;
+    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
+      visitorName: visitor,
+      companyName: company.name || 'Verified Business',
+      portfolioLink: portfolioUrl,
+      productServiceName: productName,
+      enquiryMessage: `I am interested in your product: ${productName}. Please share details.`
+    });
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,
@@ -1062,7 +1098,14 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
   const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const text = `Hello, I viewed your product ${productName} on THENIJOBS and would like more details.`;
+    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
+      visitorName: visitor,
+      companyName: company.name || 'Verified Business',
+      portfolioLink: portfolioUrl,
+      productServiceName: productName,
+      enquiryMessage: `I am interested in your product: ${productName}. Please share details.`
+    });
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,
@@ -1134,9 +1177,14 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
 
   const isModern = company.websiteTemplate === 'modern';
 
-  const whatsappText = company.whatsappMessageTemplate 
-    ? encodeURIComponent(company.whatsappMessageTemplate) 
-    : encodeURIComponent(`Hi! I saw your business page on THENIJOBS.`);
+  const visitorNameVal = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+  const whatsappText = encodeURIComponent(formatWhatsAppMessage(company.whatsappMessageTemplate, {
+    visitorName: visitorNameVal,
+    companyName: company.name || 'Verified Business',
+    portfolioLink: portfolioUrl,
+    productServiceName: 'General Consultation',
+    enquiryMessage: 'I would like to inquire about your business offerings.'
+  }));
   const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
 
   const tabs = [
@@ -1650,7 +1698,14 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
   const currentTheme = themeConfigs[activeTheme] || themeConfigs.titanium_platinum;
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const text = `Hello, I saw your product "${productName}" on your Enterprise Page at THENIJOBS. Please share more details.`;
+    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
+      visitorName: visitor,
+      companyName: company.name || 'Verified Business',
+      portfolioLink: portfolioUrl,
+      productServiceName: productName,
+      enquiryMessage: `I saw your product "${productName}" on your Enterprise Page. Please share details.`
+    });
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,
@@ -1707,9 +1762,14 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
     { id: 'testimonials', label: 'Testimonials' },
   ];
 
-  const whatsappText = company.whatsappMessageTemplate 
-    ? encodeURIComponent(company.whatsappMessageTemplate) 
-    : encodeURIComponent(`Hi! I saw your Enterprise Flagship page on THENIJOBS.`);
+  const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+  const whatsappText = encodeURIComponent(formatWhatsAppMessage(company.whatsappMessageTemplate, {
+    visitorName: visitor,
+    companyName: company.name || 'Verified Business',
+    portfolioLink: portfolioUrl,
+    productServiceName: 'General Consultation',
+    enquiryMessage: 'I would like to inquire about your business offerings.'
+  }));
   const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
 
   return (
@@ -1864,6 +1924,177 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
                   </h3>
                   <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line text-justify">{company.description}</p>
                 </div>
+
+                {/* CEO / Founder Biography & Profile */}
+                {(company.ceoName || company.ceoPhotoUrl || company.ceoMessage || company.aboutFounder) && (
+                  <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-6 relative overflow-hidden`}>
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/[0.01] rounded-full blur-2xl pointer-events-none" />
+                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                      <Crown size={18} className={currentTheme.accent} /> Leadership & Founder Message
+                    </h3>
+                    <div className="flex flex-col sm:flex-row gap-6 items-start">
+                      {company.ceoPhotoUrl && (
+                        <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-white/10 shrink-0 self-center sm:self-start bg-slate-900 shadow-lg">
+                          <img src={company.ceoPhotoUrl} alt={company.ceoName || 'CEO'} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="space-y-3 flex-1">
+                        {company.ceoName && (
+                          <div>
+                            <span className="text-xs text-slate-500 uppercase tracking-widest font-black block">CEO / Founder</span>
+                            <h4 className="text-sm font-extrabold text-white mt-0.5">{company.ceoName}</h4>
+                          </div>
+                        )}
+                        {company.ceoMessage && (
+                          <blockquote className="text-xs text-slate-300 italic border-l-2 border-amber-500/40 pl-4 py-1 leading-relaxed">
+                            &ldquo;{company.ceoMessage}&rdquo;
+                          </blockquote>
+                        )}
+                      </div>
+                    </div>
+                    {company.aboutFounder && (
+                      <div className="pt-4 border-t border-white/[0.04] space-y-2">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">About the Founder</span>
+                        <p className="text-xs text-slate-300 leading-relaxed text-justify">{company.aboutFounder}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Company Story, Vision, Mission & Core Values */}
+                {(company.companyStory || company.vision || company.mission || company.coreValues) && (
+                  <div className="space-y-6">
+                    {company.companyStory && (
+                      <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                        <h3 className="text-base font-black text-white flex items-center gap-2">
+                          <Sparkles size={18} className={currentTheme.accent} /> Our Legacy & Story
+                        </h3>
+                        <p className="text-xs text-slate-300 leading-relaxed text-justify whitespace-pre-line">{company.companyStory}</p>
+                      </div>
+                    )}
+
+                    {(company.vision || company.mission) && (
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {company.vision && (
+                          <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-3`}>
+                            <div className="flex items-center gap-2 text-white">
+                              <div className={`p-2 rounded-xl bg-white/[0.03] border border-white/5 ${currentTheme.accent}`}>
+                                <Globe size={16} />
+                              </div>
+                              <h4 className="text-xs font-black uppercase tracking-wider">Our Vision</h4>
+                            </div>
+                            <p className="text-xs text-slate-350 leading-relaxed">{company.vision}</p>
+                          </div>
+                        )}
+                        {company.mission && (
+                          <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-3`}>
+                            <div className="flex items-center gap-2 text-white">
+                              <div className={`p-2 rounded-xl bg-white/[0.03] border border-white/5 ${currentTheme.accent}`}>
+                                <Star size={16} />
+                              </div>
+                              <h4 className="text-xs font-black uppercase tracking-wider">Our Mission</h4>
+                            </div>
+                            <p className="text-xs text-slate-350 leading-relaxed">{company.mission}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {company.coreValues && (
+                      <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-4`}>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Core Corporate Values</span>
+                        <div className="flex flex-wrap gap-2">
+                          {company.coreValues.split(',').map((val: string) => (
+                            <span key={val} className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 text-slate-200 transition-colors hover:bg-white/[0.06] hover:${currentTheme.accent}`}>
+                              {val.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Timeline Milestones */}
+                {company.timeline && company.timeline.length > 0 && (
+                  <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-6`}>
+                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                      <TrendingUp size={18} className={currentTheme.accent} /> Historic Milestones
+                    </h3>
+                    <div className="relative border-l border-white/[0.08] ml-4 pl-6 space-y-6">
+                      {company.timeline.map((event: any, idx: number) => (
+                        <div key={event.id || idx} className="relative group">
+                          {/* Timeline Dot */}
+                          <div className={`absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 border-slate-950 transition-all group-hover:scale-125 ${
+                            idx === 0 
+                              ? 'bg-amber-400 ring-4 ring-amber-400/20' 
+                              : 'bg-slate-700'
+                          }`} />
+                          
+                          <div className="space-y-1">
+                            <span className={`text-xs font-black font-mono tracking-wider ${currentTheme.accent}`}>{event.year}</span>
+                            <h4 className="text-xs font-extrabold text-white">{event.title}</h4>
+                            {event.description && (
+                              <p className="text-[11px] text-slate-400 leading-relaxed mt-1">{event.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Achievements & CSR Activities */}
+                {(company.achievements || company.csrActivities) && (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {company.achievements && (
+                      <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-3`}>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
+                          <Award size={15} className={currentTheme.accent} /> Awards & Accreditations
+                        </h4>
+                        <p className="text-xs text-slate-350 leading-relaxed">{company.achievements}</p>
+                      </div>
+                    )}
+                    {company.csrActivities && (
+                      <div className={`${currentTheme.card} rounded-[2rem] p-6 space-y-3`}>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
+                          <Heart size={15} className={currentTheme.accent} /> Corporate Social Responsibility
+                        </h4>
+                        <p className="text-xs text-slate-350 leading-relaxed">{company.csrActivities}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Partners & Clients Logotypes */}
+                {((company.clients && company.clients.length > 0) || (company.partners && company.partners.length > 0)) && (
+                  <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-6`}>
+                    {company.clients && company.clients.length > 0 && (
+                      <div className="space-y-4">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Trusted by Prestigious Clients</span>
+                        <div className="flex gap-4 items-center flex-wrap">
+                          {company.clients.map((url: string, idx: number) => (
+                            <div key={idx} className="h-10 w-24 relative bg-white/5 rounded-xl border border-white/5 p-2 overflow-hidden flex items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 hover:border-white/20 transition-all duration-300">
+                              <img src={url} alt="client logo" className="max-h-full max-w-full object-contain" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {company.partners && company.partners.length > 0 && (
+                      <div className="space-y-4 pt-4 border-t border-white/[0.04]">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black block">Corporate Alliance Partners</span>
+                        <div className="flex gap-4 items-center flex-wrap">
+                          {company.partners.map((url: string, idx: number) => (
+                            <div key={idx} className="h-10 w-24 relative bg-white/5 rounded-xl border border-white/5 p-2 overflow-hidden flex items-center justify-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 hover:border-white/20 transition-all duration-300">
+                              <img src={url} alt="partner logo" className="max-h-full max-w-full object-contain" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Services/Specials List */}
                 {company.companyServicesTags?.length > 0 && (
@@ -2311,14 +2542,26 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
     setTimeout(() => setCopiedCoupon(false), 2000);
   };
 
-  const whatsappText = company.whatsappMessageTemplate 
-    ? encodeURIComponent(company.whatsappMessageTemplate) 
-    : encodeURIComponent(`Hi! I saw your premium page on THENIJOBS.`);
+  const visitorPremium = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+  const whatsappText = encodeURIComponent(formatWhatsAppMessage(company.whatsappMessageTemplate, {
+    visitorName: visitorPremium,
+    companyName: company.name || 'Verified Business',
+    portfolioLink: portfolioUrl,
+    productServiceName: 'General Consultation',
+    enquiryMessage: 'I would like to inquire about your business offerings.'
+  }));
   const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
 
   // WhatsApp helper for specific products
   const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const text = `Hello, I viewed your product ${productName} on THENIJOBS and would like more details.`;
+    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
+      visitorName: visitor,
+      companyName: company.name || 'Verified Business',
+      portfolioLink: portfolioUrl,
+      productServiceName: productName,
+      enquiryMessage: `I viewed your product ${productName} on THENIJOBS and would like more details.`
+    });
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,

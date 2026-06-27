@@ -87,36 +87,47 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Premium: Full SEO Optimization (custom title/description, full OpenGraph & Twitter tags)
     const title = companyData.customMetaTitle || companyData.seoTitle || name;
     const description = companyData.customMetaDescription || companyData.seoDescription || defaultDescription;
+    const keywords = companyData.seoKeywords || undefined;
     const logoUrl = companyData.logoUrl || undefined;
+    const ogTitleVal = companyData.ogTitle || `${title} — THENIJOBS Premium Partner`;
+    const ogDescVal = companyData.ogDescription || description;
+    const ogImageVal = companyData.socialShareImage || logoUrl;
 
     return {
       title,
       description,
+      keywords,
       openGraph: {
-        title: `${title} — THENIJOBS Premium Partner`,
-        description,
+        title: ogTitleVal,
+        description: ogDescVal,
         type: 'website',
         url: `https://thenijobs.com/company/${slug}`,
-        ...(logoUrl ? { images: [{ url: logoUrl, width: 256, height: 256, alt: `${name} logo` }] } : {}),
+        ...(ogImageVal ? { images: [{ url: ogImageVal, alt: `${name} logo` }] } : {}),
       },
       twitter: {
         card: 'summary',
-        title: `${title} — THENIJOBS Premium Partner`,
-        description,
-        ...(logoUrl ? { images: [logoUrl] } : {}),
+        title: ogTitleVal,
+        description: ogDescVal,
+        ...(ogImageVal ? { images: [ogImageVal] } : {}),
       },
     };
   } else {
     // Enterprise: Ultra Premium SEO Optimization & Structured Data
     const title = companyData.customMetaTitle || companyData.seoTitle || name;
     const description = companyData.customMetaDescription || companyData.seoDescription || defaultDescription;
+    const keywords = companyData.seoKeywords || undefined;
     const logoUrl = companyData.logoUrl || undefined;
+    const ogTitleVal = companyData.ogTitle || `${title} — THENIJOBS Enterprise VIP Partner`;
+    const ogDescVal = companyData.ogDescription || description;
+    const ogImageVal = companyData.socialShareImage || logoUrl || companyData.coverUrl;
+    const canonical = companyData.canonicalUrl || `https://thenijobs.in/company/${slug}`;
 
     return {
       title,
       description,
+      keywords,
       alternates: {
-        canonical: `https://thenijobs.in/company/${slug}`
+        canonical,
       },
       robots: {
         index: true,
@@ -130,17 +141,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         },
       },
       openGraph: {
-        title: `${title} — THENIJOBS Enterprise VIP Partner`,
-        description,
+        title: ogTitleVal,
+        description: ogDescVal,
         type: 'website',
         url: `https://thenijobs.in/company/${slug}`,
-        ...(logoUrl ? { images: [{ url: logoUrl, width: 256, height: 256, alt: `${name} logo` }] } : {}),
+        ...(ogImageVal ? { images: [{ url: ogImageVal, alt: `${name} logo` }] } : {}),
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${title} — THENIJOBS Enterprise VIP Partner`,
-        description,
-        ...(logoUrl ? { images: [logoUrl] } : {}),
+        title: ogTitleVal,
+        description: ogDescVal,
+        ...(ogImageVal ? { images: [ogImageVal] } : {}),
       },
     };
   }

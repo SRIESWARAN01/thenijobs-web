@@ -7,7 +7,7 @@ import {
   Link2, Heart, Briefcase as LinkedinIcon, Play, Plus, Save,
   CheckCircle, AlertCircle, Shield, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2,
-  Lock, Sparkles
+  Lock, Sparkles, Crown, Laptop, Tablet, Smartphone, Check, TrendingUp
 } from 'lucide-react';
 import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +17,7 @@ import { createDocument, updateDocument } from '@/lib/firebase/firestoreService'
 import { where } from 'firebase/firestore';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 import { normalizePlanSlug, selectBestSubscription, getPlanRank } from '@/lib/subscriptions';
+import CompanyProfileClient from '@/app/company/[slug]/CompanyProfileClient';
 
 const DEFAULT_COMPANY = {
   name: '',
@@ -56,6 +57,37 @@ const DEFAULT_COMPANY = {
   businessRegNumber: '',
   verificationDocUrl: '',
   verificationDocName: '',
+  
+  // Enterprise Plan Sections
+  ceoPhotoUrl: '',
+  ceoName: '',
+  ceoMessage: '',
+  aboutFounder: '',
+  companyStory: '',
+  vision: '',
+  mission: '',
+  coreValues: '',
+  timeline: [] as any[],
+  achievements: '',
+  awardsCertificates: [] as string[],
+  clients: [] as string[],
+  partners: [] as string[],
+  careerSectionText: '',
+  careerEmail: '',
+  csrActivities: '',
+  
+  // Publish Status
+  isPublished: false,
+  publishedAt: null as any,
+  
+  // Advanced SEO settings
+  seoKeywords: '',
+  canonicalUrl: '',
+  socialShareImage: '',
+  ogTitle: '',
+  ogDescription: '',
+  slug: '',
+  updatedAt: null as any,
 };
 
 function calcCompletion(data: typeof DEFAULT_COMPANY): number {
@@ -86,7 +118,10 @@ export default function CompanyProfilePage() {
   const activeSubscription = selectBestSubscription(subscriptions);
   const currentPlan = normalizePlanSlug(activeSubscription?.plan || resolvedCompany?.subscriptionPlan || (resolvedCompany?.isPremium ? 'premium' : 'free'));
 
-  const [activeFormTab, setActiveFormTab] = useState<'info' | 'branding' | 'seo' | 'verification'>('info');
+  const [activeFormTab, setActiveFormTab] = useState<'info' | 'branding' | 'seo' | 'verification' | 'enterprise'>('info');
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'mobile' | 'tablet' | 'desktop' | 'seo'>('desktop');
 
   const [company, setCompany] = useState(DEFAULT_COMPANY);
   const [charCount, setCharCount] = useState(0);
@@ -107,7 +142,7 @@ export default function CompanyProfilePage() {
 
   // Cropper states
   const [cropFile, setCropFile] = useState<File | null>(null);
-  const [cropType, setCropType] = useState<'logo' | 'cover' | 'gallery' | null>(null);
+  const [cropType, setCropType] = useState<'logo' | 'cover' | 'gallery' | 'ceo' | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [galleryCropIndex, setGalleryCropIndex] = useState<number | null>(null);
 
@@ -199,6 +234,36 @@ export default function CompanyProfilePage() {
           businessRegNumber: updatedCompanyData.businessRegNumber || '',
           verificationDocUrl: updatedCompanyData.verificationDocUrl || '',
           verificationDocName: updatedCompanyData.verificationDocName || '',
+          
+          // Enterprise & Founder
+          ceoPhotoUrl: updatedCompanyData.ceoPhotoUrl || '',
+          ceoName: updatedCompanyData.ceoName || '',
+          ceoMessage: updatedCompanyData.ceoMessage || '',
+          aboutFounder: updatedCompanyData.aboutFounder || '',
+          companyStory: updatedCompanyData.companyStory || '',
+          vision: updatedCompanyData.vision || '',
+          mission: updatedCompanyData.mission || '',
+          coreValues: updatedCompanyData.coreValues || '',
+          timeline: updatedCompanyData.timeline || [],
+          achievements: updatedCompanyData.achievements || '',
+          awardsCertificates: updatedCompanyData.awardsCertificates || [],
+          clients: updatedCompanyData.clients || [],
+          partners: updatedCompanyData.partners || [],
+          careerSectionText: updatedCompanyData.careerSectionText || '',
+          careerEmail: updatedCompanyData.careerEmail || '',
+          csrActivities: updatedCompanyData.csrActivities || '',
+          
+          // Publish Status
+          isPublished: updatedCompanyData.isPublished || false,
+          publishedAt: updatedCompanyData.publishedAt || null,
+          
+          // Advanced SEO settings
+          seoKeywords: updatedCompanyData.seoKeywords || '',
+          canonicalUrl: updatedCompanyData.canonicalUrl || '',
+          socialShareImage: updatedCompanyData.socialShareImage || '',
+          ogTitle: updatedCompanyData.ogTitle || '',
+          ogDescription: updatedCompanyData.ogDescription || '',
+
           updatedAt: new Date()
         };
         await updateDocument('companies', resolvedCompany.id, docData);
@@ -276,6 +341,15 @@ export default function CompanyProfilePage() {
     if (e.target) e.target.value = '';
   };
 
+  const handleUploadCeoPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCropFile(file);
+    setCropType('ceo');
+    setShowCropper(true);
+    if (e.target) e.target.value = '';
+  };
+
   const handleUploadGallery = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -338,6 +412,36 @@ export default function CompanyProfilePage() {
         businessRegNumber: company.businessRegNumber || '',
         verificationDocUrl: company.verificationDocUrl || '',
         verificationDocName: company.verificationDocName || '',
+        
+        // Enterprise & Founder
+        ceoPhotoUrl: company.ceoPhotoUrl || '',
+        ceoName: company.ceoName || '',
+        ceoMessage: company.ceoMessage || '',
+        aboutFounder: company.aboutFounder || '',
+        companyStory: company.companyStory || '',
+        vision: company.vision || '',
+        mission: company.mission || '',
+        coreValues: company.coreValues || '',
+        timeline: company.timeline || [],
+        achievements: company.achievements || '',
+        awardsCertificates: company.awardsCertificates || [],
+        clients: company.clients || [],
+        partners: company.partners || [],
+        careerSectionText: company.careerSectionText || '',
+        careerEmail: company.careerEmail || '',
+        csrActivities: company.csrActivities || '',
+        
+        // Publish Status
+        isPublished: company.isPublished || false,
+        publishedAt: company.publishedAt || null,
+        
+        // Advanced SEO settings
+        seoKeywords: company.seoKeywords || '',
+        canonicalUrl: company.canonicalUrl || '',
+        socialShareImage: company.socialShareImage || '',
+        ogTitle: company.ogTitle || '',
+        ogDescription: company.ogDescription || '',
+
         updatedAt: new Date()
       };
 
@@ -367,6 +471,103 @@ export default function CompanyProfilePage() {
     }
   };
 
+  const handlePublish = async () => {
+    if (!company.name) {
+      alert('Please fill in the Company Name.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const updatedCompanyData = {
+        ...company,
+        isPublished: true,
+        publishedAt: new Date(),
+      };
+      setCompany(updatedCompanyData);
+
+      const docData = {
+        name: updatedCompanyData.name,
+        tagline: updatedCompanyData.tagline,
+        logoUrl: updatedCompanyData.logoUrl,
+        coverUrl: updatedCompanyData.coverUrl,
+        description: updatedCompanyData.description,
+        phone: updatedCompanyData.phone,
+        email: updatedCompanyData.email,
+        whatsapp: updatedCompanyData.whatsapp,
+        website: updatedCompanyData.website,
+        address: updatedCompanyData.address,
+        location: updatedCompanyData.location,
+        district: updatedCompanyData.district,
+        facebook: updatedCompanyData.facebook,
+        instagram: updatedCompanyData.instagram,
+        linkedin: updatedCompanyData.linkedin,
+        youtube: updatedCompanyData.youtube,
+        gallery: updatedCompanyData.gallery,
+        branches: updatedCompanyData.branches,
+        verification: updatedCompanyData.verification,
+        customTheme: updatedCompanyData.customTheme || 'classic_blue',
+        websiteTemplate: updatedCompanyData.websiteTemplate || 'classic',
+        customMetaTitle: updatedCompanyData.customMetaTitle || '',
+        customMetaDescription: updatedCompanyData.customMetaDescription || '',
+        googleAnalyticsId: updatedCompanyData.googleAnalyticsId || '',
+        facebookPixelId: updatedCompanyData.facebookPixelId || '',
+        whatsappMessageTemplate: updatedCompanyData.whatsappMessageTemplate || '',
+        customCtaLabel: updatedCompanyData.customCtaLabel || '',
+        customCtaUrl: updatedCompanyData.customCtaUrl || '',
+        hideBranding: updatedCompanyData.hideBranding || false,
+        gstNumber: updatedCompanyData.gstNumber || '',
+        businessRegNumber: updatedCompanyData.businessRegNumber || '',
+        verificationDocUrl: updatedCompanyData.verificationDocUrl || '',
+        verificationDocName: updatedCompanyData.verificationDocName || '',
+        
+        // Enterprise & Founder
+        ceoPhotoUrl: updatedCompanyData.ceoPhotoUrl || '',
+        ceoName: updatedCompanyData.ceoName || '',
+        ceoMessage: updatedCompanyData.ceoMessage || '',
+        aboutFounder: updatedCompanyData.aboutFounder || '',
+        companyStory: updatedCompanyData.companyStory || '',
+        vision: updatedCompanyData.vision || '',
+        mission: updatedCompanyData.mission || '',
+        coreValues: updatedCompanyData.coreValues || '',
+        timeline: updatedCompanyData.timeline || [],
+        achievements: updatedCompanyData.achievements || '',
+        awardsCertificates: updatedCompanyData.awardsCertificates || [],
+        clients: updatedCompanyData.clients || [],
+        partners: updatedCompanyData.partners || [],
+        careerSectionText: updatedCompanyData.careerSectionText || '',
+        careerEmail: updatedCompanyData.careerEmail || '',
+        csrActivities: updatedCompanyData.csrActivities || '',
+        
+        // Publish Status
+        isPublished: true,
+        publishedAt: new Date(),
+        
+        // Advanced SEO settings
+        seoKeywords: updatedCompanyData.seoKeywords || '',
+        canonicalUrl: updatedCompanyData.canonicalUrl || '',
+        socialShareImage: updatedCompanyData.socialShareImage || '',
+        ogTitle: updatedCompanyData.ogTitle || '',
+        ogDescription: updatedCompanyData.ogDescription || '',
+
+        updatedAt: new Date()
+      };
+
+      if (resolvedCompany?.id) {
+        await updateDocument('companies', resolvedCompany.id, docData);
+        alert('Your Business Portfolio has been successfully published! It is now live.');
+      } else {
+        alert('Failed to publish. Please check if your profile basic details are filled.');
+      }
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to publish company profile.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 font-outfit">
@@ -379,23 +580,66 @@ export default function CompanyProfilePage() {
   return (
     <div className="space-y-6 animate-fade-in-up font-outfit">
       {/* Page Header */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white font-outfit">Company Profile</h1>
-          <p className="text-sm text-gray-400 mt-1">Manage your company information and branding</p>
-        </div>
-        {autoSaveStatus !== 'idle' && (
-          <div className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
-            autoSaveStatus === 'saving' 
-              ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
-              : autoSaveStatus === 'saved' 
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-              : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-          }`}>
-            {autoSaveStatus === 'saving' && <Loader2 size={12} className="animate-spin" />}
-            {autoSaveStatus === 'saving' ? 'Saving changes...' : autoSaveStatus === 'saved' ? 'Saved Successfully' : 'Save Error'}
+      <div className="flex justify-between items-center flex-wrap gap-4 p-6 bg-slate-900/40 border border-white/5 rounded-3xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold text-white font-outfit">Company Profile</h1>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              company.isPublished 
+                ? 'bg-emerald-500/15 border border-emerald-500/35 text-emerald-400' 
+                : 'bg-white/5 border border-white/10 text-gray-400'
+            }`}>
+              {company.isPublished ? '✓ Published' : 'Draft'}
+            </span>
+            {company.isPublished && company.slug && (
+              <a
+                href={`/company/${company.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-cyan-400 font-bold hover:underline ml-2"
+              >
+                View Live Page ↗
+              </a>
+            )}
           </div>
-        )}
+          <p className="text-xs text-gray-400 mt-0.5">
+            Manage your company information, dynamic design templates, and SEO mapping.
+          </p>
+          {company.updatedAt && (
+            <p className="text-[10px] text-gray-500">
+              Last Saved: {new Date(company.updatedAt.seconds ? company.updatedAt.seconds * 1000 : company.updatedAt).toLocaleString('en-IN')}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          {autoSaveStatus !== 'idle' && (
+            <div className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              autoSaveStatus === 'saving' 
+                ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
+                : autoSaveStatus === 'saved' 
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+            }`}>
+              {autoSaveStatus === 'saving' && <Loader2 size={12} className="animate-spin" />}
+              {autoSaveStatus === 'saving' ? 'Saving changes...' : autoSaveStatus === 'saved' ? 'Saved Successfully' : 'Save Error'}
+            </div>
+          )}
+          
+          <button
+            onClick={() => setIsPreviewOpen(true)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-bold text-gray-300 transition-colors cursor-pointer"
+          >
+            <Globe size={14} /> Preview Website
+          </button>
+          
+          <button
+            onClick={handlePublish}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-550 text-xs font-bold text-white shadow-lg hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+          >
+            <CheckCircle size={14} /> {saving ? 'Publishing...' : 'Publish Website'}
+          </button>
+        </div>
       </div>
 
       {/* Profile Completion Banner */}
@@ -437,6 +681,7 @@ export default function CompanyProfilePage() {
           { id: 'branding', label: 'Branding & Design', Icon: Camera },
           { id: 'seo', label: 'SEO & Marketing', Icon: Globe },
           { id: 'verification', label: 'Verification Docs', Icon: Shield },
+          ...(currentPlan === 'enterprise' ? [{ id: 'enterprise', label: 'Enterprise & Founder', Icon: Crown }] : []),
         ].map((t) => {
           const Icon = t.Icon;
           return (
@@ -1015,40 +1260,96 @@ export default function CompanyProfilePage() {
              <div className="space-y-6">
                {/* Custom SEO Meta Tags */}
                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
-                 {getPlanRank(currentPlan) < 1 && (
-                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                     <Lock size={24} className="text-amber-400 mb-2" />
-                     <h4 className="text-sm font-bold text-white">SEO customization is a Standard/Premium Feature</h4>
-                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the title and description indexed by search engines like Google.</p>
-                   </div>
-                 )}
-                 <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                   <Globe size={16} className="text-cyan-400" />
-                   SEO Customization
-                 </h3>
-                 <div className="space-y-4">
-                   <div>
-                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Title (Indexed by Google)</label>
-                     <input
-                       type="text"
-                       placeholder="e.g. Best Biryani in Theni | Hotel Salem Ananda"
-                       value={company.customMetaTitle || ''}
-                       onChange={(e) => update('customMetaTitle', e.target.value)}
-                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
-                     />
-                   </div>
-                   <div>
-                     <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Description</label>
-                     <textarea
-                       rows={3}
-                       placeholder="e.g. Hotel Salem Ananda offers premium traditional Biryani and South Indian foods in Theni district. Visit us or order online."
-                       value={company.customMetaDescription || ''}
-                       onChange={(e) => update('customMetaDescription', e.target.value)}
-                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
-                     />
-                   </div>
-                 </div>
-               </div>
+                  {getPlanRank(currentPlan) < 1 && (
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
+                      <Lock size={24} className="text-amber-400 mb-2" />
+                      <h4 className="text-sm font-bold text-white">SEO customization is a Standard/Premium Feature</h4>
+                      <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the title and description indexed by search engines like Google.</p>
+                    </div>
+                  )}
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Globe size={16} className="text-cyan-400" />
+                    SEO Customization
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Title (Indexed by Google)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Best Biryani in Theni | Hotel Salem Ananda"
+                          value={company.customMetaTitle || ''}
+                          onChange={(e) => update('customMetaTitle', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">SEO Meta Keywords</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. biryani, hotel, restaurants in theni, food delivery"
+                          value={company.seoKeywords || ''}
+                          onChange={(e) => update('seoKeywords', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 font-medium block mb-1.5">Meta Description</label>
+                      <textarea
+                        rows={3}
+                        placeholder="e.g. Hotel Salem Ananda offers premium traditional Biryani and South Indian foods in Theni district. Visit us or order online."
+                        value={company.customMetaDescription || ''}
+                        onChange={(e) => update('customMetaDescription', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                      />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Canonical URL</label>
+                        <input
+                          type="url"
+                          placeholder="e.g. https://yourdomain.com"
+                          value={company.canonicalUrl || ''}
+                          onChange={(e) => update('canonicalUrl', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Social Share Image URL</label>
+                        <input
+                          type="url"
+                          placeholder="e.g. https://yourdomain.com/social-preview.jpg"
+                          value={company.socialShareImage || ''}
+                          onChange={(e) => update('socialShareImage', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-white/5">
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Open Graph (Facebook) Title</label>
+                        <input
+                          type="text"
+                          placeholder="Open Graph custom title"
+                          value={company.ogTitle || ''}
+                          onChange={(e) => update('ogTitle', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Open Graph (Facebook) Description</label>
+                        <input
+                          type="text"
+                          placeholder="Open Graph custom description"
+                          value={company.ogDescription || ''}
+                          onChange={(e) => update('ogDescription', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
  
                {/* Marketing Analytics & Pixels */}
                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
@@ -1160,17 +1461,28 @@ export default function CompanyProfilePage() {
                     <div className="flex items-center gap-4">
                       <label className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-bold text-gray-300 hover:bg-white/[0.08] hover:text-white cursor-pointer transition-all">
                         <Upload size={14} />
-                        Select File (PDF, PNG, JPG)
+                        Select Verification Document (PDF, Max 3MB)
                         <input
                           type="file"
-                          accept=".pdf,.png,.jpg,.jpeg"
+                          accept=".pdf"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file || !user?.uid) return;
+
+                            if (file.type !== 'application/pdf') {
+                              alert('Only PDF documents are allowed.');
+                              return;
+                            }
+
+                            if (file.size > 3 * 1024 * 1024) {
+                              alert('Maximum file size allowed is 3MB.');
+                              return;
+                            }
+
                             try {
-                              const url = await uploadFile(file, `companies/${user.uid}/verification_doc_${Date.now()}`, {
-                                allowedTypes: ['application/pdf', 'image/jpeg', 'image/png'],
-                                maxSizeBytes: 10 * 1024 * 1024
+                              const url = await uploadFile(file, `verification/${resolvedCompany?.id || user.uid}/doc_${Date.now()}`, {
+                                allowedTypes: ['application/pdf'],
+                                maxSizeBytes: 3 * 1024 * 1024
                               });
                               setCompany(prev => {
                                 const next = {
@@ -1209,29 +1521,366 @@ export default function CompanyProfilePage() {
                 </div>
               </div>
             )}
- 
-           {/* Save Button */}
-           <button
-             onClick={handleSave}
-             disabled={saving}
-             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
-           >
-             {saving ? (
-               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-             ) : (
-               <Save size={16} />
-             )}
-             {saving ? 'Saving...' : 'Save Company Profile'}
-           </button>
-         </div>
- 
-         {/* Sidebar — Verification Status */}
-         <div className="xl:col-span-1 font-outfit">
-           <div className="glass-card rounded-2xl p-6 sticky top-24">
-             <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-               <Shield size={16} className="text-cyan-400" />
-               Verification Status
-             </h3>
+
+            {/* ENTREPRENEURSHIP & ENTERPRISE PLAN TAB */}
+            {activeFormTab === 'enterprise' && (
+              <div className="space-y-6">
+                {/* CEO / Founder Profile */}
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Crown size={16} className="text-cyan-400" />
+                    CEO / Founder Biography & Profile
+                  </h3>
+                  <div className="grid sm:grid-cols-3 gap-6">
+                    <div className="sm:col-span-1 space-y-3">
+                      <label className="text-xs text-gray-400 font-medium block">CEO / Founder Photo</label>
+                      <div className="relative w-32 h-32 rounded-2xl overflow-hidden border border-white/10 bg-white/[0.02] group flex flex-col items-center justify-center">
+                        {company.ceoPhotoUrl ? (
+                          <img src={company.ceoPhotoUrl} alt="CEO" className="object-cover w-full h-full" />
+                        ) : (
+                          <Building2 size={24} className="text-gray-600" />
+                        )}
+                        <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 cursor-pointer transition-opacity">
+                          <Upload size={16} className="text-white" />
+                          <span className="text-[10px] text-white font-bold text-center px-1">Upload CEO Photo</span>
+                          <input type="file" accept="image/*" onChange={handleUploadCeoPhoto} className="hidden" />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="sm:col-span-2 space-y-4">
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">CEO / Founder Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Dr. K. Sivaraj M.B.A."
+                          value={company.ceoName || ''}
+                          onChange={(e) => update('ceoName', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">CEO / Founder Message</label>
+                        <textarea
+                          rows={3}
+                          placeholder="e.g. Welcome to our corporate page. We believe in providing premium services..."
+                          value={company.ceoMessage || ''}
+                          onChange={(e) => update('ceoMessage', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="text-xs text-gray-400 font-medium block mb-1.5">About the Founder</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Detail the founder's academic milestones, business journey, and values..."
+                      value={company.aboutFounder || ''}
+                      onChange={(e) => update('aboutFounder', e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Company Story & Strategy */}
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Sparkles size={16} className="text-cyan-400" />
+                    Company Story, Vision & Core Values
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs text-gray-400 font-medium block mb-1.5">Company Story & History</label>
+                      <textarea
+                        rows={4}
+                        placeholder="Share your business origin story, how it started, milestones and achievements over the years..."
+                        value={company.companyStory || ''}
+                        onChange={(e) => update('companyStory', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                      />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Our Vision</label>
+                        <textarea
+                          rows={3}
+                          placeholder="Our vision is to revolutionize..."
+                          value={company.vision || ''}
+                          onChange={(e) => update('vision', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Our Mission</label>
+                        <textarea
+                          rows={3}
+                          placeholder="Our mission is to deliver high-quality..."
+                          value={company.mission || ''}
+                          onChange={(e) => update('mission', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 font-medium block mb-1.5">Core Values (Comma separated)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Quality, Integrity, Innovation, Customer First"
+                        value={company.coreValues || ''}
+                        onChange={(e) => update('coreValues', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Milestones / Timeline */}
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <TrendingUp size={16} className="text-cyan-400" />
+                    Company History Milestones Timeline
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Add Milestone form */}
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
+                      <p className="text-xs font-bold text-gray-300">Add History Milestone</p>
+                      <div className="grid sm:grid-cols-3 gap-3">
+                        <input
+                          id="timeline_year"
+                          type="text"
+                          placeholder="Year (e.g. 2018)"
+                          className="px-4 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white"
+                        />
+                        <input
+                          id="timeline_title"
+                          type="text"
+                          placeholder="Milestone Title"
+                          className="sm:col-span-2 px-4 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white"
+                        />
+                      </div>
+                      <textarea
+                        id="timeline_desc"
+                        rows={2}
+                        placeholder="Brief details about the milestone..."
+                        className="w-full px-4 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const yearInput = document.getElementById('timeline_year') as HTMLInputElement;
+                          const titleInput = document.getElementById('timeline_title') as HTMLInputElement;
+                          const descInput = document.getElementById('timeline_desc') as HTMLTextAreaElement;
+                          if (yearInput?.value && titleInput?.value) {
+                            const newEvent = {
+                              id: Date.now().toString(),
+                              year: yearInput.value.trim(),
+                              title: titleInput.value.trim(),
+                              description: descInput?.value.trim() || ''
+                            };
+                            update('timeline', [...(company.timeline || []), newEvent]);
+                            yearInput.value = '';
+                            titleInput.value = '';
+                            if (descInput) descInput.value = '';
+                          } else {
+                            alert('Please fill out both Year and Title.');
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-[10px] font-bold text-white flex items-center gap-1 transition-all cursor-pointer"
+                      >
+                        <Plus size={10} /> Add Milestone
+                      </button>
+                    </div>
+
+                    {/* Milestones list */}
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {(company.timeline || []).map((t: any) => (
+                        <div key={t.id || t.year} className="flex justify-between items-center p-3 bg-white/[0.01] border border-white/5 rounded-xl gap-4">
+                          <div className="text-xs">
+                            <span className="font-bold text-cyan-400 font-mono mr-2">[{t.year}]</span>
+                            <span className="font-semibold text-white">{t.title}</span>
+                            {t.description && <p className="text-[10px] text-gray-500 mt-0.5">{t.description}</p>}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              update('timeline', (company.timeline || []).filter((x: any) => x.id !== t.id));
+                            }}
+                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 cursor-pointer"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Achievements, CSR & Careers Section */}
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <LinkedinIcon size={16} className="text-cyan-400" />
+                    Achievements, CSR & Careers Settings
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs text-gray-400 font-medium block mb-1.5">Awards, Accreditations & Achievements</label>
+                      <textarea
+                        rows={2}
+                        placeholder="Describe key awards, certifications, or major company achievements..."
+                        value={company.achievements || ''}
+                        onChange={(e) => update('achievements', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 font-medium block mb-1.5">Corporate Social Responsibility (CSR) Activities</label>
+                      <textarea
+                        rows={2}
+                        placeholder="Detail company charity work, environment protection measures, community welfare, etc..."
+                        value={company.csrActivities || ''}
+                        onChange={(e) => update('csrActivities', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                      />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Custom Careers Section Introduction Text</label>
+                        <textarea
+                          rows={2}
+                          placeholder="e.g. Join our professional family. We offer competitive salaries, health benefits..."
+                          value={company.careerSectionText || ''}
+                          onChange={(e) => update('careerSectionText', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-400 font-medium block mb-1.5">Careers Contact Email</label>
+                        <input
+                          type="email"
+                          placeholder="e.g. careers@yourcompany.com"
+                          value={company.careerEmail || ''}
+                          onChange={(e) => update('careerEmail', e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stakeholder Logos: Clients & Partners (URL lists) */}
+                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Link2 size={16} className="text-cyan-400" />
+                    Corporate Partners & Clients Logotypes
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Add Client / Partner input */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-3">
+                        <p className="text-xs font-bold text-gray-300">Add Client Logo (URL Link)</p>
+                        <div className="flex gap-2">
+                          <input
+                            id="new_client_logo"
+                            type="text"
+                            placeholder="https://example.com/client-logo.png"
+                            className="flex-1 px-3 py-1.5 bg-slate-950 border border-white/10 rounded-lg text-xs text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const input = document.getElementById('new_client_logo') as HTMLInputElement;
+                              if (input?.value) {
+                                update('clients', [...(company.clients || []), input.value.trim()]);
+                                input.value = '';
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-[10px] font-bold text-white cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
+                        <div className="flex gap-2 flex-wrap max-h-24 overflow-y-auto mt-2">
+                          {(company.clients || []).map((url: string, idx: number) => (
+                            <div key={idx} className="relative group/logo w-10 h-10 border border-white/10 rounded-lg overflow-hidden bg-white/5">
+                              <img src={url} alt="client logo" className="w-full h-full object-contain" />
+                              <button
+                                type="button"
+                                onClick={() => update('clients', (company.clients || []).filter((_: any, i: number) => i !== idx))}
+                                className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity text-[8px] font-bold cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-3">
+                        <p className="text-xs font-bold text-gray-300">Add Partner Logo (URL Link)</p>
+                        <div className="flex gap-2">
+                          <input
+                            id="new_partner_logo"
+                            type="text"
+                            placeholder="https://example.com/partner-logo.png"
+                            className="flex-1 px-3 py-1.5 bg-slate-950 border border-white/10 rounded-lg text-xs text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const input = document.getElementById('new_partner_logo') as HTMLInputElement;
+                              if (input?.value) {
+                                update('partners', [...(company.partners || []), input.value.trim()]);
+                                input.value = '';
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-700 text-[10px] font-bold text-white cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
+                        <div className="flex gap-2 flex-wrap max-h-24 overflow-y-auto mt-2">
+                          {(company.partners || []).map((url: string, idx: number) => (
+                            <div key={idx} className="relative group/logo w-10 h-10 border border-white/10 rounded-lg overflow-hidden bg-white/5">
+                              <img src={url} alt="partner logo" className="w-full h-full object-contain" />
+                              <button
+                                type="button"
+                                onClick={() => update('partners', (company.partners || []).filter((_: any, i: number) => i !== idx))}
+                                className="absolute inset-0 bg-red-600/80 text-white flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity text-[8px] font-bold cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Save Button */}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {saving ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
+              {saving ? 'Saving...' : 'Save Company Profile'}
+            </button>
+          </div>
+
+          {/* Sidebar — Verification Status */}
+          <div className="xl:col-span-1 font-outfit">
+            <div className="glass-card rounded-2xl p-6 sticky top-24">
+              <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                <Shield size={16} className="text-cyan-400" />
+                Verification Status
+              </h3>
              <div className="space-y-3">
                {[
                  { label: 'Email Verified', icon: Mail, verified: company.verification.email },
@@ -1297,7 +1946,144 @@ export default function CompanyProfilePage() {
            </div>
          </div>
        </div>
- 
+
+      {/* Live Responsive Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-md animate-fade-in font-outfit">
+          {/* Header Bar */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-900/90 backdrop-blur-md">
+            <div>
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Globe size={18} className="text-cyan-400" />
+                Live Breakpoint Preview: <span className="text-cyan-400 capitalize">{company.name || 'Your Company'}</span>
+              </h2>
+              <p className="text-[10px] text-gray-400">See how your website templates render across devices and search engines.</p>
+            </div>
+            
+            {/* Controls */}
+            <div className="flex items-center gap-2 bg-slate-950/50 p-1 border border-white/10 rounded-2xl">
+              {[
+                { mode: 'desktop', Icon: Laptop, label: 'Desktop (100%)' },
+                { mode: 'tablet', Icon: Tablet, label: 'Tablet (768px)' },
+                { mode: 'mobile', Icon: Smartphone, label: 'Mobile (375px)' },
+                { mode: 'seo', Icon: Globe, label: 'Google Search & Social' }
+              ].map((item) => {
+                const Icon = item.Icon;
+                const active = previewMode === item.mode;
+                return (
+                  <button
+                    key={item.mode}
+                    onClick={() => setPreviewMode(item.mode as any)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      active 
+                        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' 
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                    title={item.label}
+                  >
+                    <Icon size={14} />
+                    <span className="hidden sm:inline">{item.label.split(' ')[0]}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setIsPreviewOpen(false)}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              Close Preview
+            </button>
+          </div>
+
+          {/* Canvas Wrapper */}
+          <div className="flex-1 overflow-y-auto p-8 flex justify-center items-start bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-950/15 via-slate-950 to-slate-950">
+            {previewMode === 'seo' ? (
+              <div className="w-full max-w-2xl space-y-6 animate-fade-in-up">
+                {/* Google Search Mockup */}
+                <div className="glass-card rounded-2xl p-6 border border-white/5 bg-slate-900/30">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-widest font-black block mb-4">Google Search Result Snippet</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <span className="bg-white/10 px-1.5 py-0.5 rounded text-[9px] font-bold">Ad</span>
+                      <span>https://thenijobs.com › company › {company.slug || 'slug'}</span>
+                    </div>
+                    <h3 className="text-xl text-blue-400 hover:underline cursor-pointer font-medium leading-tight">
+                      {company.customMetaTitle || company.name || 'Company Name | Theni Jobs'}
+                    </h3>
+                    <p className="text-sm text-gray-300 leading-relaxed font-sans mt-1">
+                      {company.customMetaDescription || company.description || 'Discover company updates, open jobs, founder stories, and portfolios on Theni Jobs.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Social Card Mockup */}
+                <div className="glass-card rounded-2xl p-6 border border-white/5 bg-slate-900/30">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-widest font-black block mb-4">Facebook & Social Feed Preview</span>
+                  <div className="max-w-md border border-white/10 rounded-2xl overflow-hidden bg-slate-950/80">
+                    <div className="aspect-[1.91/1] w-full bg-slate-900 relative overflow-hidden flex items-center justify-center">
+                      {company.socialShareImage || company.coverUrl || company.logoUrl ? (
+                        <img 
+                          src={company.socialShareImage || company.coverUrl || company.logoUrl} 
+                          alt="Social share" 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-6 text-center text-gray-600">
+                          <ImagePlus size={36} />
+                          <span className="text-[10px] mt-2 font-bold uppercase">No Custom Social Preview Image</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4 bg-slate-900/60 space-y-1">
+                      <span className="text-[9px] text-gray-500 uppercase tracking-wider block font-bold font-mono">thenijobs.com</span>
+                      <h4 className="text-xs font-bold text-white leading-snug line-clamp-1">
+                        {company.ogTitle || company.customMetaTitle || company.name || 'Company Title'}
+                      </h4>
+                      <p className="text-[10px] text-gray-400 leading-normal line-clamp-2">
+                        {company.ogDescription || company.customMetaDescription || company.description || 'Description details...'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div 
+                className={`transition-all duration-300 ease-out bg-slate-950 shadow-2xl relative overflow-hidden flex flex-col ${
+                  previewMode === 'mobile' 
+                    ? 'w-[375px] h-[750px] border-[10px] border-slate-800 rounded-[36px] ring-2 ring-white/10' 
+                    : previewMode === 'tablet' 
+                    ? 'w-[768px] h-[950px] border-[10px] border-slate-800 rounded-[36px] ring-2 ring-white/10' 
+                    : 'w-full min-h-[90vh] border border-white/10 rounded-2xl'
+                }`}
+              >
+                {/* Device Status Bar Mockup */}
+                {(previewMode === 'mobile' || previewMode === 'tablet') && (
+                  <div className="h-6 bg-slate-900 flex justify-between items-center px-6 text-[10px] text-gray-400 font-mono flex-shrink-0">
+                    <span>9:41</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>5G</span>
+                      <div className="w-5 h-2.5 border border-gray-400/50 rounded-sm p-px flex items-center">
+                        <div className="w-full h-full bg-gray-400 rounded-2xs" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Page content scrollable inside device mockup */}
+                <div className="flex-1 overflow-y-auto">
+                  <CompanyProfileClient 
+                    company={company} 
+                    jobs={[]} 
+                    reviews={[]} 
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
        <ImageCropperModal
          open={showCropper}
          onClose={() => {
@@ -1307,18 +2093,20 @@ export default function CompanyProfilePage() {
            setGalleryCropIndex(null);
          }}
          file={cropFile}
-         aspectRatio={cropType === 'logo' ? 1 : cropType === 'cover' ? 4 : 4/3}
-         cropWidth={cropType === 'logo' ? 400 : cropType === 'cover' ? 1200 : 800}
-         cropHeight={cropType === 'logo' ? 400 : cropType === 'cover' ? 300 : 600}
-         isCircular={cropType === 'logo'}
+         aspectRatio={cropType === 'logo' || cropType === 'ceo' ? 1 : cropType === 'cover' ? 4 : 4/3}
+         cropWidth={cropType === 'logo' || cropType === 'ceo' ? 400 : cropType === 'cover' ? 1200 : 800}
+         cropHeight={cropType === 'logo' || cropType === 'ceo' ? 400 : cropType === 'cover' ? 300 : 600}
+         isCircular={cropType === 'logo' || cropType === 'ceo'}
          title={
            cropType === 'logo'
              ? 'Crop Company Logo'
              : cropType === 'cover'
              ? 'Crop Cover Banner'
+             : cropType === 'ceo'
+             ? 'Crop CEO/Founder Photo'
              : 'Crop Gallery Image'
          }
-         uploadPath={user?.uid && cropType ? (cropType === 'logo' ? `companies/${user.uid}/logo_${Date.now()}` : cropType === 'cover' ? `companies/${user.uid}/cover_${Date.now()}` : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`) : undefined}
+         uploadPath={user?.uid && cropType ? (cropType === 'logo' ? `companies/${user.uid}/logo_${Date.now()}` : cropType === 'cover' ? `companies/${user.uid}/cover_${Date.now()}` : cropType === 'ceo' ? `companies/${user.uid}/ceo_${Date.now()}` : `companies/${user.uid}/gallery_${galleryCropIndex}_${Date.now()}`) : undefined}
          onUploadComplete={async (url) => {
            try {
              const nextCompany = { ...company };
@@ -1326,9 +2114,11 @@ export default function CompanyProfilePage() {
                nextCompany.logoUrl = url;
              } else if (cropType === 'cover') {
                nextCompany.coverUrl = url;
+             } else if (cropType === 'ceo') {
+               nextCompany.ceoPhotoUrl = url;
              } else if (cropType === 'gallery' && galleryCropIndex !== null) {
                const newGallery = [...company.gallery];
-               newGallery[galleryCropIndex] = url;
+               newGallery[newGallery.length > galleryCropIndex ? galleryCropIndex : 0] = url;
                nextCompany.gallery = newGallery;
              }
              
@@ -1341,6 +2131,7 @@ export default function CompanyProfilePage() {
                await updateDocument('companies', resolvedCompany.id, {
                  logoUrl: nextCompany.logoUrl,
                  coverUrl: nextCompany.coverUrl,
+                 ceoPhotoUrl: nextCompany.ceoPhotoUrl,
                  gallery: nextCompany.gallery,
                  updatedAt: new Date()
                });

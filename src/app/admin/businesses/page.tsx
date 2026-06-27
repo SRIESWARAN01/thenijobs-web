@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   Building2, Search, ChevronDown, Eye, CheckCircle, XCircle,
   Star, Crown, MapPin, Phone, Globe, LayoutGrid, List,
-  Download, BadgeCheck, Clock, Loader2, Ban, Check, Settings, Ticket
+  Download, BadgeCheck, Clock, Loader2, Ban, Check, Settings, Ticket, ShieldCheck
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,6 +41,10 @@ interface BusinessDoc {
   subscriptionStartsAt?: any;
   subscriptionEndsAt?: any;
   verificationLevel?: string;
+  gstNumber?: string;
+  businessRegNumber?: string;
+  verificationDocUrl?: string;
+  verificationDocName?: string;
 };
 
 // ===== CONSTANTS =====
@@ -672,6 +676,45 @@ export default function BusinessesPage() {
                 </p>
               </div>
             </div>
+
+            {/* GST & Registration Verification Documents */}
+            {(selectedBiz.gstNumber || selectedBiz.businessRegNumber || selectedBiz.verificationDocUrl) && (
+              <div className="bg-white/[0.02] border border-white/[0.08] p-5 rounded-2xl space-y-4">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                  <ShieldCheck size={14} className="text-cyan-400" /> GST & Verification Documents
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedBiz.gstNumber && (
+                    <div>
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider block font-bold">GST Tax ID</span>
+                      <span className="text-sm font-semibold text-white font-mono">{selectedBiz.gstNumber}</span>
+                    </div>
+                  )}
+                  {selectedBiz.businessRegNumber && (
+                    <div>
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider block font-bold">Reg Number / PAN</span>
+                      <span className="text-sm font-semibold text-white font-mono">{selectedBiz.businessRegNumber}</span>
+                    </div>
+                  )}
+                </div>
+                {selectedBiz.verificationDocUrl && (
+                  <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-gray-500 uppercase block font-bold">Registration Proof PDF</span>
+                      <p className="text-xs text-white truncate font-medium mt-0.5">{selectedBiz.verificationDocName || 'Scanned Document'}</p>
+                    </div>
+                    <a
+                      href={selectedBiz.verificationDocUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-xs font-bold text-white rounded-xl transition-colors flex items-center gap-1.5 flex-shrink-0"
+                    >
+                      <Download size={12} /> Download PDF
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Services & Description */}
             <div className="space-y-3">

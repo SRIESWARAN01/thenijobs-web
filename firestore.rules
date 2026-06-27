@@ -191,11 +191,11 @@ service cloud.firestore {
       // Owner: restricted update (cannot change status, verification, featured, premium, active)
       allow update: if resource.data.ownerId == request.auth.uid
         && request.resource.data.ownerId == resource.data.ownerId
-        && request.resource.data.verificationStatus == resource.data.verificationStatus
-        && request.resource.data.status == resource.data.status
-        && optionalFalseOrUnchanged('isFeatured')
-        && optionalFalseOrUnchanged('isPremium')
-        && optionalFalseOrUnchanged('isActive');
+        && request.resource.data.get('verificationStatus', 'pending') == resource.data.get('verificationStatus', 'pending')
+        && request.resource.data.get('status', 'pending') == resource.data.get('status', 'pending')
+        && request.resource.data.get('isFeatured', false) == resource.data.get('isFeatured', false)
+        && request.resource.data.get('isPremium', false) == resource.data.get('isPremium', false)
+        && request.resource.data.get('isActive', false) == resource.data.get('isActive', false);
       allow delete: if isAdmin();
 
       match /private/verification {

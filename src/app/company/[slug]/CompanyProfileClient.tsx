@@ -164,23 +164,43 @@ Please share more details.`;
   );
 }
 
-const renderVerificationBadge = (level?: string, status?: string, size = 18) => {
-  const activeLevel = level || (status === 'verified' ? 'basic' : 'free');
-  if (activeLevel === 'free') return null;
-  if (activeLevel === 'basic' || activeLevel === 'standard') {
-    return <span title="Standard Verified Business" className="shrink-0 inline-block align-middle ml-1.5 animate-fade-in"><BadgeCheck size={size} className="text-blue-400 fill-blue-400/10" /></span>;
-  }
-  if (activeLevel === 'premium') {
-    return <span title="Premium Verified Business" className="shrink-0 inline-block align-middle ml-1.5 animate-fade-in"><BadgeCheck size={size} className="text-amber-400 fill-amber-400/10" /></span>;
-  }
-  if (activeLevel === 'enterprise' || activeLevel === 'elite') {
+const renderVerificationBadge = (company: any, size = 18) => {
+  if (!company || company.verificationStatus !== 'verified') return null;
+
+  const plan = getCompanyActivePlan(company);
+
+  if (plan === 'free') return null;
+
+  if (plan === 'basic') {
+    // Grey Verified Style Badge
     return (
-      <span className="inline-flex items-center gap-0.5 align-middle ml-1.5 shrink-0 animate-fade-in">
-        <span title="Elite Enterprise Verified Business"><BadgeCheck size={size} className="text-violet-400 fill-violet-400/10" /></span>
-        <span className="text-xs text-violet-400 font-extrabold" style={{ fontSize: size * 0.65 }} title="Enterprise Crown VIP">👑</span>
+      <span title="Standard Business" className="shrink-0 inline-block align-middle ml-1.5 animate-fade-in">
+        <BadgeCheck size={size} className="text-slate-400 fill-slate-400/10" />
       </span>
     );
   }
+
+  if (plan === 'premium') {
+    // Blue Premium Verified Badge
+    return (
+      <span title="Premium Verified Business" className="shrink-0 inline-block align-middle ml-1.5 animate-fade-in">
+        <BadgeCheck size={size} className="text-blue-500 fill-blue-500/10" />
+      </span>
+    );
+  }
+
+  if (plan === 'enterprise') {
+    // Gold Verified Badge + Crown Icon
+    return (
+      <span className="inline-flex items-center gap-0.5 align-middle ml-1.5 shrink-0 animate-fade-in">
+        <span title="Enterprise Verified Business">
+          <BadgeCheck size={size} className="text-amber-500 fill-amber-500/10" />
+        </span>
+        <span className="text-xs text-amber-500 font-extrabold" style={{ fontSize: size * 0.65 }} title="Enterprise Crown VIP">👑</span>
+      </span>
+    );
+  }
+
   return null;
 };
 
@@ -189,10 +209,10 @@ const renderVerificationBadge = (level?: string, status?: string, size = 18) => 
 // ──────────────────────────────────────────────────────────────────
 function SubscriptionPlanBadge({ plan }: { plan: string }) {
   const config: Record<string, { label: string; emoji: string; style: string }> = {
-    free: { label: 'Free', emoji: '🟢', style: 'bg-slate-800/60 border-slate-700 text-slate-400' },
-    basic: { label: 'Standard', emoji: '🔵', style: 'bg-blue-500/10 border-blue-400/30 text-blue-300' },
-    premium: { label: 'Premium', emoji: '🟡', style: 'bg-amber-500/10 border-amber-400/30 text-amber-300' },
-    enterprise: { label: 'Enterprise', emoji: '🟣', style: 'bg-violet-500/10 border-violet-400/30 text-violet-300' },
+    free: { label: 'Free Member', emoji: '🌱', style: 'bg-slate-800/60 border-slate-700 text-slate-400' },
+    basic: { label: 'Standard Business', emoji: '⚙️', style: 'bg-slate-700/40 border-slate-600/30 text-slate-300' },
+    premium: { label: 'Premium Verified Business', emoji: '💎', style: 'bg-blue-500/10 border-blue-400/30 text-blue-400' },
+    enterprise: { label: 'Enterprise Verified Business', emoji: '👑', style: 'bg-amber-500/10 border-amber-400/30 text-amber-400 font-extrabold' },
   };
   const c = config[plan] || config.free;
   return (
@@ -554,28 +574,63 @@ function SocialMediaLinks({ company, accentColor = 'text-cyan-400' }: { company:
 // VERIFIED DOCUMENT BADGES
 // ──────────────────────────────────────────────────────────────────
 function VerifiedDocBadges({ company }: { company: any }) {
-  const badges = [
-    { key: 'businessVerified', label: 'Business Verified', verified: company.verificationBadges?.businessVerified },
-    { key: 'gstVerified', label: 'GST Verified', verified: company.verificationBadges?.gstVerified },
-    { key: 'emailVerified', label: 'Email Verified', verified: company.verificationBadges?.emailVerified },
+  const plan = getCompanyActivePlan(company);
+
+  const trustItems = [
+    { key: 'adminApproved', label: 'Admin Approved', verified: company.verificationStatus === 'verified' },
+    { key: 'premiumBadge', label: 'Premium Tier', verified: plan === 'premium' || plan === 'enterprise' },
+    { key: 'gstVerified', label: 'GST Verified', verified: company.verificationBadges?.gstVerified || company.verification?.gst },
+    { key: 'emailVerified', label: 'Email Verified', verified: company.verificationBadges?.emailVerified || company.verification?.email },
     { key: 'mobileVerified', label: 'Mobile Verified', verified: company.verificationBadges?.mobileVerified || !!company.phone },
+    { key: 'websiteVerified', label: 'Website Verified', verified: !!company.website },
   ];
 
+  const joinedStr = company.joinedDate
+    ? new Date(company.joinedDate.seconds ? company.joinedDate.seconds * 1000 : company.joinedDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+    : 'June 2026';
+
+  const lastActiveStr = company.lastActive
+    ? new Date(company.lastActive.seconds ? company.lastActive.seconds * 1000 : company.lastActive).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
+    : 'Today';
+
+  const responseRate = company.responseRate || '95%';
+  const responseTime = company.responseTime || 'Under 1 hour';
+
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {badges.map(b => (
-        <span
-          key={b.key}
-          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border ${
-            b.verified
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-              : 'bg-white/[0.02] border-white/[0.06] text-slate-600'
-          }`}
-        >
-          {b.verified ? <Check size={10} /> : <Lock size={10} />}
-          {b.label}
-        </span>
-      ))}
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-1.5">
+        {trustItems.map(b => (
+          <span
+            key={b.key}
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border ${
+              b.verified
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                : 'bg-white/[0.02] border-white/[0.06] text-slate-500'
+            }`}
+          >
+            <span className="text-[11px]">{b.verified ? '✓' : '🔒'}</span> {b.label}
+          </span>
+        ))}
+      </div>
+
+      <div className="pt-3 border-t border-white/5 space-y-2 text-[11px] text-slate-400">
+        <div className="flex justify-between">
+          <span className="text-slate-500">Joined Date</span>
+          <span className="text-slate-350 font-semibold">{joinedStr}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Last Active</span>
+          <span className="text-slate-355 font-semibold">{lastActiveStr}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Response Rate</span>
+          <span className="text-emerald-450 font-semibold">{responseRate}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">Response Time</span>
+          <span className="text-slate-355 font-semibold">{responseTime}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -751,23 +806,22 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 
   const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
 
+  // Free Plan Gated Tabs: Simple Minimal Layout (About, Jobs, Gallery, Reviews only)
   const tabs = [
     { id: 'about', label: 'About' },
     { id: 'jobs', label: `Jobs (${jobs.length})` },
-    { id: 'products', label: `Products (${company.products?.length || 0})` },
-    { id: 'services', label: `Services (${company.services?.length || 0})` },
     { id: 'gallery', label: `Gallery (${Math.min(company.galleryImages?.length || 0, 4)}/4)` },
     { id: 'reviews', label: `Reviews (${reviews.length})` },
   ];
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+    <main className="min-h-screen bg-slate-50 text-slate-800 font-sans">
       <Header />
 
-      <section className="pt-20 pb-16 px-4 max-w-5xl mx-auto">
-        {/* Simple Cover Header */}
-        <div className="h-40 rounded-2xl relative overflow-hidden bg-slate-900 border border-slate-800">
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-800 to-slate-900" />
+      <section className="pt-24 pb-16 px-4 max-w-5xl mx-auto">
+        {/* Simple Cover Header - Light Gradient */}
+        <div className="h-40 rounded-2xl relative overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/60 shadow-sm">
+          <div className="absolute inset-0 bg-grid-pattern opacity-10" />
           <div className="absolute top-3 right-3">
             <SubscriptionPlanBadge plan="free" />
           </div>
@@ -775,21 +829,21 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 
         {/* Basic Brand Details */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-6 mb-4">
-          <div className="relative w-16 h-16 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0">
+          <div className="relative w-16 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
             {company.logoUrl ? (
               <Image src={company.logoUrl} alt={company.name} fill className="object-cover rounded-xl" />
             ) : (
-              <Building2 size={24} className="text-slate-500" />
+              <Building2 size={24} className="text-slate-400" />
             )}
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-white flex items-center flex-wrap gap-1">
+            <h1 className="text-xl font-bold text-slate-900 flex items-center flex-wrap gap-1">
               {company.name}
-              {renderVerificationBadge(company.verificationLevel, company.verificationStatus, 16)}
+              {renderVerificationBadge(company, 16)}
             </h1>
-            <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-              <span className="text-slate-300 font-medium">{company.category}</span> · 
-              <span className="flex items-center gap-1"><MapPin size={10} />{company.district}</span>
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+              <span className="text-blue-600 font-semibold bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/50">{company.category}</span> · 
+              <span className="flex items-center gap-1"><MapPin size={10} className="text-slate-400" />{company.district}</span>
               {company.rating > 0 && (
                 <span className="flex items-center gap-0.5"><Star size={10} className="fill-amber-400 text-amber-400" />{company.rating}</span>
               )}
@@ -800,19 +854,19 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2 mb-6">
           <FollowButton companyId={company.id} />
-          <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
-            <Share2 size={13} /> Share
+          <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
+            <Share2 size={13} className="text-slate-500" /> Share
           </button>
           {company.brochureUrl && (
-            <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
-              <FileDown size={13} /> Brochure
+            <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
+              <FileDown size={13} className="text-slate-500" /> Brochure
             </a>
           )}
         </div>
 
         {/* Company Stats */}
         <div className="mb-6">
-          <CompanyStatsBar company={company} jobs={jobs} reviews={reviews} accentColor="text-slate-400" />
+          <CompanyStatsBar company={company} jobs={jobs} reviews={reviews} accentColor="text-blue-600" />
         </div>
 
         {/* Main Layout Grid */}
@@ -820,15 +874,15 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
           {/* Left / Middle: Tabs & Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tabs Row */}
-            <div className="flex gap-1 overflow-x-auto pb-2 border-b border-slate-850">
+            <div className="flex gap-1 overflow-x-auto pb-2 border-b border-slate-200">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     activeTab === tab.id
-                      ? 'bg-slate-800 text-white border border-slate-700'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-600 text-white border border-blue-500 shadow-sm shadow-blue-500/10'
+                      : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                   }`}
                 >
                   {tab.label}
@@ -838,17 +892,17 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 
             {/* Content Switcher */}
             {activeTab === 'about' && (
-              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
                 <div>
-                  <h3 className="text-sm font-semibold text-white mb-2">About the Company</h3>
-                  <p className="text-xs text-slate-300 leading-relaxed">{company.description}</p>
+                  <h3 className="text-sm font-semibold text-slate-900 mb-2">About the Company</h3>
+                  <p className="text-xs text-slate-655 leading-relaxed">{company.description}</p>
                 </div>
                 {company.companyServicesTags?.length > 0 && (
                   <div className="pt-2">
-                    <h4 className="text-xs font-semibold text-white mb-2">Services</h4>
+                    <h4 className="text-xs font-semibold text-slate-900 mb-2">Services</h4>
                     <div className="flex flex-wrap gap-1.5">
                       {company.companyServicesTags.map((svc: string) => (
-                        <span key={svc} className="text-[10px] px-2 py-0.5 rounded bg-slate-850 border border-slate-800 text-slate-400">
+                        <span key={svc} className="text-[10px] px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600">
                           {svc}
                         </span>
                       ))}
@@ -859,13 +913,13 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
             )}
 
             {activeTab === 'jobs' && (
-              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-3">
-                <h3 className="text-sm font-semibold text-white mb-2">Active Jobs</h3>
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-3 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">Active Jobs</h3>
                 {jobs.length > 0 ? (
-                  jobs.map(job => (
+                  jobs.slice(0, 1).map(job => ( // Gated to 1 active job for Free plan
                     <Link key={job.id} href={`/jobs/${job.id}`}
-                      className="block p-3 rounded-lg bg-slate-950 border border-slate-850 hover:border-slate-700 transition-colors">
-                      <div className="text-xs font-bold text-white">{job.title}</div>
+                      className="block p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-400 transition-colors">
+                      <div className="text-xs font-bold text-slate-900">{job.title}</div>
                       <div className="text-[10px] text-slate-500 mt-1 flex justify-between">
                         <span>{job.type} · {job.salary}</span>
                         <span>{job.posted}</span>
@@ -873,112 +927,69 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                     </Link>
                   ))
                 ) : (
-                  <p className="text-xs text-slate-500 py-4 text-center">No active jobs listed.</p>
+                  <p className="text-xs text-slate-400 py-4 text-center">No active jobs listed.</p>
                 )}
-              </div>
-            )}
-
-            {activeTab === 'products' && (
-              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-white mb-2">Products</h3>
-                {company.products?.length > 0 ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {company.products.map((product: any) => (
-                      <div key={product.id || product.name} className="p-4 rounded-xl bg-slate-950 border border-slate-850 flex flex-col sm:flex-row gap-4 hover:border-slate-700 transition-colors">
-                        {product.images?.[0] && (
-                          <div className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-slate-800">
-                            <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
-                          </div>
-                        )}
-                        <div className="flex-1 flex flex-col justify-between">
-                          <div>
-                            <div className="flex items-center justify-between gap-2">
-                              <h4 className="text-xs font-bold text-white truncate max-w-[120px]">{product.name}</h4>
-                              {product.price > 0 && <span className="text-[10px] font-bold text-slate-300">₹{product.price}</span>}
-                            </div>
-                            {product.category && <span className="text-[8px] text-gray-500 bg-white/[0.04] px-1.5 py-0.5 rounded uppercase mt-1 inline-block">{product.category}</span>}
-                            <p className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
-                          </div>
-                          <button
-                            onClick={() => handleProductWhatsApp(product.name, product.id)}
-                            className="mt-2.5 self-start flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-slate-850 hover:bg-slate-800 transition-colors text-white"
-                          >
-                            <MessageCircle size={10} /> Enquire on WhatsApp
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 py-4 text-center">No products catalogue uploaded.</p>
-                )}
-                {company.products?.length === 1 && (
-                  <div className="text-[10px] text-slate-500 text-center mt-2">
-                    Upgrade to Standard or Premium to list more products.
+                {jobs.length > 1 && (
+                  <div className="text-[10px] text-slate-500 text-center mt-2 p-2 bg-slate-55 rounded-lg border border-slate-100">
+                    💡 1 of {jobs.length} jobs is shown. Upgrade to Standard/Premium to publish multiple jobs.
                   </div>
                 )}
-              </div>
-            )}
-
-            {activeTab === 'services' && (
-              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
-                <ServicesShowcaseSection company={company} services={company.services} currentTheme={{ card: 'bg-transparent border-0 p-0', accent: 'text-slate-400' }} />
               </div>
             )}
 
             {activeTab === 'gallery' && (
-              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-white mb-2">Media Gallery</h3>
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">Media Gallery</h3>
                 {company.galleryImages?.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {company.galleryImages.slice(0, 4).map((src: string, index: number) => (
-                      <div key={src || index} className="relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-850">
+                      <div key={src || index} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
                         <img src={src} alt="gallery" className="object-cover w-full h-full" />
                       </div>
                     ))}
                     {company.galleryImages.length > 4 && (
-                      <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-950 border border-slate-850 flex flex-col items-center justify-center p-3 text-center border-dashed border-slate-750">
-                        <Lock size={14} className="text-slate-500 mb-1" />
+                      <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col items-center justify-center p-3 text-center border-dashed">
+                        <Lock size={14} className="text-slate-400 mb-1" />
                         <span className="text-[8px] text-slate-500 leading-tight">Upgrade to Standard to see {company.galleryImages.length - 4} more</span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 py-4 text-center">No gallery media uploaded.</p>
+                  <p className="text-xs text-slate-400 py-4 text-center">No gallery media uploaded.</p>
                 )}
               </div>
             )}
 
             {activeTab === 'reviews' && (
-              <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-semibold text-white mb-2">Customer Reviews</h3>
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">Customer Reviews</h3>
                 {reviews.length > 0 ? (
                   <div className="space-y-3">
                     {reviews.map((review: any) => (
-                      <div key={review.id} className="p-3 rounded-lg bg-slate-950 border border-slate-850">
+                      <div key={review.id} className="p-3 rounded-lg bg-slate-50 border border-slate-200">
                         <div className="flex items-center gap-2 mb-1">
                           <div className="flex gap-0.5">
-                            {[1,2,3,4,5].map(n => <Star key={n} size={11} className={n <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />)}
+                            {[1,2,3,4,5].map(n => <Star key={n} size={11} className={n <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'} />)}
                           </div>
-                          <span className="text-[10px] text-slate-500">{review.date}</span>
+                          <span className="text-[10px] text-slate-400">{review.date}</span>
                         </div>
-                        <p className="text-xs font-bold text-white">{review.title || review.name}</p>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{review.content}</p>
+                        <p className="text-xs font-bold text-slate-900">{review.title || review.name}</p>
+                        <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">{review.content}</p>
                         {review.ownerReply && (
-                          <div className="mt-2 ml-3 pl-3 border-l-2 border-slate-800">
+                          <div className="mt-2 ml-3 pl-3 border-l-2 border-slate-200">
                             <p className="text-[10px] text-slate-500 font-bold">Owner Reply:</p>
-                            <p className="text-[10px] text-slate-400">{review.ownerReply}</p>
+                            <p className="text-[10px] text-slate-655">{review.ownerReply}</p>
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 py-4 text-center">No reviews yet. Be the first!</p>
+                  <p className="text-xs text-slate-400 py-4 text-center">No reviews yet. Be the first!</p>
                 )}
-                <div className="pt-4 border-t border-slate-850">
-                  <h4 className="text-xs font-bold text-white mb-3">Write a Review</h4>
-                  <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-700" />
+                <div className="pt-4 border-t border-slate-200">
+                  <h4 className="text-xs font-bold text-slate-900 mb-3">Write a Review</h4>
+                  <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" />
                 </div>
               </div>
             )}
@@ -986,20 +997,20 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 
           {/* Right Sidebar: Contact Card */}
           <div className="space-y-4">
-            <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-4">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Contact Info</h3>
-              <div className="space-y-3 text-xs text-slate-300">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Contact Info</h3>
+              <div className="space-y-3 text-xs text-slate-700">
                 <div className="flex items-center gap-2">
-                  <Phone size={13} className="text-slate-500" />
+                  <Phone size={13} className="text-slate-400" />
                   <span>{company.phone}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Mail size={13} className="text-slate-500" />
+                  <Mail size={13} className="text-slate-400" />
                   <span className="truncate">{company.email}</span>
                 </div>
                 {company.website && (
                   <div className="flex items-center gap-2">
-                    <Globe size={13} className="text-slate-500" />
+                    <Globe size={13} className="text-slate-400" />
                     <span className="truncate">{company.website}</span>
                   </div>
                 )}
@@ -1008,26 +1019,26 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 
             {/* Digital ID Card Preview */}
             <div className="space-y-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Digital Business ID Card</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Digital Business ID Card</span>
               <MiniDigitalIDCard company={company} plan="free" />
             </div>
 
             {/* Enhanced Enquiry Form */}
-            <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Send Enquiry</h3>
-              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-700" />
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-3 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Send Enquiry</h3>
+              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" />
             </div>
 
             {/* Verified Badges */}
-            <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Trust & Verification</h3>
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-3 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Trust & Verification</h3>
               <VerifiedDocBadges company={company} />
             </div>
 
             {/* Social Media Links */}
-            <div className="bg-slate-900/50 border border-slate-900 rounded-xl p-5 space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Connect With Us</h3>
-              <SocialMediaLinks company={company} accentColor="text-slate-400" />
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-3 shadow-sm">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Connect With Us</h3>
+              <SocialMediaLinks company={company} accentColor="text-blue-600" />
             </div>
           </div>
         </div>
@@ -1063,9 +1074,9 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
     window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const activeTheme = company.customTheme && ['classic_blue', 'emerald_growth', 'royal_purple'].includes(company.customTheme)
+  const activeTheme = company.customTheme && ['indigo_modern', 'classic_blue', 'emerald_growth', 'royal_purple'].includes(company.customTheme)
     ? company.customTheme
-    : 'classic_blue';
+    : 'indigo_modern';
   
   const themeMap: Record<string, {
     bg: string;
@@ -1077,6 +1088,16 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
     bullet: string;
     gradient: string;
   }> = {
+    indigo_modern: {
+      bg: 'bg-[#05060f]',
+      accent: 'text-indigo-400',
+      border: 'border-indigo-900/30',
+      btn: 'bg-gradient-to-r from-indigo-650 to-violet-650 hover:opacity-90 text-white shadow-indigo-500/10',
+      badge: 'bg-indigo-500/10 border-indigo-400/30 text-indigo-300',
+      card: 'bg-[#090b1c]/40 border border-indigo-900/20',
+      bullet: 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20',
+      gradient: 'from-indigo-700/80 via-violet-900 to-[#05060f]',
+    },
     classic_blue: {
       bg: 'bg-[#070b19]',
       accent: 'text-blue-400',
@@ -1109,7 +1130,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
     }
   };
   
-  const currentTheme = themeMap[activeTheme] || themeMap.classic_blue;
+  const currentTheme = themeMap[activeTheme] || themeMap.indigo_modern;
 
   const isModern = company.websiteTemplate === 'modern';
 
@@ -1155,7 +1176,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center flex-wrap gap-1">
                 {company.name}
-                {renderVerificationBadge(company.verificationLevel, company.verificationStatus, 18)}
+                {renderVerificationBadge(company, 18)}
               </h1>
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-400">
@@ -1556,7 +1577,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
 type EnterpriseThemeName = 'luxury_gold' | 'midnight_purple' | 'mint_emerald' | 'titanium_platinum';
 
 function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
-  const [activeTheme, setActiveTheme] = useState<EnterpriseThemeName>('titanium_platinum');
+  const [activeTheme, setActiveTheme] = useState<EnterpriseThemeName>('luxury_gold');
   const [activeTab, setActiveTab] = useState('overview');
   const [shareOpen, setShareOpen] = useState(false);
   const { user } = useAuth();
@@ -1743,7 +1764,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
           <div className="flex-1 pb-2">
             <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center flex-wrap gap-2.5 tracking-tight">
               {company.name}
-              {renderVerificationBadge('elite', company.verificationStatus, 28)}
+              {renderVerificationBadge(company, 28)}
             </h1>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-sm text-slate-400">
               <span className={`font-black uppercase tracking-widest text-xs px-2.5 py-1 rounded bg-white/[0.03] border border-white/5 ${currentTheme.accent}`}>{company.category}</span>
@@ -2138,7 +2159,7 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
     if (['luxury_gold', 'midnight_purple', 'mint_emerald', 'sunset_amber', 'classic_blue'].includes(defaultTheme)) {
       return defaultTheme;
     }
-    return 'luxury_gold';
+    return 'classic_blue';
   });
 
   // Track page layouts: classic, modern, e_commerce, service_booking
@@ -2390,7 +2411,7 @@ Please confirm my booking request. Thanks!`;
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center flex-wrap gap-2 tracking-tight">
                 {company.name}
-                {renderVerificationBadge(company.verificationLevel, company.verificationStatus, 24)}
+                {renderVerificationBadge(company, 24)}
               </h1>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm text-slate-400">

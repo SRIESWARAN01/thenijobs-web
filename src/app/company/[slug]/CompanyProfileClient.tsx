@@ -692,9 +692,15 @@ function formatWhatsAppMessage(
     .replace(/\{\{enquiryMessage\}\}/g, msg);
 }
 
-export default function CompanyProfileClient({ company, jobs, reviews }: {
+export default function CompanyProfileClient({ company: rawCompany, jobs, reviews }: {
   company: any; jobs: any[]; reviews: any[];
 }) {
+  const company = {
+    ...rawCompany,
+    coverImageUrl: rawCompany.coverImageUrl || rawCompany.coverUrl || '',
+    galleryImages: rawCompany.galleryImages || rawCompany.gallery || [],
+  };
+
   // Determine plan type: free, basic (Standard), premium, enterprise
   const plan = getCompanyActivePlan(company);
 

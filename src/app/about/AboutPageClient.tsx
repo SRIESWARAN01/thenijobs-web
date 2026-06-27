@@ -501,89 +501,87 @@ export default function AboutPageClient() {
 
           <div className="grid gap-12 md:grid-cols-2">
             {/* CEO Eswaran */}
-            <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 p-6 sm:p-8 hover:border-teal-500/25 transition-all shadow-xl group">
-              <div className="flex items-center gap-4 mb-6">
-                <div 
-                  onClick={() => setSelectedPhoto({ src: '/eswaran.jpeg', name: 'Eswaran P' })}
-                  className="relative h-20 w-20 overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 shrink-0 cursor-zoom-in group/photo"
-                >
-                  <Image
-                    src="/eswaran.jpeg"
-                    alt="Eswaran P"
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="80px"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white">
-                    <Eye size={16} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-outfit text-xl font-black text-white leading-tight">Eswaran P</h3>
-                  <p className="text-xs font-bold text-teal-400 mt-1">Founder & Chief Executive Officer (CEO)</p>
+            <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 overflow-hidden hover:border-teal-500/25 transition-all shadow-xl group">
+              <div 
+                onClick={() => setSelectedPhoto({ src: '/eswaran.jpeg', name: 'Eswaran P' })}
+                className="relative w-full aspect-[4/5] bg-slate-950 cursor-zoom-in group/photo overflow-hidden border-b border-slate-900"
+              >
+                <Image
+                  src="/eswaran.jpeg"
+                  alt="Eswaran P"
+                  fill
+                  className="object-contain transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  <Eye size={20} />
                 </div>
               </div>
+              <div className="p-6 sm:p-8 flex flex-col flex-1">
+                <h3 className="font-outfit text-2xl font-black text-white leading-tight">Eswaran P</h3>
+                <p className="text-xs font-bold text-teal-400 mt-1 mb-4">Founder & Chief Executive Officer (CEO)</p>
 
-              <blockquote className="text-xs sm:text-sm italic text-slate-300 border-l-2 border-teal-500 pl-3 py-1 mb-6 leading-relaxed font-medium">
-                &quot;Create opportunities for everyone and help businesses grow through meaningful professional connections.&quot;
-              </blockquote>
+                <blockquote className="text-xs sm:text-sm italic text-slate-300 border-l-2 border-teal-500 pl-3 py-1 mb-6 leading-relaxed font-medium">
+                  &quot;Create opportunities for everyone and help businesses grow through meaningful professional connections.&quot;
+                </blockquote>
 
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6 font-medium">
-                Eswaran P directs product ideation, strategic alignments, commercial partnerships, and marketing strategies. He is committed to simplifying career search and professional networking via digital innovations.
-              </p>
+                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6 font-medium">
+                  Eswaran P directs product ideation, strategic alignments, commercial partnerships, and marketing strategies. He is committed to simplifying career search and professional networking via digital innovations.
+                </p>
 
-              <div className="mt-auto">
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 font-mono">Areas of Expertise</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {['Entrepreneurship', 'Business Strategy', 'Career Development', 'Networking', 'Product Innovation', 'Marketing Strategy', 'Stock Market', 'Leadership'].map((tag) => (
-                    <span key={tag} className="text-[9px] font-bold text-slate-300 bg-slate-900/60 border border-slate-800/80 px-2.5 py-1 rounded-xl">
-                      {tag}
-                    </span>
-                  ))}
+                <div className="mt-auto pt-4 border-t border-slate-900">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 font-mono">Areas of Expertise</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Entrepreneurship', 'Business Strategy', 'Career Development', 'Networking', 'Product Innovation', 'Marketing Strategy', 'Stock Market', 'Leadership'].map((tag) => (
+                      <span key={tag} className="text-[9px] font-bold text-slate-300 bg-slate-900/60 border border-slate-800/80 px-2.5 py-1 rounded-xl">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Developer Anbarasan */}
-            <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 p-6 sm:p-8 hover:border-blue-500/25 transition-all shadow-xl group">
-              <div className="flex items-center gap-4 mb-6">
-                <div 
-                  onClick={() => setSelectedPhoto({ src: '/anbu.jpeg', name: 'Anbarasan S' })}
-                  className="relative h-20 w-20 overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 shrink-0 cursor-zoom-in group/photo"
-                >
-                  <Image
-                    src="/anbu.jpeg"
-                    alt="Anbarasan S"
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="80px"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white">
-                    <Eye size={16} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-outfit text-xl font-black text-white leading-tight">Anbarasan S</h3>
-                  <p className="text-xs font-bold text-blue-400 mt-1">Co-Founder | Director | Software Developer</p>
+            <div className="flex flex-col rounded-3xl border border-slate-800 bg-[#070714]/40 overflow-hidden hover:border-blue-500/25 transition-all shadow-xl group">
+              <div 
+                onClick={() => setSelectedPhoto({ src: '/anbu.jpeg', name: 'Anbarasan S' })}
+                className="relative w-full aspect-[4/5] bg-slate-950 cursor-zoom-in group/photo overflow-hidden border-b border-slate-900"
+              >
+                <Image
+                  src="/anbu.jpeg"
+                  alt="Anbarasan S"
+                  fill
+                  className="object-contain transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  <Eye size={20} />
                 </div>
               </div>
+              <div className="p-6 sm:p-8 flex flex-col flex-1">
+                <h3 className="font-outfit text-2xl font-black text-white leading-tight">Anbarasan S</h3>
+                <p className="text-xs font-bold text-blue-400 mt-1 mb-4">Co-Founder | Director | Software Developer</p>
 
-              <blockquote className="text-xs sm:text-sm italic text-slate-300 border-l-2 border-blue-500 pl-3 py-1 mb-6 leading-relaxed font-medium">
-                &quot;Building secure, reliable, fast, and scalable digital architectures for the future of job ecosystem.&quot;
-              </blockquote>
+                <blockquote className="text-xs sm:text-sm italic text-slate-300 border-l-2 border-blue-500 pl-3 py-1 mb-6 leading-relaxed font-medium">
+                  &quot;Building secure, reliable, fast, and scalable digital architectures for the future of job ecosystem.&quot;
+                </blockquote>
 
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6 font-medium">
-                Anbarasan S leads system design, API engineering, artificial intelligence utilities, and mobile integrations. He ensures the platform is optimized for low-latency indexing and real-time synchronization.
-              </p>
+                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6 font-medium">
+                  Anbarasan S leads system design, API engineering, artificial intelligence utilities, and mobile integrations. He ensures the platform is optimized for low-latency indexing and real-time synchronization.
+                </p>
 
-              <div className="mt-auto">
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 font-mono">Core Skills</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {['Software Development', 'Flutter Development', 'AI Systems', 'Firebase Cloud', 'Python', 'SQL Database', 'API Integration', 'Web Tech', 'UI/UX Design'].map((tag) => (
-                    <span key={tag} className="text-[9px] font-bold text-slate-300 bg-slate-900/60 border border-slate-800/80 px-2.5 py-1 rounded-xl">
-                      {tag}
-                    </span>
-                  ))}
+                <div className="mt-auto pt-4 border-t border-slate-900">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 font-mono">Core Skills</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Software Development', 'Flutter Development', 'AI Systems', 'Firebase Cloud', 'Python', 'SQL Database', 'API Integration', 'Web Tech', 'UI/UX Design'].map((tag) => (
+                      <span key={tag} className="text-[9px] font-bold text-slate-300 bg-slate-900/60 border border-slate-800/80 px-2.5 py-1 rounded-xl">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

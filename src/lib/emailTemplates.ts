@@ -1,16 +1,26 @@
 /**
- * Theni Jobs — Password Reset Email Template
+ * Theni Jobs — Premium Email Templates
  *
- * Pure HTML + inline CSS, compatible with Gmail, Outlook, Apple Mail, Yahoo Mail.
- * No external CSS, no JavaScript. Fully responsive.
+ * Pure HTML + inline CSS, responsive design, optimized for:
+ * Gmail, Outlook, Apple Mail, Yahoo Mail, and other major clients.
+ * Uses robust table structures, bulletproof buttons, and proper styling.
  */
 
-export function getPasswordResetEmailHtml(params: {
+interface BaseEmailParams {
+  preheader: string;
+  title: string;
   userName: string;
-  resetLink: string;
-  expiryMinutes?: number;
-}): string {
-  const { userName, resetLink, expiryMinutes = 15 } = params;
+  bodyHtml: string;
+  cta?: { label: string; url: string };
+  notice?: string; // e.g., "This link expires in 15 minutes"
+  warning?: string; // e.g., "Didn't request this?"
+}
+
+/**
+ * Builds the base HTML wrapper for all premium emails
+ */
+function buildBaseEmailHtml(params: BaseEmailParams): string {
+  const { preheader, title, userName, bodyHtml, cta, notice, warning } = params;
   const currentYear = new Date().getFullYear();
 
   return `<!DOCTYPE html>
@@ -21,7 +31,7 @@ export function getPasswordResetEmailHtml(params: {
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="x-apple-disable-message-reformatting" />
   <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no" />
-  <title>Reset Your Password — Theni Jobs</title>
+  <title>${title}</title>
   <!--[if mso]>
   <noscript>
     <xml>
@@ -33,37 +43,31 @@ export function getPasswordResetEmailHtml(params: {
   </noscript>
   <![endif]-->
   <style type="text/css">
-    /* Reset */
     body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
     table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
     img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
     body { margin: 0; padding: 0; width: 100% !important; height: 100% !important; }
     a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
-    /* Responsive */
     @media only screen and (max-width: 620px) {
       .email-container { width: 100% !important; max-width: 100% !important; }
       .fluid { max-width: 100% !important; height: auto !important; }
-      .stack-column { display: block !important; width: 100% !important; }
       .padding-mobile { padding-left: 20px !important; padding-right: 20px !important; }
     }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #0a0a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif;">
 
-  <!-- Visually Hidden Preheader Text -->
+  <!-- Preheader Text -->
   <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all;">
-    Reset your Theni Jobs password. This link expires in ${expiryMinutes} minutes.
+    ${preheader}
   </div>
 
-  <!-- Email Body -->
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #0a0a1a;">
     <tr>
       <td align="center" style="padding: 40px 16px;">
-
-        <!-- Email Container -->
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="560" class="email-container" style="max-width: 560px; width: 100%;">
 
-          <!-- ====== LOGO HEADER ====== -->
+          <!-- Logo Header -->
           <tr>
             <td align="center" style="padding: 0 0 32px 0;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0">
@@ -83,130 +87,103 @@ export function getPasswordResetEmailHtml(params: {
             </td>
           </tr>
 
-          <!-- ====== MAIN CARD ====== -->
+          <!-- Main Card -->
           <tr>
             <td>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #12122a; border: 1px solid rgba(124, 58, 237, 0.15); border-radius: 24px; overflow: hidden;">
-
-                <!-- Purple Gradient Top Bar -->
                 <tr>
                   <td style="height: 4px; background: linear-gradient(90deg, #7c3aed, #a855f7, #c084fc); font-size: 0; line-height: 0;">&nbsp;</td>
                 </tr>
 
-                <!-- Lock Icon -->
+                <!-- Content Area -->
                 <tr>
-                  <td align="center" style="padding: 40px 40px 0 40px;" class="padding-mobile">
-                    <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(124, 58, 237, 0.2); text-align: center; line-height: 72px;">
-                      <span style="font-size: 32px;">🔐</span>
-                    </div>
-                  </td>
-                </tr>
-
-                <!-- Title -->
-                <tr>
-                  <td align="center" style="padding: 24px 40px 0 40px;" class="padding-mobile">
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; line-height: 1.3;">
-                      Forgot Your Password?
+                  <td style="padding: 40px;" class="padding-mobile">
+                    <!-- Title -->
+                    <h1 style="margin: 0 0 24px 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; line-height: 1.3; text-align: center;">
+                      ${title}
                     </h1>
-                  </td>
-                </tr>
 
-                <!-- Greeting -->
-                <tr>
-                  <td style="padding: 20px 40px 0 40px;" class="padding-mobile">
-                    <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #a1a1b5;">
+                    <!-- Greeting -->
+                    <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.7; color: #a1a1b5;">
                       Hello <strong style="color: #ffffff;">${userName}</strong>,
                     </p>
-                  </td>
-                </tr>
 
-                <!-- Body Text -->
-                <tr>
-                  <td style="padding: 12px 40px 0 40px;" class="padding-mobile">
-                    <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #a1a1b5;">
-                      We received a request to reset the password for your Theni Jobs account. If you made this request, use the button below to set a new password.
-                    </p>
-                  </td>
-                </tr>
+                    <!-- Body Content -->
+                    <div style="font-size: 15px; line-height: 1.7; color: #a1a1b5; margin-bottom: 24px;">
+                      ${bodyHtml}
+                    </div>
 
-                <!-- CTA Button -->
-                <tr>
-                  <td align="center" style="padding: 32px 40px 0 40px;" class="padding-mobile">
-                    <!--[if mso]>
-                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${resetLink}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="50%" strokeweight="0" fillcolor="#7c3aed">
-                      <w:anchorlock/>
-                      <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Reset Password</center>
-                    </v:roundrect>
-                    <![endif]-->
-                    <!--[if !mso]><!-->
-                    <a href="${resetLink}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #9333ea); color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 16px 48px; border-radius: 50px; letter-spacing: 0.3px; box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4); mso-padding-alt: 0;">
-                      Reset Password →
-                    </a>
-                    <!--<![endif]-->
-                  </td>
-                </tr>
-
-                <!-- Expiry Notice -->
-                <tr>
-                  <td align="center" style="padding: 20px 40px 0 40px;" class="padding-mobile">
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="background-color: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.12); border-radius: 12px;">
+                    <!-- CTA Button -->
+                    ${cta ? `
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
                       <tr>
-                        <td style="padding: 12px 20px;">
-                          <p style="margin: 0; font-size: 12px; color: #c084fc; text-align: center; line-height: 1.5;">
-                            ⏱️ This link will expire in <strong style="color: #d8b4fe;">${expiryMinutes} minutes</strong>
+                        <td align="center">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${cta.url}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="50%" strokeweight="0" fillcolor="#7c3aed">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">${cta.label}</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-->
+                          <a href="${cta.url}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #7c3aed, #9333ea); color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 16px 48px; border-radius: 50px; letter-spacing: 0.3px; box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4); mso-padding-alt: 0;">
+                            ${cta.label}
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+
+                    <!-- Notice Card -->
+                    ${notice ? `
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0 0 0; background-color: rgba(124, 58, 237, 0.08); border: 1px solid rgba(124, 58, 237, 0.12); border-radius: 12px;">
+                      <tr>
+                        <td style="padding: 12px 20px;" align="center">
+                          <p style="margin: 0; font-size: 12px; color: #c084fc; line-height: 1.5;">
+                            ${notice}
                           </p>
                         </td>
                       </tr>
                     </table>
-                  </td>
-                </tr>
+                    ` : ''}
 
-                <!-- Fallback Link -->
-                <tr>
-                  <td style="padding: 24px 40px 0 40px;" class="padding-mobile">
-                    <p style="margin: 0; font-size: 12px; color: #6b6b80; line-height: 1.6;">
-                      If the button doesn't work, copy and paste this link into your browser:
-                    </p>
-                    <p style="margin: 8px 0 0 0; word-break: break-all;">
-                      <a href="${resetLink}" style="font-size: 12px; color: #a855f7; text-decoration: underline; line-height: 1.5;">${resetLink}</a>
-                    </p>
-                  </td>
-                </tr>
+                    <!-- Fallback Link -->
+                    ${cta ? `
+                    <div style="margin: 28px 0 0 0; padding-top: 20px; border-t: 1px solid rgba(255,255,255,0.06);">
+                      <p style="margin: 0; font-size: 11px; color: #6b6b80; line-height: 1.6;">
+                        If the button doesn't work, copy and paste this link into your browser:
+                      </p>
+                      <p style="margin: 6px 0 0 0; word-break: break-all;">
+                        <a href="${cta.url}" style="font-size: 11px; color: #a855f7; text-decoration: underline; line-height: 1.5;">${cta.url}</a>
+                      </p>
+                    </div>
+                    ` : ''}
 
-                <!-- Divider -->
-                <tr>
-                  <td style="padding: 28px 40px 0 40px;" class="padding-mobile">
-                    <div style="height: 1px; background-color: rgba(255,255,255,0.06);"></div>
-                  </td>
-                </tr>
-
-                <!-- Security Warning -->
-                <tr>
-                  <td style="padding: 20px 40px 36px 40px;" class="padding-mobile">
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: rgba(251, 191, 36, 0.06); border: 1px solid rgba(251, 191, 36, 0.12); border-radius: 12px;">
+                    <!-- Warning Box -->
+                    ${warning ? `
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 28px 0 0 0; background-color: rgba(251, 191, 36, 0.06); border: 1px solid rgba(251, 191, 36, 0.12); border-radius: 12px;">
                       <tr>
                         <td style="padding: 16px 20px;">
-                          <p style="margin: 0; font-size: 13px; color: #fbbf24; font-weight: 600; line-height: 1.4;">
-                            ⚠️ Didn't request this?
+                          <p style="margin: 0 0 4px 0; font-size: 13px; color: #fbbf24; font-weight: 600; line-height: 1.4;">
+                            ⚠️ Security Notice
                           </p>
-                          <p style="margin: 6px 0 0 0; font-size: 12px; color: #a1a1b5; line-height: 1.6;">
-                            If you didn't request a password reset, please ignore this email. Your account remains secure and no changes have been made.
+                          <p style="margin: 0; font-size: 12px; color: #a1a1b5; line-height: 1.6;">
+                            ${warning}
                           </p>
                         </td>
                       </tr>
                     </table>
+                    ` : ''}
+
                   </td>
                 </tr>
-
               </table>
             </td>
           </tr>
 
-          <!-- ====== FOOTER ====== -->
+          <!-- Footer -->
           <tr>
             <td style="padding: 32px 20px 0 20px;">
-
-              <!-- Help Text -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td align="center" style="padding-bottom: 16px;">
@@ -218,10 +195,8 @@ export function getPasswordResetEmailHtml(params: {
                 </tr>
               </table>
 
-              <!-- Divider -->
               <div style="height: 1px; background-color: rgba(255,255,255,0.04); margin-bottom: 16px;"></div>
 
-              <!-- Brand Footer -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td align="center">
@@ -235,7 +210,6 @@ export function getPasswordResetEmailHtml(params: {
                 </tr>
               </table>
 
-              <!-- Links -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td align="center" style="padding: 12px 0;">
@@ -248,62 +222,250 @@ export function getPasswordResetEmailHtml(params: {
                 </tr>
               </table>
 
-              <!-- Copyright -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td align="center" style="padding: 0 0 8px 0;">
                     <p style="margin: 0; font-size: 10px; color: #3a3a4e; line-height: 1.5;">
                       &copy; ${currentYear} Theni Jobs. All rights reserved.
                     </p>
-                    <p style="margin: 4px 0 0 0; font-size: 10px; color: #3a3a4e; line-height: 1.5;">
-                      This is an automated email. Please do not reply.
-                    </p>
                   </td>
                 </tr>
               </table>
-
             </td>
           </tr>
 
         </table>
-        <!-- /Email Container -->
-
       </td>
     </tr>
   </table>
-
 </body>
 </html>`;
 }
 
-/**
- * Returns a plain-text version of the password reset email for clients
- * that don't support HTML.
- */
+// ──────────────────────────────────────────────────────────────────
+// 1. WELCOME EMAIL
+// ──────────────────────────────────────────────────────────────────
+export function getWelcomeEmailHtml(userName: string, dashboardUrl: string): string {
+  return buildBaseEmailHtml({
+    preheader: 'Welcome to Theni Jobs! Let\'s build your professional presence.',
+    title: 'Welcome to Theni Jobs!',
+    userName,
+    bodyHtml: `Thank you for joining our platform. We are excited to help you connect with top local talent and job opportunities in the Theni district.<br/><br/>
+    Complete your profile today to stand out to employers and get recommendations matched to your skills.`,
+    cta: { label: 'Go to Dashboard', url: dashboardUrl },
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 2. ACCOUNT VERIFICATION
+// ──────────────────────────────────────────────────────────────────
+export function getAccountVerificationEmailHtml(userName: string, verificationUrl: string): string {
+  return buildBaseEmailHtml({
+    preheader: 'Verify your email address to activate your Theni Jobs account.',
+    title: 'Verify Your Email Address',
+    userName,
+    bodyHtml: 'Thank you for registering. Please click the button below to verify your email address and activate your account.',
+    cta: { label: 'Verify Email Address', url: verificationUrl },
+    notice: '⏱️ This link will expire in 24 hours.',
+    warning: 'If you did not create a Theni Jobs account, you can safely ignore this email.',
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 3. PASSWORD RESET (Matches previous custom template specs)
+// ──────────────────────────────────────────────────────────────────
+export function getPasswordResetEmailHtml(params: {
+  userName: string;
+  resetLink: string;
+  expiryMinutes?: number;
+}): string {
+  const { userName, resetLink, expiryMinutes = 15 } = params;
+  return buildBaseEmailHtml({
+    preheader: `Reset your password. Link expires in ${expiryMinutes} minutes.`,
+    title: 'Forgot Your Password?',
+    userName,
+    bodyHtml: 'We received a request to reset the password for your Theni Jobs account. If you made this request, click the button below to set a new password.',
+    cta: { label: 'Reset Password', url: resetLink },
+    notice: `⏱️ This link will expire in ${expiryMinutes} minutes.`,
+    warning: 'If you did not request a password reset, please ignore this email. Your account remains secure.',
+  });
+}
+
 export function getPasswordResetEmailText(params: {
   userName: string;
   resetLink: string;
   expiryMinutes?: number;
 }): string {
   const { userName, resetLink, expiryMinutes = 15 } = params;
-  const currentYear = new Date().getFullYear();
-
   return `THENI JOBS — Password Reset
 
 Hello ${userName},
 
-We received a request to reset the password for your Theni Jobs account.
-
-Click the link below to reset your password:
+We received a request to reset your password. Click the link below:
 ${resetLink}
 
-⏱️ This link will expire in ${expiryMinutes} minutes.
+⏱️ Expiry time: ${expiryMinutes} minutes.
 
-If you didn't request a password reset, please ignore this email. Your account remains secure.
-
----
-Need help? Contact us at support@thenijobs.com
-© ${currentYear} Theni Jobs — Connecting Talent with Opportunity
-https://thenijobs.com
+If you didn't request a reset, ignore this email. Your account remains secure.
 `;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 4. INTERVIEW INVITATION
+// ──────────────────────────────────────────────────────────────────
+export function getInterviewInvitationEmailHtml(params: {
+  userName: string;
+  companyName: string;
+  jobTitle: string;
+  date: string;
+  time: string;
+  location: string;
+  respondUrl: string;
+}): string {
+  const { userName, companyName, jobTitle, date, time, location, respondUrl } = params;
+  return buildBaseEmailHtml({
+    preheader: `Congratulations! You have an interview invitation from ${companyName}.`,
+    title: 'Interview Invitation',
+    userName,
+    bodyHtml: `Great news! <strong>${companyName}</strong> has invited you to interview for the position of <strong>${jobTitle}</strong>.<br/><br/>
+    <strong>Interview Details:</strong><br/>
+    📅 Date: ${date}<br/>
+    🕒 Time: ${time}<br/>
+    📍 Format/Location: ${location}<br/><br/>
+    Click the button below to confirm your availability or propose a reschedule.`,
+    cta: { label: 'Respond to Interview', url: respondUrl },
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 5. JOB APPLICATION UPDATE
+// ──────────────────────────────────────────────────────────────────
+export function getApplicationUpdateEmailHtml(params: {
+  userName: string;
+  companyName: string;
+  jobTitle: string;
+  status: 'Shortlisted' | 'Reviewed' | 'Contacted' | 'Closed';
+  statusColor?: string;
+  applicationUrl: string;
+}): string {
+  const { userName, companyName, jobTitle, status, statusColor = '#7c3aed', applicationUrl } = params;
+  return buildBaseEmailHtml({
+    preheader: `Your application status at ${companyName} has been updated.`,
+    title: 'Application Status Update',
+    userName,
+    bodyHtml: `Your job application for <strong>${jobTitle}</strong> at <strong>${companyName}</strong> has been updated.<br/><br/>
+    <strong>New Status:</strong> <span style="font-weight: 800; color: ${statusColor};">${status}</span>`,
+    cta: { label: 'View Application details', url: applicationUrl },
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 6. ADVERTISEMENT CONFIRMATION
+// ──────────────────────────────────────────────────────────────────
+export function getAdConfirmationEmailHtml(params: {
+  userName: string;
+  campaignName: string;
+  durationDays: number;
+  amount: number;
+  analyticsUrl: string;
+}): string {
+  const { userName, campaignName, durationDays, amount, analyticsUrl } = params;
+  return buildBaseEmailHtml({
+    preheader: 'Your promotion campaign is now active on Theni Jobs.',
+    title: 'Promotion Campaign Live',
+    userName,
+    bodyHtml: `Your advertisement campaign is confirmed and now visible to users on our platform!<br/><br/>
+    <strong>Campaign Details:</strong><br/>
+    🏷️ Name: ${campaignName}<br/>
+    ⏳ Duration: ${durationDays} Days<br/>
+    💵 Paid: ₹${amount.toLocaleString('en-IN')}<br/><br/>
+    Track impressions, click analytics, and lead metrics in your analytics dashboard.`,
+    cta: { label: 'View Analytics Dashboard', url: analyticsUrl },
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 7. SUBSCRIPTION RENEWAL REMINDER
+// ──────────────────────────────────────────────────────────────────
+export function getSubscriptionRenewalReminderEmailHtml(params: {
+  userName: string;
+  planName: string;
+  expiryDate: string;
+  renewUrl: string;
+}): string {
+  const { userName, planName, expiryDate, renewUrl } = params;
+  return buildBaseEmailHtml({
+    preheader: `Your ${planName} subscription expires on ${expiryDate}. Renew now!`,
+    title: 'Subscription Expiry Reminder',
+    userName,
+    bodyHtml: `Your <strong>${planName}</strong> subscription is due to expire on <strong>${expiryDate}</strong>.<br/><br/>
+    Renew your plan today to prevent service interruption, keep your featured job listings active, and maintain your premium business search ranking.`,
+    cta: { label: 'Renew Plan Now', url: renewUrl },
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 8. PAYMENT SUCCESS
+// ──────────────────────────────────────────────────────────────────
+export function getPaymentSuccessEmailHtml(params: {
+  userName: string;
+  txId: string;
+  planName: string;
+  amount: number;
+  date: string;
+  dashboardUrl: string;
+}): string {
+  const { userName, txId, planName, amount, date, dashboardUrl } = params;
+  return buildBaseEmailHtml({
+    preheader: 'Payment receipt confirmation for your subscription.',
+    title: 'Payment Successful',
+    userName,
+    bodyHtml: `Thank you for your transaction. Your payment has been processed successfully.<br/><br/>
+    <strong>Receipt Summary:</strong><br/>
+    💳 Transaction ID: ${txId}<br/>
+    📦 Plan/Service: ${planName}<br/>
+    💵 Amount: ₹${amount.toLocaleString('en-IN')}<br/>
+    📅 Date: ${date}`,
+    cta: { label: 'Go to Dashboard', url: dashboardUrl },
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 9. PAYMENT FAILED
+// ──────────────────────────────────────────────────────────────────
+export function getPaymentFailedEmailHtml(params: {
+  userName: string;
+  planName: string;
+  amount: number;
+  retryUrl: string;
+}): string {
+  const { userName, planName, amount, retryUrl } = params;
+  return buildBaseEmailHtml({
+    preheader: 'Action required: payment process failure notification.',
+    title: 'Payment Attempt Failed',
+    userName,
+    bodyHtml: `We were unable to process your payment of <strong>₹${amount.toLocaleString('en-IN')}</strong> for the <strong>${planName}</strong> subscription.<br/><br/>
+    Please update your payment method or try again to avoid service interruption.`,
+    cta: { label: 'Retry Payment Now', url: retryUrl },
+  });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 10. ADMIN ANNOUNCEMENT
+// ──────────────────────────────────────────────────────────────────
+export function getAdminAnnouncementEmailHtml(params: {
+  userName: string;
+  subject: string;
+  messageBodyHtml: string;
+  actionUrl?: string;
+  actionLabel?: string;
+}): string {
+  const { userName, subject, messageBodyHtml, actionUrl, actionLabel = 'Learn More' } = params;
+  return buildBaseEmailHtml({
+    preheader: subject,
+    title: subject,
+    userName,
+    bodyHtml: messageBodyHtml,
+    cta: actionUrl ? { label: actionLabel, url: actionUrl } : undefined,
+  });
 }

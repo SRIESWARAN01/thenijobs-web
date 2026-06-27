@@ -25,6 +25,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { trackProductOrServiceAnalytics } from '@/lib/firebase/firestoreService';
 import { followCompany, unfollowCompany, useIsFollowing, useFollowerCount } from '@/lib/firebase/followService';
 import { likeProduct, unlikeProduct, useUserProductLikes } from '@/lib/firebase/likeService';
+import { getCompanyActivePlan } from '@/lib/subscriptions';
+
 
 // ──────────────────────────────────────────────────────────────────
 // SERVICES SHOWCASE COMPONENT
@@ -610,7 +612,7 @@ export default function CompanyProfileClient({ company, jobs, reviews }: {
   company: any; jobs: any[]; reviews: any[];
 }) {
   // Determine plan type: free, basic (Standard), premium, enterprise
-  const plan = company.subscriptionBadge || 'free';
+  const plan = getCompanyActivePlan(company);
 
   useEffect(() => {
     if (company?.id) {

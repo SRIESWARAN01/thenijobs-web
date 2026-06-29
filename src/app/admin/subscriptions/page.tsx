@@ -21,6 +21,7 @@ import {
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -33,6 +34,7 @@ import {
 } from 'firebase/firestore';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -469,16 +471,15 @@ export default function SubscriptionsPage() {
 
   const handlePreview = async (companyId: string) => {
     try {
-      const snap = await getDocs(query(collection(db, 'companies'), where('id', '==', companyId), limit(1)));
-      if (!snap.empty) {
-        const data = snap.docs[0].data();
-        const slug = data.slug || companyId;
-        window.open(`/company/${slug}`, '_blank');
+      const snap = await getDoc(doc(db, 'companies', companyId));
+      if (snap.exists()) {
+        const data = { id: snap.id, ...snap.data() };
+        window.open(getCompanyPortfolioPath(data), '_blank');
       } else {
-        window.open(`/company/${companyId}`, '_blank');
+        window.open(getCompanyPortfolioPath({ id: companyId }), '_blank');
       }
     } catch (err) {
-      window.open(`/company/${companyId}`, '_blank');
+      window.open(getCompanyPortfolioPath({ id: companyId }), '_blank');
     }
   };
 

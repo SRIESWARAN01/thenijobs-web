@@ -8,18 +8,19 @@ import {
   CheckCircle, AlertCircle, Shield, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2,
   Lock, Sparkles, Crown, Laptop, Tablet, Smartphone, Check, TrendingUp,
-  Calendar, Clock
+  Calendar, Clock, ArrowRight
 } from 'lucide-react';
-import { LAUNCH_DISTRICT } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { useUploadFile } from '@/hooks/useStorage';
-import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
+import { createDocument, getAvailableCompanySlug, updateDocument } from '@/lib/firebase/firestoreService';
 import { where } from 'firebase/firestore';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 import { normalizePlanSlug, selectBestSubscription, getPlanRank } from '@/lib/subscriptions';
 import CompanyProfileClient from '@/app/company/[slug]/CompanyProfileClient';
 import { useLocations } from '@/hooks/useLocations';
+import UpgradePlanDialog from '@/components/portal/UpgradePlanDialog';
+import { getCompanyPortfolioPath, normalizeExternalUrl } from '@/lib/companyPortfolio';
 
 const DEFAULT_COMPANY = {
   name: '',
@@ -33,8 +34,8 @@ const DEFAULT_COMPANY = {
   website: '',
   address: '',
   location: '',
-  district: LAUNCH_DISTRICT,
-  state: 'Tamil Nadu',
+  district: '',
+  state: '',
   establishedYear: '',
   workingHours: '',
   googleMapsLink: '',
@@ -94,6 +95,7 @@ const DEFAULT_COMPANY = {
   ogTitle: '',
   ogDescription: '',
   slug: '',
+  portfolioPath: '',
   updatedAt: null as any,
 };
 
@@ -109,7 +111,7 @@ function calcCompletion(data: typeof DEFAULT_COMPANY): number {
 
 export default function CompanyProfilePage() {
   const { user } = useAuth();
-  const { states, getDistricts, getAreas, allAreas } = useLocations();
+  const { states, getDistricts, getAreas } = useLocations();
   
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -129,11 +131,12 @@ export default function CompanyProfilePage() {
   const [activeFormTab, setActiveFormTab] = useState<'info' | 'branding' | 'seo' | 'verification' | 'enterprise'>('info');
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState<'mobile' | 'tablet' | 'desktop' | 'seo'>('desktop');
 
   const [company, setCompany] = useState(DEFAULT_COMPANY);
   const [charCount, setCharCount] = useState(0);
-  const [newBranch, setNewBranch] = useState({ name: '', address: '', district: LAUNCH_DISTRICT, location: '' });
+  const [newBranch, setNewBranch] = useState({ name: '', address: '', district: '', location: '' });
   const [showBranchForm, setShowBranchForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -163,24 +166,31 @@ export default function CompanyProfilePage() {
   useEffect(() => {
     if (!companyLoading && user?.uid && companies.length === 0 && !isCreatingDraft) {
       setIsCreatingDraft(true);
-      const docData = {
-        ...DEFAULT_COMPANY,
-        ownerId: user.uid,
-        name: user.displayName || 'My Business',
-        verificationStatus: 'pending',
-        isActive: false,
-        isFeatured: false,
-        isPremium: false,
-        viewCount: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      const createDraft = async () => {
+        const name = user.displayName || 'My Business';
+        const slug = await getAvailableCompanySlug(name);
+        const docData = {
+          ...DEFAULT_COMPANY,
+          ownerId: user.uid,
+          name,
+          slug,
+          portfolioPath: getCompanyPortfolioPath({ slug }),
+          verificationStatus: 'pending',
+          isActive: false,
+          isFeatured: false,
+          isPremium: false,
+          viewCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        await createDocument('companies', docData);
       };
-      createDocument('companies', docData).catch((err) => {
+      createDraft().catch((err) => {
         console.error('Failed to auto-create company draft:', err);
         setIsCreatingDraft(false);
       });
     }
-  }, [companyLoading, user?.uid, companies.length, isCreatingDraft]);
+  }, [companyLoading, user?.uid, user?.displayName, companies.length, isCreatingDraft]);
 
   useEffect(() => {
     if (resolvedCompany) {
@@ -199,6 +209,47 @@ export default function CompanyProfilePage() {
     }
   }, [resolvedCompany]);
 
+  useEffect(() => {
+    if (states.length === 0) return;
+
+    setCompany((current) => {
+      const nextState = current.state && states.includes(current.state) ? current.state : states[0];
+      const districts = getDistricts(nextState);
+      const nextDistrict = current.district && districts.includes(current.district)
+        ? current.district
+        : (districts[0] || '');
+      const areas = getAreas(nextState, nextDistrict);
+      const nextLocation = current.location && areas.includes(current.location) ? current.location : '';
+
+      if (
+        nextState === current.state &&
+        nextDistrict === current.district &&
+        nextLocation === current.location
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        state: nextState,
+        district: nextDistrict,
+        location: nextLocation,
+      };
+    });
+
+    setNewBranch((current) => {
+      const nextState = company.state && states.includes(company.state) ? company.state : states[0];
+      const districts = getDistricts(nextState);
+      const nextDistrict = current.district && districts.includes(current.district)
+        ? current.district
+        : (districts[0] || '');
+      const areas = getAreas(nextState, nextDistrict);
+      const nextLocation = current.location && areas.includes(current.location) ? current.location : '';
+      if (nextDistrict === current.district && nextLocation === current.location) return current;
+      return { ...current, district: nextDistrict, location: nextLocation };
+    });
+  }, [states, getDistricts, getAreas, company.state]);
+
   const completion = calcCompletion(company);
 
   const triggerAutoSave = (updatedCompanyData: typeof DEFAULT_COMPANY) => {
@@ -211,6 +262,7 @@ export default function CompanyProfilePage() {
       try {
         const docData = {
           name: updatedCompanyData.name,
+          slug: updatedCompanyData.slug || '',
           tagline: updatedCompanyData.tagline,
           logoUrl: updatedCompanyData.logoUrl,
           coverUrl: updatedCompanyData.coverUrl,
@@ -218,7 +270,7 @@ export default function CompanyProfilePage() {
           phone: updatedCompanyData.phone,
           email: updatedCompanyData.email,
           whatsapp: updatedCompanyData.whatsapp,
-          website: updatedCompanyData.website,
+          website: normalizeExternalUrl(updatedCompanyData.website),
           address: updatedCompanyData.address,
           location: updatedCompanyData.location,
           district: updatedCompanyData.district,
@@ -294,6 +346,9 @@ export default function CompanyProfilePage() {
   const update = (key: string, value: any) => {
     setCompany((prev) => {
       const next = { ...prev, [key]: value };
+      if (key === 'name' && (!prev.slug || prev.slug === (prev.name ? prev.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : ''))) {
+        next.slug = value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      }
       triggerAutoSave(next);
       return next;
     });
@@ -320,7 +375,7 @@ export default function CompanyProfilePage() {
         triggerAutoSave(next);
         return next;
       });
-      setNewBranch({ name: '', address: '', district: LAUNCH_DISTRICT, location: '' });
+      setNewBranch({ name: '', address: '', district: company.district, location: '' });
       setShowBranchForm(false);
     }
   };
@@ -391,6 +446,7 @@ export default function CompanyProfilePage() {
     }
     setSaving(true);
     try {
+      const slug = await getAvailableCompanySlug(company.slug || company.name, resolvedCompany?.id);
       const docData = {
         name: company.name,
         tagline: company.tagline,
@@ -400,10 +456,13 @@ export default function CompanyProfilePage() {
         phone: company.phone,
         email: company.email,
         whatsapp: company.whatsapp,
-        website: company.website,
+        website: normalizeExternalUrl(company.website),
         address: company.address,
         location: company.location,
         district: company.district,
+        state: company.state,
+        slug,
+        portfolioPath: getCompanyPortfolioPath({ slug }),
         facebook: company.facebook,
         instagram: company.instagram,
         linkedin: company.linkedin,
@@ -460,9 +519,10 @@ export default function CompanyProfilePage() {
 
       if (resolvedCompany?.id) {
         await updateDocument('companies', resolvedCompany.id, docData);
+        setCompany((current) => ({ ...current, slug, portfolioPath: getCompanyPortfolioPath({ slug }) }));
         alert('Company profile updated successfully!');
       } else {
-        await createDocument('companies', {
+        const companyId = await createDocument('companies', {
           ...docData,
           ownerId: user?.uid,
           verificationStatus: 'pending',
@@ -471,6 +531,7 @@ export default function CompanyProfilePage() {
           isPremium: false,
           viewCount: 0
         });
+        setCompany((current) => ({ ...current, id: companyId, slug, portfolioPath: getCompanyPortfolioPath({ slug }) } as any));
         alert('Company profile created successfully! It is currently pending admin approval.');
       }
       setAutoSaveStatus('saved');
@@ -491,8 +552,11 @@ export default function CompanyProfilePage() {
     }
     setSaving(true);
     try {
+      const slug = await getAvailableCompanySlug(company.slug || company.name, resolvedCompany?.id);
       const updatedCompanyData = {
         ...company,
+        slug,
+        portfolioPath: getCompanyPortfolioPath({ slug }),
         isPublished: true,
         publishedAt: new Date(),
       };
@@ -500,6 +564,7 @@ export default function CompanyProfilePage() {
 
       const docData = {
         name: updatedCompanyData.name,
+        slug: updatedCompanyData.slug || '',
         tagline: updatedCompanyData.tagline,
         logoUrl: updatedCompanyData.logoUrl,
         coverUrl: updatedCompanyData.coverUrl,
@@ -507,10 +572,12 @@ export default function CompanyProfilePage() {
         phone: updatedCompanyData.phone,
         email: updatedCompanyData.email,
         whatsapp: updatedCompanyData.whatsapp,
-        website: updatedCompanyData.website,
+        website: normalizeExternalUrl(updatedCompanyData.website),
         address: updatedCompanyData.address,
         location: updatedCompanyData.location,
         district: updatedCompanyData.district,
+        state: updatedCompanyData.state,
+        portfolioPath: getCompanyPortfolioPath({ slug }),
         facebook: updatedCompanyData.facebook,
         instagram: updatedCompanyData.instagram,
         linkedin: updatedCompanyData.linkedin,
@@ -606,7 +673,7 @@ export default function CompanyProfilePage() {
             </span>
             {company.isPublished && company.slug && (
               <a
-                href={`/company/${company.slug}`}
+                href={getCompanyPortfolioPath(company)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[10px] text-cyan-400 font-bold hover:underline ml-2"
@@ -1145,16 +1212,35 @@ export default function CompanyProfilePage() {
                     onChange={(e) => setNewBranch((p) => ({ ...p, address: e.target.value }))}
                     className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
                   />
-                  <select
-                    value={newBranch.location}
-                    onChange={(e) => setNewBranch((p) => ({ ...p, location: e.target.value, district: LAUNCH_DISTRICT }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
-                  >
-                    <option value="">Select area</option>
-                    {allAreas.map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <select
+                      value={newBranch.district}
+                      onChange={(e) => {
+                        const areas = getAreas(company.state || states[0] || '', e.target.value);
+                        setNewBranch((p) => ({
+                          ...p,
+                          district: e.target.value,
+                          location: areas[0] || '',
+                        }));
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
+                    >
+                      <option value="">Select district</option>
+                      {getDistricts(company.state || states[0] || '').map((district) => (
+                        <option key={district} value={district}>{district}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={newBranch.location}
+                      onChange={(e) => setNewBranch((p) => ({ ...p, location: e.target.value }))}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
+                    >
+                      <option value="">Select area</option>
+                      {getAreas(company.state || states[0] || '', newBranch.district).map((area) => (
+                        <option key={area} value={area}>{area}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={addBranch}
@@ -1200,12 +1286,12 @@ export default function CompanyProfilePage() {
                        <div
                          key={themeOpt.id}
                          onClick={() => {
-                           if (isLocked) {
-                             alert(`Please upgrade your subscription plan to unlock the ${themeOpt.label}.`);
-                             return;
-                           }
-                           update('customTheme', themeOpt.id);
-                         }}
+                            if (isLocked) {
+                              setIsUpgradeOpen(true);
+                              return;
+                            }
+                            update('customTheme', themeOpt.id);
+                          }}
                          className={`p-4 rounded-xl border cursor-pointer transition-all relative overflow-hidden ${themeOpt.bg} ${
                            isSelected
                              ? 'border-cyan-500 ring-1 ring-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
@@ -1250,12 +1336,12 @@ export default function CompanyProfilePage() {
                        <div
                          key={tempOpt.id}
                          onClick={() => {
-                           if (isLocked) {
-                             alert(`Please upgrade your subscription plan to unlock the ${tempOpt.label} template.`);
-                             return;
-                           }
-                           update('websiteTemplate', tempOpt.id);
-                         }}
+                            if (isLocked) {
+                              setIsUpgradeOpen(true);
+                              return;
+                            }
+                            update('websiteTemplate', tempOpt.id);
+                          }}
                          className={`p-4 rounded-xl border cursor-pointer transition-all bg-white/[0.02] ${
                            isSelected
                              ? 'border-cyan-500 ring-1 ring-cyan-500/30'
@@ -1282,10 +1368,18 @@ export default function CompanyProfilePage() {
                {/* Custom Action (CTA) Button */}
                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
                  {getPlanRank(currentPlan) < 1 && (
-                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                     <Lock size={24} className="text-amber-400 mb-2" />
-                     <h4 className="text-sm font-bold text-white">Custom CTA is a Standard/Premium Feature</h4>
-                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to add a custom action button to your public micro-website.</p>
+                   <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-10 flex flex-col items-center justify-center text-center p-4">
+                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 mb-2">
+                       <Lock size={18} />
+                     </div>
+                     <h4 className="text-sm font-bold text-white font-outfit">Custom CTA is a Standard/Premium Feature</h4>
+                     <p className="text-[11px] text-gray-400 mt-1 max-w-xs">Upgrade your account to add a custom action button to your public micro-website.</p>
+                     <button
+                       onClick={() => setIsUpgradeOpen(true)}
+                       className="mt-3 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg transition-all flex items-center gap-1 cursor-pointer"
+                     >
+                       Unlock Feature <Sparkles size={11} />
+                     </button>
                    </div>
                  )}
                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
@@ -1319,10 +1413,18 @@ export default function CompanyProfilePage() {
                {/* Hide Platform Branding */}
                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
                  {getPlanRank(currentPlan) < 2 && (
-                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                     <Lock size={24} className="text-amber-400 mb-2" />
-                     <h4 className="text-sm font-bold text-white">White-labeled Branding is a Premium Feature</h4>
-                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade to Premium to remove the &quot;Powered by THENIJOBS&quot; badge from your website footer.</p>
+                   <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-10 flex flex-col items-center justify-center text-center p-4">
+                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 mb-2">
+                       <Lock size={18} />
+                     </div>
+                     <h4 className="text-sm font-bold text-white font-outfit">White-labeled Branding is a Premium Feature</h4>
+                     <p className="text-[11px] text-gray-400 mt-1 max-w-xs">Upgrade to Premium to remove the &quot;Powered by THENIJOBS&quot; badge from your website footer.</p>
+                     <button
+                       onClick={() => setIsUpgradeOpen(true)}
+                       className="mt-3 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg transition-all flex items-center gap-1 cursor-pointer"
+                     >
+                       Upgrade Plan <Sparkles size={11} />
+                     </button>
                    </div>
                  )}
                  <div className="flex items-center gap-3">
@@ -1347,10 +1449,18 @@ export default function CompanyProfilePage() {
                {/* Custom SEO Meta Tags */}
                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
                   {getPlanRank(currentPlan) < 1 && (
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                      <Lock size={24} className="text-amber-400 mb-2" />
-                      <h4 className="text-sm font-bold text-white">SEO customization is a Standard/Premium Feature</h4>
-                      <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the title and description indexed by search engines like Google.</p>
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-10 flex flex-col items-center justify-center text-center p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 mb-2">
+                        <Lock size={18} />
+                      </div>
+                      <h4 className="text-sm font-bold text-white font-outfit">SEO customization is a Standard/Premium Feature</h4>
+                      <p className="text-[11px] text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the title and description indexed by search engines like Google.</p>
+                      <button
+                        onClick={() => setIsUpgradeOpen(true)}
+                        className="mt-3 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        Unlock Feature <Sparkles size={11} />
+                      </button>
                     </div>
                   )}
                   <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
@@ -1440,10 +1550,18 @@ export default function CompanyProfilePage() {
                {/* Marketing Analytics & Pixels */}
                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
                  {getPlanRank(currentPlan) < 2 && (
-                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                     <Lock size={24} className="text-amber-400 mb-2" />
-                     <h4 className="text-sm font-bold text-white">Marketing integrations are a Premium Feature</h4>
-                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade to Premium to track client visits using Facebook Pixel and Google Analytics.</p>
+                   <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-10 flex flex-col items-center justify-center text-center p-4">
+                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 mb-2">
+                       <Lock size={18} />
+                     </div>
+                     <h4 className="text-sm font-bold text-white font-outfit">Marketing integrations are a Premium Feature</h4>
+                     <p className="text-[11px] text-gray-400 mt-1 max-w-xs">Upgrade to Premium to track client visits using Facebook Pixel and Google Analytics.</p>
+                     <button
+                       onClick={() => setIsUpgradeOpen(true)}
+                       className="mt-3 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg transition-all flex items-center gap-1 cursor-pointer"
+                     >
+                       Unlock Feature <Sparkles size={11} />
+                     </button>
                    </div>
                  )}
                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
@@ -1477,10 +1595,18 @@ export default function CompanyProfilePage() {
                {/* WhatsApp Chat Pre-fill Template */}
                <div className="glass-card rounded-2xl p-6 relative overflow-hidden">
                  {getPlanRank(currentPlan) < 1 && (
-                   <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-4">
-                     <Lock size={24} className="text-amber-400 mb-2" />
-                     <h4 className="text-sm font-bold text-white">WhatsApp template customization is locked</h4>
-                     <p className="text-xs text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the default message sent when customers click your WhatsApp button.</p>
+                   <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-10 flex flex-col items-center justify-center text-center p-4">
+                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 mb-2">
+                       <Lock size={18} />
+                     </div>
+                     <h4 className="text-sm font-bold text-white font-outfit">WhatsApp template customization is locked</h4>
+                     <p className="text-[11px] text-gray-400 mt-1 max-w-xs">Upgrade your account to customize the default message sent when customers click your WhatsApp button.</p>
+                     <button
+                       onClick={() => setIsUpgradeOpen(true)}
+                       className="mt-3 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg transition-all flex items-center gap-1 cursor-pointer"
+                     >
+                       Unlock Feature <Sparkles size={11} />
+                     </button>
                    </div>
                  )}
                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
@@ -1991,9 +2117,66 @@ export default function CompanyProfilePage() {
             </button>
           </div>
 
-          {/* Sidebar — Verification Status */}
-          <div className="xl:col-span-1 font-outfit">
-            <div className="glass-card rounded-2xl p-6 sticky top-24">
+          {/* Sidebar — Verification Status & Upgrades */}
+          <div className="xl:col-span-1 font-outfit space-y-6 sticky top-24">
+            {/* Subscription / Plan Upgrade Card */}
+            <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-[#0c051a] via-[#12082b] to-[#180a3a] p-6 shadow-[0_8px_32px_rgba(139,92,246,0.15)] flex flex-col gap-4">
+              {/* Decorative Glow */}
+              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-violet-600/10 blur-3xl" />
+              
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 shrink-0">
+                  <Crown size={20} />
+                </div>
+                <div>
+                  <span className="text-[10px] text-violet-400 font-bold uppercase tracking-wider block">Current Plan</span>
+                  <span className="text-base font-black text-white capitalize">{currentPlan} Plan</span>
+                </div>
+              </div>
+
+              {currentPlan === 'free' ? (
+                <>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    You are currently using the limited Free Profile. Unlock advanced branding, custom designs, SEO keywords, and click tracking.
+                  </p>
+                  <div className="space-y-2 mt-1">
+                    {[
+                      'Add custom Action Buttons (CTA)',
+                      'Choose premium design themes & templates',
+                      'SEO Customization for Google Search',
+                      'Remove THENIJOBS branding badge'
+                    ].map((feat) => (
+                      <div key={feat} className="flex items-center gap-2 text-xs text-gray-300">
+                        <Check size={12} className="text-emerald-400 shrink-0" />
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setIsUpgradeOpen(true)}
+                    className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-violet-950/40 hover:shadow-violet-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    Upgrade Profile <Sparkles size={13} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Thank you for supporting THENIJOBS! You have unlocked premium branding and advanced features.
+                  </p>
+                  {currentPlan !== 'enterprise' && (
+                    <button
+                      onClick={() => setIsUpgradeOpen(true)}
+                      className="w-full mt-2 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-xs font-bold uppercase tracking-wider text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      Upgrade Plan <ArrowRight size={13} />
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="glass-card rounded-2xl p-6">
               <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                 <Shield size={16} className="text-cyan-400" />
                 Verification Status
@@ -2200,6 +2383,17 @@ export default function CompanyProfilePage() {
           </div>
         </div>
       )}
+
+       <UpgradePlanDialog
+         open={isUpgradeOpen}
+         onOpenChange={setIsUpgradeOpen}
+         currentPlan={currentPlan as any}
+         audience="employer"
+         companyId={resolvedCompany?.id}
+         userName={user?.displayName}
+         userEmail={user?.email}
+         userPhone={user?.phone}
+       />
 
        <ImageCropperModal
          open={showCropper}

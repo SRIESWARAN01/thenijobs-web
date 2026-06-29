@@ -10,10 +10,10 @@ import {
   Navigation, MessageCircle, Phone, Loader2
 } from 'lucide-react';
 import { getPublicCompanies, getActiveServices } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT } from '@/lib/types';
 import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT & Software', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance', 'Food & Beverage'];
 
@@ -27,6 +27,7 @@ const SORT_OPTIONS = [
 interface Business {
   id: string;
   slug: string;
+  portfolioPath: string;
   name: string;
   category: string;
   description: string;
@@ -78,7 +79,6 @@ export default function BusinessesPage() {
         ]);
 
         const data = companies
-          .filter((company) => (company.district || LAUNCH_DISTRICT) === LAUNCH_DISTRICT)
           .map(company => {
             const d = company;
             // Get dynamically approved services for this company
@@ -92,12 +92,13 @@ export default function BusinessesPage() {
             return {
               id: d.id,
               slug: d.slug || d.id,
+              portfolioPath: getCompanyPortfolioPath(d),
               name: d.name || '',
               category: d.category || '',
               description: d.description || '',
               services: mergedServices,
-              district: d.district || LAUNCH_DISTRICT,
-              location: d.location || d.locality || d.town || d.district || LAUNCH_DISTRICT,
+              district: d.district || 'Local Area',
+              location: d.location || d.locality || d.town || d.district || 'Local Area',
               rating: d.rating || 0,
               reviews: d.reviewCount || 0,
               jobs: d.jobCount || 0,
@@ -237,10 +238,10 @@ export default function BusinessesPage() {
               </p>
             </div>
             <button
-              onClick={() => setSelectedDistrict('Theni')}
+              onClick={() => setSelectedDistrict(allAreas[0] || 'All')}
               className="btn-gradient px-5 py-3 rounded-xl text-sm font-semibold relative z-10 flex items-center justify-center gap-2"
             >
-              <MapPin size={15} /> Use Theni Location
+              <MapPin size={15} /> Use Primary Area
             </button>
           </div>
         </div>
@@ -253,7 +254,7 @@ export default function BusinessesPage() {
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {selectedCategory !== 'All' ? selectedCategory : 'All categories'}
-              {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across Theni district'}
+              {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across all areas'}
             </p>
           </div>
           <Select
@@ -294,7 +295,7 @@ export default function BusinessesPage() {
             </h3>
             <p className="text-gray-400 text-sm mb-6 max-w-md mx-auto">
               {businesses.length === 0
-                ? 'Be the first to register your business on THENIJOBS and get discovered by thousands of customers across Theni district.'
+                ? 'Be the first to register your business on THENIJOBS and get discovered by local customers.'
                 : 'Try adjusting your search or filters to find what you are looking for.'
               }
             </p>
@@ -338,7 +339,7 @@ export default function BusinessesPage() {
                 </div>
 
                 <div className="flex gap-2 mt-auto">
-                  <Link href={`/company/${encodeURIComponent(biz.slug)}`}
+                  <Link href={biz.portfolioPath}
                     className="flex-1 btn-gradient py-2.5 rounded-xl text-xs font-semibold relative z-10 text-center flex items-center justify-center gap-1.5">
                     View Profile <ArrowRight size={12} />
                   </Link>

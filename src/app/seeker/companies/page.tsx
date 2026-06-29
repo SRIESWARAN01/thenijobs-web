@@ -8,10 +8,10 @@ import {
   Navigation, MessageCircle, Phone, Loader2
 } from 'lucide-react';
 import { getPublicCompanies } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT } from '@/lib/types';
 import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT & Software', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance', 'Food & Beverage'];
 
@@ -25,6 +25,7 @@ const SORT_OPTIONS = [
 interface Business {
   id: string;
   slug: string;
+  portfolioPath: string;
   name: string;
   category: string;
   description: string;
@@ -72,18 +73,18 @@ export default function SeekerCompaniesPage() {
       try {
         const companies = await getPublicCompanies();
         const data = companies
-          .filter((company) => (company.district || LAUNCH_DISTRICT) === LAUNCH_DISTRICT)
           .map(company => {
             const d = company;
             return {
               id: d.id,
               slug: d.slug || d.id,
+              portfolioPath: getCompanyPortfolioPath(d),
               name: d.name || '',
               category: d.category || '',
               description: d.description || '',
               services: Array.isArray(d.services) ? d.services : [],
-              district: d.district || LAUNCH_DISTRICT,
-              location: d.location || d.locality || d.town || d.district || LAUNCH_DISTRICT,
+              district: d.district || 'Local Area',
+              location: d.location || d.locality || d.town || d.district || 'Local Area',
               rating: d.rating || 0,
               reviews: d.reviewCount || 0,
               jobs: d.jobCount || 0,
@@ -241,10 +242,10 @@ export default function SeekerCompaniesPage() {
             </p>
           </div>
           <button
-            onClick={() => setSelectedDistrict('Theni')}
+            onClick={() => setSelectedDistrict(allAreas[0] || 'All')}
             className="px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 hover:opacity-95 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all"
           >
-            <MapPin size={15} /> Use Theni Location
+            <MapPin size={15} /> Use Primary Area
           </button>
         </div>
       </div>
@@ -257,7 +258,7 @@ export default function SeekerCompaniesPage() {
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {selectedCategory !== 'All' ? selectedCategory : 'All categories'}
-            {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across Theni district'}
+            {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across all areas'}
           </p>
         </div>
         <Select
@@ -339,7 +340,7 @@ export default function SeekerCompaniesPage() {
               </div>
 
               <div className="flex gap-2 mt-auto">
-                <Link href={`/company/${encodeURIComponent(biz.slug)}`}
+                <Link href={biz.portfolioPath}
                   className="flex-1 py-2 rounded-xl bg-[#0e0e22] hover:bg-white/5 border border-white/10 text-white text-xs font-semibold text-center flex items-center justify-center gap-1.5 transition-all">
                   View Profile <ArrowRight size={12} />
                 </Link>

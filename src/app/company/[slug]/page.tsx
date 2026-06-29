@@ -2,7 +2,8 @@ import { cache } from 'react';
 import type { Metadata } from 'next';
 import CompanyProfilePageClient from './CompanyProfilePageClient';
 import { db } from '@/lib/firebase/config';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
+import { getCompanyBannerUrl, getCompanyPortfolioUrl } from '@/lib/companyPortfolio';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -19,6 +20,22 @@ const getCompanyBySlug = cache(async (slug: string) => {
     const snap = await getDocs(q);
     if (!snap.empty) {
       return snap.docs[0].data();
+    }
+
+    // Fallback: Try fetching by document ID directly
+    const docSnap = await getDoc(doc(db, 'companies', slug));
+    if (docSnap.exists()) {
+      return docSnap.data();
+    }
+
+    const aliasQuery = query(
+      collection(db, 'companies'),
+      where('aliases', 'array-contains', slug),
+      limit(1)
+    );
+    const aliasSnap = await getDocs(aliasQuery);
+    if (!aliasSnap.empty) {
+      return aliasSnap.docs[0].data();
     }
   } catch (err) {
     console.error('Failed to fetch company data:', err);
@@ -38,6 +55,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const name = companyData.name || companyData.businessName || companyData.companyName || 'Business';
+  const canonicalUrl = getCompanyPortfolioUrl({ ...companyData, slug });
+  const bannerUrl = getCompanyBannerUrl(companyData);
   const defaultDescription = companyData.description
     ? String(companyData.description).replace(/\s+/g, ' ').slice(0, 160)
     : `${name} — a verified business in ${companyData.district || 'Theni'} district. View profile, services, and reviews on THENIJOBS.`;
@@ -91,7 +110,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const logoUrl = companyData.logoUrl || undefined;
     const ogTitleVal = companyData.ogTitle || `${title} — THENIJOBS Premium Partner`;
     const ogDescVal = companyData.ogDescription || description;
-    const ogImageVal = companyData.socialShareImage || logoUrl;
+    const ogImageVal = companyData.socialShareImage || bannerUrl || logoUrl;
 
     return {
       title,
@@ -101,7 +120,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: ogTitleVal,
         description: ogDescVal,
         type: 'website',
-        url: `https://thenijobs.com/company/${slug}`,
+        url: canonicalUrl,
         ...(ogImageVal ? { images: [{ url: ogImageVal, alt: `${name} logo` }] } : {}),
       },
       twitter: {
@@ -119,8 +138,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const logoUrl = companyData.logoUrl || undefined;
     const ogTitleVal = companyData.ogTitle || `${title} — THENIJOBS Enterprise VIP Partner`;
     const ogDescVal = companyData.ogDescription || description;
-    const ogImageVal = companyData.socialShareImage || logoUrl || companyData.coverUrl;
-    const canonical = companyData.canonicalUrl || `https://thenijobs.in/company/${slug}`;
+    const ogImageVal = companyData.socialShareImage || bannerUrl || logoUrl;
+    const canonical = companyData.canonicalUrl || canonicalUrl;
 
     return {
       title,
@@ -144,7 +163,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: ogTitleVal,
         description: ogDescVal,
         type: 'website',
-        url: `https://thenijobs.in/company/${slug}`,
+        url: canonicalUrl,
         ...(ogImageVal ? { images: [{ url: ogImageVal, alt: `${name} logo` }] } : {}),
       },
       twitter: {
@@ -234,7 +253,7 @@ export default async function CompanyProfilePage({ params }: PageProps) {
       'name': companyData.name,
       'description': companyData.description || 'Verified Enterprise Organization in Theni',
       'logo': companyData.logoUrl || undefined,
-      'url': `https://thenijobs.in/company/${slug}`,
+      'url': getCompanyPortfolioUrl({ ...companyData, slug }),
       'sameAs': [
         companyData.website || undefined,
         companyData.facebook || undefined,

@@ -8,6 +8,7 @@ import {
   BadgeCheck, Crown, Megaphone, Briefcase, CalendarDays,
   Loader2, Send, Trash2
 } from 'lucide-react';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 
 export interface SocialPostData {
   id: string;
@@ -80,6 +81,11 @@ export function SocialPost({
   const typeConfig = POST_TYPE_CONFIG[post.postType] || POST_TYPE_CONFIG.general;
   const TypeIcon = typeConfig.icon;
   const isOwner = currentUserId === post.authorId;
+  const companyPath = getCompanyPortfolioPath({
+    id: post.companyId,
+    slug: post.companySlug,
+    name: post.companyName,
+  });
 
   const handleSubmitComment = () => {
     if (commentText.trim() && onComment) {
@@ -94,7 +100,7 @@ export function SocialPost({
       {/* Post Header */}
       <div className="p-4 pb-0 flex items-start gap-3">
         {/* Company Avatar */}
-        <Link href={`/company/${post.companySlug || post.companyId}`} className="flex-shrink-0">
+        <Link href={companyPath} className="flex-shrink-0">
           {post.companyLogo && !imgError ? (
             <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-white/10">
               <Image
@@ -118,7 +124,7 @@ export function SocialPost({
         {/* Company Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <Link href={`/company/${post.companySlug || post.companyId}`} className="text-sm font-bold text-white hover:text-violet-300 transition-colors truncate">
+            <Link href={companyPath} className="text-sm font-bold text-white hover:text-violet-300 transition-colors truncate">
               {post.companyName}
             </Link>
             {post.isVerified && <BadgeCheck size={14} className="text-blue-400 flex-shrink-0" />}

@@ -12,13 +12,15 @@ import {
   Loader2, Upload, Plus, X, BadgeCheck, AlertCircle, CheckCircle2,
   type LucideIcon
 } from 'lucide-react';
-import { BUSINESS_CATEGORIES, LAUNCH_DISTRICT, LAUNCH_STATE } from '@/lib/types';
+import { BUSINESS_CATEGORIES } from '@/lib/types';
 import { useLocations } from '@/hooks/useLocations';
 import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, addDoc, doc, setDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
+import { getAvailableCompanySlug } from '@/lib/firebase/firestoreService';
+import { getCompanyPortfolioPath, normalizeExternalUrl, slugifyCompanyName } from '@/lib/companyPortfolio';
 
 const STEPS: Array<{ id: number; label: string; icon: LucideIcon }> = [
   { id: 1, label: 'Basic Info', icon: Building2 },
@@ -37,8 +39,8 @@ const HOURS = ['08:00 AM', '09:00 AM', '10:00 AM'] as const;
 export default function CompanyRegisterPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { allAreas } = useLocations();
-  const locationOptions = allAreas.map(d => ({ value: d, label: d }));
+  const { states, getDistricts, getAreas } = useLocations();
+  const stateOptions = states.map((state) => ({ value: state, label: state }));
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<string[]>([]);
@@ -51,11 +53,14 @@ export default function CompanyRegisterPage() {
     name: '', category: '', subcategory: '', foundedYear: '',
     companySize: '', gstNumber: '', registrationNumber: '', description: '',
     phone: '', alternatePhone: '', email: '', website: '', whatsapp: '',
-    address: '', location: '', district: LAUNCH_DISTRICT, state: LAUNCH_STATE, country: 'India',
+    address: '', location: '', district: '', state: '', country: 'India',
     facebook: '', instagram: '', linkedin: '', youtube: '',
     openFrom: '09:00 AM', openTo: '06:00 PM',
     logoUrl: '', coverUrl: '',
   });
+
+  const districtOptions = getDistricts(form.state).map((district) => ({ value: district, label: district }));
+  const locationOptions = getAreas(form.state, form.district).map((area) => ({ value: area, label: area }));
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -92,12 +97,36 @@ export default function CompanyRegisterPage() {
     setCropType(null);
   };
 
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-  };
+  const generateSlug = slugifyCompanyName;
+
+  useEffect(() => {
+    if (states.length === 0) return;
+
+    setForm((current) => {
+      const nextState = current.state && states.includes(current.state) ? current.state : states[0];
+      const districts = getDistricts(nextState);
+      const nextDistrict = current.district && districts.includes(current.district)
+        ? current.district
+        : (districts[0] || '');
+      const areas = getAreas(nextState, nextDistrict);
+      const nextLocation = current.location && areas.includes(current.location) ? current.location : '';
+
+      if (
+        nextState === current.state &&
+        nextDistrict === current.district &&
+        nextLocation === current.location
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        state: nextState,
+        district: nextDistrict,
+        location: nextLocation,
+      };
+    });
+  }, [states, getDistricts, getAreas]);
 
   const checkSlugAvailability = useCallback(async (name: string) => {
     const slug = generateSlug(name);
@@ -108,37 +137,9 @@ export default function CompanyRegisterPage() {
     }
     setSlugStatus('checking');
     try {
-      const q = query(
-        collection(db, 'companies'),
-        where('slug', '==', slug),
-        limit(1)
-      );
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        setSlugStatus('available');
-        setValidatedSlug(slug);
-      } else {
-        // Try with numeric suffix
-        let suffix = 2;
-        let uniqueSlug = `${slug}-${suffix}`;
-        while (suffix <= 10) {
-          const qRetry = query(
-            collection(db, 'companies'),
-            where('slug', '==', uniqueSlug),
-            limit(1)
-          );
-          const snapRetry = await getDocs(qRetry);
-          if (snapRetry.empty) {
-            setSlugStatus('taken');
-            setValidatedSlug(uniqueSlug);
-            return;
-          }
-          suffix++;
-          uniqueSlug = `${slug}-${suffix}`;
-        }
-        setSlugStatus('taken');
-        setValidatedSlug(uniqueSlug);
-      }
+      const uniqueSlug = await getAvailableCompanySlug(slug);
+      setSlugStatus(uniqueSlug === slug ? 'available' : 'taken');
+      setValidatedSlug(uniqueSlug);
     } catch (err) {
       console.error('Slug check error:', err);
       setSlugStatus('idle');
@@ -154,6 +155,25 @@ export default function CompanyRegisterPage() {
         checkSlugAvailability(v);
       }, 600);
     }
+  };
+  const updateState = (state: string) => {
+    const districts = getDistricts(state);
+    const district = districts[0] || '';
+    const areas = getAreas(state, district);
+    setForm((current) => ({
+      ...current,
+      state,
+      district,
+      location: areas[0] || '',
+    }));
+  };
+  const updateDistrict = (district: string) => {
+    const areas = getAreas(form.state, district);
+    setForm((current) => ({
+      ...current,
+      district,
+      location: areas[0] || '',
+    }));
   };
   const addService = () => { if (newService.trim()) { setServices(s => [...s, newService.trim()]); setNewService(''); } };
   const removeService = (i: number) => setServices(s => s.filter((_, idx) => idx !== i));
@@ -188,15 +208,24 @@ export default function CompanyRegisterPage() {
       setSubmitError('Please select your area / town.');
       return;
     }
+    if (!form.district || !form.state) {
+      setSubmitError('Please select your state and district.');
+      return;
+    }
     setLoading(true);
     try {
-      // Use the pre-validated unique slug, or generate one fresh
-      const slug = validatedSlug || generateSlug(form.name);
+      const slug = await getAvailableCompanySlug(form.name);
+      setValidatedSlug(slug);
+      setSlugStatus(slug === generateSlug(form.name) ? 'available' : 'taken');
 
       const { gstNumber, registrationNumber, ...publicForm } = form;
+      const normalizedForm = {
+        ...publicForm,
+        website: normalizeExternalUrl(publicForm.website),
+      };
 
       const docRef = await addDoc(collection(db, 'companies'), {
-        ...publicForm,
+        ...normalizedForm,
         foundedYear: form.foundedYear ? parseInt(form.foundedYear) : '',
         services,
         ownerId: user.uid,
@@ -212,6 +241,7 @@ export default function CompanyRegisterPage() {
         enquiryCount: 0,
         followerCount: 0,
         slug,
+        portfolioPath: getCompanyPortfolioPath({ slug }),
         verificationBadges: {
           emailVerified: !!form.email,
           gstVerified: !!gstNumber,
@@ -407,10 +437,24 @@ export default function CompanyRegisterPage() {
                     className="search-input w-full px-4 py-3 text-sm resize-none" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">District</label>
-                  <input type="text" value={form.district} readOnly className="search-input w-full px-4 py-3 text-sm opacity-60" />
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">State *</label>
+                  <Select
+                    value={form.state}
+                    onChange={updateState}
+                    options={stateOptions}
+                    placeholder="Select state"
+                  />
                 </div>
                 <div>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">District *</label>
+                  <Select
+                    value={form.district}
+                    onChange={updateDistrict}
+                    options={districtOptions}
+                    placeholder="Select district"
+                  />
+                </div>
+                <div className="sm:col-span-2">
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Area / Town *</label>
                   <Select
                     value={form.location}
@@ -418,10 +462,6 @@ export default function CompanyRegisterPage() {
                     options={locationOptions}
                     placeholder="Select area"
                   />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">State</label>
-                  <input type="text" value={form.state} readOnly className="search-input w-full px-4 py-3 text-sm opacity-60" />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Opening Time</label>

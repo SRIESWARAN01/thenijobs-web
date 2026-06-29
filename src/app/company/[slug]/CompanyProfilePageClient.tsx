@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CompanyProfileClient from './CompanyProfileClient';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { formatDate, formatJobType } from '@/lib/jobFormatters';
 import { isPublicJobVisible } from '@/lib/jobPolicy';
@@ -34,8 +34,20 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
           limit(1)
         );
         const snapCompany = await getDocs(qCompany);
+        let docData: any = null;
 
-        if (snapCompany.empty) {
+        if (!snapCompany.empty) {
+          docData = { id: snapCompany.docs[0].id, ...snapCompany.docs[0].data() };
+        } else {
+          // Fallback 1: Try checking by document ID directly
+          const docRef = doc(db, 'companies', slug);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            docData = { id: docSnap.id, ...docSnap.data() };
+          }
+        }
+
+        if (!docData) {
           // Try checking aliases array (if company has redirects)
           const qAlias = query(
             collection(db, 'companies'),
@@ -47,14 +59,11 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
             setNotFoundState(true);
             return;
           }
-          const docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
-          setCompany(docData);
-          await loadJobsAndReviews(docData.id);
-        } else {
-          const docData = { id: snapCompany.docs[0].id, ...snapCompany.docs[0].data() };
-          setCompany(docData);
-          await loadJobsAndReviews(docData.id);
+          docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
         }
+
+        setCompany(docData);
+        await loadJobsAndReviews(docData.id);
       } catch (err) {
         console.error('Error loading company:', err);
         setNotFoundState(true);

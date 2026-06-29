@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { where, limit } from 'firebase/firestore';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 
 const getCategoryIcon = (category?: string) => {
   switch (category?.toLowerCase()) {
@@ -41,9 +42,10 @@ export default function FeaturedBusinesses() {
   const companiesList = dbCompanies.map((d: any) => ({
     id: d.id,
     slug: d.slug || d.id,
+    portfolioPath: getCompanyPortfolioPath(d),
     name: d.name || '',
     category: d.category || 'Local Business',
-    location: d.district || d.location || 'Theni',
+    location: d.district || d.location || 'Local Area',
     rating: d.rating || 4.5,
     reviews: d.reviewsCount || 0,
     isVerified: d.verificationStatus === 'verified',
@@ -129,7 +131,7 @@ export default function FeaturedBusinesses() {
                   <div className="p-4 pt-0">
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2">
                       <Link
-                        href={`/company/${encodeURIComponent(biz.slug)}`}
+                        href={biz.portfolioPath}
                         className="flex min-h-12 items-center justify-center rounded-xl bg-slate-950 text-xs font-black text-white hover:bg-teal-800"
                       >
                         View Profile

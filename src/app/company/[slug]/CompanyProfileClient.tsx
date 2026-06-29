@@ -29,6 +29,11 @@ import { getCompanyActivePlan } from '@/lib/subscriptions';
 import { downloadVCard } from '@/lib/vcf';
 import { downloadCompanyPdf } from '@/lib/companyPdf';
 import TrustScoreBadge from '@/components/company/TrustScoreBadge';
+import {
+  getCompanyBannerUrl,
+  getCompanyPortfolioUrl,
+  normalizeExternalUrl,
+} from '@/lib/companyPortfolio';
 
 
 // ──────────────────────────────────────────────────────────────────
@@ -59,9 +64,10 @@ function ServicesShowcaseSection({ company, services, currentTheme }: { company:
     }
 
     if (eventType === 'whatsapp') {
-      const serviceUrl = typeof window !== 'undefined'
-        ? `${window.location.origin}/company/${company.slug}#services`
-        : `https://thenijobs.com/company/${company.slug}`;
+      const serviceUrl = `${getCompanyPortfolioUrl(
+        company,
+        typeof window !== 'undefined' ? window.location.origin : undefined,
+      )}#services`;
       const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
       
       const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
@@ -718,8 +724,9 @@ export default function CompanyProfileClient({ company: rawCompany, jobs, review
 }) {
   const company = {
     ...rawCompany,
-    coverImageUrl: rawCompany.coverImageUrl || rawCompany.coverUrl || '',
+    coverImageUrl: getCompanyBannerUrl(rawCompany),
     galleryImages: rawCompany.galleryImages || rawCompany.gallery || [],
+    website: normalizeExternalUrl(rawCompany.website),
   };
 
   // Determine plan type: free, basic (Standard), premium, enterprise
@@ -867,7 +874,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
     window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
+  const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
   // Free Plan Gated Tabs: Simple Minimal Layout (About, Jobs, Products/Services, Gallery, Reviews only)
   const tabs = [
@@ -1204,7 +1211,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
   const [reviewType, setReviewType] = useState('company');
   const { user } = useAuth();
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
-  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
+  const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
     const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
@@ -1764,7 +1771,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
   const [shareOpen, setShareOpen] = useState(false);
   const { user } = useAuth();
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
-  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
+  const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
   // Theme styling map
   const themeConfigs: Record<EnterpriseThemeName, {
@@ -2725,7 +2732,7 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
   const [reviewType, setReviewType] = useState('company');
   const { user } = useAuth();
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
-  const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
+  const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
   // E-Commerce specific states
   const [productSearch, setProductSearch] = useState('');

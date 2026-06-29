@@ -27,6 +27,7 @@ import { db, functions } from './config';
 import { normaliseTimestamps } from './serializers';
 import { getJobExpiryDate, getJobPlanLimit, isActiveJobSlot, isPublicJobVisible } from '@/lib/jobPolicy';
 import { normalizePlanSlug, selectBestSubscription } from '@/lib/subscriptions';
+import { getCompanyPortfolioPath, slugifyCompanyName } from '@/lib/companyPortfolio';
 
 // ============================================================
 // HELPERS
@@ -280,7 +281,47 @@ export async function getCompanyBySlug(slug: string) {
     where('slug', '==', slug),
     limit(1),
   ]);
-  return results[0] || null;
+  if (results[0]) return results[0];
+
+  const aliasResults = await fetchCollection<DocumentData>('companies', [
+    where('aliases', 'array-contains', slug),
+    limit(1),
+  ]);
+  if (aliasResults[0]) return aliasResults[0];
+
+  return fetchDocument<DocumentData>('companies', slug);
+}
+
+export async function getAvailableCompanySlug(
+  value: string,
+  excludeCompanyId?: string | null,
+): Promise<string> {
+  const baseSlug = slugifyCompanyName(value) || `company-${Date.now()}`;
+
+  for (let suffix = 0; suffix < 50; suffix += 1) {
+    const candidate = suffix === 0 ? baseSlug : `${baseSlug}-${suffix + 1}`;
+    const matches = await fetchCollection<{ id: string }>('companies', [
+      where('slug', '==', candidate),
+      limit(2),
+    ]);
+    const taken = matches.some((match) => match.id !== excludeCompanyId);
+    if (!taken) return candidate;
+  }
+
+  return `${baseSlug}-${Date.now()}`;
+}
+
+export async function ensureCompanySlug(
+  companyId: string,
+  nameOrSlug: string,
+): Promise<string> {
+  const slug = await getAvailableCompanySlug(nameOrSlug, companyId);
+  await updateDoc(doc(db, 'companies', companyId), {
+    slug,
+    portfolioPath: getCompanyPortfolioPath({ slug }),
+    updatedAt: serverTimestamp(),
+  });
+  return slug;
 }
 
 // ============================================================

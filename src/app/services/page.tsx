@@ -9,16 +9,17 @@ import {
   Briefcase, SlidersHorizontal, ArrowRight, Building2, Loader2
 } from 'lucide-react';
 import { getPublicCompanies, getActiveServices } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT } from '@/lib/types';
 import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance'];
 
 interface Service {
   id: string;
   slug: string;
+  portfolioPath: string;
   name: string;
   category: string;
   district: string;
@@ -75,7 +76,6 @@ export default function ServicesPage() {
         ]);
 
         const data = companies
-          .filter((company) => (company.district || LAUNCH_DISTRICT) === LAUNCH_DISTRICT)
           .map(company => {
             const d = company;
             // Get dynamically approved services for this company
@@ -89,10 +89,11 @@ export default function ServicesPage() {
             return {
               id: d.id,
               slug: d.slug || d.id,
+              portfolioPath: getCompanyPortfolioPath(d),
               name: d.name || '',
               category: d.category || '',
-              district: d.district || LAUNCH_DISTRICT,
-              location: d.location || d.locality || d.town || d.district || LAUNCH_DISTRICT,
+              district: d.district || 'Local Area',
+              location: d.location || d.locality || d.town || d.district || 'Local Area',
               description: d.description || '',
               services: mergedServices,
               rating: d.rating || 0,
@@ -226,7 +227,7 @@ export default function ServicesPage() {
             <h1 className="font-outfit font-bold text-xl text-white">{filtered.length} Services</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {selectedCategory !== 'All' ? selectedCategory : 'All categories'}
-              {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across Theni district'}
+              {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across all areas'}
             </p>
           </div>
           <Select
@@ -294,7 +295,7 @@ export default function ServicesPage() {
                 </div>
 
                 <div className="flex gap-2 mt-auto">
-                  <Link href={`/company/${encodeURIComponent(svc.slug)}`}
+                  <Link href={svc.portfolioPath}
                     className="flex-1 btn-gradient py-2.5 rounded-xl text-xs font-semibold relative z-10 text-center flex items-center justify-center gap-1.5">
                     View Profile <ArrowRight size={12} />
                   </Link>

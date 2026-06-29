@@ -15,14 +15,15 @@ import { useRequireAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase/config';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { buildPublicSeekerProfile } from '@/lib/publicProfile';
-import { createDocument } from '@/lib/firebase/firestoreService';
+import { createDocument, getAvailableCompanySlug } from '@/lib/firebase/firestoreService';
 import { BUSINESS_CATEGORIES } from '@/lib/types';
 import { useLocations } from '@/hooks/useLocations';
 import { getDashboardPathForRole } from '@/lib/access';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 
 export default function ProfileSetupPage() {
   const router = useRouter();
-  const { allAreas } = useLocations();
+  const { allAreas, hierarchy } = useLocations();
   
   // Require auth but skip checking setup completion to prevent redirect loop
   const { user, loading: authLoading } = useRequireAuth(undefined, '/login');
@@ -175,8 +176,20 @@ export default function ProfileSetupPage() {
     setSaving(true);
     setError(null);
     try {
+      const resolveArea = (area: string) => {
+        for (const [state, districts] of Object.entries(hierarchy)) {
+          for (const [district, areas] of Object.entries(districts)) {
+            if (areas.includes(area)) {
+              return { state, district };
+            }
+          }
+        }
+        return { state: '', district: '' };
+      };
+
       if (isSeeker) {
         const skillsArray = seekerForm.skills.split(',').map(s => s.trim()).filter(Boolean);
+        const seekerLocation = resolveArea(seekerForm.district);
         const profileData = {
           uid: user.uid,
           name: seekerForm.name,
@@ -187,7 +200,8 @@ export default function ProfileSetupPage() {
           photoUrl: user.photoURL || '',
           address: seekerForm.address,
           district: seekerForm.district,
-          state: 'Tamil Nadu',
+          state: seekerLocation.state,
+          locationDistrict: seekerLocation.district,
           currentRole: seekerForm.currentRole,
           skills: skillsArray,
           experience: [],
@@ -205,6 +219,8 @@ export default function ProfileSetupPage() {
         await setDoc(doc(db, 'publicProfiles', user.uid), buildPublicSeekerProfile(user.uid, profileData, user));
       } else {
         // Create Company Profile
+        const businessLocation = resolveArea(businessForm.location);
+        const slug = await getAvailableCompanySlug(businessForm.name);
         const companyData = {
           ownerId: user.uid,
           name: businessForm.name,
@@ -217,9 +233,12 @@ export default function ProfileSetupPage() {
           address: businessForm.address,
           logoUrl: businessForm.logoUrl || '',
           coverUrl: businessForm.coverUrl || '',
-          district: 'Theni',
-          state: 'Tamil Nadu',
+          coverImageUrl: businessForm.coverUrl || '',
+          district: businessLocation.district,
+          state: businessLocation.state,
           country: 'India',
+          slug,
+          portfolioPath: getCompanyPortfolioPath({ slug }),
           gallery: ['', '', '', ''],
           branches: [],
           verificationStatus: 'pending',

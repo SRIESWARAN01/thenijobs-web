@@ -7,16 +7,17 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { MapPin, Briefcase, Building2, ArrowRight, BadgeCheck, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
 
 const CATEGORY_META: Record<string, { title: string; description: string; emoji: string; color: string }> = {
-  agriculture: { title: 'Agriculture', description: 'Farm services, machinery rental, crop management companies in Theni', emoji: '🌾', color: '#10b981' },
-  construction: { title: 'Construction', description: 'Builders, contractors, civil engineers and construction companies in Theni', emoji: '🏗️', color: '#f59e0b' },
-  'it-software': { title: 'IT & Software', description: 'Web development, app development and IT companies in Theni', emoji: '💻', color: '#7c3aed' },
-  healthcare: { title: 'Healthcare', description: 'Hospitals, clinics, medical labs and healthcare providers in Theni', emoji: '🏥', color: '#f43f5e' },
-  education: { title: 'Education', description: 'Schools, colleges, coaching centres and educational institutes in Theni', emoji: '📚', color: '#06b6d4' },
-  textiles: { title: 'Textiles', description: 'Textile mills, garment factories, fabric suppliers in Theni', emoji: '🧵', color: '#a78bfa' },
-  manufacturing: { title: 'Manufacturing', description: 'Manufacturing units, factories and industrial companies in Theni', emoji: '🏭', color: '#fb923c' },
-  retail: { title: 'Retail', description: 'Shops, stores, supermarkets and retail businesses in Theni', emoji: '🛒', color: '#34d399' },
+  agriculture: { title: 'Agriculture', description: 'Farm services, machinery rental, and crop management companies', emoji: '🌾', color: '#10b981' },
+  construction: { title: 'Construction', description: 'Builders, contractors, civil engineers, and construction companies', emoji: '🏗️', color: '#f59e0b' },
+  'it-software': { title: 'IT & Software', description: 'Web development, app development, and IT companies', emoji: '💻', color: '#7c3aed' },
+  healthcare: { title: 'Healthcare', description: 'Hospitals, clinics, medical labs, and healthcare providers', emoji: '🏥', color: '#f43f5e' },
+  education: { title: 'Education', description: 'Schools, colleges, coaching centres, and educational institutes', emoji: '📚', color: '#06b6d4' },
+  textiles: { title: 'Textiles', description: 'Textile mills, garment factories, and fabric suppliers', emoji: '🧵', color: '#a78bfa' },
+  manufacturing: { title: 'Manufacturing', description: 'Manufacturing units, factories, and industrial companies', emoji: '🏭', color: '#fb923c' },
+  retail: { title: 'Retail', description: 'Shops, stores, supermarkets, and retail businesses', emoji: '🛒', color: '#34d399' },
 };
 
 const categoryMap: Record<string, string> = {
@@ -53,9 +54,10 @@ export default function BusinessCategoryPageClient({ category }: { category: str
           return {
             id: doc.id,
             slug: d.slug || doc.id,
+            portfolioPath: getCompanyPortfolioPath({ id: doc.id, ...d }),
             name: d.name || '',
             tagline: d.tagline || d.description?.substring(0, 100) || '',
-            location: d.district || 'Theni',
+            location: d.district || 'Local Area',
             rating: d.rating || 0,
             reviews: d.reviewCount || 0,
             jobs: d.jobCount || 0,
@@ -104,7 +106,7 @@ export default function BusinessCategoryPageClient({ category }: { category: str
           <div className="relative z-10">
             <div className="text-7xl mb-4">{meta.emoji}</div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              {meta.title} <span className="gradient-text">Companies in Theni</span>
+              {meta.title} <span className="gradient-text">Companies</span>
             </h1>
             <p className="text-gray-400 text-sm max-w-lg mx-auto">{meta.description}</p>
             <div className="flex flex-wrap justify-center gap-4 mt-5 text-sm">
@@ -118,7 +120,7 @@ export default function BusinessCategoryPageClient({ category }: { category: str
               </div>
               <div className="flex items-center gap-2 glass rounded-full px-4 py-2">
                 <MapPin size={14} className="text-emerald-400" />
-                <span className="text-gray-300">Theni, Tamil Nadu</span>
+                <span className="text-gray-300">All service areas</span>
               </div>
             </div>
           </div>
@@ -158,11 +160,11 @@ export default function BusinessCategoryPageClient({ category }: { category: str
                       <span className="flex items-center gap-1 text-cyan-400"><Briefcase size={11} />{biz.jobs} open jobs</span>
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/company/${encodeURIComponent(biz.slug)}`}
+                      <Link href={biz.portfolioPath}
                         className="btn-gradient px-5 py-2.5 rounded-xl text-sm font-semibold relative z-10 flex items-center gap-2">
                         View Profile <ArrowRight size={14} />
                       </Link>
-                      <Link href={`/company/${encodeURIComponent(biz.slug)}`}
+                      <Link href={biz.portfolioPath}
                         className="btn-outline-glass px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2">
                         <Briefcase size={13} /> Jobs
                       </Link>
@@ -176,7 +178,7 @@ export default function BusinessCategoryPageClient({ category }: { category: str
           <div className="glass-card rounded-2xl p-16 text-center">
             <div className="text-6xl mb-4">{meta.emoji}</div>
             <h3 className="text-xl font-semibold text-white mb-2">No businesses listed yet</h3>
-            <p className="text-gray-400 text-sm mb-6">Be the first {meta.title} business in Theni on THENIJOBS</p>
+            <p className="text-gray-400 text-sm mb-6">Be the first {meta.title} business in this category on THENIJOBS</p>
             <Link href="/company/register" className="btn-gradient px-6 py-3 rounded-2xl text-sm font-semibold relative z-10 inline-flex items-center gap-2">
               Register Your Business <ArrowRight size={15} />
             </Link>

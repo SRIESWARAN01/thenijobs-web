@@ -886,7 +886,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+    <main id="company-profile-content" className="min-h-screen bg-slate-50 text-slate-800 font-sans">
       <Header />
 
       <section className="pt-24 pb-16 px-4 max-w-5xl mx-auto">
@@ -1322,7 +1322,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
   ];
 
   return (
-    <main className={`min-h-screen ${currentTheme.bg} text-white font-outfit`}>
+    <main id="company-profile-content" className={`min-h-screen ${currentTheme.bg} text-white font-outfit`}>
       <Header />
 
       <section className="pt-16 pb-16 max-w-5xl mx-auto px-4 sm:px-6">
@@ -2106,7 +2106,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
   const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
 
   return (
-    <main className={`min-h-screen ${currentTheme.bg} text-white overflow-x-hidden relative font-outfit pb-16`}>
+    <main id="company-profile-content" className={`min-h-screen ${currentTheme.bg} text-white overflow-x-hidden relative font-outfit pb-16`}>
       <Header />
 
       {/* Dynamic Background Glowing Circles */}
@@ -3137,7 +3137,7 @@ Please confirm my booking request. Thanks!`;
   });
 
   return (
-    <main className={`min-h-screen ${currentTheme.bg} text-white overflow-x-hidden relative font-outfit pb-12`}>
+    <main id="company-profile-content" className={`min-h-screen ${currentTheme.bg} text-white overflow-x-hidden relative font-outfit pb-12`}>
       <Header />
 
       {/* Dynamic Background Glowing Circles */}

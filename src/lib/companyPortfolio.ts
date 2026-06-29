@@ -18,11 +18,14 @@ export function getCompanyRouteSlug(company: {
   if (explicitSlug) return explicitSlug;
 
   const id = String(company.id || '').trim();
-  if (id) return id;
+  const name = company.name || company.businessName || company.companyName || '';
+  const nameSlug = slugifyCompanyName(name);
 
-  const nameSlug = slugifyCompanyName(
-    company.name || company.businessName || company.companyName || '',
-  );
+  if (nameSlug && id) {
+    return `${nameSlug}-${id}`;
+  }
+
+  if (id) return id;
   if (nameSlug) return nameSlug;
 
   return '';

@@ -7,7 +7,7 @@ import {
   BadgeCheck, MapPin, QrCode, ShieldCheck, Download,
   Crown, Lock, Info, Sparkles, Check, Phone, Mail, Building2, ExternalLink
 } from 'lucide-react';
-import { useCollection } from '@/hooks/useFirestore';
+import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { where, limit } from 'firebase/firestore';
 import { toDate, getCompanyActivePlan } from '@/lib/subscriptions';
 
@@ -54,15 +54,44 @@ export default function CompanyDigitalCardPageClient({
   const [activeTheme, setActiveTheme] = useState<CardThemeName>('luxury_gold');
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const { data: companies, loading: dbLoading } = useCollection<any>(
+  // Extract potential ID from name-id slug structure
+  const parsedId = useMemo(() => {
+    if (!slug) return null;
+    const lastHyphenIndex = slug.lastIndexOf('-');
+    if (lastHyphenIndex !== -1) {
+      const possibleId = slug.substring(lastHyphenIndex + 1);
+      if (possibleId.length === 20 && /^[a-zA-Z0-9]+$/.test(possibleId)) {
+        return possibleId;
+      }
+    }
+    // If the slug itself is 20 alphanumeric characters, treat it as the ID
+    if (slug.length === 20 && /^[a-zA-Z0-9]+$/.test(slug)) {
+      return slug;
+    }
+    return null;
+  }, [slug]);
+
+  // Listen to single document if parsedId is available
+  const { data: docCompany, loading: docLoading } = useDocument<any>(
+    'companies',
+    parsedId || undefined
+  );
+
+  // Otherwise, fallback to querying by slug
+  const { data: slugCompanies, loading: slugLoading } = useCollection<any>(
     'companies',
     [where('slug', '==', slug), limit(1)],
-    { skip: !slug }
+    { skip: !!parsedId || !slug }
   );
 
   const company = useMemo(() => {
-    return companies[0] || initialCompany;
-  }, [companies, initialCompany]);
+    if (parsedId) {
+      return docCompany || initialCompany;
+    }
+    return slugCompanies[0] || initialCompany;
+  }, [parsedId, docCompany, slugCompanies, initialCompany]);
+
+  const dbLoading = parsedId ? docLoading : slugLoading;
 
   const profileUrl = useMemo(() => {
     if (typeof window === 'undefined') return `/company/${slug}`;

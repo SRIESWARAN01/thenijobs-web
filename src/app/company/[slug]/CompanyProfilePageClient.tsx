@@ -38,8 +38,24 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
 
         if (!snapCompany.empty) {
           docData = { id: snapCompany.docs[0].id, ...snapCompany.docs[0].data() };
-        } else {
-          // Fallback 1: Try checking by document ID directly
+        }
+
+        // Fallback 1: Extract possible ID from name-id slug structure
+        if (!docData) {
+          const lastHyphenIndex = slug.lastIndexOf('-');
+          if (lastHyphenIndex !== -1) {
+            const possibleId = slug.substring(lastHyphenIndex + 1);
+            if (possibleId.length === 20 && /^[a-zA-Z0-9]+$/.test(possibleId)) {
+              const docSnap = await getDoc(doc(db, 'companies', possibleId));
+              if (docSnap.exists()) {
+                docData = { id: docSnap.id, ...docSnap.data() };
+              }
+            }
+          }
+        }
+
+        // Fallback 2: Try checking by document ID directly (full slug string)
+        if (!docData) {
           const docRef = doc(db, 'companies', slug);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
@@ -47,19 +63,22 @@ export default function CompanyProfilePageClient({ slug }: { slug: string }) {
           }
         }
 
+        // Fallback 3: Try checking aliases array (if company has redirects)
         if (!docData) {
-          // Try checking aliases array (if company has redirects)
           const qAlias = query(
             collection(db, 'companies'),
             where('aliases', 'array-contains', slug),
             limit(1)
           );
           const snapAlias = await getDocs(qAlias);
-          if (snapAlias.empty) {
-            setNotFoundState(true);
-            return;
+          if (!snapAlias.empty) {
+            docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
           }
-          docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
+        }
+
+        if (!docData) {
+          setNotFoundState(true);
+          return;
         }
 
         setCompany(docData);

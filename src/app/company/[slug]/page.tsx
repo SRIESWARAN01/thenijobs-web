@@ -22,7 +22,19 @@ const getCompanyBySlug = cache(async (slug: string) => {
       return snap.docs[0].data();
     }
 
-    // Fallback: Try fetching by document ID directly
+    // Fallback 1: Extract possible ID from name-id slug structure (e.g., name-Js5S3mEMVKZz6WkOlonP)
+    const lastHyphenIndex = slug.lastIndexOf('-');
+    if (lastHyphenIndex !== -1) {
+      const possibleId = slug.substring(lastHyphenIndex + 1);
+      if (possibleId.length === 20 && /^[a-zA-Z0-9]+$/.test(possibleId)) {
+        const docSnap = await getDoc(doc(db, 'companies', possibleId));
+        if (docSnap.exists()) {
+          return docSnap.data();
+        }
+      }
+    }
+
+    // Fallback 2: Try fetching by document ID directly
     const docSnap = await getDoc(doc(db, 'companies', slug));
     if (docSnap.exists()) {
       return docSnap.data();

@@ -280,8 +280,9 @@ export default function ProfileSetupPage() {
   return (
     <div className="min-h-screen bg-[#0a0a1a] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 blob-bg grid-pattern font-outfit">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center mb-6">
-          <Image src="/logo.png" alt="THENIJOBS Logo" width={160} height={40} className="h-10 w-auto object-contain" />
+        <div className="flex items-center gap-2.5 justify-center mb-6">
+          <Image src="/logo.png" alt="THENIJOBS Logo" width={40} height={40} className="h-10 w-10 object-contain rounded-xl" />
+          <span className="font-outfit font-black text-2xl tracking-wider text-white">THENIJOBS</span>
         </div>
         <h2 className="text-center text-3xl font-extrabold text-white">
           Complete Your Profile

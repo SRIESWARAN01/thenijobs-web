@@ -63,16 +63,17 @@ export default function Header() {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2" aria-label="THENIJOBS home">
+        <Link href="/" className="flex items-center gap-2.5" aria-label="THENIJOBS home">
           <Image
             src="/logo.png"
             alt="THENIJOBS Logo"
-            width={128}
+            width={32}
             height={32}
-            sizes="128px"
-            className="h-8 w-auto object-contain"
+            sizes="32px"
+            className="h-8 w-8 object-contain rounded-lg"
             priority
           />
+          <span className="font-outfit font-black text-xl tracking-wider text-transparent bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text">THENIJOBS</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">

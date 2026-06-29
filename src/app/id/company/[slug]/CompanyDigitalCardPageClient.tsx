@@ -548,14 +548,6 @@ export default function CompanyDigitalCardPageClient({
                     <div className="shrink-0 flex flex-col items-center gap-1.5">
                       <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
                         <img src={qrUrl} alt="QR Verification Link" className="object-contain w-full h-full" crossOrigin="anonymous" />
-                        {/* Central Logo Overlay */}
-                        <div className="absolute w-6 h-6 rounded bg-white p-0.5 border border-slate-200 flex items-center justify-center shadow-md">
-                          {logoUrl ? (
-                            <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" crossOrigin="anonymous" />
-                          ) : (
-                            <Building2 className="text-purple-600 w-full h-full p-0.5" />
-                          )}
-                        </div>
                       </div>
                       <span className="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 text-center">
                         <QrCode size={8} /> Scan to View Company Profile
@@ -753,14 +745,6 @@ export default function CompanyDigitalCardPageClient({
               <div className="shrink-0 flex flex-col items-center gap-1.5">
                 <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
                   <img src={qrUrl} alt="QR Verification Link" className="object-contain w-full h-full" crossOrigin="anonymous" />
-                  {/* Central Logo Overlay */}
-                  <div className="absolute w-6 h-6 rounded bg-white p-0.5 border border-slate-200 flex items-center justify-center shadow-md">
-                    {logoUrl ? (
-                      <img src={logoUrl} alt="logo" className="object-cover rounded w-full h-full" crossOrigin="anonymous" />
-                    ) : (
-                      <Building2 className="text-purple-600 w-full h-full p-0.5" />
-                    )}
-                  </div>
                 </div>
                 <span className="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 text-center">
                   <QrCode size={8} /> Scan to View Company Profile

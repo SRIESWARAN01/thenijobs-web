@@ -17,6 +17,8 @@ import {
   sendEmailVerification,
   signOut,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   browserLocalPersistence,
   setPersistence,
   updateProfile,
@@ -284,6 +286,55 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.warn('[AuthContext] Firebase persistence setup failed:', err);
     });
 
+    // Check redirect result on mount if running on Capacitor (for mobile Google Sign-In redirect flow)
+    const isCapacitor = typeof window !== 'undefined' && !!(window as any).Capacitor;
+    if (isCapacitor) {
+      setLoading(true);
+      getRedirectResult(auth)
+        .then(async (cred) => {
+          if (cred) {
+            const fbUser = cred.user;
+            const unverified = await rejectUnverifiedEmail(fbUser);
+            if (unverified) {
+              setLoading(false);
+              return;
+            }
+
+            const idToken = await fbUser.getIdToken(true);
+            const res = await fetch('/api/auth/google-signin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ idToken }),
+            });
+            const data = await res.json();
+            
+            if (res.ok && data.customToken) {
+              await signInWithCustomToken(auth, data.customToken);
+              const profile = await fetchUserProfile(data.uid);
+              if (profile) {
+                const verifiedProfile = {
+                  ...profile,
+                  emailVerified: fbUser.emailVerified,
+                  isVerified: fbUser.emailVerified || profile.isVerified,
+                  photoURL: fbUser.photoURL || profile.photoURL,
+                };
+                await ensureSeekerProfile(verifiedProfile);
+                setUser(verifiedProfile);
+              }
+            } else {
+              console.error('[AuthContext] Redirect sign-in mapping failed:', data?.error || 'Unknown error');
+            }
+          }
+        })
+        .catch((err) => {
+          console.error('[AuthContext] getRedirectResult error:', err);
+          setError(mapAuthError(err));
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setLoading(true);
       if (fbUser) {
@@ -370,6 +421,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         await ensureLocalSessionPersistence();
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: 'select_account' });
+
+        const isCapacitor = typeof window !== 'undefined' && !!(window as any).Capacitor;
+        if (isCapacitor) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
         const cred = await signInWithPopup(auth, provider);
         const fbUser = cred.user;
         const unverified = await rejectUnverifiedEmail(fbUser);

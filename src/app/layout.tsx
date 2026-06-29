@@ -6,6 +6,7 @@ import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { ToastProvider } from "@/components/ui/Toaster";
 import SplashIntro from "@/components/ui/SplashIntro";
 import OfflineBanner from "@/components/ui/OfflineBanner";
+import MobileAuthGate from "@/components/auth/MobileAuthGate";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
@@ -71,7 +72,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <NotificationProvider>
                 <OfflineBanner />
                 <SplashIntro />
-                {children}
+                <MobileAuthGate>
+                  {children}
+                </MobileAuthGate>
               </NotificationProvider>
             </AuthProvider>
           </PreferencesProvider>

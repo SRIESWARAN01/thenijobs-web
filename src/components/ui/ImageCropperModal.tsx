@@ -370,12 +370,12 @@ export function ImageCropperModal({
                 resolve();
               },
               'image/jpeg',
-              0.85
+              0.90
             );
           }
         },
         'image/webp',
-        0.82
+        0.90
       );
     });
   };
@@ -584,31 +584,33 @@ export function ImageCropperModal({
                   <ZoomIn className="w-4 h-4 text-gray-400 shrink-0" />
                 </div>
 
-                {/* Aspect Ratios Selector */}
-                <div className="space-y-1.5">
-                  <span className="text-[11px] text-gray-400">Aspect Ratio</span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {aspectRatios.map((ratio) => {
-                      const isSelected = ratio.value === 'original' 
-                        ? Math.abs(currentAspectRatio - (imageInfo.width / imageInfo.height)) < 0.01
-                        : Math.abs(currentAspectRatio - (ratio.value as number)) < 0.01;
-                      return (
-                        <button
-                          key={ratio.label}
-                          type="button"
-                          onClick={() => handleRatioChange(ratio.value)}
-                          className={`py-1.5 px-2 rounded-lg border text-[10px] font-semibold transition-all ${
-                            isSelected
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold'
-                              : 'bg-white/[0.02] border-white/[0.08] text-gray-400 hover:bg-white/[0.04]'
-                          }`}
-                        >
-                          {ratio.label}
-                        </button>
-                      );
-                    })}
+                {/* Aspect Ratios Selector - Only show if not locked to a specific ratio by parent */}
+                {!aspectRatio && (
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] text-gray-400">Aspect Ratio</span>
+                    <div className="grid grid-cols-4 gap-2">
+                      {aspectRatios.map((ratio) => {
+                        const isSelected = ratio.value === 'original' 
+                          ? Math.abs(currentAspectRatio - (imageInfo.width / imageInfo.height)) < 0.01
+                          : Math.abs(currentAspectRatio - (ratio.value as number)) < 0.01;
+                        return (
+                          <button
+                            key={ratio.label}
+                            type="button"
+                            onClick={() => handleRatioChange(ratio.value)}
+                            className={`py-1.5 px-2 rounded-lg border text-[10px] font-semibold transition-all ${
+                              isSelected
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold'
+                                : 'bg-white/[0.02] border-white/[0.08] text-gray-400 hover:bg-white/[0.04]'
+                            }`}
+                          >
+                            {ratio.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 

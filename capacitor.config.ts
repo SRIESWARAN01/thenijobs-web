@@ -9,6 +9,7 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://thenijobs.com',
     cleartext: false,
+    allowNavigation: ['*'],
   },
 
   android: {

@@ -35,15 +35,16 @@ export default function HomeFooter() {
       <div className="mx-auto max-w-6xl">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-4 flex items-center gap-2.5">
               <Image
                 src="/logo.png"
                 alt="THENIJOBS Logo"
-                width={128}
+                width={32}
                 height={32}
-                sizes="128px"
-                className="h-8 w-auto object-contain"
+                sizes="32px"
+                className="h-8 w-8 object-contain rounded-lg"
               />
+              <span className="font-outfit font-black text-xl tracking-wider text-slate-800">THENIJOBS</span>
             </div>
             <p className="mb-4 text-sm font-semibold leading-6 text-slate-500">
               Search, connect, hire and grow. Theni jobs and business discovery platform.

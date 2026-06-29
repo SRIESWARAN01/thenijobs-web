@@ -121,8 +121,9 @@ export default function RoleSelectionPage() {
     <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center px-4 blob-bg grid-pattern py-10 font-outfit">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center mb-8">
-          <Image src="/logo.png" alt="THENIJOBS Logo" width={160} height={40} className="h-10 w-auto object-contain" />
+        <div className="flex items-center gap-2.5 justify-center mb-8">
+          <Image src="/logo.png" alt="THENIJOBS Logo" width={40} height={40} className="h-10 w-10 object-contain rounded-xl" />
+          <span className="font-outfit font-black text-2xl tracking-wider text-white">THENIJOBS</span>
         </div>
 
         <div className="glass-card rounded-3xl p-7 shadow-2xl border border-white/5">

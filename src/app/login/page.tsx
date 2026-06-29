@@ -34,6 +34,7 @@ function LoginPageContent() {
 
   const {
     user,
+    loading: authLoading,
     error: authError,
     signInWithEmail,
     signInWithGoogle,
@@ -154,7 +155,16 @@ function LoginPageContent() {
     }
   };
 
-
+  // Auto-trigger Google Sign-in on native platform
+  const autoTriggered = useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isCapacitor = !!(window as any).Capacitor;
+    if (isCapacitor && !user && !authLoading && !autoTriggered.current) {
+      autoTriggered.current = true;
+      handleGoogleLogin();
+    }
+  }, [user, authLoading]);
 
   const activeError = localError || authError;
 
@@ -162,8 +172,9 @@ function LoginPageContent() {
     <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center px-4 blob-bg grid-pattern">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 justify-center mb-8">
-          <Image src="/logo.png" alt="THENIJOBS Logo" width={160} height={40} className="h-10 w-auto object-contain" />
+        <Link href="/" className="flex items-center gap-2.5 justify-center mb-8">
+          <Image src="/logo.png" alt="THENIJOBS Logo" width={40} height={40} className="h-10 w-10 object-contain rounded-xl" />
+          <span className="font-outfit font-black text-2xl tracking-wider text-white">THENIJOBS</span>
         </Link>
 
         <div className="glass-card rounded-3xl p-7 shadow-2xl">

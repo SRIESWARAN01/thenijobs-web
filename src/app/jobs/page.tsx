@@ -14,7 +14,8 @@ import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { isPublicJobVisible } from '@/lib/jobPolicy';
 import { useToast } from '@/hooks/useToast';
@@ -22,8 +23,6 @@ import { Select } from '@/components/ui/Select';
 
 const JOB_TYPES = ['Full Time', 'Part Time', 'Remote', 'WFH', 'Internship', 'Fresher', 'Contract'];
 const CATEGORIES = ['Agriculture', 'Education', 'IT & Software', 'Healthcare', 'Construction', 'Textiles', 'Transport', 'Finance'];
-const LOCATION_OPTIONS = Array.from(new Set([LAUNCH_DISTRICT, ...THENI_LAUNCH_LOCATIONS]));
-const LOCATION_ITEMS = [{ value: '', label: 'All Areas' }, ...LOCATION_OPTIONS.map(d => ({ value: d, label: d }))];
 
 interface Job {
   id: string;
@@ -108,6 +107,13 @@ function getHaversineDistanceKm(lat1: number, lon1: number, lat2: number, lon2: 
 export default function JobsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { allAreas } = useLocations();
+
+  const locationItems = useMemo(() => {
+    const combined = Array.from(new Set([LAUNCH_DISTRICT, ...allAreas]));
+    return [{ value: '', label: 'All Areas' }, ...combined.map(d => ({ value: d, label: d }))];
+  }, [allAreas]);
+
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -464,7 +470,7 @@ export default function JobsPage() {
             <Select
               value={location}
               onChange={setLocation}
-              options={LOCATION_ITEMS}
+              options={locationItems}
               placeholder="All Areas"
               className="w-28"
               buttonClassName="bg-transparent border-none text-gray-300 text-sm hover:text-white"
@@ -611,7 +617,7 @@ export default function JobsPage() {
                         </Link>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {job.companySlug ? (
-                            <Link href={`/company?slug=${encodeURIComponent(job.companySlug)}`} className="text-sm text-gray-400 hover:text-violet-400 transition-colors">
+                            <Link href={`/company/${encodeURIComponent(job.companySlug)}`} className="text-sm text-gray-400 hover:text-violet-400 transition-colors">
                               {job.company}
                             </Link>
                           ) : (
@@ -671,7 +677,7 @@ export default function JobsPage() {
                         <BookmarkPlus size={16} className={savedJobs.includes(job.id) ? 'fill-current' : ''} />
                       </button>
                       {job.companySlug && (
-                        <Link href={`/company?slug=${encodeURIComponent(job.companySlug)}`}
+                        <Link href={`/company/${encodeURIComponent(job.companySlug)}`}
                           className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-xl btn-outline-glass text-sm font-medium">
                           <Building2 size={14} /> Company
                         </Link>

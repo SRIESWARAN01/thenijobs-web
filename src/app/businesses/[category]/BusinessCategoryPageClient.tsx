@@ -158,11 +158,11 @@ export default function BusinessCategoryPageClient({ category }: { category: str
                       <span className="flex items-center gap-1 text-cyan-400"><Briefcase size={11} />{biz.jobs} open jobs</span>
                     </div>
                     <div className="flex gap-2">
-                      <Link href={`/company?slug=${encodeURIComponent(biz.slug)}`}
+                      <Link href={`/company/${encodeURIComponent(biz.slug)}`}
                         className="btn-gradient px-5 py-2.5 rounded-xl text-sm font-semibold relative z-10 flex items-center gap-2">
                         View Profile <ArrowRight size={14} />
                       </Link>
-                      <Link href={`/company?slug=${encodeURIComponent(biz.slug)}`}
+                      <Link href={`/company/${encodeURIComponent(biz.slug)}`}
                         className="btn-outline-glass px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2">
                         <Briefcase size={13} /> Jobs
                       </Link>

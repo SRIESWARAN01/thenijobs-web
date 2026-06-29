@@ -10,7 +10,7 @@ import {
   Lock, Sparkles, Crown, Laptop, Tablet, Smartphone, Check, TrendingUp,
   Calendar, Clock
 } from 'lucide-react';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { useUploadFile } from '@/hooks/useStorage';
@@ -109,7 +109,7 @@ function calcCompletion(data: typeof DEFAULT_COMPANY): number {
 
 export default function CompanyProfilePage() {
   const { user } = useAuth();
-  const { states, getDistricts, getAreas } = useLocations();
+  const { states, getDistricts, getAreas, allAreas } = useLocations();
   
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -1151,7 +1151,7 @@ export default function CompanyProfilePage() {
                     className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-cyan-500/40 outline-none transition-all"
                   >
                     <option value="">Select area</option>
-                    {THENI_LAUNCH_LOCATIONS.map((d) => (
+                    {allAreas.map((d) => (
                       <option key={d} value={d}>{d}</option>
                     ))}
                   </select>

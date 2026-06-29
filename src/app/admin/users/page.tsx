@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Users, Search, Filter, ChevronDown, ChevronLeft, ChevronRight,
   Eye, ShieldCheck, Ban, Trash2, UserPlus, CheckCircle, XCircle,
@@ -15,7 +15,7 @@ import {
   verifyUser,
   updateUserRole,
 } from '@/lib/firebase/firestoreService';
-import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 
 // ===== TYPES =====
 interface UserDoc {
@@ -50,7 +50,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; d
   pending: { label: 'Pending', bg: 'bg-amber-500/15', text: 'text-amber-400', dot: 'bg-amber-400' },
 };
 
-const DISTRICTS = ['All Areas', ...THENI_LAUNCH_LOCATIONS];
+
 
 const ROLE_OPTIONS = [
   { value: 'all', label: 'All Roles' },
@@ -80,7 +80,7 @@ const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pending' },
 ];
 
-const DISTRICT_OPTIONS = DISTRICTS.map((d) => ({ value: d, label: d }));
+
 
 const colorMap: Record<string, { bg: string; text: string; border: string; glow: string; iconBg: string }> = {
   violet: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20', glow: 'shadow-violet-500/20', iconBg: 'bg-violet-500/10' },
@@ -93,6 +93,10 @@ const colorMap: Record<string, { bg: string; text: string; border: string; glow:
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
+  const { allAreas } = useLocations();
+  const districtOptions = useMemo(() => {
+    return [{ value: 'All Areas', label: 'All Areas' }, ...allAreas.map(d => ({ value: d, label: d }))];
+  }, [allAreas]);
   const { data: users = [], loading, error } = useCollection<UserDoc>('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -343,7 +347,7 @@ export default function UsersPage() {
             <Select
               value={districtFilter}
               onChange={setDistrictFilter}
-              options={DISTRICT_OPTIONS}
+              options={districtOptions}
               placeholder="All Areas"
               className="w-48"
             />

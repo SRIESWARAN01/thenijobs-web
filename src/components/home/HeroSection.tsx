@@ -21,7 +21,7 @@ import {
 import { useRealtimeCount } from '@/hooks/useRealtimeStats';
 import { where } from 'firebase/firestore';
 import { getActivityLogs } from '@/lib/firebase/firestoreService';
-import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -34,6 +34,7 @@ const quickActions = [
 
 export default function HeroSection() {
   const router = useRouter();
+  const { allAreas } = useLocations();
   const { t } = useTranslation();
   const { user, isAdmin } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,7 +131,7 @@ export default function HeroSection() {
                   onChange={(e) => setLocationFilter(e.target.value)}
                   className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none"
                 >
-                  {THENI_LAUNCH_LOCATIONS.map((area) => (
+                  {allAreas.map((area) => (
                     <option key={area} value={area}>{area}</option>
                   ))}
                   <option>All Areas</option>

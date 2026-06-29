@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -9,13 +9,14 @@ import BottomNav from '@/components/navigation/BottomNav';
 import {
   Building2, MapPin, Phone, Mail, Globe, FileText, Image as ImageIcon,
   Video, Clock, ChevronRight, Check, ArrowLeft, ArrowRight,
-  Loader2, Upload, Plus, X, BadgeCheck,
+  Loader2, Upload, Plus, X, BadgeCheck, AlertCircle, CheckCircle2,
   type LucideIcon
 } from 'lucide-react';
-import { BUSINESS_CATEGORIES, LAUNCH_DISTRICT, LAUNCH_STATE, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { BUSINESS_CATEGORIES, LAUNCH_DISTRICT, LAUNCH_STATE } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, serverTimestamp, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
 
@@ -31,15 +32,19 @@ const STEPS: Array<{ id: number; label: string; icon: LucideIcon }> = [
 const COMPANY_SIZES = ['1–10', '11–50', '51–200', '201–500', '500+'];
 const COMPANY_SIZE_OPTIONS = COMPANY_SIZES.map(s => ({ value: s, label: `${s} employees` }));
 const CATEGORY_OPTIONS = BUSINESS_CATEGORIES.map(c => ({ value: c, label: c }));
-const LOCATION_OPTIONS = THENI_LAUNCH_LOCATIONS.map(d => ({ value: d, label: d }));
 const HOURS = ['08:00 AM', '09:00 AM', '10:00 AM'] as const;
 
 export default function CompanyRegisterPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { allAreas } = useLocations();
+  const locationOptions = allAreas.map(d => ({ value: d, label: d }));
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<string[]>([]);
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [validatedSlug, setValidatedSlug] = useState('');
+  const slugCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [newService, setNewService] = useState('');
 
   const [form, setForm] = useState({
@@ -87,26 +92,106 @@ export default function CompanyRegisterPage() {
     setCropType(null);
   };
 
-  const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+  };
+
+  const checkSlugAvailability = useCallback(async (name: string) => {
+    const slug = generateSlug(name);
+    if (!slug || slug.length < 2) {
+      setSlugStatus('idle');
+      setValidatedSlug('');
+      return;
+    }
+    setSlugStatus('checking');
+    try {
+      const q = query(
+        collection(db, 'companies'),
+        where('slug', '==', slug),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        setSlugStatus('available');
+        setValidatedSlug(slug);
+      } else {
+        // Try with numeric suffix
+        let suffix = 2;
+        let uniqueSlug = `${slug}-${suffix}`;
+        while (suffix <= 10) {
+          const qRetry = query(
+            collection(db, 'companies'),
+            where('slug', '==', uniqueSlug),
+            limit(1)
+          );
+          const snapRetry = await getDocs(qRetry);
+          if (snapRetry.empty) {
+            setSlugStatus('taken');
+            setValidatedSlug(uniqueSlug);
+            return;
+          }
+          suffix++;
+          uniqueSlug = `${slug}-${suffix}`;
+        }
+        setSlugStatus('taken');
+        setValidatedSlug(uniqueSlug);
+      }
+    } catch (err) {
+      console.error('Slug check error:', err);
+      setSlugStatus('idle');
+      setValidatedSlug(slug);
+    }
+  }, []);
+
+  const update = (k: string, v: string) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (k === 'name') {
+      if (slugCheckTimer.current) clearTimeout(slugCheckTimer.current);
+      slugCheckTimer.current = setTimeout(() => {
+        checkSlugAvailability(v);
+      }, 600);
+    }
+  };
   const addService = () => { if (newService.trim()) { setServices(s => [...s, newService.trim()]); setNewService(''); } };
   const removeService = (i: number) => setServices(s => s.filter((_, idx) => idx !== i));
 
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   const handleSubmit = async () => {
+    setSubmitError('');
     if (!user) {
-      alert('Please login to register a business.');
+      setSubmitError('Please login to register a business.');
       router.push('/login?redirect=/company/register');
       return;
     }
+    if (!form.name.trim()) {
+      setSubmitError('Please enter your business name.');
+      return;
+    }
+    if (!form.category) {
+      setSubmitError('Please select a business category.');
+      return;
+    }
+    if (!form.phone || form.phone.replace(/\D/g, '').length < 10) {
+      setSubmitError('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setSubmitError('Please enter a valid email address.');
+      return;
+    }
     if (!form.location) {
-      alert('Please select your area / town.');
+      setSubmitError('Please select your area / town.');
       return;
     }
     setLoading(true);
     try {
-      const slug = form.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
+      // Use the pre-validated unique slug, or generate one fresh
+      const slug = validatedSlug || generateSlug(form.name);
 
       const { gstNumber, registrationNumber, ...publicForm } = form;
 
@@ -145,11 +230,11 @@ export default function CompanyRegisterPage() {
         });
       }
 
-      alert('Business registered successfully! Pending admin approval.');
-      router.push('/employer/dashboard');
+      setSubmitSuccess(true);
+      setTimeout(() => router.push('/employer/dashboard'), 2000);
     } catch (err) {
       console.error(err);
-      alert('Error registering business. Please try again.');
+      setSubmitError('Error registering business. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -209,7 +294,12 @@ export default function CompanyRegisterPage() {
                   <input type="text"
                     value={form.name} onChange={e => update('name', e.target.value)}
                     className="search-input w-full px-4 py-3 text-sm" />
-                  <p className="text-xs text-gray-600 mt-1">Your URL: thenijobs.com/company?slug=<span className="text-violet-400">{form.name.toLowerCase().replace(/\s+/g, '-') || 'your-business-name'}</span></p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-gray-600">Your URL: thenijobs.com/company/<span className="text-violet-400">{validatedSlug || generateSlug(form.name) || 'your-business-name'}</span></p>
+                    {slugStatus === 'checking' && <Loader2 size={12} className="animate-spin text-gray-400" />}
+                    {slugStatus === 'available' && <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold"><CheckCircle2 size={11} /> Available</span>}
+                    {slugStatus === 'taken' && <span className="flex items-center gap-1 text-[10px] text-amber-400 font-semibold"><AlertCircle size={11} /> Name taken — will use: {validatedSlug}</span>}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Business Category *</label>
@@ -325,7 +415,7 @@ export default function CompanyRegisterPage() {
                   <Select
                     value={form.location}
                     onChange={(val) => update('location', val)}
-                    options={LOCATION_OPTIONS}
+                    options={locationOptions}
                     placeholder="Select area"
                   />
                 </div>
@@ -518,7 +608,7 @@ export default function CompanyRegisterPage() {
                     </div>
                     <div className="text-sm text-gray-400">{form.category || 'Category'} • {form.location || form.district || 'Location'}</div>
                     <div className="text-xs text-violet-400 mt-0.5">
-                      thenijobs.com/company?slug={(form.name || 'your-business').toLowerCase().replace(/\s+/g, '-')}
+                      thenijobs.com/company/{validatedSlug || generateSlug(form.name || 'your-business')}
                     </div>
                   </div>
                 </div>
@@ -531,6 +621,20 @@ export default function CompanyRegisterPage() {
                   </div>
                 )}
               </div>
+
+              {/* Submission status messages */}
+              {submitError && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                  <AlertCircle size={16} className="text-rose-400 shrink-0" />
+                  <p className="text-xs text-rose-300 font-medium">{submitError}</p>
+                </div>
+              )}
+              {submitSuccess && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <p className="text-xs text-emerald-300 font-medium">Business registered successfully! Redirecting to dashboard...</p>
+                </div>
+              )}
 
               {/* What happens next */}
               <div className="space-y-2">

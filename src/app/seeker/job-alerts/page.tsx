@@ -15,10 +15,11 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
 import { collection, addDoc, doc, updateDoc, deleteDoc, where, serverTimestamp } from 'firebase/firestore';
-import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { getPlanLimit, selectBestSubscription } from '@/lib/subscriptions';
 
 interface JobAlert {
@@ -35,6 +36,7 @@ interface JobAlert {
 
 export default function JobAlertsPage() {
   const { user } = useAuth();
+  const { allAreas } = useLocations();
   const uid = user?.uid;
 
   // 1. Fetch real alerts in real-time
@@ -322,7 +324,7 @@ export default function JobAlertsPage() {
                     className="search-input w-full px-3 py-2.5 text-sm bg-[#0e0e22]"
                   >
                     <option value="">Any Area</option>
-                    {THENI_LAUNCH_LOCATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                    {allAreas.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
               </div>

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Briefcase, Building2, MapPin, Package, Search, Store, Wrench } from 'lucide-react';
-import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 
 const tabs = [
   {
@@ -53,6 +53,7 @@ const activeClass: Record<string, string> = {
 
 export default function SearchHub() {
   const router = useRouter();
+  const { allAreas } = useLocations();
   const [activeTab, setActiveTab] = useState('jobs');
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('Theni');
@@ -141,7 +142,7 @@ export default function SearchHub() {
                 onChange={(event) => setLocation(event.target.value)}
                 className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none"
               >
-                {THENI_LAUNCH_LOCATIONS.map((area) => (
+                {allAreas.map((area) => (
                   <option key={area} value={area}>{area}</option>
                 ))}
                 <option>All Areas</option>

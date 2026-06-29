@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { getCompanyActivePlan } from '@/lib/subscriptions';
 import { SUBSCRIPTION_PLANS } from '@/lib/subscriptionPlans';
 
@@ -42,6 +43,7 @@ const STATUS_CONFIG = {
 
 export default function ServiceProviderServicesPage() {
   const { user } = useAuth();
+  const { allAreas } = useLocations();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'pending'>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -396,7 +398,7 @@ export default function ServiceProviderServicesPage() {
                     className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white focus:border-rose-500/45 focus:bg-white/[0.06] outline-none transition-all bg-[#0e0e22]"
                   >
                     <option value="">Select Area / Town</option>
-                    {THENI_LAUNCH_LOCATIONS.map((loc) => (
+                    {allAreas.map((loc) => (
                       <option key={loc} value={loc}>{loc}</option>
                     ))}
                   </select>

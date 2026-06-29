@@ -12,7 +12,8 @@ import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { isPublicJobVisible } from '@/lib/jobPolicy';
 import { useToast } from '@/hooks/useToast';
@@ -20,8 +21,6 @@ import { Select } from '@/components/ui/Select';
 
 const JOB_TYPES = ['Full Time', 'Part Time', 'Remote', 'WFH', 'Internship', 'Fresher', 'Contract'];
 const CATEGORIES = ['Agriculture', 'Education', 'IT & Software', 'Healthcare', 'Construction', 'Textiles', 'Transport', 'Finance'];
-const LOCATION_OPTIONS = Array.from(new Set([LAUNCH_DISTRICT, ...THENI_LAUNCH_LOCATIONS]));
-const LOCATION_ITEMS = [{ value: '', label: 'All Areas' }, ...LOCATION_OPTIONS.map(d => ({ value: d, label: d }))];
 
 interface Job {
   id: string;
@@ -75,6 +74,13 @@ function formatTime(timestamp: any) {
 export default function SeekerJobsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { allAreas } = useLocations();
+  
+  const locationItems = useMemo(() => {
+    const combined = Array.from(new Set([LAUNCH_DISTRICT, ...allAreas]));
+    return [{ value: '', label: 'All Areas' }, ...combined.map(d => ({ value: d, label: d }))];
+  }, [allAreas]);
+
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -287,7 +293,7 @@ export default function SeekerJobsPage() {
             <Select
               value={location}
               onChange={setLocation}
-              options={LOCATION_ITEMS}
+              options={locationItems}
               placeholder="All Areas"
               className="w-full"
               buttonClassName="bg-transparent border-none text-gray-300 text-sm hover:text-white"

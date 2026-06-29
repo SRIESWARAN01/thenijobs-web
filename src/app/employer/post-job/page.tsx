@@ -6,7 +6,8 @@ import {
   Briefcase, Banknote, FileText, Users, Clock,
   ArrowLeft, ArrowRight, Check, Loader2, Plus, X, Zap, CalendarCheck, Crown, Lock
 } from 'lucide-react';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -51,6 +52,7 @@ function normaliseDuplicateKey(value: string) {
 export default function PostJobPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { allAreas } = useLocations();
 
   // Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -401,7 +403,7 @@ export default function PostJobPage() {
                   className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
                 >
                   <option value="">Select area</option>
-                  {THENI_LAUNCH_LOCATIONS.map((area) => (
+                  {allAreas.map((area) => (
                     <option key={area} value={area}>{area}</option>
                   ))}
                 </select>

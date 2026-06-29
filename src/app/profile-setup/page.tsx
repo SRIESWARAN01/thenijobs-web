@@ -16,11 +16,13 @@ import { db } from '@/lib/firebase/config';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { buildPublicSeekerProfile } from '@/lib/publicProfile';
 import { createDocument } from '@/lib/firebase/firestoreService';
-import { THENI_LAUNCH_LOCATIONS, BUSINESS_CATEGORIES } from '@/lib/types';
+import { BUSINESS_CATEGORIES } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { getDashboardPathForRole } from '@/lib/access';
 
 export default function ProfileSetupPage() {
   const router = useRouter();
+  const { allAreas } = useLocations();
   
   // Require auth but skip checking setup completion to prevent redirect loop
   const { user, loading: authLoading } = useRequireAuth(undefined, '/login');
@@ -382,7 +384,7 @@ export default function ProfileSetupPage() {
                           className="search-input w-full pl-10 pr-4 py-3 text-sm bg-[#0d0d20] border-white/10"
                         >
                           <option value="">Choose Town</option>
-                          {THENI_LAUNCH_LOCATIONS.map(loc => (
+                          {allAreas.map(loc => (
                             <option key={loc} value={loc}>{loc}</option>
                           ))}
                         </select>
@@ -626,7 +628,7 @@ export default function ProfileSetupPage() {
                           className="search-input w-full pl-10 pr-4 py-3 text-sm bg-[#0d0d20] border-white/10"
                         >
                           <option value="">Select Town/Area</option>
-                          {THENI_LAUNCH_LOCATIONS.map(loc => (
+                          {allAreas.map(loc => (
                             <option key={loc} value={loc}>{loc}</option>
                           ))}
                         </select>

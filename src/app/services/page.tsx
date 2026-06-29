@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
@@ -9,13 +9,12 @@ import {
   Briefcase, SlidersHorizontal, ArrowRight, Building2, Loader2
 } from 'lucide-react';
 import { getPublicCompanies, getActiveServices } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance'];
-const DISTRICTS = ['All', ...THENI_LAUNCH_LOCATIONS];
-const DISTRICT_OPTIONS = DISTRICTS.map(d => ({ value: d, label: d }));
 
 interface Service {
   id: string;
@@ -44,6 +43,11 @@ const SORT_OPTIONS = [
 ];
 
 export default function ServicesPage() {
+  const { allAreas } = useLocations();
+  const districtOptions = useMemo(() => {
+    return [{ value: 'All', label: 'All Areas' }, ...allAreas.map(d => ({ value: d, label: d }))];
+  }, [allAreas]);
+
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDistrict, setSelectedDistrict] = useState('All');
@@ -167,7 +171,7 @@ export default function ServicesPage() {
           <Select
             value={selectedDistrict}
             onChange={setSelectedDistrict}
-            options={DISTRICT_OPTIONS}
+            options={districtOptions}
             placeholder="All Areas"
             className="w-36"
           />
@@ -290,7 +294,7 @@ export default function ServicesPage() {
                 </div>
 
                 <div className="flex gap-2 mt-auto">
-                  <Link href={`/company?slug=${encodeURIComponent(svc.slug)}`}
+                  <Link href={`/company/${encodeURIComponent(svc.slug)}`}
                     className="flex-1 btn-gradient py-2.5 rounded-xl text-xs font-semibold relative z-10 text-center flex items-center justify-center gap-1.5">
                     View Profile <ArrowRight size={12} />
                   </Link>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Building2, Search, ChevronDown, Eye, CheckCircle, XCircle,
   Star, Crown, MapPin, Phone, Globe, LayoutGrid, List,
@@ -14,7 +14,8 @@ import {
   featureCompany,
   updateDocument,
 } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch } from '@/lib/search';
 import { Modal } from '@/components/ui/Modal';
 import { Timestamp } from 'firebase/firestore';
@@ -56,7 +57,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; b
 
 const TABS = ['All', 'Pending', 'Verified', 'Rejected', 'Featured'] as const;
 const CATEGORIES = ['All Categories', 'IT & Software', 'Agriculture', 'Food & Beverage', 'Healthcare', 'Education', 'Retail', 'Construction', 'Transport', 'Manufacturing', 'Textiles'];
-const DISTRICTS = ['All Areas', ...THENI_LAUNCH_LOCATIONS];
+
 
 const INITIAL_COLORS = [
   'from-violet-500 to-indigo-500',
@@ -71,6 +72,11 @@ const INITIAL_COLORS = [
 
 export default function BusinessesPage() {
   const { user: currentUser } = useAuth();
+  const { allAreas } = useLocations();
+  
+  const districtOptions = useMemo(() => {
+    return ['All Areas', ...allAreas];
+  }, [allAreas]);
   const { data: businesses, loading } = useCollection<BusinessDoc>('companies');
   const { data: coupons } = useCollection<any>('coupons');
   const [searchQuery, setSearchQuery] = useState('');
@@ -421,7 +427,7 @@ export default function BusinessesPage() {
               onChange={(e) => setDistrictFilter(e.target.value)}
               className="appearance-none pl-3 pr-8 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer"
             >
-              {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+              {districtOptions.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
           </div>

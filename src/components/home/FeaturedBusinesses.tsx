@@ -129,7 +129,7 @@ export default function FeaturedBusinesses() {
                   <div className="p-4 pt-0">
                     <div className="grid grid-cols-[1fr_auto_auto] gap-2">
                       <Link
-                        href={`/company?slug=${encodeURIComponent(biz.slug)}`}
+                        href={`/company/${encodeURIComponent(biz.slug)}`}
                         className="flex min-h-12 items-center justify-center rounded-xl bg-slate-950 text-xs font-black text-white hover:bg-teal-800"
                       >
                         View Profile

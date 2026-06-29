@@ -38,7 +38,7 @@ const DEFAULT_PLANS_CONFIG: Record<string, PlanConfig> = {
     name: 'Free Plan',
     maxProducts: 3,
     maxServices: 3,
-    maxGallery: 1,
+    maxGallery: 6,
     maxJobs: 1,
     hasSEO: false,
     hasBranding: false,

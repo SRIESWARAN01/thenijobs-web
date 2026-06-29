@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Briefcase, Search, ChevronDown, Eye, CheckCircle, XCircle,
   Star, Trash2, AlertTriangle, Clock, Users,
@@ -16,7 +16,8 @@ import {
 } from '@/lib/firebase/firestoreService';
 import { getEffectiveJobExpiry, getEffectiveJobStatus, getJobPostedDate } from '@/lib/jobPolicy';
 import { toDate } from '@/lib/subscriptions';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
 
@@ -75,14 +76,19 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; d
 const TABS = ['All', 'Active', 'Pending', 'Expired', 'Reported', 'Featured'] as const;
 const JOB_TYPES = ['All Types', 'Full Time', 'Part Time', 'Internship', 'Remote', 'Fresher'];
 const CATEGORIES = ['All Categories', 'IT & Software', 'Marketing', 'Sales', 'Healthcare', 'Education', 'Engineering', 'Retail', 'Agriculture', 'Construction'];
-const DISTRICTS = ['All Areas', ...THENI_LAUNCH_LOCATIONS];
+
 
 const JOB_TYPES_OPTIONS = JOB_TYPES.map((t) => ({ value: t, label: t }));
 const CATEGORIES_OPTIONS = CATEGORIES.map((c) => ({ value: c, label: c }));
-const DISTRICTS_OPTIONS = DISTRICTS.map((d) => ({ value: d, label: d }));
+
 
 export default function JobsPage() {
   const { user: currentUser } = useAuth();
+  const { allAreas } = useLocations();
+  
+  const districtOptions = useMemo(() => {
+    return [{ value: 'All Areas', label: 'All Areas' }, ...allAreas.map(d => ({ value: d, label: d }))];
+  }, [allAreas]);
   const { data: jobs, loading } = useCollection<JobDoc>('jobs');
   const { data: applications } = useCollection<any>('jobApplications');
   const [searchQuery, setSearchQuery] = useState('');
@@ -310,7 +316,7 @@ export default function JobsPage() {
           <Select
             value={districtFilter}
             onChange={setDistrictFilter}
-            options={DISTRICTS_OPTIONS}
+            options={districtOptions}
             placeholder="All Areas"
             className="w-48"
           />

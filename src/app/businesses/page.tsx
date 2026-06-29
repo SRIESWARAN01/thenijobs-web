@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
@@ -10,13 +10,12 @@ import {
   Navigation, MessageCircle, Phone, Loader2
 } from 'lucide-react';
 import { getPublicCompanies, getActiveServices } from '@/lib/firebase/firestoreService';
-import { LAUNCH_DISTRICT, THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { LAUNCH_DISTRICT } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT & Software', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance', 'Food & Beverage'];
-const DISTRICTS = ['All', ...THENI_LAUNCH_LOCATIONS];
-const DISTRICT_OPTIONS = DISTRICTS.map(d => ({ value: d, label: d }));
 
 const SORT_OPTIONS = [
   { value: 'premium', label: 'Featured First' },
@@ -47,6 +46,11 @@ interface Business {
 }
 
 export default function BusinessesPage() {
+  const { allAreas } = useLocations();
+  const districtOptions = useMemo(() => {
+    return [{ value: 'All', label: 'All Areas' }, ...allAreas.map(d => ({ value: d, label: d }))];
+  }, [allAreas]);
+
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDistrict, setSelectedDistrict] = useState('All');
@@ -172,7 +176,7 @@ export default function BusinessesPage() {
           <Select
             value={selectedDistrict}
             onChange={setSelectedDistrict}
-            options={DISTRICT_OPTIONS}
+            options={districtOptions}
             placeholder="All Areas"
             className="w-36 flex-1 sm:flex-none min-w-[9rem]"
           />
@@ -334,7 +338,7 @@ export default function BusinessesPage() {
                 </div>
 
                 <div className="flex gap-2 mt-auto">
-                  <Link href={`/company?slug=${encodeURIComponent(biz.slug)}`}
+                  <Link href={`/company/${encodeURIComponent(biz.slug)}`}
                     className="flex-1 btn-gradient py-2.5 rounded-xl text-xs font-semibold relative z-10 text-center flex items-center justify-center gap-1.5">
                     View Profile <ArrowRight size={12} />
                   </Link>

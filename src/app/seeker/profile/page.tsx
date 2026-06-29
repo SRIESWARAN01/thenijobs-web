@@ -9,7 +9,7 @@ import {
   Globe, Award, Star, Zap,
   CheckCircle, Circle, Languages, ExternalLink, Loader2, Bell
 } from 'lucide-react';
-import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
@@ -299,6 +299,7 @@ const DEFAULT_PROFILE = {
 
 export default function SeekerProfilePage() {
   const { user } = useAuth();
+  const { allAreas } = useLocations();
   
   // 1. Fetch profile from Firestore
   const { data: remoteProfile, loading: profileLoading } = useDocument<any>('seekerProfiles', user?.uid);
@@ -905,7 +906,7 @@ export default function SeekerProfilePage() {
                   className="search-input w-full px-3 py-2.5 text-sm bg-[#0e0e22]"
                 >
                   <option value="">Select area</option>
-                  {THENI_LAUNCH_LOCATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                  {allAreas.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">
@@ -1473,7 +1474,7 @@ export default function SeekerProfilePage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-gray-400 block">Preferred Locations (Towns in Theni)</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {THENI_LAUNCH_LOCATIONS.map((loc) => {
+                {allAreas.map((loc) => {
                   const isChecked = preferences.locations?.includes(loc);
                   return (
                     <label key={loc} className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium cursor-pointer transition-all ${

@@ -7,10 +7,11 @@ import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import Link from 'next/link';
 import { planHasFeature, selectBestSubscription } from '@/lib/subscriptions';
-import { THENI_LAUNCH_LOCATIONS } from '@/lib/types';
+import { useLocations } from '@/hooks/useLocations';
 
 export default function TalentSearchPage() {
   const { user } = useAuth();
+  const { allAreas } = useLocations();
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState('All Areas');
   const [expFilter, setExpFilter] = useState('All Experience');
@@ -130,7 +131,7 @@ export default function TalentSearchPage() {
     };
   }, [selectedCandidateId, canContactCandidates, candidateContacts, contactLoading]);
 
-  const districts = ['All Areas', ...THENI_LAUNCH_LOCATIONS];
+  const districts = ['All Areas', ...allAreas];
   
   const filtered = seekerProfiles.filter((c: any) => {
     // Text search (name / skills / currentRole)

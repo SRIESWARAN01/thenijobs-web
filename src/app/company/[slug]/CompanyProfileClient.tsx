@@ -869,11 +869,12 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 
   const portfolioUrl = typeof window !== 'undefined' ? `${window.location.origin}/company/${company.slug}` : `https://thenijobs.com/company/${company.slug}`;
 
-  // Free Plan Gated Tabs: Simple Minimal Layout (About, Jobs, Gallery, Reviews only)
+  // Free Plan Gated Tabs: Simple Minimal Layout (About, Jobs, Products/Services, Gallery, Reviews only)
   const tabs = [
     { id: 'about', label: 'About' },
     { id: 'jobs', label: `Jobs (${jobs.length})` },
-    { id: 'gallery', label: `Gallery (${Math.min(company.galleryImages?.length || 0, 4)}/4)` },
+    { id: 'products', label: `Shop & Services (${(company.products?.length || 0) + (company.services?.length || 0)})` },
+    { id: 'gallery', label: `Gallery (${Math.min(company.galleryImages?.length || 0, 6)}/6)` },
     { id: 'reviews', label: `Reviews (${reviews.length})` },
   ];
 
@@ -882,8 +883,10 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
       <Header />
 
       <section className="pt-24 pb-16 px-4 max-w-5xl mx-auto">
-        {/* Simple Cover Header - Light Gradient */}
         <div className="h-40 rounded-2xl relative overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/60 shadow-sm">
+          {company.coverImageUrl && company.coverImageUrl.startsWith('http') && (
+            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-60" unoptimized={company.coverImageUrl.includes('firebasestorage.googleapis.com')} />
+          )}
           <div className="absolute inset-0 bg-grid-pattern opacity-10" />
           <div className="absolute top-3 right-3">
             <SubscriptionPlanBadge plan="free" />
@@ -1011,20 +1014,88 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               </div>
             )}
 
+            {activeTab === 'products' && (
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-5 shadow-sm">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Our Services</h3>
+                  {company.services?.length > 0 ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {company.services.slice(0, 3).map((service: any) => (
+                        <div key={service.id} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors flex justify-between items-center gap-3">
+                          <div>
+                            <div className="text-xs font-bold text-slate-800">{service.name}</div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">{service.price ? `Starts at ₹${service.price}` : 'Price on request'}</div>
+                          </div>
+                          <button
+                            onClick={() => window.open(`https://wa.me/${company.whatsapp || company.phone}?text=Hello, I am interested in your service: ${service.name}.`, '_blank')}
+                            className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-lg border border-blue-100"
+                          >
+                            Enquire
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 py-2">No services listed yet.</p>
+                  )}
+                  {company.services?.length > 3 && (
+                    <p className="text-[9px] text-slate-400 mt-2 italic">Showing 3 of {company.services.length} services. Upgrade to Standard/Premium to show all.</p>
+                  )}
+                </div>
+
+                <div className="pt-3 border-t border-slate-100">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Products Catalogue</h3>
+                  {company.products?.length > 0 ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {company.products.slice(0, 3).map((product: any) => (
+                        <div key={product.id || product.name} className="p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors flex gap-3">
+                          {product.images?.[0] && (
+                            <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border border-slate-200">
+                              <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
+                            </div>
+                          )}
+                          <div className="flex-1 flex flex-col justify-between">
+                            <div>
+                              <div className="flex items-center justify-between gap-2">
+                                <h4 className="text-xs font-bold text-slate-800 truncate max-w-[100px]">{product.name}</h4>
+                                {product.price > 0 && <span className="text-xs font-bold text-blue-600">₹{product.price}</span>}
+                              </div>
+                              <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{product.description || product.detail}</p>
+                            </div>
+                            <button
+                              onClick={() => handleProductWhatsApp(product.name, product.id)}
+                              className="mt-2 self-start flex items-center gap-1 text-[9px] font-bold uppercase text-slate-600 hover:text-slate-800"
+                            >
+                              <MessageCircle size={10} /> WhatsApp
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 py-2">No products listed yet.</p>
+                  )}
+                  {company.products?.length > 3 && (
+                    <p className="text-[9px] text-slate-400 mt-2 italic">Showing 3 of {company.products.length} products. Upgrade to Standard/Premium to show all.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'gallery' && (
               <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-900 mb-2">Media Gallery</h3>
                 {company.galleryImages?.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {company.galleryImages.slice(0, 4).map((src: string, index: number) => (
+                    {company.galleryImages.slice(0, 6).map((src: string, index: number) => (
                       <div key={src || index} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm">
                         <img src={src} alt="gallery" className="object-cover w-full h-full" />
                       </div>
                     ))}
-                    {company.galleryImages.length > 4 && (
+                    {company.galleryImages.length > 6 && (
                       <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex flex-col items-center justify-center p-3 text-center border-dashed">
                         <Lock size={14} className="text-slate-400 mb-1" />
-                        <span className="text-[8px] text-slate-500 leading-tight">Upgrade to Standard to see {company.galleryImages.length - 4} more</span>
+                        <span className="text-[8px] text-slate-500 leading-tight">Upgrade to Standard to see {company.galleryImages.length - 6} more</span>
                       </div>
                     )}
                   </div>
@@ -1250,8 +1321,8 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
       <section className="pt-16 pb-16 max-w-5xl mx-auto px-4 sm:px-6">
         {/* Cover Block with dynamic gradient styling */}
         <div className={`h-44 sm:h-56 relative overflow-hidden rounded-2xl bg-gradient-to-br ${currentTheme.gradient} border ${currentTheme.border}`}>
-          {company.coverImageUrl && (
-            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-65 mix-blend-overlay" />
+          {company.coverImageUrl && company.coverImageUrl.startsWith('http') && (
+            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-65 mix-blend-overlay" unoptimized={company.coverImageUrl.includes('firebasestorage.googleapis.com')} />
           )}
           <div className="absolute inset-0 bg-black/10" />
           <div className="absolute top-4 right-4">
@@ -2038,8 +2109,8 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
       <section className="pt-24 pb-16 max-w-5xl mx-auto px-4 relative z-10">
         {/* Dynamic Cover Block */}
         <div className={`h-56 sm:h-72 relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br ${currentTheme.gradient} shadow-[0_20px_50px_rgba(0,0,0,0.5)] border ${currentTheme.border}`}>
-          {company.coverImageUrl && (
-            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-45 mix-blend-overlay" />
+          {company.coverImageUrl && company.coverImageUrl.startsWith('http') && (
+            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-45 mix-blend-overlay" unoptimized={company.coverImageUrl.includes('firebasestorage.googleapis.com')} />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
           
@@ -3069,8 +3140,8 @@ Please confirm my booking request. Thanks!`;
       <section className="pt-20 pb-16 max-w-5xl mx-auto px-4 relative z-10">
         {/* Dynamic Cover Block */}
         <div className={`h-48 sm:h-64 relative overflow-hidden rounded-[2rem] bg-gradient-to-br ${currentTheme.gradient} shadow-2xl border border-white/10`}>
-          {company.coverImageUrl && (
-            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-55 mix-blend-overlay" />
+          {company.coverImageUrl && company.coverImageUrl.startsWith('http') && (
+            <Image src={company.coverImageUrl} alt={company.name} fill className="object-cover opacity-55 mix-blend-overlay" unoptimized={company.coverImageUrl.includes('firebasestorage.googleapis.com')} />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
           

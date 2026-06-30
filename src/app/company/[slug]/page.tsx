@@ -4,6 +4,7 @@ import CompanyProfilePageClient from './CompanyProfilePageClient';
 import { db } from '@/lib/firebase/config';
 import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
 import { getCompanyBannerUrl, getCompanyPortfolioUrl } from '@/lib/companyPortfolio';
+import { Building2 } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -59,10 +60,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const companyData = await getCompanyBySlug(slug);
 
-  if (!companyData) {
+  const isSuspendedOrDeleted = !companyData || 
+    companyData.isActive === false || 
+    companyData.status === 'suspended' || 
+    companyData.status === 'deleted' || 
+    companyData.deleted === true;
+
+  if (isSuspendedOrDeleted) {
     return {
-      title: 'Business Not Found',
-      description: 'This business listing may have been removed or is no longer available on THENIJOBS.',
+      title: 'Business Not Available',
+      description: 'This business listing is currently not available or has been removed on THENIJOBS.',
+      robots: {
+        index: false,
+        follow: false,
+        nocache: true,
+        googleBot: {
+          index: false,
+          follow: false,
+        }
+      }
     };
   }
 
@@ -224,6 +240,34 @@ export async function generateStaticParams() {
 export default async function CompanyProfilePage({ params }: PageProps) {
   const { slug } = await params;
   const companyData = await getCompanyBySlug(slug);
+
+  const isSuspendedOrDeleted = !companyData || 
+    companyData.isActive === false || 
+    companyData.status === 'suspended' || 
+    companyData.status === 'deleted' || 
+    companyData.deleted === true;
+
+  if (isSuspendedOrDeleted) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-bounce">
+            <Building2 size={24} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">Business listing not available</h1>
+          <p className="mt-2 text-sm text-gray-400">
+            This company profile has been suspended, removed, or is currently undergoing review.
+          </p>
+          <a
+            href="/"
+            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
+          >
+            Go Back Home
+          </a>
+        </div>
+      </main>
+    );
+  }
 
   const toDateLocal = (value?: any) => {
     if (!value) return null;

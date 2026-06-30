@@ -14,6 +14,7 @@ import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
 import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
+import MembershipBadge from '@/components/ui/MembershipBadge';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT & Software', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance', 'Food & Beverage'];
 
@@ -44,6 +45,7 @@ interface Business {
   isNew: boolean;
   phone: string;
   whatsapp: string;
+  subscriptionPlan?: string;
 }
 
 export default function BusinessesPageClient() {
@@ -104,12 +106,13 @@ export default function BusinessesPageClient() {
               jobs: d.jobCount || 0,
               isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || d.verificationBadges?.businessVerified || false,
               isPremium: d.isPremium || d.isFeatured || false,
+              subscriptionPlan: d.subscriptionPlan || (d.isPremium ? 'premium' : 'free'),
               tagline: d.tagline || d.description?.substring(0, 80) || '',
               logo: d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'B',
               isNew: d.createdAt ? (Date.now() - d.createdAt?.toMillis?.() < 7 * 24 * 60 * 60 * 1000) : false,
               phone: d.phone || '',
               whatsapp: d.whatsapp || d.phone || '',
-            } as Business;
+            } as any;
           });
         setBusinesses(data);
       } catch (err) {
@@ -321,7 +324,7 @@ export default function BusinessesPageClient() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h2 className="font-semibold text-white text-sm leading-tight truncate">{biz.name}</h2>
-                          {biz.isVerified && <BadgeCheck size={14} className="text-emerald-400 shrink-0" />}
+                          <MembershipBadge plan={biz.subscriptionPlan} size={14} />
                         </div>
                         {biz.isPremium && <span className="badge-premium text-[9px] mt-0.5 inline-block">FEATURED</span>}
                         {biz.isNew && !biz.isPremium && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 font-bold inline-block mt-0.5">NEW</span>}

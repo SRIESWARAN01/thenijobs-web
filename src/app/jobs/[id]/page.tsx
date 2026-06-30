@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import JobDetailPageClient from './JobDetailPageClient';
 import { db } from '@/lib/firebase/config';
 import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
+import { Briefcase } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -25,10 +26,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const jobData = await getJobData(id);
 
-  if (!jobData) {
+  const isSuspendedOrDeleted = !jobData || 
+    jobData.isActive === false || 
+    jobData.status === 'suspended' || 
+    jobData.status === 'deleted' || 
+    jobData.deleted === true;
+
+  if (isSuspendedOrDeleted) {
     return {
-      title: 'Job Not Found',
-      description: 'This job posting may have been removed or is no longer available on THENIJOBS.',
+      title: 'Job Vacancy Not Available | THENIJOBS',
+      description: 'This job vacancy is currently not available on THENIJOBS.',
+      robots: {
+        index: false,
+        follow: false,
+        nocache: true,
+        googleBot: {
+          index: false,
+          follow: false,
+        }
+      }
     };
   }
 
@@ -82,6 +98,34 @@ export async function generateStaticParams() {
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
   const jobData = await getJobData(id);
+
+  const isSuspendedOrDeleted = !jobData || 
+    jobData.isActive === false || 
+    jobData.status === 'suspended' || 
+    jobData.status === 'deleted' || 
+    jobData.deleted === true;
+
+  if (isSuspendedOrDeleted) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-bounce">
+            <Briefcase size={24} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">Job listing not available</h1>
+          <p className="mt-2 text-sm text-gray-400">
+            This job posting has been suspended, filled, or is no longer active.
+          </p>
+          <a
+            href="/"
+            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
+          >
+            Go Back Home
+          </a>
+        </div>
+      </main>
+    );
+  }
 
   const jsonLd = jobData ? {
     '@context': 'https://schema.org',

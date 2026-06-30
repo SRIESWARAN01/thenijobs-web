@@ -66,7 +66,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .get();
     companyPages = companiesSnap.docs
       .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
-      .filter((c: any) => !!c.slug)
+      .filter((c: any) => !!c.slug && c.isActive === true && c.status !== 'suspended' && c.status !== 'deleted' && c.deleted !== true)
       .map((c: any) => {
         const lastModified = c.updatedAt ? (
           typeof c.updatedAt.toDate === 'function' ? c.updatedAt.toDate() : new Date(c.updatedAt)

@@ -8,6 +8,8 @@ import { MapPin, Briefcase, Building2, ArrowRight, BadgeCheck, Loader2 } from 'l
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
+import { sortCompaniesByPlan } from '@/lib/firebase/firestoreService';
+import MembershipBadge from '@/components/ui/MembershipBadge';
 
 const CATEGORY_META: Record<string, { title: string; description: string; emoji: string; color: string }> = {
   agriculture: { title: 'Agriculture', description: 'Farm services, machinery rental, and crop management companies', emoji: '🌾', color: '#10b981' },
@@ -46,26 +48,37 @@ export default function BusinessCategoryPageClient({ category }: { category: str
         const q = query(
           collection(db, 'companies'),
           where('category', '==', mappedName),
-          where('verificationStatus', '==', 'verified')
+          where('isActive', '==', true)
         );
         const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => {
-          const d = doc.data();
-          return {
-            id: doc.id,
-            slug: d.slug || doc.id,
-            portfolioPath: getCompanyPortfolioPath({ id: doc.id, ...d }),
-            name: d.name || '',
-            tagline: d.tagline || d.description?.substring(0, 100) || '',
-            location: d.district || 'Local Area',
-            rating: d.rating || 0,
-            reviews: d.reviewCount || 0,
-            jobs: d.jobCount || 0,
-            isVerified: d.isVerified || false,
-            isPremium: d.isPremium || false
-          };
-        });
-        setBusinesses(data);
+        const list = snapshot.docs
+          .map(doc => {
+            const d = doc.data();
+            return {
+              id: doc.id,
+              slug: d.slug || doc.id,
+              portfolioPath: getCompanyPortfolioPath({ id: doc.id, ...d }),
+              name: d.name || '',
+              tagline: d.tagline || d.description?.substring(0, 100) || '',
+              location: d.district || 'Local Area',
+              rating: d.rating || 0,
+              reviews: d.reviewCount || 0,
+              jobs: d.jobCount || 0,
+              isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || false,
+              isPremium: d.isPremium || d.isFeatured || false,
+              subscriptionPlan: d.subscriptionPlan || (d.isPremium ? 'premium' : 'free'),
+              status: d.status || '',
+              deleted: d.deleted || false
+            };
+          })
+          .filter(biz => {
+            const isApproved = biz.isVerified || biz.status === 'approved';
+            const isNotSuspendedOrDeleted = biz.status !== 'suspended' && biz.status !== 'deleted' && biz.deleted !== true;
+            return isApproved && isNotSuspendedOrDeleted;
+          });
+        
+        const sorted = sortCompaniesByPlan(list);
+        setBusinesses(sorted);
       } catch (err) {
         console.error('Error loading businesses:', err);
       } finally {
@@ -148,7 +161,7 @@ export default function BusinessCategoryPageClient({ category }: { category: str
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-white group-hover:text-violet-400 transition-colors">{biz.name}</h3>
-                          {biz.isVerified && <BadgeCheck size={15} className="text-emerald-400" />}
+                          <MembershipBadge plan={biz.subscriptionPlan} size={15} />
                           {biz.isPremium && <span className="badge-premium text-[9px]">PREMIUM</span>}
                         </div>
                         <p className="text-sm text-gray-400">{biz.tagline}</p>

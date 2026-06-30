@@ -147,6 +147,49 @@ export default function CompanyDigitalCardPageClient({
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(profileUrl)}`;
   const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(profileUrl)}`;
 
+  const [logoBase64, setLogoBase64] = useState<string>('');
+  const [qrBase64, setQrBase64] = useState<string>('');
+
+  useEffect(() => {
+    const getBase64FromUrl = async (url: string): Promise<string> => {
+      if (!url) return '';
+      if (url.startsWith('data:')) return url;
+      try {
+        const fetchUrl = url.startsWith('http') ? url : window.location.origin + url;
+        const cleanUrl = fetchUrl.startsWith('http')
+          ? (fetchUrl.includes('?') ? `${fetchUrl}&t=${Date.now()}` : `${fetchUrl}?t=${Date.now()}`)
+          : fetchUrl;
+        
+        const res = await fetch(cleanUrl);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => resolve(url);
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        console.warn('Failed to convert image to base64:', err);
+        return url;
+      }
+    };
+
+    const convertImages = async () => {
+      if (logoUrl) {
+        const base64 = await getBase64FromUrl(logoUrl);
+        setLogoBase64(base64);
+      }
+      if (qrUrl) {
+        const base64 = await getBase64FromUrl(qrUrl);
+        setQrBase64(base64);
+      }
+    };
+
+    if (company) {
+      convertImages();
+    }
+  }, [logoUrl, qrUrl, company]);
+
   // Premium themes config for visiting card background
   const themeGradients: Record<CardThemeName, {
     frontBg: string;
@@ -476,10 +519,10 @@ export default function CompanyDigitalCardPageClient({
                       }`}>
                         {logoUrl && !logoError ? (
                           <img 
-                            src={logoUrl} 
-                            alt={name} 
+                            src={logoBase64 || logoUrl} 
+                            alt={`${name} Logo`} 
                             className="object-cover w-full h-full rounded-2xl" 
-                            crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                            crossOrigin="anonymous"
                             onError={() => setLogoError(true)} 
                           />
                         ) : (
@@ -552,10 +595,10 @@ export default function CompanyDigitalCardPageClient({
                     <div className="h-8 w-8 overflow-hidden rounded-lg border border-white/10 bg-[#070714] flex items-center justify-center shadow-inner">
                       {logoUrl && !logoError ? (
                         <img 
-                          src={logoUrl} 
-                          alt={name} 
+                          src={logoBase64 || logoUrl} 
+                          alt={`${name} Logo`} 
                           className="object-cover w-full h-full rounded-lg" 
-                          crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                          crossOrigin="anonymous"
                           onError={() => setLogoError(true)} 
                         />
                       ) : (
@@ -584,7 +627,7 @@ export default function CompanyDigitalCardPageClient({
                     <div className="shrink-0 flex flex-col items-center gap-1.5">
                       <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
                         <img 
-                          src={qrError ? backupQrUrl : qrUrl} 
+                          src={qrBase64 || (qrError ? backupQrUrl : qrUrl)} 
                           alt="QR Verification Link" 
                           className="object-contain w-full h-full" 
                           crossOrigin="anonymous" 
@@ -701,10 +744,10 @@ export default function CompanyDigitalCardPageClient({
                 }`}>
                   {logoUrl && !logoError ? (
                     <img 
-                      src={logoUrl} 
-                      alt={name} 
+                      src={logoBase64 || logoUrl} 
+                      alt={`${name} Logo`} 
                       className="object-cover w-full h-full rounded-2xl" 
-                      crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                      crossOrigin="anonymous"
                       onError={() => setLogoError(true)} 
                     />
                   ) : (
@@ -776,10 +819,10 @@ export default function CompanyDigitalCardPageClient({
               <div className="h-8 w-8 overflow-hidden rounded-lg border border-white/10 bg-[#070714] flex items-center justify-center shadow-inner">
                 {logoUrl && !logoError ? (
                   <img 
-                    src={logoUrl} 
-                    alt={name} 
+                    src={logoBase64 || logoUrl} 
+                    alt={`${name} Logo`} 
                     className="object-cover w-full h-full rounded-lg" 
-                    crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                    crossOrigin="anonymous"
                     onError={() => setLogoError(true)} 
                   />
                 ) : (
@@ -808,7 +851,7 @@ export default function CompanyDigitalCardPageClient({
               <div className="shrink-0 flex flex-col items-center gap-1.5">
                 <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
                   <img 
-                    src={qrError ? backupQrUrl : qrUrl} 
+                    src={qrBase64 || (qrError ? backupQrUrl : qrUrl)} 
                     alt="QR Verification Link" 
                     className="object-contain w-full h-full" 
                     crossOrigin="anonymous" 

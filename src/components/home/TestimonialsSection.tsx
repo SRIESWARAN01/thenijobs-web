@@ -33,35 +33,35 @@ export default function TestimonialsSection() {
   const active = testimonials[current % testimonials.length];
 
   return (
-    <section className="px-4 py-12 sm:px-6">
+    <section className="px-4 py-12 sm:px-6 bg-[#0a0a1a]">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6 text-center">
-          <p className="text-xs font-black uppercase text-teal-700">Community</p>
-          <h2 className="mt-1 font-outfit text-2xl font-black text-slate-950 sm:text-3xl">
-            Verified member reviews
+        <div className="mb-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-wider text-violet-400">Community</p>
+          <h2 className="mt-1 font-outfit text-2xl font-black text-white sm:text-3xl tracking-tight">
+            Verified Member Reviews
           </h2>
-          <p className="mt-1 text-sm text-slate-500">Approved reviews from real THENIJOBS users.</p>
+          <p className="mt-1 text-sm text-slate-400">Approved reviews from real THENIJOBS users.</p>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 text-center shadow-sm sm:p-8">
-          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
-            <Quote size={22} />
+        <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-5 text-center shadow-2xl backdrop-blur-md sm:p-8">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-400">
+            <Quote size={20} />
           </div>
           <div className="mb-4 flex justify-center">
             {Array.from({ length: active.rating }).map((_, index) => (
               <Star key={index} size={18} className="fill-amber-400 text-amber-400" />
             ))}
           </div>
-          <blockquote className="mx-auto mb-6 max-w-2xl text-base font-semibold leading-8 text-slate-700 sm:text-lg">
+          <blockquote className="mx-auto mb-6 max-w-2xl text-base font-semibold leading-8 text-slate-300 sm:text-lg italic">
             &quot;{active.text}&quot;
           </blockquote>
           <div className="flex items-center justify-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-lg font-black text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-600 text-lg font-black text-white shadow-md">
               {active.avatar}
             </div>
             <div className="text-left">
-              <div className="font-black text-slate-950">{active.name}</div>
-              <div className="text-sm font-semibold text-slate-500">
+              <div className="font-bold text-white">{active.name}</div>
+              <div className="text-xs text-slate-400">
                 {[active.role, active.company, active.location].filter(Boolean).join(' - ')}
               </div>
             </div>
@@ -73,7 +73,7 @@ export default function TestimonialsSection() {
             <button
               type="button"
               onClick={prev}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 shadow-md hover:bg-white/10 transition-colors"
               aria-label="Previous testimonial"
             >
               <ChevronLeft size={20} />
@@ -84,7 +84,7 @@ export default function TestimonialsSection() {
                   key={item.id}
                   type="button"
                   onClick={() => setCurrent(index)}
-                  className={`h-2 rounded-full transition-all ${index === current ? 'w-8 bg-teal-700' : 'w-2 bg-slate-300'}`}
+                  className={`h-2 rounded-full transition-all ${index === current ? 'w-8 bg-violet-500' : 'w-2 bg-white/10'}`}
                   aria-label={`Show testimonial ${index + 1}`}
                 />
               ))}
@@ -92,7 +92,7 @@ export default function TestimonialsSection() {
             <button
               type="button"
               onClick={next}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 shadow-md hover:bg-white/10 transition-colors"
               aria-label="Next testimonial"
             >
               <ChevronRight size={20} />

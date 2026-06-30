@@ -92,99 +92,103 @@ export default function TrendingJobs() {
   }, [dbJobs]);
 
   return (
-    <section className="px-4 py-10 sm:px-6">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <section className="px-4 py-12 sm:px-6 relative overflow-hidden bg-gradient-to-b from-[#080814] to-[#0a0a1a]">
+      <div className="mx-auto max-w-6xl relative z-10">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-black uppercase text-teal-700">Latest Jobs</p>
-            <h2 className="mt-1 font-outfit text-2xl font-black text-slate-950 sm:text-3xl">
-              இன்று வந்த வேலை வாய்ப்புகள்
+            <p className="text-xs font-bold uppercase tracking-wider text-violet-400">Latest Jobs</p>
+            <h2 className="mt-1 font-outfit text-2xl font-black text-white sm:text-3xl tracking-tight">
+              Latest Career Opportunities
             </h2>
-            <p className="mt-1 text-sm text-slate-500">Verified local employers-லிருந்து fresh openings.</p>
+            <p className="mt-1 text-sm text-slate-400">Verified local openings from top employers.</p>
           </div>
           <Link
             href="/jobs"
-            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-800 shadow-sm hover:bg-slate-50"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all shadow-md active:scale-95"
           >
-            View all jobs <ArrowRight size={15} />
+            View all jobs <ArrowRight size={14} />
           </Link>
         </div>
 
         {loading && dbJobs.length === 0 ? (
           <div className="flex justify-center items-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-teal-600 border-t-transparent"></div>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500/30 border-t-violet-500"></div>
           </div>
         ) : jobsList.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+          <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-8 text-center backdrop-blur-md">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
               <Briefcase size={24} />
             </div>
-            <h3 className="mt-4 font-outfit text-lg font-black text-slate-950">No live jobs yet</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm font-semibold text-slate-500">
+            <h3 className="mt-4 font-outfit text-lg font-bold text-white">No live jobs yet</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
               Approved jobs from local employers will appear here as soon as they are posted.
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {jobsList.map((job) => {
               const Icon = getCategoryIcon(job.category);
               return (
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-teal-200 hover:bg-teal-50/30"
+                  className="group rounded-2xl border border-white/5 bg-white/[0.02] hover:border-violet-500/30 hover:bg-white/[0.05] p-5 shadow-xl transition-all duration-300 flex flex-col justify-between h-full relative"
                 >
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                        <Icon size={22} />
-                      </span>
-                      <div className="min-w-0">
-                        <h3 className="line-clamp-1 text-base font-black text-slate-950 group-hover:text-teal-800">
-                          {job.title}
-                        </h3>
-                        <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-500">{job.company}</p>
+                  <div>
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 group-hover:scale-105 transition-transform duration-300">
+                          <Icon size={20} />
+                        </span>
+                        <div className="min-w-0">
+                          <h3 className="line-clamp-1 text-base font-bold text-white group-hover:text-violet-300 transition-colors">
+                            {job.title}
+                          </h3>
+                          <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-400">{job.company}</p>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {job.isUrgent && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-400 uppercase tracking-wide">
+                            <Zap size={9} className="fill-current" /> Urgent
+                          </span>
+                        )}
+                        {job.isPremium && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[9px] font-bold text-blue-400 uppercase tracking-wide">
+                            <Star size={9} className="fill-current" /> Premium
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      {job.isUrgent && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black text-amber-700 ring-1 ring-amber-100">
-                          <Zap size={10} className="fill-current" /> Urgent
+
+                    <div className="mb-4 flex flex-wrap gap-1.5">
+                      {job.skills.slice(0, 3).map((skill) => (
+                        <span key={skill} className="rounded-full bg-white/5 border border-white/5 px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
+                          {skill}
                         </span>
-                      )}
-                      {job.isPremium && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-700 ring-1 ring-blue-100">
-                          <Star size={10} className="fill-current" /> Premium
-                        </span>
-                      )}
+                      ))}
                     </div>
                   </div>
 
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {job.skills.map((skill) => (
-                      <span key={skill} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                        {skill}
+                  <div>
+                    <div className="grid gap-2 border-t border-white/5 pt-4 text-xs font-bold text-slate-400">
+                      <span className="flex items-center gap-2">
+                        <MapPin size={13} className="text-violet-400" />
+                        {job.location}
                       </span>
-                    ))}
-                  </div>
+                      <span className="flex items-center gap-2">
+                        <Banknote size={13} className="text-emerald-400" />
+                        {job.salary}
+                      </span>
+                      <span className="flex items-center gap-2 text-slate-500">
+                        <Clock size={13} />
+                        {job.posted} - {job.type}
+                      </span>
+                    </div>
 
-                  <div className="grid gap-2 border-t border-slate-100 pt-4 text-xs font-bold text-slate-500">
-                    <span className="flex items-center gap-2">
-                      <MapPin size={14} className="text-teal-700" />
-                      {job.location}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Banknote size={14} className="text-emerald-700" />
-                      {job.salary}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <Clock size={14} />
-                      {job.posted} - {job.type}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 flex min-h-12 items-center justify-center rounded-xl bg-slate-950 text-sm font-black text-white transition-colors group-hover:bg-teal-800">
-                    Apply Now
+                    <div className="mt-5 flex min-h-10 items-center justify-center rounded-xl bg-violet-600 group-hover:bg-violet-500 text-xs font-bold text-white transition-all shadow-md active:scale-95">
+                      Apply Now
+                    </div>
                   </div>
                 </Link>
               );

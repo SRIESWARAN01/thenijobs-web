@@ -33,8 +33,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCompanyAccount = exports.syncMobileVerification = void 0;
+exports.onUserWriteSync = exports.deleteCompanyAccount = exports.syncMobileVerification = void 0;
 const https_1 = require("firebase-functions/v2/https");
+const functions = __importStar(require("firebase-functions/v1"));
 const firestore_1 = require("firebase-admin/firestore");
 const config_1 = require("./config");
 const auth_1 = require("firebase-admin/auth");
@@ -205,5 +206,153 @@ exports.deleteCompanyAccount = (0, https_1.onCall)({ region: config_1.REGION, en
     return {
         success: true
     };
+});
+exports.onUserWriteSync = functions.region('us-central1').firestore
+    .document('users/{userId}')
+    .onWrite(async (change, context) => {
+    const beforeData = change.before.data();
+    const afterData = change.after.data();
+    const userId = context.params.userId;
+    // A. DELETION CASE (User document deleted)
+    if (!afterData) {
+        console.log(`User ${userId} deleted. Triggering cascade deletion.`);
+        // 1. Fetch all companies owned by this user
+        const companiesSnap = await config_1.db.collection('companies').where('ownerId', '==', userId).get();
+        const companyIds = new Set();
+        const userData = beforeData || {};
+        const companyId = userData.companyId;
+        if (companyId) {
+            companyIds.add(companyId);
+        }
+        companiesSnap.docs.forEach(doc => {
+            companyIds.add(doc.id);
+        });
+        // 2. Cascade delete Firestore company-related data
+        for (const cId of companyIds) {
+            // Jobs & Job Applications
+            const jobsSnap = await config_1.db.collection('jobs').where('companyId', '==', cId).get();
+            for (const jobDoc of jobsSnap.docs) {
+                await deleteQueryDocs(config_1.db.collection('jobApplications').where('jobId', '==', jobDoc.id));
+                await jobDoc.ref.delete();
+            }
+            await deleteQueryDocs(config_1.db.collection('jobApplications').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('products').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('services').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('reviews').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('companyFollows').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('enquiries').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('analyticsEvents').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('subscriptions').where('companyId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('bookings').where('serviceProviderId', '==', cId));
+            await deleteQueryDocs(config_1.db.collection('interviews').where('companyId', '==', cId));
+            await config_1.db.doc(`employerSettings/${cId}`).delete();
+            await config_1.db.doc(`companies/${cId}`).delete();
+        }
+        // Delete seeker & user-related tables
+        await deleteQueryDocs(config_1.db.collection('reviews').where('userId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('companyFollows').where('userId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('productLikes').where('userId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('bookings').where('customerId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('savedJobs').where('userId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('interviews').where('seekerId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('notifications').where('userId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('subscriptions').where('userId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('activityLogs').where('userId', '==', userId));
+        await deleteQueryDocs(config_1.db.collection('certificates').where('userId', '==', userId));
+        await config_1.db.doc(`seekerProfiles/${userId}`).delete();
+        await config_1.db.doc(`publicProfiles/${userId}`).delete();
+        // Delete Firebase Storage files
+        try {
+            const { getStorage } = await Promise.resolve().then(() => __importStar(require('firebase-admin/storage')));
+            const bucket = getStorage().bucket();
+            await bucket.deleteFiles({ prefix: `companies/${userId}/` }).catch(() => { });
+            await bucket.deleteFiles({ prefix: `seekers/${userId}/` }).catch(() => { });
+            await bucket.deleteFiles({ prefix: `resumes/${userId}/` }).catch(() => { });
+            for (const cId of companyIds) {
+                await bucket.deleteFiles({ prefix: `products/${cId}/` }).catch(() => { });
+                await bucket.deleteFiles({ prefix: `services/${cId}/` }).catch(() => { });
+            }
+        }
+        catch (storageErr) {
+            console.error('Storage deletion error:', storageErr);
+        }
+        console.log(`Cascade deletion completed for User ${userId}`);
+        return;
+    }
+    // B. SUSPENSION CASE
+    const wasSuspendedBefore = beforeData && beforeData.status === 'suspended';
+    const isSuspendedNow = afterData.status === 'suspended';
+    if (!wasSuspendedBefore && isSuspendedNow) {
+        console.log(`User ${userId} suspended. Propagating suspension.`);
+        // 1. Fetch user's companies
+        const companiesSnap = await config_1.db.collection('companies').where('ownerId', '==', userId).get();
+        const companyIds = new Set();
+        if (afterData.companyId) {
+            companyIds.add(afterData.companyId);
+        }
+        companiesSnap.docs.forEach(doc => {
+            companyIds.add(doc.id);
+        });
+        // 2. Suspend companies and jobs
+        for (const cId of companyIds) {
+            await config_1.db.doc(`companies/${cId}`).update({
+                status: 'suspended',
+                isActive: false,
+                updatedAt: firestore_1.FieldValue.serverTimestamp(),
+            });
+            // Suspend jobs
+            const jobsSnap = await config_1.db.collection('jobs').where('companyId', '==', cId).get();
+            const batch = config_1.db.batch();
+            jobsSnap.docs.forEach(doc => {
+                batch.update(doc.ref, {
+                    isActive: false,
+                    status: 'suspended',
+                    suspendedByAdmin: true, // track that it was admin suspended
+                    updatedAt: firestore_1.FieldValue.serverTimestamp(),
+                });
+            });
+            await batch.commit();
+        }
+        return;
+    }
+    // C. ACTIVATION / RESTORATION CASE
+    const isActiveNow = afterData.status === 'active' || afterData.status === 'approved' || !afterData.status;
+    if (wasSuspendedBefore && isActiveNow) {
+        console.log(`User ${userId} activated. Restoring company & jobs.`);
+        // 1. Fetch user's companies
+        const companiesSnap = await config_1.db.collection('companies').where('ownerId', '==', userId).get();
+        const companyIds = new Set();
+        if (afterData.companyId) {
+            companyIds.add(afterData.companyId);
+        }
+        companiesSnap.docs.forEach(doc => {
+            companyIds.add(doc.id);
+        });
+        // 2. Restore companies and jobs
+        for (const cId of companyIds) {
+            await config_1.db.doc(`companies/${cId}`).update({
+                status: 'approved',
+                isActive: true,
+                updatedAt: firestore_1.FieldValue.serverTimestamp(),
+            });
+            // Restore jobs that were suspended by admin
+            const jobsSnap = await config_1.db.collection('jobs')
+                .where('companyId', '==', cId)
+                .where('status', '==', 'suspended')
+                .where('suspendedByAdmin', '==', true)
+                .get();
+            const batch = config_1.db.batch();
+            jobsSnap.docs.forEach(doc => {
+                batch.update(doc.ref, {
+                    isActive: true,
+                    status: 'active',
+                    suspendedByAdmin: firestore_1.FieldValue.delete(),
+                    updatedAt: firestore_1.FieldValue.serverTimestamp(),
+                });
+            });
+            await batch.commit();
+        }
+        return;
+    }
 });
 //# sourceMappingURL=auth.js.map

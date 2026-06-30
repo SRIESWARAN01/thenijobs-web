@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { BadgeCheck, MapPin, QrCode, ShieldCheck, Download, Crown, Lock, Info, Sparkles, Check } from 'lucide-react';
 import { useDocument } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -130,6 +130,49 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
   const isPremium = profile.isPremium !== false; // Display Premium styling
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(portfolioUrl)}`;
   const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(portfolioUrl)}`;
+
+  const [photoBase64, setPhotoBase64] = useState<string>('');
+  const [qrBase64, setQrBase64] = useState<string>('');
+
+  useEffect(() => {
+    const getBase64FromUrl = async (url: string): Promise<string> => {
+      if (!url) return '';
+      if (url.startsWith('data:')) return url;
+      try {
+        const fetchUrl = url.startsWith('http') ? url : window.location.origin + url;
+        const cleanUrl = fetchUrl.startsWith('http')
+          ? (fetchUrl.includes('?') ? `${fetchUrl}&t=${Date.now()}` : `${fetchUrl}?t=${Date.now()}`)
+          : fetchUrl;
+        
+        const res = await fetch(cleanUrl);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => resolve(url);
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        console.warn('Failed to convert image to base64:', err);
+        return url;
+      }
+    };
+
+    const convertImages = async () => {
+      if (photoUrl) {
+        const base64 = await getBase64FromUrl(photoUrl);
+        setPhotoBase64(base64);
+      }
+      if (qrUrl) {
+        const base64 = await getBase64FromUrl(qrUrl);
+        setQrBase64(base64);
+      }
+    };
+
+    if (profile) {
+      convertImages();
+    }
+  }, [photoUrl, qrUrl, profile]);
   
   const downloadPng = async (side: 'front' | 'back') => {
     setExporting(side === 'front' ? 'png-front' : 'png-back');
@@ -380,10 +423,10 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
                       <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
                         {photoUrl && !photoError ? (
                           <img 
-                            src={photoUrl} 
-                            alt={name} 
+                            src={photoBase64 || photoUrl} 
+                            alt={`${name} Photo`} 
                             className="object-cover w-full h-full rounded-2xl" 
-                            crossOrigin={photoUrl.startsWith('http') ? 'anonymous' : undefined}
+                            crossOrigin="anonymous"
                             onError={() => setPhotoError(true)} 
                           />
                         ) : (
@@ -471,7 +514,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
                     <div className="col-span-5 flex flex-col items-center justify-center text-center">
                       <div className="relative bg-white p-3 rounded-xl border border-white/10 shadow-lg h-32 w-32 flex items-center justify-center">
                         <img 
-                          src={qrError ? backupQrUrl : qrUrl} 
+                          src={qrBase64 || (qrError ? backupQrUrl : qrUrl)} 
                           alt="Portfolio QR code" 
                           className="w-full h-full object-contain" 
                           crossOrigin="anonymous" 
@@ -597,10 +640,10 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
                 <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
                   {photoUrl && !photoError ? (
                     <img 
-                      src={photoUrl} 
-                      alt={name} 
-                      className="object-cover w-full h-full rounded-2xl" 
-                      crossOrigin={photoUrl.startsWith('http') ? 'anonymous' : undefined}
+                      src={photoBase64 || photoUrl} 
+                      alt={`${name} Photo`} 
+                      className="object-cover w-full h-full rounded-2xl"
+                      crossOrigin="anonymous"
                       onError={() => setPhotoError(true)} 
                     />
                   ) : (
@@ -688,7 +731,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
               <div className="col-span-5 flex flex-col items-center justify-center text-center">
                 <div className="relative bg-white p-3 rounded-xl border border-white/10 shadow-lg h-32 w-32 flex items-center justify-center">
                   <img 
-                    src={qrError ? backupQrUrl : qrUrl} 
+                    src={qrBase64 || (qrError ? backupQrUrl : qrUrl)} 
                     alt="Portfolio QR code" 
                     className="w-full h-full object-contain" 
                     crossOrigin="anonymous" 

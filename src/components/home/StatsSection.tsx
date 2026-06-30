@@ -98,15 +98,15 @@ export default function StatsSection() {
       loading: totalUsers.loading,
       label: 'Registered Users',
       detail: 'Total user accounts',
-      color: 'text-teal-700',
+      color: 'text-teal-400',
       icon: Users,
     },
     {
       value: activeJobs.count,
       loading: activeJobs.loading,
       label: 'Active Jobs',
-      detail: 'Live job records',
-      color: 'text-blue-700',
+      detail: 'Live vacancies',
+      color: 'text-rose-400',
       icon: BellRing,
     },
     {
@@ -114,7 +114,7 @@ export default function StatsSection() {
       loading: totalCompanies.loading,
       label: 'Companies',
       detail: 'Company records',
-      color: 'text-emerald-700',
+      color: 'text-emerald-400',
       icon: Building2,
     },
     {
@@ -122,7 +122,7 @@ export default function StatsSection() {
       loading: totalServiceProviders.loading,
       label: 'Service Providers',
       detail: 'Service role accounts',
-      color: 'text-amber-700',
+      color: 'text-amber-400',
       icon: Store,
     },
     {
@@ -130,7 +130,7 @@ export default function StatsSection() {
       loading: totalEmployers.loading,
       label: 'Employers',
       detail: 'Employer accounts',
-      color: 'text-cyan-700',
+      color: 'text-cyan-400',
       icon: BriefcaseBusiness,
     },
     {
@@ -138,27 +138,27 @@ export default function StatsSection() {
       loading: totalSeekers.loading,
       label: 'Job Seekers',
       detail: 'Candidate accounts',
-      color: 'text-violet-700',
+      color: 'text-violet-400',
       icon: BadgeCheck,
     },
   ];
 
   return (
-    <section className="px-4 py-8 sm:px-6">
+    <section className="px-4 py-8 sm:px-6 bg-[#0a0a1a]">
       <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-700">
-                  <Icon size={20} />
+              <div key={stat.label} className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 shadow-xl sm:p-5 backdrop-blur-md hover:border-white/10 transition-all duration-300">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300">
+                  <Icon size={18} />
                 </div>
                 <div className={`font-outfit text-2xl font-black sm:text-3xl ${stat.color}`}>
                   {stat.loading ? '...' : <AnimatedNumber target={stat.value} />}
                 </div>
-                <div className="mt-1 text-sm font-black text-slate-900">{stat.label}</div>
-                <div className="mt-0.5 text-xs font-semibold text-slate-500">{stat.detail}</div>
+                <div className="mt-1 text-sm font-bold text-white">{stat.label}</div>
+                <div className="mt-0.5 text-xs text-slate-400">{stat.detail}</div>
               </div>
             );
           })}

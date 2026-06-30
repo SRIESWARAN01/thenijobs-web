@@ -13,7 +13,8 @@ export {
   adminUpdateSubscription
 } from './admin';
 
-export { syncMobileVerification, deleteCompanyAccount } from './auth';
+export { syncMobileVerification, deleteCompanyAccount, onUserWriteSync } from './auth';
+export { onCompanyWriteSync } from './companySync';
 
 export { healthCheck, seedDemoAccounts } from './dev';
 

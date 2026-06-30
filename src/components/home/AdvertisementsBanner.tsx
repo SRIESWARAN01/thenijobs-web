@@ -77,7 +77,7 @@ export default function AdvertisementsBanner() {
   };
 
   const content = (
-    <div className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
+    <div className="relative group rounded-2xl overflow-hidden border border-white/5 bg-white/[0.02] shadow-2xl">
       {currentAd.imageUrl && (
         <div className="relative w-full aspect-[3/1] sm:aspect-[4/1]">
           <Image
@@ -92,20 +92,20 @@ export default function AdvertisementsBanner() {
       {(currentAd.title || currentAd.description) && !currentAd.imageUrl && (
         <div className="p-4 flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-900 truncate">{currentAd.title}</p>
+            <p className="text-sm font-bold text-white truncate">{currentAd.title}</p>
             {currentAd.description && (
-              <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{currentAd.description}</p>
+              <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{currentAd.description}</p>
             )}
           </div>
           {currentAd.linkUrl && (
-            <ExternalLink size={14} className="text-teal-600 shrink-0" />
+            <ExternalLink size={14} className="text-violet-400 shrink-0" />
           )}
         </div>
       )}
       <button
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDismiss(currentAd.id); }}
-        className="absolute top-2 right-2 p-1 rounded-full bg-black/40 text-white/80 hover:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-2 right-2 p-1 rounded-full bg-black/50 text-white/80 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
         aria-label="Dismiss advertisement"
       >
         <X size={14} />
@@ -116,13 +116,13 @@ export default function AdvertisementsBanner() {
             <span
               key={i}
               className={`h-1.5 rounded-full transition-all ${
-                i === currentIndex % visibleAds.length ? 'w-4 bg-teal-600' : 'w-1.5 bg-black/20'
+                i === currentIndex % visibleAds.length ? 'w-4 bg-violet-500' : 'w-1.5 bg-white/10'
               }`}
             />
           ))}
         </div>
       )}
-      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/30 text-white/70 backdrop-blur-sm">
+      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/45 text-white/80 backdrop-blur-sm">
         Ad
       </span>
     </div>

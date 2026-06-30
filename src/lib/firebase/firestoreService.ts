@@ -26,7 +26,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from './config';
 import { normaliseTimestamps } from './serializers';
 import { getJobExpiryDate, getJobPlanLimit, isActiveJobSlot, isPublicJobVisible } from '@/lib/jobPolicy';
-import { normalizePlanSlug, selectBestSubscription } from '@/lib/subscriptions';
+import { normalizePlanSlug, selectBestSubscription, getPlanRank, toDate } from '@/lib/subscriptions';
 import { getCompanyPortfolioPath, slugifyCompanyName } from '@/lib/companyPortfolio';
 
 // ============================================================
@@ -259,21 +259,52 @@ export async function getPublicCompanies(): Promise<any[]> {
   const snapshot = await getDocs(
     query(
       collection(db, 'companies'),
-      where('isActive', '!=', false),
+      where('isActive', '==', true),
       limit(200),
     ),
   );
 
-  return snapshot.docs
-    .filter((companyDoc) => {
-      const data = companyDoc.data();
-      return (
-        data.verificationStatus === 'verified' ||
-        data.status === 'approved' ||
-        data.isVerified === true
-      );
-    })
-    .map((companyDoc) => ({ id: companyDoc.id, ...companyDoc.data() }));
+  const list = snapshot.docs
+    .map((companyDoc) => ({ id: companyDoc.id, ...companyDoc.data() }))
+    .filter((data: any) => {
+      const isApproved = data.status === 'approved' || data.verificationStatus === 'verified' || data.isVerified === true;
+      const isNotSuspendedOrDeleted = data.status !== 'suspended' && data.status !== 'deleted' && data.deleted !== true;
+      return isApproved && isNotSuspendedOrDeleted;
+    });
+
+  return sortCompaniesByPlan(list);
+}
+
+export function sortCompaniesByPlan(companies: any[]): any[] {
+  return [...companies].sort((a, b) => {
+    // 1. Plan Rank (enterprise -> premium -> basic -> free)
+    const planA = a.subscriptionPlan || (a.isPremium ? 'premium' : 'free');
+    const planB = b.subscriptionPlan || (b.isPremium ? 'premium' : 'free');
+    const rankA = getPlanRank(planA);
+    const rankB = getPlanRank(planB);
+    if (rankA !== rankB) {
+      return rankB - rankA;
+    }
+
+    // 2. Featured status
+    const featA = a.isPremium || a.isFeatured ? 1 : 0;
+    const featB = b.isPremium || b.isFeatured ? 1 : 0;
+    if (featA !== featB) {
+      return featB - featA;
+    }
+
+    // 3. Recently updated
+    const dateA = toDate(a.updatedAt || a.createdAt)?.getTime() || 0;
+    const dateB = toDate(b.updatedAt || b.createdAt)?.getTime() || 0;
+    if (dateA !== dateB) {
+      return dateB - dateA;
+    }
+
+    // 4. Rating / Engagement score
+    const scoreA = (a.rating || 0) * (a.reviewCount || a.reviews || 0);
+    const scoreB = (b.rating || 0) * (b.reviewCount || b.reviews || 0);
+    return scoreB - scoreA;
+  });
 }
 
 export async function getCompanyBySlug(slug: string) {

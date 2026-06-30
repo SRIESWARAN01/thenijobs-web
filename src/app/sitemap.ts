@@ -1,6 +1,5 @@
 import { MetadataRoute } from 'next';
-import { db } from '@/lib/firebase/config';
-import { collection, getDocs, query, where, limit } from 'firebase/firestore';
+import { adminDb } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-static';
 
@@ -38,12 +37,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch active jobs from Firestore
   let jobPages: MetadataRoute.Sitemap = [];
   try {
-    const jobsQuery = query(
-      collection(db, 'jobs'),
-      where('isActive', '==', true),
-      limit(500)
-    );
-    const jobsSnap = await getDocs(jobsQuery);
+    const jobsSnap = await adminDb.collection('jobs')
+      .where('isActive', '==', true)
+      .limit(500)
+      .get();
     jobPages = jobsSnap.docs.map((docSnap) => {
       const d = docSnap.data();
       const lastModified = d.updatedAt ? (
@@ -63,12 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch verified companies from Firestore
   let companyPages: MetadataRoute.Sitemap = [];
   try {
-    const companiesQuery = query(
-      collection(db, 'companies'),
-      where('verificationStatus', '==', 'verified'),
-      limit(500)
-    );
-    const companiesSnap = await getDocs(companiesQuery);
+    const companiesSnap = await adminDb.collection('companies')
+      .where('verificationStatus', '==', 'verified')
+      .limit(500)
+      .get();
     companyPages = companiesSnap.docs
       .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
       .filter((c: any) => !!c.slug)
@@ -90,11 +85,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch seeker public profiles from Firestore
   let profilePages: MetadataRoute.Sitemap = [];
   try {
-    const profilesQuery = query(
-      collection(db, 'publicProfiles'),
-      limit(500)
-    );
-    const profilesSnap = await getDocs(profilesQuery);
+    const profilesSnap = await adminDb.collection('publicProfiles')
+      .limit(500)
+      .get();
     profilePages = profilesSnap.docs.map((docSnap) => {
       const d = docSnap.data();
       const lastModified = d.updatedAt ? (

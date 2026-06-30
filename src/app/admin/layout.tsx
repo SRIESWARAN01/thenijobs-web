@@ -30,6 +30,7 @@ const ADMIN_NAV = [
   { label: 'Shop Customers', tamilLabel: 'வாடிக்கையாளர்கள்', icon: 'UserCircle', href: '/admin/shop/customers' },
   { label: 'Shop Coupons', tamilLabel: 'கடை தள்ளுபடி குறியீடுகள்', icon: 'Tag', href: '/admin/shop/coupons' },
   { label: 'Shop Reviews', tamilLabel: 'கடை மதிப்புரைகள்', icon: 'MessageSquare', href: '/admin/shop/reviews' },
+  { label: 'Learning Academy', tamilLabel: 'கற்றல் அகாடமி', icon: 'GraduationCap', href: '/admin/academy' },
   { label: 'Reports', tamilLabel: 'அறிக்கைகள்', icon: 'BarChart3', href: '/admin/reports' },
   { label: 'Notifications', tamilLabel: 'அறிவிப்புகள்', icon: 'Bell', href: '/admin/notifications' },
   { label: 'Security', tamilLabel: 'பாதுகாப்பு', icon: 'Shield', href: '/admin/security' },

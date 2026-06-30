@@ -751,8 +751,8 @@ export async function approveJob(jobId: string, adminId: string) {
   if (!job) {
     throw new Error('Job not found.');
   }
-  if (company && (company.isActive === false || company.deleted === true || company.status === 'deleted')) {
-    throw new Error('Jobs from deleted or inactive companies cannot be approved.');
+  if (company && company.deleted === true && company.status === 'deleted') {
+    throw new Error('Jobs from permanently deleted companies cannot be approved. Restore the company first.');
   }
 
   if (job.companyId) {

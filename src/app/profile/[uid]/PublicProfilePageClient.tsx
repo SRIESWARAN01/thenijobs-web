@@ -36,6 +36,8 @@ interface PublicProfile {
   role?: string;
   candidateId?: string;
   aboutMe?: string;
+  completedCourses?: any[];
+  gamification?: any;
 }
 
 function getText(value: unknown, fallback = '') {
@@ -469,6 +471,27 @@ export default function PublicProfilePageClient({ uid }: { uid: string }) {
                   Certifications
                 </h2>
                 <div className="space-y-3">
+                  {/* Academy Completed Courses */}
+                  {profile.completedCourses && profile.completedCourses.length > 0 && (
+                    profile.completedCourses.map((c: any) => (
+                      <div key={c.courseId} className="rounded-xl bg-violet-600/5 border border-violet-500/15 p-3 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-12 h-12 bg-violet-500/5 rounded-full blur-xl group-hover:bg-violet-500/10 transition-all" />
+                        <div className="font-bold text-sm text-violet-300">✓ {c.courseName}</div>
+                        <div className="text-[10px] text-gray-500 mt-1">THENIJOBS Academy • Completed</div>
+                        {c.certificateId && (
+                          <a
+                            href={`/academy/certificate/${c.certificateId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] text-violet-400 mt-2 hover:underline font-bold uppercase tracking-wider"
+                          >
+                            View Verified Credential →
+                          </a>
+                        )}
+                      </div>
+                    ))
+                  )}
+
                   {profile.certifications && profile.certifications.length > 0 ? (
                     profile.certifications.map((cert: any, idx: number) => (
                       <div key={cert.id || idx} className="rounded-xl bg-white/[0.02] border border-white/[0.05] p-3">
@@ -488,18 +511,32 @@ export default function PublicProfilePageClient({ uid }: { uid: string }) {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500 py-2">No certificates uploaded.</p>
+                    (!profile.completedCourses || profile.completedCourses.length === 0) && (
+                      <p className="text-sm text-gray-500 py-2">No certificates uploaded.</p>
+                    )
                   )}
                 </div>
               </div>
 
-              {/* Achievements */}
+              {/* Achievements & Academy Badges */}
               <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 shadow-lg shadow-black/20 backdrop-blur-lg">
                 <h2 className="flex items-center gap-2.5 text-lg font-outfit font-black tracking-tight text-white mb-4">
                   <Star size={18} className="text-amber-400 shrink-0" />
-                  Achievements
+                  Achievements & Badges
                 </h2>
                 <div className="space-y-3">
+                  {/* Academy Badges */}
+                  {profile.gamification?.badges && profile.gamification.badges.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4 p-2 bg-amber-500/5 rounded-xl border border-amber-500/10">
+                      {profile.gamification.badges.map((b: any) => (
+                        <div key={b.id} className="flex items-center gap-1.5 bg-slate-900 border border-amber-500/20 px-2.5 py-1 rounded-lg text-xs" title={b.description}>
+                          <span className="text-sm">{b.icon || '🏅'}</span>
+                          <span className="font-bold text-amber-300 text-[10px]">{b.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {profile.achievements && profile.achievements.length > 0 ? (
                     profile.achievements.map((ach: any, idx: number) => (
                       <div key={ach.id || idx} className="rounded-xl bg-white/[0.02] border border-white/[0.05] p-3 flex gap-2">
@@ -511,7 +548,9 @@ export default function PublicProfilePageClient({ uid }: { uid: string }) {
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500 py-2">No achievements listed yet.</p>
+                    (!profile.gamification?.badges || profile.gamification.badges.length === 0) && (
+                      <p className="text-sm text-gray-500 py-2">No achievements listed yet.</p>
+                    )
                   )}
                 </div>
               </div>

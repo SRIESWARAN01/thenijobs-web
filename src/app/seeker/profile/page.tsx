@@ -1238,47 +1238,83 @@ export default function SeekerProfilePage() {
 
         {/* ── Certifications ── */}
         {activeTab === 'certifications' && (
-          <div>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-semibold text-white text-sm flex items-center gap-2">
-                <Award size={15} className="text-emerald-400" /> Certifications
-              </h2>
-              <button onClick={addCertification} className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 transition-all">
-                <Plus size={12} /> Add Certification
-              </button>
+          <div className="space-y-6">
+            {/* Academy Certifications */}
+            <div>
+              <h3 className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-3">
+                THENIJOBS Academy Certificates
+              </h3>
+              <div className="space-y-3">
+                {remoteProfile?.completedCourses && remoteProfile.completedCourses.length > 0 ? (
+                  remoteProfile.completedCourses.map((c: any) => (
+                    <div key={c.courseId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-violet-600/5 border border-violet-500/15">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">✓ {c.courseName}</h4>
+                        <p className="text-[10px] text-gray-500 mt-1">Verified Credential issued by Academy</p>
+                      </div>
+                      {c.certificateId && (
+                        <a
+                          href={`/academy/certificate/${c.certificateId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white transition-colors"
+                        >
+                          View Certificate
+                        </a>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-gray-600 text-xs border border-dashed border-white/[0.05] rounded-xl">
+                    No Academy certificates earned yet. Visit the Learning Academy.
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="space-y-4">
-              {certifications.map(cert => (
-                <div key={cert.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
-                  <button onClick={() => removeCertification(cert.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
-                    <X size={14} />
-                  </button>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Certification Name</label>
-                      <input type="text" value={cert.name} onChange={e => updateCertification(cert.id, 'name', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="e.g. Google Analytics" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Organization</label>
-                      <input type="text" value={cert.organization} onChange={e => updateCertification(cert.id, 'organization', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="e.g. Google" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Date</label>
-                      <input type="month" value={cert.date} onChange={e => updateCertification(cert.id, 'date', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">Certificate Link (Optional)</label>
-                      <input type="url" value={cert.link} onChange={e => updateCertification(cert.id, 'link', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="https://..." />
+
+            {/* Manual Certifications */}
+            <div>
+              <div className="flex items-center justify-between mb-4 border-t border-white/[0.05] pt-5">
+                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest">
+                  Other Professional Certifications
+                </h3>
+                <button onClick={addCertification} className="flex items-center gap-1 text-[10px] text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 transition-all">
+                  <Plus size={10} /> Add Certification
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {certifications.map(cert => (
+                  <div key={cert.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
+                    <button onClick={() => removeCertification(cert.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                      <X size={14} />
+                    </button>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-gray-500 block mb-1">Certification Name</label>
+                        <input type="text" value={cert.name} onChange={e => updateCertification(cert.id, 'name', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="e.g. Google Analytics" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block mb-1">Organization</label>
+                        <input type="text" value={cert.organization} onChange={e => updateCertification(cert.id, 'organization', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="e.g. Google" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block mb-1">Date</label>
+                        <input type="month" value={cert.date} onChange={e => updateCertification(cert.id, 'date', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 block mb-1">Certificate Link (Optional)</label>
+                        <input type="url" value={cert.link} onChange={e => updateCertification(cert.id, 'link', e.target.value)} className="search-input w-full px-3 py-2 text-sm bg-[#0e0e22]" placeholder="https://..." />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {certifications.length === 0 && (
-                <div className="text-center py-10 text-gray-600 text-sm">
-                  <Award size={32} className="mx-auto mb-2 opacity-40" />
-                  No certifications yet. Add your professional certifications.
-                </div>
-              )}
+                ))}
+                {certifications.length === 0 && (
+                  <div className="text-center py-6 text-gray-600 text-xs border border-dashed border-white/[0.05] rounded-xl">
+                    No other certifications listed. Add custom ones above.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

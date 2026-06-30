@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useMemo, useState, useEffect } from 'react';
-import { BadgeCheck, MapPin, QrCode, ShieldCheck, Download, Crown, Lock, Info, Sparkles, Check } from 'lucide-react';
+import { BadgeCheck, MapPin, QrCode, ShieldCheck, Download, Crown, Lock, Info, Sparkles, Check, User } from 'lucide-react';
 import { useDocument } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,6 +23,9 @@ interface PublicProfile {
   premiumUntil?: any;
   isPremium?: boolean;
   updatedAt?: any;
+  isActive?: boolean;
+  status?: string;
+  deleted?: boolean;
 }
 
 const WhatsAppIcon = () => (
@@ -117,6 +120,33 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
           <Info size={40} className="mx-auto text-amber-400 mb-4 animate-bounce" />
           <h1 className="text-xl font-bold tracking-tight">Digital ID not available</h1>
           <p className="mt-2 text-sm text-gray-400">Complete the profile first to generate this card.</p>
+        </div>
+      </main>
+    );
+  }
+
+  const isSuspendedOrDeleted = profile.isActive === false || 
+    profile.status === 'suspended' || 
+    profile.status === 'deleted' || 
+    (profile as any).deleted === true;
+
+  if (isSuspendedOrDeleted) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white font-sans">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-bounce">
+            <User size={24} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">ID Card not available</h1>
+          <p className="mt-2 text-sm text-gray-400">
+            This candidate ID card has been suspended, removed, or is currently undergoing review.
+          </p>
+          <a
+            href="/"
+            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
+          >
+            Go Back Home
+          </a>
         </div>
       </main>
     );

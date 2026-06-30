@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Video, FileText, CheckCircle2, Lock, Target } from 'lucide-react';
+import { Video, FileText, CheckCircle2, Lock, Target } from 'lucide-react';
 import type { CourseModule, Lesson } from '@/lib/types/lms';
 
 interface LessonSidebarProps {
@@ -22,11 +22,19 @@ export default function LessonSidebar({
   activeQuizModuleId,
   quizStatusMap,
 }: LessonSidebarProps) {
-  // Logic to determine if a module or lesson is unlocked:
-  // For simplicity, a module/lesson is unlocked if the previous module's quiz is completed
-  // and previous lessons in the current module are completed.
   
-  let previousModuleCompleted = true;
+  // Pre-calculate module unlock statuses
+  const moduleUnlockedMap: Record<string, boolean> = {};
+  let prevModuleCompleted = true;
+  
+  modules.forEach((mod) => {
+    moduleUnlockedMap[mod.id] = prevModuleCompleted;
+    
+    const hasQuiz = !!mod.quizId;
+    const quizPassed = mod.quizId ? quizStatusMap[mod.quizId]?.passed : false;
+    const allLessonsCompleted = mod.lessons.every(l => completedLessons.includes(l.id));
+    prevModuleCompleted = hasQuiz ? !!quizPassed : allLessonsCompleted;
+  });
 
   return (
     <div className="space-y-4 font-outfit text-white">
@@ -38,13 +46,10 @@ export default function LessonSidebar({
           const quizPassed = mod.quizId ? quizStatusMap[mod.quizId]?.passed : false;
           
           // Current module is unlocked if previous was completed
-          const isModuleUnlocked = previousModuleCompleted;
+          const isModuleUnlocked = moduleUnlockedMap[mod.id];
 
           // Check if all lessons in this module are completed
           const allLessonsCompleted = mod.lessons.every(l => completedLessons.includes(l.id));
-          
-          // Update for the next module iteration
-          previousModuleCompleted = hasQuiz ? quizPassed : allLessonsCompleted;
 
           return (
             <div key={mod.id} className="space-y-1.5">

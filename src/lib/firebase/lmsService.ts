@@ -248,7 +248,7 @@ export async function enrollInCourse(userId: string, courseId: string, courseNam
   // Get first module and lesson
   const modules = await getModules(courseId);
   let firstLessonId = '';
-  let firstModuleId = modules[0]?.id || '';
+  const firstModuleId = modules[0]?.id || '';
   if (firstModuleId) {
     const lessons = await getLessons(courseId, firstModuleId);
     firstLessonId = lessons[0]?.id || '';

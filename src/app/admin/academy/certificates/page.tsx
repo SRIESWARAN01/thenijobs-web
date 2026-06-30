@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Award, Plus, Loader2, Save, Sparkles, Image as ImageIcon, Trash2, CheckCircle2 } from 'lucide-react';
+import { Plus, Loader2, Save, Sparkles, CheckCircle2 } from 'lucide-react';
 import { getCertificateTemplates, createCertificateTemplate, updateCertificateTemplate } from '@/lib/firebase/lmsService';
 import { useAuth } from '@/hooks/useAuth';
 import type { CertificateTemplate } from '@/lib/types/lms';
@@ -27,9 +27,19 @@ export default function CertificateTemplatesPage() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTemplates();
-  }, []);
+  const selectTemplate = (t: CertificateTemplate) => {
+    setSelectedId(t.id);
+    setName(t.name);
+    setBgImage(t.backgroundImage || '');
+    setLogoPos(t.logoPosition || 'top-center');
+    setSigImage(t.signatureImage || '');
+    setSigName(t.signatoryName || '');
+    setSigTitle(t.signatoryTitle || '');
+    setPrimaryColor(t.colorScheme?.primary || '#7C3AED');
+    setSecondaryColor(t.colorScheme?.secondary || '#10B981');
+    setAccentColor(t.colorScheme?.accent || '#F59E0B');
+    setTextColor(t.colorScheme?.text || '#F8FAFC');
+  };
 
   const loadTemplates = async () => {
     try {
@@ -45,19 +55,9 @@ export default function CertificateTemplatesPage() {
     }
   };
 
-  const selectTemplate = (t: CertificateTemplate) => {
-    setSelectedId(t.id);
-    setName(t.name);
-    setBgImage(t.backgroundImage || '');
-    setLogoPos(t.logoPosition || 'top-center');
-    setSigImage(t.signatureImage || '');
-    setSigName(t.signatoryName || '');
-    setSigTitle(t.signatoryTitle || '');
-    setPrimaryColor(t.colorScheme?.primary || '#7C3AED');
-    setSecondaryColor(t.colorScheme?.secondary || '#10B981');
-    setAccentColor(t.colorScheme?.accent || '#F59E0B');
-    setTextColor(t.colorScheme?.text || '#F8FAFC');
-  };
+  useEffect(() => {
+    loadTemplates();
+  }, []);
 
   const handleNewTemplate = () => {
     setSelectedId(null);

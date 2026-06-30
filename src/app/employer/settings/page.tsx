@@ -4,13 +4,45 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
-import { Settings, Shield, Bell, Save, Loader2, CheckCircle } from 'lucide-react';
+import { Settings, Shield, Bell, Save, Loader2, CheckCircle, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { upsertDocument } from '@/lib/firebase/firestoreService';
 
 export default function EmployerSettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [saving, setSaving] = useState(false);
+  const router = useRouter();
+
+  // Delete account states
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      setDeleteError('Please type "DELETE" to confirm.');
+      return;
+    }
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const functions = getFunctions(undefined, 'asia-south1');
+      const deleteAcc = httpsCallable(functions, 'deleteCompanyAccount');
+      await deleteAcc();
+      
+      // Logout and redirect to login page
+      await logout();
+      router.push('/login');
+    } catch (err: any) {
+      console.error(err);
+      setDeleteError(err?.message || 'Failed to delete company account.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -162,6 +194,23 @@ export default function EmployerSettingsPage() {
             </div>
           </div>
 
+          {/* Danger Zone: Delete Account */}
+          <div className="glass-card rounded-2xl p-6 space-y-4 border border-rose-500/20 bg-rose-950/5">
+            <h3 className="text-sm font-semibold text-rose-450 flex items-center gap-2">
+              <Trash2 size={16} className="text-rose-400" />
+              Danger Zone
+            </h3>
+            <p className="text-xs text-rose-300/80 leading-relaxed">
+              Once you delete your company account, all associated data, including company profile, jobs, applications, products, reviews, images, subscriptions, and logs, will be permanently removed. This action cannot be undone.
+            </p>
+            <button
+              onClick={() => setDeleteConfirmOpen(true)}
+              className="w-full py-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold transition-all hover:scale-[1.01]"
+            >
+              Permanently Delete Company Account
+            </button>
+          </div>
+
           <button
             onClick={() => handleSave()}
             disabled={saving}
@@ -175,6 +224,65 @@ export default function EmployerSettingsPage() {
               Settings saved.
             </p>
           )}
+        </div>
+      )}
+
+      {/* Confirmation Dialog Modal */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-950 border border-white/10 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl relative">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-rose-500">
+              <AlertTriangle size={24} />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-base font-black text-white">Permanently Delete Account?</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                This will delete your company profile, auth credentials, storage images, and all related database records. 
+                <strong> This action is irreversible.</strong>
+              </p>
+            </div>
+            
+            <div className="space-y-1.5 pt-2">
+              <label className="text-[9px] font-black text-slate-500 uppercase tracking-wider block">
+                Type &quot;DELETE&quot; to confirm
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                className="w-full bg-white/[0.02] border border-white/10 px-3.5 py-2.5 text-xs text-white rounded-xl outline-none focus:border-rose-500/50 transition-all font-mono text-center tracking-widest"
+              />
+            </div>
+
+            {deleteError && (
+              <p className="text-[11px] text-rose-450 text-center font-semibold bg-rose-500/10 border border-rose-500/20 p-2 rounded-xl">
+                ⚠️ {deleteError}
+              </p>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setDeleteConfirmText('');
+                  setDeleteError(null);
+                }}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] text-slate-300 text-xs font-bold transition-all disabled:opacity-40"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteConfirmText !== 'DELETE'}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-650 hover:brightness-110 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 disabled:opacity-40"
+              >
+                {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                {deleting ? 'Deleting...' : 'Delete Everything'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

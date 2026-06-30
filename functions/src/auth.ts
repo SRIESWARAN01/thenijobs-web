@@ -98,3 +98,111 @@ export const syncMobileVerification = onCall(
     };
   }
 );
+
+// Helper to delete all documents returned by a query
+async function deleteQueryDocs(query: FirebaseFirestore.Query) {
+  const snap = await query.get();
+  if (snap.empty) return;
+  const batch = db.batch();
+  snap.docs.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
+}
+
+export const deleteCompanyAccount = onCall(
+  { region: REGION, enforceAppCheck: false },
+  async (request: CallableRequest<void>) => {
+    const uid = requireUid(request);
+
+    // 1. Fetch user to confirm existence and get companyId
+    const userRef = db.doc(`users/${uid}`);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      throw new HttpsError('not-found', 'User profile document not found.');
+    }
+    const userData = userSnap.data() || {};
+    const companyId = getString(userData.companyId);
+
+    // 2. Fetch all companies owned by this user
+    const companiesSnap = await db.collection('companies').where('ownerId', '==', uid).get();
+    const companyIds = new Set<string>();
+    if (companyId) {
+      companyIds.add(companyId);
+    }
+    companiesSnap.docs.forEach(doc => {
+      companyIds.add(doc.id);
+    });
+
+    // 3. Delete Firebase Storage files (Logo, cover, resumes, products, services images)
+    try {
+      const { getStorage } = await import('firebase-admin/storage');
+      const bucket = getStorage().bucket();
+      
+      // Delete user/company specific files
+      await bucket.deleteFiles({ prefix: `companies/${uid}/` }).catch(() => {});
+      await bucket.deleteFiles({ prefix: `seekers/${uid}/` }).catch(() => {});
+      await bucket.deleteFiles({ prefix: `resumes/${uid}/` }).catch(() => {});
+      
+      for (const cId of companyIds) {
+        await bucket.deleteFiles({ prefix: `products/${cId}/` }).catch(() => {});
+        await bucket.deleteFiles({ prefix: `services/${cId}/` }).catch(() => {});
+      }
+    } catch (storageErr) {
+      console.error('Storage deletion warning:', storageErr);
+      // Log storage failure but continue with database cleanup
+    }
+
+    // 4. Delete Firestore records
+    // Delete company profile, jobs, applications, products, reviews, settings, etc.
+    for (const cId of companyIds) {
+      // Jobs & Applications
+      const jobsSnap = await db.collection('jobs').where('companyId', '==', cId).get();
+      for (const jobDoc of jobsSnap.docs) {
+        await deleteQueryDocs(db.collection('jobApplications').where('jobId', '==', jobDoc.id));
+        await jobDoc.ref.delete();
+      }
+      
+      await deleteQueryDocs(db.collection('jobApplications').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('products').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('services').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('reviews').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('companyFollows').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('enquiries').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('analyticsEvents').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('subscriptions').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('bookings').where('serviceProviderId', '==', cId));
+      await deleteQueryDocs(db.collection('interviews').where('companyId', '==', cId));
+      
+      // Delete settings document
+      await db.doc(`employerSettings/${cId}`).delete();
+      
+      // Delete the company doc itself
+      await db.doc(`companies/${cId}`).delete();
+    }
+
+    // Seeker specific/User specific data deletion
+    await deleteQueryDocs(db.collection('reviews').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('companyFollows').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('productLikes').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('bookings').where('customerId', '==', uid));
+    await deleteQueryDocs(db.collection('savedJobs').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('interviews').where('seekerId', '==', uid));
+    await deleteQueryDocs(db.collection('notifications').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('subscriptions').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('activityLogs').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('certificates').where('userId', '==', uid));
+
+    // Delete base user documents
+    await db.doc(`seekerProfiles/${uid}`).delete();
+    await db.doc(`publicProfiles/${uid}`).delete();
+    await userRef.delete();
+
+    // 5. Delete the Firebase Authentication user account
+    await getAuth().deleteUser(uid);
+
+    return {
+      success: true
+    };
+  }
+);

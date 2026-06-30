@@ -53,6 +53,8 @@ export default function CompanyDigitalCardPageClient({
   const [exporting, setExporting] = useState<string | null>(null);
   const [activeTheme, setActiveTheme] = useState<CardThemeName>('luxury_gold');
   const [isFlipped, setIsFlipped] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  const [qrError, setQrError] = useState(false);
 
   // Extract potential ID from name-id slug structure
   const parsedId = useMemo(() => {
@@ -143,6 +145,7 @@ export default function CompanyDigitalCardPageClient({
   
   const uniqueId = `TNI-BUS-${(company.id || company.uid || 'unknown').slice(0, 8).toUpperCase()}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(profileUrl)}`;
+  const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(profileUrl)}`;
 
   // Premium themes config for visiting card background
   const themeGradients: Record<CardThemeName, {
@@ -471,10 +474,19 @@ export default function CompanyDigitalCardPageClient({
                       <div className={`relative h-24 w-24 overflow-hidden rounded-2xl border bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center ${
                         plan === 'enterprise' ? 'border-slate-300' : plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
                       }`}>
-                        {logoUrl ? (
-                          <img src={logoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
+                        {logoUrl && !logoError ? (
+                          <img 
+                            src={logoUrl} 
+                            alt={name} 
+                            className="object-cover w-full h-full rounded-2xl" 
+                            crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                            onError={() => setLogoError(true)} 
+                          />
                         ) : (
-                          <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
+                          <div className="h-full w-full bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-2 text-center">
+                            <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
+                            <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest mt-1">NO LOGO</span>
+                          </div>
                         )}
                       </div>
                       {isVerified && (
@@ -532,12 +544,24 @@ export default function CompanyDigitalCardPageClient({
                   <div className="absolute top-0 left-0 w-32 h-32 bg-white/[0.01] rounded-full blur-2xl pointer-events-none" />
 
                   {/* Top logo header */}
-                  <div className="flex justify-between items-start border-b border-white/5 pb-3">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
                     <div>
                       <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 block uppercase">THENIJOBS</span>
                       <span className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 block">VERIFIED LISTING</span>
                     </div>
-                    <Building2 size={16} className="text-slate-500" />
+                    <div className="h-8 w-8 overflow-hidden rounded-lg border border-white/10 bg-[#070714] flex items-center justify-center shadow-inner">
+                      {logoUrl && !logoError ? (
+                        <img 
+                          src={logoUrl} 
+                          alt={name} 
+                          className="object-cover w-full h-full rounded-lg" 
+                          crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                          onError={() => setLogoError(true)} 
+                        />
+                      ) : (
+                        <Building2 size={14} className="text-slate-400" />
+                      )}
+                    </div>
                   </div>
 
                   {/* Mid Section: QR Code & Summary */}
@@ -559,7 +583,13 @@ export default function CompanyDigitalCardPageClient({
                     {/* QR Code with Centered Logo Overlay (Premium Scan Asset) */}
                     <div className="shrink-0 flex flex-col items-center gap-1.5">
                       <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
-                        <img src={qrUrl} alt="QR Verification Link" className="object-contain w-full h-full" crossOrigin="anonymous" />
+                        <img 
+                          src={qrError ? backupQrUrl : qrUrl} 
+                          alt="QR Verification Link" 
+                          className="object-contain w-full h-full" 
+                          crossOrigin="anonymous" 
+                          onError={() => setQrError(true)} 
+                        />
                       </div>
                       <span className="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 text-center">
                         <QrCode size={8} /> Scan to View Company Profile
@@ -669,10 +699,19 @@ export default function CompanyDigitalCardPageClient({
                 <div className={`relative h-24 w-24 overflow-hidden rounded-2xl border bg-[#070714] shadow-lg flex-shrink-0 flex items-center justify-center ${
                   plan === 'enterprise' ? 'border-slate-300' : plan === 'premium' ? 'border-amber-400/20' : plan === 'basic' ? 'border-blue-500/20' : 'border-slate-800'
                 }`}>
-                  {logoUrl ? (
-                    <img src={logoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
+                  {logoUrl && !logoError ? (
+                    <img 
+                      src={logoUrl} 
+                      alt={name} 
+                      className="object-cover w-full h-full rounded-2xl" 
+                      crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                      onError={() => setLogoError(true)} 
+                    />
                   ) : (
-                    <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
+                    <div className="h-full w-full bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-2 text-center">
+                      <Building2 size={36} className={plan === 'enterprise' ? 'text-slate-100' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'} />
+                      <span className="text-[7.5px] font-black text-slate-500 uppercase tracking-widest mt-1">NO LOGO</span>
+                    </div>
                   )}
                 </div>
                 {isVerified && (
@@ -729,12 +768,24 @@ export default function CompanyDigitalCardPageClient({
             <div className="absolute top-0 left-0 w-32 h-32 bg-white/[0.01] rounded-full blur-2xl pointer-events-none" />
 
             {/* Top logo header */}
-            <div className="flex justify-between items-start border-b border-white/5 pb-3">
+            <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <div>
                 <span className="text-[10px] tracking-[0.2em] font-black text-slate-400 block uppercase">THENIJOBS</span>
                 <span className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 block">VERIFIED LISTING</span>
               </div>
-              <Building2 size={16} className="text-slate-500" />
+              <div className="h-8 w-8 overflow-hidden rounded-lg border border-white/10 bg-[#070714] flex items-center justify-center shadow-inner">
+                {logoUrl && !logoError ? (
+                  <img 
+                    src={logoUrl} 
+                    alt={name} 
+                    className="object-cover w-full h-full rounded-lg" 
+                    crossOrigin={logoUrl.startsWith('http') ? 'anonymous' : undefined}
+                    onError={() => setLogoError(true)} 
+                  />
+                ) : (
+                  <Building2 size={14} className="text-slate-400" />
+                )}
+              </div>
             </div>
 
             {/* Mid Section: QR Code & Summary */}
@@ -756,7 +807,13 @@ export default function CompanyDigitalCardPageClient({
               {/* QR Code with Centered Logo Overlay (Premium Scan Asset) */}
               <div className="shrink-0 flex flex-col items-center gap-1.5">
                 <div className="relative h-32 w-32 overflow-hidden rounded-xl border border-white/15 bg-white p-2 shadow-lg flex items-center justify-center">
-                  <img src={qrUrl} alt="QR Verification Link" className="object-contain w-full h-full" crossOrigin="anonymous" />
+                  <img 
+                    src={qrError ? backupQrUrl : qrUrl} 
+                    alt="QR Verification Link" 
+                    className="object-contain w-full h-full" 
+                    crossOrigin="anonymous" 
+                    onError={() => setQrError(true)} 
+                  />
                 </div>
                 <span className="text-[7.5px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1 text-center">
                   <QrCode size={8} /> Scan to View Company Profile

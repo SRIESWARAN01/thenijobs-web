@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { db } from '@/lib/firebase/config';
+import { db, functions } from '@/lib/firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
@@ -51,7 +52,7 @@ function getGoogleMapsUrl(company: any): string {
   if (company.mapsUrl) return company.mapsUrl;
   if (company.mapUrl) return company.mapUrl;
   const query = `${company.name || ''} ${company.address || ''} ${company.district || ''}`.trim();
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
 }
 
 
@@ -384,17 +385,25 @@ function ProductLikeButton({ productId, companyId, likeCount = 0, isLiked, accen
 // ──────────────────────────────────────────────────────────────────
 // REVIEW SUBMIT FORM
 // ──────────────────────────────────────────────────────────────────
-function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400', btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500', theme = 'dark' }: {
-  companyId: string; companyName: string; accentColor?: string; btnStyle?: string; theme?: 'light' | 'dark';
+function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 'text-cyan-400', btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500', theme = 'dark' }: {
+  companyId: string; companyName: string; reviews?: any[]; accentColor?: string; btnStyle?: string; theme?: 'light' | 'dark';
 }) {
   const { user } = useAuth();
   const [rating, setRating] = useState(5);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const existingReview = user ? reviews.find((r: any) => r.userId === user.uid) : null;
+
+  useEffect(() => {
+    if (existingReview) {
+      setRating(existingReview.rating || 5);
+      setContent(existingReview.comment || existingReview.content || '');
+    }
+  }, [existingReview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -403,33 +412,43 @@ function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400
       setError('Please login to submit a review.');
       return;
     }
-    if (!content.trim()) {
+    const cleanComment = content.trim();
+    if (!cleanComment) {
       setError('Please write your review.');
       return;
     }
+    // Spam and fake review validation checks on client
+    if (/(.)\1{4,}/.test(cleanComment)) {
+      setError('Spam detected! Repetitive characters are not allowed.');
+      return;
+    }
+    if (/https?:\/\/[^\s]+/.test(cleanComment) || /www\.[^\s]+/.test(cleanComment)) {
+      setError('Links/URLs are not allowed in reviews.');
+      return;
+    }
+    if (cleanComment.length < 5) {
+      setError('Comment must be at least 5 characters long.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'reviews'), {
+      const submitCallable = httpsCallable<any, { success: boolean; reviewId: string; updated?: boolean }>(
+        functions,
+        'submitBusinessReview'
+      );
+      await submitCallable({
         companyId,
-        companyName,
-        userId: user.uid,
+        rating,
+        comment: cleanComment,
         userName: user.displayName || (user as any).fullName || 'Anonymous',
         userPhoto: user.photoURL || '',
-        rating,
-        title: title.trim() || 'Review',
-        comment: content.trim(),
-        type: 'customer',
-        status: 'pending',
-        createdAt: serverTimestamp(),
       });
       trackAnalyticsEvent({ companyId, eventType: 'review_submit' });
       setSubmitted(true);
-      setTitle('');
-      setContent('');
-      setRating(5);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Review submit error:', err);
-      setError('Failed to submit review. Please try again.');
+      setError(err?.message || 'Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -442,14 +461,21 @@ function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400
           <Check size={26} className="text-emerald-500" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-black text-emerald-500">Review Submitted Successfully!</p>
-          <p className={`text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>Your review will appear on the platform after administrator approval.</p>
+          <p className="text-sm font-black text-emerald-500">
+            {existingReview ? 'Review Updated Successfully!' : 'Review Submitted Successfully!'}
+          </p>
+          <p className={`text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
+            Your review is now live on the platform.
+          </p>
         </div>
         <button
-          onClick={() => setSubmitted(false)}
+          onClick={() => {
+            setSubmitted(false);
+            window.location.reload();
+          }}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${theme === 'light' ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700' : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300'}`}
         >
-          Write Another Review
+          Close & Refresh
         </button>
       </div>
     );
@@ -468,6 +494,12 @@ function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400
           <button type="button" onClick={() => setError(null)} className="opacity-60 hover:opacity-100 transition-opacity">
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {existingReview && (
+        <div className={`p-3 rounded-xl border text-[11px] font-bold ${isLight ? 'bg-amber-50 border-amber-100 text-amber-800' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
+          ✏️ You have already reviewed this company. Submitting this form will update your existing rating and review comments.
         </div>
       )}
 
@@ -504,20 +536,6 @@ function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400
       </div>
 
       <div className="space-y-3">
-        <input
-          type="text"
-          placeholder="Review title (optional)"
-          value={title}
-          onChange={e => {
-            setTitle(e.target.value);
-            if (error) setError(null);
-          }}
-          className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none focus:ring-2 transition-all ${
-            isLight
-              ? 'bg-slate-100 border-slate-200 focus:border-slate-400 focus:bg-white text-slate-900 placeholder:text-slate-500 focus:ring-slate-500/10'
-              : 'bg-white/[0.02] border-white/[0.08] focus:border-white/20 focus:bg-white/[0.04] text-white placeholder:text-slate-400 focus:ring-white/5'
-          }`}
-        />
         <textarea
           placeholder="Share your experience with this business..."
           value={content}
@@ -541,7 +559,7 @@ function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400
         className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all hover:brightness-105 active:scale-[0.98] focus:ring-2 focus:ring-purple-500/20 focus:outline-none flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer shadow-md ${btnStyle}`}
       >
         {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-        {submitting ? 'Submitting...' : 'Submit Review'}
+        {submitting ? 'Submitting...' : existingReview ? 'Update My Review' : 'Submit Review'}
       </button>
     </form>
   );
@@ -935,6 +953,16 @@ function MiniDigitalIDCard({ company, plan }: { company: any; plan: string }) {
 function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; reviews: any[] }) {
   const [activeTab, setActiveTab] = useState('about');
   const [shareOpen, setShareOpen] = useState(false);
+
+  const scrollToReview = () => {
+    setActiveTab('reviews');
+    setTimeout(() => {
+      const elem = document.getElementById('review-form-anchor');
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
   const { user } = useAuth();
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
   const visitorNameVal = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
@@ -1007,13 +1035,19 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               {company.name}
               {renderVerificationBadge(company, 16)}
             </h1>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-              <span className="text-blue-600 font-semibold bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/50">{company.category}</span> · 
+            <div className="text-xs text-slate-500 mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="text-blue-600 font-semibold bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/50">{company.category}</span>
+              <span className="text-slate-400">·</span>
               <span className="flex items-center gap-1"><MapPin size={10} className="text-slate-400" />{company.district}</span>
-              {company.rating > 0 && (
-                <span className="flex items-center gap-0.5"><Star size={10} className="fill-amber-400 text-amber-400" />{company.rating}</span>
-              )}
-            </p>
+              <span className="text-slate-400">·</span>
+              <button 
+                onClick={scrollToReview}
+                className="flex items-center gap-1 hover:text-amber-500 transition-colors bg-amber-50/80 text-amber-800 border border-amber-100/50 px-2 py-0.5 rounded font-bold"
+              >
+                <Star size={10} className="fill-amber-400 text-amber-400" />
+                {company.averageRating || company.rating || '0'} ({reviews.length} Reviews)
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1024,6 +1058,9 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
           </a>
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'whatsapp_click' })} className="px-4 py-2 rounded-xl text-xs font-bold border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 text-emerald-700 shadow-sm">
             <MessageCircle size={13} className="text-emerald-600" /> WhatsApp Chat
+          </a>
+          <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
+            <MapPin size={13} className="text-slate-500" /> Open in Google Maps
           </a>
           <FollowButton companyId={company.id} />
           <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
@@ -1238,9 +1275,9 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                 ) : (
                   <p className="text-xs text-slate-400 py-4 text-center">No reviews yet. Be the first!</p>
                 )}
-                <div className="pt-4 border-t border-slate-200">
+                <div id="review-form-anchor" className="pt-4 border-t border-slate-200">
                   <h4 className="text-xs font-bold text-slate-900 mb-3">Write a Review</h4>
-                  <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" theme="light" />
+                  <ReviewSubmitForm companyId={company.id} companyName={company.name} reviews={reviews} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" theme="light" />
                 </div>
               </div>
             )}
@@ -1313,6 +1350,17 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
   const [shareOpen, setShareOpen] = useState(false);
   const [reviewType, setReviewType] = useState('company');
   const { user } = useAuth();
+
+  const scrollToReview = () => {
+    setActiveTab('reviews');
+    setTimeout(() => {
+      const elem = document.getElementById('review-form-anchor');
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
   const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
@@ -1456,13 +1504,18 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                 {renderVerificationBadge(company, 18)}
               </h1>
             </div>
-            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-400">
-              <span className={`font-semibold ${currentTheme.accent}`}>{company.category}</span> · 
-              <span className="flex items-center gap-1"><MapPin size={11} className={currentTheme.accent} />{company.district}</span> · 
-              <span className="flex items-center gap-1">
+            <div className="text-xs text-slate-450 mt-1.5 flex items-center flex-wrap gap-2">
+              <span className={`font-semibold ${currentTheme.accent}`}>{company.category}</span>
+              <span className="text-slate-600">·</span>
+              <span className="flex items-center gap-1"><MapPin size={11} className={currentTheme.accent} />{company.district}</span>
+              <span className="text-slate-600">·</span>
+              <button 
+                onClick={scrollToReview}
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/5 border border-white/10 hover:border-amber-400/30 hover:text-amber-400 transition-all font-bold text-slate-200"
+              >
                 <Star size={11} className="fill-amber-400 text-amber-400" />
-                {company.rating} ({reviews.length} reviews)
-              </span>
+                {company.averageRating || company.rating || '0'} ({reviews.length} reviews)
+              </button>
             </div>
           </div>
         </div>
@@ -1480,6 +1533,9 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
               <Sparkles size={13} /> {company.customCtaLabel}
             </a>
           )}
+          <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors">
+            <MapPin size={13} className={currentTheme.accent} /> Open in Google Maps
+          </a>
           <FollowButton companyId={company.id} />
           <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 hover:bg-white/5 transition-colors flex items-center gap-1.5">
             <Share2 size={13} /> Share
@@ -1750,9 +1806,9 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                 {activeTab === 'reviews' && (
                   <div className="space-y-4">
                     {/* Write Review Form */}
-                    <div className={`${currentTheme.card} rounded-2xl p-5`}>
+                    <div id="review-form-anchor" className={`${currentTheme.card} rounded-2xl p-5`}>
                       <h3 className="text-xs font-bold text-white mb-3">Submit a Verified Review</h3>
-                      <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle={currentTheme.btn} />
+                      <ReviewSubmitForm companyId={company.id} companyName={company.name} reviews={reviews} btnStyle={currentTheme.btn} />
                     </div>
 
                     {reviews.map(review => (
@@ -1873,6 +1929,17 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
   const [activeTab, setActiveTab] = useState('overview');
   const [shareOpen, setShareOpen] = useState(false);
   const { user } = useAuth();
+
+  const scrollToReview = () => {
+    setActiveTab('testimonials');
+    setTimeout(() => {
+      const elem = document.getElementById('review-form-anchor');
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
   const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
@@ -2291,10 +2358,13 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-sm text-slate-400">
               <span className={`font-black uppercase tracking-widest text-xs px-2.5 py-1 rounded bg-white/[0.03] border border-white/5 ${currentTheme.accent}`}>{company.category}</span>
               <span className="flex items-center gap-1.5"><MapPin size={14} className={currentTheme.accent} />{company.district}, {company.state}</span>
-              <span className="flex items-center gap-1 font-bold text-white bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              <button 
+                onClick={scrollToReview}
+                className="flex items-center gap-1 font-bold text-white bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded border border-amber-500/20 hover:border-amber-400/40 hover:text-amber-400 transition-all text-xs"
+              >
                 <Star size={13} className="fill-amber-400 text-amber-400" />
-                {company.rating} <span className="text-slate-400 font-normal">({reviews.length} reviews)</span>
-              </span>
+                {company.averageRating || company.rating || '0'} <span className="text-slate-400 font-normal">({reviews.length} reviews)</span>
+              </button>
             </div>
           </div>
         </div>
@@ -2715,12 +2785,23 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
 
             {activeTab === 'testimonials' && (
               <div className="space-y-4">
-                <div className={`${currentTheme.card} rounded-[2rem] p-7 space-y-6`}>
+                <div id="review-form-anchor" className={`${currentTheme.card} rounded-[2rem] p-7 space-y-6`}>
                   <div className="border-b border-white/5 pb-4">
                     <h3 className="text-base font-black text-white flex items-center gap-2">
                       <Quote size={18} className={currentTheme.accent} /> Testimonials & Client Endorsements
                     </h3>
                     <p className="text-xs text-slate-400 mt-1">Verified reviews submitted by clients and partners.</p>
+                  </div>
+
+                  {/* Reviews Form Container */}
+                  <div className="bg-white/[0.01] rounded-2xl border border-white/[0.04] p-5 mb-6">
+                    <ReviewSubmitForm 
+                      companyId={company.id} 
+                      companyName={company.name} 
+                      reviews={reviews} 
+                      btnStyle={currentTheme.button || 'bg-white/10 text-white'} 
+                      theme="dark" 
+                    />
                   </div>
 
                   <div className="space-y-4">
@@ -2837,6 +2918,17 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
   const [copiedCoupon, setCopiedCoupon] = useState(false);
   const [reviewType, setReviewType] = useState('company');
   const { user } = useAuth();
+
+  const scrollToReview = () => {
+    setActiveTab('reviews');
+    setTimeout(() => {
+      const elem = document.getElementById('review-form-anchor');
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
   const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
@@ -3326,10 +3418,13 @@ Please confirm my booking request. Thanks!`;
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm text-slate-400">
               <span className={`font-bold uppercase tracking-wider text-xs ${currentTheme.accent}`}>{company.category}</span>
               <span className="flex items-center gap-1"><MapPin size={13} className={currentTheme.accent} />{company.district}, Tamil Nadu</span>
-              <span className="flex items-center gap-1 font-bold text-white">
+              <button 
+                onClick={scrollToReview}
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/5 border border-white/10 hover:border-amber-400/30 hover:text-amber-400 transition-all font-bold text-white text-xs"
+              >
                 <Star size={13} className="fill-amber-400 text-amber-400" />
-                {company.rating} <span className="text-slate-500">({reviews.length} feedback)</span>
-              </span>
+                {company.averageRating || company.rating || '0'} <span className="text-slate-500 font-normal">({reviews.length} feedback)</span>
+              </button>
             </div>
           </div>
         </div>
@@ -3356,6 +3451,9 @@ Please confirm my booking request. Thanks!`;
                   <ExternalLink size={13} className={currentTheme.accent} /> {company.customCtaLabel}
                 </a>
               )}
+              <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs border border-white/10 hover:bg-white/5 transition-colors">
+                <MapPin size={13} className={currentTheme.accent} /> Open in Google Maps
+              </a>
               <FollowButton companyId={company.id} />
               <button onClick={() => setShareOpen(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs border border-white/10 hover:bg-white/5 transition-colors">
                 <Share2 size={13} /> Share
@@ -3554,21 +3652,17 @@ Please confirm my booking request. Thanks!`;
                 {activeTab === 'reviews' && (
                   <div className="space-y-4">
                     {/* Reviews Form */}
-                    <div className="bg-white/[0.01] rounded-3xl border border-white/[0.06] p-6 space-y-3 bg-gradient-to-r from-white/[0.02] to-transparent">
-                      <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <div id="review-form-anchor" className="bg-white/[0.01] rounded-3xl border border-white/[0.06] p-6 space-y-3 bg-gradient-to-r from-white/[0.02] to-transparent">
+                      <h3 className="text-xs font-bold text-white flex items-center gap-1.5 mb-2">
                         <UserCheck size={14} className={currentTheme.accent} /> Submit Verified Client Feedback
                       </h3>
-                      <div className="grid grid-cols-3 gap-2">
-                        {['Customer Feedback', 'Staff Review', 'General Service'].map(label => (
-                          <button key={label} onClick={() => setReviewType(label.toLowerCase())} className={`py-1.5 rounded-xl text-[10px] font-bold border transition-colors ${reviewType === label.toLowerCase() ? 'bg-white/10 border-white/30 text-white' : 'border-white/5 text-slate-400 bg-white/[0.01]'}`}>
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      <textarea rows={2} placeholder="Share your experience with this business..." className="w-full bg-slate-950 border border-white/10 p-3 text-xs rounded-xl text-white resize-none" />
-                      <button className={`bg-gradient-to-r ${currentTheme.gradient} text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-lg transition-transform hover:-translate-y-0.5`}>
-                        Submit verified review
-                      </button>
+                      <ReviewSubmitForm 
+                        companyId={company.id} 
+                        companyName={company.name} 
+                        reviews={reviews} 
+                        btnStyle={currentTheme.button || 'bg-white/10 text-white'} 
+                        theme="dark" 
+                      />
                     </div>
 
                     {reviews.map(review => (

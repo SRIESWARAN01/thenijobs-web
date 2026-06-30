@@ -179,6 +179,22 @@ export const submitBusinessReview = onCall(COMMON_OPTS, async (request) => {
     throw new HttpsError('permission-denied', 'You cannot review your own company');
   }
 
+  const cleanComment = comment?.trim() || '';
+  if (cleanComment) {
+    // Check for repetitive characters (e.g., "aaaaaaa")
+    if (/(.)\1{4,}/.test(cleanComment)) {
+      throw new HttpsError('invalid-argument', 'Review comment contains spam or repetitive characters.');
+    }
+    // Check for spam URLs/links
+    if (/https?:\/\/[^\s]+/.test(cleanComment) || /www\.[^\s]+/.test(cleanComment)) {
+      throw new HttpsError('invalid-argument', 'Links/URLs are not allowed in reviews.');
+    }
+    // Check minimum length if comment is provided
+    if (cleanComment.length < 5) {
+      throw new HttpsError('invalid-argument', 'Review comment is too short (min 5 characters).');
+    }
+  }
+
   // Check for existing review (one per user per company)
   const existingReview = await db.collection('reviews')
     .where('companyId', '==', companyId)
@@ -187,7 +203,31 @@ export const submitBusinessReview = onCall(COMMON_OPTS, async (request) => {
     .get();
 
   if (!existingReview.empty) {
-    throw new HttpsError('already-exists', 'You have already reviewed this company');
+    const existingDoc = existingReview.docs[0];
+    await existingDoc.ref.update({
+      rating,
+      comment: cleanComment,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    // Update company aggregate rating
+    const allReviews = await db.collection('reviews')
+      .where('companyId', '==', companyId)
+      .where('status', '==', 'approved')
+      .get();
+
+    let totalRating = 0;
+    allReviews.forEach((d) => {
+      totalRating += d.data().rating || 0;
+    });
+    const avgRating = totalRating / allReviews.size;
+
+    await db.collection('companies').doc(companyId).update({
+      averageRating: Math.round(avgRating * 10) / 10,
+      totalReviews: allReviews.size,
+    });
+
+    return { success: true, reviewId: existingDoc.id, updated: true };
   }
 
   const reviewData = {
@@ -196,7 +236,7 @@ export const submitBusinessReview = onCall(COMMON_OPTS, async (request) => {
     userName: userName || 'Anonymous',
     userPhoto: userPhoto || null,
     rating,
-    comment: comment?.trim() || '',
+    comment: cleanComment,
     status: 'approved' as const, // instant publish
     replyText: null,
     isActive: true,
@@ -212,8 +252,8 @@ export const submitBusinessReview = onCall(COMMON_OPTS, async (request) => {
     .get();
 
   let totalRating = 0;
-  allReviews.forEach((doc) => {
-    totalRating += doc.data().rating || 0;
+  allReviews.forEach((d) => {
+    totalRating += d.data().rating || 0;
   });
   const avgRating = totalRating / allReviews.size;
 

@@ -157,6 +157,21 @@ exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) 
     if (companyDoc.data()?.ownerId === request.auth.uid) {
         throw new https_1.HttpsError('permission-denied', 'You cannot review your own company');
     }
+    const cleanComment = comment?.trim() || '';
+    if (cleanComment) {
+        // Check for repetitive characters (e.g., "aaaaaaa")
+        if (/(.)\1{4,}/.test(cleanComment)) {
+            throw new https_1.HttpsError('invalid-argument', 'Review comment contains spam or repetitive characters.');
+        }
+        // Check for spam URLs/links
+        if (/https?:\/\/[^\s]+/.test(cleanComment) || /www\.[^\s]+/.test(cleanComment)) {
+            throw new https_1.HttpsError('invalid-argument', 'Links/URLs are not allowed in reviews.');
+        }
+        // Check minimum length if comment is provided
+        if (cleanComment.length < 5) {
+            throw new https_1.HttpsError('invalid-argument', 'Review comment is too short (min 5 characters).');
+        }
+    }
     // Check for existing review (one per user per company)
     const existingReview = await config_1.db.collection('reviews')
         .where('companyId', '==', companyId)
@@ -164,7 +179,27 @@ exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) 
         .limit(1)
         .get();
     if (!existingReview.empty) {
-        throw new https_1.HttpsError('already-exists', 'You have already reviewed this company');
+        const existingDoc = existingReview.docs[0];
+        await existingDoc.ref.update({
+            rating,
+            comment: cleanComment,
+            updatedAt: firestore_1.FieldValue.serverTimestamp(),
+        });
+        // Update company aggregate rating
+        const allReviews = await config_1.db.collection('reviews')
+            .where('companyId', '==', companyId)
+            .where('status', '==', 'approved')
+            .get();
+        let totalRating = 0;
+        allReviews.forEach((d) => {
+            totalRating += d.data().rating || 0;
+        });
+        const avgRating = totalRating / allReviews.size;
+        await config_1.db.collection('companies').doc(companyId).update({
+            averageRating: Math.round(avgRating * 10) / 10,
+            totalReviews: allReviews.size,
+        });
+        return { success: true, reviewId: existingDoc.id, updated: true };
     }
     const reviewData = {
         companyId,
@@ -172,7 +207,7 @@ exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) 
         userName: userName || 'Anonymous',
         userPhoto: userPhoto || null,
         rating,
-        comment: comment?.trim() || '',
+        comment: cleanComment,
         status: 'approved', // instant publish
         replyText: null,
         isActive: true,
@@ -185,8 +220,8 @@ exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) 
         .where('status', '==', 'approved')
         .get();
     let totalRating = 0;
-    allReviews.forEach((doc) => {
-        totalRating += doc.data().rating || 0;
+    allReviews.forEach((d) => {
+        totalRating += d.data().rating || 0;
     });
     const avgRating = totalRating / allReviews.size;
     await config_1.db.collection('companies').doc(companyId).update({

@@ -10,7 +10,7 @@ import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
 import ShareModal from '@/components/ui/ShareModal';
 import {
-  MapPin, Phone, Mail, Globe, MessageCircle, Share2, Heart,
+  MapPin, Phone, Mail, Globe, MessageCircle, Share2, Heart, X,
   Star, BadgeCheck, Clock, Users, Eye, TrendingUp, ChevronRight,
   Briefcase, Navigation, Building2,
   ShieldCheck, FileCheck, Award, ExternalLink,
@@ -34,6 +34,26 @@ import {
   getCompanyPortfolioUrl,
   normalizeExternalUrl,
 } from '@/lib/companyPortfolio';
+
+function getCleanCallUrl(num: string | undefined | null): string {
+  const clean = String(num || '').replace(/[^\d+]/g, '');
+  return `tel:${clean}`;
+}
+
+function getCleanWhatsAppUrl(num: string | undefined | null, text: string): string {
+  const clean = String(num || '').replace(/\D/g, '');
+  const formatted = clean.length === 10 ? `91${clean}` : clean;
+  return `https://wa.me/${formatted}?text=${encodeURIComponent(text)}`;
+}
+
+function getGoogleMapsUrl(company: any): string {
+  if (company.googleMapsUrl) return company.googleMapsUrl;
+  if (company.mapsUrl) return company.mapsUrl;
+  if (company.mapUrl) return company.mapUrl;
+  const query = `${company.name || ''} ${company.address || ''} ${company.district || ''}`.trim();
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
 
 
 // ──────────────────────────────────────────────────────────────────
@@ -364,24 +384,27 @@ function ProductLikeButton({ productId, companyId, likeCount = 0, isLiked, accen
 // ──────────────────────────────────────────────────────────────────
 // REVIEW SUBMIT FORM
 // ──────────────────────────────────────────────────────────────────
-function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400', btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500' }: {
-  companyId: string; companyName: string; accentColor?: string; btnStyle?: string;
+function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400', btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500', theme = 'dark' }: {
+  companyId: string; companyName: string; accentColor?: string; btnStyle?: string; theme?: 'light' | 'dark';
 }) {
   const { user } = useAuth();
   const [rating, setRating] = useState(5);
+  const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!user?.uid) {
-      alert('Please login to submit a review.');
+      setError('Please login to submit a review.');
       return;
     }
     if (!content.trim()) {
-      alert('Please write your review.');
+      setError('Please write your review.');
       return;
     }
     setSubmitting(true);
@@ -406,7 +429,7 @@ function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400
       setRating(5);
     } catch (err) {
       console.error('Review submit error:', err);
-      alert('Failed to submit review. Please try again.');
+      setError('Failed to submit review. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -414,47 +437,108 @@ function ReviewSubmitForm({ companyId, companyName, accentColor = 'text-cyan-400
 
   if (submitted) {
     return (
-      <div className="text-center py-6 space-y-2">
-        <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-          <Check size={20} className="text-emerald-400" />
+      <div className={`text-center py-8 px-4 rounded-2xl border ${theme === 'light' ? 'bg-emerald-50/50 border-emerald-100 text-slate-800' : 'bg-emerald-950/15 border-emerald-500/20 text-white'} space-y-4 animate-fadeIn`}>
+        <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto shadow-sm">
+          <Check size={26} className="text-emerald-500" />
         </div>
-        <p className="text-xs text-emerald-400 font-bold">Review submitted successfully!</p>
-        <p className="text-[10px] text-slate-500">Your review will appear after admin approval.</p>
+        <div className="space-y-1">
+          <p className="text-sm font-black text-emerald-500">Review Submitted Successfully!</p>
+          <p className={`text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>Your review will appear on the platform after administrator approval.</p>
+        </div>
+        <button
+          onClick={() => setSubmitted(false)}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${theme === 'light' ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700' : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300'}`}
+        >
+          Write Another Review
+        </button>
       </div>
     );
   }
 
+  const isLight = theme === 'light';
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-2 animate-slideDown ${isLight ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+          <div className="flex items-center gap-2">
+            <ShieldAlert size={16} className="shrink-0" />
+            <span className="text-xs font-semibold">{error}</span>
+          </div>
+          <button type="button" onClick={() => setError(null)} className="opacity-60 hover:opacity-100 transition-opacity">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <div>
-        <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">Your Rating</label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map(n => (
-            <button key={n} type="button" onClick={() => setRating(n)} className="transition-transform hover:scale-110">
-              <Star size={20} className={n <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
-            </button>
-          ))}
+        <label className={`text-[10px] font-black uppercase tracking-wider block mb-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+          Your Rating
+        </label>
+        <div className="flex gap-1.5">
+          {[1, 2, 3, 4, 5].map(n => {
+            const active = n <= (hoveredRating ?? rating);
+            return (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setRating(n)}
+                onMouseEnter={() => setHoveredRating(n)}
+                onMouseLeave={() => setHoveredRating(null)}
+                className="transition-all hover:scale-125 focus:outline-none"
+              >
+                <Star
+                  size={24}
+                  className={`transition-colors duration-150 ${
+                    active
+                      ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.35)]'
+                      : isLight
+                        ? 'text-slate-300 fill-slate-50'
+                        : 'text-slate-700 fill-slate-900/40'
+                  }`}
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
-      <input
-        type="text"
-        placeholder="Review title (optional)"
-        value={title}
-        onChange={e => setTitle(e.target.value)}
-        className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none"
-      />
-      <textarea
-        placeholder="Write your review..."
-        value={content}
-        onChange={e => setContent(e.target.value)}
-        rows={3}
-        required
-        className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none resize-none"
-      />
+
+      <div className="space-y-3">
+        <input
+          type="text"
+          placeholder="Review title (optional)"
+          value={title}
+          onChange={e => {
+            setTitle(e.target.value);
+            if (error) setError(null);
+          }}
+          className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none focus:ring-2 transition-all ${
+            isLight
+              ? 'bg-slate-100 border-slate-200 focus:border-slate-400 focus:bg-white text-slate-900 placeholder:text-slate-500 focus:ring-slate-500/10'
+              : 'bg-white/[0.02] border-white/[0.08] focus:border-white/20 focus:bg-white/[0.04] text-white placeholder:text-slate-400 focus:ring-white/5'
+          }`}
+        />
+        <textarea
+          placeholder="Share your experience with this business..."
+          value={content}
+          onChange={e => {
+            setContent(e.target.value);
+            if (error) setError(null);
+          }}
+          rows={3}
+          required
+          className={`w-full px-3.5 py-2.5 text-xs rounded-xl border outline-none focus:ring-2 transition-all resize-none ${
+            isLight
+              ? 'bg-slate-100 border-slate-200 focus:border-slate-400 focus:bg-white text-slate-900 placeholder:text-slate-500 focus:ring-slate-500/10'
+              : 'bg-white/[0.02] border-white/[0.08] focus:border-white/20 focus:bg-white/[0.04] text-white placeholder:text-slate-450 focus:ring-white/5'
+          }`}
+        />
+      </div>
+
       <button
         type="submit"
         disabled={submitting}
-        className={`w-full py-2.5 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-40 ${btnStyle}`}
+        className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all hover:brightness-105 active:scale-[0.98] focus:ring-2 focus:ring-purple-500/20 focus:outline-none flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer shadow-md ${btnStyle}`}
       >
         {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
         {submitting ? 'Submitting...' : 'Submit Review'}
@@ -796,7 +880,7 @@ function MiniDigitalIDCard({ company, plan }: { company: any; plan: string }) {
   }
 
   return (
-    <Link href={`/id/company/${encodeURIComponent(company.slug)}`} className="block group">
+    <Link href={`/id/company/${encodeURIComponent(company.slug || company.id)}`} className="block group">
       <div className={`w-full rounded-2xl border p-4 flex flex-col justify-between min-h-[190px] relative overflow-hidden transition-all duration-300 hover:scale-[1.02] ${cardBg} ${borderStyle}`}>
         {/* Top row */}
         <div className="flex items-center justify-between z-10">
@@ -853,6 +937,15 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
   const [shareOpen, setShareOpen] = useState(false);
   const { user } = useAuth();
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
+  const visitorNameVal = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
+  const whatsappText = formatWhatsAppMessage(company.whatsappMessageTemplate, {
+    visitorName: visitorNameVal,
+    companyName: company.name || 'Verified Business',
+    portfolioLink: getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined),
+    productServiceName: '',
+    enquiryMessage: `Hello, I visited your profile on THENIJOBS and would like to connect.`
+  });
+  const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
   const handleProductWhatsApp = (productName: string, productId?: string) => {
     const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
@@ -871,7 +964,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
         targetName: productName
       });
     }
-    window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(getCleanWhatsAppUrl(company.whatsapp || company.phone, text), '_blank');
   };
 
   const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
@@ -926,6 +1019,12 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2 mb-6">
+          <a href={getCleanCallUrl(company.phone)} onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'call_click' })} className="px-4 py-2 rounded-xl text-xs font-bold border border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center gap-1.5 text-blue-700 shadow-sm">
+            <Phone size={13} className="text-blue-600" /> Call Now
+          </a>
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'whatsapp_click' })} className="px-4 py-2 rounded-xl text-xs font-bold border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 text-emerald-700 shadow-sm">
+            <MessageCircle size={13} className="text-emerald-600" /> WhatsApp Chat
+          </a>
           <FollowButton companyId={company.id} />
           <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
             <Share2 size={13} className="text-slate-500" /> Share
@@ -979,7 +1078,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 mb-2">About the Company</h3>
-                  <p className="text-xs text-slate-655 leading-relaxed">{company.description}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed">{company.description}</p>
                 </div>
                 {company.companyServicesTags?.length > 0 && (
                   <div className="pt-2">
@@ -1130,7 +1229,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                         {review.ownerReply && (
                           <div className="mt-2 ml-3 pl-3 border-l-2 border-slate-200">
                             <p className="text-[10px] text-slate-500 font-bold">Owner Reply:</p>
-                            <p className="text-[10px] text-slate-655">{review.ownerReply}</p>
+                            <p className="text-[10px] text-slate-600">{review.ownerReply}</p>
                           </div>
                         )}
                       </div>
@@ -1141,7 +1240,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                 )}
                 <div className="pt-4 border-t border-slate-200">
                   <h4 className="text-xs font-bold text-slate-900 mb-3">Write a Review</h4>
-                  <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" />
+                  <ReviewSubmitForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" theme="light" />
                 </div>
               </div>
             )}
@@ -1152,20 +1251,24 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Contact Info</h3>
               <div className="space-y-3 text-xs text-slate-700">
-                <div className="flex items-center gap-2">
+                <a href={getCleanCallUrl(company.phone)} className="flex items-center gap-2 hover:text-blue-600 transition-colors">
                   <Phone size={13} className="text-slate-400" />
                   <span>{company.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
+                </a>
+                <a href={company.email ? `mailto:${company.email}` : undefined} className="flex items-center gap-2 hover:text-blue-600 transition-colors truncate">
                   <Mail size={13} className="text-slate-400" />
                   <span className="truncate">{company.email}</span>
-                </div>
+                </a>
                 {company.website && (
-                  <div className="flex items-center gap-2">
+                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-blue-600 transition-colors truncate">
                     <Globe size={13} className="text-slate-400" />
                     <span className="truncate">{company.website}</span>
-                  </div>
+                  </a>
                 )}
+                <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 pt-2 border-t border-slate-100 hover:text-blue-600 transition-colors">
+                  <MapPin size={13} className="text-slate-400 shrink-0 mt-0.5" />
+                  <span className="leading-relaxed text-slate-500">{company.address}</span>
+                </a>
               </div>
             </div>
 
@@ -1230,7 +1333,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
         targetName: productName
       });
     }
-    window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(getCleanWhatsAppUrl(company.whatsapp || company.phone, text), '_blank');
   };
 
   const activeTheme = company.customTheme && ['corporate_blue', 'green_business', 'orange_startup', 'purple_modern', 'dark_classic'].includes(company.customTheme)
@@ -1311,7 +1414,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
     productServiceName: 'General Consultation',
     enquiryMessage: 'I would like to inquire about your business offerings.'
   }));
-  const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
+  const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
   const tabs = [
     { id: 'about', label: 'About' },
@@ -1366,7 +1469,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
 
         {/* Quick action buttons */}
         <div className="flex flex-wrap gap-2 mb-6">
-          <a href={`tel:${company.phone}`} onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'call_click' })} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-colors ${currentTheme.btn}`}>
+          <a href={getCleanCallUrl(company.phone)} onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'call_click' })} className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-colors ${currentTheme.btn}`}>
             <Phone size={13} /> Call Now
           </a>
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'whatsapp_click' })} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}>
@@ -1682,7 +1785,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
             <div className={`${currentTheme.card} rounded-2xl p-5 space-y-4`}>
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">Office Details</h3>
               <div className="space-y-3 text-xs text-slate-350">
-                <a href={`tel:${company.phone}`} className="flex items-center gap-2 hover:text-white transition-colors">
+                <a href={getCleanCallUrl(company.phone)} className="flex items-center gap-2 hover:text-white transition-colors">
                   <Phone size={12} className={currentTheme.accent} />
                   <span>{company.phone}</span>
                 </a>
@@ -1696,10 +1799,10 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                     <span>Website Listing</span>
                   </a>
                 )}
-                <div className="flex items-start gap-2 pt-2 border-t border-white/5">
+                <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 pt-2 border-t border-white/5 hover:text-white transition-colors">
                   <MapPin size={12} className={`${currentTheme.accent} shrink-0 mt-0.5`} />
                   <span>{company.address}</span>
-                </div>
+                </a>
               </div>
             </div>
 
@@ -2047,7 +2150,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
         targetName: productName
       });
     }
-    window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(getCleanWhatsAppUrl(company.whatsapp || company.phone, text), '_blank');
   };
 
   // Mock Blog/News Data (or read from company if exists)
@@ -2103,7 +2206,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
     productServiceName: 'General Consultation',
     enquiryMessage: 'I would like to inquire about your business offerings.'
   }));
-  const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
+  const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
   return (
     <main id="company-profile-content" className={`min-h-screen ${currentTheme.bg} text-white overflow-x-hidden relative font-outfit pb-16`}>
@@ -2197,8 +2300,8 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
         </div>
 
         {/* Quick Contact Ribbon */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          <a href={`tel:${company.phone}`} className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider text-center transition-all hover:scale-[1.03] ${currentTheme.button}`}>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+          <a href={getCleanCallUrl(company.phone)} className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider text-center transition-all hover:scale-[1.03] ${currentTheme.button}`}>
             <Phone size={14} /> Call Provider
           </a>
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider text-white text-center transition-all hover:scale-[1.03]" style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}>
@@ -2212,6 +2315,9 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
               <Globe size={14} /> Visit Website
             </a>
           )}
+          <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-extrabold uppercase tracking-wider bg-white/[0.03] border border-white/10 hover:bg-white/[0.08] text-center transition-all hover:scale-[1.03]">
+            <MapPin size={14} className={currentTheme.accent} /> Maps Location
+          </a>
         </div>
 
         {/* Follow, Share & Brochure Actions */}
@@ -3086,7 +3192,7 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
     productServiceName: 'General Consultation',
     enquiryMessage: 'I would like to inquire about your business offerings.'
   }));
-  const whatsappUrl = `https://wa.me/${company.whatsapp}?text=${whatsappText}`;
+  const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
   // WhatsApp helper for specific products
   const handleProductWhatsApp = (productName: string, productId?: string) => {
@@ -3106,7 +3212,7 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
         targetName: productName
       });
     }
-    window.open(`https://wa.me/${company.whatsapp || company.phone}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(getCleanWhatsAppUrl(company.whatsapp || company.phone, text), '_blank');
   };
 
   // WhatsApp helper for service booking
@@ -3125,7 +3231,7 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
 - Notes: ${bookingNotes || 'None'}
 
 Please confirm my booking request. Thanks!`;
-    window.open(`https://wa.me/${company.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(getCleanWhatsAppUrl(company.whatsapp, msg), '_blank');
     setBookingSuccess(true);
   };
 
@@ -3239,7 +3345,7 @@ Please confirm my booking request. Thanks!`;
               <p className="text-xs text-slate-400 mt-1">This luxury dynamic site generates higher customer trust and is highly visible on our search loops.</p>
             </div>
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
-              <a href={`tel:${company.phone}`} onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'call_click' })} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-transform hover:scale-105 active:scale-95 ${currentTheme.button}`}>
+              <a href={getCleanCallUrl(company.phone)} onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'call_click' })} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs transition-transform hover:scale-105 active:scale-95 ${currentTheme.button}`}>
                 <Phone size={14} /> Contact Now
               </a>
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'whatsapp_click' })} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs text-white hover:opacity-90 transition-opacity" style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}>
@@ -3888,7 +3994,7 @@ Please confirm my booking request. Thanks!`;
             <div className="bg-white/[0.01] backdrop-blur-md rounded-3xl border border-white/[0.06] p-5 space-y-4">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider border-b border-white/5 pb-2">Business Cards</h3>
               <div className="space-y-3.5 text-xs text-slate-300">
-                <a href={`tel:${company.phone}`} className="flex items-center gap-2 hover:text-white transition-colors">
+                <a href={getCleanCallUrl(company.phone)} className="flex items-center gap-2 hover:text-white transition-colors">
                   <Phone size={13} className={currentTheme.accent} />
                   <span>{company.phone}</span>
                 </a>
@@ -3902,10 +4008,10 @@ Please confirm my booking request. Thanks!`;
                     <span className="truncate">Official Web Listing</span>
                   </a>
                 )}
-                <div className="flex items-start gap-2 pt-3 border-t border-white/5">
+                <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 pt-3 border-t border-white/5 hover:text-white transition-colors">
                   <MapPin size={13} className={`${currentTheme.accent} shrink-0 mt-0.5`} />
                   <span className="leading-relaxed text-slate-400">{company.address}</span>
-                </div>
+                </a>
               </div>
 
               {/* Social Channels */}

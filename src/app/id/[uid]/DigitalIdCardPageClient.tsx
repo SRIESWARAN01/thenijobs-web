@@ -37,6 +37,7 @@ const WhatsAppIcon = () => (
 
 export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
   const [exporting, setExporting] = useState<string | null>(null);
+  const [isFlipped, setIsFlipped] = useState(false);
   const { user: currentUser } = useAuth();
   
   const isAuthorized = useMemo(() => {
@@ -306,6 +307,18 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
             background: #0f172a !important;
           }
         }
+        .card-perspective {
+          perspective: 1000px;
+          -webkit-perspective: 1000px;
+        }
+        .card-transform-3d {
+          transform-style: preserve-3d;
+          -webkit-transform-style: preserve-3d;
+        }
+        .card-backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
       `}</style>
 
       <div className="mx-auto max-w-5xl space-y-8">
@@ -321,7 +334,221 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
           </p>
         </header>
 
-        <div id="id-card-print-area" className="grid gap-8 lg:grid-cols-2 justify-center">
+
+        {/* Interactive Screen 3D Flip Card Preview (Hidden on Print) */}
+        <div className="no-print flex flex-col items-center gap-6">
+          <div 
+            className="w-full max-w-[460px] min-h-[290px] card-perspective cursor-pointer"
+            onClick={() => setIsFlipped(!isFlipped)}
+          >
+            <div className={`relative w-full min-h-[290px] transition-transform duration-700 card-transform-3d ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+              
+              {/* Front Side */}
+              <div className="absolute inset-0 w-full h-full card-backface-hidden">
+                <div className="w-full h-full min-h-[290px] rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#0e1224] via-[#111832] to-[#1e2a4a] shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-emerald-500/30 text-left font-sans">
+                  {/* Background design elements */}
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none group-hover:bg-emerald-500/10 transition-all" />
+                  <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+                  
+                  {/* Top Bar */}
+                  <div className="flex items-center justify-between z-10">
+                    <div className="flex flex-col border-l-2 border-emerald-500 pl-2">
+                      <span className="text-[10px] tracking-[0.2em] font-black text-emerald-400 uppercase">THENIJOBS</span>
+                      <span className="text-xs font-extrabold tracking-wide text-white uppercase flex items-center gap-1">
+                        VERIFIED PROFESSIONAL
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isPremium && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 border border-amber-400/30 px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                          <Crown size={10} /> Premium
+                        </span>
+                      )}
+                      <span className="rounded-md bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-slate-300 border border-white/5">
+                        ID CARD
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Middle Section: Photo & Info */}
+                  <div className="my-5 flex gap-5 items-center z-10">
+                    {/* Photo Area */}
+                    <div className="relative">
+                      <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
+                        {photoUrl ? (
+                          <img src={photoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-4xl font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
+                            {name.slice(0, 1)}
+                          </div>
+                        )}
+                      </div>
+                      {/* Verified Badge overlay */}
+                      {isVerified && (
+                        <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white rounded-full p-1 border-2 border-[#111832] shadow-md">
+                          <BadgeCheck size={16} className="fill-current text-white" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Seeker Basic Info */}
+                    <div className="min-w-0 flex-1">
+                      <h2 className="font-outfit text-xl font-black text-white leading-tight truncate flex items-center gap-1.5">
+                        {name}
+                      </h2>
+                      <p className="text-xs font-semibold text-emerald-400 truncate mt-0.5">{role}</p>
+                      
+                      {/* Micro NFC Smart chip graphic */}
+                      <div className="mt-3 flex items-center gap-3">
+                        <div className="w-8 h-6 rounded bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 border border-amber-600/30 p-0.5 flex flex-col justify-between overflow-hidden shadow-inner">
+                          <div className="flex justify-between h-full w-full opacity-60">
+                            <div className="border-r border-amber-700/40 w-1/3 h-full"></div>
+                            <div className="border-r border-amber-700/40 w-1/3 h-full"></div>
+                            <div className="w-1/3 h-full"></div>
+                          </div>
+                        </div>
+                        <div className="font-mono text-sm tracking-wider font-bold text-slate-300">
+                          {uniqueId.split('-')[0] + ' - ' + uniqueId.split('-').slice(1).join(' ')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details Footer Grid */}
+                  <div className="grid grid-cols-4 gap-2 border-t border-white/5 pt-3 text-left z-10">
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block font-bold">Location</span>
+                      <span className="text-[11px] font-bold text-white block truncate">{profile.district || 'Tamil Nadu'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block font-bold">Experience</span>
+                      <span className="text-[11px] font-bold text-white block truncate">{experienceText}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block font-bold">Membership</span>
+                      <span className="text-[11px] font-bold text-amber-300 block truncate">{isPremium ? 'Premium' : 'Standard'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 uppercase block font-bold">Valid Till</span>
+                      <span className="text-[11px] font-bold text-white block truncate">{validTill}</span>
+                    </div>
+                  </div>
+
+                  {/* Core Confirmation Note */}
+                  <div className="mt-3 text-[9px] text-slate-400/80 border-t border-white/5 pt-2 text-center italic z-10">
+                    This card confirms that the candidate is a verified member of the THENIJOBS platform.
+                  </div>
+                </div>
+              </div>
+
+              {/* Back Side */}
+              <div className="absolute inset-0 w-full h-full card-backface-hidden [transform:rotateY(180deg)]">
+                <div className="w-full h-full min-h-[290px] rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#0b0c15] via-[#101328] to-[#171c3c] shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-blue-500/30 text-left font-sans">
+                  {/* Background design elements */}
+                  <div className="absolute top-0 right-0 w-36 h-36 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 w-36 h-36 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+                  
+                  {/* Top bar back side */}
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2.5 z-10">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-black tracking-[0.1em] text-emerald-400">QR VERIFICATION</span>
+                    </div>
+                    <span className="text-[9px] font-extrabold text-blue-300 tracking-wider">THENIJOBS.IN</span>
+                  </div>
+
+                  {/* Back Side Grid Content */}
+                  <div className="my-3 grid grid-cols-12 gap-4 items-center z-10">
+                    {/* QR Code Left Column */}
+                    <div className="col-span-5 flex flex-col items-center justify-center text-center">
+                      <div className="relative bg-white p-3 rounded-xl border border-white/10 shadow-lg h-32 w-32 flex items-center justify-center">
+                        <img src={qrUrl} alt="Portfolio QR code" className="w-full h-full object-contain" crossOrigin="anonymous" />
+                      </div>
+                      <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[7.5px] font-bold text-emerald-400 uppercase text-center">
+                        <QrCode size={8} /> SCAN TO VIEW PROFILE
+                      </span>
+                    </div>
+
+                    {/* Lists Right Column */}
+                    <div className="col-span-7 space-y-2.5 text-left leading-tight">
+                      {/* Private Portfolio Features */}
+                      <div>
+                        <h3 className="text-[10px] font-black tracking-wider text-emerald-400 uppercase">
+                          Private Portfolio Features
+                        </h3>
+                        <ul className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[8.5px] text-slate-300 font-semibold">
+                          <li className="flex items-center gap-1">📸 Photo & Summary</li>
+                          <li className="flex items-center gap-1">🛠️ Skills & Expertise</li>
+                          <li className="flex items-center gap-1">💼 Experience Details</li>
+                          <li className="flex items-center gap-1">🎓 Education Details</li>
+                          <li className="flex items-center gap-1">🏆 Certifications</li>
+                          <li className="flex items-center gap-1">📄 Resume Download</li>
+                        </ul>
+                      </div>
+
+                      {/* Premium Benefits */}
+                      <div>
+                        <h3 className="text-[10px] font-black tracking-wider text-amber-400 uppercase">
+                          Premium Benefits
+                        </h3>
+                        <ul className="mt-1 grid grid-cols-1 gap-0.5 text-[8px] text-slate-300 font-semibold">
+                          <li className="flex items-center gap-1 text-[8px]">✨ Verified Candidate QR Verification</li>
+                          <li className="flex items-center gap-1 text-[8px]">✨ Private Digital Portfolio Resume Download</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Privacy Protection Callout */}
+                  <div className="rounded-xl bg-white/[0.02] border border-white/5 p-2 text-left z-10">
+                    <h4 className="text-[9px] font-black tracking-wide text-blue-300 uppercase flex items-center gap-1">
+                      <Lock size={10} className="text-blue-300" /> Privacy Protection
+                    </h4>
+                    <p className="mt-0.5 text-[8px] text-slate-400 leading-normal">
+                      Portfolio is hidden from search engines. Accessible only via QR or direct private link.
+                    </p>
+                  </div>
+
+                  {/* Footer Brand Info */}
+                  <div className="mt-3 border-t border-white/5 pt-2 flex items-center justify-between text-[8px] text-slate-400/80 z-10 font-bold">
+                    <div>
+                      <span className="text-slate-300 font-extrabold uppercase">THENIJOBS</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span>thenijobs.in</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Toggle buttons */}
+          <div className="flex gap-3 bg-white/[0.02] border border-white/10 rounded-2xl p-1 shadow-inner">
+            <button
+              onClick={() => setIsFlipped(false)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-wider ${
+                !isFlipped
+                  ? 'bg-emerald-600/90 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              View Front
+            </button>
+            <button
+              onClick={() => setIsFlipped(true)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-wider ${
+                isFlipped
+                  ? 'bg-emerald-600/90 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              View Back
+            </button>
+          </div>
+        </div>
+
+        <div id="id-card-print-area" className="hidden print:grid lg:grid lg:opacity-0 lg:absolute lg:-left-[9999px] lg:top-0 gap-8 justify-center">
           {/* Card Front */}
           <section id="id-card-front" className="id-card-section w-full max-w-[460px] min-h-[290px] rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#0e1224] via-[#111832] to-[#1e2a4a] shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-emerald-500/30">
             {/* Background design elements */}

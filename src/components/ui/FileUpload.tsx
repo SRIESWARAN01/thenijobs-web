@@ -17,6 +17,7 @@ import * as Progress from '@radix-ui/react-progress';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
+
 export interface FileUploadProps {
   onUpload: (file: File) => void;
   accept?: string;

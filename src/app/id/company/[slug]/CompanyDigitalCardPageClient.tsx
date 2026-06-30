@@ -141,7 +141,7 @@ export default function CompanyDigitalCardPageClient({
   const isPremium = plan === 'premium' || plan === 'enterprise';
   const isVerified = plan !== 'free' || company.verificationStatus === 'verified';
   
-  const uniqueId = `TNI-BUS-${company.id.slice(0, 8).toUpperCase()}`;
+  const uniqueId = `TNI-BUS-${(company.id || company.uid || 'unknown').slice(0, 8).toUpperCase()}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(profileUrl)}`;
 
   // Premium themes config for visiting card background
@@ -358,6 +358,18 @@ export default function CompanyDigitalCardPageClient({
             background: #0f172a !important;
           }
         }
+        .card-perspective {
+          perspective: 1000px;
+          -webkit-perspective: 1000px;
+        }
+        .card-transform-3d {
+          transform-style: preserve-3d;
+          -webkit-transform-style: preserve-3d;
+        }
+        .card-backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
       `}</style>
 
       <div className="mx-auto max-w-5xl space-y-8">
@@ -396,13 +408,13 @@ export default function CompanyDigitalCardPageClient({
         {/* Interactive Screen 3D Flip Card Preview (Hidden on Print) */}
         <div className="no-print flex flex-col items-center gap-6">
           <div 
-            className="w-full max-w-[460px] min-h-[290px] [perspective:1000px] cursor-pointer"
+            className="w-full max-w-[460px] min-h-[290px] card-perspective cursor-pointer"
             onClick={() => setIsFlipped(!isFlipped)}
           >
-            <div className={`relative w-full min-h-[290px] transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+            <div className={`relative w-full min-h-[290px] transition-transform duration-700 card-transform-3d ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
               
               {/* Front Side */}
-              <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [webkit-backface-visibility:hidden]">
+              <div className="absolute inset-0 w-full h-full card-backface-hidden">
                 <div
                   className={`w-full h-full min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group font-outfit ${
                     plan === 'enterprise' || plan === 'premium'
@@ -506,7 +518,7 @@ export default function CompanyDigitalCardPageClient({
               </div>
 
               {/* Back Side */}
-              <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [webkit-backface-visibility:hidden] [transform:rotateY(180deg)]">
+              <div className="absolute inset-0 w-full h-full card-backface-hidden [transform:rotateY(180deg)]">
                 <div
                   className={`w-full h-full min-h-[290px] rounded-[2rem] border shadow-2xl p-6 flex flex-col justify-between relative overflow-hidden group font-outfit ${
                     plan === 'enterprise' || plan === 'premium'

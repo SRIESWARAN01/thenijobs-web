@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/seeker/dashboard', '/employer/dashboard', '/profile', '/profile/', '/id', '/id/'],
+        disallow: ['/admin/', '/api/', '/seeker/dashboard', '/employer/dashboard', '/id', '/id/'],
       },
     ],
     sitemap: 'https://thenijobs.com/sitemap.xml',

@@ -105,6 +105,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: name,
       description: defaultDescription,
+      alternates: {
+        canonical: canonicalUrl,
+      },
     };
   } else if (activePlan === 'basic') {
     // Standard (basic): Enhanced SEO (custom seoTitle / seoDescription if available)
@@ -113,6 +116,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title,
       description,
+      alternates: {
+        canonical: canonicalUrl,
+      },
     };
   } else if (activePlan === 'premium') {
     // Premium: Full SEO Optimization (custom title/description, full OpenGraph & Twitter tags)
@@ -128,6 +134,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       keywords,
+      alternates: {
+        canonical: canonicalUrl,
+      },
       openGraph: {
         title: ogTitleVal,
         description: ogDescVal,

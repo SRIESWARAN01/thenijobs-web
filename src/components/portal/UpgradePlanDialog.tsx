@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, Crown, Zap, Check, Loader2, Sparkles, AlertCircle, ArrowRight, Building2 } from 'lucide-react';
 import { useRazorpayCheckout } from '@/hooks/useRazorpayCheckout';
@@ -17,6 +17,7 @@ interface UpgradePlanDialogProps {
   userEmail?: string;
   userPhone?: string;
   onUpgradeComplete?: () => void;
+  initialPlan?: 'basic' | 'premium' | 'enterprise';
 }
 
 const planMeta = {
@@ -59,8 +60,16 @@ export default function UpgradePlanDialog({
   userEmail,
   userPhone,
   onUpgradeComplete,
+  initialPlan,
 }: UpgradePlanDialogProps) {
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'premium' | 'enterprise'>('premium');
+
+  useEffect(() => {
+    if (open && initialPlan) {
+      setSelectedPlan(initialPlan);
+    }
+  }, [open, initialPlan]);
+
   const { initiatePayment, isProcessing, error, success, resetState } = useRazorpayCheckout();
   const { toast } = useToast();
 

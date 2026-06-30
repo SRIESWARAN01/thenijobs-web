@@ -38,6 +38,8 @@ const WhatsAppIcon = () => (
 export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
   const [exporting, setExporting] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
+  const [qrError, setQrError] = useState(false);
   const { user: currentUser } = useAuth();
   
   const isAuthorized = useMemo(() => {
@@ -127,6 +129,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
   const uniqueId = profile.candidateId || `TNI-${uid.slice(0, 8).toUpperCase()}`;
   const isPremium = profile.isPremium !== false; // Display Premium styling
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(portfolioUrl)}`;
+  const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(portfolioUrl)}`;
   
   const downloadPng = async (side: 'front' | 'back') => {
     setExporting(side === 'front' ? 'png-front' : 'png-back');
@@ -375,8 +378,14 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
                     {/* Photo Area */}
                     <div className="relative">
                       <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
-                        {photoUrl ? (
-                          <img src={photoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
+                        {photoUrl && !photoError ? (
+                          <img 
+                            src={photoUrl} 
+                            alt={name} 
+                            className="object-cover w-full h-full rounded-2xl" 
+                            crossOrigin={photoUrl.startsWith('http') ? 'anonymous' : undefined}
+                            onError={() => setPhotoError(true)} 
+                          />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-4xl font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
                             {name.slice(0, 1)}
@@ -461,7 +470,13 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
                     {/* QR Code Left Column */}
                     <div className="col-span-5 flex flex-col items-center justify-center text-center">
                       <div className="relative bg-white p-3 rounded-xl border border-white/10 shadow-lg h-32 w-32 flex items-center justify-center">
-                        <img src={qrUrl} alt="Portfolio QR code" className="w-full h-full object-contain" crossOrigin="anonymous" />
+                        <img 
+                          src={qrError ? backupQrUrl : qrUrl} 
+                          alt="Portfolio QR code" 
+                          className="w-full h-full object-contain" 
+                          crossOrigin="anonymous" 
+                          onError={() => setQrError(true)} 
+                        />
                       </div>
                       <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[7.5px] font-bold text-emerald-400 uppercase text-center">
                         <QrCode size={8} /> SCAN TO VIEW PROFILE
@@ -580,8 +595,14 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
               {/* Photo Area */}
               <div className="relative">
                 <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
-                  {photoUrl ? (
-                    <img src={photoUrl} alt={name} className="object-cover w-full h-full rounded-2xl" crossOrigin="anonymous" />
+                  {photoUrl && !photoError ? (
+                    <img 
+                      src={photoUrl} 
+                      alt={name} 
+                      className="object-cover w-full h-full rounded-2xl" 
+                      crossOrigin={photoUrl.startsWith('http') ? 'anonymous' : undefined}
+                      onError={() => setPhotoError(true)} 
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-4xl font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
                       {name.slice(0, 1)}
@@ -666,7 +687,13 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
               {/* QR Code Left Column */}
               <div className="col-span-5 flex flex-col items-center justify-center text-center">
                 <div className="relative bg-white p-3 rounded-xl border border-white/10 shadow-lg h-32 w-32 flex items-center justify-center">
-                  <img src={qrUrl} alt="Portfolio QR code" className="w-full h-full object-contain" crossOrigin="anonymous" />
+                  <img 
+                    src={qrError ? backupQrUrl : qrUrl} 
+                    alt="Portfolio QR code" 
+                    className="w-full h-full object-contain" 
+                    crossOrigin="anonymous" 
+                    onError={() => setQrError(true)} 
+                  />
                 </div>
                 <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[7.5px] font-bold text-emerald-400 uppercase text-center">
                   <QrCode size={8} /> SCAN TO VIEW PROFILE

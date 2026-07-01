@@ -26,10 +26,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { trackProductOrServiceAnalytics } from '@/lib/firebase/firestoreService';
 import { followCompany, unfollowCompany, useIsFollowing, useFollowerCount } from '@/lib/firebase/followService';
 import { likeProduct, unlikeProduct, useUserProductLikes } from '@/lib/firebase/likeService';
-import { getCompanyActivePlan } from '@/lib/subscriptions';
+import { getCompanyActivePlan, getPlanRank } from '@/lib/subscriptions';
 import { downloadVCard } from '@/lib/vcf';
 import { downloadCompanyPdf } from '@/lib/companyPdf';
 import TrustScoreBadge from '@/components/company/TrustScoreBadge';
+import { CustomTemplateWrapper } from '@/components/company/CustomTemplates';
 import {
   getCompanyBannerUrl,
   getCompanyPortfolioUrl,
@@ -929,6 +930,7 @@ export default function CompanyProfileClient({ company: rawCompany, jobs, review
 
   // Determine plan type: free, basic (Standard), premium, enterprise
   const plan = getCompanyActivePlan(company);
+  const planRank = getPlanRank(plan);
 
   useEffect(() => {
     if (company?.id) {
@@ -939,6 +941,62 @@ export default function CompanyProfileClient({ company: rawCompany, jobs, review
     }
   }, [company?.id]);
 
+  // If company configured the Website Builder template
+  if (company.websiteTemplate) {
+    // Validate subscription limitations client-side
+    let resolvedTheme = company.websiteTheme || 'classic-blue';
+    let resolvedTemplate = company.websiteTemplate || 'classic-directory';
+
+    // Sunset Amber requires Premium (rank >= 2)
+    if (resolvedTheme === 'sunset-amber' && planRank < 2) {
+      resolvedTheme = 'classic-blue';
+    }
+    // Royal Gold requires Enterprise (rank >= 3)
+    if (resolvedTheme === 'royal-gold' && planRank < 3) {
+      resolvedTheme = 'classic-blue';
+    }
+
+    // Modern Portfolio & E-Commerce require Premium (rank >= 2)
+    if ((resolvedTemplate === 'modern-portfolio' || resolvedTemplate === 'ecommerce-storefront') && planRank < 2) {
+      resolvedTemplate = 'classic-directory';
+    }
+    // Service Booking requires Enterprise (rank >= 3)
+    if (resolvedTemplate === 'service-booking' && planRank < 3) {
+      resolvedTemplate = 'classic-directory';
+    }
+
+    const customization = {
+      websiteTheme: resolvedTheme,
+      websiteTemplate: resolvedTemplate,
+      customPrimaryColor: company.customPrimaryColor || '',
+      fontFamily: company.fontFamily || 'Inter',
+      buttonStyle: company.buttonStyle || 'rounded',
+      cardStyle: company.cardStyle || 'flat',
+      borderRadius: company.borderRadius || '12px',
+      enableDarkMode: company.enableDarkMode || false,
+      enableAnimations: company.enableAnimations !== false,
+      sectionsVisible: {
+        products: company.sectionsVisible?.products !== false,
+        services: company.sectionsVisible?.services !== false,
+        reviews: company.sectionsVisible?.reviews !== false,
+        gallery: company.sectionsVisible?.gallery !== false,
+        team: company.sectionsVisible?.team !== false,
+        faq: company.sectionsVisible?.faq !== false,
+      }
+    };
+
+    return (
+      <CustomTemplateWrapper
+        company={company}
+        jobs={jobs}
+        reviews={reviews}
+        customization={customization}
+        isPreview={false}
+      />
+    );
+  }
+
+  // Fallback to legacy templates based on plan
   if (plan === 'enterprise') {
     return <TemplateEnterprise company={company} jobs={jobs} reviews={reviews} />;
   } else if (plan === 'premium') {

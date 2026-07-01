@@ -44,6 +44,7 @@ const BUSINESS_NAV: SidebarItem[] = [
 
   // Account module
   { label: 'Company Profile', tamilLabel: 'நிறுவன விவரம்', icon: 'Building2', href: '/business/company-profile', section: 'Account' },
+  { label: 'Website Builder', tamilLabel: 'இணையதள உருவாக்கி', icon: 'Globe', href: '/business/website-builder/appearance', section: 'Account' },
   { label: 'Digital ID Card', tamilLabel: 'டிஜிட்டல் ஐடி கார்டு', icon: 'Award', href: '/business/digital-card', section: 'Account' },
   { label: 'Billing', tamilLabel: 'கட்டணம்', icon: 'CreditCard', href: '/business/billing', section: 'Account' },
   { label: 'Settings', tamilLabel: 'அமைப்புகள்', icon: 'Settings', href: '/business/settings', section: 'Account' },

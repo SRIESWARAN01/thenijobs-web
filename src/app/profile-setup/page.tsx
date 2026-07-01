@@ -127,14 +127,10 @@ export default function ProfileSetupPage() {
     if (isSeeker) {
       if (step === 1) {
         if (!seekerForm.name.trim()) return 'Name is required.';
-        if (!seekerForm.dob) return 'Date of Birth is required.';
       } else if (step === 2) {
         if (!seekerForm.phone.trim() || seekerForm.phone.length !== 10) return 'Valid 10-digit mobile number is required.';
-        if (!seekerForm.district) return 'Please select your town/area.';
-        if (!seekerForm.address.trim()) return 'Address is required.';
       } else if (step === 3) {
-        if (!seekerForm.currentRole.trim()) return 'Please enter your current role or designation.';
-        if (!seekerForm.skills.trim()) return 'Please specify some skills.';
+        // All fields are optional
       }
     } else {
       if (step === 1) {
@@ -150,6 +146,27 @@ export default function ProfileSetupPage() {
       }
     }
     return null;
+  };
+
+  const handleSkip = () => {
+    setError(null);
+    if (isSeeker) {
+      if (step === 1) {
+        if (!seekerForm.name.trim()) {
+          setError('Name is required.');
+          return;
+        }
+        setStep(2);
+      } else if (step === 2) {
+        if (!seekerForm.phone.trim() || seekerForm.phone.length !== 10) {
+          setError('Valid 10-digit mobile number is required.');
+          return;
+        }
+        setStep(3);
+      } else if (step === 3) {
+        handleSubmit();
+      }
+    }
   };
 
   const handleNext = () => {
@@ -271,7 +288,13 @@ export default function ProfileSetupPage() {
       router.replace(getDashboardPathForRole(user.role));
     } catch (err: any) {
       console.error('[ProfileSetup] Submit failed:', err);
-      setError(err.message || 'Failed to complete profile setup. Please try again.');
+      let userFriendlyMsg = 'Failed to complete profile setup. Please try again.';
+      if (err.code === 'permission-denied' || err.message?.toLowerCase().includes('permission')) {
+        userFriendlyMsg = 'Database permission error: You do not have permission to save this profile. Please make sure you are logged in and try again.';
+      } else if (err.message) {
+        userFriendlyMsg = err.message;
+      }
+      setError(userFriendlyMsg);
     } finally {
       setSaving(false);
     }
@@ -348,7 +371,7 @@ export default function ProfileSetupPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Gender *</label>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Gender (Optional)</label>
                       <select
                         value={seekerForm.gender}
                         onChange={e => setSeekerForm(p => ({ ...p, gender: e.target.value }))}
@@ -361,10 +384,9 @@ export default function ProfileSetupPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Date of Birth *</label>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Date of Birth (Optional)</label>
                       <input
                         type="date"
-                        required
                         value={seekerForm.dob}
                         onChange={e => setSeekerForm(p => ({ ...p, dob: e.target.value }))}
                         className="search-input w-full px-4 py-3 text-sm bg-white/[0.02] border-white/10 text-white"
@@ -395,7 +417,7 @@ export default function ProfileSetupPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Select Town / Area in Theni *</label>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Select Town / Area in Theni (Optional)</label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                         <select
@@ -412,10 +434,9 @@ export default function ProfileSetupPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Address *</label>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Address (Optional)</label>
                       <input
                         type="text"
-                        required
                         value={seekerForm.address}
                         onChange={e => setSeekerForm(p => ({ ...p, address: e.target.value }))}
                         placeholder="House No, Street, Ward, Village..."
@@ -428,12 +449,11 @@ export default function ProfileSetupPage() {
                 {step === 3 && (
                   <div className="space-y-5 animate-fade-in-up">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Current Role / Designation *</label>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preferred Job Role (Optional)</label>
                       <div className="relative">
                         <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                         <input
                           type="text"
-                          required
                           value={seekerForm.currentRole}
                           onChange={e => setSeekerForm(p => ({ ...p, currentRole: e.target.value }))}
                           placeholder="e.g. Sales Executive, Driver, Fresher..."
@@ -443,12 +463,11 @@ export default function ProfileSetupPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Skills (Comma Separated) *</label>
+                      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Skills (Comma Separated) (Optional)</label>
                       <div className="relative">
                         <Star className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                         <input
                           type="text"
-                          required
                           value={seekerForm.skills}
                           onChange={e => setSeekerForm(p => ({ ...p, skills: e.target.value }))}
                           placeholder="e.g. Tally, Customer Service, Driving License"
@@ -681,6 +700,17 @@ export default function ProfileSetupPage() {
                 className="btn-outline-glass px-5 py-3.5 rounded-2xl text-sm font-semibold flex items-center gap-2 hover:bg-white/5 transition-all text-white border border-white/10"
               >
                 <ArrowLeft size={16} /> Back
+              </button>
+            )}
+
+            {isSeeker && (
+              <button
+                type="button"
+                onClick={handleSkip}
+                disabled={saving}
+                className="px-5 py-3.5 rounded-2xl border border-dashed border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400 text-sm font-semibold flex items-center justify-center gap-1.5 transition-all"
+              >
+                Skip
               </button>
             )}
 

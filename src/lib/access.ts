@@ -38,8 +38,12 @@ export function getDashboardPathForRole(role?: UserRole | null) {
 export function getSafePostLoginRedirect(
   requestedPath: string | null | undefined,
   role?: UserRole | null,
+  setupCompleted?: boolean,
 ) {
   if (!role) return '/role-selection';
+  if (role !== 'admin' && role !== 'super_admin' && setupCompleted === false) {
+    return '/profile-setup';
+  }
   const dashboardPath = getDashboardPathForRole(role);
   if (!requestedPath || !requestedPath.startsWith('/')) return dashboardPath;
   if (requestedPath.startsWith('//')) return dashboardPath;

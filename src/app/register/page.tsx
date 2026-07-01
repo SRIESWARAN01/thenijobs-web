@@ -59,7 +59,11 @@ export default function RegisterPage() {
   // Redirect automatically on login / registration success
   useEffect(() => {
     if (user) {
-      router.replace(getDashboardPathForRole(user.role));
+      if (user.role && user.role !== 'admin' && user.role !== 'super_admin' && user.setupCompleted === false) {
+        router.replace('/profile-setup');
+      } else {
+        router.replace(getDashboardPathForRole(user.role));
+      }
     }
   }, [user, router]);
 

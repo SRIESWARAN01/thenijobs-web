@@ -63,13 +63,13 @@ service cloud.firestore {
     }
 
     function isEndUserRole(role) {
-      return role in ['job_seeker', 'pending_employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'];
+      return role in ['job_seeker', 'business', 'pending_employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'];
     }
 
     function hasEmployerRole() {
       return isAuthenticated()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'];
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['business', 'employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'];
     }
 
     function isApprovedCompanyForCurrentUser(companyId) {
@@ -182,7 +182,6 @@ service cloud.firestore {
           request.resource.data.verificationStatus == 'pending' ||
           request.resource.data.status == 'pending'
         )
-        && optionalFalse('isActive')
         && optionalFalse('isFeatured')
         && optionalFalse('isPremium');
       // Admin: full update access (can approve/reject, feature, premium, activate)
@@ -511,10 +510,10 @@ service cloud.firestore {
         || isOwner(profileId)
         || (isAuthenticated() && (resource == null || resource.data.ownerId == request.auth.uid))
         || (resource != null && resource.data.type == 'job_seeker' && hasVerifiedEmployerAccess())
-        || (resource != null && resource.data.type in ['employer', 'business_owner']);
+        || (resource != null && resource.data.type in ['business', 'employer', 'business_owner']);
       allow create: if isAuthenticated()
         && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.type in ['job_seeker', 'employer', 'business_owner'];
+        && request.resource.data.type in ['job_seeker', 'business', 'employer', 'business_owner'];
       allow update: if isAdmin()
         || (
           isAuthenticated()

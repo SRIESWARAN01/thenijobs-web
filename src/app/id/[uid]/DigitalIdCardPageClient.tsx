@@ -160,14 +160,25 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
   const isPremium = profile.isPremium !== false; // Display Premium styling
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(portfolioUrl)}`;
   const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(portfolioUrl)}`;
-
-  const [photoBase64, setPhotoBase64] = useState<string>('');
+  const [photoSrc, setPhotoSrc] = useState<string>('');
+  const [photoCORS, setPhotoCORS] = useState<boolean>(true);
   const [qrBase64, setQrBase64] = useState<string>('');
+
+  useEffect(() => {
+    if (photoUrl) {
+      const initialSrc = photoUrl.startsWith('data:') 
+        ? photoUrl 
+        : `/api/proxy-image?url=${encodeURIComponent(photoUrl)}`;
+      setPhotoSrc(initialSrc);
+      setPhotoCORS(true);
+    }
+  }, [photoUrl]);
 
   useEffect(() => {
     const getBase64FromUrl = async (url: string): Promise<string> => {
       if (!url) return '';
       if (url.startsWith('data:')) return url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) return url;
       try {
         const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
         const res = await fetch(proxyUrl);
@@ -188,7 +199,9 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
     const convertImages = async () => {
       if (photoUrl) {
         const base64 = await getBase64FromUrl(photoUrl);
-        setPhotoBase64(base64);
+        if (base64) {
+          setPhotoSrc(base64);
+        }
       }
       if (qrUrl) {
         const base64 = await getBase64FromUrl(qrUrl);
@@ -196,10 +209,8 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
       }
     };
 
-    if (profile) {
-      convertImages();
-    }
-  }, [photoUrl, qrUrl, profile]);
+    convertImages();
+  }, [photoUrl, qrUrl]);
   
   const downloadPng = async (side: 'front' | 'back') => {
     setExporting(side === 'front' ? 'png-front' : 'png-back');
@@ -450,15 +461,22 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
                       <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
                         {photoUrl && !photoError ? (
                           <img 
-                            src={photoBase64 || photoUrl} 
+                            src={photoSrc || photoUrl} 
                             alt={`${name} Photo`} 
                             className="object-cover w-full h-full rounded-2xl" 
-                            crossOrigin="anonymous"
-                            onError={() => setPhotoError(true)} 
+                            crossOrigin={photoCORS ? "anonymous" : undefined}
+                            onError={() => {
+                              if (photoCORS && photoUrl) {
+                                setPhotoCORS(false);
+                                setPhotoSrc(photoUrl);
+                              } else {
+                                setPhotoError(true);
+                              }
+                            }}
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center text-4xl font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
-                            {name.slice(0, 1)}
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-slate-400 border border-white/5">
+                            <User size={36} className="text-slate-500" />
                           </div>
                         )}
                       </div>
@@ -667,15 +685,22 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
                 <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-2 border-white/15 bg-slate-900/50 shadow-lg flex-shrink-0">
                   {photoUrl && !photoError ? (
                     <img 
-                      src={photoBase64 || photoUrl} 
+                      src={photoSrc || photoUrl} 
                       alt={`${name} Photo`} 
                       className="object-cover w-full h-full rounded-2xl"
-                      crossOrigin="anonymous"
-                      onError={() => setPhotoError(true)} 
+                      crossOrigin={photoCORS ? "anonymous" : undefined}
+                      onError={() => {
+                        if (photoCORS && photoUrl) {
+                          setPhotoCORS(false);
+                          setPhotoSrc(photoUrl);
+                        } else {
+                          setPhotoError(true);
+                        }
+                      }}
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-4xl font-black bg-gradient-to-br from-slate-800 to-slate-950 text-emerald-400 uppercase">
-                      {name.slice(0, 1)}
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-slate-400 border border-white/5">
+                      <User size={36} className="text-slate-500" />
                     </div>
                   )}
                 </div>

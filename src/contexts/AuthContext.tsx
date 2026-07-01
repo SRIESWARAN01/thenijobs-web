@@ -300,11 +300,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
               return;
             }
 
+            const pendingRole = localStorage.getItem('pending_google_role') || undefined;
+            const pendingPhone = localStorage.getItem('pending_google_phone') || undefined;
+            localStorage.removeItem('pending_google_role');
+            localStorage.removeItem('pending_google_phone');
+
             const idToken = await fbUser.getIdToken(true);
             const res = await fetch('/api/auth/google-signin', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ idToken }),
+              body: JSON.stringify({ idToken, role: pendingRole, phone: pendingPhone }),
             });
             const data = await res.json();
             
@@ -346,17 +351,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         setFirebaseUser(fbUser);
-        let profile = await fetchUserProfile(fbUser.uid);
+        const profile = await fetchUserProfile(fbUser.uid);
         if (auth.currentUser?.uid !== fbUser.uid) return;
-
-        await syncVerifiedUserDocument(fbUser, profile);
-        if (auth.currentUser?.uid !== fbUser.uid) return;
-
-        // If profile was null, it was just created/synced by syncVerifiedUserDocument. Re-fetch to populate state!
-        if (!profile) {
-          profile = await fetchUserProfile(fbUser.uid);
-          if (auth.currentUser?.uid !== fbUser.uid) return;
-        }
 
         if (profile) {
           const verifiedProfile = {
@@ -365,19 +361,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isVerified: fbUser.emailVerified || profile.isVerified,
             photoURL: fbUser.photoURL || profile.photoURL,
           };
-          await ensureSeekerProfile(verifiedProfile);
-          if (auth.currentUser?.uid !== fbUser.uid) return;
-
           setUser(verifiedProfile);
-        } else {
-          setUser(null);
+          setLoading(false);
         }
+
+        // Perform other heavy write operations in the background asynchronously so they don't block navigation!
+        void (async () => {
+          try {
+            await syncVerifiedUserDocument(fbUser, profile);
+            if (auth.currentUser?.uid !== fbUser.uid) return;
+
+            let currentProfile = profile;
+            if (!currentProfile) {
+              currentProfile = await fetchUserProfile(fbUser.uid);
+              if (auth.currentUser?.uid !== fbUser.uid) return;
+            }
+
+            if (currentProfile) {
+              const verifiedProfile = {
+                ...currentProfile,
+                emailVerified: fbUser.emailVerified,
+                isVerified: fbUser.emailVerified || currentProfile.isVerified,
+                photoURL: fbUser.photoURL || currentProfile.photoURL,
+              };
+              await ensureSeekerProfile(verifiedProfile);
+              if (auth.currentUser?.uid !== fbUser.uid) return;
+
+              setUser(verifiedProfile);
+            } else {
+              setUser(null);
+            }
+          } catch (err) {
+            console.error('[AuthContext] Background sync error:', err);
+          } finally {
+            if (auth.currentUser?.uid === fbUser.uid) {
+              setLoading(false);
+            }
+          }
+        })();
       } else {
         setFirebaseUser(null);
         setUser(null);
+        setLoading(false);
       }
-
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -424,6 +450,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         const isCapacitor = typeof window !== 'undefined' && !!(window as any).Capacitor;
         if (isCapacitor) {
+          if (role) localStorage.setItem('pending_google_role', role);
+          if (phoneParam) localStorage.setItem('pending_google_phone', phoneParam);
           await signInWithRedirect(auth, provider);
           return;
         }
@@ -441,7 +469,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const res = await fetch('/api/auth/google-signin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
+          body: JSON.stringify({ idToken, role, phone: phoneParam }),
         });
         const data = await res.json();
         

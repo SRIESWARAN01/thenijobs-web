@@ -679,14 +679,12 @@ function CandidateDetailPanel({
                   </div>
                 </div>
                 
-                <a
+                <Link
                   href={`/id?uid=${seekerId}`}
-                  target="_blank"
-                  rel="noreferrer"
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-indigo-600/10 border border-indigo-500/25 hover:bg-indigo-600/20 text-indigo-400 text-xs font-bold transition-all"
                 >
                   <ExternalLink size={12} /> View Digital ID Card
-                </a>
+                </Link>
               </div>
             )}
           </div>

@@ -67,7 +67,7 @@ function LoginPageContent() {
   // Role-based automatic redirect after successful login
   useEffect(() => {
     if (user) {
-      router.replace(getSafePostLoginRedirect(redirectUrl, user.role));
+      router.replace(getSafePostLoginRedirect(redirectUrl, user.role, user.setupCompleted));
     }
   }, [user, router, redirectUrl]);
 

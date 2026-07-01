@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
-    const { idToken } = await request.json();
+    const { idToken, role, phone } = await request.json();
     if (!idToken) {
       return NextResponse.json({ error: 'Google ID token is required' }, { status: 400 });
     }
@@ -44,15 +44,19 @@ export async function POST(request: Request) {
         updatedAt: FieldValue.serverTimestamp(),
       });
     } else {
-      // New user! Create Firestore user document with role: null
+      // New user! Create Firestore user document with role & phone
       const displayName = decodedToken.name || email.split('@')[0] || 'User';
       const photoURL = decodedToken.picture || '';
+      const finalRole = (role === 'job_seeker' || role === 'business') ? role : null;
+      const normalizedPhone = phone ? `+91${phone.replace(/\D/g, '').slice(-10)}` : null;
 
       await adminDb.doc(`users/${uid}`).set({
         email,
         displayName,
         photoURL,
-        role: null,
+        role: finalRole,
+        phone: normalizedPhone,
+        mobileNumber: normalizedPhone,
         isVerified: true,
         emailVerified: true,
         createdAt: FieldValue.serverTimestamp(),
@@ -60,6 +64,8 @@ export async function POST(request: Request) {
         updatedAt: FieldValue.serverTimestamp(),
       });
 
+      resolvedUid = uid;
+      userRole = finalRole;
       isNewUser = true;
     }
 

@@ -8,6 +8,7 @@ import { ToastProvider } from "@/components/ui/Toaster";
 import SplashIntro from "@/components/ui/SplashIntro";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import MobileAuthGate from "@/components/auth/MobileAuthGate";
+import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
@@ -154,6 +155,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <AuthProvider>
                 <NotificationProvider>
                   <OfflineBanner />
+                  <PWAInstallPrompt />
                   <SplashIntro />
                   <MobileAuthGate>
                     {children}

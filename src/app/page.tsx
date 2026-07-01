@@ -14,9 +14,25 @@ import HomeFooter from '@/components/home/HomeFooter';
 import AdvertisementsBanner from '@/components/home/AdvertisementsBanner';
 
 export const metadata: Metadata = {
-  title: 'THENIJOBS - Theni Jobs, Businesses & Services',
+  title: 'THENIJOBS — #1 Job Portal & Business Directory in Theni, Tamil Nadu',
   description:
-    'Mobile-friendly local jobs and business discovery platform for Theni district. Search jobs, contact companies, send leads and discover verified local services.',
+    'Find local jobs, discover verified businesses, hire talent, and grow your company in Theni, Madurai & Tamil Nadu. Browse vacancies, post jobs, and connect with employers — 100% free for job seekers.',
+  alternates: {
+    canonical: 'https://thenijobs.com',
+  },
+  openGraph: {
+    title: 'THENIJOBS — #1 Job Portal & Business Directory in Theni, Tamil Nadu',
+    description:
+      'Find local jobs, discover verified businesses, hire talent, and grow your company in Theni, Madurai & Tamil Nadu.',
+    url: 'https://thenijobs.com',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'THENIJOBS — Jobs, Businesses & Services in Theni',
+    description:
+      'Find local jobs, discover verified businesses, and grow your career in Theni & Tamil Nadu.',
+  },
 };
 
 export default function HomePage() {

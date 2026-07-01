@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { browserLocalPersistence, setPersistence, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { auth, db, functions } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -47,41 +46,6 @@ export default function AdminLoginPage() {
       } else {
         setError('Authentication failed. Please verify your connection and try again.');
       }
-    } finally {
-      setLoading(false);
-    }
-  };
-  const handleDemoAdminLogin = async () => {
-    const demoEmail = 'admin@thenijobs.com';
-    const demoPass = 'admin@123';
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setLoading(true);
-    setError('');
-    try {
-      // Seed demo accounts via Cloud Function
-      try {
-        const seedFunc = httpsCallable(functions, 'seedDemoAccounts');
-        await seedFunc({ secret: 'theni_seeding_2026' });
-      } catch (seedErr) {
-        console.warn('Demo seeding failed or was already completed:', seedErr);
-      }
-
-      await setPersistence(auth, browserLocalPersistence);
-      const cred = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
-      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        if (data.role === 'admin' || data.role === 'super_admin') {
-          router.push('/admin/dashboard');
-          return;
-        }
-      }
-      await auth.signOut();
-      setError('Access Denied. You do not have administrative permissions.');
-    } catch (err: any) {
-      console.error('Admin login error:', err);
-      setError('Authentication failed. Please verify your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -159,24 +123,7 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Login */}
-          {process.env.NODE_ENV !== 'production' && (
-            <div className="mt-6 pt-5 border-t border-white/[0.06]">
-              <p className="text-[10px] font-bold tracking-wider uppercase text-gray-500 mb-3 text-center">Quick Demo Login</p>
-              <button
-                type="button"
-                onClick={handleDemoAdminLogin}
-                disabled={loading}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/10 text-left transition-all group"
-              >
-                <span className="text-base group-hover:scale-110 transition-transform">🔑</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-bold text-gray-300 group-hover:text-white transition-colors truncate">Demo Platform Admin</p>
-                  <p className="text-[9px] text-gray-500 truncate">admin@thenijobs.com</p>
-                </div>
-              </button>
-            </div>
-          )}
+
 
           <div className="mt-6 pt-4 border-t border-white/[0.06] text-center">
             <Link href="/" className="text-xs text-gray-500 hover:text-gray-400 transition-colors py-1.5 inline-block">

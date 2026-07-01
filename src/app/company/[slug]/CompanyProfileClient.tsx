@@ -337,49 +337,7 @@ function FollowButton({ companyId, accentStyle = '' }: { companyId: string; acce
 
 // ──────────────────────────────────────────────────────────────────
 // PRODUCT LIKE BUTTON (inline, for product cards)
-// ──────────────────────────────────────────────────────────────────
-function ProductLikeButton({ productId, companyId, likeCount = 0, isLiked, accentColor = 'text-rose-400' }: {
-  productId: string; companyId: string; likeCount?: number; isLiked: boolean; accentColor?: string;
-}) {
-  const { user } = useAuth();
-  const [busy, setBusy] = useState(false);
-
-  const handleToggle = async () => {
-    if (!user?.uid) {
-      alert('Please login to like products.');
-      return;
-    }
-    setBusy(true);
-    try {
-      if (isLiked) {
-        await unlikeProduct(user.uid, productId);
-      } else {
-        await likeProduct(user.uid, productId, companyId);
-      }
-    } catch (err) {
-      console.error('Like toggle error:', err);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleToggle}
-      disabled={busy}
-      className={`flex items-center gap-1 text-[10px] font-bold transition-all disabled:opacity-50 ${
-        isLiked ? accentColor : 'text-slate-500 hover:text-rose-400'
-      }`}
-    >
-      <Heart size={13} className={isLiked ? 'fill-current' : ''} />
-      {(likeCount || 0) > 0 && <span>{likeCount}</span>}
-    </button>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────
-// REVIEW SUBMIT FORM
-// ──────────────────────────────────────────────────────────────────
+// ───────────────────────────────────────────────�
 function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 'text-cyan-400', btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500', theme = 'dark' }: {
   companyId: string; companyName: string; reviews?: any[]; accentColor?: string; btnStyle?: string; theme?: 'light' | 'dark';
 }) {
@@ -387,11 +345,16 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
   const [rating, setRating] = useState(5);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [content, setContent] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const existingReview = user ? reviews.find((r: any) => r.userId === user.uid) : null;
+  const isGuest = !user?.uid;
 
   useEffect(() => {
     if (existingReview) {
@@ -403,17 +366,25 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!user?.uid) {
-      setError('Please login to submit a review.');
-      return;
+
+    // Guest validation
+    if (isGuest) {
+      if (!guestName.trim() || guestName.trim().length < 2) {
+        setError('Please enter your name (min 2 characters).');
+        return;
+      }
+      if (!guestPhone.trim() || !/^\d{10}$/.test(guestPhone.replace(/\D/g, '').slice(-10))) {
+        setError('Please enter a valid 10-digit phone number.');
+        return;
+      }
     }
+
     const cleanComment = content.trim();
     if (!cleanComment) {
       setError('Please write your review.');
       return;
     }
-    // Spam and fake review validation checks on client
-    if (/(.)\1{4,}/.test(cleanComment)) {
+    if (/(.)\\1{4,}/.test(cleanComment)) {
       setError('Spam detected! Repetitive characters are not allowed.');
       return;
     }
@@ -428,18 +399,28 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
 
     setSubmitting(true);
     try {
-      const submitCallable = httpsCallable<any, { success: boolean; reviewId: string; updated?: boolean }>(
+      const submitCallable = httpsCallable<any, { success: boolean; reviewId: string; updated?: boolean; pending?: boolean }>(
         functions,
         'submitBusinessReview'
       );
-      await submitCallable({
+      const result = await submitCallable({
         companyId,
         rating,
         comment: cleanComment,
-        userName: user.displayName || (user as any).fullName || 'Anonymous',
-        userPhoto: user.photoURL || '',
+        // Authenticated fields
+        ...(user ? {
+          userName: user.displayName || (user as any).fullName || 'Anonymous',
+          userPhoto: user.photoURL || '',
+        } : {}),
+        // Guest fields
+        ...(isGuest ? {
+          guestName: guestName.trim(),
+          guestPhone: guestPhone.replace(/\D/g, '').slice(-10),
+          guestEmail: guestEmail.trim() || '',
+        } : {}),
       });
       trackAnalyticsEvent({ companyId, eventType: 'review_submit' });
+      setIsPending(result.data.pending || false);
       setSubmitted(true);
     } catch (err: any) {
       console.error('Review submit error:', err);
@@ -457,10 +438,12 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
         </div>
         <div className="space-y-1">
           <p className="text-sm font-black text-emerald-500">
-            {existingReview ? 'Review Updated Successfully!' : 'Review Submitted Successfully!'}
+            {existingReview ? 'Review Updated Successfully!' : isPending ? 'Review Submitted for Approval!' : 'Review Submitted Successfully!'}
           </p>
           <p className={`text-xs ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
-            Your review is now live on the platform.
+            {isPending
+              ? 'Your review will be visible after admin approval. Thank you!'
+              : 'Your review is now live on the platform.'}
           </p>
         </div>
         <button
@@ -477,6 +460,9 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
   }
 
   const isLight = theme === 'light';
+  const inputCls = isLight
+    ? 'bg-slate-100 border-slate-200 focus:border-slate-400 focus:bg-white text-slate-900 placeholder:text-slate-400'
+    : 'bg-white/[0.02] border-white/[0.08] focus:border-white/20 focus:bg-white/[0.04] text-white placeholder:text-slate-500';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -495,6 +481,39 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
       {existingReview && (
         <div className={`p-3 rounded-xl border text-[11px] font-bold ${isLight ? 'bg-amber-50 border-amber-100 text-amber-800' : 'bg-amber-500/10 border-amber-500/20 text-amber-300'}`}>
           ✏️ You have already reviewed this company. Submitting this form will update your existing rating and review comments.
+        </div>
+      )}
+
+      {/* Guest info fields */}
+      {isGuest && (
+        <div className="space-y-2">
+          <div className={`p-2.5 rounded-xl border text-[10px] font-bold ${isLight ? 'bg-blue-50 border-blue-100 text-blue-700' : 'bg-blue-500/10 border-blue-500/20 text-blue-300'}`}>
+            👋 No login required! Submit your review as a guest.
+          </div>
+          <input
+            type="text"
+            placeholder="Your Name *"
+            value={guestName}
+            onChange={e => setGuestName(e.target.value)}
+            required
+            className={`w-full px-3 py-2 text-xs rounded-xl border outline-none focus:ring-2 focus:ring-white/5 transition-all ${inputCls}`}
+          />
+          <input
+            type="tel"
+            placeholder="Phone Number (10 digits) *"
+            value={guestPhone}
+            onChange={e => setGuestPhone(e.target.value)}
+            required
+            maxLength={10}
+            className={`w-full px-3 py-2 text-xs rounded-xl border outline-none focus:ring-2 focus:ring-white/5 transition-all ${inputCls}`}
+          />
+          <input
+            type="email"
+            placeholder="Email (optional)"
+            value={guestEmail}
+            onChange={e => setGuestEmail(e.target.value)}
+            className={`w-full px-3 py-2 text-xs rounded-xl border outline-none focus:ring-2 focus:ring-white/5 transition-all ${inputCls}`}
+          />
         </div>
       )}
 
@@ -556,6 +575,12 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
         {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
         {submitting ? 'Submitting...' : existingReview ? 'Update My Review' : 'Submit Review'}
       </button>
+
+      {isGuest && (
+        <p className={`text-[10px] text-center ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
+          Guest reviews are moderated and will appear after admin approval.
+        </p>
+      )}
     </form>
   );
 }
@@ -2383,43 +2408,11 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
     window.open(getCleanWhatsAppUrl(company.whatsapp || company.phone, text), '_blank');
   };
 
-  // Mock Blog/News Data (or read from company if exists)
-  const blogs = company.blogs || [
-    {
-      id: 'blog-1',
-      title: 'Expanding Our Operations in Theni District',
-      excerpt: 'We are thrilled to announce new branches and services matching local demand...',
-      date: 'June 18, 2026',
-      readTime: '3 min read'
-    },
-    {
-      id: 'blog-2',
-      title: 'Our Commitment to Quality & Customer Trust',
-      excerpt: 'Discover the processes behind our verified badge and customer service levels...',
-      date: 'May 24, 2026',
-      readTime: '5 min read'
-    }
-  ];
+  // Blog/News Data from company profile (no hardcoded fallback)
+  const blogs = company.blogs || [];
 
-  // Testimonials Data
-  const testimonials = reviews.length > 0 ? reviews : [
-    {
-      id: 't-1',
-      name: 'Ramesh Kumar',
-      title: 'Managing Director, RK Exports',
-      content: 'Excellent service! Extremely professional team. Highly recommend their services.',
-      rating: 5,
-      date: 'June 10, 2026'
-    },
-    {
-      id: 't-2',
-      name: 'Deepa Rajan',
-      title: 'Founder, Eco Organic Farms',
-      content: 'Very reliable and prompt responses. Doing business with them has been a delight.',
-      rating: 5,
-      date: 'May 15, 2026'
-    }
-  ];
+  // Testimonials from live reviews only (no hardcoded fallback)
+  const testimonials = reviews;
 
   const tabs = [
     { id: 'overview', label: 'Company Overview' },

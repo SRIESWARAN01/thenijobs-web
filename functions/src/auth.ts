@@ -148,6 +148,7 @@ export const deleteCompanyAccount = onCall(
       for (const cId of companyIds) {
         await bucket.deleteFiles({ prefix: `products/${cId}/` }).catch(() => {});
         await bucket.deleteFiles({ prefix: `services/${cId}/` }).catch(() => {});
+        await bucket.deleteFiles({ prefix: `gallery/${cId}/` }).catch(() => {});
       }
     } catch (storageErr) {
       console.error('Storage deletion warning:', storageErr);
@@ -174,6 +175,9 @@ export const deleteCompanyAccount = onCall(
       await deleteQueryDocs(db.collection('subscriptions').where('companyId', '==', cId));
       await deleteQueryDocs(db.collection('bookings').where('serviceProviderId', '==', cId));
       await deleteQueryDocs(db.collection('interviews').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('socialPosts').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('payments').where('companyId', '==', cId));
+      await deleteQueryDocs(db.collection('rfqs').where('companyId', '==', cId));
       
       // Delete settings document
       await db.doc(`employerSettings/${cId}`).delete();
@@ -193,6 +197,8 @@ export const deleteCompanyAccount = onCall(
     await deleteQueryDocs(db.collection('subscriptions').where('userId', '==', uid));
     await deleteQueryDocs(db.collection('activityLogs').where('userId', '==', uid));
     await deleteQueryDocs(db.collection('certificates').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('socialPosts').where('userId', '==', uid));
+    await deleteQueryDocs(db.collection('payments').where('userId', '==', uid));
 
     // Delete base user documents
     await db.doc(`seekerProfiles/${uid}`).delete();
@@ -250,6 +256,9 @@ export const onUserWriteSync = functions.region('us-central1').firestore
         await deleteQueryDocs(db.collection('subscriptions').where('companyId', '==', cId));
         await deleteQueryDocs(db.collection('bookings').where('serviceProviderId', '==', cId));
         await deleteQueryDocs(db.collection('interviews').where('companyId', '==', cId));
+        await deleteQueryDocs(db.collection('socialPosts').where('companyId', '==', cId));
+        await deleteQueryDocs(db.collection('payments').where('companyId', '==', cId));
+        await deleteQueryDocs(db.collection('rfqs').where('companyId', '==', cId));
         await db.doc(`employerSettings/${cId}`).delete();
         await db.doc(`companies/${cId}`).delete();
       }
@@ -265,6 +274,8 @@ export const onUserWriteSync = functions.region('us-central1').firestore
       await deleteQueryDocs(db.collection('subscriptions').where('userId', '==', userId));
       await deleteQueryDocs(db.collection('activityLogs').where('userId', '==', userId));
       await deleteQueryDocs(db.collection('certificates').where('userId', '==', userId));
+      await deleteQueryDocs(db.collection('socialPosts').where('userId', '==', userId));
+      await deleteQueryDocs(db.collection('payments').where('userId', '==', userId));
 
       await db.doc(`seekerProfiles/${userId}`).delete();
       await db.doc(`publicProfiles/${userId}`).delete();
@@ -279,6 +290,7 @@ export const onUserWriteSync = functions.region('us-central1').firestore
         for (const cId of companyIds) {
           await bucket.deleteFiles({ prefix: `products/${cId}/` }).catch(() => {});
           await bucket.deleteFiles({ prefix: `services/${cId}/` }).catch(() => {});
+          await bucket.deleteFiles({ prefix: `gallery/${cId}/` }).catch(() => {});
         }
       } catch (storageErr) {
         console.error('Storage deletion error:', storageErr);

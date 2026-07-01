@@ -270,6 +270,47 @@ export default function UpgradePlanDialog({
                 )}
               </button>
 
+              {/* Manual Payment Request */}
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/[0.06]" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-[#0d0d20] px-3 text-[10px] font-bold uppercase tracking-wider text-gray-500">or</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  const planInfo = YEARLY_SUBSCRIPTION_PLANS.find((p) => p.slug === selectedPlan);
+                  const msg = [
+                    `🔔 *Manual Payment Request*`,
+                    ``,
+                    `Plan: *${planInfo?.name || selectedPlan}*`,
+                    `Amount: *${planInfo?.displayPrice || ''}* / Year`,
+                    ``,
+                    `Name: ${userName || 'N/A'}`,
+                    `Email: ${userEmail || 'N/A'}`,
+                    `Phone: ${userPhone || 'N/A'}`,
+                    companyId ? `Company ID: ${companyId}` : '',
+                    ``,
+                    `I would like to pay via UPI / Bank Transfer.`,
+                    `Please share the payment details.`,
+                    ``,
+                    `— via THENIJOBS`,
+                  ].filter(Boolean).join('\n');
+                  window.open(`https://wa.me/919876543210?text=${encodeURIComponent(msg)}`, '_blank');
+                }}
+                disabled={isProcessing}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] text-sm font-bold text-gray-300 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-emerald-400" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.115.547 4.106 1.508 5.836L0 24l6.335-1.463A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.78 9.78 0 01-5.26-1.533l-.378-.224-3.915.905.966-3.769-.256-.396A9.777 9.777 0 012.182 12c0-5.414 4.404-9.818 9.818-9.818S21.818 6.586 21.818 12 17.414 21.818 12 21.818z" />
+                </svg>
+                Request Manual Payment (UPI / Bank)
+              </button>
+
               <p className="text-[10px] text-gray-600 text-center mt-3 leading-relaxed">
                 Payments processed securely via Razorpay. By proceeding, you agree to
                 our terms of service. Subscription is valid for 1 year from the date of payment.

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { doc, getDoc } from 'firebase/firestore';
-import { ArrowRight, Check, Crown, Shield, Zap, Sparkles, Loader2, Lock, Building2, ShieldCheck, HelpCircle } from 'lucide-react';
+import { ArrowRight, Check, Crown, Shield, Zap, Sparkles, Lock, Building2, ShieldCheck, X, ChevronDown, ChevronUp, Palette, Camera, BarChart3, Megaphone, Headphones, Globe, Layout } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import { YEARLY_SUBSCRIPTION_PLANS, formatPlanPeriod, normalizePlanSlug, type VisibleSubscriptionPlanSlug } from '@/lib/subscriptions';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,71 +20,75 @@ const customPlanFeatures: Record<VisibleSubscriptionPlanSlug, FeatureItem[]> = {
     { text: 'Basic Company Profile', tooltip: 'Set up a basic profile for your business with contact info and operational hours.' },
     { text: 'View Jobs & Business Listings', tooltip: 'Browse all available jobs and listings on the THENIJOBS platform.' },
     { text: 'Apply for Standard Jobs', tooltip: 'Apply to standard job listings posted by employers.' },
-    { text: '1 Active Job Posting (30 Days)', tooltip: 'Post 1 job at a time. The posting remains active for 30 days.' },
+    { text: '1 Active Job Posting', tooltip: 'Post 1 job at a time. The posting remains active for 30 days.' },
+    { text: '2 Job Alerts', tooltip: 'Receive up to 2 job alert notifications.' },
     { text: 'Product Catalogue (3 Products)', tooltip: 'Showcase up to 3 products in your online catalog.' },
     { text: 'Service Listings (3 Services)', tooltip: 'List up to 3 services you offer to local clients.' },
     { text: '6 Gallery Images', tooltip: 'Upload up to 6 high-quality images of your business or products.' },
-    { text: 'Basic SEO', tooltip: 'Default title and meta description tags configuration for search engines.' },
-    { text: 'Basic Business Badge', tooltip: 'Get a clean, basic verified badge on your profile.' },
+    { text: '1 Website Template & 2 Themes', tooltip: 'Access 1 basic template and 2 color themes for your profile.' },
+    { text: 'Basic Digital Visiting Card', tooltip: 'Generate a simple digital card for sharing with clients.' },
+    { text: 'Basic SEO & Schema', tooltip: 'Default title, meta description, and basic schema markup.' },
     { text: 'QR Code & Public Profile URL', tooltip: 'Generate a shareable QR code and custom slug URL for your public profile.' },
+    { text: 'Basic WhatsApp Enquiry', tooltip: 'Basic WhatsApp link for customer enquiries.' },
+    { text: 'Google Maps & Contact Form', tooltip: 'Show your location and accept enquiries via contact form.' },
+    { text: 'Customer Reviews', tooltip: 'Accept and display customer reviews on your profile.' },
+    { text: 'Basic Verification Badge', tooltip: 'Get a clean, basic verified badge on your profile.' },
   ],
   basic: [
     { text: 'Everything in Free Plan', tooltip: 'Access all features included in the Free tier.' },
     { text: '10 Active Job Postings', tooltip: 'Post and manage up to 10 active job listings simultaneously.' },
+    { text: '10 Job Alerts', tooltip: 'Receive up to 10 job alert notifications.' },
     { text: 'Product Catalogue (20 Products)', tooltip: 'Showcase up to 20 products in your digital storefront.' },
     { text: 'Service Listings (10 Services)', tooltip: 'Showcase up to 10 professional services to customers.' },
-    { text: '5 Professional Themes', tooltip: 'Choose from 5 premium themes to style your public business card.' },
+    { text: '10 Gallery Images & 2 Videos', tooltip: 'Upload up to 10 photos and embed 2 promotional videos.' },
+    { text: '5 Templates & 5 Color Themes', tooltip: 'Choose from 5 premium templates and 5 color themes.' },
     { text: 'Custom Cover Banner', tooltip: 'Upload a personalized high-resolution cover banner for your page.' },
-    { text: '10 Gallery Images', tooltip: 'Upload up to 10 high-quality photos to your gallery.' },
-    { text: '2 Videos', tooltip: 'Embed up to 2 promotional or introduction videos from YouTube/Vimeo.' },
-    { text: 'Branch Details', tooltip: 'Add addresses and contact details for multiple business branches.' },
-    { text: 'Click-to-Call', tooltip: 'Add direct click-to-call action buttons for easy customer contact.' },
-    { text: 'Company Brochure PDF Download', tooltip: 'Allow profile visitors to download your business brochure in PDF format.' },
+    { text: 'Premium Digital Visiting Card', tooltip: 'Enhanced digital card with better styling and more fields.' },
+    { text: '5 Team Members & 3 Branches', tooltip: 'Add up to 5 team members and 3 branch locations.' },
+    { text: 'Click-to-Call & FAQ Section', tooltip: 'Direct call buttons and a frequently asked questions section.' },
+    { text: 'Photo Albums & Review Photos', tooltip: 'Organize images in albums and allow photo reviews from customers.' },
+    { text: 'Business Brochure PDF', tooltip: 'Allow visitors to download your business brochure in PDF format.' },
+    { text: 'Enhanced SEO & Custom Meta Tags', tooltip: 'Custom meta titles, descriptions, keywords, and SEO optimization.' },
+    { text: 'View Counters (Profile, Jobs, Business)', tooltip: 'Track profile, job, and business listing views.' },
+    { text: 'Business Announcements & Offers', tooltip: 'Post business announcements and seasonal offers.' },
     { text: 'Silver Verified Badge', tooltip: 'Stand out with a silver verification badge indicating a trusted business.' },
-    { text: 'Profile Views Counter', tooltip: 'Monitor traffic with a public/private profile view counter.' },
-    { text: 'FAQ Section', tooltip: 'Add a frequently asked questions section to answer customer queries.' },
-    { text: 'Enhanced SEO', tooltip: 'Custom meta titles, descriptions, keywords, and search engine optimization.' },
   ],
   premium: [
     { text: 'Everything in Standard Plan', tooltip: 'Access all features of the Free and Standard tiers.' },
     { text: '50 Active Job Postings', tooltip: 'Post and manage up to 50 active job listings at any time.' },
+    { text: '50 Job Alerts', tooltip: 'Receive up to 50 job alert notifications.' },
     { text: 'Product Catalogue (100 Products)', tooltip: 'Showcase up to 100 products in an organized digital storefront.' },
     { text: 'Service Listings (50 Services)', tooltip: 'Showcase up to 50 professional services with booking queries.' },
-    { text: '15 Premium Themes', tooltip: 'Choose from 15 high-end, responsive layouts for your page.' },
-    { text: 'Animated / Video Banner', tooltip: 'Engage visitors with dynamic, auto-playing video or animated banners.' },
-    { text: '50 Gallery Images', tooltip: 'Upload a comprehensive photo gallery of up to 50 images.' },
-    { text: '10 Videos', tooltip: 'Embed up to 10 product demonstrations or promotional videos.' },
-    { text: 'Awards & Certificates Showcase', tooltip: 'Feature achievements, certifications, and industry recognitions.' },
-    { text: 'Clients Showcase', tooltip: 'Display client logos and testimonials on your page.' },
-    { text: 'Google Analytics Integration', tooltip: 'Track views, bounces, and referral sources directly on your profile.' },
-    { text: 'Facebook Pixel Integration', tooltip: 'Track conversions and retarget visitors with Facebook ads.' },
-    { text: 'Leads Dashboard', tooltip: 'Capture, manage, and download business leads and inquiry data.' },
-    { text: 'Custom CTA Buttons', tooltip: 'Create custom Call-to-Action buttons linkable to external platforms.' },
-    { text: 'Blog Section', tooltip: 'Publish news, updates, and articles to share company updates.' },
-    { text: 'Company Profile PDF Download', tooltip: 'Generate and download a stylized PDF profile card dynamically.' },
-    { text: 'Appointment Booking', tooltip: 'Allow visitors to book appointments or request service schedules.' },
-    { text: 'Live Chat Widget', tooltip: 'Integrate direct live chat buttons (like WhatsApp, Messenger, or Tawk.to).' },
+    { text: '50 Gallery Images & 10 Videos', tooltip: 'Upload a comprehensive gallery and embed up to 10 videos.' },
+    { text: '15 Premium Templates & 15 Themes', tooltip: 'Choose from 15 high-end responsive layouts and 15 themes.' },
+    { text: 'Video Banner', tooltip: 'Engage visitors with dynamic auto-playing video banners.' },
+    { text: 'Premium+ Digital Card & 25 Staff IDs', tooltip: 'Enhanced digital card plus generate up to 25 staff ID cards.' },
+    { text: '20 Team Members & 20 Branches', tooltip: 'Add up to 20 team members and 20 branch locations.' },
+    { text: 'Awards & Certifications Showcase', tooltip: 'Feature achievements, certifications, and industry recognitions.' },
+    { text: 'Google Analytics & Meta Pixel', tooltip: 'Track views, bounces, and retarget visitors with Facebook ads.' },
+    { text: 'Advanced Analytics & Leads Dashboard', tooltip: 'Advanced analytics with lead capture and management tools.' },
+    { text: 'Blog, Booking & Live Chat', tooltip: 'Blog section, appointment booking, and live chat widget.' },
+    { text: 'Dynamic QR Code', tooltip: 'QR codes that can be updated without reprinting.' },
     { text: 'Gold Verified Badge', tooltip: 'Distinguish your brand with a prestigious gold verification badge.' },
     { text: 'Featured Search Priority', tooltip: 'Get boosted to the top of category searches and directory listings.' },
   ],
   enterprise: [
     { text: 'Everything in Premium Plan', tooltip: 'Access all features of Free, Standard, and Premium tiers.' },
-    { text: 'Unlimited Active Job Postings', tooltip: 'Post as many jobs as your company needs with no constraints.' },
-    { text: 'Unlimited Products & Services', tooltip: 'Upload your entire product inventory and services directory.' },
-    { text: 'Unlimited Gallery Images & Videos', tooltip: 'Upload an unlimited gallery of images and embed unlimited videos.' },
-    { text: 'Unlimited Premium Themes', tooltip: 'Access all current and future premium themes, templates, and designs.' },
-    { text: 'Custom Brand Colors & Fonts', tooltip: 'Fully white-label your profile with your specific brand colors and typography.' },
-    { text: 'CEO Message Section', tooltip: 'Display a dedicated CEO/Founder profile message card on your page.' },
-    { text: 'Founder Video', tooltip: 'Embed a prominent video message from the founder on your homepage.' },
-    { text: 'Interactive Company Timeline', tooltip: 'Share your company history and milestones with an interactive timeline.' },
-    { text: 'Custom Domain Support', tooltip: 'Point your own custom domain (e.g. careers.mycompany.com) directly to your profile.' },
-    { text: 'AI Company Assistant (Chatbot)', tooltip: 'Train an AI assistant on your business info to answer customer questions 24/7.' },
-    { text: 'CRM Dashboard', tooltip: 'Advanced CRM dashboard with lead assignment and status pipeline tracking.' },
-    { text: 'Multi-Admin Access', tooltip: 'Grant dashboard management access to multiple team members or admins.' },
-    { text: 'Careers Portal', tooltip: 'Fully functional dedicated careers page branded for your organization.' },
-    { text: 'Partner Logos Showcase', tooltip: 'Display partners, sponsors, or vendor logos to build corporate trust.' },
+    { text: 'Unlimited Jobs, Products & Services', tooltip: 'Post unlimited jobs, products, and services with no constraints.' },
+    { text: 'Unlimited Gallery, Videos & Albums', tooltip: 'Upload unlimited media content across all formats.' },
+    { text: 'Unlimited Templates & Themes', tooltip: 'Access all current and future templates, themes, and designs.' },
+    { text: 'Advanced Branding & Custom Colors/Fonts', tooltip: 'Fully white-label your profile with brand colors and typography.' },
+    { text: 'Enterprise Digital Card & Unlimited Staff IDs', tooltip: 'Enterprise-grade digital card and unlimited staff ID generation.' },
+    { text: 'Custom Domain Support', tooltip: 'Point your own domain (e.g. careers.mycompany.com) to your profile.' },
+    { text: 'AI Company Assistant (Chatbot)', tooltip: 'Train an AI assistant on your business info for 24/7 customer support.' },
+    { text: 'AI SEO Content & AI Generated Meta Tags', tooltip: 'AI-powered content generation and automatic meta tag optimization.' },
+    { text: 'CRM Dashboard & Multi-Admin Access', tooltip: 'Advanced CRM with lead pipeline and team management access.' },
+    { text: 'Enterprise Careers Portal', tooltip: 'Fully functional dedicated careers page branded for your organization.' },
+    { text: 'CEO Message & Interactive Timeline', tooltip: 'Showcase company history and CEO message on your profile.' },
+    { text: 'Partner Logo Showcase', tooltip: 'Display partners, sponsors, or vendor logos to build corporate trust.' },
     { text: 'Platinum Corporate Badge', tooltip: 'Obtain the highest tier corporate verification badge on the directory.' },
-    { text: 'Homepage Featured Priority', tooltip: 'Get premium exposure on the THENIJOBS homepage and search banners.' },
+    { text: 'Homepage Featured & Top Search Priority', tooltip: 'Get premium exposure on homepage and highest search ranking.' },
+    { text: '24×7 Priority Support', tooltip: 'Round-the-clock dedicated priority support for enterprise clients.' },
   ],
 };
 
@@ -102,11 +106,282 @@ const taglines: Record<VisibleSubscriptionPlanSlug, string> = {
   enterprise: 'Best for Large Enterprises & Factories',
 };
 
+// ────────────────────────────────────────────────────────────────────
+// Feature Comparison Table Data
+// ────────────────────────────────────────────────────────────────────
+
+type FeatureValue = string | boolean;
+
+interface ComparisonFeature {
+  name: string;
+  free: FeatureValue;
+  basic: FeatureValue;
+  premium: FeatureValue;
+  enterprise: FeatureValue;
+}
+
+interface ComparisonGroup {
+  name: string;
+  icon: React.ReactNode;
+  features: ComparisonFeature[];
+}
+
+const comparisonGroups: ComparisonGroup[] = [
+  {
+    name: 'Core Business',
+    icon: <Building2 size={16} />,
+    features: [
+      { name: 'Annual Price', free: '₹0', basic: '₹480', premium: '₹1,200', enterprise: '₹5,000' },
+      { name: 'Active Jobs', free: '1', basic: '10', premium: '50', enterprise: 'Unlimited' },
+      { name: 'Job Alerts', free: '2', basic: '10', premium: '50', enterprise: 'Unlimited' },
+      { name: 'Company Profile', free: true, basic: true, premium: true, enterprise: true },
+      { name: 'Public Business Website', free: true, basic: true, premium: true, enterprise: true },
+      { name: 'Mobile Responsive Website', free: true, basic: true, premium: true, enterprise: true },
+      { name: 'Business Hours', free: true, basic: true, premium: true, enterprise: true },
+      { name: 'Contact Form', free: true, basic: true, premium: true, enterprise: true },
+      { name: 'Google Maps', free: true, basic: true, premium: true, enterprise: true },
+    ],
+  },
+  {
+    name: 'Website & Branding',
+    icon: <Palette size={16} />,
+    features: [
+      { name: 'Company Logo & Banner', free: 'Logo Only', basic: 'Custom Banner', premium: 'Video Banner', enterprise: 'Advanced Branding' },
+      { name: 'Website Templates', free: '1', basic: '5', premium: '15', enterprise: 'Unlimited' },
+      { name: 'Color Themes', free: '2', basic: '5', premium: '15', enterprise: 'Unlimited' },
+      { name: 'Digital Visiting Card', free: 'Basic', basic: 'Premium', premium: 'Premium+', enterprise: 'Enterprise' },
+      { name: 'Staff ID Cards', free: false, basic: false, premium: '25', enterprise: 'Unlimited' },
+      { name: 'QR Code', free: true, basic: true, premium: 'Dynamic', enterprise: 'Dynamic + Analytics' },
+      { name: 'Custom Domain', free: false, basic: false, premium: false, enterprise: true },
+      { name: 'Custom Brand Colors', free: false, basic: false, premium: false, enterprise: true },
+      { name: 'Custom Fonts', free: false, basic: false, premium: false, enterprise: true },
+    ],
+  },
+  {
+    name: 'Content & Media',
+    icon: <Camera size={16} />,
+    features: [
+      { name: 'Products', free: '3', basic: '20', premium: '100', enterprise: 'Unlimited' },
+      { name: 'Services', free: '3', basic: '10', premium: '50', enterprise: 'Unlimited' },
+      { name: 'Gallery Images', free: '6', basic: '10', premium: '50', enterprise: 'Unlimited' },
+      { name: 'Videos', free: false, basic: '2', premium: '10', enterprise: 'Unlimited' },
+      { name: 'Photo Albums', free: false, basic: true, premium: true, enterprise: 'Unlimited' },
+      { name: 'Customer Reviews', free: true, basic: true, premium: true, enterprise: true },
+      { name: 'Review Photos', free: false, basic: true, premium: true, enterprise: true },
+      { name: 'FAQ Section', free: false, basic: true, premium: true, enterprise: true },
+      { name: 'Blog Section', free: false, basic: false, premium: true, enterprise: 'Unlimited' },
+      { name: 'Business Brochure PDF', free: false, basic: true, premium: true, enterprise: 'Custom PDF' },
+      { name: 'Company Profile PDF', free: false, basic: false, premium: true, enterprise: true },
+      { name: 'Awards & Certifications', free: false, basic: false, premium: true, enterprise: 'Unlimited' },
+      { name: 'Clients Showcase', free: false, basic: false, premium: true, enterprise: 'Unlimited' },
+      { name: 'Team Members', free: false, basic: '5', premium: '20', enterprise: 'Unlimited' },
+      { name: 'Branch Locations', free: false, basic: '3', premium: '20', enterprise: 'Unlimited' },
+    ],
+  },
+  {
+    name: 'Marketing & Engagement',
+    icon: <Megaphone size={16} />,
+    features: [
+      { name: 'WhatsApp Enquiry', free: 'Basic', basic: 'Advanced', premium: 'Smart Auto Message', enterprise: 'Fully Customizable' },
+      { name: 'Click-to-Call', free: false, basic: true, premium: true, enterprise: true },
+      { name: 'Business Announcements', free: false, basic: true, premium: true, enterprise: 'Unlimited' },
+      { name: 'Seasonal Offers', free: false, basic: true, premium: true, enterprise: 'Unlimited' },
+      { name: 'Featured Products', free: false, basic: true, premium: true, enterprise: 'Unlimited' },
+      { name: 'Related Products', free: false, basic: true, premium: true, enterprise: 'Unlimited' },
+      { name: 'Careers Page', free: 'Basic', basic: 'Basic', premium: 'Advanced', enterprise: 'Enterprise Portal' },
+      { name: 'Appointment Booking', free: false, basic: false, premium: true, enterprise: 'Advanced' },
+      { name: 'Live Chat Widget', free: false, basic: false, premium: true, enterprise: 'AI Chatbot' },
+      { name: 'Partner Logo Showcase', free: false, basic: false, premium: false, enterprise: true },
+    ],
+  },
+  {
+    name: 'SEO & Analytics',
+    icon: <BarChart3 size={16} />,
+    features: [
+      { name: 'SEO Optimization', free: 'Basic', basic: 'Enhanced', premium: 'Advanced', enterprise: 'AI SEO' },
+      { name: 'XML Sitemap', free: true, basic: true, premium: true, enterprise: true },
+      { name: 'Schema Markup', free: 'Basic', basic: 'Advanced', premium: 'Complete', enterprise: 'Complete' },
+      { name: 'Custom Meta Tags', free: false, basic: true, premium: true, enterprise: 'AI Generated' },
+      { name: 'Local SEO', free: 'Basic', basic: 'Enhanced', premium: 'Advanced', enterprise: 'Enterprise' },
+      { name: 'AI SEO Content', free: false, basic: false, premium: false, enterprise: true },
+      { name: 'Product View Counter', free: false, basic: true, premium: true, enterprise: 'Advanced' },
+      { name: 'Job View Counter', free: false, basic: true, premium: true, enterprise: 'Advanced' },
+      { name: 'Business View Counter', free: false, basic: true, premium: true, enterprise: 'Live Analytics' },
+      { name: 'Analytics Dashboard', free: 'Basic', basic: 'Standard', premium: 'Advanced', enterprise: 'Enterprise' },
+      { name: 'Google Analytics', free: false, basic: false, premium: true, enterprise: true },
+      { name: 'Meta Pixel', free: false, basic: false, premium: true, enterprise: true },
+      { name: 'Lead Dashboard', free: false, basic: false, premium: true, enterprise: 'CRM Dashboard' },
+    ],
+  },
+  {
+    name: 'Enterprise & AI',
+    icon: <Sparkles size={16} />,
+    features: [
+      { name: 'AI Business Assistant', free: false, basic: false, premium: false, enterprise: true },
+      { name: 'CRM Dashboard', free: false, basic: false, premium: false, enterprise: true },
+      { name: 'Multi-Admin Access', free: false, basic: false, premium: false, enterprise: true },
+      { name: 'AI Website Builder', free: false, basic: false, premium: false, enterprise: true },
+    ],
+  },
+  {
+    name: 'Trust & Support',
+    icon: <Headphones size={16} />,
+    features: [
+      { name: 'Verification Badge', free: 'Basic', basic: 'Silver', premium: 'Gold', enterprise: 'Platinum Corporate' },
+      { name: 'Search Ranking Priority', free: 'Standard', basic: 'Silver', premium: 'Gold', enterprise: 'Platinum' },
+      { name: 'Homepage Featured', free: false, basic: false, premium: 'Featured', enterprise: 'Top Priority' },
+      { name: 'Priority Support', free: 'Community', basic: 'Email', premium: 'Priority Email', enterprise: '24×7 Priority' },
+    ],
+  },
+];
+
+// ────────────────────────────────────────────────────────────────────
+// Template Access Data
+// ────────────────────────────────────────────────────────────────────
+
+interface TemplateAccess {
+  emoji: string;
+  planName: string;
+  planSlug: VisibleSubscriptionPlanSlug;
+  templates: string[];
+  accent: string;
+  gradient: string;
+}
+
+const templateAccessData: TemplateAccess[] = [
+  {
+    emoji: '🆓',
+    planName: 'Free',
+    planSlug: 'free',
+    templates: ['Classic Directory', 'Basic Business Profile'],
+    accent: 'border-blue-500/20 text-blue-400',
+    gradient: 'from-blue-500/10 to-indigo-500/5',
+  },
+  {
+    emoji: '🥈',
+    planName: 'Standard',
+    planSlug: 'basic',
+    templates: ['Classic Directory', 'Business Directory', 'Modern Portfolio', '5 Color Themes'],
+    accent: 'border-slate-400/20 text-slate-300',
+    gradient: 'from-slate-400/10 to-slate-500/5',
+  },
+  {
+    emoji: '👑',
+    planName: 'Premium',
+    planSlug: 'premium',
+    templates: [
+      'All Standard Templates',
+      'E-Commerce Storefront',
+      'Service Booking Portal',
+      'Corporate Website',
+      'Restaurant Template',
+      'Healthcare Template',
+      'Education Template',
+      '15 Premium Themes',
+    ],
+    accent: 'border-amber-500/20 text-amber-400',
+    gradient: 'from-amber-500/10 to-orange-500/5',
+  },
+  {
+    emoji: '💎',
+    planName: 'Enterprise',
+    planSlug: 'enterprise',
+    templates: [
+      'Unlimited Templates & Themes',
+      'Custom Layout Builder',
+      'Custom Sections',
+      'White-label Branding',
+      'AI Website Builder',
+      'Custom Domain',
+      'API Integrations',
+    ],
+    accent: 'border-purple-500/20 text-purple-300',
+    gradient: 'from-purple-500/10 to-violet-500/5',
+  },
+];
+
+// ────────────────────────────────────────────────────────────────────
+// Upgrade Highlights Data
+// ────────────────────────────────────────────────────────────────────
+
+interface UpgradeHighlight {
+  emoji: string;
+  planName: string;
+  planSlug: VisibleSubscriptionPlanSlug;
+  tagline: string;
+  highlights: string[];
+  gradient: string;
+  border: string;
+}
+
+const upgradeHighlights: UpgradeHighlight[] = [
+  {
+    emoji: '🆓',
+    planName: 'Free',
+    planSlug: 'free',
+    tagline: 'Ideal for startups',
+    highlights: ['Professional business profile', 'Basic website with mobile support', 'QR code & digital card', 'Community support'],
+    gradient: 'from-blue-500/5 to-indigo-500/5',
+    border: 'border-blue-500/15',
+  },
+  {
+    emoji: '🥈',
+    planName: 'Standard',
+    planSlug: 'basic',
+    tagline: 'Grow your visibility',
+    highlights: ['More jobs, products & services', 'Better branding & themes', 'Enhanced SEO & meta tags', 'Digital brochure & view counters'],
+    gradient: 'from-slate-400/5 to-slate-500/5',
+    border: 'border-slate-400/15',
+  },
+  {
+    emoji: '👑',
+    planName: 'Premium',
+    planSlug: 'premium',
+    tagline: 'Scale your business',
+    highlights: ['Advanced templates & analytics', 'Lead management & CRM', 'Live chat & appointment booking', 'Featured business placement'],
+    gradient: 'from-amber-500/5 to-orange-500/5',
+    border: 'border-amber-500/15',
+  },
+  {
+    emoji: '💎',
+    planName: 'Enterprise',
+    planSlug: 'enterprise',
+    tagline: 'Ultimate power',
+    highlights: ['Unlimited resources & AI tools', 'CRM & multi-admin management', 'Custom domain & branding', 'Highest search priority & 24×7 support'],
+    gradient: 'from-purple-500/5 to-violet-500/5',
+    border: 'border-purple-500/15',
+  },
+];
+
+// ────────────────────────────────────────────────────────────────────
+// Helper for rendering comparison table cell values
+// ────────────────────────────────────────────────────────────────────
+
+function renderCellValue(value: FeatureValue, planSlug: VisibleSubscriptionPlanSlug) {
+  if (value === true) {
+    const checkColor =
+      planSlug === 'premium' ? 'text-amber-400' :
+      planSlug === 'enterprise' ? 'text-purple-400' :
+      planSlug === 'basic' ? 'text-slate-300' :
+      'text-emerald-400';
+    return <Check size={16} className={checkColor} />;
+  }
+  if (value === false) {
+    return <X size={14} className="text-slate-600" />;
+  }
+  return <span className="text-[11px] sm:text-xs font-semibold text-slate-300">{value}</span>;
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Main Component
+// ────────────────────────────────────────────────────────────────────
+
 export default function PricingPage() {
   const { user } = useAuth();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [selectedUpgrade, setSelectedUpgrade] = useState<'basic' | 'premium' | 'enterprise'>('premium');
   const [currentPlan, setCurrentPlan] = useState<VisibleSubscriptionPlanSlug>('free');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     async function fetchCompanyPlan() {
@@ -132,6 +407,17 @@ export default function PricingPage() {
     setSelectedUpgrade(slug as 'basic' | 'premium' | 'enterprise');
     setUpgradeOpen(true);
   };
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
+  };
+
+  // Initialize all groups as expanded
+  useEffect(() => {
+    const initial: Record<string, boolean> = {};
+    comparisonGroups.forEach((g) => { initial[g.name] = true; });
+    setExpandedGroups(initial);
+  }, []);
 
   // Determine audience from user role
   const audience: 'seeker' | 'employer' =
@@ -374,6 +660,177 @@ export default function PricingPage() {
                 </article>
               );
             })}
+          </div>
+
+          {/* ─────────────────────────────────────────────────────────── */}
+          {/* Feature Comparison Table                                    */}
+          {/* ─────────────────────────────────────────────────────────── */}
+          <div className="mt-28" id="compare">
+            <div className="mx-auto max-w-3xl text-center mb-12">
+              <div className="inline-flex items-center gap-2 rounded-full bg-violet-500/10 border border-violet-500/20 px-4 py-1.5 mb-5">
+                <Layout size={13} className="text-violet-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-violet-400">Full Feature Comparison</span>
+              </div>
+              <h2 className="font-outfit text-3xl sm:text-4xl font-black text-white leading-tight">
+                Compare Every Feature Across Plans
+              </h2>
+              <p className="mt-3 text-sm text-slate-400 font-semibold max-w-xl mx-auto">
+                See exactly what you get with each plan. Every feature has a clear upgrade path.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.01] overflow-hidden backdrop-blur-sm">
+              {/* Sticky header */}
+              <div className="sticky top-0 z-20 bg-[#0d0d20]/95 backdrop-blur-md border-b border-white/[0.06]">
+                <div className="grid grid-cols-[1fr_repeat(4,minmax(80px,1fr))] sm:grid-cols-[1.5fr_repeat(4,1fr)]">
+                  <div className="p-3 sm:p-4 text-xs font-black uppercase tracking-wider text-slate-500">Feature</div>
+                  <div className="p-3 sm:p-4 text-center">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-blue-400">🆓 Free</span>
+                  </div>
+                  <div className="p-3 sm:p-4 text-center">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-300">🥈 Standard</span>
+                  </div>
+                  <div className="p-3 sm:p-4 text-center bg-amber-500/5">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-400">👑 Premium</span>
+                  </div>
+                  <div className="p-3 sm:p-4 text-center">
+                    <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-purple-300">💎 Enterprise</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Groups */}
+              {comparisonGroups.map((group) => {
+                const isExpanded = expandedGroups[group.name] ?? true;
+
+                return (
+                  <div key={group.name}>
+                    {/* Group header */}
+                    <button
+                      onClick={() => toggleGroup(group.name)}
+                      className="w-full grid grid-cols-[1fr_repeat(4,minmax(80px,1fr))] sm:grid-cols-[1.5fr_repeat(4,1fr)] bg-white/[0.03] border-y border-white/[0.04] cursor-pointer hover:bg-white/[0.05] transition-colors"
+                    >
+                      <div className="p-3 sm:p-4 flex items-center gap-2 text-sm font-bold text-white col-span-5 sm:col-span-5">
+                        <span className="text-violet-400">{group.icon}</span>
+                        {group.name}
+                        <span className="ml-auto text-slate-500">
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Feature rows */}
+                    {isExpanded && group.features.map((feature, idx) => (
+                      <div
+                        key={feature.name}
+                        className={`grid grid-cols-[1fr_repeat(4,minmax(80px,1fr))] sm:grid-cols-[1.5fr_repeat(4,1fr)] border-b border-white/[0.03] transition-colors hover:bg-white/[0.02] ${
+                          idx % 2 === 0 ? '' : 'bg-white/[0.01]'
+                        }`}
+                      >
+                        <div className="p-3 sm:p-4 text-xs sm:text-sm font-semibold text-slate-300">
+                          {feature.name}
+                        </div>
+                        <div className="p-3 sm:p-4 flex items-center justify-center">
+                          {renderCellValue(feature.free, 'free')}
+                        </div>
+                        <div className="p-3 sm:p-4 flex items-center justify-center">
+                          {renderCellValue(feature.basic, 'basic')}
+                        </div>
+                        <div className="p-3 sm:p-4 flex items-center justify-center bg-amber-500/[0.02]">
+                          {renderCellValue(feature.premium, 'premium')}
+                        </div>
+                        <div className="p-3 sm:p-4 flex items-center justify-center">
+                          {renderCellValue(feature.enterprise, 'enterprise')}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─────────────────────────────────────────────────────────── */}
+          {/* Template Access Section                                     */}
+          {/* ─────────────────────────────────────────────────────────── */}
+          <div className="mt-28" id="templates">
+            <div className="mx-auto max-w-3xl text-center mb-12">
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-4 py-1.5 mb-5">
+                <Globe size={13} className="text-emerald-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Website Templates</span>
+              </div>
+              <h2 className="font-outfit text-3xl sm:text-4xl font-black text-white leading-tight">
+                Templates Included with Each Plan
+              </h2>
+              <p className="mt-3 text-sm text-slate-400 font-semibold max-w-xl mx-auto">
+                Every plan comes with professionally designed templates. Higher plans unlock premium industry-specific layouts.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {templateAccessData.map((tmpl) => (
+                <div
+                  key={tmpl.planSlug}
+                  className={`rounded-2xl border p-6 bg-gradient-to-br ${tmpl.gradient} ${tmpl.accent} backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-lg`}
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-2xl">{tmpl.emoji}</span>
+                    <h3 className="text-lg font-black font-outfit text-white">{tmpl.planName}</h3>
+                  </div>
+                  <ul className="space-y-2.5">
+                    {tmpl.templates.map((t) => (
+                      <li key={t} className="flex items-start gap-2 text-sm font-semibold text-slate-300">
+                        <Check size={14} className={`mt-0.5 shrink-0 ${tmpl.accent.includes('amber') ? 'text-amber-400' : tmpl.accent.includes('purple') ? 'text-purple-400' : tmpl.accent.includes('slate') ? 'text-slate-400' : 'text-blue-400'}`} />
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ─────────────────────────────────────────────────────────── */}
+          {/* Upgrade Highlights Section                                  */}
+          {/* ─────────────────────────────────────────────────────────── */}
+          <div className="mt-28 mb-8" id="highlights">
+            <div className="mx-auto max-w-3xl text-center mb-12">
+              <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 px-4 py-1.5 mb-5">
+                <Zap size={13} className="text-cyan-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Why Upgrade</span>
+              </div>
+              <h2 className="font-outfit text-3xl sm:text-4xl font-black text-white leading-tight">
+                What You Unlock at Each Level
+              </h2>
+              <p className="mt-3 text-sm text-slate-400 font-semibold max-w-xl mx-auto">
+                Each plan gives your business meaningful new capabilities and stronger incentives to grow.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {upgradeHighlights.map((uh) => (
+                <div
+                  key={uh.planSlug}
+                  className={`rounded-2xl border p-6 bg-gradient-to-br ${uh.gradient} ${uh.border} backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-lg`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-2xl">{uh.emoji}</span>
+                    <div>
+                      <h3 className="text-lg font-black font-outfit text-white">{uh.planName}</h3>
+                      <p className="text-xs font-semibold text-slate-400">{uh.tagline}</p>
+                    </div>
+                  </div>
+                  <ul className="mt-4 space-y-2.5">
+                    {uh.highlights.map((h) => (
+                      <li key={h} className="flex items-start gap-2 text-sm font-semibold text-slate-300">
+                        <ArrowRight size={13} className="mt-0.5 shrink-0 text-cyan-400" />
+                        {h}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

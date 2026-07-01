@@ -16,7 +16,7 @@ export {
 export { syncMobileVerification, deleteCompanyAccount, onUserWriteSync } from './auth';
 export { onCompanyWriteSync } from './companySync';
 
-export { healthCheck, seedDemoAccounts } from './dev';
+export { healthCheck } from './dev';
 
 export {
   serverApplyToJob,

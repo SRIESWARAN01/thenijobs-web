@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, BellRing, BriefcaseBusiness, Building2, Store, Users } from 'lucide-react';
+import { BadgeCheck, BellRing, BriefcaseBusiness, Building2, Store, Users, ShieldCheck, Heart } from 'lucide-react';
 import { where } from 'firebase/firestore';
 import { useRealtimeCount } from '@/hooks/useRealtimeStats';
 
@@ -86,67 +86,88 @@ function AnimatedNumber({ target }: { target: number }) {
 
 export default function StatsSection() {
   const totalUsers = useRealtimeCount('users');
-  const activeJobs = useRealtimeCount('jobs', [where('isActive', '==', true)]);
+  const totalEmployees = useRealtimeCount('users', [where('role', '==', 'job_seeker')]);
   const totalCompanies = useRealtimeCount('companies');
-  const totalServiceProviders = useRealtimeCount('users', [where('role', '==', 'service_provider')]);
-  const totalEmployers = useRealtimeCount('users', [where('role', '==', 'employer')]);
-  const totalSeekers = useRealtimeCount('users', [where('role', '==', 'job_seeker')]);
+  const totalActiveCustomers = useRealtimeCount('companies', [where('isActive', '==', true)]);
+  const totalActiveJobs = useRealtimeCount('jobs', [where('isActive', '==', true)]);
+  const totalVerifiedCompanies = useRealtimeCount('companies', [where('verificationStatus', '==', 'verified')]);
+  const totalVerifiedLocalBusinesses = useRealtimeCount('companies', [
+    where('verificationStatus', '==', 'verified'),
+    where('category', '!=', 'IT & Software')
+  ]);
+  const totalApprovedServices = useRealtimeCount('services', [where('status', '==', 'active')]);
 
   const stats = [
     {
       value: totalUsers.count,
       loading: totalUsers.loading,
       label: 'Registered Users',
-      detail: 'Total user accounts',
+      detail: 'Total active accounts',
       color: 'text-teal-400',
       icon: Users,
     },
     {
-      value: activeJobs.count,
-      loading: activeJobs.loading,
-      label: 'Active Jobs',
-      detail: 'Live vacancies',
-      color: 'text-rose-400',
-      icon: BellRing,
+      value: totalEmployees.count,
+      loading: totalEmployees.loading,
+      label: 'Registered Employees',
+      detail: 'Job seekers on platform',
+      color: 'text-violet-400',
+      icon: BadgeCheck,
     },
     {
       value: totalCompanies.count,
       loading: totalCompanies.loading,
-      label: 'Companies',
-      detail: 'Company records',
+      label: 'Registered Companies',
+      detail: 'Corporate profiles',
       color: 'text-emerald-400',
       icon: Building2,
     },
     {
-      value: totalServiceProviders.count,
-      loading: totalServiceProviders.loading,
-      label: 'Service Providers',
-      detail: 'Service role accounts',
+      value: totalActiveCustomers.count,
+      loading: totalActiveCustomers.loading,
+      label: 'Active Customers',
+      detail: 'Active business listings',
+      color: 'text-cyan-400',
+      icon: Heart,
+    },
+    {
+      value: totalActiveJobs.count,
+      loading: totalActiveJobs.loading,
+      label: 'Active Job Posts',
+      detail: 'Live career vacancies',
+      color: 'text-rose-400',
+      icon: BellRing,
+    },
+    {
+      value: totalVerifiedCompanies.count,
+      loading: totalVerifiedCompanies.loading,
+      label: 'Verified Companies',
+      detail: 'Gold & Silver badges',
       color: 'text-amber-400',
+      icon: ShieldCheck,
+    },
+    {
+      value: totalVerifiedLocalBusinesses.count,
+      loading: totalVerifiedLocalBusinesses.loading,
+      label: 'Verified Local Businesses',
+      detail: 'Trusted local listings',
+      color: 'text-indigo-400',
       icon: Store,
     },
     {
-      value: totalEmployers.count,
-      loading: totalEmployers.loading,
-      label: 'Employers',
-      detail: 'Employer accounts',
-      color: 'text-cyan-400',
+      value: totalApprovedServices.count,
+      loading: totalApprovedServices.loading,
+      label: 'Approved Services',
+      detail: 'Technicians & providers',
+      color: 'text-pink-400',
       icon: BriefcaseBusiness,
-    },
-    {
-      value: totalSeekers.count,
-      loading: totalSeekers.loading,
-      label: 'Job Seekers',
-      detail: 'Candidate accounts',
-      color: 'text-violet-400',
-      icon: BadgeCheck,
     },
   ];
 
   return (
     <section className="px-4 py-8 sm:px-6 bg-[#0a0a1a]">
       <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
@@ -157,7 +178,7 @@ export default function StatsSection() {
                 <div className={`font-outfit text-2xl font-black sm:text-3xl ${stat.color}`}>
                   {stat.loading ? '...' : <AnimatedNumber target={stat.value} />}
                 </div>
-                <div className="mt-1 text-sm font-bold text-white">{stat.label}</div>
+                <div className="mt-1 text-sm font-bold text-white leading-tight">{stat.label}</div>
                 <div className="mt-0.5 text-xs text-slate-400">{stat.detail}</div>
               </div>
             );

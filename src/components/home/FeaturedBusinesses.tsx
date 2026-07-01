@@ -71,14 +71,14 @@ export default function FeaturedBusinesses() {
   const companiesList = sortCompaniesByPlan(rawList).slice(0, 4);
 
   return (
-    <section className="px-4 py-12 sm:px-6 relative overflow-hidden bg-gradient-to-b from-[#0a0a1a] to-[#080814]">
+    <section className="px-4 py-12 sm:px-6 relative overflow-hidden bg-theme-main border-b border-theme text-theme-body">
       {/* Light effect */}
-      <div className="absolute top-1/2 left-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/5 blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px] pointer-events-none opacity-10" style={{ backgroundColor: 'var(--theme-primary)' }} />
       
       <div className="mx-auto max-w-6xl relative z-10">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-violet-400">Business Directory</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-theme-primary">Business Directory</p>
             <h2 className="mt-1 font-outfit text-2xl font-black text-white sm:text-3xl tracking-tight">
               Verified Local Businesses
             </h2>
@@ -86,7 +86,7 @@ export default function FeaturedBusinesses() {
           </div>
           <Link
             href="/businesses"
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all shadow-md active:scale-95"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-theme bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10 transition-all shadow-md active:scale-95 cursor-pointer"
           >
             View all <ArrowRight size={14} />
           </Link>
@@ -94,15 +94,15 @@ export default function FeaturedBusinesses() {
 
         {loading && dbCompanies.length === 0 ? (
           <div className="flex justify-center items-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-500/30 border-t-violet-500"></div>
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--theme-primary)]/30 border-t-[var(--theme-primary)]"></div>
           </div>
         ) : companiesList.length === 0 ? (
-          <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-8 text-center backdrop-blur-md">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+          <div className="rounded-2xl border border-theme bg-white/[0.01] p-8 text-center backdrop-blur-md">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-theme-card text-theme-primary">
               <Building2 size={24} />
             </div>
             <h3 className="mt-4 font-outfit text-lg font-bold text-white">No featured businesses yet</h3>
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-450">
               Verified featured businesses will appear here after approval.
             </p>
           </div>
@@ -111,33 +111,33 @@ export default function FeaturedBusinesses() {
             {companiesList.map((biz) => {
               const Icon = getCategoryIcon(biz.category);
               return (
-                <article key={biz.id} className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] hover:border-white/15 hover:scale-[1.02] transition-all duration-300 shadow-xl flex flex-col justify-between h-full group relative">
+                <article key={biz.id} className="overflow-hidden rounded-2xl border border-theme bg-theme-card hover:border-[var(--theme-primary)]/30 hover:scale-[1.02] transition-all duration-300 shadow-xl flex flex-col justify-between h-full group relative">
                   {/* Subtle top background decoration */}
                   <div className="absolute top-0 inset-x-0 h-[100px] bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none" />
                   
                   <div>
-                    <div className="relative bg-gradient-to-br from-[#12122d] to-[#1e1a3a] p-5 text-white border-b border-white/5">
+                    <div className="relative bg-gradient-to-br from-[#12122d] to-[#1e1a3a] p-5 text-white border-b border-theme">
                       <div className="flex items-start justify-between">
                         {biz.logoUrl ? (
-                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-theme overflow-hidden group-hover:scale-105 transition-transform duration-300">
                             <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none';
-                              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-violet-300">${(biz.name || 'B').substring(0, 2).toUpperCase()}</span>`;
+                              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-[var(--theme-primary)]">${(biz.name || 'B').substring(0, 2).toUpperCase()}</span>`;
                             }} />
                           </span>
                         ) : (
-                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-white/95 group-hover:scale-105 transition-transform duration-300">
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-theme text-white/95 group-hover:scale-105 transition-transform duration-300">
                             <Icon size={26} />
                           </span>
                         )}
                         {biz.isPremium && (
-                          <span className="rounded-full bg-violet-600/20 border border-violet-500/30 px-2.5 py-0.5 text-[9px] font-black text-violet-300 uppercase tracking-wide">
+                          <span className="rounded-full bg-[var(--theme-primary)]/20 border border-[var(--theme-primary)]/30 px-2.5 py-0.5 text-[9px] font-black text-theme-primary uppercase tracking-wide">
                             Featured
                           </span>
                         )}
                       </div>
                       <p className="mt-5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{biz.category}</p>
-                      <h3 className="mt-1 min-h-11 text-base font-bold leading-snug group-hover:text-violet-300 transition-colors">{biz.name}</h3>
+                      <h3 className="mt-1 min-h-11 text-base font-bold leading-snug group-hover:text-[var(--theme-primary)] transition-colors">{biz.name}</h3>
                     </div>
 
                     <div className="p-5">
@@ -146,7 +146,7 @@ export default function FeaturedBusinesses() {
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs font-bold text-slate-500 mt-2">
                         <span className="flex items-center gap-1 text-slate-400">
-                          <MapPin size={12} className="text-violet-400" />
+                          <MapPin size={12} className="text-theme-primary" />
                           {biz.location}
                         </span>
                         <span className="flex items-center gap-1 text-slate-400">
@@ -158,17 +158,17 @@ export default function FeaturedBusinesses() {
                   </div>
 
                   <div className="p-5 pt-0">
-                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 pt-4 border-t border-white/5">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 pt-4 border-t border-theme">
                       <Link
                         href={biz.portfolioPath}
-                        className="flex min-h-10 items-center justify-center rounded-xl bg-violet-600 hover:bg-violet-700 text-xs font-bold text-white transition-all shadow-md active:scale-95 flex-1 text-center"
+                        className="flex min-h-10 items-center justify-center rounded-xl btn-theme-primary text-xs font-bold text-white transition-all shadow-md active:scale-95 flex-1 text-center cursor-pointer"
                       >
                         View Profile
                       </Link>
                       {biz.phone && (
                         <a
                           href={`tel:${biz.phone}`}
-                          className="flex min-h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                          className="flex min-h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-theme text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
                           aria-label={`Call ${biz.name}`}
                         >
                           <Phone size={14} />

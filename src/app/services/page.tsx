@@ -6,41 +6,61 @@ import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import {
   Search, MapPin, X, BadgeCheck, Star,
-  Briefcase, SlidersHorizontal, ArrowRight, Building2, Loader2
+  Wrench, SlidersHorizontal, ArrowRight, Building2, Loader2, Phone, MessageCircle
 } from 'lucide-react';
 import { getPublicCompanies, getActiveServices } from '@/lib/firebase/firestoreService';
 import { useLocations } from '@/hooks/useLocations';
 import { matchesSearch, scoreSearchMatch } from '@/lib/search';
 import { Select } from '@/components/ui/Select';
 import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
+import MembershipBadge from '@/components/ui/MembershipBadge';
 
-const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance'];
+const SERVICE_CATEGORIES = [
+  'All',
+  'AC Technician',
+  'Electrician',
+  'Plumber',
+  'Carpenter',
+  'Digital Marketing',
+  'Graphic Design',
+  'Web Development',
+  'Mobile Repair',
+  'CCTV Installation',
+  'Computer Service',
+  'Home Cleaning',
+  'Painting',
+  'Interior Design',
+  'Others'
+];
 
-interface Service {
+interface ServiceWithCompany {
   id: string;
-  slug: string;
-  portfolioPath: string;
   name: string;
-  category: string;
-  district: string;
-  location: string;
   description: string;
-  services: string[];
+  category: string;
+  price: number;
+  location: string;
+  district: string;
+  providerId: string;
+  companyId: string;
+  companyName: string;
+  ceoName: string;
+  companyLogo: string;
+  phone: string;
+  whatsapp: string;
   rating: number;
-  reviews: number;
-  jobs: number;
+  reviewsCount: number;
   isVerified: boolean;
-  isPremium: boolean;
-  tagline: string;
-  logo: string;
-  isNew: boolean;
+  subscriptionPlan: string;
+  portfolioPath: string;
+  createdAt?: any;
 }
 
 const SORT_OPTIONS = [
-  { value: 'premium', label: 'Featured First' },
+  { value: 'new', label: 'Newest First' },
   { value: 'rating', label: 'Top Rated' },
-  { value: 'jobs', label: 'Most Jobs' },
-  { value: 'new', label: 'Newest' },
+  { value: 'price_low', label: 'Price: Low to High' },
+  { value: 'price_high', label: 'Price: High to Low' },
 ];
 
 export default function ServicesPage() {
@@ -53,12 +73,12 @@ export default function ServicesPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDistrict, setSelectedDistrict] = useState('All');
   const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
-  const [sortBy, setSortBy] = useState('premium');
+  const [sortBy, setSortBy] = useState('new');
   const [showFilters, setShowFilters] = useState(false);
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<ServiceWithCompany[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load service providers from Firestore (companies that offer services)
+  // Load services and companies from Firestore
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -68,120 +88,143 @@ export default function ServicesPage() {
       if (locationParam) setSelectedDistrict(locationParam);
     }
 
-    async function loadServices() {
+    async function loadServicesData() {
       try {
+        setLoading(true);
         const [companies, activeServices] = await Promise.all([
           getPublicCompanies(),
           getActiveServices()
         ]);
 
-        const data = companies
-          .map(company => {
-            const d = company;
-            // Get dynamically approved services for this company
-            const dbServices = activeServices
-              .filter((s: any) => s.providerId === company.ownerId)
-              .map((s: any) => s.name);
-            
-            const legacyServices = Array.isArray(d.services) ? d.services : [];
-            const mergedServices = Array.from(new Set([...dbServices, ...legacyServices]));
+        // Map companies list by ownerId for easy lookups
+        const companyMap: Record<string, any> = {};
+        companies.forEach(company => {
+          companyMap[company.ownerId] = company;
+        });
 
-            return {
-              id: d.id,
-              slug: d.slug || d.id,
-              portfolioPath: getCompanyPortfolioPath(d),
-              name: d.name || '',
-              category: d.category || '',
-              district: d.district || 'Local Area',
-              location: d.location || d.locality || d.town || d.district || 'Local Area',
-              description: d.description || '',
-              services: mergedServices,
-              rating: d.rating || 0,
-              reviews: d.reviewCount || 0,
-              jobs: d.jobCount || 0,
-              isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || d.verificationBadges?.businessVerified || false,
-              isPremium: d.isPremium || d.isFeatured || false,
-              tagline: d.tagline || d.description?.substring(0, 80) || '',
-              logo: d.logoUrl || d.logo || (d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'S'),
-              isNew: d.createdAt ? (Date.now() - d.createdAt?.toMillis?.() < 7 * 24 * 60 * 60 * 1000) : false,
-            } as Service;
-          });
-        setServices(data);
+        // Join services with their provider companies details
+        const mappedServices: ServiceWithCompany[] = activeServices.map(svc => {
+          const provider = companyMap[svc.providerId] || {};
+          const isVerified = provider.isVerified || provider.verificationStatus === 'verified' || provider.status === 'approved' || false;
+          
+          return {
+            id: svc.id,
+            name: svc.name || 'Unnamed Service',
+            description: svc.description || 'Verified local service on THENIJOBS.',
+            category: svc.category || 'Others',
+            price: Number(svc.price) || 0,
+            location: svc.location || provider.location || provider.district || 'Theni',
+            district: svc.district || provider.district || 'Theni',
+            providerId: svc.providerId || '',
+            companyId: provider.id || '',
+            companyName: provider.name || 'Local Service Provider',
+            ceoName: provider.ceoName || provider.founder || provider.contactPerson || 'N/A',
+            companyLogo: provider.logoUrl || provider.logo || '',
+            phone: provider.phone || '',
+            whatsapp: provider.whatsapp || provider.phone || '',
+            rating: provider.rating || 4.5,
+            reviewsCount: provider.reviewCount || 0,
+            isVerified,
+            subscriptionPlan: provider.subscriptionPlan || (provider.isFeatured ? 'premium' : 'free'),
+            portfolioPath: getCompanyPortfolioPath(provider),
+            createdAt: svc.createdAt
+          };
+        });
+
+        setServices(mappedServices);
       } catch (err) {
-        console.error('Error loading services:', err);
+        console.error('Error loading services catalogue:', err);
       } finally {
         setLoading(false);
       }
     }
-    loadServices();
+
+    loadServicesData();
   }, []);
 
-  const filtered = services
-    .filter(s => {
-      const matchSearch = matchesSearch(search, [
-        { value: s.name, weight: 3 },
-        { value: s.category, weight: 2 },
-        s.tagline,
-        s.description,
-        s.services,
-      ]);
-      const matchCat = selectedCategory === 'All' || s.category === selectedCategory;
-      const matchDist = selectedDistrict === 'All' || s.location === selectedDistrict || s.district === selectedDistrict;
-      const matchVerified = !showVerifiedOnly || s.isVerified;
-      return matchSearch && matchCat && matchDist && matchVerified;
-    })
-    .sort((a, b) => {
-      if (search.trim()) {
-        return scoreSearchMatch(search, [
-          { value: b.name, weight: 3 },
-          { value: b.category, weight: 2 },
-          b.tagline,
-          b.description,
-          b.services,
-        ]) - scoreSearchMatch(search, [
-          { value: a.name, weight: 3 },
-          { value: a.category, weight: 2 },
-          a.tagline,
-          a.description,
-          a.services,
+  const filteredServices = useMemo(() => {
+    return services
+      .filter(svc => {
+        const matchSearch = matchesSearch(search, [
+          { value: svc.name, weight: 3 },
+          { value: svc.companyName, weight: 2 },
+          { value: svc.category, weight: 2 },
+          svc.description,
+          svc.location
         ]);
-      }
-      if (sortBy === 'premium') return (b.isPremium ? 1 : 0) - (a.isPremium ? 1 : 0);
-      if (sortBy === 'rating') return b.rating - a.rating;
-      if (sortBy === 'jobs') return b.jobs - a.jobs;
-      if (sortBy === 'new') return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
-      return 0;
-    });
+        const matchCat = selectedCategory === 'All' || svc.category.toLowerCase().trim() === selectedCategory.toLowerCase().trim();
+        const matchDist = selectedDistrict === 'All' || svc.location === selectedDistrict || svc.district === selectedDistrict;
+        const matchVerified = !showVerifiedOnly || svc.isVerified;
 
-  const activeFilters = (selectedCategory !== 'All' ? 1 : 0) + (selectedDistrict !== 'All' ? 1 : 0) + (showVerifiedOnly ? 1 : 0);
+        return matchSearch && matchCat && matchDist && matchVerified;
+      })
+      .sort((a, b) => {
+        if (search.trim()) {
+          return scoreSearchMatch(search, [
+            { value: b.name, weight: 3 },
+            { value: b.companyName, weight: 2 },
+            b.description,
+          ]) - scoreSearchMatch(search, [
+            { value: a.name, weight: 3 },
+            { value: a.companyName, weight: 2 },
+            a.description,
+          ]);
+        }
+
+        if (sortBy === 'new') {
+          const timeA = a.createdAt?.toMillis?.() || 0;
+          const timeB = b.createdAt?.toMillis?.() || 0;
+          return timeB - timeA;
+        }
+        if (sortBy === 'rating') return b.rating - a.rating;
+        if (sortBy === 'price_low') return a.price - b.price;
+        if (sortBy === 'price_high') return b.price - a.price;
+
+        return 0;
+      });
+  }, [services, search, selectedCategory, selectedDistrict, showVerifiedOnly, sortBy]);
+
+  const activeFiltersCount = (selectedCategory !== 'All' ? 1 : 0) + (selectedDistrict !== 'All' ? 1 : 0) + (showVerifiedOnly ? 1 : 0);
 
   return (
     <main className="min-h-screen bg-[#0a0a1a]">
       <Header />
 
-      {/* Sticky Search */}
+      {/* Sticky Search bar */}
       <div className="sticky top-16 z-40 glass-nav border-b border-white/5 px-4 sm:px-6 py-3">
-        <div className="max-w-5xl mx-auto flex gap-2">
-          <div className="flex-1 flex items-center gap-2 search-input px-4 py-2.5">
+        <div className="max-w-5xl mx-auto flex flex-wrap gap-2">
+          <div className="min-w-0 flex-[1_1_220px] flex items-center gap-2 search-input px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl">
             <Search size={15} className="text-gray-500 shrink-0" />
-            <input value={search} onChange={e => setSearch(e.target.value)} type="text"
-              placeholder="Search services, categories, providers..."
-              className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              type="text"
+              placeholder="Search services, category, providers..."
+              className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder-gray-500 outline-none"
+            />
             {search && <button onClick={() => setSearch('')}><X size={13} className="text-gray-500" /></button>}
           </div>
+
           <Select
             value={selectedDistrict}
             onChange={setSelectedDistrict}
             options={districtOptions}
             placeholder="All Areas"
-            className="w-36"
+            className="w-36 flex-1 sm:flex-none min-w-[9rem]"
           />
-          <button onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all border
-              ${showFilters || activeFilters > 0 ? 'bg-violet-500/20 border-violet-500/40 text-violet-300' : 'bg-white/5 border-white/10 text-gray-400'}`}>
+
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex flex-none items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all border
+              ${showFilters || activeFiltersCount > 0 ? 'bg-violet-500/20 border-violet-500/40 text-violet-300' : 'bg-white/5 border-white/10 text-gray-400'}`}
+          >
             <SlidersHorizontal size={15} />
             <span className="hidden sm:inline">Filters</span>
-            {activeFilters > 0 && <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">{activeFilters}</span>}
+            {activeFiltersCount > 0 && (
+              <span className="w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -189,28 +232,37 @@ export default function ServicesPage() {
           <div className="max-w-5xl mx-auto mt-3 glass-card rounded-2xl p-4 border border-white/10">
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-semibold text-gray-400 mb-2">Service Category</p>
-                <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map(c => (
-                    <button key={c} onClick={() => setSelectedCategory(c)}
+                <p className="text-xs font-semibold text-gray-400 mb-2">Service Categories</p>
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto no-scrollbar">
+                  {SERVICE_CATEGORIES.map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setSelectedCategory(c)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all
-                        ${selectedCategory === c ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+                        ${selectedCategory === c ? 'bg-violet-500/20 border-violet-500/50 text-violet-300' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
+                    >
                       {c}
                     </button>
                   ))}
                 </div>
               </div>
+
               <label className="flex items-center gap-2 cursor-pointer">
-                <div onClick={() => setShowVerifiedOnly(!showVerifiedOnly)}
-                  className={`w-9 h-5 rounded-full relative transition-all ${showVerifiedOnly ? 'bg-violet-600' : 'bg-white/20'}`}>
+                <div
+                  onClick={() => setShowVerifiedOnly(!showVerifiedOnly)}
+                  className={`w-9 h-5 rounded-full relative transition-all ${showVerifiedOnly ? 'bg-violet-600' : 'bg-white/20'}`}
+                >
                   <div className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-all ${showVerifiedOnly ? 'left-[18px]' : 'left-0.5'}`} />
                 </div>
-                <span className="text-xs text-gray-300">Verified services only</span>
+                <span className="text-xs text-gray-300">Verified service providers only</span>
                 <BadgeCheck size={12} className="text-emerald-400" />
               </label>
-              {activeFilters > 0 && (
-                <button onClick={() => { setSelectedCategory('All'); setSelectedDistrict('All'); setShowVerifiedOnly(false); }}
-                  className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
+
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={() => { setSelectedCategory('All'); setSelectedDistrict('All'); setShowVerifiedOnly(false); }}
+                  className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                >
                   <X size={11} /> Clear all filters
                 </button>
               )}
@@ -220,13 +272,14 @@ export default function ServicesPage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-12">
-
         {/* Stats + Sort */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="font-outfit font-bold text-xl text-white">{filtered.length} Services</h1>
+            <h1 className="font-outfit font-bold text-xl text-white">
+              {loading ? 'Loading...' : `${filteredServices.length} Service${filteredServices.length !== 1 ? 's' : ''}`}
+            </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              {selectedCategory !== 'All' ? selectedCategory : 'All categories'}
+              {selectedCategory !== 'All' ? selectedCategory : 'All service categories'}
               {selectedDistrict !== 'All' ? ` in ${selectedDistrict}` : ' across all areas'}
             </p>
           </div>
@@ -239,77 +292,135 @@ export default function ServicesPage() {
           />
         </div>
 
-        {/* Category quick pills */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6">
-          {CATEGORIES.slice(1).map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(selectedCategory === cat ? 'All' : cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap border transition-all shrink-0
-                ${selectedCategory === cat ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
-              {cat}
-            </button>
-          ))}
+        {/* Category Pills horizontal scroller */}
+        <div className="-mx-4 sm:mx-0 overflow-x-auto no-scrollbar mb-6 px-4 sm:px-0">
+          <div className="flex w-max gap-2">
+            {SERVICE_CATEGORIES.slice(1).map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(selectedCategory === cat ? 'All' : cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap border transition-all shrink-0
+                  ${selectedCategory === cat ? 'bg-violet-600 text-white border-violet-600' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Services Cards */}
+        {/* Loading / Empty / Grid layout */}
         {loading ? (
-          <div className="glass-card rounded-2xl p-12 text-center">
-            <Loader2 size={32} className="animate-spin text-violet-500 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm">Loading services...</p>
+          <div className="glass-card rounded-2xl p-16 text-center">
+            <Loader2 size={32} className="text-violet-400 mx-auto mb-4 animate-spin" />
+            <p className="text-sm text-gray-400">Loading approved services...</p>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : filteredServices.length === 0 ? (
           <div className="glass-card rounded-2xl p-12 text-center">
-            <div className="text-5xl mb-4">🔧</div>
+            <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
+              <Wrench size={28} className="text-violet-400" />
+            </div>
             <h3 className="text-lg font-semibold text-white mb-2">No services found</h3>
-            <p className="text-gray-400 text-sm mb-4">Try adjusting your search or filters</p>
-            <button onClick={() => { setSearch(''); setSelectedCategory('All'); setSelectedDistrict('All'); setShowVerifiedOnly(false); }}
-              className="btn-outline-glass px-5 py-2 rounded-xl text-sm font-medium">Clear Filters</button>
+            <p className="text-gray-450 text-sm mb-6 max-w-md mx-auto">
+              We couldn&apos;t find any approved services matching your filters. Try adjusting your query or district.
+            </p>
+            <button
+              onClick={() => { setSearch(''); setSelectedCategory('All'); setSelectedDistrict('All'); setShowVerifiedOnly(false); }}
+              className="btn-outline-glass px-5 py-2 rounded-xl text-sm font-medium"
+            >
+              Clear Filters
+            </button>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
-            {filtered.map(svc => (
-              <div key={svc.id} className="premium-card rounded-2xl p-5 flex flex-col gap-4 group">
-                <div className="flex gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                    {svc.logo && (svc.logo.startsWith('http') || svc.logo.startsWith('/')) ? (
-                      <img src={svc.logo} alt={svc.name} className="w-full h-full object-cover" onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-violet-400">${(svc.name || 'S').substring(0, 2).toUpperCase()}</span>`;
-                      }} />
-                    ) : (
-                      <span className="text-lg font-black text-violet-400">{svc.logo}</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-1">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h2 className="font-semibold text-white text-sm leading-tight truncate">{svc.name}</h2>
-                          {svc.isVerified && <BadgeCheck size={14} className="text-emerald-400 shrink-0" />}
+            {filteredServices.map(svc => (
+              <div key={svc.id} className="premium-card rounded-2xl p-5 flex flex-col gap-4 group justify-between h-full">
+                <div>
+                  <div className="flex gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                      {svc.companyLogo ? (
+                        <img
+                          src={svc.companyLogo}
+                          alt={svc.companyName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-violet-400">${svc.companyName.substring(0, 2).toUpperCase()}</span>`;
+                          }}
+                        />
+                      ) : (
+                        <span className="text-lg font-black text-violet-400">
+                          {svc.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="min-w-0">
+                          <h2 className="font-semibold text-white text-base leading-tight truncate">
+                            {svc.name}
+                          </h2>
+                          <p className="text-xs text-gray-500 mt-1.5 font-bold">
+                            Business: <span className="text-slate-300 font-bold">{svc.companyName}</span>
+                          </p>
+                          <p className="text-[11px] text-gray-500 font-semibold mt-0.5">
+                            CEO / Owner: <span className="text-slate-400">{svc.ceoName}</span>
+                          </p>
                         </div>
-                        {svc.isPremium && <span className="badge-premium text-[9px] mt-0.5 inline-block">FEATURED</span>}
-                        {svc.isNew && !svc.isPremium && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 font-bold inline-block mt-0.5">NEW</span>}
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-1">{svc.tagline}</p>
                   </div>
+
+                  <p className="text-xs text-gray-400 mt-4 line-clamp-3 leading-relaxed text-left">
+                    {svc.description}
+                  </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                  <span className="text-violet-400 font-medium">{svc.category}</span>
-                  <span className="flex items-center gap-1"><MapPin size={10} />{svc.location}</span>
-                  <span className="flex items-center gap-1"><Star size={10} className="fill-amber-400 text-amber-400" />{svc.rating} ({svc.reviews})</span>
-                  <span className="flex items-center gap-1 text-cyan-400"><Briefcase size={10} />{svc.jobs} jobs</span>
-                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-500 pt-3 border-t border-white/5">
+                    <span className="text-violet-400 font-medium">{svc.category}</span>
+                    <span className="flex items-center gap-1"><MapPin size={10} />{svc.location}</span>
+                    {svc.price > 0 && (
+                      <span className="text-emerald-400 font-bold">
+                        Est: ₹{svc.price.toLocaleString('en-IN')}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Star size={10} className="fill-amber-400 text-amber-400" />
+                      {svc.rating.toFixed(1)}
+                    </span>
+                    {svc.subscriptionPlan && (
+                      <MembershipBadge plan={svc.subscriptionPlan} size={14} />
+                    )}
+                  </div>
 
-                <div className="flex gap-2 mt-auto">
-                  <Link href={svc.portfolioPath}
-                    className="flex-1 btn-gradient py-2.5 rounded-xl text-xs font-semibold relative z-10 text-center flex items-center justify-center gap-1.5">
-                    View Profile <ArrowRight size={12} />
-                  </Link>
-                  <Link href={`/businesses/${svc.category.toLowerCase()}`}
-                    className="btn-outline-glass px-3 py-2.5 rounded-xl text-xs font-medium flex items-center gap-1">
-                    <Building2 size={12} /> More
-                  </Link>
+                  <div className="flex gap-2 mt-4">
+                    <Link
+                      href={svc.portfolioPath}
+                      className="flex-1 btn-gradient py-2.5 rounded-xl text-xs font-semibold relative z-10 text-center flex items-center justify-center gap-1.5"
+                    >
+                      View Details <ArrowRight size={12} />
+                    </Link>
+                    {svc.phone && (
+                      <a
+                        href={`tel:${svc.phone}`}
+                        className="btn-outline-glass px-3 py-2.5 rounded-xl text-xs font-medium flex items-center gap-1"
+                        aria-label={`Call ${svc.companyName}`}
+                      >
+                        <Phone size={12} />
+                      </a>
+                    )}
+                    {svc.whatsapp && (
+                      <a
+                        href={`https://wa.me/${svc.whatsapp.replace(/[^0-9]/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-outline-glass px-3 py-2.5 rounded-xl text-xs font-medium flex items-center gap-1"
+                        aria-label={`WhatsApp ${svc.companyName}`}
+                      >
+                        <MessageCircle size={12} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -321,7 +432,10 @@ export default function ServicesPage() {
           <div className="text-3xl mb-3">🚀</div>
           <h3 className="font-outfit font-bold text-white text-lg mb-1">List Your Services Free</h3>
           <p className="text-gray-400 text-sm mb-4">Get your own Google-ready SEO page on THENIJOBS</p>
-          <Link href="/company/register" className="btn-gradient px-6 py-3 rounded-2xl text-sm font-semibold relative z-10 inline-flex items-center gap-2">
+          <Link
+            href="/company/register"
+            className="btn-gradient px-6 py-3 rounded-2xl text-sm font-semibold relative z-10 inline-flex items-center gap-2"
+          >
             Register Now — It&apos;s Free <ArrowRight size={15} />
           </Link>
         </div>

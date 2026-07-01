@@ -8,6 +8,7 @@ import StatsSection from '@/components/home/StatsSection';
 import CategoriesSection from '@/components/home/CategoriesSection';
 import TrendingJobs from '@/components/home/TrendingJobs';
 import FeaturedBusinesses from '@/components/home/FeaturedBusinesses';
+import LatestServices from '@/components/home/LatestServices';
 import BusinessUpdates from '@/components/home/BusinessUpdates';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import HomeFooter from '@/components/home/HomeFooter';
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#0a0a1a]">
+    <main className="min-h-screen bg-theme-main text-theme-body">
       <Header />
       <HeroSection />
       <SearchHub />
@@ -46,6 +47,7 @@ export default function HomePage() {
       <CategoriesSection />
       <TrendingJobs />
       <FeaturedBusinesses />
+      <LatestServices />
       <BusinessUpdates />
       <TestimonialsSection />
       <HomeFooter />

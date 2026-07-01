@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ToastProvider } from "@/components/ui/Toaster";
 import SplashIntro from "@/components/ui/SplashIntro";
 import OfflineBanner from "@/components/ui/OfflineBanner";
@@ -149,15 +150,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans antialiased bg-[#0a0a1a] text-white">
         <ToastProvider>
           <PreferencesProvider>
-            <AuthProvider>
-              <NotificationProvider>
-                <OfflineBanner />
-                <SplashIntro />
-                <MobileAuthGate>
-                  {children}
-                </MobileAuthGate>
-              </NotificationProvider>
-            </AuthProvider>
+            <ThemeProvider>
+              <AuthProvider>
+                <NotificationProvider>
+                  <OfflineBanner />
+                  <SplashIntro />
+                  <MobileAuthGate>
+                    {children}
+                  </MobileAuthGate>
+                </NotificationProvider>
+              </AuthProvider>
+            </ThemeProvider>
           </PreferencesProvider>
         </ToastProvider>
       </body>

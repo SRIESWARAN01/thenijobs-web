@@ -93,15 +93,15 @@ export default function HeroSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-[#0a0a1a] px-4 pb-12 pt-24 sm:px-6 lg:pb-16 lg:pt-32">
+    <section className="relative overflow-hidden bg-theme-main px-4 pb-12 pt-24 sm:px-6 lg:pb-16 lg:pt-32 border-b border-theme text-theme-body">
       {/* Background glow effects */}
-      <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 h-[350px] w-[350px] rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full blur-[120px] pointer-events-none opacity-20" style={{ backgroundColor: 'var(--theme-primary)' }} />
+      <div className="absolute top-1/3 right-1/4 h-[350px] w-[350px] rounded-full blur-[100px] pointer-events-none opacity-20" style={{ backgroundColor: 'var(--theme-accent)' }} />
       
       <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div className="z-10">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3.5 py-1.5 text-xs font-bold text-violet-300 shadow-sm backdrop-blur-md">
-            <ShieldCheck size={14} className="text-violet-400" />
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-theme bg-theme-card px-3.5 py-1.5 text-xs font-bold text-theme-primary shadow-sm backdrop-blur-md">
+            <ShieldCheck size={14} className="text-theme-primary" />
             Theni local jobs + business directory
           </div>
 
@@ -109,13 +109,13 @@ export default function HeroSection() {
             {t('home.heroTitle')}
           </h1>
 
-          <p className="mt-5 max-w-2xl text-sm sm:text-base leading-7 text-slate-400">
+          <p className="mt-5 max-w-2xl text-sm sm:text-base leading-7 text-slate-450">
             {t('home.heroSubtitle')}
           </p>
 
-          <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.02] p-3 shadow-2xl backdrop-blur-md">
+          <div className="mt-7 rounded-2xl border border-theme bg-theme-card p-3 shadow-2xl backdrop-blur-md">
             <div className="grid gap-2 sm:grid-cols-[1fr_180px_auto]">
-              <label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 focus-within:border-violet-500 focus-within:bg-white/[0.08] transition-all">
+              <label className="flex min-h-12 items-center gap-3 rounded-xl border border-theme bg-white/5 px-4 focus-within:border-[var(--theme-primary)] focus-within:bg-white/[0.08] transition-all">
                 <Search size={18} className="shrink-0 text-slate-500" />
                 <input
                   type="search"
@@ -127,8 +127,8 @@ export default function HeroSection() {
                 />
               </label>
 
-              <label className="flex min-h-12 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4">
-                <MapPin size={18} className="shrink-0 text-teal-400" />
+              <label className="flex min-h-12 items-center gap-3 rounded-xl border border-theme bg-white/5 px-4">
+                <MapPin size={18} className="shrink-0 text-theme-primary" />
                 <select
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
@@ -145,7 +145,7 @@ export default function HeroSection() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="min-h-12 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 px-6 text-sm font-bold text-white transition-all shadow-lg shadow-violet-600/20 active:scale-95"
+                className="min-h-12 rounded-xl btn-theme-primary px-6 text-sm font-bold transition-all shadow-lg active:scale-95 cursor-pointer"
               >
                 Search
               </button>

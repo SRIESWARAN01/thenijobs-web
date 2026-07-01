@@ -73,7 +73,7 @@ export default function Header() {
             className="h-8 w-8 object-contain rounded-lg"
             priority
           />
-          <span className="font-outfit font-black text-xl tracking-wider text-transparent bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text">THENIJOBS</span>
+          <span className="font-outfit font-black text-xl tracking-wider theme-gradient-text">THENIJOBS</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">

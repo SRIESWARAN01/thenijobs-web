@@ -14,55 +14,109 @@ import {
   Store,
   Truck,
   Wrench,
+  Grid,
+  ChevronRight
 } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const categoryDefs = [
-  { label: 'Agriculture', tamil: 'விவசாயம்', href: '/businesses?category=agriculture', color: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', icon: Sprout },
-  { label: 'Construction', tamil: 'கட்டிடம்', href: '/businesses?category=construction', color: 'bg-amber-500/10 border border-amber-500/20 text-amber-400', icon: Building2 },
-  { label: 'IT & Software', tamil: 'IT', href: '/businesses?category=it-software', color: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', icon: Laptop },
-  { label: 'Healthcare', tamil: 'மருத்துவம்', href: '/businesses?category=healthcare', color: 'bg-rose-500/10 border border-rose-500/20 text-rose-400', icon: HeartPulse },
-  { label: 'Education', tamil: 'கல்வி', href: '/businesses?category=education', color: 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400', icon: GraduationCap },
-  { label: 'Textiles', tamil: 'ஜவுளி', href: '/businesses?category=textiles', color: 'bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-400', icon: Package },
-  { label: 'Manufacturing', tamil: 'தொழிற்சாலை', href: '/businesses?category=manufacturing', color: 'bg-orange-500/10 border border-orange-500/20 text-orange-400', icon: Wrench },
-  { label: 'Retail', tamil: 'கடை', href: '/businesses?category=retail', color: 'bg-lime-500/10 border border-lime-500/20 text-lime-400', icon: Store },
-  { label: 'Transport', tamil: 'போக்குவரத்து', href: '/businesses?category=transport', color: 'bg-sky-500/10 border border-sky-500/20 text-sky-400', icon: Truck },
-  { label: 'Finance', tamil: 'நிதி', href: '/businesses?category=finance', color: 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400', icon: Landmark },
-  { label: 'Services', tamil: 'சேவைகள்', href: '/services', color: 'bg-slate-500/10 border border-slate-500/20 text-slate-300', icon: BriefcaseBusiness },
+  { label: 'Agriculture', tamil: 'விவசாயம்', slugs: ['agriculture'], href: '/businesses?category=Agriculture', color: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400', icon: Sprout },
+  { label: 'Construction', tamil: 'கட்டிடம்', slugs: ['construction'], href: '/businesses?category=Construction', color: 'bg-amber-500/10 border border-amber-500/20 text-amber-400', icon: Building2 },
+  { label: 'IT & Software', tamil: 'IT', slugs: ['it-software', 'it & software', 'it'], href: '/businesses?category=IT & Software', color: 'bg-blue-500/10 border border-blue-500/20 text-blue-400', icon: Laptop },
+  { label: 'Healthcare', tamil: 'மருத்துவம்', slugs: ['healthcare'], href: '/businesses?category=Healthcare', color: 'bg-rose-500/10 border border-rose-500/20 text-rose-400', icon: HeartPulse },
+  { label: 'Education', tamil: 'கல்வி', slugs: ['education'], href: '/businesses?category=Education', color: 'bg-cyan-500/10 border border-cyan-500/20 text-cyan-400', icon: GraduationCap },
+  { label: 'Textiles', tamil: 'ஜவுளி', slugs: ['textile', 'textiles'], href: '/businesses?category=Textile', color: 'bg-fuchsia-500/10 border border-fuchsia-500/20 text-fuchsia-400', icon: Package },
+  { label: 'Manufacturing', tamil: 'தொழிற்சாலை', slugs: ['manufacturing'], href: '/businesses?category=Manufacturing', color: 'bg-orange-500/10 border border-orange-500/20 text-orange-400', icon: Wrench },
+  { label: 'Retail', tamil: 'கடை', slugs: ['retail'], href: '/businesses?category=Retail', color: 'bg-lime-500/10 border border-lime-500/20 text-lime-400', icon: Store },
+  { label: 'Transport', tamil: 'போக்குவரத்து', slugs: ['transport', 'transportation'], href: '/businesses?category=Transportation', color: 'bg-sky-500/10 border border-sky-500/20 text-sky-400', icon: Truck },
+  { label: 'Finance', tamil: 'நிதி', slugs: ['finance'], href: '/businesses?category=Finance', color: 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400', icon: Landmark },
+  { label: 'Hospitality', tamil: 'விருந்தோம்பல்', slugs: ['hospitality', 'food & beverage'], href: '/businesses?category=Hospitality', color: 'bg-red-500/10 border border-red-500/20 text-red-400', icon: BriefcaseBusiness },
+  { label: 'Others', tamil: 'இதர பிரிவுகள்', slugs: [], href: '/businesses', color: 'bg-slate-500/10 border border-slate-500/20 text-slate-300', icon: Grid },
 ];
 
+interface CategoryStats {
+  businesses: number;
+  jobs: number;
+}
+
 export default function CategoriesSection() {
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState<Record<string, CategoryStats>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchCounts() {
-      const results: Record<string, number> = {};
-      await Promise.all(
-        categoryDefs.map(async (cat) => {
-          try {
-            const categoryKey = cat.label.toLowerCase().replace(/\s*&\s*/g, '-').replace(/\s+/g, '-');
-            if (cat.label === 'Services') {
-              const snap = await getCountFromServer(collection(db, 'serviceProfiles'));
-              results[cat.label] = snap.data().count;
-            } else {
-              const q = query(
-                collection(db, 'companies'),
-                where('category', '==', categoryKey)
-              );
-              const snap = await getCountFromServer(q);
-              results[cat.label] = snap.data().count;
+    async function fetchCategoryMetrics() {
+      try {
+        setLoading(true);
+        // Fetch all active companies and active jobs in single parallel request to save Firestore reads and offer rapid loading
+        const [companiesSnap, jobsSnap] = await Promise.all([
+          getDocs(query(collection(db, 'companies'), where('isActive', '==', true))),
+          getDocs(query(collection(db, 'jobs'), where('isActive', '==', true)))
+        ]);
+
+        if (cancelled) return;
+
+        const companyList = companiesSnap.docs.map(doc => doc.data());
+        const jobList = jobsSnap.docs.map(doc => doc.data());
+
+        const tempStats: Record<string, CategoryStats> = {};
+        
+        // Initialize stats object
+        categoryDefs.forEach(cat => {
+          tempStats[cat.label] = { businesses: 0, jobs: 0 };
+        });
+
+        // Accumulate company metrics
+        companyList.forEach(company => {
+          const rawCat = String(company.category || '').toLowerCase().trim();
+          let matched = false;
+
+          for (const cat of categoryDefs) {
+            if (cat.label === 'Others') continue;
+            if (cat.slugs.some(s => s === rawCat || rawCat.includes(s))) {
+              tempStats[cat.label].businesses += 1;
+              matched = true;
+              break;
             }
-          } catch {
-            results[cat.label] = 0;
           }
-        })
-      );
-      if (!cancelled) setCounts(results);
+
+          if (!matched) {
+            tempStats['Others'].businesses += 1;
+          }
+        });
+
+        // Accumulate active job metrics
+        jobList.forEach(job => {
+          const rawCat = String(job.category || '').toLowerCase().trim();
+          let matched = false;
+
+          for (const cat of categoryDefs) {
+            if (cat.label === 'Others') continue;
+            if (cat.slugs.some(s => s === rawCat || rawCat.includes(s))) {
+              tempStats[cat.label].jobs += 1;
+              matched = true;
+              break;
+            }
+          }
+
+          if (!matched) {
+            tempStats['Others'].jobs += 1;
+          }
+        });
+
+        setStats(tempStats);
+      } catch (err) {
+        console.error('Error fetching category counts:', err);
+      } finally {
+        setLoading(false);
+      }
     }
-    fetchCounts();
-    return () => { cancelled = true; };
+
+    fetchCategoryMetrics();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -70,36 +124,60 @@ export default function CategoriesSection() {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-violet-400">Browse Categories</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-violet-400">Popular Categories</p>
             <h2 className="mt-1 font-outfit text-2xl font-black text-white sm:text-3xl tracking-tight">
-              Jobs + Businesses by Industry
+              Jobs & Businesses by Industry
             </h2>
+            <p className="mt-1 text-sm text-slate-400">Dynamically updated live business listings and active careers count.</p>
           </div>
-          <p className="max-w-xl text-sm leading-relaxed text-slate-400">
-            Theni local market-க்கு முக்கியமான categories. Mobile-ல் swipe இல்லாமல் scan பண்ண easy.
-          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {categoryDefs.map((cat) => {
             const Icon = cat.icon;
-            const count = counts[cat.label];
+            const categoryData = stats[cat.label];
+
             return (
               <Link
                 key={cat.label}
                 href={cat.href}
-                className="group rounded-2xl border border-white/5 bg-white/[0.02] hover:border-violet-500/30 hover:bg-white/[0.04] p-4 shadow-xl transition-all duration-300 relative overflow-hidden"
+                className="group rounded-2xl border border-white/5 bg-white/[0.02] hover:border-violet-500/30 hover:bg-white/[0.04] p-5 shadow-xl transition-all duration-300 flex flex-col justify-between"
               >
-                <span className={`mb-3 flex h-11 w-11 items-center justify-center rounded-xl ${cat.color} group-hover:scale-105 transition-transform`}>
-                  <Icon size={20} />
-                </span>
-                <span className="block text-sm font-bold text-white group-hover:text-violet-300 transition-colors">{cat.label}</span>
-                <span className="mt-0.5 block text-xs text-slate-400">{cat.tamil}</span>
-                <span className="mt-4 block text-xs font-bold text-violet-400">
-                  {count !== undefined ? `${count} listings` : (
-                    <span className="inline-block h-3 w-12 animate-pulse rounded bg-white/10" />
-                  )}
-                </span>
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${cat.color} group-hover:scale-105 transition-transform`}>
+                      <Icon size={20} />
+                    </span>
+                    <ChevronRight size={14} className="text-slate-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <span className="block text-base font-bold text-white group-hover:text-violet-300 transition-colors leading-tight">
+                    {cat.label}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-500 font-semibold">{cat.tamil}</span>
+                </div>
+
+                <div className="mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-bold">
+                  <div className="text-slate-400">
+                    Businesses:{' '}
+                    <span className="text-white">
+                      {loading ? (
+                        <span className="inline-block h-3 w-4 animate-pulse rounded bg-white/10" />
+                      ) : (
+                        categoryData?.businesses ?? 0
+                      )}
+                    </span>
+                  </div>
+                  <div className="text-violet-400">
+                    Jobs:{' '}
+                    <span className="text-white">
+                      {loading ? (
+                        <span className="inline-block h-3 w-4 animate-pulse rounded bg-white/10" />
+                      ) : (
+                        categoryData?.jobs ?? 0
+                      )}
+                    </span>
+                  </div>
+                </div>
               </Link>
             );
           })}

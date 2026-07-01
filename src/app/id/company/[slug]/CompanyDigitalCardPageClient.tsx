@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   BadgeCheck, MapPin, QrCode, ShieldCheck, Download,
-  Crown, Lock, Info, Sparkles, Check, Phone, Mail, Building2, ExternalLink
+  Crown, Lock, Info, Sparkles, Check, Phone, Mail, Building2, ExternalLink, Globe
 } from 'lucide-react';
 import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { where, limit } from 'firebase/firestore';
@@ -559,7 +559,13 @@ export default function CompanyDigitalCardPageClient({
                       <p className={`text-xs font-semibold truncate mt-0.5 ${
                         plan === 'enterprise' ? 'text-slate-200 font-bold' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-400'
                       }`}>{category}</p>
-                      <div className="mt-3 font-mono text-sm tracking-wider font-bold text-slate-350">
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1 truncate">
+                        Owner/CEO: <span className="text-white font-bold">{company.ceoName || company.founder || company.contactPerson || 'N/A'}</span>
+                      </p>
+                      <p className="text-[9px] text-slate-450 font-bold truncate">
+                        Reg No: <span className="text-slate-300 font-mono">{company.registrationNumber || company.gstNumber || 'N/A'}</span>
+                      </p>
+                      <div className="mt-2 font-mono text-sm tracking-wider font-bold text-slate-350">
                         {uniqueId.split('-').slice(0, 2).join('-') + ' - ' + uniqueId.split('-')[2]}
                       </div>
                     </div>
@@ -579,6 +585,14 @@ export default function CompanyDigitalCardPageClient({
                       <MapPin size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                       <span className="truncate">{address}</span>
                     </div>
+                    {company.website && (
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Globe size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                        <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="truncate hover:underline text-[11px] text-blue-400">
+                          {company.website.replace(/^https?:\/\/(www\.)?/, '')}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -796,7 +810,13 @@ export default function CompanyDigitalCardPageClient({
                 <p className={`text-xs font-semibold truncate mt-0.5 ${
                   plan === 'enterprise' ? 'text-slate-200 font-bold' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-400'
                 }`}>{category}</p>
-                <div className="mt-3 font-mono text-sm tracking-wider font-bold text-slate-350">
+                <p className="text-[10px] text-slate-400 font-semibold mt-1 truncate">
+                  Owner/CEO: <span className="text-white font-bold">{company.ceoName || company.founder || company.contactPerson || 'N/A'}</span>
+                </p>
+                <p className="text-[9px] text-slate-455 font-bold truncate">
+                  Reg No: <span className="text-slate-300 font-mono">{company.registrationNumber || company.gstNumber || 'N/A'}</span>
+                </p>
+                <div className="mt-2 font-mono text-sm tracking-wider font-bold text-slate-350">
                   {uniqueId.split('-').slice(0, 2).join('-') + ' - ' + uniqueId.split('-')[2]}
                 </div>
               </div>
@@ -816,6 +836,14 @@ export default function CompanyDigitalCardPageClient({
                 <MapPin size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
                 <span className="truncate">{address}</span>
               </div>
+              {company.website && (
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Globe size={11} className={`shrink-0 ${plan === 'enterprise' ? 'text-slate-300' : plan === 'premium' ? currentCardTheme.accent : plan === 'basic' ? 'text-blue-400' : 'text-slate-500'}`} />
+                  <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="truncate hover:underline text-[11px] text-blue-400">
+                    {company.website.replace(/^https?:\/\/(www\.)?/, '')}
+                  </a>
+                </div>
+              )}
             </div>
           </section>
 

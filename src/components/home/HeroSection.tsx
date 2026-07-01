@@ -179,8 +179,9 @@ export default function HeroSection() {
         </div>
 
         <div className="relative w-full">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-3 shadow-2xl backdrop-blur-md relative overflow-hidden group hover:border-white/20 transition-all duration-500">
+          <div className="rounded-[2rem] border border-white/10 bg-white/[0.02] p-3 shadow-2xl backdrop-blur-md relative overflow-hidden group hover:border-white/20 transition-all duration-500 premium-animated-banner">
             <div className="absolute -inset-x-20 -top-20 h-40 w-40 rounded-full bg-violet-600/20 blur-3xl pointer-events-none group-hover:bg-violet-600/30 transition-all" />
+            <div className="glow-sweep-line" />
             <div className="overflow-hidden rounded-[1.4rem] bg-slate-900/50">
               <Image
                 src="/thenijobs-platform-preview.png"

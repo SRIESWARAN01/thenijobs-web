@@ -708,3 +708,47 @@
   }
 }
 
+/* Premium Loop Animations for Platform Preview Banner */
+@keyframes premiumFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.006);
+  }
+}
+
+@keyframes glowSweep {
+  0% {
+    left: -150%;
+  }
+  50% {
+    left: 150%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+
+.premium-animated-banner {
+  animation: premiumFloat 6s ease-in-out infinite;
+  position: relative;
+}
+
+.glow-sweep-line {
+  position: absolute;
+  top: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  animation: glowSweep 5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+

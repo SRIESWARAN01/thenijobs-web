@@ -292,7 +292,7 @@ export default function JobsPage() {
             salaryMax: d.salaryMax || 0,
             type: typeStr,
             posted: formatTime(d.createdAt),
-            logo: d.logo || (d.companyName ? d.companyName.substring(0, 2).toUpperCase() : '💼'),
+            logo: d.companyLogoUrl || d.logoUrl || d.logo || (d.companyName ? d.companyName.substring(0, 2).toUpperCase() : '💼'),
             isUrgent: d.isUrgent || false,
             isPremium: d.isPremium || false,
             isVerified: d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified || false,
@@ -602,8 +602,15 @@ export default function JobsPage() {
               <div key={job.id} className="premium-card rounded-2xl p-5 group">
                 <div className="flex gap-4">
                   {/* Logo */}
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl shrink-0">
-                    {job.logo}
+                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                    {job.logo && (job.logo.startsWith('http') || job.logo.startsWith('/')) ? (
+                      <img src={job.logo} alt={job.company} className="w-full h-full object-cover" onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-violet-400">${(job.company || 'C').substring(0, 2).toUpperCase()}</span>`;
+                      }} />
+                    ) : (
+                      <span className="text-lg font-black text-violet-400">{job.logo}</span>
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">

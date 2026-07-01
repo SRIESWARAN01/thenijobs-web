@@ -149,6 +149,7 @@ export default function CompanyDigitalCardPageClient({
 
   const [logoBase64, setLogoBase64] = useState<string>('');
   const [qrBase64, setQrBase64] = useState<string>('');
+  const [useFallbackLogo, setUseFallbackLogo] = useState<boolean>(false);
 
   useEffect(() => {
     const getBase64FromUrl = async (url: string): Promise<string> => {
@@ -177,7 +178,14 @@ export default function CompanyDigitalCardPageClient({
     const convertImages = async () => {
       if (logoUrl) {
         const base64 = await getBase64FromUrl(logoUrl);
-        setLogoBase64(base64);
+        if (base64 && base64.startsWith('data:')) {
+          setLogoBase64(base64);
+          setUseFallbackLogo(false);
+        } else {
+          setUseFallbackLogo(true);
+        }
+      } else {
+        setUseFallbackLogo(true);
       }
       if (qrUrl) {
         const base64 = await getBase64FromUrl(qrUrl);
@@ -519,11 +527,17 @@ export default function CompanyDigitalCardPageClient({
                       }`}>
                         {logoUrl && !logoError ? (
                           <img 
-                            src={logoBase64 || logoUrl} 
+                            src={(!useFallbackLogo && logoBase64) ? logoBase64 : logoUrl} 
                             alt={`${name} Logo`} 
                             className="object-cover w-full h-full rounded-2xl" 
-                            crossOrigin="anonymous"
-                            onError={() => setLogoError(true)} 
+                            {...((!useFallbackLogo && logoBase64) ? { crossOrigin: "anonymous" } : {})}
+                            onError={() => {
+                              if (!useFallbackLogo && logoBase64) {
+                                setUseFallbackLogo(true);
+                              } else {
+                                setLogoError(true);
+                              }
+                            }} 
                           />
                         ) : (
                           <div className="h-full w-full bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-2 text-center">
@@ -595,11 +609,17 @@ export default function CompanyDigitalCardPageClient({
                     <div className="h-8 w-8 overflow-hidden rounded-lg border border-white/10 bg-[#070714] flex items-center justify-center shadow-inner">
                       {logoUrl && !logoError ? (
                         <img 
-                          src={logoBase64 || logoUrl} 
+                          src={(!useFallbackLogo && logoBase64) ? logoBase64 : logoUrl} 
                           alt={`${name} Logo`} 
                           className="object-cover w-full h-full rounded-lg" 
-                          crossOrigin="anonymous"
-                          onError={() => setLogoError(true)} 
+                          {...((!useFallbackLogo && logoBase64) ? { crossOrigin: "anonymous" } : {})}
+                          onError={() => {
+                            if (!useFallbackLogo && logoBase64) {
+                              setUseFallbackLogo(true);
+                            } else {
+                              setLogoError(true);
+                            }
+                          }} 
                         />
                       ) : (
                         <Building2 size={14} className="text-slate-400" />
@@ -744,11 +764,17 @@ export default function CompanyDigitalCardPageClient({
                 }`}>
                   {logoUrl && !logoError ? (
                     <img 
-                      src={logoBase64 || logoUrl} 
+                      src={(!useFallbackLogo && logoBase64) ? logoBase64 : logoUrl} 
                       alt={`${name} Logo`} 
                       className="object-cover w-full h-full rounded-2xl" 
-                      crossOrigin="anonymous"
-                      onError={() => setLogoError(true)} 
+                      {...((!useFallbackLogo && logoBase64) ? { crossOrigin: "anonymous" } : {})}
+                      onError={() => {
+                        if (!useFallbackLogo && logoBase64) {
+                          setUseFallbackLogo(true);
+                        } else {
+                          setLogoError(true);
+                        }
+                      }} 
                     />
                   ) : (
                     <div className="h-full w-full bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center p-2 text-center">
@@ -819,11 +845,17 @@ export default function CompanyDigitalCardPageClient({
               <div className="h-8 w-8 overflow-hidden rounded-lg border border-white/10 bg-[#070714] flex items-center justify-center shadow-inner">
                 {logoUrl && !logoError ? (
                   <img 
-                    src={logoBase64 || logoUrl} 
+                    src={(!useFallbackLogo && logoBase64) ? logoBase64 : logoUrl} 
                     alt={`${name} Logo`} 
                     className="object-cover w-full h-full rounded-lg" 
-                    crossOrigin="anonymous"
-                    onError={() => setLogoError(true)} 
+                    {...((!useFallbackLogo && logoBase64) ? { crossOrigin: "anonymous" } : {})}
+                    onError={() => {
+                      if (!useFallbackLogo && logoBase64) {
+                        setUseFallbackLogo(true);
+                      } else {
+                        setLogoError(true);
+                      }
+                    }} 
                   />
                 ) : (
                   <Building2 size={14} className="text-slate-400" />

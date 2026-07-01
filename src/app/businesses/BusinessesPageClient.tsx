@@ -108,7 +108,7 @@ export default function BusinessesPageClient() {
               isPremium: d.isPremium || d.isFeatured || false,
               subscriptionPlan: d.subscriptionPlan || (d.isPremium ? 'premium' : 'free'),
               tagline: d.tagline || d.description?.substring(0, 80) || '',
-              logo: d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'B',
+              logo: d.logoUrl || d.logo || (d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'B'),
               isNew: d.createdAt ? (Date.now() - d.createdAt?.toMillis?.() < 7 * 24 * 60 * 60 * 1000) : false,
               phone: d.phone || '',
               whatsapp: d.whatsapp || d.phone || '',
@@ -315,10 +315,16 @@ export default function BusinessesPageClient() {
           <div className="grid sm:grid-cols-2 gap-4">
             {filtered.map(biz => (
               <div key={biz.id} className="premium-card rounded-2xl p-5 flex flex-col gap-4 group">
-                <div className="flex gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-sm font-bold text-violet-400 shrink-0">
-                    {biz.logo}
-                  </div>
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                  {biz.logo && (biz.logo.startsWith('http') || biz.logo.startsWith('/')) ? (
+                    <img src={biz.logo} alt={biz.name} className="w-full h-full object-cover" onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-violet-400">${(biz.name || 'B').substring(0, 2).toUpperCase()}</span>`;
+                    }} />
+                  ) : (
+                    <span className="text-lg font-black text-violet-400">{biz.logo}</span>
+                  )}
+                </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-1">
                       <div className="min-w-0">

@@ -91,13 +91,7 @@ function ServicesShowcaseSection({ company, services, currentTheme }: { company:
       )}#services`;
       const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
       
-      const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
-        visitorName: visitor,
-        companyName: company.name || 'Verified Business',
-        portfolioLink: serviceUrl,
-        productServiceName: service.name,
-        enquiryMessage: `I am interested in your service: ${service.name}. Please share details.`
-      });
+      const text = formatProductWhatsApp(company, { name: service.name, id: service.id, description: service.description, price: service.price });
       
       const rawNum = company.whatsapp || company.phone || '917094826586';
       const cleanPhone = String(rawNum).replace(/\D/g, '');
@@ -568,8 +562,8 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
 // ──────────────────────────────────────────────────────────────────
 // ENHANCED ENQUIRY FORM
 // ──────────────────────────────────────────────────────────────────
-function EnhancedEnquiryForm({ companyId, companyName, btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500' }: {
-  companyId: string; companyName: string; btnStyle?: string;
+function EnhancedEnquiryForm({ companyId, companyName, btnStyle = 'bg-gradient-to-r from-cyan-500 to-blue-500', variant = 'dark' }: {
+  companyId: string; companyName: string; btnStyle?: string; variant?: 'light' | 'dark';
 }) {
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -581,33 +575,40 @@ function EnhancedEnquiryForm({ companyId, companyName, btnStyle = 'bg-gradient-t
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !mobile.trim() || !message.trim()) {
-      alert('Please fill out Name, Mobile, and Message.');
-      return;
-    }
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'enquiries'), {
+      const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
+      await addDoc(collection(db, 'leads'), {
         companyId,
         companyName,
         name: name.trim(),
         mobile: mobile.trim(),
         email: email.trim(),
-        description: message.trim(),
+        message: message.trim(),
         type,
+        source: 'company_profile',
+        pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        status: 'new',
         createdAt: serverTimestamp(),
-        status: 'pending',
       });
-      trackAnalyticsEvent({ companyId, eventType: 'contact_submit', targetName: 'Enhanced Enquiry Form' });
       setSent(true);
-      setName(''); setMobile(''); setEmail(''); setMessage('');
     } catch (err) {
-      console.error('Enquiry submit error:', err);
+      console.error(err);
       alert('Failed to send enquiry. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Light variant styles (for white backgrounds like Free template)
+  const isLight = variant === 'light';
+  const inputCls = isLight
+    ? 'w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-blue-400 outline-none'
+    : 'w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none';
+  const selectCls = isLight
+    ? 'w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs rounded-xl text-slate-900 focus:border-blue-400 outline-none appearance-none cursor-pointer'
+    : 'w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white focus:border-white/20 outline-none appearance-none cursor-pointer';
 
   if (sent) {
     return (
@@ -615,20 +616,16 @@ function EnhancedEnquiryForm({ companyId, companyName, btnStyle = 'bg-gradient-t
         <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto animate-bounce">
           <Check size={20} className="text-emerald-400" />
         </div>
-        <p className="text-xs text-emerald-400 font-bold">Enquiry sent successfully!</p>
-        <p className="text-[10px] text-slate-500">The business will contact you soon.</p>
-        <button onClick={() => setSent(false)} className="text-[10px] text-cyan-400 underline mt-2">Send another enquiry</button>
+        <p className={`text-xs font-bold ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`}>Enquiry sent successfully!</p>
+        <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>The business will contact you soon.</p>
+        <button onClick={() => setSent(false)} className={`text-[10px] underline mt-2 ${isLight ? 'text-blue-600' : 'text-cyan-400'}`}>Send another enquiry</button>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5">
-      <select
-        value={type}
-        onChange={e => setType(e.target.value)}
-        className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white focus:border-white/20 outline-none appearance-none cursor-pointer"
-      >
+      <select value={type} onChange={e => setType(e.target.value)} className={selectCls}>
         <option value="general">General Enquiry</option>
         <option value="product">Product Enquiry</option>
         <option value="service">Service Enquiry</option>
@@ -821,6 +818,105 @@ function formatWhatsAppMessage(
     .replace(/\{\{enquiryMessage\}\}/g, msg);
 }
 
+/** Get current IST date and time strings */
+function getISTDateTime(): { date: string; time: string } {
+  const now = new Date();
+  const istOptions: Intl.DateTimeFormatOptions = { timeZone: 'Asia/Kolkata' };
+  const date = now.toLocaleDateString('en-IN', { ...istOptions, day: '2-digit', month: 'short', year: 'numeric' });
+  const time = now.toLocaleTimeString('en-IN', { ...istOptions, hour: '2-digit', minute: '2-digit', hour12: true });
+  return { date, time };
+}
+
+/** Generate a rich general company enquiry WhatsApp message */
+function formatCompanyWhatsApp(company: any): string {
+  const { date, time } = getISTDateTime();
+  const profileUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/company/${company.slug || company.id}`
+    : `https://thenijobs.com/company/${company.slug || company.id}`;
+  const website = company.website || company.portfolioUrl || '';
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : profileUrl;
+
+  return [
+    'Hello 👋',
+    '',
+    'I found your business through THENIJOBS.',
+    '',
+    `📌 Company Name:`,
+    company.name || 'Verified Business',
+    '',
+    `🏢 Company Profile:`,
+    profileUrl,
+    '',
+    ...(website ? [`🌐 Website / Portfolio:`, website, ''] : []),
+    `📄 Page Viewed:`,
+    pageUrl,
+    '',
+    `📅 Enquiry Date:`,
+    date,
+    '',
+    `🕒 Enquiry Time:`,
+    time,
+    '',
+    'I would like to know more about your products/services.',
+    '',
+    'Thank you.',
+  ].join('\n');
+}
+
+/** Generate a rich product enquiry/order WhatsApp message */
+function formatProductWhatsApp(company: any, product: any, quantity?: number): string {
+  const { date, time } = getISTDateTime();
+  const profileUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/company/${company.slug || company.id}`
+    : `https://thenijobs.com/company/${company.slug || company.id}`;
+  const productUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/shop/products/${product.id || ''}`
+    : `https://thenijobs.com/shop/products/${product.id || ''}`;
+  const website = company.website || company.portfolioUrl || '';
+  const priceStr = product.price ? `₹${Number(product.price).toLocaleString('en-IN')}` : 'Price on request';
+  const weightStr = product.weight || product.size || product.unit || '';
+  const descStr = product.description ? String(product.description).slice(0, 200) : '';
+
+  return [
+    'Hello 👋',
+    '',
+    'I found this product through THENIJOBS.',
+    '',
+    `🛍 Product Name:`,
+    product.name || 'Product',
+    '',
+    `🔗 Product Link:`,
+    productUrl,
+    '',
+    ...(weightStr ? [`⚖ Weight / Size:`, weightStr, ''] : []),
+    ...(quantity && quantity > 1 ? [`📦 Quantity:`, String(quantity), ''] : []),
+    `💰 Price:`,
+    priceStr,
+    '',
+    ...(descStr ? [`📝 Product Description:`, descStr, ''] : []),
+    `🏢 Company:`,
+    company.name || 'Verified Business',
+    '',
+    `🏢 Company Profile:`,
+    profileUrl,
+    '',
+    ...(website ? [`🌐 Website:`, website, ''] : []),
+    `📅 Enquiry Date:`,
+    date,
+    '',
+    `🕒 Enquiry Time:`,
+    time,
+    '',
+    'Reference:',
+    'THENIJOBS',
+    '',
+    'I am interested in purchasing this product.',
+    'Please provide more details.',
+    '',
+    'Thank you.',
+  ].join('\n');
+}
+
 export default function CompanyProfileClient({ company: rawCompany, jobs, reviews }: {
   company: any; jobs: any[]; reviews: any[];
 }) {
@@ -966,24 +1062,13 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
   const { user } = useAuth();
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
   const visitorNameVal = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-  const whatsappText = formatWhatsAppMessage(company.whatsappMessageTemplate, {
-    visitorName: visitorNameVal,
-    companyName: company.name || 'Verified Business',
-    portfolioLink: getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined),
-    productServiceName: '',
-    enquiryMessage: `Hello, I visited your profile on THENIJOBS and would like to connect.`
-  });
+  const whatsappText = formatCompanyWhatsApp(company);
   const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
-  const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
-      visitorName: visitor,
-      companyName: company.name || 'Verified Business',
-      portfolioLink: portfolioUrl,
-      productServiceName: productName,
-      enquiryMessage: `I am interested in your product: ${productName}. Please share details.`
-    });
+  const handleProductWhatsApp = (productName: string, productId?: string, product?: any) => {
+    const text = product
+      ? formatProductWhatsApp(company, product)
+      : formatCompanyWhatsApp(company);
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,
@@ -1318,7 +1403,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
             {/* Enhanced Enquiry Form */}
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-3 shadow-sm">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Send Enquiry</h3>
-              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" />
+              <EnhancedEnquiryForm companyId={company.id} companyName={company.name} btnStyle="bg-slate-800 hover:bg-slate-900 text-white" variant="light" />
             </div>
 
             {/* Verified Badges */}
@@ -1364,15 +1449,10 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
   const { likedProductIds } = useUserProductLikes(user?.uid, company.id);
   const portfolioUrl = getCompanyPortfolioUrl(company, typeof window !== 'undefined' ? window.location.origin : undefined);
 
-  const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
-      visitorName: visitor,
-      companyName: company.name || 'Verified Business',
-      portfolioLink: portfolioUrl,
-      productServiceName: productName,
-      enquiryMessage: `I am interested in your product: ${productName}. Please share details.`
-    });
+  const handleProductWhatsApp = (productName: string, productId?: string, product?: any) => {
+    const text = product
+      ? formatProductWhatsApp(company, product)
+      : formatCompanyWhatsApp(company);
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,
@@ -1454,14 +1534,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
 
   const isModern = company.websiteTemplate === 'modern';
 
-  const visitorNameVal = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-  const whatsappText = encodeURIComponent(formatWhatsAppMessage(company.whatsappMessageTemplate, {
-    visitorName: visitorNameVal,
-    companyName: company.name || 'Verified Business',
-    portfolioLink: portfolioUrl,
-    productServiceName: 'General Consultation',
-    enquiryMessage: 'I would like to inquire about your business offerings.'
-  }));
+  const whatsappText = formatCompanyWhatsApp(company);
   const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
   const tabs = [
@@ -2200,15 +2273,10 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
 
   const currentTheme = themeConfigs[activeTheme] || themeConfigs.titanium_platinum;
 
-  const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
-      visitorName: visitor,
-      companyName: company.name || 'Verified Business',
-      portfolioLink: portfolioUrl,
-      productServiceName: productName,
-      enquiryMessage: `I saw your product "${productName}" on your Enterprise Page. Please share details.`
-    });
+  const handleProductWhatsApp = (productName: string, productId?: string, product?: any) => {
+    const text = product
+      ? formatProductWhatsApp(company, product)
+      : formatCompanyWhatsApp(company);
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,
@@ -2265,14 +2333,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
     { id: 'testimonials', label: 'Testimonials' },
   ];
 
-  const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-  const whatsappText = encodeURIComponent(formatWhatsAppMessage(company.whatsappMessageTemplate, {
-    visitorName: visitor,
-    companyName: company.name || 'Verified Business',
-    portfolioLink: portfolioUrl,
-    productServiceName: 'General Consultation',
-    enquiryMessage: 'I would like to inquire about your business offerings.'
-  }));
+  const whatsappText = formatCompanyWhatsApp(company);
   const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
   return (
@@ -3276,26 +3337,14 @@ function TemplatePremium({ company, jobs, reviews }: { company: any; jobs: any[]
     setTimeout(() => setCopiedCoupon(false), 2000);
   };
 
-  const visitorPremium = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-  const whatsappText = encodeURIComponent(formatWhatsAppMessage(company.whatsappMessageTemplate, {
-    visitorName: visitorPremium,
-    companyName: company.name || 'Verified Business',
-    portfolioLink: portfolioUrl,
-    productServiceName: 'General Consultation',
-    enquiryMessage: 'I would like to inquire about your business offerings.'
-  }));
+  const whatsappText = formatCompanyWhatsApp(company);
   const whatsappUrl = getCleanWhatsAppUrl(company.whatsapp || company.phone, whatsappText);
 
   // WhatsApp helper for specific products
-  const handleProductWhatsApp = (productName: string, productId?: string) => {
-    const visitor = user?.displayName || user?.email?.split('@')[0] || 'Visitor';
-    const text = formatWhatsAppMessage(company.whatsappMessageTemplate, {
-      visitorName: visitor,
-      companyName: company.name || 'Verified Business',
-      portfolioLink: portfolioUrl,
-      productServiceName: productName,
-      enquiryMessage: `I viewed your product ${productName} on THENIJOBS and would like more details.`
-    });
+  const handleProductWhatsApp = (productName: string, productId?: string, product?: any) => {
+    const text = product
+      ? formatProductWhatsApp(company, product)
+      : formatCompanyWhatsApp(company);
     if (company.id) {
       trackAnalyticsEvent({
         companyId: company.id,

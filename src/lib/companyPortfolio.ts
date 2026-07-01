@@ -14,21 +14,18 @@ export function getCompanyRouteSlug(company: {
   businessName?: string | null;
   companyName?: string | null;
 }): string {
+  // 1. Always prefer the explicit slug stored in Firestore (clean & unique)
   const explicitSlug = typeof company.slug === 'string' ? company.slug.trim() : '';
   if (explicitSlug) return explicitSlug;
 
-  const id = String(company.id || '').trim();
+  // 2. Fallback: generate a clean slug from the name (NO Firestore ID appended)
   const name = company.name || company.businessName || company.companyName || '';
   const nameSlug = slugifyCompanyName(name);
-
-  if (nameSlug && id) {
-    return `${nameSlug}-${id}`;
-  }
-
-  if (id) return id;
   if (nameSlug) return nameSlug;
 
-  return '';
+  // 3. Last resort: use raw ID only if nothing else is available
+  const id = String(company.id || '').trim();
+  return id;
 }
 
 export function getCompanyPortfolioPath(company: {

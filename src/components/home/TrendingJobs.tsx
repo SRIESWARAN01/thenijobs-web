@@ -31,6 +31,7 @@ interface TrendingJob {
   isPremium: boolean;
   skills: string[];
   isPromoted?: boolean;
+  companyLogo?: string;
 }
 
 const getCategoryIcon = (category?: string) => {
@@ -87,6 +88,7 @@ export default function TrendingJobs() {
           category: d.category || '',
           skills: d.skills || [],
           isPromoted: d.isPromoted || false,
+          companyLogo: d.companyLogo || d.logoUrl || '',
         };
       });
   }, [dbJobs]);
@@ -137,9 +139,15 @@ export default function TrendingJobs() {
                   <div>
                     <div className="mb-4 flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-start gap-3">
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 group-hover:scale-105 transition-transform duration-300">
-                          <Icon size={20} />
-                        </span>
+                        {job.companyLogo ? (
+                          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/5 border border-white/10 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                            <img src={job.companyLogo} alt={job.company} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling && ((e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-sm font-black text-violet-400">${(job.company || 'C').substring(0, 2).toUpperCase()}</span>`); }} />
+                          </span>
+                        ) : (
+                          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400 group-hover:scale-105 transition-transform duration-300">
+                            <Icon size={20} />
+                          </span>
+                        )}
                         <div className="min-w-0">
                           <h3 className="line-clamp-1 text-base font-bold text-white group-hover:text-violet-300 transition-colors">
                             {job.title}

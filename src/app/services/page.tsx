@@ -102,7 +102,7 @@ export default function ServicesPage() {
               isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || d.verificationBadges?.businessVerified || false,
               isPremium: d.isPremium || d.isFeatured || false,
               tagline: d.tagline || d.description?.substring(0, 80) || '',
-              logo: d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'S',
+              logo: d.logoUrl || d.logo || (d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'S'),
               isNew: d.createdAt ? (Date.now() - d.createdAt?.toMillis?.() < 7 * 24 * 60 * 60 * 1000) : false,
             } as Service;
           });
@@ -268,10 +268,16 @@ export default function ServicesPage() {
           <div className="grid sm:grid-cols-2 gap-4">
             {filtered.map(svc => (
               <div key={svc.id} className="premium-card rounded-2xl p-5 flex flex-col gap-4 group">
-                <div className="flex gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl shrink-0">
-                    {svc.logo}
-                  </div>
+                <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                  {svc.logo && (svc.logo.startsWith('http') || svc.logo.startsWith('/')) ? (
+                    <img src={svc.logo} alt={svc.name} className="w-full h-full object-cover" onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-violet-400">${(svc.name || 'S').substring(0, 2).toUpperCase()}</span>`;
+                    }} />
+                  ) : (
+                    <span className="text-lg font-black text-violet-400">{svc.logo}</span>
+                  )}
+                </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-1">
                       <div className="min-w-0">

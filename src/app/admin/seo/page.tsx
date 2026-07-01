@@ -27,8 +27,33 @@ export default function AdminSEOPage() {
   const [seoDescription, setSeoDescription] = useState('');
   const [seoKeywords, setSeoKeywords] = useState('');
   const [saving, setSaving] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<{ updated: number; skipped: number; errors: number } | null>(null);
 
   const { data: companies, loading } = useCollection<CompanySEO>('companies');
+
+  const missingSlugs = companies.filter((c) => !c.slug).length;
+
+  const handleBackfillSlugs = async () => {
+    if (!confirm(`This will generate clean SEO slugs for ${missingSlugs} companies without slugs. Continue?`)) return;
+    setBackfilling(true);
+    setBackfillResult(null);
+    try {
+      const res = await fetch('/api/admin/backfill-slugs', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setBackfillResult(data.summary);
+        alert(`✅ Slug backfill complete!\n\nUpdated: ${data.summary.updated}\nSkipped: ${data.summary.skipped}\nErrors: ${data.summary.errors}`);
+      } else {
+        alert('❌ Slug backfill failed: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('Backfill error:', err);
+      alert('❌ Network error during slug backfill');
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const filtered = companies.filter((c) =>
     !searchQuery || matchesSearch(searchQuery, [c.name, c.slug, c.seoTitle])

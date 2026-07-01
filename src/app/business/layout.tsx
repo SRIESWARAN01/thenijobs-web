@@ -143,6 +143,7 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
         user={{
           name: user?.displayName || user?.email?.split('@')[0] || 'Business',
           email: company?.name || 'Business Account',
+          avatar: company?.logoUrl || company?.logo || '',
         }}
         onLogout={handleLogout}
       >

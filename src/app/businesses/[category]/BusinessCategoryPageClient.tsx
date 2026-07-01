@@ -67,6 +67,7 @@ export default function BusinessCategoryPageClient({ category }: { category: str
               isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || false,
               isPremium: d.isPremium || d.isFeatured || false,
               subscriptionPlan: d.subscriptionPlan || (d.isPremium ? 'premium' : 'free'),
+              logoUrl: d.logoUrl || d.logo || '',
               status: d.status || '',
               deleted: d.deleted || false
             };
@@ -153,8 +154,15 @@ export default function BusinessCategoryPageClient({ category }: { category: str
             {businesses.map(biz => (
               <div key={biz.id} className="premium-card rounded-2xl p-5 group">
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl border border-white/10 bg-white/5 shrink-0" style={{ background: `${meta.color}15` }}>
-                    {meta.emoji}
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden border border-white/10 bg-white/5 shrink-0" style={{ background: `${meta.color}15` }}>
+                    {biz.logoUrl ? (
+                      <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-2xl font-black text-violet-400">${(biz.name || 'B').substring(0, 2).toUpperCase()}</span>`;
+                      }} />
+                    ) : (
+                      <span className="text-3xl">{meta.emoji}</span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">

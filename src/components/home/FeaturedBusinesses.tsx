@@ -56,6 +56,7 @@ export default function FeaturedBusinesses() {
     tagline: d.description || d.tagline || 'Local service & support',
     phone: d.phone || '',
     whatsapp: d.whatsapp || d.phone || '',
+    logoUrl: d.logoUrl || d.logo || '',
     status: d.status || '',
     deleted: d.deleted || false,
     updatedAt: d.updatedAt,
@@ -117,9 +118,18 @@ export default function FeaturedBusinesses() {
                   <div>
                     <div className="relative bg-gradient-to-br from-[#12122d] to-[#1e1a3a] p-5 text-white border-b border-white/5">
                       <div className="flex items-start justify-between">
-                        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-white/95 group-hover:scale-105 transition-transform duration-300">
-                          <Icon size={26} />
-                        </span>
+                        {biz.logoUrl ? (
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+                            <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-lg font-black text-violet-300">${(biz.name || 'B').substring(0, 2).toUpperCase()}</span>`;
+                            }} />
+                          </span>
+                        ) : (
+                          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-white/95 group-hover:scale-105 transition-transform duration-300">
+                            <Icon size={26} />
+                          </span>
+                        )}
                         {biz.isPremium && (
                           <span className="rounded-full bg-violet-600/20 border border-violet-500/30 px-2.5 py-0.5 text-[9px] font-black text-violet-300 uppercase tracking-wide">
                             Featured

@@ -947,21 +947,25 @@ export default function CompanyProfileClient({ company: rawCompany, jobs, review
     let resolvedTheme = company.websiteTheme || 'classic-blue';
     let resolvedTemplate = company.websiteTemplate || 'classic-directory';
 
-    // Sunset Amber requires Premium (rank >= 2)
-    if (resolvedTheme === 'sunset-amber' && planRank < 2) {
-      resolvedTheme = 'classic-blue';
-    }
-    // Royal Gold requires Enterprise (rank >= 3)
-    if (resolvedTheme === 'royal-gold' && planRank < 3) {
+    // Theme plan ranking restrictions
+    const themeRankRequirement: Record<string, number> = {
+      'classic-blue': 0, 'emerald-growth': 0, 'royal-purple': 0,
+      'sunset-amber': 2, 'ocean-cyan': 2, 'ruby-red': 2, 'midnight-dark': 2, 'forest-green': 2,
+      'royal-gold': 3, 'modern-gray': 3, 'rose-pink': 3, 'indigo': 3
+    };
+    const requiredThemeRank = themeRankRequirement[resolvedTheme] || 0;
+    if (planRank < requiredThemeRank) {
       resolvedTheme = 'classic-blue';
     }
 
-    // Modern Portfolio & E-Commerce require Premium (rank >= 2)
-    if ((resolvedTemplate === 'modern-portfolio' || resolvedTemplate === 'ecommerce-storefront') && planRank < 2) {
-      resolvedTemplate = 'classic-directory';
-    }
-    // Service Booking requires Enterprise (rank >= 3)
-    if (resolvedTemplate === 'service-booking' && planRank < 3) {
+    // Template plan ranking restrictions
+    const templateRankRequirement: Record<string, number> = {
+      'classic-directory': 0,
+      'corporate': 2, 'startup': 2, 'portfolio': 2, 'agency': 2, 'construction': 2, 'agriculture': 2,
+      'hospital': 3, 'education': 3, 'restaurant': 3, 'ecommerce-storefront': 3, 'service-booking': 3, 'real-estate': 3
+    };
+    const requiredTemplateRank = templateRankRequirement[resolvedTemplate] || 0;
+    if (planRank < requiredTemplateRank) {
       resolvedTemplate = 'classic-directory';
     }
 
@@ -976,13 +980,45 @@ export default function CompanyProfileClient({ company: rawCompany, jobs, review
       enableDarkMode: company.enableDarkMode || false,
       enableAnimations: company.enableAnimations !== false,
       sectionsVisible: {
-        products: company.sectionsVisible?.products !== false,
+        hero: company.sectionsVisible?.hero !== false,
+        about: company.sectionsVisible?.about !== false,
+        stats: company.sectionsVisible?.stats !== false,
         services: company.sectionsVisible?.services !== false,
-        reviews: company.sectionsVisible?.reviews !== false,
+        products: company.sectionsVisible?.products !== false,
+        jobs: company.sectionsVisible?.jobs !== false,
         gallery: company.sectionsVisible?.gallery !== false,
-        team: company.sectionsVisible?.team !== false,
+        reviews: company.sectionsVisible?.reviews !== false,
         faq: company.sectionsVisible?.faq !== false,
-      }
+        booking: company.sectionsVisible?.booking !== false,
+        team: company.sectionsVisible?.team !== false,
+        contact: company.sectionsVisible?.contact !== false,
+      },
+      homepageSectionsOrder: company.homepageSectionsOrder || ['hero', 'about', 'stats', 'services', 'products', 'jobs', 'gallery', 'reviews', 'faq', 'booking', 'team', 'contact'],
+      fontSize: company.fontSize || '14px',
+      headingSize: company.headingSize || '32px',
+      lineHeight: company.lineHeight || '1.6',
+      letterSpacing: company.letterSpacing || 'normal',
+      fontWeight: company.fontWeight || 'normal',
+      uppercaseToggle: !!company.uppercaseToggle,
+      stickyHeader: company.stickyHeader !== false,
+      transparentHeader: !!company.transparentHeader,
+      logoPosition: company.logoPosition || 'left',
+      menuPosition: company.menuPosition || 'right',
+      showHeaderSearch: company.showHeaderSearch !== false,
+      showHeaderWhatsApp: company.showHeaderWhatsApp !== false,
+      showHeaderCall: company.showHeaderCall !== false,
+      showHeaderLanguage: !!company.showHeaderLanguage,
+      showHeaderThemeSwitch: !!company.showHeaderThemeSwitch,
+      showHeaderLogin: !!company.showHeaderLogin,
+      footerAbout: company.footerAbout !== false,
+      footerHours: company.footerHours !== false,
+      footerLinks: company.footerLinks !== false,
+      footerProducts: company.footerProducts !== false,
+      footerServices: company.footerServices !== false,
+      footerMap: company.footerMap !== false,
+      footerSocials: company.footerSocials !== false,
+      footerNewsletter: !!company.footerNewsletter,
+      footerPrivacyLinks: company.footerPrivacyLinks !== false,
     };
 
     return (
@@ -990,7 +1026,7 @@ export default function CompanyProfileClient({ company: rawCompany, jobs, review
         company={company}
         jobs={jobs}
         reviews={reviews}
-        customization={customization}
+        customization={customization as any}
         isPreview={false}
       />
     );

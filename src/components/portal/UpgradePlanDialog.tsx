@@ -299,7 +299,7 @@ export default function UpgradePlanDialog({
                     ``,
                     `— via THENIJOBS`,
                   ].filter(Boolean).join('\n');
-                  window.open(`https://wa.me/919876543210?text=${encodeURIComponent(msg)}`, '_blank');
+                  window.open(`https://wa.me/917094826586?text=${encodeURIComponent(msg)}`, '_blank');
                 }}
                 disabled={isProcessing}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] text-sm font-bold text-gray-300 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"

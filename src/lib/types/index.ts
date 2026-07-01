@@ -635,7 +635,7 @@ export const SHOP_PRODUCT_CATEGORIES = [
 
 export type ShopProductCategory = typeof SHOP_PRODUCT_CATEGORIES[number];
 
-export const WHATSAPP_BUSINESS_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '919876543210';
+export const WHATSAPP_BUSINESS_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '917094826586';
 export const SHOP_NAME = 'THENIJOBS Store';
 
 // ===== SERVICE PROVIDER BOOKINGS =====

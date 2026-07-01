@@ -961,6 +961,7 @@ export default function CompanyProfileClient({ company: rawCompany, jobs, review
     // Template plan ranking restrictions
     const templateRankRequirement: Record<string, number> = {
       'classic-directory': 0,
+      'business-directory': 0,
       'corporate': 2, 'startup': 2, 'portfolio': 2, 'agency': 2, 'construction': 2, 'agriculture': 2,
       'hospital': 3, 'education': 3, 'restaurant': 3, 'ecommerce-storefront': 3, 'service-booking': 3, 'real-estate': 3
     };

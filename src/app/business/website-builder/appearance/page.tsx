@@ -269,6 +269,7 @@ export default function WebsiteBuilderAppearancePage() {
 
   const templatePlanRestriction: Record<string, number> = {
     'classic-directory': 0,
+    'business-directory': 0,
     'corporate': 2, 'startup': 2, 'portfolio': 2, 'agency': 2, 'construction': 2, 'agriculture': 2,
     'hospital': 3, 'education': 3, 'restaurant': 3, 'ecommerce-storefront': 3, 'service-booking': 3, 'real-estate': 3
   };
@@ -599,6 +600,7 @@ export default function WebsiteBuilderAppearancePage() {
                 <div className="space-y-2">
                   {[
                     { id: 'classic-directory', label: 'Classic Directory', desc: 'Cover, stats, catalogue listings, reviews and location.', plan: 'Free' },
+                    { id: 'business-directory', label: 'Business Directory ⭐ NEW', desc: 'Inspired by professional directory websites: badges, score, products, services, contact, maps and reviews.', plan: 'Free' },
                     { id: 'corporate', label: 'Corporate Profile', desc: 'Timelines, clean grid rows, and statistics.', plan: 'Premium' },
                     { id: 'startup', label: 'Startup SaaS', desc: 'Call to Actions, features descriptions, and pricing tiers.', plan: 'Premium' },
                     { id: 'portfolio', label: 'Creative Portfolio', desc: 'Works showcases, founder introduction, and testimonials.', plan: 'Premium' },

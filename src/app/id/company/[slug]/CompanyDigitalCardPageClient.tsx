@@ -156,12 +156,9 @@ export default function CompanyDigitalCardPageClient({
       if (!url) return '';
       if (url.startsWith('data:')) return url;
       try {
-        const fetchUrl = url.startsWith('http') ? url : window.location.origin + url;
-        const cleanUrl = fetchUrl.startsWith('http')
-          ? (fetchUrl.includes('?') ? `${fetchUrl}&t=${Date.now()}` : `${fetchUrl}?t=${Date.now()}`)
-          : fetchUrl;
-        
-        const res = await fetch(cleanUrl);
+        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error(`Proxy returned status ${res.status}`);
         const blob = await res.blob();
         return new Promise((resolve) => {
           const reader = new FileReader();

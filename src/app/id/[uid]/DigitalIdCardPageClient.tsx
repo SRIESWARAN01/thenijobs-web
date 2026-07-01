@@ -73,7 +73,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
 
   const experienceText = useMemo(() => {
     const expList = profile?.experience || seekerProfile?.experience || [];
-    if (!expList || expList.length === 0) return 'Fresh Graduate';
+    if (!Array.isArray(expList) || expList.length === 0) return 'Fresh Graduate';
     let totalMonths = 0;
     expList.forEach((exp: any) => {
       if (!exp.startDate) return;
@@ -169,12 +169,9 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
       if (!url) return '';
       if (url.startsWith('data:')) return url;
       try {
-        const fetchUrl = url.startsWith('http') ? url : window.location.origin + url;
-        const cleanUrl = fetchUrl.startsWith('http')
-          ? (fetchUrl.includes('?') ? `${fetchUrl}&t=${Date.now()}` : `${fetchUrl}?t=${Date.now()}`)
-          : fetchUrl;
-        
-        const res = await fetch(cleanUrl);
+        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error(`Proxy returned status ${res.status}`);
         const blob = await res.blob();
         return new Promise((resolve) => {
           const reader = new FileReader();

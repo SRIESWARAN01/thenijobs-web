@@ -139,53 +139,116 @@ exports.deleteSocialPost = (0, https_1.onCall)(COMMON_OPTS, async (request) => {
     });
     return { success: true };
 });
-// ─── Submit Review ───────────────────────────────────────────
+// ─── Submit Review (Supports Guest & Authenticated) ──────────
 exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) => {
-    if (!request.auth)
-        throw new https_1.HttpsError('unauthenticated', 'Login required');
-    const { companyId, rating, comment, userName, userPhoto } = request.data;
+    const { companyId, rating, comment, userName, userPhoto, guestName, guestPhone, guestEmail } = request.data;
     if (!companyId)
         throw new https_1.HttpsError('invalid-argument', 'Company ID is required');
     if (typeof rating !== 'number' || rating < 1 || rating > 5) {
         throw new https_1.HttpsError('invalid-argument', 'Rating must be between 1 and 5');
     }
+    const isAuthenticated = !!request.auth?.uid;
+    const isGuest = !isAuthenticated;
+    // Guest validation: require name and phone
+    if (isGuest) {
+        if (!guestName || typeof guestName !== 'string' || guestName.trim().length < 2) {
+            throw new https_1.HttpsError('invalid-argument', 'Name is required for guest reviews (min 2 characters).');
+        }
+        if (!guestPhone || typeof guestPhone !== 'string' || !/^\d{10}$/.test(guestPhone.replace(/\D/g, '').slice(-10))) {
+            throw new https_1.HttpsError('invalid-argument', 'A valid 10-digit phone number is required for guest reviews.');
+        }
+    }
     // Check company exists
     const companyDoc = await config_1.db.collection('companies').doc(companyId).get();
     if (!companyDoc.exists)
         throw new https_1.HttpsError('not-found', 'Company not found');
-    // Prevent reviewing own company
-    if (companyDoc.data()?.ownerId === request.auth.uid) {
+    // Prevent reviewing own company (authenticated only)
+    if (isAuthenticated && companyDoc.data()?.ownerId === request.auth.uid) {
         throw new https_1.HttpsError('permission-denied', 'You cannot review your own company');
     }
     const cleanComment = comment?.trim() || '';
     if (cleanComment) {
-        // Check for repetitive characters (e.g., "aaaaaaa")
-        if (/(.)\1{4,}/.test(cleanComment)) {
+        if (/(.)\\1{4,}/.test(cleanComment)) {
             throw new https_1.HttpsError('invalid-argument', 'Review comment contains spam or repetitive characters.');
         }
-        // Check for spam URLs/links
         if (/https?:\/\/[^\s]+/.test(cleanComment) || /www\.[^\s]+/.test(cleanComment)) {
             throw new https_1.HttpsError('invalid-argument', 'Links/URLs are not allowed in reviews.');
         }
-        // Check minimum length if comment is provided
         if (cleanComment.length < 5) {
             throw new https_1.HttpsError('invalid-argument', 'Review comment is too short (min 5 characters).');
         }
     }
-    // Check for existing review (one per user per company)
-    const existingReview = await config_1.db.collection('reviews')
-        .where('companyId', '==', companyId)
-        .where('userId', '==', request.auth.uid)
-        .limit(1)
-        .get();
-    if (!existingReview.empty) {
-        const existingDoc = existingReview.docs[0];
-        await existingDoc.ref.update({
-            rating,
-            comment: cleanComment,
-            updatedAt: firestore_1.FieldValue.serverTimestamp(),
-        });
-        // Update company aggregate rating
+    // Guest rate limiting: max 3 reviews per phone per company per 24h
+    if (isGuest) {
+        const cleanPhone = guestPhone.replace(/\D/g, '').slice(-10);
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const recentGuest = await config_1.db.collection('reviews')
+            .where('companyId', '==', companyId)
+            .where('guestPhone', '==', cleanPhone)
+            .where('createdAt', '>=', oneDayAgo)
+            .get();
+        if (recentGuest.size >= 3) {
+            throw new https_1.HttpsError('resource-exhausted', 'Too many reviews from this phone number. Please try again later.');
+        }
+    }
+    // Check for existing review (authenticated: one per user per company)
+    if (isAuthenticated) {
+        const existingReview = await config_1.db.collection('reviews')
+            .where('companyId', '==', companyId)
+            .where('userId', '==', request.auth.uid)
+            .limit(1)
+            .get();
+        if (!existingReview.empty) {
+            const existingDoc = existingReview.docs[0];
+            await existingDoc.ref.update({
+                rating,
+                comment: cleanComment,
+                updatedAt: firestore_1.FieldValue.serverTimestamp(),
+            });
+            // Update company aggregate rating
+            const allReviews = await config_1.db.collection('reviews')
+                .where('companyId', '==', companyId)
+                .where('status', '==', 'approved')
+                .get();
+            let totalRating = 0;
+            allReviews.forEach((d) => {
+                totalRating += d.data().rating || 0;
+            });
+            const avgRating = totalRating / allReviews.size;
+            await config_1.db.collection('companies').doc(companyId).update({
+                averageRating: Math.round(avgRating * 10) / 10,
+                totalReviews: allReviews.size,
+            });
+            return { success: true, reviewId: existingDoc.id, updated: true };
+        }
+    }
+    const reviewData = {
+        companyId,
+        rating,
+        comment: cleanComment,
+        // Guest reviews require admin moderation; authenticated reviews publish instantly
+        status: isAuthenticated ? 'approved' : 'pending',
+        replyText: null,
+        isActive: true,
+        createdAt: firestore_1.FieldValue.serverTimestamp(),
+    };
+    if (isAuthenticated) {
+        reviewData.userId = request.auth.uid;
+        reviewData.userName = userName || 'Anonymous';
+        reviewData.userPhoto = userPhoto || null;
+        reviewData.isGuest = false;
+    }
+    else {
+        reviewData.userId = null;
+        reviewData.userName = guestName.trim();
+        reviewData.guestPhone = guestPhone.replace(/\D/g, '').slice(-10);
+        reviewData.guestEmail = guestEmail?.trim() || null;
+        reviewData.userPhoto = null;
+        reviewData.isGuest = true;
+    }
+    const reviewRef = await config_1.db.collection('reviews').add(reviewData);
+    // Update company aggregate rating (only if approved)
+    if (isAuthenticated) {
         const allReviews = await config_1.db.collection('reviews')
             .where('companyId', '==', companyId)
             .where('status', '==', 'approved')
@@ -199,35 +262,7 @@ exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) 
             averageRating: Math.round(avgRating * 10) / 10,
             totalReviews: allReviews.size,
         });
-        return { success: true, reviewId: existingDoc.id, updated: true };
     }
-    const reviewData = {
-        companyId,
-        userId: request.auth.uid,
-        userName: userName || 'Anonymous',
-        userPhoto: userPhoto || null,
-        rating,
-        comment: cleanComment,
-        status: 'approved', // instant publish
-        replyText: null,
-        isActive: true,
-        createdAt: firestore_1.FieldValue.serverTimestamp(),
-    };
-    const reviewRef = await config_1.db.collection('reviews').add(reviewData);
-    // Update company aggregate rating
-    const allReviews = await config_1.db.collection('reviews')
-        .where('companyId', '==', companyId)
-        .where('status', '==', 'approved')
-        .get();
-    let totalRating = 0;
-    allReviews.forEach((d) => {
-        totalRating += d.data().rating || 0;
-    });
-    const avgRating = totalRating / allReviews.size;
-    await config_1.db.collection('companies').doc(companyId).update({
-        averageRating: Math.round(avgRating * 10) / 10,
-        totalReviews: allReviews.size,
-    });
-    return { success: true, reviewId: reviewRef.id };
+    return { success: true, reviewId: reviewRef.id, pending: isGuest };
 });
 //# sourceMappingURL=social.js.map

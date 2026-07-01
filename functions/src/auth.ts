@@ -217,6 +217,20 @@ export const deleteCompanyAccount = onCall(
 export const onUserWriteSync = functions.region('us-central1').firestore
   .document('users/{userId}')
   .onWrite(async (change, context) => {
+    // Sync global system stats counts on any write to users
+    try {
+      const usersCount = await db.collection('users').count().get();
+      const seekersCount = await db.collection('users').where('role', '==', 'job_seeker').count().get();
+      await db.doc('systemStats/global').set({
+        totalUsers: usersCount.data().count,
+        totalEmployees: seekersCount.data().count,
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+      console.log(`Global stats sync: totalUsers=${usersCount.data().count}, totalEmployees=${seekersCount.data().count}`);
+    } catch (statsErr) {
+      console.error('Failed to sync global stats:', statsErr);
+    }
+
     const beforeData = change.before.data();
     const afterData = change.after.data();
     const userId = context.params.userId;

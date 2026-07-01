@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitBusinessReview = exports.deleteSocialPost = exports.addSocialComment = exports.toggleSocialLike = exports.createSocialPost = exports.verifyAdPayment = exports.createAdOrder = exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.processSubscriptionAutomation = exports.validateSubscriptionAccess = exports.onJobCreated = exports.createNotification = exports.serverGetCandidateContact = exports.serverTalentSearch = exports.processJobAutomation = exports.createJobPosting = exports.serverUpdateApplicationStatus = exports.serverApplyToJob = exports.seedDemoAccounts = exports.healthCheck = exports.onCompanyWriteSync = exports.onUserWriteSync = exports.deleteCompanyAccount = exports.syncMobileVerification = exports.adminUpdateSubscription = exports.sendBroadcastNotification = exports.adminVerifyUser = exports.adminUpdateUserRole = exports.rejectJob = exports.approveJob = exports.adminVerifyCompany = exports.adminFeatureCompany = exports.rejectCompany = exports.approveCompany = void 0;
+exports.submitBusinessReview = exports.deleteSocialPost = exports.addSocialComment = exports.toggleSocialLike = exports.createSocialPost = exports.verifyAdPayment = exports.createAdOrder = exports.verifyRazorpayPayment = exports.createRazorpayOrder = exports.processSubscriptionAutomation = exports.validateSubscriptionAccess = exports.onJobCreated = exports.createNotification = exports.serverGetCandidateContact = exports.serverTalentSearch = exports.processJobAutomation = exports.createJobPosting = exports.serverUpdateApplicationStatus = exports.serverApplyToJob = exports.healthCheck = exports.onCompanyWriteSync = exports.onUserWriteSync = exports.deleteCompanyAccount = exports.syncMobileVerification = exports.adminUpdateSubscription = exports.sendBroadcastNotification = exports.adminVerifyUser = exports.adminUpdateUserRole = exports.rejectJob = exports.approveJob = exports.adminVerifyCompany = exports.adminFeatureCompany = exports.rejectCompany = exports.approveCompany = void 0;
 require("./config"); // initializes app
 var admin_1 = require("./admin");
 Object.defineProperty(exports, "approveCompany", { enumerable: true, get: function () { return admin_1.approveCompany; } });
@@ -21,7 +21,6 @@ var companySync_1 = require("./companySync");
 Object.defineProperty(exports, "onCompanyWriteSync", { enumerable: true, get: function () { return companySync_1.onCompanyWriteSync; } });
 var dev_1 = require("./dev");
 Object.defineProperty(exports, "healthCheck", { enumerable: true, get: function () { return dev_1.healthCheck; } });
-Object.defineProperty(exports, "seedDemoAccounts", { enumerable: true, get: function () { return dev_1.seedDemoAccounts; } });
 var jobs_1 = require("./jobs");
 Object.defineProperty(exports, "serverApplyToJob", { enumerable: true, get: function () { return jobs_1.serverApplyToJob; } });
 Object.defineProperty(exports, "serverUpdateApplicationStatus", { enumerable: true, get: function () { return jobs_1.serverUpdateApplicationStatus; } });

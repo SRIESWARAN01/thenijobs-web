@@ -125,6 +125,30 @@ export function useRealtimeCount(
       setLoading(true);
       setError(null);
       try {
+        if (collectionName === 'users') {
+          // Fetch from public systemStats/global document to bypass users collection read permission restriction
+          const docRef = doc(db, 'systemStats', 'global');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const isJobSeeker = constraintsKey.includes('job_seeker');
+            const isServiceProvider = constraintsKey.includes('service_provider');
+            const isEmployer = constraintsKey.includes('employer');
+            
+            let val = 0;
+            if (isJobSeeker) val = data.totalEmployees || 0;
+            else if (isServiceProvider) val = data.totalServiceProviders || 0;
+            else if (isEmployer) val = data.totalEmployers || 0;
+            else val = data.totalUsers || 0;
+            
+            if (!cancelled) {
+              setCount(val);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
         const q = constraints.length > 0
           ? query(collection(db, collectionName), ...constraints)
           : collection(db, collectionName);

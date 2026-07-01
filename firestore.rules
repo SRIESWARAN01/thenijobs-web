@@ -695,6 +695,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ===== SYSTEM STATS =====
+    match /systemStats/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // ===== CATCH-ALL =====
     match /{document=**} {
       allow read, write: if false;

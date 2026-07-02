@@ -120,7 +120,7 @@ function LoginContent() {
                 Create Account
               </Link>
             </p>
-            <Link href="/shop" className="flex items-center justify-center gap-1.5 text-gray-600 hover:text-gray-400 text-xs transition-colors py-1.5">
+            <Link href="/shop" className="flex items-center justify-center gap-1.5 text-gray-500 hover:text-gray-400 text-xs transition-colors py-1.5">
               <ArrowLeft size={12} /> Continue shopping without account
             </Link>
           </div>

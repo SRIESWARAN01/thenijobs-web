@@ -81,7 +81,7 @@ export default function TrustScoreBadge({ company, variant = 'badge' }: TrustSco
         <ShieldCheck size={13} className={color} />
         <span className={color}>{score}%</span>
         <span className="text-slate-400">·</span>
-        <span className="text-slate-600">{level}</span>
+        <span className="text-slate-500">{level}</span>
       </div>
     );
   }

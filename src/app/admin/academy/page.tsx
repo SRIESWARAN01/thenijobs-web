@@ -105,7 +105,7 @@ export default function AcademyDashboardPage() {
               </div>
               <h3 className="text-sm font-semibold text-white flex items-center gap-1">
                 {item.label}
-                <ArrowUpRight size={12} className="text-gray-600 group-hover:text-violet-400 transition-colors" />
+                <ArrowUpRight size={12} className="text-gray-500 group-hover:text-violet-400 transition-colors" />
               </h3>
               <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
             </Link>
@@ -153,50 +153,52 @@ export default function AcademyDashboardPage() {
           </div>
         ) : courses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <GraduationCap size={32} className="text-gray-600 mb-3" />
+            <GraduationCap size={32} className="text-gray-500 mb-3" />
             <p className="text-sm text-gray-400">No courses created yet.</p>
             <Link href="/admin/academy/courses/create" className="text-xs text-violet-400 mt-2 hover:underline">
               Create your first course →
             </Link>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/[0.06]">
-                <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500">Course</th>
-                <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden md:table-cell">Category</th>
-                <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Enrolled</th>
-                <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden lg:table-cell">Lessons</th>
-                <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.04]">
-              {courses.slice(0, 8).map(course => (
-                <tr key={course.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-5 py-3.5">
-                    <Link href={`/admin/academy/courses/${course.id}/edit`} className="text-sm font-medium text-white hover:text-violet-400 transition-colors">
-                      {course.title}
-                    </Link>
-                    <p className="text-[10px] text-gray-600 mt-0.5">{course.difficulty}</p>
-                  </td>
-                  <td className="px-3 py-3.5 text-center hidden md:table-cell">
-                    <span className="text-xs text-gray-400">{course.category}</span>
-                  </td>
-                  <td className="px-3 py-3.5 text-center">
-                    <span className="text-sm font-medium text-white">{course.enrollmentCount || 0}</span>
-                  </td>
-                  <td className="px-3 py-3.5 text-center hidden lg:table-cell">
-                    <span className="text-xs text-gray-400">{course.totalLessons || 0}</span>
-                  </td>
-                  <td className="px-3 py-3.5 text-center">
-                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${course.isPublished ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
-                      {course.isPublished ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
+          <div className="w-full overflow-x-auto min-w-0">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500">Course</th>
+                  <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden md:table-cell">Category</th>
+                  <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Enrolled</th>
+                  <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden lg:table-cell">Lessons</th>
+                  <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {courses.slice(0, 8).map(course => (
+                  <tr key={course.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-5 py-3.5">
+                      <Link href={`/admin/academy/courses/${course.id}/edit`} className="text-sm font-medium text-white hover:text-violet-400 transition-colors">
+                        {course.title}
+                      </Link>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{course.difficulty}</p>
+                    </td>
+                    <td className="px-3 py-3.5 text-center hidden md:table-cell">
+                      <span className="text-xs text-gray-400">{course.category}</span>
+                    </td>
+                    <td className="px-3 py-3.5 text-center">
+                      <span className="text-sm font-medium text-white">{course.enrollmentCount || 0}</span>
+                    </td>
+                    <td className="px-3 py-3.5 text-center hidden lg:table-cell">
+                      <span className="text-xs text-gray-400">{course.totalLessons || 0}</span>
+                    </td>
+                    <td className="px-3 py-3.5 text-center">
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${course.isPublished ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                        {course.isPublished ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

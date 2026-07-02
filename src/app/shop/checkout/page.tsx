@@ -386,7 +386,7 @@ export default function CheckoutPage() {
                 <label className="block text-sm text-gray-400 mb-1.5 font-medium">
                   <FileText className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
                   Additional Notes{' '}
-                  <span className="text-gray-600 font-normal">(optional)</span>
+                  <span className="text-gray-500 font-normal">(optional)</span>
                 </label>
                 <textarea
                   name="notes"
@@ -430,7 +430,7 @@ export default function CheckoutPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-4 h-4 text-gray-600" />
+                          <ShoppingBag className="w-4 h-4 text-gray-500" />
                         </div>
                       )}
                     </div>
@@ -499,7 +499,7 @@ export default function CheckoutPage() {
               )}
             </button>
 
-            <p className="text-center text-gray-600 text-xs px-4">
+            <p className="text-center text-gray-500 text-xs px-4">
               Your order will be confirmed via WhatsApp by our team.
             </p>
           </motion.div>

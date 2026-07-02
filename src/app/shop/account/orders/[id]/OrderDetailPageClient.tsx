@@ -47,7 +47,7 @@ export default function OrderDetailPageClient({ params }: { params: Promise<{ id
   if (!order) {
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col items-center justify-center gap-4">
-        <Package size={40} className="text-gray-600" />
+        <Package size={40} className="text-gray-500" />
         <p className="text-gray-400">Order not found.</p>
         <Link href="/shop/account" className="btn-gradient px-6 py-2.5 text-sm">Back to Account</Link>
       </div>
@@ -95,7 +95,7 @@ export default function OrderDetailPageClient({ params }: { params: Promise<{ id
                     <Image src={item.image} alt={item.name} width={48} height={48} className="w-12 h-12 object-cover rounded-xl bg-white/[0.05]" />
                   ) : (
                     <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center">
-                      <Package size={18} className="text-gray-600" />
+                      <Package size={18} className="text-gray-500" />
                     </div>
                   )}
                   <div>

@@ -178,7 +178,7 @@ function ProductsContent() {
         {!loading && filtered.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto mb-4">
-              <Search size={32} className="text-gray-600" />
+              <Search size={32} className="text-gray-500" />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">No products found</h3>
             <p className="text-gray-500 text-sm mb-6">Try adjusting your search or filters</p>

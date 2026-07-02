@@ -171,7 +171,7 @@ export default function CartPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-6 h-6 text-gray-600" />
+                          <ShoppingBag className="w-6 h-6 text-gray-500" />
                         </div>
                       )}
                     </div>
@@ -325,7 +325,7 @@ export default function CartPage() {
             </button>
 
             {/* Trust badge */}
-            <p className="text-center text-gray-600 text-xs">
+            <p className="text-center text-gray-500 text-xs">
               🔒 Secure order via WhatsApp
             </p>
           </motion.div>

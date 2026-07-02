@@ -125,7 +125,7 @@ export default function CourseDetailPage() {
                   {mod.lessons.map((lesson, lessonIdx) => (
                     <div key={lesson.id} className="flex items-center justify-between text-xs text-gray-400">
                       <span className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-600 font-bold font-mono">L{lessonIdx + 1}</span>
+                        <span className="text-[10px] text-gray-500 font-bold font-mono">L{lessonIdx + 1}</span>
                         <span>{lesson.title}</span>
                       </span>
                       {lesson.videoDuration ? (

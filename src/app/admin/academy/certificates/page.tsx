@@ -193,14 +193,14 @@ export default function CertificateTemplatesPage() {
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Template Name *</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/[0.08] px-3.5 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none" />
+                className="w-full bg-white/[0.03] border border-white/[0.08] px-3.5 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Background Image URL</label>
                 <input type="text" value={bgImage} onChange={e => setBgImage(e.target.value)} placeholder="https://..."
-                  className="w-full bg-white/[0.03] border border-white/[0.08] px-3.5 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 outline-none" />
+                  className="w-full bg-white/[0.03] border border-white/[0.08] px-3.5 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 outline-none" />
               </div>
               <div>
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Logo Placement</label>

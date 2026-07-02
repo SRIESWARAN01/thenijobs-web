@@ -821,9 +821,9 @@ export default function SeekerProfilePage() {
               {item.done ? (
                 <CheckCircle size={13} className="text-emerald-400 shrink-0" />
               ) : (
-                <Circle size={13} className="text-gray-600 shrink-0" />
+                <Circle size={13} className="text-gray-500 shrink-0" />
               )}
-              <span className={item.done ? 'text-gray-300' : 'text-gray-600'}>{item.label}</span>
+              <span className={item.done ? 'text-gray-300' : 'text-gray-500'}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -937,7 +937,7 @@ export default function SeekerProfilePage() {
             <div className="space-y-4">
               {education.map((edu) => (
                 <div key={edu.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
-                  <button onClick={() => removeEducation(edu.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                  <button onClick={() => removeEducation(edu.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
                     <X size={14} />
                   </button>
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -961,7 +961,7 @@ export default function SeekerProfilePage() {
                 </div>
               ))}
               {education.length === 0 && (
-                <div className="text-center py-10 text-gray-600 text-sm">
+                <div className="text-center py-10 text-gray-500 text-sm">
                   <GraduationCap size={32} className="mx-auto mb-2 opacity-40" />
                   No education entries yet. Click &quot;Add Education&quot; to get started.
                 </div>
@@ -984,7 +984,7 @@ export default function SeekerProfilePage() {
             <div className="space-y-4">
               {experience.map((exp) => (
                 <div key={exp.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
-                  <button onClick={() => removeExperience(exp.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                  <button onClick={() => removeExperience(exp.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
                     <X size={14} />
                   </button>
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -1012,7 +1012,7 @@ export default function SeekerProfilePage() {
                 </div>
               ))}
               {experience.length === 0 && (
-                <div className="text-center py-10 text-gray-600 text-sm">
+                <div className="text-center py-10 text-gray-500 text-sm">
                   <Briefcase size={32} className="mx-auto mb-2 opacity-40" />
                   No experience entries yet. Click &quot;Add Experience&quot; to get started.
                 </div>
@@ -1265,7 +1265,7 @@ export default function SeekerProfilePage() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-6 text-gray-600 text-xs border border-dashed border-white/[0.05] rounded-xl">
+                  <div className="text-center py-6 text-gray-500 text-xs border border-dashed border-white/[0.05] rounded-xl">
                     No Academy certificates earned yet. Visit the Learning Academy.
                   </div>
                 )}
@@ -1286,7 +1286,7 @@ export default function SeekerProfilePage() {
               <div className="space-y-4">
                 {certifications.map(cert => (
                   <div key={cert.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
-                    <button onClick={() => removeCertification(cert.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                    <button onClick={() => removeCertification(cert.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
                       <X size={14} />
                     </button>
                     <div className="grid sm:grid-cols-2 gap-3">
@@ -1310,7 +1310,7 @@ export default function SeekerProfilePage() {
                   </div>
                 ))}
                 {certifications.length === 0 && (
-                  <div className="text-center py-6 text-gray-600 text-xs border border-dashed border-white/[0.05] rounded-xl">
+                  <div className="text-center py-6 text-gray-500 text-xs border border-dashed border-white/[0.05] rounded-xl">
                     No other certifications listed. Add custom ones above.
                   </div>
                 )}
@@ -1333,7 +1333,7 @@ export default function SeekerProfilePage() {
             <div className="space-y-4">
               {achievements.map(ach => (
                 <div key={ach.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
-                  <button onClick={() => removeAchievement(ach.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                  <button onClick={() => removeAchievement(ach.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
                     <X size={14} />
                   </button>
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -1349,7 +1349,7 @@ export default function SeekerProfilePage() {
                 </div>
               ))}
               {achievements.length === 0 && (
-                <div className="text-center py-10 text-gray-600 text-sm">
+                <div className="text-center py-10 text-gray-500 text-sm">
                   <Star size={32} className="mx-auto mb-2 opacity-40 text-amber-400" />
                   No achievements listed yet. Click &quot;Add Achievement&quot; to show off your awards.
                 </div>
@@ -1373,7 +1373,7 @@ export default function SeekerProfilePage() {
                   <span className="flex-1 text-sm text-cyan-300 truncate">{link}</span>
                   <button
                     onClick={() => setPortfolio(p => p.filter((_, i) => i !== idx))}
-                    className="p-1.5 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"
+                    className="p-1.5 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100"
                   >
                     <X size={13} />
                   </button>
@@ -1434,7 +1434,7 @@ export default function SeekerProfilePage() {
             <div className="space-y-4">
               {projects.map(proj => (
                 <div key={proj.id} className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] relative group">
-                  <button onClick={() => removeProject(proj.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
+                  <button onClick={() => removeProject(proj.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all opacity-0 group-hover:opacity-100">
                     <X size={14} />
                   </button>
                   <div className="grid sm:grid-cols-2 gap-3">
@@ -1458,7 +1458,7 @@ export default function SeekerProfilePage() {
                 </div>
               ))}
               {projects.length === 0 && (
-                <div className="text-center py-10 text-gray-600 text-sm">
+                <div className="text-center py-10 text-gray-500 text-sm">
                   <Briefcase size={32} className="mx-auto mb-2 opacity-40" />
                   No projects added yet. Click &quot;Add Project&quot; to get started.
                 </div>
@@ -1498,7 +1498,7 @@ export default function SeekerProfilePage() {
                         }}
                         className="hidden"
                       />
-                      {isChecked ? <CheckCircle size={14} className="text-emerald-400 shrink-0" /> : <Circle size={14} className="text-gray-600 shrink-0" />}
+                      {isChecked ? <CheckCircle size={14} className="text-emerald-400 shrink-0" /> : <Circle size={14} className="text-gray-500 shrink-0" />}
                       <span className="truncate">{cat}</span>
                     </label>
                   );
@@ -1530,7 +1530,7 @@ export default function SeekerProfilePage() {
                         }}
                         className="hidden"
                       />
-                      {isChecked ? <CheckCircle size={14} className="text-cyan-400 shrink-0" /> : <Circle size={14} className="text-gray-600 shrink-0" />}
+                      {isChecked ? <CheckCircle size={14} className="text-cyan-400 shrink-0" /> : <Circle size={14} className="text-gray-500 shrink-0" />}
                       <span>{loc}</span>
                     </label>
                   );
@@ -1563,7 +1563,7 @@ export default function SeekerProfilePage() {
                           }}
                           className="hidden"
                         />
-                        {isChecked ? <CheckCircle size={14} className="text-violet-400 shrink-0" /> : <Circle size={14} className="text-gray-600 shrink-0" />}
+                        {isChecked ? <CheckCircle size={14} className="text-violet-400 shrink-0" /> : <Circle size={14} className="text-gray-500 shrink-0" />}
                         <span>{type}</span>
                       </label>
                     );

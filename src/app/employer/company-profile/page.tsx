@@ -915,7 +915,7 @@ export default function CompanyProfilePage() {
                 value={company.description}
                 onChange={(e) => handleDescChange(e.target.value)}
                 placeholder="Describe your company, what you do, your mission, and details candidates would want to know..."
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 focus:bg-white/[0.06] outline-none transition-all resize-none leading-relaxed"
+                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 focus:bg-white/[0.06] outline-none transition-all resize-none leading-relaxed"
               />
               <div className="flex justify-end mt-1.5">
                 <span className={`text-[10px] font-medium ${charCount > 900 ? 'text-amber-400' : 'text-gray-500'}`}>
@@ -941,7 +941,7 @@ export default function CompanyProfilePage() {
                     placeholder="+91 XXXXX XXXXX"
                     value={company.phone}
                     onChange={(e) => update('phone', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -954,7 +954,7 @@ export default function CompanyProfilePage() {
                     placeholder="contact@company.com"
                     value={company.email}
                     onChange={(e) => update('email', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -967,7 +967,7 @@ export default function CompanyProfilePage() {
                     placeholder="+91 XXXXX XXXXX"
                     value={company.whatsapp}
                     onChange={(e) => update('whatsapp', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -980,7 +980,7 @@ export default function CompanyProfilePage() {
                     placeholder="https://company.com"
                     value={company.website}
                     onChange={(e) => update('website', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -993,7 +993,7 @@ export default function CompanyProfilePage() {
                     placeholder="e.g. 2018"
                     value={company.establishedYear || ''}
                     onChange={(e) => update('establishedYear', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1006,7 +1006,7 @@ export default function CompanyProfilePage() {
                     placeholder="e.g. 5+ Years"
                     value={company.experience || ''}
                     onChange={(e) => update('experience', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1019,7 +1019,7 @@ export default function CompanyProfilePage() {
                     placeholder="e.g. 9:00 AM - 6:00 PM"
                     value={company.workingHours || ''}
                     onChange={(e) => update('workingHours', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1032,7 +1032,7 @@ export default function CompanyProfilePage() {
                     placeholder="https://maps.google.com/..."
                     value={company.googleMapsLink || ''}
                     onChange={(e) => update('googleMapsLink', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1045,7 +1045,7 @@ export default function CompanyProfilePage() {
                     placeholder="https://www.google.com/maps/embed?pb=..."
                     value={company.googleMapsEmbedUrl || ''}
                     onChange={(e) => update('googleMapsEmbedUrl', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -1066,7 +1066,7 @@ export default function CompanyProfilePage() {
                   placeholder="Street, Area, Building Details"
                   value={company.address}
                   onChange={(e) => update('address', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-3">
@@ -1133,7 +1133,7 @@ export default function CompanyProfilePage() {
                   value={company.facebook}
                   onChange={(e) => update('facebook', e.target.value)}
                   placeholder="https://facebook.com/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
               <div>
@@ -1145,7 +1145,7 @@ export default function CompanyProfilePage() {
                   value={company.instagram}
                   onChange={(e) => update('instagram', e.target.value)}
                   placeholder="https://instagram.com/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
               <div>
@@ -1157,7 +1157,7 @@ export default function CompanyProfilePage() {
                   value={company.linkedin}
                   onChange={(e) => update('linkedin', e.target.value)}
                   placeholder="https://linkedin.com/company/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
               <div>
@@ -1169,7 +1169,7 @@ export default function CompanyProfilePage() {
                   value={company.youtube}
                   onChange={(e) => update('youtube', e.target.value)}
                   placeholder="https://youtube.com/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
               <div>
@@ -1181,7 +1181,7 @@ export default function CompanyProfilePage() {
                   value={company.twitter || ''}
                   onChange={(e) => update('twitter', e.target.value)}
                   placeholder="https://twitter.com/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
             </div>
@@ -1218,8 +1218,8 @@ export default function CompanyProfilePage() {
                     </>
                   ) : (
                     <div className="text-center">
-                      <Upload size={20} className="text-gray-600 mx-auto mb-1 group-hover:text-cyan-400 transition-colors" />
-                      <p className="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors">Upload</p>
+                      <Upload size={20} className="text-gray-500 mx-auto mb-1 group-hover:text-cyan-400 transition-colors" />
+                      <p className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">Upload</p>
                     </div>
                   )}
                 </div>
@@ -1256,7 +1256,7 @@ export default function CompanyProfilePage() {
                   </div>
                   <button
                     onClick={() => removeBranch(branch.id)}
-                    className="p-2 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-2 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -1270,14 +1270,14 @@ export default function CompanyProfilePage() {
                     placeholder="Branch Name (e.g. Cumbum Branch)"
                     value={newBranch.name}
                     onChange={(e) => setNewBranch((p) => ({ ...p, name: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                   <input
                     type="text"
                     placeholder="Address"
                     value={newBranch.address}
                     onChange={(e) => setNewBranch((p) => ({ ...p, address: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                   />
                   <div className="grid gap-3 sm:grid-cols-2">
                     <select
@@ -1370,7 +1370,7 @@ export default function CompanyProfilePage() {
                       <button
                         type="button"
                         onClick={() => removeTeamMember(member.id)}
-                        className="p-2 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer bg-transparent border-0"
+                        className="p-2 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer bg-transparent border-0"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -1578,7 +1578,7 @@ export default function CompanyProfilePage() {
                        placeholder="e.g. Book Appointment, Visit Shop"
                        value={company.customCtaLabel || ''}
                        onChange={(e) => update('customCtaLabel', e.target.value)}
-                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                      />
                    </div>
                    <div>
@@ -1588,7 +1588,7 @@ export default function CompanyProfilePage() {
                        placeholder="https://..."
                        value={company.customCtaUrl || ''}
                        onChange={(e) => update('customCtaUrl', e.target.value)}
-                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                      />
                    </div>
                  </div>
@@ -1660,7 +1660,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. Best Biryani in Theni | Hotel Salem Ananda"
                           value={company.customMetaTitle || ''}
                           onChange={(e) => update('customMetaTitle', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                         />
                       </div>
                       <div>
@@ -1670,7 +1670,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. biryani, hotel, restaurants in theni, food delivery"
                           value={company.seoKeywords || ''}
                           onChange={(e) => update('seoKeywords', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -1681,7 +1681,7 @@ export default function CompanyProfilePage() {
                         placeholder="e.g. Hotel Salem Ananda offers premium traditional Biryani and South Indian foods in Theni district. Visit us or order online."
                         value={company.customMetaDescription || ''}
                         onChange={(e) => update('customMetaDescription', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                       />
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
@@ -1692,7 +1692,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. https://yourdomain.com"
                           value={company.canonicalUrl || ''}
                           onChange={(e) => update('canonicalUrl', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all font-mono"
                         />
                       </div>
                       <div>
@@ -1702,7 +1702,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. https://yourdomain.com/social-preview.jpg"
                           value={company.socialShareImage || ''}
                           onChange={(e) => update('socialShareImage', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all font-mono"
                         />
                       </div>
                     </div>
@@ -1714,7 +1714,7 @@ export default function CompanyProfilePage() {
                           placeholder="Open Graph custom title"
                           value={company.ogTitle || ''}
                           onChange={(e) => update('ogTitle', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                         />
                       </div>
                       <div>
@@ -1724,7 +1724,7 @@ export default function CompanyProfilePage() {
                           placeholder="Open Graph custom description"
                           value={company.ogDescription || ''}
                           onChange={(e) => update('ogDescription', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -1760,7 +1760,7 @@ export default function CompanyProfilePage() {
                        placeholder="G-XXXXXXXXXX"
                        value={company.googleAnalyticsId || ''}
                        onChange={(e) => update('googleAnalyticsId', e.target.value)}
-                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                      />
                    </div>
                    <div>
@@ -1770,7 +1770,7 @@ export default function CompanyProfilePage() {
                        placeholder="123456789012345"
                        value={company.facebookPixelId || ''}
                        onChange={(e) => update('facebookPixelId', e.target.value)}
-                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                       className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                      />
                    </div>
                  </div>
@@ -1804,7 +1804,7 @@ export default function CompanyProfilePage() {
                      placeholder="e.g. Hello! I visited your website on THENIJOBS and would like to ask about..."
                      value={company.whatsappMessageTemplate || ''}
                      onChange={(e) => update('whatsappMessageTemplate', e.target.value)}
-                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                     className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                    />
                  </div>
                </div>
@@ -1827,7 +1827,7 @@ export default function CompanyProfilePage() {
                         placeholder="e.g. 33AAAAA1111A1Z1"
                         value={company.gstNumber || ''}
                         onChange={(e) => update('gstNumber', e.target.value.toUpperCase())}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all font-mono"
                       />
                     </div>
                     <div>
@@ -1837,7 +1837,7 @@ export default function CompanyProfilePage() {
                         placeholder="e.g. AAABC1111A"
                         value={company.businessRegNumber || ''}
                         onChange={(e) => update('businessRegNumber', e.target.value.toUpperCase())}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all font-mono"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all font-mono"
                       />
                     </div>
                   </div>
@@ -1935,7 +1935,7 @@ export default function CompanyProfilePage() {
                         {company.ceoPhotoUrl ? (
                           <img src={company.ceoPhotoUrl} alt="CEO" className="object-cover w-full h-full" />
                         ) : (
-                          <Building2 size={24} className="text-gray-600" />
+                          <Building2 size={24} className="text-gray-500" />
                         )}
                         <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 cursor-pointer transition-opacity">
                           <Upload size={16} className="text-white" />
@@ -1952,7 +1952,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. Dr. K. Sivaraj M.B.A."
                           value={company.ceoName || ''}
                           onChange={(e) => update('ceoName', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                         />
                       </div>
                       <div>
@@ -1962,7 +1962,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. Welcome to our corporate page. We believe in providing premium services..."
                           value={company.ceoMessage || ''}
                           onChange={(e) => update('ceoMessage', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                         />
                       </div>
                     </div>
@@ -1974,7 +1974,7 @@ export default function CompanyProfilePage() {
                       placeholder="Detail the founder's academic milestones, business journey, and values..."
                       value={company.aboutFounder || ''}
                       onChange={(e) => update('aboutFounder', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                     />
                   </div>
                 </div>
@@ -1993,7 +1993,7 @@ export default function CompanyProfilePage() {
                         placeholder="Share your business origin story, how it started, milestones and achievements over the years..."
                         value={company.companyStory || ''}
                         onChange={(e) => update('companyStory', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                       />
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
@@ -2004,7 +2004,7 @@ export default function CompanyProfilePage() {
                           placeholder="Our vision is to revolutionize..."
                           value={company.vision || ''}
                           onChange={(e) => update('vision', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                         />
                       </div>
                       <div>
@@ -2014,7 +2014,7 @@ export default function CompanyProfilePage() {
                           placeholder="Our mission is to deliver high-quality..."
                           value={company.mission || ''}
                           onChange={(e) => update('mission', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                         />
                       </div>
                     </div>
@@ -2025,7 +2025,7 @@ export default function CompanyProfilePage() {
                         placeholder="e.g. Quality, Integrity, Innovation, Customer First"
                         value={company.coreValues || ''}
                         onChange={(e) => update('coreValues', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -2127,7 +2127,7 @@ export default function CompanyProfilePage() {
                         placeholder="Describe key awards, certifications, or major company achievements..."
                         value={company.achievements || ''}
                         onChange={(e) => update('achievements', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                       />
                     </div>
                     
@@ -2139,7 +2139,7 @@ export default function CompanyProfilePage() {
                         placeholder="Detail company charity work, environment protection measures, community welfare, etc..."
                         value={company.csrActivities || ''}
                         onChange={(e) => update('csrActivities', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                        className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                       />
                     </div>
 
@@ -2151,7 +2151,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. Join our professional family. We offer competitive salaries, health benefits..."
                           value={company.careerSectionText || ''}
                           onChange={(e) => update('careerSectionText', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all resize-none"
                         />
                       </div>
                       <div>
@@ -2161,7 +2161,7 @@ export default function CompanyProfilePage() {
                           placeholder="e.g. careers@yourcompany.com"
                           value={company.careerEmail || ''}
                           onChange={(e) => update('careerEmail', e.target.value)}
-                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                          className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -2488,7 +2488,7 @@ export default function CompanyProfilePage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center p-6 text-center text-gray-600">
+                        <div className="flex flex-col items-center justify-center p-6 text-center text-gray-500">
                           <ImagePlus size={36} />
                           <span className="text-[10px] mt-2 font-bold uppercase">No Custom Social Preview Image</span>
                         </div>

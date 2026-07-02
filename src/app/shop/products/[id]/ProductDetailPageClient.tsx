@@ -272,7 +272,7 @@ function ReviewForm({
           className="search-input w-full px-4 py-3 resize-none rounded-xl text-sm"
           maxLength={800}
         />
-        <p className="text-gray-600 text-xs self-end">{comment.length}/800</p>
+        <p className="text-gray-500 text-xs self-end">{comment.length}/800</p>
       </div>
 
       <button
@@ -562,7 +562,7 @@ Please share more details.`;
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col items-center justify-center gap-6 text-center px-4">
         <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-2">
-          <ShoppingBag className="w-12 h-12 text-gray-600" />
+          <ShoppingBag className="w-12 h-12 text-gray-500" />
         </div>
         <h1 className="text-2xl font-bold text-white font-outfit">Product not found</h1>
         <p className="text-gray-400 max-w-sm">
@@ -915,7 +915,7 @@ Please share more details.`;
             </div>
           ) : reviews.length === 0 ? (
             <div className="glass-card rounded-2xl p-8 flex flex-col items-center gap-3 text-center">
-              <Star className="w-10 h-10 text-gray-600" />
+              <Star className="w-10 h-10 text-gray-500" />
               <p className="text-gray-400 text-sm">
                 No approved reviews yet.{' '}
                 {shopUser
@@ -994,7 +994,7 @@ Please share more details.`;
                       min={1}
                       value={rfqQty}
                       onChange={(e) => setRfqQty(Number(e.target.value))}
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/40 outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/40 outline-none"
                     />
                   </div>
                   <div>
@@ -1004,7 +1004,7 @@ Please share more details.`;
                       type="date"
                       value={rfqDate}
                       onChange={(e) => setRfqDate(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/40 outline-none cursor-pointer"
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/40 outline-none cursor-pointer"
                     />
                   </div>
                 </div>
@@ -1018,7 +1018,7 @@ Please share more details.`;
                     value={rfqPhone}
                     onChange={(e) => setRfqPhone(e.target.value)}
                     placeholder="Enter phone number"
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/40 outline-none"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/40 outline-none"
                   />
                 </div>
 
@@ -1030,7 +1030,7 @@ Please share more details.`;
                     value={rfqMsg}
                     onChange={(e) => setRfqMsg(e.target.value)}
                     placeholder="E.g., custom branding, bulk packaging details, delivery queries..."
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/40 outline-none resize-none"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/40 outline-none resize-none"
                   />
                 </div>
 

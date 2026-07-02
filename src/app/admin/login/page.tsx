@@ -132,7 +132,7 @@ export default function AdminLoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-gray-600 mt-6">
+        <p className="text-center text-[10px] text-gray-500 mt-6">
           Protected by Firebase Auth · Secure Admin Dashboard
         </p>
       </div>

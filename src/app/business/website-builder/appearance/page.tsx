@@ -1065,7 +1065,7 @@ export default function WebsiteBuilderAppearancePage() {
                     <circle cx="65" cy="8" r="1.5" fill="#EC4899" />
                     <circle cx="95" cy="5" r="1.5" fill="#EC4899" />
                   </svg>
-                  <div className="flex justify-between text-[9px] text-gray-600 font-bold uppercase">
+                  <div className="flex justify-between text-[9px] text-gray-500 font-bold uppercase">
                     <span>March</span>
                     <span>April</span>
                     <span>May</span>

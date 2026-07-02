@@ -342,7 +342,7 @@ export default function SkillsPage() {
                 <div>
                   <p className="text-2xl font-bold text-white">{metric.value}</p>
                   <p className="mt-1 text-xs font-medium text-gray-400">{metric.label}</p>
-                  <p className="mt-1 text-[10px] text-gray-600">{metric.description}</p>
+                  <p className="mt-1 text-[10px] text-gray-500">{metric.description}</p>
                 </div>
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colors[metric.color]}`}>
                   <Icon size={18} />

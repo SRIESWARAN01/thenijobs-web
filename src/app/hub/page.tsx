@@ -154,7 +154,7 @@ export default function BusinessHubPage() {
           <h1 className="mx-auto max-w-3xl font-outfit text-3xl font-black leading-tight text-slate-950 sm:text-4xl lg:text-5xl">
             Your Business starts here
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
             One unified Business Account to post jobs, manage products, connect with suppliers, and offer services — all under one dashboard for Theni district businesses.
           </p>
 
@@ -169,7 +169,7 @@ export default function BusinessHubPage() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-400 transition-colors hover:border-slate-300 hover:bg-slate-50"
             >
               Already registered? Login
               <ArrowRight size={15} />
@@ -210,7 +210,7 @@ export default function BusinessHubPage() {
                 </div>
 
                 {/* Description */}
-                <p className="mb-5 text-sm leading-relaxed text-slate-600">
+                <p className="mb-5 text-sm leading-relaxed text-slate-500">
                   {portal.description}
                 </p>
 

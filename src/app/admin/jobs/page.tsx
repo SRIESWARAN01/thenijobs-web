@@ -379,7 +379,7 @@ export default function JobsPage() {
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${typeConfig.bg} ${typeConfig.text}`}>
                             {typeConfig.label}
                           </span>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">{plan}</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">{plan}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3.5 hidden lg:table-cell">
@@ -407,7 +407,7 @@ export default function JobsPage() {
                       <td className="px-4 py-3.5 hidden md:table-cell text-center">
                         <button
                           onClick={() => handleToggleFeatured(job.id, job.isFeatured)}
-                          className={`transition-all ${job.isFeatured ? 'text-amber-400' : 'text-gray-600 hover:text-amber-400'}`}
+                          className={`transition-all ${job.isFeatured ? 'text-amber-400' : 'text-gray-500 hover:text-amber-400'}`}
                         >
                           <Star size={16} fill={job.isFeatured ? 'currentColor' : 'none'} />
                         </button>
@@ -459,10 +459,10 @@ export default function JobsPage() {
         {!loading && filteredJobs.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
-              <Briefcase size={28} className="text-gray-600" />
+              <Briefcase size={28} className="text-gray-500" />
             </div>
             <p className="text-sm font-medium text-gray-400">No jobs found</p>
-            <p className="text-xs text-gray-600 mt-1">Try adjusting your filters</p>
+            <p className="text-xs text-gray-500 mt-1">Try adjusting your filters</p>
           </div>
         )}
       </div>

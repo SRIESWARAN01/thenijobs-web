@@ -325,7 +325,7 @@ export default function CompanyRegisterPage() {
                     value={form.name} onChange={e => update('name', e.target.value)}
                     className="search-input w-full px-4 py-3 text-sm" />
                   <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-gray-600">Your URL: thenijobs.com/company/<span className="text-violet-400">{validatedSlug || generateSlug(form.name) || 'your-business-name'}</span></p>
+                    <p className="text-xs text-gray-500">Your URL: thenijobs.com/company/<span className="text-violet-400">{validatedSlug || generateSlug(form.name) || 'your-business-name'}</span></p>
                     {slugStatus === 'checking' && <Loader2 size={12} className="animate-spin text-gray-400" />}
                     {slugStatus === 'available' && <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold"><CheckCircle2 size={11} /> Available</span>}
                     {slugStatus === 'taken' && <span className="flex items-center gap-1 text-[10px] text-amber-400 font-semibold"><AlertCircle size={11} /> Name taken — will use: {validatedSlug}</span>}
@@ -374,11 +374,11 @@ export default function CompanyRegisterPage() {
                     className="search-input w-full px-4 py-3 text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Business Description * <span className="text-gray-600">(for SEO – min 100 words)</span></label>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Business Description * <span className="text-gray-500">(for SEO – min 100 words)</span></label>
                   <textarea rows={5} placeholder="Describe your business, services offered, and what makes you unique. This will appear on Google Search results."
                     value={form.description} onChange={e => update('description', e.target.value)}
                     className="search-input w-full px-4 py-3 text-sm resize-none leading-relaxed" />
-                  <p className="text-xs text-gray-600 mt-1">{form.description.split(' ').filter(Boolean).length} words</p>
+                  <p className="text-xs text-gray-500 mt-1">{form.description.split(' ').filter(Boolean).length} words</p>
                 </div>
               </div>
             </div>

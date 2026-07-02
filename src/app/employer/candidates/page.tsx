@@ -456,7 +456,7 @@ function CandidateDetailPanel({
           <div className="glass-card rounded-xl p-4">
             <h4 className="text-xs font-bold text-gray-400 tracking-wider uppercase border-b border-white/5 pb-2 mb-2">Internal HR Notes</h4>
             <textarea
-              className="w-full bg-[#111124] border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder:text-gray-600 focus:border-cyan-500/40 focus:outline-none resize-none"
+              className="w-full bg-[#111124] border border-white/10 rounded-lg p-2.5 text-xs text-white placeholder:text-gray-500 focus:border-cyan-500/40 focus:outline-none resize-none"
               rows={3}
               placeholder="Record interview notes, internal feedback, etc..."
               value={localNotes}
@@ -1264,7 +1264,7 @@ ${xmlRows}  </Table>
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
-        <Users2 size={48} className="text-gray-600 mb-4" />
+        <Users2 size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold text-white">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and manage candidate applications.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
@@ -1365,7 +1365,7 @@ ${xmlRows}  </Table>
                 placeholder="Search by name, phone, skills..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
               />
             </div>
 
@@ -1691,9 +1691,9 @@ ${xmlRows}  </Table>
           {/* Empty State */}
           {filtered.length === 0 && (
             <div className="glass-card rounded-2xl p-12 text-center border border-white/[0.05]">
-              <Users2 size={32} className="text-gray-600 mx-auto mb-3" />
+              <Users2 size={32} className="text-gray-500 mx-auto mb-3" />
               <p className="text-sm text-gray-400 font-semibold">No candidates match your search filters</p>
-              <p className="text-xs text-gray-600 mt-1">Adjust search parameters or status tabs</p>
+              <p className="text-xs text-gray-500 mt-1">Adjust search parameters or status tabs</p>
             </div>
           )}
         </>

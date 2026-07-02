@@ -175,7 +175,7 @@ export default function LeadsPage() {
                   <p className="text-xs text-gray-400 mt-1">{stage.label}</p>
                 </div>
                 {idx < PIPELINE_STAGES.length - 1 && (
-                  <ArrowRight size={16} className="text-gray-600 flex-shrink-0" />
+                  <ArrowRight size={16} className="text-gray-500 flex-shrink-0" />
                 )}
               </div>
             );
@@ -258,7 +258,7 @@ export default function LeadsPage() {
                       </td>
                       <td className="px-4 py-3.5 hidden md:table-cell">
                         <p className="text-sm text-gray-300">{lead.company || 'Personal'}</p>
-                        <p className="text-[10px] text-gray-600">via {lead.source || 'Website'}</p>
+                        <p className="text-[10px] text-gray-500">via {lead.source || 'Website'}</p>
                       </td>
                       <td className="px-4 py-3.5">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${typeCfg.bg} ${typeCfg.text}`}>
@@ -300,7 +300,7 @@ export default function LeadsPage() {
                           <a href={`mailto:${lead.email}`} className="p-2 rounded-lg text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-all" title="Email" onClick={(e) => e.stopPropagation()}>
                             <Mail size={15} />
                           </a>
-                          <ChevronRight size={15} className={`text-gray-600 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          <ChevronRight size={15} className={`text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                         </div>
                       </td>
                     </tr>
@@ -315,10 +315,10 @@ export default function LeadsPage() {
         {!loading && filteredLeads.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
-              <TrendingUp size={28} className="text-gray-600" />
+              <TrendingUp size={28} className="text-gray-500" />
             </div>
             <p className="text-sm font-medium text-gray-400">No leads found</p>
-            <p className="text-xs text-gray-600 mt-1">Try adjusting your search or filters</p>
+            <p className="text-xs text-gray-500 mt-1">Try adjusting your search or filters</p>
           </div>
         )}
       </div>

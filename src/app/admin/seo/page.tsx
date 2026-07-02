@@ -212,9 +212,9 @@ export default function AdminSEOPage() {
                         onChange={(e) => setSeoTitle(e.target.value)}
                         placeholder={company.name || 'Business Name'}
                         maxLength={70}
-                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/40"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500/40"
                       />
-                      <p className="text-[10px] text-gray-600 text-right">{seoTitle.length}/70</p>
+                      <p className="text-[10px] text-gray-500 text-right">{seoTitle.length}/70</p>
                     </div>
 
                     <div className="space-y-1">
@@ -225,9 +225,9 @@ export default function AdminSEOPage() {
                         onChange={(e) => setSeoDescription(e.target.value)}
                         placeholder="Brief description for search engines..."
                         maxLength={160}
-                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/40 resize-none"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500/40 resize-none"
                       />
-                      <p className="text-[10px] text-gray-600 text-right">{seoDescription.length}/160</p>
+                      <p className="text-[10px] text-gray-500 text-right">{seoDescription.length}/160</p>
                     </div>
 
                     <div className="space-y-1">
@@ -237,7 +237,7 @@ export default function AdminSEOPage() {
                         value={seoKeywords}
                         onChange={(e) => setSeoKeywords(e.target.value)}
                         placeholder="keyword1, keyword2, keyword3"
-                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/40"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500/40"
                       />
                     </div>
 

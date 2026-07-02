@@ -94,7 +94,7 @@ export default function AdminCoursesPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <GraduationCap size={32} className="text-gray-600 mb-3" />
+            <GraduationCap size={32} className="text-gray-500 mb-3" />
             <p className="text-sm text-gray-400">No courses found.</p>
           </div>
         ) : (
@@ -132,7 +132,7 @@ export default function AdminCoursesPage() {
                           )}
                           <div>
                             <p className="text-sm font-medium text-white">{c.title}</p>
-                            <p className="text-[10px] text-gray-600">{c.estimatedHours || 0}h estimated</p>
+                            <p className="text-[10px] text-gray-500">{c.estimatedHours || 0}h estimated</p>
                           </div>
                         </div>
                       </td>

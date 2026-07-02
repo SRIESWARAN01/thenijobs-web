@@ -324,10 +324,10 @@ export default function ReviewsPage() {
       ) : (
         <div className="glass-card rounded-2xl flex flex-col items-center justify-center py-16">
           <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
-            <MessageSquare size={28} className="text-gray-600" />
+            <MessageSquare size={28} className="text-gray-500" />
           </div>
           <p className="text-sm font-medium text-gray-400">No reviews found</p>
-          <p className="text-xs text-gray-600 mt-1">Try adjusting your filters</p>
+          <p className="text-xs text-gray-500 mt-1">Try adjusting your filters</p>
         </div>
       )}
     </div>

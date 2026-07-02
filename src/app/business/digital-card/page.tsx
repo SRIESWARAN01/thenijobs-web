@@ -29,7 +29,7 @@ export default function BusinessDigitalCardPage() {
   if (!company) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <Building2 size={48} className="text-gray-600 mb-4" />
+        <Building2 size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold text-white">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and download your professional Digital Business Card.</p>
         <Link href="/business/company-profile" className="mt-6 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold hover:opacity-90 transition-opacity">

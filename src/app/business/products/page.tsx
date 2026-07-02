@@ -387,7 +387,7 @@ export default function BusinessProductsPage() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <Box size={48} className="text-gray-600 mb-4" />
+        <Box size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to add and manage your products/services.</p>
         <Link href="/business/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:opacity-90">
@@ -484,7 +484,7 @@ export default function BusinessProductsPage() {
                 placeholder="Search products..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/40 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/40 outline-none transition-all"
               />
             </div>
             <select
@@ -502,7 +502,7 @@ export default function BusinessProductsPage() {
           {/* Product Grid */}
           {filtered.length === 0 ? (
             <div className="glass-card rounded-2xl p-12 text-center">
-              <Box size={32} className="text-gray-600 mx-auto mb-3" />
+              <Box size={32} className="text-gray-500 mx-auto mb-3" />
               <p className="text-sm text-gray-400">No products or services found.</p>
             </div>
           ) : (
@@ -617,7 +617,7 @@ export default function BusinessProductsPage() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
                     placeholder="E.g. Pure Cold Pressed Coconut Oil"
                   />
                 </div>
@@ -629,7 +629,7 @@ export default function BusinessProductsPage() {
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all resize-none leading-relaxed"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all resize-none leading-relaxed"
                     placeholder="Tell customers about the quality, specifications, benefits..."
                   />
                 </div>
@@ -642,7 +642,7 @@ export default function BusinessProductsPage() {
                     min={0}
                     value={formData.price}
                     onChange={(e) => setFormData(p => ({ ...p, price: Number(e.target.value) }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
                   />
                 </div>
 
@@ -653,7 +653,7 @@ export default function BusinessProductsPage() {
                     min={0}
                     value={formData.originalPrice}
                     onChange={(e) => setFormData(p => ({ ...p, originalPrice: Number(e.target.value) }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
                     placeholder="Optional retail price"
                   />
                 </div>
@@ -666,7 +666,7 @@ export default function BusinessProductsPage() {
                     min={0}
                     value={formData.stock}
                     onChange={(e) => setFormData(p => ({ ...p, stock: Number(e.target.value) }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
                   />
                 </div>
 
@@ -677,7 +677,7 @@ export default function BusinessProductsPage() {
                     required
                     value={formData.category}
                     onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
                     placeholder="E.g. Food, Handloom, Services"
                   />
                 </div>
@@ -708,7 +708,7 @@ export default function BusinessProductsPage() {
                       type="url"
                       value={formData.imageUrl}
                       onChange={(e) => setFormData(p => ({ ...p, imageUrl: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all mt-1"
+                      className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all mt-1"
                       placeholder="https://example.com/image.jpg"
                     />
                   </div>
@@ -720,7 +720,7 @@ export default function BusinessProductsPage() {
                     type="text"
                     value={formData.tagsString}
                     onChange={(e) => setFormData(p => ({ ...p, tagsString: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
+                    className="w-full px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/45 focus:bg-white/[0.06] outline-none transition-all"
                     placeholder="oil, pure, organic"
                   />
                 </div>

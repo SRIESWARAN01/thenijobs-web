@@ -550,7 +550,7 @@ export default function BusinessesPage() {
                       {biz.isPremium && <Crown size={14} className="text-amber-400 flex-shrink-0" />}
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">{biz.category || 'General'} · {biz.location || biz.district || 'Theni'}</p>
-                    <p className="text-xs text-gray-600 mt-0.5">Owner: {biz.ownerName || 'User'}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Owner: {biz.ownerName || 'User'}</p>
                   </div>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusCfg.bg} ${statusCfg.text} flex-shrink-0`}>
                     {statusCfg.label}
@@ -625,10 +625,10 @@ export default function BusinessesPage() {
       ) : (
         <div className="glass-card rounded-2xl flex flex-col items-center justify-center py-16">
           <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
-            <Building2 size={28} className="text-gray-600" />
+            <Building2 size={28} className="text-gray-500" />
           </div>
           <p className="text-sm font-medium text-gray-400">No businesses found</p>
-          <p className="text-xs text-gray-600 mt-1">Try adjusting your filters or search query</p>
+          <p className="text-xs text-gray-500 mt-1">Try adjusting your filters or search query</p>
         </div>
       )}
 

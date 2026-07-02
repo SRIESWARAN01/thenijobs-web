@@ -82,7 +82,7 @@ export default function EmployerReviewsPage() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <Star size={48} className="text-gray-600 mb-4" />
+        <Star size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold text-white">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and respond to customer reviews.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
@@ -120,7 +120,7 @@ export default function EmployerReviewsPage() {
                       <Star
                         key={i}
                         size={18}
-                        className={filled ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}
+                        className={filled ? 'text-amber-400 fill-amber-400' : 'text-gray-500'}
                       />
                     );
                   })}
@@ -171,7 +171,7 @@ export default function EmployerReviewsPage() {
             <div className="space-y-4">
               {filtered.length === 0 ? (
                 <div className="glass-card rounded-2xl p-12 text-center">
-                  <MessageSquare size={32} className="text-gray-600 mx-auto mb-3" />
+                  <MessageSquare size={32} className="text-gray-500 mx-auto mb-3" />
                   <p className="text-sm text-gray-400">No reviews found.</p>
                 </div>
               ) : (
@@ -195,7 +195,7 @@ export default function EmployerReviewsPage() {
                               <Star
                                 key={i}
                                 size={12}
-                                className={i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}
+                                className={i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-500'}
                               />
                             ))}
                           </div>
@@ -231,7 +231,7 @@ export default function EmployerReviewsPage() {
                               placeholder="Write a response..."
                               value={replyInput}
                               onChange={(e) => setReplyInput(e.target.value)}
-                              className="w-full bg-[#111124] border border-white/10 rounded-lg p-2 text-xs text-white placeholder:text-gray-600 focus:border-cyan-500/40 focus:outline-none resize-none"
+                              className="w-full bg-[#111124] border border-white/10 rounded-lg p-2 text-xs text-white placeholder:text-gray-500 focus:border-cyan-500/40 focus:outline-none resize-none"
                             />
                             <div className="flex gap-2">
                               <button

@@ -642,7 +642,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="text-right">
                     <div className="text-xs font-bold text-emerald-400">{(biz.visitCount || 0) + (biz.whatsappClickCount || 0) * 3 + (biz.callClickCount || 0) * 3} points</div>
-                    <div className="text-[9px] text-gray-600">Views: {biz.visitCount || 0}</div>
+                    <div className="text-[9px] text-gray-500">Views: {biz.visitCount || 0}</div>
                   </div>
                 </div>
               ))}

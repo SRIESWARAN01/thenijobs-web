@@ -237,7 +237,7 @@ export default function ResumeManagementPage() {
                       <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500">
                         <span className="flex items-center gap-1"><Clock size={10} /> {resume.uploadDate}</span>
                         <span className="flex items-center gap-1"><HardDrive size={10} /> {resume.size}</span>
-                        <span className="uppercase font-medium text-gray-600">{resume.format}</span>
+                        <span className="uppercase font-medium text-gray-500">{resume.format}</span>
                       </div>
                     </div>
 
@@ -283,7 +283,7 @@ export default function ResumeManagementPage() {
                   </div>
                 ))}
                 {resumes.length === 0 && (
-                  <div className="text-center py-12 text-gray-600">
+                  <div className="text-center py-12 text-gray-500">
                     <FileText size={36} className="mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No resumes uploaded yet</p>
                     <p className="text-xs mt-1">Upload your first resume to get started</p>
@@ -316,7 +316,7 @@ export default function ResumeManagementPage() {
                 ))}
               </div>
             </div>
-            <ChevronRight size={18} className="text-gray-600 group-hover:text-emerald-400 transition-colors shrink-0" />
+            <ChevronRight size={18} className="text-gray-500 group-hover:text-emerald-400 transition-colors shrink-0" />
           </Link>
         </div>
 

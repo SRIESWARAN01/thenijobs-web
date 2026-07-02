@@ -283,7 +283,7 @@ export default function ResumeBuilderPage() {
                   {item.done ? (
                     <CheckCircle size={14} className="text-emerald-400 shrink-0" />
                   ) : (
-                    <Circle size={14} className="text-gray-600 shrink-0" />
+                    <Circle size={14} className="text-gray-500 shrink-0" />
                   )}
                   <span className={item.done ? 'text-gray-300' : 'text-gray-500'}>{item.label}</span>
                 </div>
@@ -437,7 +437,7 @@ export default function ResumeBuilderPage() {
                             <span>{exp.role} — {exp.company}</span>
                             <span className="text-gray-500 font-normal">{exp.startDate} - {exp.endDate}</span>
                           </div>
-                          {exp.description && <p className="text-[10px] text-gray-600 leading-normal">{exp.description}</p>}
+                          {exp.description && <p className="text-[10px] text-gray-500 leading-normal">{exp.description}</p>}
                         </div>
                       ))}
                     </div>
@@ -454,7 +454,7 @@ export default function ResumeBuilderPage() {
                             {proj.url && <a href={proj.url} className="text-emerald-600 font-normal text-[10px] hover:underline">Link</a>}
                           </div>
                           {proj.technologies && <p className="text-[10px] font-medium text-gray-500">Technologies: {proj.technologies}</p>}
-                          {proj.description && <p className="text-[10px] text-gray-600 leading-normal">{proj.description}</p>}
+                          {proj.description && <p className="text-[10px] text-gray-500 leading-normal">{proj.description}</p>}
                         </div>
                       ))}
                     </div>
@@ -491,7 +491,7 @@ export default function ResumeBuilderPage() {
                     {certifications.length > 0 && (
                       <div className="space-y-1.5 col-span-1">
                         <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide border-b border-gray-200 pb-1">Certifications</h4>
-                        <ul className="list-disc list-inside text-[9px] text-gray-600 space-y-0.5">
+                        <ul className="list-disc list-inside text-[9px] text-gray-500 space-y-0.5">
                           {certifications.map((c: any, idx: number) => (
                             <li key={c.id || idx} className="truncate">{c.name} ({c.organization})</li>
                           ))}
@@ -518,7 +518,7 @@ export default function ResumeBuilderPage() {
                         {achievements.map((ach: any, idx: number) => (
                           <div key={ach.id || idx} className="space-y-1">
                             <p className="font-semibold text-gray-900 text-[11px]">{ach.name}</p>
-                            {ach.description && <p className="text-[10px] text-gray-600 leading-normal">{ach.description}</p>}
+                            {ach.description && <p className="text-[10px] text-gray-500 leading-normal">{ach.description}</p>}
                           </div>
                         ))}
                       </div>
@@ -591,7 +591,7 @@ export default function ResumeBuilderPage() {
                       {/* Contact Info */}
                       <div className="space-y-2 border-t border-slate-200 pt-4">
                         <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-wider">Contact</h4>
-                        <div className="space-y-1.5 text-[9px] text-slate-600 word-break">
+                        <div className="space-y-1.5 text-[9px] text-slate-500 word-break">
                           <p className="flex items-center gap-1.5"><Mail size={9} /> {profile.email}</p>
                           <p className="flex items-center gap-1.5"><Phone size={9} /> {profile.phone}</p>
                           {profile.address && <p className="flex items-center gap-1.5"><MapPin size={9} /> {profile.district}</p>}
@@ -622,7 +622,7 @@ export default function ResumeBuilderPage() {
                       {((profile.dob || profile.seekerDob) || (profile.gender || profile.seekerGender)) && (
                         <div className="space-y-2 border-t border-slate-200 pt-4">
                           <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-wider">Personal</h4>
-                          <div className="space-y-1 text-[9px] text-slate-600">
+                          <div className="space-y-1 text-[9px] text-slate-500">
                             {(profile.dob || profile.seekerDob) && <p>DOB: {profile.dob || profile.seekerDob}</p>}
                             {(profile.gender || profile.seekerGender) && <p className="capitalize">Gender: {profile.gender || profile.seekerGender}</p>}
                           </div>
@@ -645,7 +645,7 @@ export default function ResumeBuilderPage() {
                       {languages.length > 0 && (
                         <div className="space-y-2 border-t border-slate-200 pt-4">
                           <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-wider">Languages</h4>
-                          <p className="text-[9px] text-slate-600">{languages.join(', ')}</p>
+                          <p className="text-[9px] text-slate-500">{languages.join(', ')}</p>
                         </div>
                       )}
                     </div>
@@ -657,7 +657,7 @@ export default function ResumeBuilderPage() {
                     {summary && (
                       <div className="space-y-1">
                         <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b-2 border-indigo-500 pb-1">Profile</h3>
-                        <p className="text-[10px] text-slate-600 leading-relaxed">{summary}</p>
+                        <p className="text-[10px] text-slate-500 leading-relaxed">{summary}</p>
                       </div>
                     )}
 
@@ -669,7 +669,7 @@ export default function ResumeBuilderPage() {
                           <div key={exp.id || idx} className="space-y-0.5">
                             <p className="font-semibold text-slate-900 text-[10px]">{exp.role} at {exp.company}</p>
                             <p className="text-[8px] text-slate-500">{exp.startDate} – {exp.endDate}</p>
-                            {exp.description && <p className="text-[9px] text-slate-600 leading-normal mt-1">{exp.description}</p>}
+                            {exp.description && <p className="text-[9px] text-slate-500 leading-normal mt-1">{exp.description}</p>}
                           </div>
                         ))}
                       </div>
@@ -686,7 +686,7 @@ export default function ResumeBuilderPage() {
                               {proj.url && <a href={proj.url} className="text-indigo-600 text-[8px] hover:underline">Link</a>}
                             </div>
                             {proj.technologies && <p className="text-[8px] text-slate-500">Tech: {proj.technologies}</p>}
-                            {proj.description && <p className="text-[9px] text-slate-600 leading-normal mt-1">{proj.description}</p>}
+                            {proj.description && <p className="text-[9px] text-slate-500 leading-normal mt-1">{proj.description}</p>}
                           </div>
                         ))}
                       </div>
@@ -696,7 +696,7 @@ export default function ResumeBuilderPage() {
                     {certifications.length > 0 && (
                       <div className="space-y-2">
                         <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b-2 border-indigo-500 pb-1">Certifications</h3>
-                        <ul className="list-disc list-inside text-[9px] text-slate-600 space-y-0.5">
+                        <ul className="list-disc list-inside text-[9px] text-slate-500 space-y-0.5">
                           {certifications.map((c: any, idx: number) => (
                             <li key={c.id || idx}>{c.name} ({c.organization})</li>
                           ))}
@@ -711,7 +711,7 @@ export default function ResumeBuilderPage() {
                         {education.map((edu: any, idx: number) => (
                           <div key={edu.id || idx} className="space-y-0.5">
                             <p className="font-semibold text-slate-900 text-[10px]">{edu.degree} in {edu.field}</p>
-                            <p className="text-[9px] text-slate-600">{edu.institution} · {edu.year}</p>
+                            <p className="text-[9px] text-slate-500">{edu.institution} · {edu.year}</p>
                           </div>
                         ))}
                       </div>
@@ -725,7 +725,7 @@ export default function ResumeBuilderPage() {
                           {achievements.map((ach: any, idx: number) => (
                             <div key={ach.id || idx} className="space-y-0.5">
                               <p className="font-semibold text-slate-900 text-[10px]">{ach.name}</p>
-                              {ach.description && <p className="text-[9px] text-slate-600 leading-normal">{ach.description}</p>}
+                              {ach.description && <p className="text-[9px] text-slate-500 leading-normal">{ach.description}</p>}
                             </div>
                           ))}
                         </div>
@@ -831,7 +831,7 @@ export default function ResumeBuilderPage() {
 
                   {/* Summary */}
                   {summary && (
-                    <p className="text-[10px] leading-relaxed italic text-gray-600 font-serif">{summary}</p>
+                    <p className="text-[10px] leading-relaxed italic text-gray-500 font-serif">{summary}</p>
                   )}
 
                   {/* Experience */}
@@ -844,7 +844,7 @@ export default function ResumeBuilderPage() {
                             <span className="col-span-1 text-[9px] text-gray-500">{exp.startDate} - {exp.endDate}</span>
                             <div className="col-span-3 space-y-1">
                               <p className="font-bold text-gray-900 text-[10px]">{exp.role} — {exp.company}</p>
-                              {exp.description && <p className="text-[9px] text-gray-600 leading-normal">{exp.description}</p>}
+                              {exp.description && <p className="text-[9px] text-gray-500 leading-normal">{exp.description}</p>}
                             </div>
                           </div>
                         ))}
@@ -889,7 +889,7 @@ export default function ResumeBuilderPage() {
                             <div className="col-span-3 space-y-0.5">
                               <p className="font-bold text-gray-900 text-[10px]">{proj.title}</p>
                               {proj.technologies && <p className="text-[8px] text-gray-400">Technologies: {proj.technologies}</p>}
-                              {proj.description && <p className="text-[9px] text-gray-600 leading-normal">{proj.description}</p>}
+                              {proj.description && <p className="text-[9px] text-gray-500 leading-normal">{proj.description}</p>}
                             </div>
                           </div>
                         ))}
@@ -901,7 +901,7 @@ export default function ResumeBuilderPage() {
                   {skills.length > 0 && (
                     <div className="space-y-1.5">
                       <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider">Skills</h3>
-                      <p className="text-[9px] text-gray-600 leading-relaxed">{skills.join(', ')}</p>
+                      <p className="text-[9px] text-gray-500 leading-relaxed">{skills.join(', ')}</p>
                     </div>
                   )}
 
@@ -909,7 +909,7 @@ export default function ResumeBuilderPage() {
                   {languages.length > 0 && (
                     <div className="space-y-1.5">
                       <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider">Languages</h3>
-                      <p className="text-[9px] text-gray-600 leading-relaxed">{languages.join(', ')}</p>
+                      <p className="text-[9px] text-gray-500 leading-relaxed">{languages.join(', ')}</p>
                     </div>
                   )}
 
@@ -917,7 +917,7 @@ export default function ResumeBuilderPage() {
                   {certifications.length > 0 && (
                     <div className="space-y-1.5">
                       <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider">Certifications</h3>
-                      <ul className="list-disc list-inside text-[9px] text-gray-600 space-y-0.5">
+                      <ul className="list-disc list-inside text-[9px] text-gray-500 space-y-0.5">
                         {certifications.map((c: any, idx: number) => (
                           <li key={c.id || idx}>{c.name} ({c.organization})</li>
                         ))}
@@ -935,7 +935,7 @@ export default function ResumeBuilderPage() {
                             <span className="col-span-1 text-[9px] text-gray-500">Award / Key</span>
                             <div className="col-span-3 space-y-0.5">
                               <p className="font-bold text-gray-900 text-[10px]">{ach.name}</p>
-                              {ach.description && <p className="text-[9px] text-gray-600 leading-normal">{ach.description}</p>}
+                              {ach.description && <p className="text-[9px] text-gray-500 leading-normal">{ach.description}</p>}
                             </div>
                           </div>
                         ))}

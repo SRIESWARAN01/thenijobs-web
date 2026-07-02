@@ -299,7 +299,7 @@ export default function ServicesPage() {
                             <Star size={12} className="fill-amber-400" />{s.rating.toFixed(1)}
                           </span>
                         ) : (
-                          <span className="text-xs text-gray-600">N/A</span>
+                          <span className="text-xs text-gray-500">N/A</span>
                         )}
                       </td>
                       <td className="px-3 py-3.5 text-center">
@@ -424,7 +424,7 @@ export default function ServicesPage() {
                   type="text"
                   value={editForm.name}
                   onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none"
+                  className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none"
                 />
               </div>
 
@@ -435,7 +435,7 @@ export default function ServicesPage() {
                     type="text"
                     value={editForm.category}
                     onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
-                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none"
+                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none"
                   />
                 </div>
                 <div>
@@ -444,7 +444,7 @@ export default function ServicesPage() {
                     type="text"
                     value={editForm.district}
                     onChange={e => setEditForm(f => ({ ...f, district: e.target.value }))}
-                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none"
+                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none"
                   />
                 </div>
               </div>
@@ -456,7 +456,7 @@ export default function ServicesPage() {
                     type="number"
                     value={editForm.priceMin}
                     onChange={e => setEditForm(f => ({ ...f, priceMin: e.target.value }))}
-                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none"
+                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none"
                     placeholder="0"
                   />
                 </div>
@@ -466,7 +466,7 @@ export default function ServicesPage() {
                     type="number"
                     value={editForm.priceMax}
                     onChange={e => setEditForm(f => ({ ...f, priceMax: e.target.value }))}
-                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none"
+                    className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none"
                     placeholder="0"
                   />
                 </div>
@@ -478,7 +478,7 @@ export default function ServicesPage() {
                   value={editForm.description}
                   onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
                   rows={3}
-                  className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none resize-none"
+                  className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none resize-none"
                 />
               </div>
 

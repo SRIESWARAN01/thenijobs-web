@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
           </div>
         ) : leaderboard.length === 0 ? (
           <div className="glass-card rounded-2xl p-12 text-center text-gray-400">
-            <Trophy size={36} className="mx-auto text-gray-600 mb-3" />
+            <Trophy size={36} className="mx-auto text-gray-500 mb-3" />
             <p className="text-sm">No leaderboard entries found yet.</p>
           </div>
         ) : (

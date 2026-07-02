@@ -246,7 +246,7 @@ export default function PostJobPage() {
   if (!companyId) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
-        <Briefcase size={48} className="text-gray-600 mb-4" />
+        <Briefcase size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold text-white">No Company Profile Found</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to post job opportunities.</p>
         <Link href="/employer/company-profile" className="mt-6 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90 transition-opacity">
@@ -312,7 +312,7 @@ export default function PostJobPage() {
               {step > s.id ? <Check size={12} /> : s.id}
             </div>
             <span className={`text-xs hidden sm:block font-medium transition-colors
-              ${step === s.id ? 'text-white' : step > s.id ? 'text-emerald-400' : 'text-gray-600'}`}>
+              ${step === s.id ? 'text-white' : step > s.id ? 'text-emerald-400' : 'text-gray-500'}`}>
               {s.label}
             </span>
             {i < STEPS.length - 1 && (
@@ -337,7 +337,7 @@ export default function PostJobPage() {
                 value={form.title}
                 onChange={(e) => update('title', e.target.value)}
                 placeholder="e.g. Tractor Driver, School Teacher, Accounts Executive"
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 focus:bg-white/[0.06] outline-none transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 focus:bg-white/[0.06] outline-none transition-all"
               />
             </div>
 
@@ -381,7 +381,7 @@ export default function PostJobPage() {
                 value={form.description}
                 onChange={(e) => update('description', e.target.value)}
                 placeholder="Describe job responsibilities, working hours, day-to-day tasks, work environment..."
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 focus:bg-white/[0.06] outline-none transition-all resize-none leading-relaxed"
+                className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 focus:bg-white/[0.06] outline-none transition-all resize-none leading-relaxed"
               />
             </div>
 
@@ -400,7 +400,7 @@ export default function PostJobPage() {
                 <select
                   value={form.location}
                   onChange={(e) => update('location', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 >
                   <option value="">Select area</option>
                   {allAreas.map((area) => (
@@ -518,7 +518,7 @@ export default function PostJobPage() {
                       value={form.walkInVenue}
                       onChange={(e) => update('walkInVenue', e.target.value)}
                       placeholder="Office address or interview venue"
-                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                     />
                   </div>
                   <div>
@@ -590,7 +590,7 @@ export default function PostJobPage() {
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
                   placeholder="e.g. Tractor Driving, Tally, Excel..."
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
                 <button
                   type="button"
@@ -657,7 +657,7 @@ export default function PostJobPage() {
                   value={form.salaryMin}
                   onChange={(e) => update('salaryMin', e.target.value)}
                   placeholder="e.g. 15000"
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
               <div>
@@ -667,7 +667,7 @@ export default function PostJobPage() {
                   value={form.salaryMax}
                   onChange={(e) => update('salaryMax', e.target.value)}
                   placeholder="e.g. 20000"
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
             </div>

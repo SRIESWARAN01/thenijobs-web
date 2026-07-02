@@ -117,7 +117,7 @@ function BookServiceContent() {
       <main className="min-h-screen bg-[#0a0a1a] text-white font-outfit">
         <Header />
         <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-          <AlertCircle size={48} className="text-gray-600 mb-4" />
+          <AlertCircle size={48} className="text-gray-500 mb-4" />
           <h2 className="text-lg font-semibold">Missing Company ID</h2>
           <p className="text-sm text-gray-400 mt-2 max-w-sm">Please book service requests directly from a service provider profile page.</p>
           <Link href="/services" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">

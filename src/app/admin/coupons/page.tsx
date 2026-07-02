@@ -185,7 +185,7 @@ export default function AdminCouponsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center">
-          <Ticket size={32} className="text-gray-600 mx-auto mb-3" />
+          <Ticket size={32} className="text-gray-500 mx-auto mb-3" />
           <p className="text-sm text-gray-400">No coupons found. Create your first coupon!</p>
         </div>
       ) : (

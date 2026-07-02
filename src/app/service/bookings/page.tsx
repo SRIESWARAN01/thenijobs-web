@@ -157,7 +157,7 @@ export default function ServiceBookingsPage() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <Calendar size={48} className="text-gray-600 mb-4" />
+        <Calendar size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold">No Service Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and manage customer bookings.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-semibold hover:opacity-90">
@@ -255,7 +255,7 @@ export default function ServiceBookingsPage() {
                       placeholder="Search bookings..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-rose-500/40 outline-none transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-rose-500/40 outline-none transition-all"
                     />
                   </div>
                   <div className="relative">
@@ -279,7 +279,7 @@ export default function ServiceBookingsPage() {
                   <h2 className="text-sm font-semibold text-gray-400">All Service Requests</h2>
                   {filtered.length === 0 ? (
                     <div className="glass-card rounded-2xl p-12 text-center">
-                      <Calendar size={32} className="text-gray-600 mx-auto mb-3" />
+                      <Calendar size={32} className="text-gray-500 mx-auto mb-3" />
                       <p className="text-sm text-gray-400">No booking requests found.</p>
                     </div>
                   ) : (
@@ -390,7 +390,7 @@ export default function ServiceBookingsPage() {
                                   )}
 
                                   {booking.bookingStatus === 'declined' && (
-                                    <span className="text-xs text-gray-600 font-semibold py-1">Declined</span>
+                                    <span className="text-xs text-gray-500 font-semibold py-1">Declined</span>
                                   )}
                                 </div>
                               )}
@@ -472,7 +472,7 @@ export default function ServiceBookingsPage() {
                   </div>
                 ) : (
                   <div className="glass-card rounded-2xl p-6 border border-white/[0.06] bg-white/[0.01] text-center py-12">
-                    <AlertCircle size={28} className="text-gray-600 mx-auto mb-3" />
+                    <AlertCircle size={28} className="text-gray-500 mx-auto mb-3" />
                     <p className="text-xs font-semibold text-white">No Booking Selected</p>
                     <p className="text-[11px] text-gray-500 mt-1">Select a request from the list to view full details and send pricing quotes.</p>
                   </div>

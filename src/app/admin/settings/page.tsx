@@ -567,7 +567,7 @@ export default function SettingsPage() {
                         className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all ${plansConfig[selectedPlanSlug]?.[feat.key as keyof PlanConfig] ? 'bg-violet-500/10 border-violet-500/30 text-white' : 'bg-white/[0.01] border-white/[0.06] text-gray-400'}`}
                       >
                         <span className="text-xs font-semibold">{feat.label}</span>
-                        {plansConfig[selectedPlanSlug]?.[feat.key as keyof PlanConfig] ? <Check size={14} className="text-violet-400" /> : <X size={14} className="text-gray-600" />}
+                        {plansConfig[selectedPlanSlug]?.[feat.key as keyof PlanConfig] ? <Check size={14} className="text-violet-400" /> : <X size={14} className="text-gray-500" />}
                       </button>
                     ))}
                   </div>
@@ -598,7 +598,7 @@ export default function SettingsPage() {
                 {categories.map((cat, i) => (
                   <div key={cat} className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all group">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs text-gray-600 shrink-0">{i + 1}.</span>
+                      <span className="text-xs text-gray-500 shrink-0">{i + 1}.</span>
                       <span className="text-xs text-gray-300 truncate">{cat}</span>
                     </div>
                     <button onClick={() => removeCategory(cat)} className="p-1 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 shrink-0">

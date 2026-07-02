@@ -172,7 +172,7 @@ Please share more details.`;
                   </div>
                 ) : (
                   <div className="w-full sm:w-40 aspect-video sm:aspect-square rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 shrink-0">
-                    <Briefcase size={48} className="text-slate-600" />
+                    <Briefcase size={48} className="text-slate-500" />
                   </div>
                 )}
                 

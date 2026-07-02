@@ -218,7 +218,7 @@ export default function SeoJobsLanding({
                     </div>
                     
                     <div className="flex flex-col items-end justify-between flex-shrink-0">
-                      <span className="text-[10px] text-gray-600 font-medium bg-white/[0.02] px-2 py-1 rounded-lg">
+                      <span className="text-[10px] text-gray-500 font-medium bg-white/[0.02] px-2 py-1 rounded-lg">
                         {job.posted}
                       </span>
                       <Link href={`/jobs/${job.id}`} className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-all">

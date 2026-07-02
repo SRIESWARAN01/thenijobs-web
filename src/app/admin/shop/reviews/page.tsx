@@ -18,7 +18,7 @@ function StarRating({ rating, max = 5 }: { rating: number; max?: number }) {
         <Star
           key={i}
           size={13}
-          className={i < Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}
+          className={i < Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-500'}
         />
       ))}
       <span className="ml-1 text-xs text-gray-400">{rating.toFixed(1)}</span>
@@ -208,7 +208,7 @@ export default function ReviewsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <MessageSquare size={36} className="text-gray-600" />
+            <MessageSquare size={36} className="text-gray-500" />
             <p className="text-gray-400 text-sm">No reviews in this category.</p>
           </div>
         ) : (

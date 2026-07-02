@@ -244,7 +244,7 @@ export default function CreateCoursePage() {
         {STEPS.map((s, i) => (
           <div key={s} className="flex-1">
             <div className={`h-1.5 rounded-full transition-all ${i <= step ? 'bg-gradient-to-r from-violet-500 to-indigo-500' : 'bg-white/[0.06]'}`} />
-            <p className={`text-[10px] mt-1 font-medium ${i <= step ? 'text-violet-400' : 'text-gray-600'}`}>{s}</p>
+            <p className={`text-[10px] mt-1 font-medium ${i <= step ? 'text-violet-400' : 'text-gray-500'}`}>{s}</p>
           </div>
         ))}
       </div>
@@ -319,9 +319,9 @@ export default function CreateCoursePage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input type="text" value={mod.title} onChange={e => updateModuleField(mIdx, 'title', e.target.value)} placeholder="Module title *"
-                  className="bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none" />
+                  className="bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none" />
                 <input type="text" value={mod.description} onChange={e => updateModuleField(mIdx, 'description', e.target.value)} placeholder="Module description"
-                  className="bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none" />
+                  className="bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-sm rounded-xl text-white placeholder:text-gray-500 focus:border-violet-500/30 outline-none" />
               </div>
 
               {/* Lessons */}
@@ -338,7 +338,7 @@ export default function CreateCoursePage() {
                       )}
                     </div>
                     <input type="text" value={lesson.title} onChange={e => updateLessonField(mIdx, lIdx, 'title', e.target.value)} placeholder="Lesson title *"
-                      className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-600 outline-none" />
+                      className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-500 outline-none" />
                     <div className="grid grid-cols-2 gap-2">
                       <select value={lesson.type} onChange={e => updateLessonField(mIdx, lIdx, 'type', e.target.value)}
                         className="bg-[#0F172A] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white outline-none">
@@ -347,16 +347,16 @@ export default function CreateCoursePage() {
                       </select>
                       {lesson.type === 'video' && (
                         <input type="text" value={lesson.youtubeVideoId} onChange={e => updateLessonField(mIdx, lIdx, 'youtubeVideoId', e.target.value)}
-                          placeholder="YouTube URL or Video ID" className="bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-600 outline-none" />
+                          placeholder="YouTube URL or Video ID" className="bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-500 outline-none" />
                       )}
                     </div>
                     {lesson.type === 'video' && (
                       <input type="number" value={lesson.videoDuration || ''} onChange={e => updateLessonField(mIdx, lIdx, 'videoDuration', Number(e.target.value))}
-                        placeholder="Duration in seconds" className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-600 outline-none" />
+                        placeholder="Duration in seconds" className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-500 outline-none" />
                     )}
                     {lesson.type === 'text' && (
                       <textarea value={lesson.content} onChange={e => updateLessonField(mIdx, lIdx, 'content', e.target.value)}
-                        placeholder="Lesson content..." rows={3} className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-600 outline-none resize-none" />
+                        placeholder="Lesson content..." rows={3} className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-500 outline-none resize-none" />
                     )}
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={lesson.isPreview} onChange={e => updateLessonField(mIdx, lIdx, 'isPreview', e.target.checked)}
@@ -389,14 +389,14 @@ export default function CreateCoursePage() {
                   {mod.quiz.questions.map((q, qIdx) => (
                     <div key={qIdx} className="bg-white/[0.02] rounded-lg p-2.5 space-y-2">
                       <input type="text" value={q.question} onChange={e => updateQuizQuestion(mIdx, qIdx, 'question', e.target.value)}
-                        placeholder={`Question ${qIdx + 1}`} className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-600 outline-none" />
+                        placeholder={`Question ${qIdx + 1}`} className="w-full bg-white/[0.03] border border-white/[0.06] px-3 py-1.5 text-xs rounded-lg text-white placeholder:text-gray-500 outline-none" />
                       <div className="grid grid-cols-2 gap-1.5">
                         {q.options.map((opt, oIdx) => (
                           <div key={oIdx} className="flex items-center gap-1.5">
                             <input type="radio" name={`q-${mIdx}-${qIdx}`} checked={q.correctAnswer === oIdx}
                               onChange={() => updateQuizQuestion(mIdx, qIdx, 'correctAnswer', oIdx)} className="accent-emerald-500" />
                             <input type="text" value={opt} onChange={e => updateQuizQuestionOption(mIdx, qIdx, oIdx, e.target.value)}
-                              placeholder={`Option ${oIdx + 1}`} className="flex-1 bg-white/[0.03] border border-white/[0.06] px-2 py-1 text-[10px] rounded-lg text-white placeholder:text-gray-600 outline-none" />
+                              placeholder={`Option ${oIdx + 1}`} className="flex-1 bg-white/[0.03] border border-white/[0.06] px-2 py-1 text-[10px] rounded-lg text-white placeholder:text-gray-500 outline-none" />
                           </div>
                         ))}
                       </div>

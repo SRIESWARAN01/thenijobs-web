@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
-import { MapPin, Briefcase, Building2, ArrowRight, BadgeCheck, Loader2 } from 'lucide-react';
+import { MapPin, Briefcase, Building2, ArrowRight, BadgeCheck, Loader2, Star } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { getCompanyPortfolioPath } from '@/lib/companyPortfolio';
@@ -61,8 +61,8 @@ export default function BusinessCategoryPageClient({ category }: { category: str
               name: d.name || '',
               tagline: d.tagline || d.description?.substring(0, 100) || '',
               location: d.district || 'Local Area',
-              rating: d.rating || 0,
-              reviews: d.reviewCount || 0,
+              rating: d.averageRating || d.rating || 0,
+              reviews: d.totalReviews || d.reviewCount || d.reviewsCount || 0,
               jobs: d.jobCount || 0,
               isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || false,
               isPremium: d.isPremium || d.isFeatured || false,
@@ -177,7 +177,22 @@ export default function BusinessCategoryPageClient({ category }: { category: str
                     </div>
                     <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-3">
                       <span className="flex items-center gap-1"><MapPin size={11} />{biz.location}</span>
-                      <span className="flex items-center gap-1">⭐ {biz.rating} ({biz.reviews} reviews)</span>
+                      {biz.reviews > 0 ? (
+                        <span className="flex items-center gap-1">
+                          <span className="flex items-center">
+                            {[1, 2, 3, 4, 5].map(i => (
+                              <Star key={i} size={10} className={i <= Math.round(biz.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-600'} />
+                            ))}
+                          </span>
+                          <span className="text-amber-300 font-bold ml-0.5">{biz.rating}</span>
+                          <span>({biz.reviews})</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <Star size={10} className="text-slate-500" />
+                          <span className="text-slate-500">New</span>
+                        </span>
+                      )}
                       <span className="flex items-center gap-1 text-cyan-400"><Briefcase size={11} />{biz.jobs} open jobs</span>
                     </div>
                     <div className="flex gap-2">

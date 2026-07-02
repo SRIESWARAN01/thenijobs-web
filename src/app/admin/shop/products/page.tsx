@@ -226,7 +226,7 @@ export default function ProductManagementPage() {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-16 text-center">
-                    <Package size={36} className="text-gray-600 mx-auto mb-3" />
+                    <Package size={36} className="text-gray-500 mx-auto mb-3" />
                     <p className="text-sm text-gray-400">
                       {products.length === 0 ? 'No products yet. Add your first product!' : 'No products match your filters.'}
                     </p>
@@ -252,7 +252,7 @@ export default function ProductManagementPage() {
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-lg bg-white/[0.04] flex items-center justify-center flex-shrink-0">
-                            <Package size={16} className="text-gray-600" />
+                            <Package size={16} className="text-gray-500" />
                           </div>
                         )}
                         <div className="min-w-0">
@@ -304,7 +304,7 @@ export default function ProductManagementPage() {
                           <Star size={12} className="fill-amber-400" /> Featured
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-600">—</span>
+                        <span className="text-xs text-gray-500">—</span>
                       )}
                     </td>
 

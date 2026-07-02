@@ -101,8 +101,8 @@ export default function BusinessesPageClient() {
               services: mergedServices,
               district: d.district || 'Local Area',
               location: d.location || d.locality || d.town || d.district || 'Local Area',
-              rating: d.rating || 0,
-              reviews: d.reviewCount || 0,
+              rating: d.averageRating || d.rating || 0,
+              reviews: d.totalReviews || d.reviewCount || d.reviewsCount || 0,
               jobs: d.jobCount || 0,
               isVerified: d.isVerified || d.verificationStatus === 'verified' || d.status === 'approved' || d.verificationBadges?.businessVerified || false,
               isPremium: d.isPremium || d.isFeatured || false,
@@ -344,7 +344,22 @@ export default function BusinessesPageClient() {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                   <span className="text-violet-400 font-medium">{biz.category}</span>
                   <span className="flex items-center gap-1"><MapPin size={10} />{biz.location}</span>
-                  {biz.rating > 0 && <span className="flex items-center gap-1"><Star size={10} className="fill-amber-400 text-amber-400" />{biz.rating} ({biz.reviews})</span>}
+                  {biz.reviews > 0 ? (
+                    <span className="flex items-center gap-1">
+                      <span className="flex items-center">
+                        {[1, 2, 3, 4, 5].map(i => (
+                          <Star key={i} size={10} className={i <= Math.round(biz.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-600'} />
+                        ))}
+                      </span>
+                      <span className="text-amber-300 font-bold ml-0.5">{biz.rating}</span>
+                      <span>({biz.reviews})</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <Star size={10} className="text-slate-500" />
+                      <span className="text-slate-500">New</span>
+                    </span>
+                  )}
                   {biz.jobs > 0 && <span className="flex items-center gap-1 text-cyan-400"><Briefcase size={10} />{biz.jobs} jobs</span>}
                 </div>
 

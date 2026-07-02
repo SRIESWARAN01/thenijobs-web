@@ -220,7 +220,7 @@ export default function ReportsPage() {
                 ) : (
                   formattedDistricts.map((district, i) => (
                     <div key={district.name} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
-                      <span className="text-xs font-bold text-gray-600 w-5">#{i + 1}</span>
+                      <span className="text-xs font-bold text-gray-500 w-5">#{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white">{district.name}</p>
                         <div className="w-full h-1 bg-white/[0.06] rounded-full mt-1.5 overflow-hidden">
@@ -248,7 +248,7 @@ export default function ReportsPage() {
                 ) : (
                   formattedCategories.map((category, i) => (
                     <div key={category.name} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
-                      <span className="text-xs font-bold text-gray-600 w-5">#{i + 1}</span>
+                      <span className="text-xs font-bold text-gray-500 w-5">#{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white">{category.name}</p>
                         <div className="w-full h-1 bg-white/[0.06] rounded-full mt-1.5 overflow-hidden">
@@ -276,7 +276,7 @@ export default function ReportsPage() {
                 ) : (
                   formattedEmployers.map((employer, i) => (
                     <div key={employer.name} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
-                      <span className="text-xs font-bold text-gray-600 w-5">#{i + 1}</span>
+                      <span className="text-xs font-bold text-gray-500 w-5">#{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-white truncate">{employer.name}</p>
                         <p className="text-[10px] text-gray-500">{employer.jobs} jobs · {employer.applications} apps</p>

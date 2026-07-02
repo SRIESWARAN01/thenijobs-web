@@ -185,7 +185,7 @@ export default function PublicFeedPage() {
           </div>
         ) : posts.length === 0 ? (
           <div className="glass-card rounded-2xl p-16 text-center">
-            <MessageCircle size={40} className="text-gray-600 mx-auto mb-4" />
+            <MessageCircle size={40} className="text-gray-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-white">No Posts Yet</h3>
             <p className="text-sm text-gray-400 mt-2">Check back later for updates from businesses.</p>
           </div>

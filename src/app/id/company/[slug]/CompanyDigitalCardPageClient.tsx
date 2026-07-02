@@ -678,9 +678,9 @@ export default function CompanyDigitalCardPageClient({
                         <ExternalLink size={10} />
                         <span className="truncate">{profileUrl.replace(/^https?:\/\//, '')}</span>
                       </div>
-                      <span className="text-[8px] text-slate-600 block">Powered by THENIJOBS.in · Support: +91 98765 43210</span>
+                      <span className="text-[8px] text-slate-500 block">Powered by THENIJOBS.in · Support: +91 98765 43210</span>
                     </div>
-                    <span className="font-bold tracking-widest text-[8px] text-slate-600">THENIJOBS</span>
+                    <span className="font-bold tracking-widest text-[8px] text-slate-500">THENIJOBS</span>
                   </div>
                 </div>
               </div>
@@ -928,9 +928,9 @@ export default function CompanyDigitalCardPageClient({
                   <ExternalLink size={10} />
                   <span className="truncate">{profileUrl.replace(/^https?:\/\//, '')}</span>
                 </div>
-                <span className="text-[8px] text-slate-600 block">Powered by THENIJOBS.in · Support: +91 98765 43210</span>
+                <span className="text-[8px] text-slate-500 block">Powered by THENIJOBS.in · Support: +91 98765 43210</span>
               </div>
-              <span className="font-bold tracking-widest text-[8px] text-slate-600">THENIJOBS</span>
+              <span className="font-bold tracking-widest text-[8px] text-slate-500">THENIJOBS</span>
             </div>
           </section>
         </div>

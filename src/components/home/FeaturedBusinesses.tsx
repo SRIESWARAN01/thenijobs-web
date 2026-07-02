@@ -48,8 +48,8 @@ export default function FeaturedBusinesses() {
     name: d.name || '',
     category: d.category || 'Local Business',
     location: d.district || d.location || 'Local Area',
-    rating: d.rating || 4.5,
-    reviews: d.reviewCount || d.reviewsCount || 0,
+    rating: d.averageRating || d.rating || 0,
+    reviews: d.totalReviews || d.reviewCount || d.reviewsCount || 0,
     isVerified: d.verificationStatus === 'verified' || d.status === 'approved' || d.isVerified === true,
     isPremium: d.isPremium || d.isFeatured || false,
     subscriptionPlan: d.subscriptionPlan || (d.isPremium ? 'premium' : 'free'),
@@ -150,8 +150,20 @@ export default function FeaturedBusinesses() {
                           {biz.location}
                         </span>
                         <span className="flex items-center gap-1 text-slate-400">
-                          <Star size={12} className="fill-amber-400 text-amber-400" />
-                          {biz.rating} ({biz.reviews})
+                          {biz.reviews > 0 ? (
+                            <>
+                              {[1,2,3,4,5].map(i => (
+                                <Star key={i} size={11} className={i <= Math.round(biz.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-600'} />
+                              ))}
+                              <span className="ml-0.5 text-amber-300 font-bold">{biz.rating}</span>
+                              <span className="text-slate-500">({biz.reviews})</span>
+                            </>
+                          ) : (
+                            <>
+                              <Star size={11} className="text-slate-500" />
+                              <span className="text-slate-500">New</span>
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>

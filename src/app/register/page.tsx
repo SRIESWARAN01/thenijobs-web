@@ -232,7 +232,7 @@ export default function RegisterPage() {
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-white text-sm">{r.label}</div>
                       <div className="text-xs text-gray-500">{r.subLabel}</div>
-                      <div className="text-xs text-gray-600 mt-0.5">{r.desc}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{r.desc}</div>
                     </div>
                     {role === r.id && <Check size={16} className={iconColorMap[r.color]} />}
                   </button>

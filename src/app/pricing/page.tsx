@@ -367,7 +367,7 @@ function renderCellValue(value: FeatureValue, planSlug: VisibleSubscriptionPlanS
     return <Check size={16} className={checkColor} />;
   }
   if (value === false) {
-    return <X size={14} className="text-slate-600" />;
+    return <X size={14} className="text-slate-500" />;
   }
   return <span className="text-[11px] sm:text-xs font-semibold text-slate-300">{value}</span>;
 }
@@ -520,7 +520,7 @@ export default function PricingPage() {
                                 : isEnterprise
                                   ? 'bg-purple-950/40 text-purple-200 border-purple-800/40'
                                   : isBasic
-                                    ? 'bg-slate-100 text-slate-600 border-slate-200'
+                                    ? 'bg-slate-100 text-slate-500 border-slate-200'
                                     : 'bg-blue-50 text-blue-600 border-blue-100'
                             }`}
                           >
@@ -602,7 +602,7 @@ export default function PricingPage() {
                                     : 'text-emerald-500'
                               }`}
                             />
-                            <span className={isEnterprise ? 'text-slate-200' : 'text-slate-700'}>
+                            <span className={isEnterprise ? 'text-slate-200' : 'text-slate-400'}>
                               {f.text}
                             </span>
                             

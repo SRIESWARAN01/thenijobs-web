@@ -43,7 +43,7 @@ export default function EmployerSubscriptionPage() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <Crown size={48} className="mb-4 text-gray-600" />
+        <Crown size={48} className="mb-4 text-gray-500" />
         <h2 className="text-lg font-semibold text-white">No Company Profile</h2>
         <p className="mt-2 max-w-sm text-sm text-gray-400">
           Please register your company profile first to view subscription details.

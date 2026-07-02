@@ -148,7 +148,7 @@ export default function CategoriesSection() {
                     <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${cat.color} group-hover:scale-105 transition-transform`}>
                       <Icon size={20} />
                     </span>
-                    <ChevronRight size={14} className="text-slate-600 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight size={14} className="text-slate-500 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
                   </div>
                   <span className="block text-base font-bold text-white group-hover:text-violet-300 transition-colors leading-tight">
                     {cat.label}

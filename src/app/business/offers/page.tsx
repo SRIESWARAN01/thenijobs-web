@@ -112,7 +112,7 @@ export default function BusinessOffersPage() {
   if (!company) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <Building2 size={48} className="text-gray-600 mb-4" />
+        <Building2 size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Setup your company profile first to create offers.</p>
         <Link href="/business/company-profile" className="mt-6 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold hover:opacity-90 transition-opacity">
@@ -153,7 +153,7 @@ export default function BusinessOffersPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Summer Sale - 20% Off!"
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-orange-500/40"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-orange-500/40"
             />
           </div>
 
@@ -164,7 +164,7 @@ export default function BusinessOffersPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your offer..."
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-orange-500/40 resize-none"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-orange-500/40 resize-none"
             />
           </div>
 
@@ -230,7 +230,7 @@ export default function BusinessOffersPage() {
         </div>
       ) : offers.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center">
-          <Megaphone size={32} className="text-gray-600 mx-auto mb-3" />
+          <Megaphone size={32} className="text-gray-500 mx-auto mb-3" />
           <p className="text-sm text-gray-400">No offers yet. Create your first promotional offer!</p>
         </div>
       ) : (

@@ -161,7 +161,7 @@ export default function CustomersPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Users size={36} className="text-gray-600" />
+            <Users size={36} className="text-gray-500" />
             <p className="text-gray-400 text-sm">
               {search ? 'No customers match your search.' : 'No customers yet.'}
             </p>
@@ -214,7 +214,7 @@ export default function CustomersPage() {
                     {/* Last Order */}
                     <td className="px-4 py-3 whitespace-nowrap text-gray-400">
                       <div className="flex items-center gap-1.5">
-                        <Calendar size={12} className="text-gray-600" />
+                        <Calendar size={12} className="text-gray-500" />
                         {formatDate(customer.lastOrderAt)}
                       </div>
                     </td>

@@ -208,7 +208,7 @@ export default function EmployerDashboard() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
-        <Building2 size={48} className="text-gray-600 mb-4" />
+        <Building2 size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold text-white">No Company Registered</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to access the dashboard and post jobs.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
@@ -741,7 +741,7 @@ export default function EmployerDashboard() {
                       <p className={`text-2xl font-bold ${colors.text}`}>{stage.count}</p>
                     </div>
                     <p className="text-xs text-gray-400">{stage.label}</p>
-                    <p className="text-[10px] text-gray-600">{stage.pct}%</p>
+                    <p className="text-[10px] text-gray-500">{stage.pct}%</p>
                   </div>
                 );
               })}

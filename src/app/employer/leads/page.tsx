@@ -99,7 +99,7 @@ export default function EmployerLeadsPage() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
-        <TrendingUp size={48} className="text-gray-600 mb-4" />
+        <TrendingUp size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold text-white">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and manage customer leads.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
@@ -148,7 +148,7 @@ export default function EmployerLeadsPage() {
                 placeholder="Search leads..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
               />
             </div>
             <div className="relative">
@@ -172,7 +172,7 @@ export default function EmployerLeadsPage() {
           <div className="space-y-4">
             {filtered.length === 0 ? (
               <div className="glass-card rounded-2xl p-12 text-center">
-                <TrendingUp size={32} className="text-gray-600 mx-auto mb-3" />
+                <TrendingUp size={32} className="text-gray-500 mx-auto mb-3" />
                 <p className="text-sm text-gray-400">இன்னும் quote / inquiry leads வரவில்லை.</p>
               </div>
             ) : (

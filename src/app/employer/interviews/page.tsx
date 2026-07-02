@@ -101,7 +101,7 @@ export default function InterviewsPage() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
-        <Calendar size={48} className="text-gray-600 mb-4" />
+        <Calendar size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold text-white">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and manage interviews.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
@@ -199,7 +199,7 @@ export default function InterviewsPage() {
                           <ModeIcon size={12} /> {interview.mode}
                         </span>
                       </div>
-                      {interview.notes && <p className="text-[10px] text-gray-600 mt-2 italic">Notes: {interview.notes}</p>}
+                      {interview.notes && <p className="text-[10px] text-gray-500 mt-2 italic">Notes: {interview.notes}</p>}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {isUpdating || isReminding ? (
@@ -246,7 +246,7 @@ export default function InterviewsPage() {
 
             {filtered.length === 0 && (
               <div className="glass-card rounded-2xl p-12 text-center">
-                <Calendar size={32} className="text-gray-600 mx-auto mb-3" />
+                <Calendar size={32} className="text-gray-500 mx-auto mb-3" />
                 <p className="text-sm text-gray-400">No interviews scheduled</p>
               </div>
             )}

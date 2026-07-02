@@ -175,7 +175,7 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
               value={headerSearch}
               onChange={(event) => setHeaderSearch(event.target.value)}
               placeholder="Search jobs, products, leads..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-purple-500/40 focus:bg-white/[0.06] outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-purple-500/40 focus:bg-white/[0.06] outline-none transition-all"
             />
           </form>
 

@@ -279,7 +279,7 @@ export default function ApplicationSuccessOverlay({
 
               {/* Dismiss hint */}
               <motion.p
-                className="text-[10px] text-gray-600 mt-4"
+                className="text-[10px] text-gray-500 mt-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.2 }}

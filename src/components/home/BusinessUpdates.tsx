@@ -107,7 +107,7 @@ export default function BusinessUpdates() {
                         </span>
                       </span>
                     </span>
-                    <ArrowRight size={14} className="mt-1 shrink-0 text-slate-600 group-hover:text-violet-400 transition-colors" />
+                    <ArrowRight size={14} className="mt-1 shrink-0 text-slate-500 group-hover:text-violet-400 transition-colors" />
                   </Link>
                 );
               })}

@@ -274,7 +274,7 @@ export default function WorkflowPage({
                 <div>
                   <p className="text-2xl font-bold text-white font-outfit">{metric.value}</p>
                   <p className="mt-1 text-xs font-medium text-gray-400">{metric.label}</p>
-                  {metric.description && <p className="mt-1 text-[10px] text-gray-600">{metric.description}</p>}
+                  {metric.description && <p className="mt-1 text-[10px] text-gray-500">{metric.description}</p>}
                 </div>
                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${metricColors.bg}`}>
                   <Icon size={18} className={metricColors.text} />
@@ -381,7 +381,7 @@ export default function WorkflowPage({
                       }`} />
                       <div>
                         <p className="text-xs font-semibold text-gray-300">{step.label}</p>
-                        {step.detail && <p className="mt-0.5 text-[10px] text-gray-600">{step.detail}</p>}
+                        {step.detail && <p className="mt-0.5 text-[10px] text-gray-500">{step.detail}</p>}
                       </div>
                     </div>
                   ))}

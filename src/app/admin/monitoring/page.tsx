@@ -275,7 +275,7 @@ export default function ExpiryMonitoringPage() {
               placeholder={activeTab === 'subscriptions' ? 'Search by business, plan...' : 'Search by job title, company...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-violet-500/40 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-violet-500/40 outline-none transition-all"
             />
           </div>
         </div>

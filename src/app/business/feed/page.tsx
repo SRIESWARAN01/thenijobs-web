@@ -160,7 +160,7 @@ export default function BusinessFeedPage() {
   if (!company) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <Building2 size={48} className="text-gray-600 mb-4" />
+        <Building2 size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Setup your company profile first to start posting updates.</p>
         <Link href="/business/company-profile" className="mt-6 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold hover:opacity-90 transition-opacity">
@@ -191,9 +191,9 @@ export default function BusinessFeedPage() {
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's happening at your business? Share an update, offer, or hiring alert..."
               maxLength={2000}
-              className="w-full bg-transparent border-none text-sm text-white placeholder:text-gray-600 focus:outline-none resize-none"
+              className="w-full bg-transparent border-none text-sm text-white placeholder:text-gray-500 focus:outline-none resize-none"
             />
-            <p className="text-[10px] text-gray-600 text-right">{content.length}/2000</p>
+            <p className="text-[10px] text-gray-500 text-right">{content.length}/2000</p>
           </div>
         </div>
 
@@ -317,7 +317,7 @@ export default function BusinessFeedPage() {
         </div>
       ) : posts.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center">
-          <MessageCircle size={32} className="text-gray-600 mx-auto mb-3" />
+          <MessageCircle size={32} className="text-gray-500 mx-auto mb-3" />
           <p className="text-sm text-gray-400">No posts yet. Share your first update!</p>
         </div>
       ) : (

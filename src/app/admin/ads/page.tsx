@@ -166,7 +166,7 @@ export default function AdsPage() {
                       </td>
                       <td className="px-3 py-3.5 text-center hidden md:table-cell">
                         <p className="text-[10px] text-gray-400">{c.startDate ? new Date(c.startDate).toLocaleDateString('en-IN') : 'Recent'}</p>
-                        <p className="text-[10px] text-gray-600">to {c.endDate ? new Date(c.endDate).toLocaleDateString('en-IN') : 'Ongoing'}</p>
+                        <p className="text-[10px] text-gray-500">to {c.endDate ? new Date(c.endDate).toLocaleDateString('en-IN') : 'Ongoing'}</p>
                       </td>
                       <td className="px-3 py-3.5 text-center text-sm text-gray-300">{impressions.toLocaleString()}</td>
                       <td className="px-3 py-3.5 text-center text-sm text-cyan-400 font-medium">{clicks.toLocaleString()}</td>

@@ -250,7 +250,7 @@ export default function TalentSearchPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search skill, role, candidate name..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-cyan-500/40 outline-none transition-all"
             />
           </div>
           <div className="flex gap-2">
@@ -372,9 +372,9 @@ export default function TalentSearchPage() {
 
             {filtered.length === 0 && !profilesError && (
               <div className="glass-card rounded-2xl p-12 text-center">
-                <User size={32} className="text-gray-600 mx-auto mb-3" />
+                <User size={32} className="text-gray-500 mx-auto mb-3" />
                 <p className="text-sm text-gray-400">No candidates found</p>
-                <p className="text-xs text-gray-600 mt-1">Try resetting filters or typing another keyword</p>
+                <p className="text-xs text-gray-500 mt-1">Try resetting filters or typing another keyword</p>
               </div>
             )}
           </div>

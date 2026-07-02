@@ -614,7 +614,7 @@ export default function ProfileSetupPage() {
                               <>
                                 <Building2 size={24} className="text-gray-500 mb-1 group-hover:text-violet-400 transition-colors" />
                                 <span className="text-[10px] text-gray-400 font-semibold group-hover:text-gray-300">Upload Logo</span>
-                                <span className="text-[8px] text-gray-600 mt-0.5">Recommended: 1:1 Square</span>
+                                <span className="text-[8px] text-gray-500 mt-0.5">Recommended: 1:1 Square</span>
                               </>
                             )}
                           </div>
@@ -645,7 +645,7 @@ export default function ProfileSetupPage() {
                               <>
                                 <Package size={24} className="text-gray-500 mb-1 group-hover:text-violet-400 transition-colors" />
                                 <span className="text-[10px] text-gray-400 font-semibold group-hover:text-gray-300">Upload Cover</span>
-                                <span className="text-[8px] text-gray-600 mt-0.5">Recommended: 4:1 Ratio</span>
+                                <span className="text-[8px] text-gray-500 mt-0.5">Recommended: 4:1 Ratio</span>
                               </>
                             )}
                           </div>

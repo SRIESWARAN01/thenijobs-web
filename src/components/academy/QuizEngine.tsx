@@ -136,7 +136,7 @@ export default function QuizEngine({ quiz, onSubmit, attemptsMade }: QuizEngineP
                     <p className="text-emerald-500 font-medium mt-1">Correct answer: {q.options[q.correctAnswer]}</p>
                   )}
                   {q.explanation && (
-                    <p className="text-gray-600 mt-1 italic font-light">{q.explanation}</p>
+                    <p className="text-gray-500 mt-1 italic font-light">{q.explanation}</p>
                   )}
                 </div>
               );

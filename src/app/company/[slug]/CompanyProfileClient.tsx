@@ -228,6 +228,30 @@ const renderVerificationBadge = (company: any, size = 18) => {
   return null;
 };
 
+const renderTrustBadge = (company: any) => {
+  if (!company) return null;
+  const rating = company.rating || company.averageRating || 0;
+  const reviewCount = company.reviewCount || company.totalReviews || 0;
+
+  if (rating >= 4.0 && reviewCount >= 5) {
+    return (
+      <span title="Highly Rated by Customers" className="shrink-0 inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-lg text-[10px] font-bold text-amber-400 align-middle ml-2 select-none">
+        <Star size={10} className="fill-amber-400 text-amber-400 animate-pulse" /> Highly Rated
+      </span>
+    );
+  }
+
+  if (rating >= 3.5 && reviewCount >= 3) {
+    return (
+      <span title="Trusted and Verified" className="shrink-0 inline-flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-lg text-[10px] font-bold text-emerald-400 align-middle ml-2 select-none">
+        <ShieldCheck size={10} /> Trusted
+      </span>
+    );
+  }
+
+  return null;
+};
+
 // ──────────────────────────────────────────────────────────────────
 // SUBSCRIPTION PLAN BADGE
 // ──────────────────────────────────────────────────────────────────
@@ -451,7 +475,7 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
             setSubmitted(false);
             window.location.reload();
           }}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${theme === 'light' ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700' : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300'}`}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${theme === 'light' ? 'border-slate-200 bg-white hover:bg-slate-50 text-slate-400' : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300'}`}
         >
           Close & Refresh
         </button>
@@ -518,7 +542,7 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
       )}
 
       <div>
-        <label className={`text-[10px] font-black uppercase tracking-wider block mb-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+        <label className={`text-[10px] font-black uppercase tracking-wider block mb-2 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
           Your Rating
         </label>
         <div className="flex gap-1.5">
@@ -540,7 +564,7 @@ function ReviewSubmitForm({ companyId, companyName, reviews = [], accentColor = 
                       ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.35)]'
                       : isLight
                         ? 'text-slate-300 fill-slate-50'
-                        : 'text-slate-700 fill-slate-900/40'
+                        : 'text-slate-400 fill-slate-900/40'
                   }`}
                 />
               </button>
@@ -631,7 +655,7 @@ function EnhancedEnquiryForm({ companyId, companyName, btnStyle = 'bg-gradient-t
   const isLight = variant === 'light';
   const inputCls = isLight
     ? 'w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs rounded-xl text-slate-900 placeholder:text-slate-400 focus:border-blue-400 outline-none'
-    : 'w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none';
+    : 'w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-500 focus:border-white/20 outline-none';
   const selectCls = isLight
     ? 'w-full bg-slate-50 border border-slate-200 px-3 py-2 text-xs rounded-xl text-slate-900 focus:border-blue-400 outline-none appearance-none cursor-pointer'
     : 'w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white focus:border-white/20 outline-none appearance-none cursor-pointer';
@@ -658,10 +682,10 @@ function EnhancedEnquiryForm({ companyId, companyName, btnStyle = 'bg-gradient-t
         <option value="job">Job Application</option>
         <option value="partnership">Partnership</option>
       </select>
-      <input type="text" placeholder="Your Name *" value={name} onChange={e => setName(e.target.value)} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none" />
-      <input type="tel" placeholder="Mobile Number *" value={mobile} onChange={e => setMobile(e.target.value)} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none" />
-      <input type="email" placeholder="Email (optional)" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none" />
-      <textarea placeholder="Your requirement *" value={message} onChange={e => setMessage(e.target.value)} rows={2} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-600 focus:border-white/20 outline-none resize-none" />
+      <input type="text" placeholder="Your Name *" value={name} onChange={e => setName(e.target.value)} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-500 focus:border-white/20 outline-none" />
+      <input type="tel" placeholder="Mobile Number *" value={mobile} onChange={e => setMobile(e.target.value)} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-500 focus:border-white/20 outline-none" />
+      <input type="email" placeholder="Email (optional)" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-500 focus:border-white/20 outline-none" />
+      <textarea placeholder="Your requirement *" value={message} onChange={e => setMessage(e.target.value)} rows={2} required className="w-full bg-white/[0.03] border border-white/[0.08] px-3 py-2 text-xs rounded-xl text-white placeholder:text-slate-500 focus:border-white/20 outline-none resize-none" />
       <button type="submit" disabled={submitting} className={`w-full py-2.5 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-40 ${btnStyle}`}>
         {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
         {submitting ? 'Sending...' : 'Send Enquiry'}
@@ -1239,6 +1263,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
             <h1 className="text-xl font-bold text-slate-900 flex items-center flex-wrap gap-1">
               {company.name}
               {renderVerificationBadge(company, 16)}
+              {renderTrustBadge(company)}
             </h1>
             <div className="text-xs text-slate-500 mt-1.5 flex flex-wrap items-center gap-2">
               <span className="text-blue-600 font-semibold bg-blue-50/80 px-2 py-0.5 rounded border border-blue-100/50">{company.category}</span>
@@ -1264,18 +1289,18 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
           <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => trackAnalyticsEvent({ companyId: company.id, eventType: 'whatsapp_click' })} className="px-4 py-2 rounded-xl text-xs font-bold border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 text-emerald-700 shadow-sm">
             <MessageCircle size={13} className="text-emerald-600" /> WhatsApp Chat
           </a>
-          <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
+          <a href={getGoogleMapsUrl(company)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-400 shadow-sm">
             <MapPin size={13} className="text-slate-500" /> Open in Google Maps
           </a>
           <FollowButton companyId={company.id} />
-          <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
+          <button onClick={() => setShareOpen(true)} className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-400 shadow-sm">
             <Share2 size={13} className="text-slate-500" /> Share
           </button>
           <button onClick={() => downloadVCard({ name: company.name || 'Business', organization: company.name, phone: company.phone, whatsapp: company.whatsapp, email: company.email, website: company.website, address: company.address, district: company.district, category: company.category })} className="px-4 py-2 rounded-xl text-xs font-bold border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors flex items-center gap-1.5 text-emerald-700 shadow-sm">
             <UserPlus size={13} className="text-emerald-600" /> Save Contact
           </button>
           {company.brochureUrl && (
-            <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-700 shadow-sm">
+            <a href={company.brochureUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 text-slate-400 shadow-sm">
               <FileDown size={13} className="text-slate-500" /> Brochure
             </a>
           )}
@@ -1320,14 +1345,14 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
               <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 mb-2">About the Company</h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">{company.description}</p>
+                  <p className="text-xs text-slate-500 leading-relaxed">{company.description}</p>
                 </div>
                 {company.companyServicesTags?.length > 0 && (
                   <div className="pt-2">
                     <h4 className="text-xs font-semibold text-slate-900 mb-2">Services</h4>
                     <div className="flex flex-wrap gap-1.5">
                       {company.companyServicesTags.map((svc: string) => (
-                        <span key={svc} className="text-[10px] px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600">
+                        <span key={svc} className="text-[10px] px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-500">
                           {svc}
                         </span>
                       ))}
@@ -1412,7 +1437,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                             </div>
                             <button
                               onClick={() => handleProductWhatsApp(product.name, product.id)}
-                              className="mt-2 self-start flex items-center gap-1 text-[9px] font-bold uppercase text-slate-600 hover:text-slate-800"
+                              className="mt-2 self-start flex items-center gap-1 text-[9px] font-bold uppercase text-slate-500 hover:text-slate-800"
                             >
                               <MessageCircle size={10} /> WhatsApp
                             </button>
@@ -1467,11 +1492,11 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
                           <span className="text-[10px] text-slate-400">{review.date}</span>
                         </div>
                         <p className="text-xs font-bold text-slate-900">{review.title || review.name}</p>
-                        <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">{review.content}</p>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{review.content}</p>
                         {review.ownerReply && (
                           <div className="mt-2 ml-3 pl-3 border-l-2 border-slate-200">
                             <p className="text-[10px] text-slate-500 font-bold">Owner Reply:</p>
-                            <p className="text-[10px] text-slate-600">{review.ownerReply}</p>
+                            <p className="text-[10px] text-slate-500">{review.ownerReply}</p>
                           </div>
                         )}
                       </div>
@@ -1492,7 +1517,7 @@ function TemplateFree({ company, jobs, reviews }: { company: any; jobs: any[]; r
           <div className="space-y-4">
             <div className="bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Contact Info</h3>
-              <div className="space-y-3 text-xs text-slate-700">
+              <div className="space-y-3 text-xs text-slate-400">
                 <a href={getCleanCallUrl(company.phone)} className="flex items-center gap-2 hover:text-blue-600 transition-colors">
                   <Phone size={13} className="text-slate-400" />
                   <span>{company.phone}</span>
@@ -1695,13 +1720,14 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
               <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center flex-wrap gap-1">
                 {company.name}
                 {renderVerificationBadge(company, 18)}
+                {renderTrustBadge(company)}
               </h1>
             </div>
             <div className="text-xs text-slate-450 mt-1.5 flex items-center flex-wrap gap-2">
               <span className={`font-semibold ${currentTheme.accent}`}>{company.category}</span>
-              <span className="text-slate-600">·</span>
+              <span className="text-slate-500">·</span>
               <span className="flex items-center gap-1"><MapPin size={11} className={currentTheme.accent} />{company.district}</span>
-              <span className="text-slate-600">·</span>
+              <span className="text-slate-500">·</span>
               <button 
                 onClick={scrollToReview}
                 className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/5 border border-white/10 hover:border-amber-400/30 hover:text-amber-400 transition-all font-bold text-slate-200"
@@ -2010,7 +2036,7 @@ function TemplateStandard({ company, jobs, reviews }: { company: any; jobs: any[
                           <span className="text-xs font-bold text-slate-200">{review.name}</span>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map(i => (
-                              <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
+                              <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-400'} />
                             ))}
                           </div>
                         </div>
@@ -2503,6 +2529,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
             <h1 className="text-3xl sm:text-4xl font-black text-white flex items-center flex-wrap gap-2.5 tracking-tight">
               {company.name}
               {renderVerificationBadge(company, 28)}
+              {renderTrustBadge(company)}
             </h1>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 text-sm text-slate-400">
               <span className={`font-black uppercase tracking-widest text-xs px-2.5 py-1 rounded bg-white/[0.03] border border-white/5 ${currentTheme.accent}`}>{company.category}</span>
@@ -2964,7 +2991,7 @@ function TemplateEnterprise({ company, jobs, reviews }: { company: any; jobs: an
                           </div>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map(i => (
-                              <Star key={i} size={11} className={i <= test.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
+                              <Star key={i} size={11} className={i <= test.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-400'} />
                             ))}
                           </div>
                         </div>
@@ -3550,6 +3577,7 @@ Please confirm my booking request. Thanks!`;
               <h1 className="text-2xl sm:text-3xl font-black text-white flex items-center flex-wrap gap-2 tracking-tight">
                 {company.name}
                 {renderVerificationBadge(company, 24)}
+                {renderTrustBadge(company)}
               </h1>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2 text-sm text-slate-400">
@@ -3809,11 +3837,11 @@ Please confirm my booking request. Thanks!`;
                             <span className="text-xs font-bold text-white">{review.name}</span>
                             <div className="flex gap-0.5 mt-0.5">
                               {[1, 2, 3, 4, 5].map(i => (
-                                <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
+                                <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-400'} />
                               ))}
                             </div>
                           </div>
-                          <span className="text-[9px] text-slate-600 font-medium">{review.date}</span>
+                          <span className="text-[9px] text-slate-500 font-medium">{review.date}</span>
                         </div>
                         <p className="text-xs text-slate-400 leading-relaxed">{review.content}</p>
                         <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">
@@ -3944,7 +3972,7 @@ Please confirm my booking request. Thanks!`;
                           <span className="text-xs font-bold text-white">{review.name}</span>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map(i => (
-                              <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
+                              <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-400'} />
                             ))}
                           </div>
                         </div>
@@ -4050,7 +4078,7 @@ Please confirm my booking request. Thanks!`;
                           <span className="text-xs font-bold text-white">{review.name}</span>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map(i => (
-                              <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'} />
+                              <Star key={i} size={10} className={i <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-400'} />
                             ))}
                           </div>
                         </div>

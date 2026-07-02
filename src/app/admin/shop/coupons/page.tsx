@@ -429,7 +429,7 @@ export default function CouponsPage() {
           </div>
         ) : coupons.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Tag size={36} className="text-gray-600" />
+            <Tag size={36} className="text-gray-500" />
             <p className="text-gray-400 text-sm">No coupons yet. Create your first one!</p>
           </div>
         ) : (
@@ -464,7 +464,7 @@ export default function CouponsPage() {
                           </span>
                           <button
                             onClick={() => handleCopy(coupon.code)}
-                            className="text-gray-600 hover:text-violet-400 transition-colors"
+                            className="text-gray-500 hover:text-violet-400 transition-colors"
                             title="Copy code"
                           >
                             {copiedCode === coupon.code ? (
@@ -492,7 +492,7 @@ export default function CouponsPage() {
                       {/* Uses */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-white">{coupon.usedCount}</span>
-                        <span className="text-gray-600">/{coupon.maxUses}</span>
+                        <span className="text-gray-500">/{coupon.maxUses}</span>
                       </td>
                       {/* Expiry */}
                       <td className="px-4 py-3 whitespace-nowrap text-gray-400">

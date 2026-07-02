@@ -790,7 +790,7 @@ export default function SubscriptionsPage() {
                       <td className="px-4 py-3.5">
                         <p className="text-xs text-gray-400">{formatDate(sub.endDate)}</p>
                         {typeof sub.daysUntilExpiry === 'number' && sub.daysUntilExpiry >= 0 && (
-                          <p className="mt-0.5 text-[10px] text-gray-600">{sub.daysUntilExpiry} days left</p>
+                          <p className="mt-0.5 text-[10px] text-gray-500">{sub.daysUntilExpiry} days left</p>
                         )}
                       </td>
                       <td className="px-4 py-3.5">
@@ -836,10 +836,10 @@ export default function SubscriptionsPage() {
         {!subsLoading && filteredRows.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.04]">
-              <CreditCard size={28} className="text-gray-600" />
+              <CreditCard size={28} className="text-gray-500" />
             </div>
             <p className="text-sm font-medium text-gray-400">No subscriptions found</p>
-            <p className="mt-1 text-xs text-gray-600">Try adjusting your filters</p>
+            <p className="mt-1 text-xs text-gray-500">Try adjusting your filters</p>
           </div>
         )}
       </div>

@@ -315,7 +315,7 @@ export default function BusinessLeadsPage() {
   if (!companyId && !companyLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-white">
-        <TrendingUp size={48} className="text-gray-600 mb-4" />
+        <TrendingUp size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold">No Company Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and manage customer leads.</p>
         <Link href="/business/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold hover:opacity-90">
@@ -380,7 +380,7 @@ export default function BusinessLeadsPage() {
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-emerald-500/40 outline-none transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-500 focus:border-emerald-500/40 outline-none transition-all"
               />
             </div>
             <div className="relative">
@@ -419,7 +419,7 @@ export default function BusinessLeadsPage() {
             <div className="space-y-4">
               {filteredLeads.length === 0 ? (
                 <div className="glass-card rounded-2xl p-12 text-center">
-                  <TrendingUp size={32} className="text-gray-600 mx-auto mb-3" />
+                  <TrendingUp size={32} className="text-gray-500 mx-auto mb-3" />
                   <p className="text-sm text-gray-400">No leads or enquiries received yet.</p>
                 </div>
               ) : (
@@ -522,7 +522,7 @@ export default function BusinessLeadsPage() {
             <div className="space-y-4">
               {filteredRfqs.length === 0 ? (
                 <div className="glass-card rounded-2xl p-12 text-center">
-                  <ClipboardList size={32} className="text-gray-600 mx-auto mb-3" />
+                  <ClipboardList size={32} className="text-gray-500 mx-auto mb-3" />
                   <p className="text-sm text-gray-400">No B2B RFQs received yet.</p>
                 </div>
               ) : (
@@ -859,7 +859,7 @@ export default function BusinessLeadsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="text-slate-700 font-medium">
+                        <tr className="text-slate-400 font-medium">
                           <td className="py-2">{selectedRfq.productName}</td>
                           <td className="py-2 text-right">{selectedRfq.quantity}</td>
                           <td className="py-2 text-right">₹{selectedRfq.quotedPricePerUnit}</td>
@@ -887,7 +887,7 @@ export default function BusinessLeadsPage() {
                     </div>
 
                     {selectedRfq.notes && (
-                      <div className="p-2.5 rounded-lg bg-slate-50 border-l-2 border-slate-300 text-slate-600 text-[10px]">
+                      <div className="p-2.5 rounded-lg bg-slate-50 border-l-2 border-slate-300 text-slate-500 text-[10px]">
                         <strong>Seller Terms:</strong> {selectedRfq.notes}
                       </div>
                     )}

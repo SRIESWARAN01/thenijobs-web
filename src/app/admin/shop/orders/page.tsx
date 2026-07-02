@@ -122,7 +122,7 @@ export default function AdminOrdersPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <ShoppingBag size={36} className="text-gray-600 mx-auto mb-3" />
+          <ShoppingBag size={36} className="text-gray-500 mx-auto mb-3" />
           <p className="text-gray-500">No orders found.</p>
         </div>
       ) : (
@@ -155,7 +155,7 @@ export default function AdminOrdersPage() {
                       <td className="px-4 py-3">
                         {order.couponCode ? (
                           <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs">{order.couponCode}</span>
-                        ) : <span className="text-gray-600 text-xs">—</span>}
+                        ) : <span className="text-gray-500 text-xs">—</span>}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-1.5 py-0.5 rounded text-xs ${order.whatsappSent ? 'bg-emerald-500/10 text-emerald-400' : 'bg-gray-500/10 text-gray-500'}`}>

@@ -71,7 +71,7 @@ export default function ProfileCompletionIndicator({ company, variant = 'compact
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-slate-700">Profile Completion</span>
+          <span className="text-xs font-bold text-slate-400">Profile Completion</span>
           <span className={`text-sm font-black ${textColor}`}>{percentage}%</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">

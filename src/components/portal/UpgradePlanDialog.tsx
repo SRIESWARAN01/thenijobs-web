@@ -311,7 +311,7 @@ export default function UpgradePlanDialog({
                 Request Manual Payment (UPI / Bank)
               </button>
 
-              <p className="text-[10px] text-gray-600 text-center mt-3 leading-relaxed">
+              <p className="text-[10px] text-gray-500 text-center mt-3 leading-relaxed">
                 Payments processed securely via Razorpay. By proceeding, you agree to
                 our terms of service. Subscription is valid for 1 year from the date of payment.
               </p>

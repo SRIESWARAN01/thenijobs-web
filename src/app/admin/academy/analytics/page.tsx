@@ -67,7 +67,7 @@ export default function LMSAnalyticsPage() {
                     </div>
                   </div>
                   <p className="text-xs text-gray-400 font-semibold">{s.label}</p>
-                  <p className="text-[10px] text-gray-600 mt-0.5">{s.desc}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{s.desc}</p>
                 </div>
               );
             })}

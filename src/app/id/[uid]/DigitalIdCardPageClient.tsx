@@ -68,7 +68,7 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
 
   const portfolioUrl = useMemo(() => {
     if (typeof window === 'undefined') return `/profile/${uid}`;
-    return `${window.location.origin}/profile/${encodeURIComponent(uid)}`;
+    return `${window.location.origin}/profile/${encodeURIComponent(uid || '')}`;
   }, [uid]);
 
   const experienceText = useMemo(() => {
@@ -94,70 +94,55 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
   const validTill = useMemo(() => {
     const dateVal = profile?.premiumUntil || seekerProfile?.premiumUntil;
     if (dateVal) {
-      const d = dateVal.toDate ? dateVal.toDate() : new Date(dateVal);
-      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      try {
+        let d: Date;
+        if (typeof dateVal.toDate === 'function') {
+          d = dateVal.toDate();
+        } else if (dateVal.seconds !== undefined) {
+          d = new Date(dateVal.seconds * 1000);
+        } else {
+          d = new Date(dateVal);
+        }
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+      } catch (err) {
+        console.error('Error parsing premiumUntil date:', err);
+      }
     }
     // Default valid till date (e.g., 1 year from update)
     const updateVal = profile?.updatedAt || seekerProfile?.updatedAt;
-    const baseDate = updateVal ? (updateVal.toDate ? updateVal.toDate() : new Date(updateVal)) : new Date();
-    const expiry = new Date(baseDate);
-    expiry.setFullYear(expiry.getFullYear() + 1);
-    return expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    try {
+      let baseDate = new Date();
+      if (updateVal) {
+        if (typeof updateVal.toDate === 'function') {
+          baseDate = updateVal.toDate();
+        } else if (updateVal.seconds !== undefined) {
+          baseDate = new Date(updateVal.seconds * 1000);
+        } else {
+          const parsed = new Date(updateVal);
+          if (!isNaN(parsed.getTime())) {
+            baseDate = parsed;
+          }
+        }
+      }
+      const expiry = new Date(baseDate);
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      return expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch (err) {
+      console.error('Error parsing updatedAt date:', err);
+      const expiry = new Date();
+      expiry.setFullYear(expiry.getFullYear() + 1);
+      return expiry.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
   }, [profile?.premiumUntil, profile?.updatedAt, seekerProfile?.premiumUntil, seekerProfile?.updatedAt]);
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070714] text-white">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500/30 border-t-emerald-400" />
-      </main>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
-          <Info size={40} className="mx-auto text-amber-400 mb-4 animate-bounce" />
-          <h1 className="text-xl font-bold tracking-tight">Digital ID not available</h1>
-          <p className="mt-2 text-sm text-gray-400">Complete the profile first to generate this card.</p>
-        </div>
-      </main>
-    );
-  }
-
-  const isSuspendedOrDeleted = profile.isActive === false || 
-    profile.status === 'suspended' || 
-    profile.status === 'deleted' || 
-    (profile as any).deleted === true;
-
-  if (isSuspendedOrDeleted) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white font-sans">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-bounce">
-            <User size={24} />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">ID Card not available</h1>
-          <p className="mt-2 text-sm text-gray-400">
-            This candidate ID card has been suspended, removed, or is currently undergoing review.
-          </p>
-          <a
-            href="/"
-            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
-          >
-            Go Back Home
-          </a>
-        </div>
-      </main>
-    );
-  }
-
-  const name = profile.name || profile.displayName || 'THENIJOBS Member';
-  const role = profile.currentRole || profile.qualification || 'Job Seeker';
-  const photoUrl = profile.photoUrl || profile.profilePhotoUrl || profile.photoURL || '';
-  const isVerified = !!profile.candidateId;
-  const uniqueId = profile.candidateId || `TNI-${uid.slice(0, 8).toUpperCase()}`;
-  const isPremium = profile.isPremium !== false; // Display Premium styling
+  const name = profile?.name || profile?.displayName || 'THENIJOBS Member';
+  const role = profile?.currentRole || profile?.qualification || 'Job Seeker';
+  const photoUrl = profile?.photoUrl || profile?.profilePhotoUrl || profile?.photoURL || '';
+  const isVerified = !!profile?.candidateId;
+  const uniqueId = profile?.candidateId || `TNI-${uid ? uid.slice(0, 8).toUpperCase() : ''}`;
+  const isPremium = profile?.isPremium !== false; // Display Premium styling
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(portfolioUrl)}`;
   const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(portfolioUrl)}`;
   const [photoSrc, setPhotoSrc] = useState<string>('');
@@ -211,6 +196,53 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
 
     convertImages();
   }, [photoUrl, qrUrl]);
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] text-white">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500/30 border-t-emerald-400" />
+      </main>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
+          <Info size={40} className="mx-auto text-amber-400 mb-4 animate-bounce" />
+          <h1 className="text-xl font-bold tracking-tight">Digital ID not available</h1>
+          <p className="mt-2 text-sm text-gray-400">Complete the profile first to generate this card.</p>
+        </div>
+      </main>
+    );
+  }
+
+  const isSuspendedOrDeleted = profile.isActive === false || 
+    profile.status === 'suspended' || 
+    profile.status === 'deleted' || 
+    (profile as any).deleted === true;
+
+  if (isSuspendedOrDeleted) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white font-sans">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-bounce">
+            <User size={24} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight">ID Card not available</h1>
+          <p className="mt-2 text-sm text-gray-400">
+            This candidate ID card has been suspended, removed, or is currently undergoing review.
+          </p>
+          <a
+            href="/"
+            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
+          >
+            Go Back Home
+          </a>
+        </div>
+      </main>
+    );
+  }
   
   const downloadPng = async (side: 'front' | 'back') => {
     setExporting(side === 'front' ? 'png-front' : 'png-back');

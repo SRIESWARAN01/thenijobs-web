@@ -1,14 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import DigitalIdCardPageClient from './[uid]/DigitalIdCardPageClient';
 
 export default function DigitalIdQueryClient() {
+  const { user } = useAuth();
   const [uid, setUid] = useState<string | null>(null);
 
   useEffect(() => {
-    setUid(new URLSearchParams(window.location.search).get('uid') || '');
-  }, []);
+    const queryUid = new URLSearchParams(window.location.search).get('uid');
+    if (queryUid) {
+      setUid(queryUid);
+    } else if (user?.uid) {
+      setUid(user.uid);
+    } else {
+      setUid('');
+    }
+  }, [user]);
 
   if (uid === null) {
     return (

@@ -8,7 +8,7 @@ import {
   CheckCircle, AlertCircle, Shield, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2,
   Lock, Sparkles, Crown, Laptop, Tablet, Smartphone, Check, TrendingUp,
-  Calendar, Clock, ArrowRight, Award
+  Calendar, Clock, ArrowRight, Award, Users
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -48,6 +48,7 @@ const DEFAULT_COMPANY = {
   experience: '',
   gallery: ['', '', '', ''],
   branches: [] as any[],
+  team: [] as any[],
   verification: {
     email: false,
     gst: false,
@@ -140,6 +141,8 @@ export default function CompanyProfilePage() {
   const [charCount, setCharCount] = useState(0);
   const [newBranch, setNewBranch] = useState({ name: '', address: '', district: '', location: '' });
   const [showBranchForm, setShowBranchForm] = useState(false);
+  const [newMember, setNewMember] = useState({ name: '', role: '', bio: '', photoUrl: '' });
+  const [showTeamForm, setShowTeamForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -289,6 +292,7 @@ export default function CompanyProfilePage() {
           experience: updatedCompanyData.experience || '',
           gallery: updatedCompanyData.gallery,
           branches: updatedCompanyData.branches,
+          team: updatedCompanyData.team || [],
           customTheme: updatedCompanyData.customTheme || 'classic_blue',
           websiteTemplate: updatedCompanyData.websiteTemplate || 'classic',
           customMetaTitle: updatedCompanyData.customMetaTitle || '',
@@ -395,6 +399,34 @@ export default function CompanyProfilePage() {
     });
   };
 
+  const addTeamMember = () => {
+    if (newMember.name && newMember.role) {
+      setCompany((prev) => {
+        const next = {
+          ...prev,
+          team: [...(prev.team || []), { id: Date.now().toString(), ...newMember }],
+        };
+        triggerAutoSave(next);
+        return next;
+      });
+      setNewMember({ name: '', role: '', bio: '', photoUrl: '' });
+      setShowTeamForm(false);
+    } else {
+      alert('Please fill in at least Name and Role for the team member.');
+    }
+  };
+
+  const removeTeamMember = (id: string) => {
+    setCompany((prev) => {
+      const next = {
+        ...prev,
+        team: (prev.team || []).filter((m: any) => m.id !== id),
+      };
+      triggerAutoSave(next);
+      return next;
+    });
+  };
+
   const handleUploadCover = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -475,6 +507,7 @@ export default function CompanyProfilePage() {
         experience: company.experience || '',
         gallery: company.gallery,
         branches: company.branches,
+        team: company.team || [],
         verification: company.verification,
         customTheme: company.customTheme || 'classic_blue',
         websiteTemplate: company.websiteTemplate || 'classic',
@@ -592,6 +625,7 @@ export default function CompanyProfilePage() {
         experience: updatedCompanyData.experience || '',
         gallery: updatedCompanyData.gallery,
         branches: updatedCompanyData.branches,
+        team: updatedCompanyData.team || [],
         verification: updatedCompanyData.verification,
         customTheme: updatedCompanyData.customTheme || 'classic_blue',
         websiteTemplate: updatedCompanyData.websiteTemplate || 'classic',
@@ -1284,6 +1318,123 @@ export default function CompanyProfilePage() {
                     <button
                       onClick={() => setShowBranchForm(false)}
                       className="px-4 py-2 rounded-xl bg-white/[0.06] text-gray-400 text-sm font-medium hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Management & Team Members */}
+          <div className="glass-card rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Users size={16} className="text-cyan-400" />
+                Management & Team Members
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowTeamForm(true)}
+                className="text-xs text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1 cursor-pointer bg-transparent border-0"
+              >
+                <Plus size={14} /> Add Team Member
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {(company.team || []).length === 0 ? (
+                <p className="text-xs text-gray-500 italic">No team members added yet. Default team members will show on your profile unless custom members are added.</p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(company.team || []).map((member: any) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-900 overflow-hidden flex items-center justify-center shrink-0 border border-white/10 text-cyan-400 font-bold text-sm">
+                          {member.photoUrl ? (
+                            <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+                          ) : (
+                            member.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-white">{member.name}</p>
+                          <p className="text-xs text-cyan-400 font-medium">{member.role}</p>
+                          {member.bio && <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{member.bio}</p>}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeTeamMember(member.id)}
+                        className="p-2 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer bg-transparent border-0"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showTeamForm && (
+                <div className="p-4 rounded-xl bg-white/[0.04] border border-cyan-500/20 space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="text-[10px] text-gray-400 font-medium block mb-1">Member Name *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Dr. S. Eswaran"
+                        value={newMember.name}
+                        onChange={(e) => setNewMember((p) => ({ ...p, name: e.target.value }))}
+                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-white/10 text-sm text-white placeholder:text-gray-650 focus:border-cyan-500/40 outline-none transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-400 font-medium block mb-1">Role / Designation *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Chief Executive Officer"
+                        value={newMember.role}
+                        onChange={(e) => setNewMember((p) => ({ ...p, role: e.target.value }))}
+                        className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-white/10 text-sm text-white placeholder:text-gray-650 focus:border-cyan-500/40 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-400 font-medium block mb-1">Short Biography (Optional)</label>
+                    <textarea
+                      placeholder="e.g. 12+ years experience in operations and strategy."
+                      rows={2}
+                      value={newMember.bio}
+                      onChange={(e) => setNewMember((p) => ({ ...p, bio: e.target.value }))}
+                      className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-white/10 text-sm text-white placeholder:text-gray-655 focus:border-cyan-500/40 outline-none transition-all resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-400 font-medium block mb-1">Photo URL (Optional)</label>
+                    <input
+                      type="url"
+                      placeholder="https://example.com/photo.png"
+                      value={newMember.photoUrl}
+                      onChange={(e) => setNewMember((p) => ({ ...p, photoUrl: e.target.value }))}
+                      className="w-full px-4 py-2 rounded-xl bg-slate-900 border border-white/10 text-sm text-white placeholder:text-gray-655 focus:border-cyan-500/40 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={addTeamMember}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer border-0"
+                    >
+                      Add Member
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowTeamForm(false)}
+                      className="px-4 py-2 rounded-xl bg-white/[0.06] text-gray-400 text-xs font-medium hover:text-white transition-colors cursor-pointer border-0"
                     >
                       Cancel
                     </button>

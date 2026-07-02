@@ -45,10 +45,17 @@ export default function YouTubePlayer({
       if (!containerRef.current) return;
 
       try {
+        const cleanVideoId = (() => {
+          if (!videoId) return '';
+          const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+          const match = videoId.match(regExp);
+          return (match && match[2].length === 11) ? match[2] : videoId;
+        })();
+
         playerRef.current = new (window as any).YT.Player(containerRef.current, {
           height: '100%',
           width: '100%',
-          videoId: videoId,
+          videoId: cleanVideoId,
           playerVars: {
             controls: 0, // Disable standard scrubbing progress bar
             disablekb: 1, // Disable keyboard controls

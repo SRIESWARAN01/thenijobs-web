@@ -292,9 +292,6 @@ exports.serverUpdateApplicationStatus = (0, https_1.onCall)({ region: config_1.R
 exports.createJobPosting = (0, https_1.onCall)({ region: config_1.REGION, enforceAppCheck: false }, async (request) => {
     const uid = requireUid(request);
     const authUser = await (0, auth_1.getAuth)().getUser(uid);
-    if (!authUser.emailVerified) {
-        throw new https_1.HttpsError('failed-precondition', 'Please verify your email address before posting jobs.');
-    }
     const userSnap = await config_1.db.doc(`users/${uid}`).get();
     const user = userSnap.data();
     if (!user) {
@@ -302,6 +299,10 @@ exports.createJobPosting = (0, https_1.onCall)({ region: config_1.REGION, enforc
     }
     if (!['business', 'employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'].includes(String(user.role))) {
         throw new https_1.HttpsError('permission-denied', 'Only business accounts can post jobs.');
+    }
+    const isVerified = authUser.emailVerified || !!authUser.phoneNumber || user.isVerified === true;
+    if (!isVerified) {
+        throw new https_1.HttpsError('failed-precondition', 'Please verify your email address or mobile number before posting jobs.');
     }
     const data = request.data;
     const companyId = getRequiredString(data.companyId, 'companyId');
@@ -313,8 +314,8 @@ exports.createJobPosting = (0, https_1.onCall)({ region: config_1.REGION, enforc
     if (company.ownerId !== uid) {
         throw new https_1.HttpsError('permission-denied', 'You can only post jobs for your own company.');
     }
-    if (company.deleted === true || company.isActive === false || company.status === 'deleted') {
-        throw new https_1.HttpsError('failed-precondition', 'Deleted or inactive companies cannot post jobs.');
+    if (company.deleted === true || company.status === 'deleted' || company.status === 'suspended') {
+        throw new https_1.HttpsError('failed-precondition', 'Deleted or suspended companies cannot post jobs.');
     }
     const plans = await getPlanConfigs();
     const plan = await resolveCompanyPlan(companyId, company);

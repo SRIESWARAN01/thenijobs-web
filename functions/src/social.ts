@@ -258,8 +258,8 @@ export const submitBusinessReview = onCall(COMMON_OPTS, async (request) => {
     companyId,
     rating,
     comment: cleanComment,
-    // Guest reviews require admin moderation; authenticated reviews publish instantly
-    status: isAuthenticated ? 'approved' : 'pending',
+    // Automatically approve all reviews instantly without admin moderation
+    status: 'approved',
     replyText: null,
     isActive: true,
     createdAt: FieldValue.serverTimestamp(),
@@ -281,24 +281,22 @@ export const submitBusinessReview = onCall(COMMON_OPTS, async (request) => {
 
   const reviewRef = await db.collection('reviews').add(reviewData);
 
-  // Update company aggregate rating (only if approved)
-  if (isAuthenticated) {
-    const allReviews = await db.collection('reviews')
-      .where('companyId', '==', companyId)
-      .where('status', '==', 'approved')
-      .get();
+  // Update company aggregate rating (since all reviews are approved instantly)
+  const allReviews = await db.collection('reviews')
+    .where('companyId', '==', companyId)
+    .where('status', '==', 'approved')
+    .get();
 
-    let totalRating = 0;
-    allReviews.forEach((d) => {
-      totalRating += d.data().rating || 0;
-    });
-    const avgRating = totalRating / allReviews.size;
+  let totalRating = 0;
+  allReviews.forEach((d) => {
+    totalRating += d.data().rating || 0;
+  });
+  const avgRating = allReviews.size > 0 ? (totalRating / allReviews.size) : 0;
 
-    await db.collection('companies').doc(companyId).update({
-      averageRating: Math.round(avgRating * 10) / 10,
-      totalReviews: allReviews.size,
-    });
-  }
+  await db.collection('companies').doc(companyId).update({
+    averageRating: Math.round(avgRating * 10) / 10,
+    totalReviews: allReviews.size,
+  });
 
-  return { success: true, reviewId: reviewRef.id, pending: isGuest };
+  return { success: true, reviewId: reviewRef.id, pending: false };
 });

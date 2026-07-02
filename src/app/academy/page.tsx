@@ -42,13 +42,13 @@ export default function AcademyCatalogPage() {
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="relative w-full md:max-w-xs">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search courses..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="search-input w-full pl-10 pr-4 py-2.5 text-sm"
+              className="search-input w-full pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-gray-300 bg-slate-900 border border-white/20 focus:border-violet-500 focus:ring-1 focus:ring-violet-500 outline-none"
             />
           </div>
 
@@ -143,9 +143,9 @@ export default function AcademyCatalogPage() {
 
                     <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                       <div>
-                        <span className="text-[9px] text-gray-500 uppercase tracking-widest font-black block">{course.category}</span>
-                        <h3 className="text-sm font-bold text-white mt-1 group-hover:text-violet-400 transition-colors line-clamp-1">{course.title}</h3>
-                        <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">{course.description}</p>
+                        <span className="text-[9px] text-violet-300 uppercase tracking-widest font-black block">{course.category}</span>
+                        <h3 className="text-sm font-bold text-white mt-1 group-hover:text-violet-300 transition-colors line-clamp-1">{course.title}</h3>
+                        <p className="text-xs text-slate-200 mt-2 line-clamp-2 leading-relaxed">{course.description}</p>
                       </div>
 
                       <div className="pt-4 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-gray-500">

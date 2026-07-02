@@ -226,8 +226,8 @@ exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) 
         companyId,
         rating,
         comment: cleanComment,
-        // Guest reviews require admin moderation; authenticated reviews publish instantly
-        status: isAuthenticated ? 'approved' : 'pending',
+        // Automatically approve all reviews instantly without admin moderation
+        status: 'approved',
         replyText: null,
         isActive: true,
         createdAt: firestore_1.FieldValue.serverTimestamp(),
@@ -247,22 +247,20 @@ exports.submitBusinessReview = (0, https_1.onCall)(COMMON_OPTS, async (request) 
         reviewData.isGuest = true;
     }
     const reviewRef = await config_1.db.collection('reviews').add(reviewData);
-    // Update company aggregate rating (only if approved)
-    if (isAuthenticated) {
-        const allReviews = await config_1.db.collection('reviews')
-            .where('companyId', '==', companyId)
-            .where('status', '==', 'approved')
-            .get();
-        let totalRating = 0;
-        allReviews.forEach((d) => {
-            totalRating += d.data().rating || 0;
-        });
-        const avgRating = totalRating / allReviews.size;
-        await config_1.db.collection('companies').doc(companyId).update({
-            averageRating: Math.round(avgRating * 10) / 10,
-            totalReviews: allReviews.size,
-        });
-    }
-    return { success: true, reviewId: reviewRef.id, pending: isGuest };
+    // Update company aggregate rating (since all reviews are approved instantly)
+    const allReviews = await config_1.db.collection('reviews')
+        .where('companyId', '==', companyId)
+        .where('status', '==', 'approved')
+        .get();
+    let totalRating = 0;
+    allReviews.forEach((d) => {
+        totalRating += d.data().rating || 0;
+    });
+    const avgRating = allReviews.size > 0 ? (totalRating / allReviews.size) : 0;
+    await config_1.db.collection('companies').doc(companyId).update({
+        averageRating: Math.round(avgRating * 10) / 10,
+        totalReviews: allReviews.size,
+    });
+    return { success: true, reviewId: reviewRef.id, pending: false };
 });
 //# sourceMappingURL=social.js.map

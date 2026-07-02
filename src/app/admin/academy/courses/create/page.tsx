@@ -142,8 +142,9 @@ export default function CreateCoursePage() {
   // Extract YouTube Video ID from URL
   const extractYouTubeId = (url: string): string => {
     if (!url) return '';
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
-    return match ? match[1] : url; // Return as-is if already just an ID
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url;
   };
 
   // Submit
@@ -252,28 +253,28 @@ export default function CreateCoursePage() {
       {step === 0 && (
         <div className="glass-card rounded-2xl p-6 space-y-4">
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Course Title *</label>
+            <label className="text-[10px] font-bold text-gray-450 uppercase tracking-wider block mb-1.5">Course Title *</label>
             <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g., Tally ERP Masterclass"
-              className="w-full bg-white/[0.03] border border-white/[0.08] px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none" />
+              className="w-full bg-slate-900/80 border border-white/20 px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-400 focus:border-violet-500/50 outline-none" />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Description *</label>
+            <label className="text-[10px] font-bold text-gray-450 uppercase tracking-wider block mb-1.5">Description *</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Describe what this course covers..."
-              className="w-full bg-white/[0.03] border border-white/[0.08] px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none resize-none" />
+              className="w-full bg-slate-900/80 border border-white/20 px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-400 focus:border-violet-500/50 outline-none resize-none" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Category *</label>
+              <label className="text-[10px] font-bold text-gray-450 uppercase tracking-wider block mb-1.5">Category *</label>
               <select value={category} onChange={e => setCategory(e.target.value)}
-                className="w-full bg-[#0F172A] border border-white/[0.08] px-4 py-2.5 text-sm rounded-xl text-white focus:border-violet-500/30 outline-none">
+                className="w-full bg-slate-900/80 border border-white/20 px-4 py-2.5 text-sm rounded-xl text-white focus:border-violet-500/50 outline-none">
                 <option value="">Select Category</option>
                 {COURSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Difficulty</label>
+              <label className="text-[10px] font-bold text-gray-450 uppercase tracking-wider block mb-1.5">Difficulty</label>
               <select value={difficulty} onChange={e => setDifficulty(e.target.value as CourseDifficulty)}
-                className="w-full bg-[#0F172A] border border-white/[0.08] px-4 py-2.5 text-sm rounded-xl text-white focus:border-violet-500/30 outline-none">
+                className="w-full bg-slate-900/80 border border-white/20 px-4 py-2.5 text-sm rounded-xl text-white focus:border-violet-500/50 outline-none">
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="advanced">Advanced</option>
@@ -282,20 +283,20 @@ export default function CreateCoursePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Thumbnail URL</label>
+              <label className="text-[10px] font-bold text-gray-450 uppercase tracking-wider block mb-1.5">Thumbnail URL</label>
               <input type="text" value={thumbnail} onChange={e => setThumbnail(e.target.value)} placeholder="https://..."
-                className="w-full bg-white/[0.03] border border-white/[0.08] px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none" />
+                className="w-full bg-slate-900/80 border border-white/20 px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-400 focus:border-violet-500/50 outline-none" />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Estimated Hours</label>
+              <label className="text-[10px] font-bold text-gray-450 uppercase tracking-wider block mb-1.5">Estimated Hours</label>
               <input type="number" value={estimatedHours} onChange={e => setEstimatedHours(e.target.value)} placeholder="e.g., 10"
-                className="w-full bg-white/[0.03] border border-white/[0.08] px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none" />
+                className="w-full bg-slate-900/80 border border-white/20 px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-400 focus:border-violet-500/50 outline-none" />
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Skills (comma separated)</label>
+            <label className="text-[10px] font-bold text-gray-450 uppercase tracking-wider block mb-1.5">Skills (comma separated)</label>
             <input type="text" value={skills} onChange={e => setSkills(e.target.value)} placeholder="e.g., Tally, GST, Accounting"
-              className="w-full bg-white/[0.03] border border-white/[0.08] px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-600 focus:border-violet-500/30 outline-none" />
+              className="w-full bg-slate-900/80 border border-white/20 px-4 py-2.5 text-sm rounded-xl text-white placeholder:text-gray-400 focus:border-violet-500/50 outline-none" />
           </div>
         </div>
       )}

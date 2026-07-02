@@ -329,13 +329,6 @@ export const createJobPosting = onCall(
   async (request: CallableRequest<CreateJobPostingData>) => {
     const uid = requireUid(request);
     const authUser = await getAuth().getUser(uid);
-    if (!authUser.emailVerified) {
-      throw new HttpsError(
-        'failed-precondition',
-        'Please verify your email address before posting jobs.',
-      );
-    }
-
     const userSnap = await db.doc(`users/${uid}`).get();
     const user = userSnap.data();
 
@@ -344,6 +337,14 @@ export const createJobPosting = onCall(
     }
     if (!['business', 'employer', 'business_owner', 'supplier', 'service_provider', 'entrepreneur'].includes(String(user.role))) {
       throw new HttpsError('permission-denied', 'Only business accounts can post jobs.');
+    }
+
+    const isVerified = authUser.emailVerified || !!authUser.phoneNumber || user.isVerified === true;
+    if (!isVerified) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Please verify your email address or mobile number before posting jobs.',
+      );
     }
 
     const data = request.data;
@@ -357,8 +358,8 @@ export const createJobPosting = onCall(
     if (company.ownerId !== uid) {
       throw new HttpsError('permission-denied', 'You can only post jobs for your own company.');
     }
-    if (company.deleted === true || company.isActive === false || company.status === 'deleted') {
-      throw new HttpsError('failed-precondition', 'Deleted or inactive companies cannot post jobs.');
+    if (company.deleted === true || company.status === 'deleted' || company.status === 'suspended') {
+      throw new HttpsError('failed-precondition', 'Deleted or suspended companies cannot post jobs.');
     }
 
     const plans = await getPlanConfigs();

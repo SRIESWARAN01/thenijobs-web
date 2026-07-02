@@ -8,7 +8,7 @@ import {
   CheckCircle, AlertCircle, Shield, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2,
   Lock, Sparkles, Crown, Laptop, Tablet, Smartphone, Check, TrendingUp,
-  Calendar, Clock, ArrowRight
+  Calendar, Clock, ArrowRight, Award
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -44,6 +44,8 @@ const DEFAULT_COMPANY = {
   instagram: '',
   linkedin: '',
   youtube: '',
+  twitter: '',
+  experience: '',
   gallery: ['', '', '', ''],
   branches: [] as any[],
   verification: {
@@ -279,10 +281,12 @@ export default function CompanyProfilePage() {
           workingHours: updatedCompanyData.workingHours || '',
           googleMapsLink: updatedCompanyData.googleMapsLink || '',
           googleMapsEmbedUrl: updatedCompanyData.googleMapsEmbedUrl || '',
-          facebook: updatedCompanyData.facebook,
-          instagram: updatedCompanyData.instagram,
-          linkedin: updatedCompanyData.linkedin,
-          youtube: updatedCompanyData.youtube,
+          facebook: normalizeExternalUrl(updatedCompanyData.facebook),
+          instagram: normalizeExternalUrl(updatedCompanyData.instagram),
+          linkedin: normalizeExternalUrl(updatedCompanyData.linkedin),
+          youtube: normalizeExternalUrl(updatedCompanyData.youtube),
+          twitter: normalizeExternalUrl(updatedCompanyData.twitter),
+          experience: updatedCompanyData.experience || '',
           gallery: updatedCompanyData.gallery,
           branches: updatedCompanyData.branches,
           customTheme: updatedCompanyData.customTheme || 'classic_blue',
@@ -463,10 +467,12 @@ export default function CompanyProfilePage() {
         state: company.state,
         slug,
         portfolioPath: getCompanyPortfolioPath({ slug }),
-        facebook: company.facebook,
-        instagram: company.instagram,
-        linkedin: company.linkedin,
-        youtube: company.youtube,
+        facebook: normalizeExternalUrl(company.facebook),
+        instagram: normalizeExternalUrl(company.instagram),
+        linkedin: normalizeExternalUrl(company.linkedin),
+        youtube: normalizeExternalUrl(company.youtube),
+        twitter: normalizeExternalUrl(company.twitter),
+        experience: company.experience || '',
         gallery: company.gallery,
         branches: company.branches,
         verification: company.verification,
@@ -578,10 +584,12 @@ export default function CompanyProfilePage() {
         district: updatedCompanyData.district,
         state: updatedCompanyData.state,
         portfolioPath: getCompanyPortfolioPath({ slug }),
-        facebook: updatedCompanyData.facebook,
-        instagram: updatedCompanyData.instagram,
-        linkedin: updatedCompanyData.linkedin,
-        youtube: updatedCompanyData.youtube,
+        facebook: normalizeExternalUrl(updatedCompanyData.facebook),
+        instagram: normalizeExternalUrl(updatedCompanyData.instagram),
+        linkedin: normalizeExternalUrl(updatedCompanyData.linkedin),
+        youtube: normalizeExternalUrl(updatedCompanyData.youtube),
+        twitter: normalizeExternalUrl(updatedCompanyData.twitter),
+        experience: updatedCompanyData.experience || '',
         gallery: updatedCompanyData.gallery,
         branches: updatedCompanyData.branches,
         verification: updatedCompanyData.verification,
@@ -761,7 +769,7 @@ export default function CompanyProfilePage() {
           { id: 'branding', label: 'Branding & Design', Icon: Camera },
           { id: 'seo', label: 'SEO & Marketing', Icon: Globe },
           { id: 'verification', label: 'Verification Docs', Icon: Shield },
-          ...(getPlanRank(currentPlan) >= 2 ? [{ id: 'enterprise', label: 'Corporate & Leadership', Icon: Crown }] : []),
+          { id: 'enterprise', label: 'Corporate & Leadership', Icon: Crown },
         ].map((t) => {
           const Icon = t.Icon;
           return (
@@ -956,6 +964,19 @@ export default function CompanyProfilePage() {
                 </div>
               </div>
               <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Experience (Years)</label>
+                <div className="relative">
+                  <Award size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="e.g. 5+ Years"
+                    value={company.experience || ''}
+                    onChange={(e) => update('experience', e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                  />
+                </div>
+              </div>
+              <div>
                 <label className="text-xs text-gray-400 font-medium block mb-1.5">Working Hours</label>
                 <div className="relative">
                   <Clock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -1114,6 +1135,18 @@ export default function CompanyProfilePage() {
                   value={company.youtube}
                   onChange={(e) => update('youtube', e.target.value)}
                   placeholder="https://youtube.com/..."
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5 flex items-center gap-1.5">
+                  <span className="text-[11px] font-bold text-slate-400">𝕏</span> Twitter / X
+                </label>
+                <input
+                  type="url"
+                  value={company.twitter || ''}
+                  onChange={(e) => update('twitter', e.target.value)}
+                  placeholder="https://twitter.com/..."
                   className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-gray-600 focus:border-cyan-500/40 outline-none transition-all"
                 />
               </div>
@@ -1739,13 +1772,7 @@ export default function CompanyProfilePage() {
               <div className="space-y-6">
                 {/* CEO / Founder Profile */}
                 <div className="glass-card rounded-2xl p-6 relative overflow-hidden min-h-[220px]">
-                  {currentPlan !== 'enterprise' && (
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center text-center p-4">
-                      <Lock size={20} className="text-amber-500 mb-2" />
-                      <span className="text-xs font-bold text-white uppercase tracking-wider">Enterprise Feature</span>
-                      <span className="text-[10px] text-gray-400 mt-1 max-w-[280px]">CEO Biography is available on the Enterprise Plan. Upgrade to publish CEO details and messages.</span>
-                    </div>
-                  )}
+
                   <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                     <Crown size={16} className="text-cyan-400" />
                     CEO / Founder Biography & Profile
@@ -1855,13 +1882,7 @@ export default function CompanyProfilePage() {
 
                 {/* Milestones / Timeline */}
                 <div className="glass-card rounded-2xl p-6 relative overflow-hidden min-h-[220px]">
-                  {currentPlan !== 'enterprise' && (
-                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center text-center p-4">
-                      <Lock size={20} className="text-amber-500 mb-2" />
-                      <span className="text-xs font-bold text-white uppercase tracking-wider">Enterprise Feature</span>
-                      <span className="text-[10px] text-gray-400 mt-1 max-w-[280px]">Company Journey Timeline is available on the Enterprise Plan. Upgrade to add achievements timeline.</span>
-                    </div>
-                  )}
+
                   <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                     <TrendingUp size={16} className="text-cyan-400" />
                     Company History Milestones Timeline
@@ -1960,14 +1981,7 @@ export default function CompanyProfilePage() {
                     </div>
                     
                     <div className="relative">
-                      {currentPlan !== 'enterprise' && (
-                        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-xl border border-white/5">
-                          <div className="flex items-center gap-1.5 bg-slate-900/90 px-3 py-1 rounded-lg border border-white/10">
-                            <Lock size={12} className="text-amber-500" />
-                            <span className="text-[10px] font-bold text-white">CSR Activities (Enterprise Only)</span>
-                          </div>
-                        </div>
-                      )}
+
                       <label className="text-xs text-gray-400 font-medium block mb-1.5">Corporate Social Responsibility (CSR) Activities</label>
                       <textarea
                         rows={2}
@@ -2052,13 +2066,7 @@ export default function CompanyProfilePage() {
                       </div>
 
                       <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-3 relative overflow-hidden">
-                        {currentPlan !== 'enterprise' && (
-                          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs z-10 flex flex-col items-center justify-center text-center p-4">
-                            <Lock size={14} className="text-amber-500 mb-1" />
-                            <span className="text-[10px] font-bold text-white uppercase">Enterprise Feature</span>
-                            <span className="text-[8px] text-gray-400">Partner logos showcase is available on Enterprise.</span>
-                          </div>
-                        )}
+
                         <p className="text-xs font-bold text-gray-300">Add Partner Logo (URL Link)</p>
                         <div className="flex gap-2">
                           <input

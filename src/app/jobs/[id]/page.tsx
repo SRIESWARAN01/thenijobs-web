@@ -1,9 +1,9 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import JobDetailPageClient from './JobDetailPageClient';
 import { db } from '@/lib/firebase/config';
 import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
-import { Briefcase } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -59,6 +59,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
+    alternates: {
+      canonical: `https://thenijobs.com/jobs/${id}`,
+    },
     openGraph: {
       title: `${title} — THENIJOBS`,
       description,
@@ -80,18 +83,15 @@ export async function generateStaticParams() {
     const q = query(
       collection(db, 'jobs'),
       where('isActive', '==', true),
-      limit(100)
+      limit(200)
     );
     const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-      return [{ id: 'placeholder' }];
-    }
     return snapshot.docs.map((d) => ({
       id: d.id,
     }));
   } catch (err) {
     console.error('Failed to generate static params for jobs:', err);
-    return [{ id: 'placeholder' }];
+    return [];
   }
 }
 
@@ -106,25 +106,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     jobData.deleted === true;
 
   if (isSuspendedOrDeleted) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-bounce">
-            <Briefcase size={24} />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">Job listing not available</h1>
-          <p className="mt-2 text-sm text-gray-400">
-            This job posting has been suspended, filled, or is no longer active.
-          </p>
-          <a
-            href="/"
-            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
-          >
-            Go Back Home
-          </a>
-        </div>
-      </main>
-    );
+    notFound();
   }
 
   const jsonLd = jobData ? {

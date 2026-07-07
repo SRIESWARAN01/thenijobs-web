@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     'Professional Networking',
     'Employment Platform India',
   ],
+  alternates: {
+    canonical: 'https://thenijobs.com/about',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_IN',

@@ -1,14 +1,33 @@
 import { MetadataRoute } from 'next';
 
-export const dynamic = 'force-static';
-
+/**
+ * robots.txt — dynamically generated (no force-static).
+ * Disallows dashboard/auth pages and points to the sitemap.
+ */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/', '/seeker/dashboard', '/employer/dashboard', '/id', '/id/'],
+        disallow: [
+          '/admin/',
+          '/api/',
+          '/business/',
+          '/seeker/',
+          '/employer/',
+          '/service/',
+          '/id/',
+          '/id',
+          '/profile-setup',
+          '/role-selection',
+          '/forgot-password',
+          '/verify/',
+          '/login',
+          '/shop/login',
+          '/shop/checkout',
+          '/shop/account/',
+        ],
       },
     ],
     sitemap: 'https://thenijobs.com/sitemap.xml',

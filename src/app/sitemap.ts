@@ -1,32 +1,40 @@
 import { MetadataRoute } from 'next';
 import { adminDb } from '@/lib/firebaseAdmin';
 
-export const dynamic = 'force-static';
-
+/**
+ * Dynamic sitemap — regenerated on every request so newly added
+ * jobs, companies, and profiles appear immediately for Google.
+ *
+ * Previously this used `force-static` which froze the sitemap at build time.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE = 'https://thenijobs.com';
   const now = new Date();
 
-  const staticPages = [
-    { url: `${BASE}/`, changeFrequency: 'daily', priority: 1.0 },
-    { url: `${BASE}/jobs`, changeFrequency: 'hourly', priority: 0.9 },
-    { url: `${BASE}/jobs/madurai`, changeFrequency: 'daily', priority: 0.85 },
-    { url: `${BASE}/jobs/theni`, changeFrequency: 'daily', priority: 0.85 },
-    { url: `${BASE}/jobs/coimbatore`, changeFrequency: 'daily', priority: 0.85 },
-    { url: `${BASE}/jobs/freshers`, changeFrequency: 'daily', priority: 0.85 },
-    { url: `${BASE}/jobs/part-time`, changeFrequency: 'daily', priority: 0.85 },
-    { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${BASE}/services`, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${BASE}/register`, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${BASE}/login`, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE}/company/register`, changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${BASE}/employer/post-job`, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${BASE}/pricing`, changeFrequency: 'weekly', priority: 0.7 },
-  ] as MetadataRoute.Sitemap;
+  // ── Static pages ──
+  const staticPages: MetadataRoute.Sitemap = [
+    { url: `${BASE}/`, changeFrequency: 'daily', priority: 1.0, lastModified: now },
+    { url: `${BASE}/jobs`, changeFrequency: 'hourly', priority: 0.9, lastModified: now },
+    { url: `${BASE}/jobs/madurai`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
+    { url: `${BASE}/jobs/theni`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
+    { url: `${BASE}/jobs/coimbatore`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
+    { url: `${BASE}/jobs/freshers`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
+    { url: `${BASE}/jobs/part-time`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
+    { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
+    { url: `${BASE}/services`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
+    { url: `${BASE}/about`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
+    { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.4, lastModified: now },
+    { url: `${BASE}/academy`, changeFrequency: 'weekly', priority: 0.7, lastModified: now },
+    { url: `${BASE}/register`, changeFrequency: 'monthly', priority: 0.7, lastModified: now },
+    { url: `${BASE}/company/register`, changeFrequency: 'monthly', priority: 0.8, lastModified: now },
+    { url: `${BASE}/pricing`, changeFrequency: 'weekly', priority: 0.7, lastModified: now },
+  ];
 
-  const categoryPages = [
+  // ── Business category pages ──
+  const categoryPages: MetadataRoute.Sitemap = [
     'agriculture', 'construction', 'education', 'healthcare',
     'it-software', 'textiles', 'manufacturing', 'retail', 'transport', 'finance',
+    'food-beverage',
   ].map(cat => ({
     url: `${BASE}/businesses/${cat}`,
     changeFrequency: 'daily' as const,
@@ -34,12 +42,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: now,
   }));
 
-  // Fetch active jobs from Firestore
+  // ── Active jobs from Firestore ──
   let jobPages: MetadataRoute.Sitemap = [];
   try {
     const jobsSnap = await adminDb.collection('jobs')
       .where('isActive', '==', true)
-      .limit(500)
+      .limit(5000)
       .get();
     jobPages = jobsSnap.docs.map((docSnap) => {
       const d = docSnap.data();
@@ -57,12 +65,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Failed to fetch jobs for sitemap:', err);
   }
 
-  // Fetch verified companies from Firestore
+  // ── Verified companies from Firestore ──
   let companyPages: MetadataRoute.Sitemap = [];
   try {
     const companiesSnap = await adminDb.collection('companies')
       .where('verificationStatus', '==', 'verified')
-      .limit(500)
+      .limit(5000)
       .get();
     companyPages = companiesSnap.docs
       .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
@@ -82,11 +90,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Failed to fetch companies for sitemap:', err);
   }
 
-  // Fetch seeker public profiles from Firestore
+  // ── Public profiles from Firestore ──
   let profilePages: MetadataRoute.Sitemap = [];
   try {
     const profilesSnap = await adminDb.collection('publicProfiles')
-      .limit(500)
+      .limit(5000)
       .get();
     profilePages = profilesSnap.docs.map((docSnap) => {
       const d = docSnap.data();

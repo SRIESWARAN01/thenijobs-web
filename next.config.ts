@@ -31,6 +31,27 @@ const nextConfig: NextConfig = {
     ],
   },
   serverExternalPackages: ['firebase-admin'],
+
+  // SEO: Permanent redirects for legacy path migrations
+  async redirects() {
+    return [
+      {
+        source: '/employer/:path*',
+        destination: '/business/:path*',
+        permanent: true,
+      },
+      {
+        source: '/service/:path*',
+        destination: '/business/:path*',
+        permanent: true,
+      },
+      {
+        source: '/company',
+        destination: '/businesses',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

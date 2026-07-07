@@ -133,7 +133,9 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a1a] flex">
+    <>
+      <meta name="robots" content="noindex, nofollow" />
+      <div className="min-h-screen bg-[#0a0a1a] flex">
       {/* Sidebar */}
       <Sidebar
         items={BUSINESS_NAV}
@@ -312,6 +314,7 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
           {children}
         </main>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

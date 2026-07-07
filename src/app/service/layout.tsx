@@ -1,22 +1,18 @@
-'use client';
+import { permanentRedirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+export const metadata = {
+  robots: { index: false, follow: false },
+};
 
-export default function ServiceLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-
-  useEffect(() => {
-    const targetPath = pathname.replace(/^\/service/, '/business');
-    router.replace(targetPath);
-  }, [pathname, router]);
-
-  return (
-    <div className="min-h-screen bg-[#0a0a1a] flex flex-col items-center justify-center font-outfit">
-      <div className="w-10 h-10 border-4 border-rose-500/30 border-t-rose-400 rounded-full animate-spin mb-4" />
-      <p className="text-sm text-gray-400">Redirecting to Business Portal...</p>
-    </div>
-  );
+/**
+ * Legacy /service/* routes permanently redirect to /business/*.
+ * This is a server component so Googlebot receives a proper 308 status code
+ * instead of a client-side JavaScript redirect.
+ */
+export default async function ServiceLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  permanentRedirect('/business/dashboard');
 }
-

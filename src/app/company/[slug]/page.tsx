@@ -1,10 +1,10 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import CompanyProfilePageClient from './CompanyProfilePageClient';
 import { db } from '@/lib/firebase/config';
 import { collection, getDocs, query, where, limit, doc, getDoc } from 'firebase/firestore';
 import { getCompanyBannerUrl, getCompanyPortfolioUrl } from '@/lib/companyPortfolio';
-import { Building2 } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -218,22 +218,18 @@ export async function generateStaticParams() {
     const q = query(
       collection(db, 'companies'),
       where('verificationStatus', '==', 'verified'),
-      limit(100)
+      limit(200)
     );
     const snapshot = await getDocs(q);
-    const paths = snapshot.docs
+    return snapshot.docs
       .map((d) => d.data())
       .filter((company) => !!company.slug)
       .map((company) => ({
         slug: String(company.slug),
       }));
-    if (paths.length === 0) {
-      return [{ slug: 'placeholder' }];
-    }
-    return paths;
   } catch (err) {
     console.error('Failed to generate static params for companies:', err);
-    return [{ slug: 'placeholder' }];
+    return [];
   }
 }
 
@@ -248,25 +244,7 @@ export default async function CompanyProfilePage({ params }: PageProps) {
     companyData.deleted === true;
 
   if (isSuspendedOrDeleted) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400 mb-4 animate-bounce">
-            <Building2 size={24} />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">Business listing not available</h1>
-          <p className="mt-2 text-sm text-gray-400">
-            This company profile has been suspended, removed, or is currently undergoing review.
-          </p>
-          <a
-            href="/"
-            className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
-          >
-            Go Back Home
-          </a>
-        </div>
-      </main>
-    );
+    notFound();
   }
 
   const toDateLocal = (value?: any) => {

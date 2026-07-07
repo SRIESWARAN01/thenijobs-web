@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: 'Privacy Policy – THENIJOBS',
   description: 'Learn how THENIJOBS collects, protects, uses, and handles user data in compliance with Google Play Store Policies and standard privacy regulations.',
   keywords: ['THENIJOBS Privacy Policy', 'Data Protection', 'User Data Deletion', 'Theni Jobs Privacy', 'Capacitor App Privacy'],
+  alternates: {
+    canonical: 'https://thenijobs.com/privacy',
+  },
 };
 
 export default function PrivacyPolicyPage() {

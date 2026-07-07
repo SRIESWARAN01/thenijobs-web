@@ -8,26 +8,7 @@ import {
   Briefcase, MapPin, Clock, Banknote, CalendarCheck, Zap,
   Star, Loader2, ArrowRight, BadgeCheck
 } from 'lucide-react';
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { isPublicJobVisible } from '@/lib/jobPolicy';
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  district: string;
-  salary: string;
-  type: string;
-  posted: string;
-  logo: string;
-  isUrgent: boolean;
-  isPremium: boolean;
-  isVerified: boolean;
-  verificationLevel?: string;
-  description: string;
-}
+import type { SeoJob } from './fetchSeoJobs';
 
 interface SeoJobsLandingProps {
   title: string;
@@ -35,6 +16,8 @@ interface SeoJobsLandingProps {
   metaDescription: string;
   filterField: 'district' | 'jobType';
   filterValue: string;
+  /** Server-fetched initial jobs for SSR. If provided, skips client-side fetch. */
+  initialJobs?: SeoJob[];
 }
 
 export default function SeoJobsLanding({
@@ -42,17 +25,23 @@ export default function SeoJobsLanding({
   subtitle,
   metaDescription,
   filterField,
-  filterValue
+  filterValue,
+  initialJobs,
 }: SeoJobsLandingProps) {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<SeoJob[]>(initialJobs || []);
+  const [loading, setLoading] = useState(!initialJobs);
 
+  // Only fetch client-side if no server-fetched data was provided (fallback)
   useEffect(() => {
-    async function fetchLandingJobs() {
+    if (initialJobs && initialJobs.length > 0) return;
+    // Dynamic import to avoid bundling Firestore in the client if SSR data is available
+    import('firebase/firestore').then(async ({ collection, getDocs, query, where, orderBy, limit: fbLimit }) => {
+      const { db } = await import('@/lib/firebase/config');
+      const { isPublicJobVisible } = await import('@/lib/jobPolicy');
       try {
         setLoading(true);
         const jobsRef = collection(db, 'jobs');
-        
+
         let q;
         if (filterField === 'district') {
           q = query(
@@ -60,7 +49,7 @@ export default function SeoJobsLanding({
             where('isActive', '==', true),
             where('district', '==', filterValue),
             orderBy('createdAt', 'desc'),
-            limit(40)
+            fbLimit(40)
           );
         } else {
           q = query(
@@ -68,7 +57,7 @@ export default function SeoJobsLanding({
             where('isActive', '==', true),
             where('jobType', '==', filterValue),
             orderBy('createdAt', 'desc'),
-            limit(40)
+            fbLimit(40)
           );
         }
 
@@ -113,10 +102,8 @@ export default function SeoJobsLanding({
       } finally {
         setLoading(false);
       }
-    }
-
-    fetchLandingJobs();
-  }, [filterField, filterValue]);
+    });
+  }, [filterField, filterValue, initialJobs]);
 
   // Helper to render badge based on verification level
   const renderVerificationBadge = (level?: string) => {

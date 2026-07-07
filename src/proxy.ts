@@ -1,27 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PRIMARY_DOMAIN = 'thenijobs.com';
-
+/**
+ * Next.js Proxy (formerly Middleware in Next.js <16)
+ *
+ * Handles legacy path redirects only.
+ *
+ * IMPORTANT: Domain canonicalization (www ↔ apex) is handled by the
+ * hosting provider (Vercel dashboard → Domains settings).
+ * Do NOT add domain redirects here — they conflict with Vercel's
+ * own redirects and cause ERR_TOO_MANY_REDIRECTS.
+ */
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  const hostname = request.headers.get('host') || '';
 
-  // ── 1. Domain consolidation: thenijobs.in → thenijobs.com (301) ──
-  // Redirect any non-primary domain (e.g. thenijobs.in, www.thenijobs.com)
-  const bareHost = hostname.split(':')[0].toLowerCase();
-  if (
-    bareHost !== PRIMARY_DOMAIN &&
-    bareHost !== 'localhost' &&
-    !bareHost.startsWith('127.') &&
-    !bareHost.startsWith('192.168.') &&
-    !bareHost.startsWith('10.')
-  ) {
-    const canonicalUrl = new URL(`https://${PRIMARY_DOMAIN}${pathname}${search}`);
-    return NextResponse.redirect(canonicalUrl, 301);
-  }
-
-  // ── 2. Legacy path redirects (308 Permanent) ──
+  // ── Legacy path redirects (308 Permanent) ──
 
   // /employer/* → /business/*
   if (pathname.startsWith('/employer')) {

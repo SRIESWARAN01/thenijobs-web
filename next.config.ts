@@ -32,26 +32,8 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['firebase-admin'],
 
-  // SEO: Permanent redirects for legacy path migrations
-  async redirects() {
-    return [
-      {
-        source: '/employer/:path*',
-        destination: '/business/:path*',
-        permanent: true,
-      },
-      {
-        source: '/service/:path*',
-        destination: '/business/:path*',
-        permanent: true,
-      },
-      {
-        source: '/company',
-        destination: '/businesses',
-        permanent: true,
-      },
-    ];
-  },
+  // Legacy path redirects are handled by src/proxy.ts
+  // Do NOT add redirects here — they conflict with proxy and cause redirect loops.
 };
 
 export default nextConfig;

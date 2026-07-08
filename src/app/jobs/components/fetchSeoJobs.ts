@@ -46,7 +46,8 @@ export async function fetchSeoJobs(
         // Inline visibility check (mirroring isPublicJobVisible without importing client lib)
         if (d.status === 'suspended' || d.status === 'deleted' || d.deleted === true) return false;
         if (d.companyDeleted === true || d.companyIsActive === false) return false;
-        if (d.companyStatus && !['approved', 'verified', 'active', 'pending'].includes(d.companyStatus)) return false;
+        const blockedStatuses = ['suspended', 'deleted', 'rejected', 'banned'];
+        if (d.companyStatus && blockedStatuses.includes(d.companyStatus)) return false;
         return true;
       })
       .map((doc) => {

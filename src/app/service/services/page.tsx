@@ -79,12 +79,9 @@ export default function ServiceProviderServicesPage() {
   const reachedLimit = limit !== -1 && services.length >= limit;
 
   const handleOpenAddModal = () => {
-    if (limit === 0) {
-      alert('Service Catalogue is not available on the Free plan. Please upgrade to a Standard or Premium plan to add services.');
-      return;
-    }
     if (reachedLimit) {
-      alert(`Service limit reached. Your ${subscriptionBadge === 'free' ? 'Free' : subscriptionBadge === 'basic' ? 'Standard' : subscriptionBadge === 'premium' ? 'Premium' : 'Enterprise'} plan allows a maximum of ${limit} service(s). Please delete existing services or upgrade.`);
+      const planLabel = subscriptionBadge === 'free' ? 'Free' : subscriptionBadge === 'basic' ? 'Standard' : subscriptionBadge === 'premium' ? 'Premium' : 'Enterprise';
+      alert(`Service limit reached. Your ${planLabel} plan allows a maximum of ${limit === -1 ? 'unlimited' : limit} service(s). Please delete existing services or upgrade your plan.`);
       return;
     }
     setEditingService(null);
@@ -175,7 +172,7 @@ export default function ServiceProviderServicesPage() {
         <Wrench size={48} className="text-gray-500 mb-4" />
         <h2 className="text-lg font-semibold">Setup Portfolio Profile</h2>
         <p className="text-sm text-gray-400 mt-2 max-w-sm">Please setup your service provider portfolio profile first to add and manage your service listings.</p>
-        <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-semibold hover:opacity-90">
+        <Link href="/business/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-semibold hover:opacity-90">
           Setup Portfolio
         </Link>
       </div>

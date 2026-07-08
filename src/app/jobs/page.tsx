@@ -546,17 +546,17 @@ export default function JobsPage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-12">
         {/* Results Header */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h1 className="font-outfit font-bold text-xl text-white">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div className="min-w-0">
+            <h1 className="font-outfit font-bold text-xl text-white truncate">
               {sortedJobs.length} Jobs Found
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="text-sm text-gray-500 mt-0.5 truncate">
               {search ? `Results for "${search}"` : 'All available positions'}
               {location ? ` in ${location}` : ''}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-gray-400 shrink-0">
             <button
               onClick={handleSaveAlert}
               disabled={savingAlert}

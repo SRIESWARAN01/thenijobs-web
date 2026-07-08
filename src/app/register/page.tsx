@@ -1,18 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight, ArrowLeft, Check, Briefcase, Building2,
   Package, Wrench, Users, Loader2, User, Phone, Mail, Lock, AlertCircle,
-  Eye, EyeOff
+  Eye, EyeOff, ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { UserRole } from '@/lib/types';
 import { getDashboardPathForRole } from '@/lib/access';
 import { mapAuthError } from '@/lib/firebase/authErrors';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 
 const ROLES = [
@@ -42,8 +44,18 @@ const iconTintMap: Record<string, string> = {
 };
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a1a]" />}>
+      <RegisterPageContent />
+    </Suspense>
+  );
+}
+
+function RegisterPageContent() {
   const router = useRouter();
-  const { user, createAccount, signInWithGoogle, error: authError, clearError } = useAuth();
+  const searchParams = useSearchParams();
+  const isGoogleMethod = searchParams.get('method') === 'google';
+  const { user, firebaseUser, createAccount, signInWithGoogle, error: authError, clearError } = useAuth();
   
   const [step, setStep] = useState(1);
   const [role, setRole] = useState('');
@@ -56,10 +68,21 @@ export default function RegisterPage() {
 
   const totalSteps = 2;
 
+  // Auto-fill form from Google user data
+  useEffect(() => {
+    if (isGoogleMethod && firebaseUser) {
+      setForm(prev => ({
+        ...prev,
+        name: prev.name || firebaseUser.displayName || '',
+        email: prev.email || firebaseUser.email || '',
+      }));
+    }
+  }, [isGoogleMethod, firebaseUser]);
+
   // Redirect automatically on login / registration success
   useEffect(() => {
-    if (user) {
-      if (user.role && user.role !== 'admin' && user.role !== 'super_admin' && user.setupCompleted === false) {
+    if (user && user.role) {
+      if (user.role !== 'admin' && user.role !== 'super_admin' && user.setupCompleted === false) {
         router.replace('/profile-setup');
       } else {
         router.replace(getDashboardPathForRole(user.role));
@@ -84,7 +107,7 @@ export default function RegisterPage() {
     }
 
     if (step === 2) {
-      if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+      if (!form.name || !form.email) {
         setLocalError('Please fill in all required fields.');
         return;
       }
@@ -95,6 +118,40 @@ export default function RegisterPage() {
       }
       if (form.phone && !/^\d{10}$/.test(form.phone)) {
         setLocalError('Please enter a valid 10-digit mobile number.');
+        return;
+      }
+
+      // Google registration flow — update existing user doc with role + phone
+      if (isGoogleMethod && firebaseUser) {
+        if (!form.phone) {
+          setLocalError('Mobile number is required for Google registration.');
+          return;
+        }
+        setLoading(true);
+        try {
+          const normalizedPhone = `+91${form.phone}`;
+          await updateDoc(doc(db, 'users', firebaseUser.uid), {
+            role: role as UserRole,
+            displayName: form.name,
+            phone: normalizedPhone,
+            mobileNumber: normalizedPhone,
+            setupCompleted: false,
+            updatedAt: serverTimestamp(),
+          });
+          // Force re-fetch profile to trigger redirect
+          window.location.href = getDashboardPathForRole(role as UserRole);
+        } catch (err: any) {
+          console.error(err);
+          setLocalError(err.message || 'Failed to complete registration.');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Standard email/password registration flow
+      if (!form.password || !form.confirmPassword) {
+        setLocalError('Password is required.');
         return;
       }
       if (form.password.length < 6) {
@@ -244,8 +301,12 @@ export default function RegisterPage() {
           {/* STEP 2 — Basic Details */}
           {step === 2 && (
             <div>
-              <h1 className="text-xl font-outfit font-bold text-white mb-1">Create Account</h1>
-              <p className="text-gray-400 text-sm mb-5">Fill in your basic details</p>
+              <h1 className="text-xl font-outfit font-bold text-white mb-1">
+                {isGoogleMethod ? 'Complete Registration' : 'Create Account'}
+              </h1>
+              <p className="text-gray-400 text-sm mb-5">
+                {isGoogleMethod ? 'Fill in your details to get started' : 'Fill in your basic details'}
+              </p>
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-gray-400 font-medium block mb-1.5">Full Name *</label>
@@ -269,54 +330,73 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Email Address *</label>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">
+                    Email Address {isGoogleMethod ? '' : '*'}
+                    {isGoogleMethod && (
+                      <span className="inline-flex items-center gap-1 ml-2 text-emerald-400 font-semibold">
+                        <ShieldCheck size={12} /> Email Verified
+                      </span>
+                    )}
+                  </label>
                   <div className="relative">
                     <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
                     <input type="email" required placeholder="your@email.com" value={form.email}
                       onChange={e => setForm({ ...form, email: e.target.value })}
-                      className="search-input w-full pl-10 pr-4 py-3 text-sm" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Password *</label>
-                  <div className="relative">
-                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input type={showPassword ? 'text' : 'password'} required minLength={6} placeholder="Min. 6 characters" value={form.password}
-                      onChange={e => setForm({ ...form, password: e.target.value })}
-                      className="search-input w-full pl-10 pr-10 py-3 text-sm" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Confirm Password *</label>
-                  <div className="relative">
-                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input type={showConfirmPassword ? 'text' : 'password'} required minLength={6} placeholder="Confirm your password" value={form.confirmPassword}
-                      onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
-                      className="search-input w-full pl-10 pr-10 py-3 text-sm" />
-                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
-                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                      readOnly={isGoogleMethod}
+                      className={`search-input w-full pl-10 pr-4 py-3 text-sm ${isGoogleMethod ? 'opacity-70 cursor-not-allowed' : ''}`} />
                   </div>
                 </div>
 
               </div>
 
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-white/10" />
-                <span className="text-[11px] uppercase tracking-wider text-gray-500">or</span>
-                <div className="h-px flex-1 bg-white/10" />
-              </div>
+              {/* Password fields — only for email registration, not Google */}
+              {!isGoogleMethod && (
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Password *</label>
+                    <div className="relative">
+                      <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                      <input type={showPassword ? 'text' : 'password'} required minLength={6} placeholder="Min. 6 characters" value={form.password}
+                        onChange={e => setForm({ ...form, password: e.target.value })}
+                        className="search-input w-full pl-10 pr-10 py-3 text-sm" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 font-medium block mb-1.5">Confirm Password *</label>
+                    <div className="relative">
+                      <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                      <input type={showConfirmPassword ? 'text' : 'password'} required minLength={6} placeholder="Confirm your password" value={form.confirmPassword}
+                        onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                        className="search-input w-full pl-10 pr-10 py-3 text-sm" />
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300">
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              <button type="button" onClick={handleGoogleRegister} disabled={loading}
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2">
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <span aria-hidden className="grid h-4 w-4 place-items-center rounded-full bg-white text-[11px] font-bold text-slate-900">G</span>}
-                Continue with Google
-              </button>
+              {/* Google sign-in button — only for email registration */}
+              {!isGoogleMethod && (
+                <>
+                  <div className="my-5 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-white/10" />
+                    <span className="text-[11px] uppercase tracking-wider text-gray-500">or</span>
+                    <div className="h-px flex-1 bg-white/10" />
+                  </div>
+
+                  <button type="button" onClick={handleGoogleRegister} disabled={loading}
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2">
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <span aria-hidden className="grid h-4 w-4 place-items-center rounded-full bg-white text-[11px] font-bold text-slate-900">G</span>}
+                    Continue with Google
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -331,7 +411,7 @@ export default function RegisterPage() {
             <button type="submit" disabled={(step === 1 && !role) || loading}
               className="flex-1 btn-gradient py-3 rounded-2xl font-semibold text-sm relative z-10 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
               {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-              {step === totalSteps ? 'Create Account' : 'Continue'}
+              {step === totalSteps ? (isGoogleMethod ? 'Complete Registration' : 'Create Account') : 'Continue'}
               {!loading && <ArrowRight size={15} />}
             </button>
           </div>

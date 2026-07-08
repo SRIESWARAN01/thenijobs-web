@@ -40,7 +40,7 @@ export function getSafePostLoginRedirect(
   role?: UserRole | null,
   setupCompleted?: boolean,
 ) {
-  if (!role) return '/role-selection';
+  if (!role) return '/register?method=google';
   if (role !== 'admin' && role !== 'super_admin' && setupCompleted === false) {
     return '/profile-setup';
   }

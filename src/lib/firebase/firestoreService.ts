@@ -694,13 +694,69 @@ export async function approveCompany(companyId: string, adminId: string) {
       updatedAt: serverTimestamp(),
     }, { merge: true });
 
+    // ── Cascade-activate pending jobs for this company ──
+    await runSideEffect('cascade activate pending jobs', async () => {
+      try {
+        const pendingJobs = await fetchCollection<DocumentData>('jobs', [
+          where('companyId', '==', companyId),
+          where('status', '==', 'pending'),
+        ]);
+        const batch = writeBatch(db);
+        const now = new Date();
+        const expiry = getJobExpiryDate(now);
+        let count = 0;
+        for (const job of pendingJobs) {
+          batch.update(doc(db, 'jobs', job.id), {
+            isActive: true,
+            status: 'active',
+            activatedAt: Timestamp.fromDate(now),
+            expiresAt: Timestamp.fromDate(expiry),
+            expiryReminderDaysSent: [],
+            updatedAt: serverTimestamp(),
+          });
+          count++;
+        }
+        if (count > 0) {
+          await batch.commit();
+          console.log(`[approveCompany] Activated ${count} pending job(s) for company ${companyId}`);
+        }
+      } catch (err) {
+        console.error('[approveCompany] Failed to cascade-activate pending jobs:', err);
+      }
+    });
+
+    // ── Cascade-activate pending services for this provider ──
+    await runSideEffect('cascade activate pending services', async () => {
+      try {
+        const pendingServices = await fetchCollection<DocumentData>('services', [
+          where('providerId', '==', ownerId),
+          where('status', '==', 'pending'),
+        ]);
+        const batch = writeBatch(db);
+        let count = 0;
+        for (const svc of pendingServices) {
+          batch.update(doc(db, 'services', svc.id), {
+            status: 'active',
+            updatedAt: serverTimestamp(),
+          });
+          count++;
+        }
+        if (count > 0) {
+          await batch.commit();
+          console.log(`[approveCompany] Activated ${count} pending service(s) for owner ${ownerId}`);
+        }
+      } catch (err) {
+        console.error('[approveCompany] Failed to cascade-activate pending services:', err);
+      }
+    });
+
     await runSideEffect('create company approval notification', () =>
       createNotification({
         userId: ownerId,
         type: 'system',
         title: 'Business Approved!',
         message: `Your business "${company.name}" has been approved and is now live on THENIJOBS.`,
-        actionUrl: `/employer/company-profile`,
+        actionUrl: `/business/company-profile`,
       }),
     );
   }
@@ -743,7 +799,7 @@ export async function rejectCompany(
         type: 'system',
         title: 'Business Review Update',
         message: `Your business "${company.name}" requires changes. ${reason || ''}`,
-        actionUrl: `/employer/company-profile`,
+        actionUrl: `/business/company-profile`,
       }),
     );
   }

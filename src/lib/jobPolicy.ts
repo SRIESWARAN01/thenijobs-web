@@ -97,7 +97,9 @@ export function isPublicJobVisible(job: {
   if (!isActiveJobSlot(job, now)) return false;
   if (job.companyDeleted === true) return false;
   if (job.companyIsActive === false) return false;
-  if (job.companyStatus && !['approved', 'verified', 'active', 'pending'].includes(job.companyStatus)) return false;
+  // Only reject if companyStatus is explicitly set to a disallowed value
+  const blockedStatuses = ['suspended', 'deleted', 'rejected', 'banned'];
+  if (job.companyStatus && blockedStatuses.includes(job.companyStatus)) return false;
   return true;
 }
 

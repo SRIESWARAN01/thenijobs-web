@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import {
   Star, Clock, CheckCircle, XCircle, Eye, Search, Loader2,
-  Pencil, RotateCcw, Trash2, X, Save, AlertTriangle,
+  Pencil, RotateCcw, Trash2, X, Save, AlertTriangle, Download,
 } from 'lucide-react';
+import { writeBatch, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateDocument, deleteDocument } from '@/lib/firebase/firestoreService';
 
@@ -59,6 +61,59 @@ export default function ServicesPage() {
     status: string;
   }>({ name: '', category: '', district: '', priceMin: '', priceMax: '', description: '', status: '' });
   const [editSaving, setEditSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(filtered.map(s => s.id)));
+  };
+
+  const handleBulkAction = async (status: string) => {
+    if (selectedIds.size === 0) return;
+    const label = status === 'active' ? 'approve' : status === 'rejected' ? 'reject' : 'delete';
+    if (!window.confirm(`Are you sure you want to ${label} ${selectedIds.size} service(s)?`)) return;
+    setBulkLoading(true);
+    try {
+      const batch = writeBatch(db);
+      selectedIds.forEach(id => {
+        batch.update(doc(db, 'services', id), { status });
+      });
+      await batch.commit();
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error(`Bulk ${label} error:`, err);
+      alert(`Failed to ${label} services.`);
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Name', 'Provider', 'Category', 'District', 'Price', 'Rating', 'Status'];
+    const rows = filtered.map(s => [
+      s.name,
+      s.providerName || s.provider || '',
+      s.category || '',
+      s.district || '',
+      s.priceMin && s.priceMax ? `${s.priceMin}-${s.priceMax}` : s.price || '',
+      s.rating?.toString() || '',
+      s.status || 'pending',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `services_export_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
 
   const filtered = services.filter(s => {
     const serviceStatus = s.status || 'pending';
@@ -248,7 +303,23 @@ export default function ServicesPage() {
             className="search-input w-full pl-9 pr-4 py-2 text-sm"
           />
         </div>
+        <button onClick={handleExportCSV} className="shrink-0 px-3 py-2 rounded-xl bg-white/[0.04] text-gray-400 hover:bg-white/[0.08] hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+          <Download size={14} /> Export CSV
+        </button>
       </div>
+
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-0 z-20 flex items-center gap-3 rounded-2xl border border-violet-500/20 bg-violet-500/10 backdrop-blur-xl px-5 py-3">
+          <span className="text-xs font-bold text-violet-300">{selectedIds.size} selected</span>
+          <div className="flex-1" />
+          <button onClick={() => handleBulkAction('active')} disabled={bulkLoading} className="px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-bold hover:bg-emerald-500/25 disabled:opacity-40 transition-colors">Approve All</button>
+          <button onClick={() => handleBulkAction('rejected')} disabled={bulkLoading} className="px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-400 text-xs font-bold hover:bg-rose-500/25 disabled:opacity-40 transition-colors">Reject All</button>
+          <button onClick={() => handleBulkAction('deleted')} disabled={bulkLoading} className="px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 text-xs font-bold hover:bg-red-500/25 disabled:opacity-40 transition-colors">Delete All</button>
+          <button onClick={() => setSelectedIds(new Set())} className="p-1.5 rounded-lg text-gray-400 hover:text-white transition-colors"><X size={14} /></button>
+          {bulkLoading && <Loader2 size={14} className="text-violet-400 animate-spin" />}
+        </div>
+      )}
 
       <div className="glass-card rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -268,7 +339,10 @@ export default function ServicesPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500">Service</th>
+                  <th className="px-3 py-3 w-10">
+                    <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll} className="accent-violet-500 w-3.5 h-3.5 cursor-pointer" />
+                  </th>
+                  <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Service</th>
                   <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden md:table-cell">Provider</th>
                   <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden lg:table-cell">District</th>
                   <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Price</th>
@@ -285,8 +359,11 @@ export default function ServicesPage() {
                   const isRejected = sStatus === 'rejected';
 
                   return (
-                    <tr key={s.id} className={`hover:bg-white/[0.02] transition-colors ${isDeleted ? 'opacity-60' : ''}`}>
-                      <td className="px-5 py-3.5">
+                    <tr key={s.id} className={`hover:bg-white/[0.02] transition-colors ${isDeleted ? 'opacity-60' : ''} ${selectedIds.has(s.id) ? 'bg-violet-500/5' : ''}`}>
+                      <td className="px-3 py-3.5">
+                        <input type="checkbox" checked={selectedIds.has(s.id)} onChange={() => toggleSelect(s.id)} className="accent-violet-500 w-3.5 h-3.5 cursor-pointer" />
+                      </td>
+                      <td className="px-3 py-3.5">
                         <p className={`text-sm font-medium ${isDeleted ? 'text-gray-500 line-through' : 'text-white'}`}>{s.name}</p>
                         <p className="text-[10px] text-gray-500">{s.category || 'General'}</p>
                       </td>

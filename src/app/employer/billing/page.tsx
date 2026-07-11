@@ -20,6 +20,7 @@ import { useCollection } from '@/hooks/useFirestore';
 import { createPaymentRequest } from '@/lib/firebase/firestoreService';
 import {
   YEARLY_SUBSCRIPTION_PLANS,
+  getDaysUntilExpiry,
   getEffectiveSubscriptionStatus,
   selectBestSubscription,
   toDate,
@@ -336,32 +337,105 @@ export default function EmployerBillingPage() {
         </div>
       ) : (
         <>
-          <div className="glass-card rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10">
-                  <CreditCard size={18} className="text-cyan-400" />
+          {/* Enhanced Current Plan Status Card */}
+          {(() => {
+            const daysLeft = activeSub ? getDaysUntilExpiry(activeSub.endDate) : null;
+            const totalDays = 365;
+            const progressPct = daysLeft !== null ? Math.max(0, Math.min(100, (daysLeft / totalDays) * 100)) : 100;
+            const isExpired = currentStatus === 'expired';
+            const isExpiringSoon = daysLeft !== null && daysLeft <= 30 && daysLeft > 0;
+
+            const statusStyle = isExpired
+              ? { border: 'border-rose-500/20', bg: 'bg-rose-500/10', text: 'text-rose-400', label: 'Expired' }
+              : isExpiringSoon
+                ? { border: 'border-amber-500/20', bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Expiring Soon' }
+                : currentStatus === 'pending_renewal'
+                  ? { border: 'border-amber-500/20', bg: 'bg-amber-500/10', text: 'text-amber-300', label: 'Pending Renewal' }
+                  : { border: 'border-emerald-500/20', bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Active' };
+
+            const progressColor = isExpired ? 'bg-rose-500' : isExpiringSoon ? 'bg-amber-500' : 'bg-emerald-500';
+
+            return (
+              <div className={`glass-card rounded-2xl border ${statusStyle.border} p-5 space-y-4`}>
+                {/* Plan name + status */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${statusStyle.bg}`}>
+                      <CreditCard size={18} className={statusStyle.text} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        Current Plan:{' '}
+                        <span className="text-cyan-300">
+                          {activeSub?.planName || `${currentPlanSlug[0].toUpperCase()}${currentPlanSlug.slice(1)} Plan`}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        {activeSub
+                          ? `Subscribed on ${formatDate(activeSub.startDate || activeSub.createdAt)}`
+                          : 'Free yearly access. Upgrade for extra employer tools.'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center gap-1 rounded-full border ${statusStyle.border} ${statusStyle.bg} px-3 py-1 text-xs font-bold ${statusStyle.text}`}>
+                    <ShieldCheck size={14} />
+                    {statusStyle.label}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">
-                    Current Plan:{' '}
-                    <span className="text-cyan-300">
-                      {activeSub?.planName || `${currentPlanSlug[0].toUpperCase()}${currentPlanSlug.slice(1)} Plan`}
-                    </span>
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-400">
-                    {activeSub
-                      ? `Expires on ${formatDate(activeSub.endDate)}`
-                      : 'Free yearly access. Upgrade for extra employer tools.'}
-                  </p>
-                </div>
+
+                {/* Validity details */}
+                {activeSub && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Expiry Date</p>
+                      <p className="text-sm font-bold text-white mt-1">{formatDate(activeSub.endDate)}</p>
+                    </div>
+                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Remaining</p>
+                      <p className={`text-sm font-bold mt-1 ${isExpired ? 'text-rose-400' : isExpiringSoon ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        {daysLeft !== null ? (daysLeft <= 0 ? 'Expired' : `${daysLeft} day${daysLeft !== 1 ? 's' : ''}`) : '—'}
+                      </p>
+                    </div>
+                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Plan Type</p>
+                      <p className="text-sm font-bold text-white mt-1 capitalize">{currentPlanSlug}</p>
+                    </div>
+                    <div className="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Renewal</p>
+                      <p className={`text-sm font-bold mt-1 ${isExpired ? 'text-rose-400' : 'text-gray-300'}`}>
+                        {isExpired ? 'Renew Now' : 'Auto-renew'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress bar */}
+                {activeSub && (
+                  <div>
+                    <div className="flex justify-between text-[10px] text-gray-500 mb-1.5">
+                      <span>Plan validity</span>
+                      <span>{daysLeft !== null && daysLeft > 0 ? `${daysLeft} of ${totalDays} days remaining` : 'Expired'}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${progressColor} transition-all duration-1000 ease-out`}
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Expired notice */}
+                {isExpired && currentPlanSlug !== 'free' && (
+                  <div className="rounded-xl border border-rose-500/15 bg-rose-500/5 px-4 py-3 text-xs text-rose-300/80">
+                    <p className="font-bold text-rose-300 mb-1">⚠️ Your plan has expired</p>
+                    <p>Your company profile is still visible, but Premium badge, priority ranking, and featured listings have been removed. Renew below to restore all benefits instantly.</p>
+                  </div>
+                )}
               </div>
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold capitalize text-emerald-400">
-                <ShieldCheck size={14} />
-                {currentStatus.replace('_', ' ')}
-              </span>
-            </div>
-          </div>
+            );
+          })()}
+
 
           {/* Coupon Input Code */}
           <div className="glass-card rounded-2xl p-5 border border-white/[0.08] bg-white/[0.01] flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -36,6 +36,7 @@ const ADMIN_NAV = [
   { label: 'Notifications', tamilLabel: 'அறிவிப்புகள்', icon: 'Bell', href: '/admin/notifications' },
   { label: 'Security', tamilLabel: 'பாதுகாப்பு', icon: 'Shield', href: '/admin/security' },
   { label: 'Settings', tamilLabel: 'அமைப்புகள்', icon: 'Settings', href: '/admin/settings' },
+  { label: 'Activity Logs', tamilLabel: 'செயல்பாட்டு பதிவுகள்', icon: 'FileText', href: '/admin/activity-logs' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

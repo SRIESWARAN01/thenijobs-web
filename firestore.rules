@@ -536,6 +536,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /adminActivityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
     // ===== ROADMAP / SUPPORT REQUESTS =====
     match /aiCoachWaitlist/{userId} {
       allow read: if isOwner(userId) || isAdmin();

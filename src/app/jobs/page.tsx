@@ -23,6 +23,20 @@ import { Select } from '@/components/ui/Select';
 
 const JOB_TYPES = ['Full Time', 'Part Time', 'Remote', 'WFH', 'Internship', 'Fresher', 'Contract'];
 const CATEGORIES = ['Agriculture', 'Education', 'IT & Software', 'Healthcare', 'Construction', 'Textiles', 'Transport', 'Finance'];
+const EXPERIENCE_LEVELS = [
+  { value: '', label: 'Any Experience' },
+  { value: 'fresher', label: 'Fresher' },
+  { value: '1-2', label: '1-2 Years' },
+  { value: '3-5', label: '3-5 Years' },
+  { value: '5+', label: '5+ Years' },
+];
+const WORK_MODES = [
+  { value: '', label: 'Any Mode' },
+  { value: 'onsite', label: 'On-site' },
+  { value: 'remote', label: 'Remote' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'wfh', label: 'Work From Home' },
+];
 
 interface Job {
   id: string;
@@ -134,6 +148,10 @@ export default function JobsPage() {
   const [locating, setLocating] = useState(false);
 
   const [savingAlert, setSavingAlert] = useState(false);
+  const [salaryMin, setSalaryMin] = useState('');
+  const [salaryMax, setSalaryMax] = useState('');
+  const [experienceFilter, setExperienceFilter] = useState('');
+  const [workModeFilter, setWorkModeFilter] = useState('');
 
   const handleSaveAlert = async () => {
     if (!user?.uid) {
@@ -444,8 +462,19 @@ export default function JobsPage() {
       }
     }
 
-    return matchSearch && matchLoc && matchType && matchCat && matchProximity;
-  }), [jobs, search, location, selectedTypes, selectedCategories, proximity, coords]);
+    // Salary filter
+    let matchSalary = true;
+    if (salaryMin) {
+      const min = parseInt(salaryMin, 10);
+      if (!isNaN(min)) matchSalary = (j.salaryMax || j.salaryMin || 0) >= min;
+    }
+    if (matchSalary && salaryMax) {
+      const max = parseInt(salaryMax, 10);
+      if (!isNaN(max)) matchSalary = (j.salaryMin || 0) <= max;
+    }
+
+    return matchSearch && matchLoc && matchType && matchCat && matchProximity && matchSalary;
+  }), [jobs, search, location, selectedTypes, selectedCategories, proximity, coords, salaryMin, salaryMax]);
 
   const sortedJobs = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -477,7 +506,7 @@ export default function JobsPage() {
     });
   }, [filtered, search, sortBy]);
 
-  const activeFilters = selectedTypes.length + selectedCategories.length;
+  const activeFilters = selectedTypes.length + selectedCategories.length + (salaryMin ? 1 : 0) + (salaryMax ? 1 : 0) + (experienceFilter ? 1 : 0) + (workModeFilter ? 1 : 0);
 
 
   return (
@@ -562,9 +591,56 @@ export default function JobsPage() {
                   ))}
                 </div>
               </div>
+              {/* Salary Range */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 mb-2">Salary Range (₹/month)</p>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    value={salaryMin}
+                    onChange={(e) => setSalaryMin(e.target.value)}
+                    className="w-24 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white outline-none focus:border-cyan-500/40"
+                  />
+                  <span className="text-gray-500 text-xs">to</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    value={salaryMax}
+                    onChange={(e) => setSalaryMax(e.target.value)}
+                    className="w-24 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white outline-none focus:border-cyan-500/40"
+                  />
+                </div>
+              </div>
+              {/* Experience Level */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 mb-2">Experience</p>
+                <div className="flex flex-wrap gap-2">
+                  {EXPERIENCE_LEVELS.map(item => (
+                    <button key={item.value} onClick={() => setExperienceFilter(experienceFilter === item.value ? '' : item.value)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all
+                        ${experienceFilter === item.value ? 'bg-purple-500/20 border-purple-500/50 text-purple-300' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Work Mode */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 mb-2">Work Mode</p>
+                <div className="flex flex-wrap gap-2">
+                  {WORK_MODES.map(item => (
+                    <button key={item.value} onClick={() => setWorkModeFilter(workModeFilter === item.value ? '' : item.value)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition-all
+                        ${workModeFilter === item.value ? 'bg-amber-500/20 border-amber-500/50 text-amber-300' : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'}`}>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             {activeFilters > 0 && (
-              <button onClick={() => { setSelectedTypes([]); setSelectedCategories([]); setProximity('all'); setCoords(null); }}
+              <button onClick={() => { setSelectedTypes([]); setSelectedCategories([]); setProximity('all'); setCoords(null); setSalaryMin(''); setSalaryMax(''); setExperienceFilter(''); setWorkModeFilter(''); }}
                 className="mt-3 text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
                 <X size={11} /> Clear all filters
               </button>

@@ -337,8 +337,23 @@ export default function EmployerJobsPage() {
                           </span>
                         </div>
                         <p className="text-xs text-gray-500">
-                          {job.district || 'Theni'} · {job.location || 'Local'} · {salaryText} · Posted {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Recently'} · {expiryText}
+                          {job.district || 'Theni'} · {job.location || 'Local'} · {salaryText} · Posted {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'Recently'}
                         </p>
+                        {/* Expiry countdown bar */}
+                        {daysUntilExpiry !== null && (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <Clock size={10} className={daysUntilExpiry <= 0 ? 'text-rose-400' : daysUntilExpiry <= 7 ? 'text-amber-400' : 'text-emerald-400'} />
+                            <div className="h-1.5 w-20 rounded-full bg-white/5 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${daysUntilExpiry <= 0 ? 'bg-rose-500' : daysUntilExpiry <= 7 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                style={{ width: `${Math.max(0, Math.min(100, (daysUntilExpiry / 30) * 100))}%` }}
+                              />
+                            </div>
+                            <span className={`text-[10px] font-bold ${daysUntilExpiry <= 0 ? 'text-rose-400' : daysUntilExpiry <= 7 ? 'text-amber-400' : 'text-gray-400'}`}>
+                              {expiryText}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Stats */}

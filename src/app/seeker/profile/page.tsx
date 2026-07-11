@@ -492,7 +492,7 @@ export default function SeekerProfilePage() {
         console.error('Background auto-save failed:', err);
         setAutoSaveStatus('error');
       }
-    }, 1500);
+    }, 3000);
 
     return () => {
       if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);

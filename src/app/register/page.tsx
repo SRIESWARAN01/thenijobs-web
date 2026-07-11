@@ -82,11 +82,10 @@ function RegisterPageContent() {
   // Redirect automatically on login / registration success
   useEffect(() => {
     if (user && user.role) {
-      if (user.role !== 'admin' && user.role !== 'super_admin' && user.setupCompleted === false) {
-        router.replace('/profile-setup');
-      } else {
-        router.replace(getDashboardPathForRole(user.role));
-      }
+      const dest = (user.role !== 'admin' && user.role !== 'super_admin' && user.setupCompleted === false)
+        ? '/profile-setup'
+        : getDashboardPathForRole(user.role);
+      router.replace(dest);
     }
   }, [user, router]);
 
@@ -107,8 +106,8 @@ function RegisterPageContent() {
     }
 
     if (step === 2) {
-      if (!form.name || !form.email) {
-        setLocalError('Please fill in all required fields.');
+      if (!form.name || !form.email || !form.phone) {
+        setLocalError('Please fill in all required fields including mobile number.');
         return;
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -116,17 +115,13 @@ function RegisterPageContent() {
         setLocalError('Please enter a valid email address.');
         return;
       }
-      if (form.phone && !/^\d{10}$/.test(form.phone)) {
+      if (!/^\d{10}$/.test(form.phone)) {
         setLocalError('Please enter a valid 10-digit mobile number.');
         return;
       }
 
       // Google registration flow — update existing user doc with role + phone
       if (isGoogleMethod && firebaseUser) {
-        if (!form.phone) {
-          setLocalError('Mobile number is required for Google registration.');
-          return;
-        }
         setLoading(true);
         try {
           const normalizedPhone = `+91${form.phone}`;
@@ -138,12 +133,18 @@ function RegisterPageContent() {
             setupCompleted: false,
             updatedAt: serverTimestamp(),
           });
-          // Force re-fetch profile to trigger redirect
-          window.location.href = getDashboardPathForRole(role as UserRole);
+          // Use router.replace for clean navigation (avoids race condition with window.location.href)
+          const dest = getDashboardPathForRole(role as UserRole);
+          router.replace(dest);
+          // Fallback: if router doesn't trigger within 5s, force navigation
+          setTimeout(() => {
+            if (document.location.pathname.includes('/register')) {
+              window.location.href = dest;
+            }
+          }, 5000);
         } catch (err: any) {
           console.error(err);
           setLocalError(err.message || 'Failed to complete registration.');
-        } finally {
           setLoading(false);
         }
         return;
@@ -165,7 +166,7 @@ function RegisterPageContent() {
 
       setLoading(true);
       try {
-        const normalizedPhone = form.phone ? `+91${form.phone}` : undefined;
+        const normalizedPhone = `+91${form.phone}`;
 
         // Verify uniqueness with Firestore backend
         const checkRes = await fetch('/api/auth/check-unique', {
@@ -318,7 +319,7 @@ function RegisterPageContent() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Mobile Number * <span className="text-violet-400 font-normal">(Required for Google)</span></label>
+                  <label className="text-xs text-gray-400 font-medium block mb-1.5">Mobile Number * <span className="text-rose-400 text-[10px]">Required</span></label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-16 text-center rounded-xl">+91</div>
                     <div className="relative flex-1">
@@ -410,9 +411,17 @@ function RegisterPageContent() {
             )}
             <button type="submit" disabled={(step === 1 && !role) || loading}
               className="flex-1 btn-gradient py-3 rounded-2xl font-semibold text-sm relative z-10 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-              {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-              {step === totalSteps ? (isGoogleMethod ? 'Complete Registration' : 'Create Account') : 'Continue'}
-              {!loading && <ArrowRight size={15} />}
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>{isGoogleMethod && step === 2 ? 'Setting up account...' : 'Processing...'}</span>
+                </>
+              ) : (
+                <>
+                  {step === totalSteps ? (isGoogleMethod ? 'Complete Registration' : 'Create Account') : 'Continue'}
+                  <ArrowRight size={15} />
+                </>
+              )}
             </button>
           </div>
 

@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Users, Search, Filter, ChevronDown, ChevronLeft, ChevronRight,
-  Eye, ShieldCheck, Ban, Trash2, UserPlus, CheckCircle, XCircle,
-  MoreHorizontal, Download, Mail, UserCheck, AlertCircle, Clock, Loader2
+  Users, Search, ChevronLeft, ChevronRight,
+  Eye, ShieldCheck, Ban, Trash2, UserCheck, Clock, Loader2,
+  CheckCircle, XCircle, Download, Save, X, Briefcase, Globe,
+  Phone, Mail, MapPin, Crown, Package
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,6 +17,7 @@ import {
   updateUserRole,
 } from '@/lib/firebase/firestoreService';
 import { useLocations } from '@/hooks/useLocations';
+import { toDate } from '@/lib/subscriptions';
 
 // ===== TYPES =====
 interface UserDoc {
@@ -91,6 +93,156 @@ const colorMap: Record<string, { bg: string; text: string; border: string; glow:
   purple: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20', glow: 'shadow-purple-500/20', iconBg: 'bg-purple-500/10' },
 };
 
+// ===== USER PROFILE MODAL =====
+function UserProfileModal({ user, onClose }: { user: UserDoc; onClose: () => void }) {
+  const { data: companies } = useCollection<any>('companies', [], { skip: false });
+  const { data: jobs } = useCollection<any>('jobs', [], { skip: false });
+  const { data: services } = useCollection<any>('services', [], { skip: false });
+  const { data: subscriptions } = useCollection<any>('subscriptions', [], { skip: false });
+
+  const userCompany = companies.find(c => c.ownerId === user.id);
+  const userJobs = jobs.filter(j => j.postedBy === user.id || j.companyId === userCompany?.id);
+  const userServices = services.filter(s => s.providerId === user.id || s.companyId === userCompany?.id);
+  const userSub = subscriptions.find(s => s.userId === user.id || s.companyId === userCompany?.id);
+
+  const roleConfig = ROLE_CONFIG[user.role] || { label: user.role, bg: 'bg-gray-500/15', text: 'text-gray-400' };
+
+  const formatDate = (val?: any) => {
+    const d = toDate(val);
+    return d ? d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+  };
+
+  const remainingDays = userSub?.expiresAt ? Math.max(0, Math.ceil((toDate(userSub.expiresAt)!.getTime() - Date.now()) / 86400000)) : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-2xl glass-card rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 glass-nav flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
+              <span className="text-white text-sm font-bold">
+                {(user.displayName || user.name || 'U').substring(0, 2).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white font-outfit">{user.displayName || user.name || 'Unnamed'}</h2>
+              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${roleConfig.bg} ${roleConfig.text}`}>{roleConfig.label}</span>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Contact Details */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Contact Information</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                { icon: Mail, label: 'Email', value: user.email || 'N/A' },
+                { icon: Phone, label: 'Mobile', value: (user as any).phone || (user as any).mobileNumber || 'N/A' },
+                { icon: MapPin, label: 'District', value: user.district || 'N/A' },
+                { icon: MapPin, label: 'Address', value: (user as any).address || 'N/A' },
+              ].map(item => (
+                <div key={item.label} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <item.icon size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-500">{item.label}</p>
+                    <p className="text-sm text-white font-medium truncate">{item.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Company Details */}
+          {userCompany && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Company Details</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {[
+                  { icon: Briefcase, label: 'Company Name', value: userCompany.name || 'N/A' },
+                  { icon: Globe, label: 'Website', value: userCompany.website || 'N/A' },
+                  { icon: MapPin, label: 'Company Address', value: userCompany.address || userCompany.district || 'N/A' },
+                  { icon: Phone, label: 'Company Phone', value: userCompany.phone || 'N/A' },
+                ].map(item => (
+                  <div key={item.label} className="flex items-start gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <item.icon size={14} className="text-gray-500 mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-gray-500">{item.label}</p>
+                      <p className="text-sm text-white font-medium truncate">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Subscription */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Subscription</p>
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Crown size={16} className="text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-white">{userSub?.plan || 'Free Plan'}</p>
+                {userSub ? (
+                  <p className="text-xs text-gray-400">
+                    Expires: {formatDate(userSub.expiresAt)}
+                    {remainingDays !== null && (
+                      <span className={`ml-2 font-semibold ${remainingDays <= 7 ? 'text-rose-400' : remainingDays <= 30 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                        ({remainingDays} days left)
+                      </span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500">No active subscription</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Activity Stats */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Activity</p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { icon: Briefcase, label: 'Jobs Posted', value: userJobs.length, color: 'text-violet-400' },
+                { icon: Package, label: 'Services', value: userServices.length, color: 'text-cyan-400' },
+                { icon: Clock, label: 'Joined', value: formatDate(user.createdAt), color: 'text-gray-400' },
+              ].map(s => (
+                <div key={s.label} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                  <s.icon size={16} className={`${s.color} mx-auto mb-1.5`} />
+                  <p className="text-sm font-bold text-white">{s.value}</p>
+                  <p className="text-[10px] text-gray-500">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Jobs */}
+          {userJobs.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Jobs ({userJobs.length})</p>
+              <div className="space-y-2">
+                {userJobs.slice(0, 5).map(j => (
+                  <div key={j.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <p className="text-sm text-white truncate">{j.title || 'Untitled'}</p>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ j.status === 'active' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>{j.status || 'pending'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const { allAreas } = useLocations();
@@ -105,6 +257,10 @@ export default function UsersPage() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  // Staged role changes: userId -> pendingRole (not saved until Save button clicked)
+  const [pendingRoles, setPendingRoles] = useState<Record<string, UserRole>>({});
+  // Profile modal
+  const [profileUser, setProfileUser] = useState<UserDoc | null>(null);
 
   const getInitials = (name?: string, email?: string) => {
     const text = name || email || 'User';
@@ -169,6 +325,8 @@ export default function UsersPage() {
     setActionLoading(userId);
     try {
       await updateUserRole(userId, newRole, currentUser?.uid || 'admin');
+      // Clear pending after save
+      setPendingRoles(prev => { const n = { ...prev }; delete n[userId]; return n; });
     } catch (err) {
       console.error('Update user role error:', err);
       alert('Failed to update user role');
@@ -241,15 +399,17 @@ export default function UsersPage() {
   };
 
   const handleExport = () => {
-    const headers = ['Name', 'Email', 'Role', 'District', 'Status', 'Verified', 'Phone'];
+    const headers = ['Name', 'Email', 'Role', 'Phone', 'District', 'Address', 'Status', 'Verified', 'Joined Date'];
     const rows = filteredUsers.map((u) => [
       u.displayName || u.name || '',
       u.email || '',
       u.role || '',
+      (u as any).phone || (u as any).mobileNumber || '',
       u.district || '',
+      (u as any).address || '',
       u.status || 'active',
-      u.isVerified ? 'yes' : 'no',
-      u.phone || '',
+      u.isVerified ? 'Yes' : 'No',
+      toDate(u.createdAt)?.toLocaleDateString('en-IN') || '',
     ]);
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
@@ -278,6 +438,8 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {/* Profile Modal */}
+      {profileUser && <UserProfileModal user={profileUser} onClose={() => setProfileUser(null)} />}
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -446,18 +608,36 @@ export default function UsersPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
-                          disabled={actionLoading === user.id}
-                          className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-transparent border border-white/10 outline-none cursor-pointer focus:border-violet-500/50 transition-all ${roleConfig.text} ${roleConfig.bg}`}
-                        >
-                          {EDITABLE_ROLE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value} className="bg-[#0F172A] text-white uppercase text-[10px]">
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={pendingRoles[user.id] ?? user.role}
+                            onChange={(e) => setPendingRoles(prev => ({ ...prev, [user.id]: e.target.value as UserRole }))}
+                            disabled={actionLoading === user.id}
+                            className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-transparent border outline-none cursor-pointer transition-all ${
+                              pendingRoles[user.id] && pendingRoles[user.id] !== user.role
+                                ? 'border-amber-500/50 text-amber-300'
+                                : `border-white/10 ${roleConfig.text} ${roleConfig.bg}`
+                            }`}
+                          >
+                            {EDITABLE_ROLE_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value} className="bg-[#0F172A] text-white uppercase text-[10px]">
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                          {/* Save button — only shows when pending change exists */}
+                          {pendingRoles[user.id] && pendingRoles[user.id] !== user.role && (
+                            <button
+                              onClick={() => handleRoleChange(user.id, pendingRoles[user.id])}
+                              disabled={actionLoading === user.id}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[10px] font-semibold hover:bg-amber-500/25 transition-all"
+                              title="Save role change"
+                            >
+                              {actionLoading === user.id ? <Loader2 size={10} className="animate-spin" /> : <Save size={10} />}
+                              Save
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3.5 hidden lg:table-cell">
                         <span className="text-sm text-gray-300">{user.district || 'Theni'}</span>
@@ -486,6 +666,14 @@ export default function UsersPage() {
                             <Loader2 size={16} className="text-violet-400 animate-spin" />
                           ) : (
                             <>
+                              {/* View Profile */}
+                              <button
+                                onClick={() => setProfileUser(user)}
+                                className="p-2 rounded-lg text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-all"
+                                title="View Full Profile"
+                              >
+                                <Eye size={15} />
+                              </button>
                               {!user.isVerified && (
                                 <button
                                   onClick={() => handleVerify(user.id)}

@@ -143,7 +143,7 @@ export default function SeekerJobsPage() {
             salaryMax: d.salaryMax || 0,
             type: typeStr,
             posted: formatTime(d.createdAt),
-            logo: d.logo || (d.companyName ? d.companyName.substring(0, 2).toUpperCase() : '💼'),
+            logo: d.companyLogoUrl || d.logoUrl || d.logo || (d.companyName ? d.companyName.substring(0, 2).toUpperCase() : '💼'),
             isUrgent: d.isUrgent || false,
             isPremium: d.isPremium || false,
             isVerified: d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified || false,

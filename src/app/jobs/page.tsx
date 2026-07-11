@@ -10,7 +10,7 @@ import {
   Building2, ArrowRight, BadgeCheck, Loader2, CalendarCheck, Bell
 } from 'lucide-react';
 
-import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, limit as firestoreLimit, startAfter, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { saveJob, unsaveJob } from '@/lib/firebase/firestoreService';
@@ -126,6 +126,7 @@ export default function JobsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [lastVisible, setLastVisible] = useState<any>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [extraJobs, setExtraJobs] = useState<Job[]>([]);
 
   // Proximity states
   const [proximity, setProximity] = useState<string>('all');
@@ -227,36 +228,99 @@ export default function JobsPage() {
     }
   }, [proximity, coords, toast]);
 
-  // Fetch jobs from Firestore (with pagination)
+  // Helper to map a Firestore doc to a Job object
+  const mapDocToJob = (doc: any): Job | null => {
+    const d = doc.data();
+    if (!isPublicJobVisible(d)) return null;
+    const salaryStr = d.salaryMin && d.salaryMax
+      ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}`
+      : 'Salary Negotiable';
+    const typeStr = d.jobType
+      ? d.jobType.replace('_', ' ').split(' ').map((w: string) => w[0].toUpperCase() + w.substring(1)).join(' ')
+      : 'Full Time';
+    const createdAtMs = timestampToMillis(d.createdAt);
+    return {
+      id: doc.id,
+      title: d.title || '',
+      company: d.companyName || 'Verified Employer',
+      location: d.location || d.district || 'Theni',
+      district: d.district || LAUNCH_DISTRICT,
+      salary: salaryStr,
+      salaryMin: d.salaryMin || 0,
+      salaryMax: d.salaryMax || 0,
+      type: typeStr,
+      posted: formatTime(d.createdAt),
+      logo: d.companyLogoUrl || d.logoUrl || d.logo || (d.companyName ? d.companyName.substring(0, 2).toUpperCase() : '💼'),
+      isUrgent: d.isUrgent || false,
+      isPremium: d.isPremium || false,
+      isVerified: d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified || false,
+      verificationLevel: d.verificationLevel || d.companyVerificationLevel || (d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified ? 'standard' : 'free'),
+      category: d.category || '',
+      skills: d.skills || [],
+      description: d.description || '',
+      companyDescription: d.companyDescription || '',
+      openings: d.openings ? Number(d.openings) : 1,
+      isWalkIn: d.isWalkIn || !!d.walkInDate || !!d.walkIn?.date,
+      isPromoted: d.isPromoted || false,
+      companySlug: d.companySlug || '',
+      createdAtMs,
+      latitude: d.latitude || null,
+      longitude: d.longitude || null,
+    } as Job;
+  };
+
+  // Real-time listener for first 24 jobs — updates automatically when admin approves/rejects
+  useEffect(() => {
+    setLoading(true);
+    const q = query(
+      collection(db, 'jobs'),
+      where('isActive', '==', true),
+      where('status', '==', 'active'),
+      orderBy('createdAt', 'desc'),
+      firestoreLimit(24)
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const mapped = snapshot.docs
+          .map(mapDocToJob)
+          .filter((j): j is Job => j !== null);
+        setJobs(mapped);
+        if (snapshot.docs.length > 0) {
+          setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+        }
+        setHasMore(snapshot.docs.length >= 24);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Error in jobs real-time listener:', err);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load more jobs (pagination) — uses getDocs for subsequent pages
   const loadJobs = async (isFirstPage = false) => {
+    if (isFirstPage) return; // first page is handled by onSnapshot above
     try {
-      if (isFirstPage) {
-        setLoading(true);
-        setLastVisible(null);
-        setHasMore(true);
-      } else {
-        setLoadingMore(true);
-      }
+      setLoadingMore(true);
+      if (!lastVisible) return;
 
-      const { startAfter, limit } = await import('firebase/firestore');
-
-      const constraints: any[] = [
+      const q = query(
+        collection(db, 'jobs'),
         where('isActive', '==', true),
+        where('status', '==', 'active'),
         orderBy('createdAt', 'desc'),
-        limit(24)
-      ];
-
-      if (!isFirstPage && lastVisible) {
-        constraints.push(startAfter(lastVisible));
-      }
-
-      const q = query(collection(db, 'jobs'), ...constraints);
+        firestoreLimit(24),
+        startAfter(lastVisible)
+      );
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        if (isFirstPage) {
-          setJobs([]);
-        }
         setHasMore(false);
         return;
       }
@@ -269,61 +333,16 @@ export default function JobsPage() {
       }
 
       const newJobs = snapshot.docs
-        .filter((jobDoc) => isPublicJobVisible(jobDoc.data()))
-        .map(doc => {
-          const d = doc.data();
-          const salaryStr = d.salaryMin && d.salaryMax 
-            ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}`
-            : 'Salary Negotiable';
-            
-          const typeStr = d.jobType 
-            ? d.jobType.replace('_', ' ').split(' ').map((w: string) => w[0].toUpperCase() + w.substring(1)).join(' ')
-            : 'Full Time';
-          const createdAtMs = timestampToMillis(d.createdAt);
+        .map(mapDocToJob)
+        .filter((j): j is Job => j !== null);
 
-          return {
-            id: doc.id,
-            title: d.title || '',
-            company: d.companyName || 'Verified Employer',
-            location: d.location || d.district || 'Theni',
-            district: d.district || LAUNCH_DISTRICT,
-            salary: salaryStr,
-            salaryMin: d.salaryMin || 0,
-            salaryMax: d.salaryMax || 0,
-            type: typeStr,
-            posted: formatTime(d.createdAt),
-            logo: d.companyLogoUrl || d.logoUrl || d.logo || (d.companyName ? d.companyName.substring(0, 2).toUpperCase() : '💼'),
-            isUrgent: d.isUrgent || false,
-            isPremium: d.isPremium || false,
-            isVerified: d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified || false,
-            verificationLevel: d.verificationLevel || d.companyVerificationLevel || (d.isVerified || d.companyVerificationStatus === 'verified' || d.companyVerified ? 'standard' : 'free'),
-            category: d.category || '',
-            skills: d.skills || [],
-            description: d.description || '',
-            companyDescription: d.companyDescription || '',
-            openings: d.openings ? Number(d.openings) : 1,
-            isWalkIn: d.isWalkIn || !!d.walkInDate || !!d.walkIn?.date,
-            isPromoted: d.isPromoted || false,
-            companySlug: d.companySlug || '',
-            createdAtMs,
-            latitude: d.latitude || null,
-            longitude: d.longitude || null,
-          } as Job;
-        });
-
-      setJobs(prev => isFirstPage ? newJobs : [...prev, ...newJobs]);
+      setExtraJobs(prev => [...prev, ...newJobs]);
     } catch (err) {
-      console.error('Error loading jobs:', err);
+      console.error('Error loading more jobs:', err);
     } finally {
-      setLoading(false);
       setLoadingMore(false);
     }
   };
-
-  useEffect(() => {
-    loadJobs(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Fetch saved jobs for the user
   useEffect(() => {
@@ -377,7 +396,17 @@ export default function JobsPage() {
     }
   };
 
-  const filtered = useMemo(() => jobs.filter(j => {
+  const allJobs = useMemo(() => {
+    const combined = [...jobs, ...extraJobs];
+    const seen = new Set<string>();
+    return combined.filter(j => {
+      if (seen.has(j.id)) return false;
+      seen.add(j.id);
+      return true;
+    });
+  }, [jobs, extraJobs]);
+
+  const filtered = useMemo(() => allJobs.filter(j => {
     const loc = location.toLowerCase();
     const matchSearch = matchesSearch(search, [
       { value: j.title, weight: 3 },
@@ -713,6 +742,10 @@ export default function JobsPage() {
               </button>
             </div>
           )}
+          {/* Real-time badge */}
+          <p className="text-center text-[10px] text-gray-600 mt-4">
+            🔴 Live — updates automatically when new jobs are approved
+          </p>
         </div>
       </div>
 

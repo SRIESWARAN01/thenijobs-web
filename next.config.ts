@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const appRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
-  // output: 'export',
+  // output: 'export', // disabled — project uses dynamic API routes (auth, otp, razorpay, proxy-image)
   devIndicators: false,
   turbopack: {
     root: appRoot,

@@ -8,7 +8,7 @@ import {
   AlertTriangle, ArrowUpRight, ArrowDownRight, Activity,
   UserPlus, Building, BriefcaseBusiness, Star,
   ChevronRight, BadgeCheck, ShieldAlert, Globe, Loader2,
-  ShoppingBag, Package, Crown, Phone,
+  ShoppingBag, Package, Crown, Phone, Download,
 } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/useRealtimeStats';
 import { useCollection } from '@/hooks/useFirestore';
@@ -490,6 +490,28 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-black text-white">BI Control Center</h1>
           <p className="text-sm text-gray-400 mt-1">Platform analytics, user tracking, revenue auditing and rankings</p>
         </div>
+        <button
+          onClick={async () => {
+            try {
+              const { getAuth } = await import('firebase/auth');
+              const token = await getAuth().currentUser?.getIdToken();
+              if (!token) { alert('Not authenticated'); return; }
+              const res = await fetch('/api/admin/export', { headers: { Authorization: `Bearer ${token}` } });
+              if (!res.ok) { alert('Export failed: ' + (await res.json()).error); return; }
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `thenijobs_full_export_${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch (e: any) { alert('Export error: ' + e.message); }
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600/20 to-indigo-600/20 border border-violet-500/30 text-violet-300 hover:text-white hover:border-violet-500/50 text-sm font-semibold transition-all"
+        >
+          <Download size={16} />
+          Export Full Database
+        </button>
       </div>
 
       {adminPendingOver7DaysCount > 0 && (

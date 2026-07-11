@@ -53,6 +53,7 @@ const getCategoryIcon = (category?: string) => {
 export default function TrendingJobs() {
   const { data: dbJobs, loading } = useCollection<any>('jobs', [
     where('isActive', '==', true),
+    where('status', '==', 'active'),
     orderBy('createdAt', 'desc'),
     limit(20)
   ]);

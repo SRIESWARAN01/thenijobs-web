@@ -15,6 +15,7 @@ const ADMIN_NAV = [
   { label: 'Dashboard', tamilLabel: 'டாஷ்போர்டு', icon: 'LayoutDashboard', href: '/admin/dashboard' },
   { label: 'Users', tamilLabel: 'பயனர்கள்', icon: 'Users', href: '/admin/users' },
   { label: 'Businesses', tamilLabel: 'நிறுவனங்கள்', icon: 'Building2', href: '/admin/businesses' },
+  { label: 'Digital ID Cards', tamilLabel: 'டிஜிட்டல் அடையாள அட்டைகள்', icon: 'CreditCard', href: '/admin/businesses/digital-cards' },
   { label: 'Jobs', tamilLabel: 'வேலைகள்', icon: 'Briefcase', href: '/admin/jobs' },
   { label: 'Leads', tamilLabel: 'விசாரணைகள்', icon: 'TrendingUp', href: '/admin/leads' },
   { label: 'Services', tamilLabel: 'சேவைகள்', icon: 'Globe', href: '/admin/services' },

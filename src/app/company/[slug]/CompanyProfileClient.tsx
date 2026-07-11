@@ -36,6 +36,7 @@ import {
   getCompanyPortfolioUrl,
   normalizeExternalUrl,
 } from '@/lib/companyPortfolio';
+import CompanyReviewsSection from '@/components/company/CompanyReviewsSection';
 
 function getCleanCallUrl(num: string | undefined | null): string {
   const clean = String(num || '').replace(/[^\d+]/g, '');
@@ -4305,6 +4306,18 @@ Please confirm my booking request. Thanks!`;
             {/* Company Bio */}
             <CompanyBioSection company={company} cardStyle="bg-white/[0.01] backdrop-blur-md rounded-3xl border border-white/[0.06]" />
           </div>
+        </div>
+      </section>
+
+      {/* ── Company Reviews Section ── */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <div className="glass-card rounded-2xl p-5 sm:p-6">
+          <CompanyReviewsSection
+            companyId={company.id}
+            companyName={company.name || company.businessName || 'This Company'}
+            companySlug={company.slug || company.id}
+            mode="preview"
+          />
         </div>
       </section>
 

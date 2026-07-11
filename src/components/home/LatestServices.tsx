@@ -39,6 +39,7 @@ interface CompanyItem {
   subscriptionPlan?: string;
   verificationStatus?: string;
   location?: string;
+  isPremium?: boolean;
 }
 
 export default function LatestServices() {
@@ -51,12 +52,12 @@ export default function LatestServices() {
     async function loadLatestServices() {
       try {
         setLoading(true);
-        // Query latest active services
+        // Query active services — fetch more so we can sort premium providers first
         const servicesQ = query(
           collection(db, 'services'),
           where('status', '==', 'active'),
           orderBy('createdAt', 'desc'),
-          limit(6)
+          limit(18)
         );
         const servicesSnap = await getDocs(servicesQ);
         if (cancelled) return;
@@ -93,6 +94,7 @@ export default function LatestServices() {
               reviewCount: data.reviewCount || 0,
               subscriptionPlan: data.subscriptionPlan || (data.isPremium ? 'premium' : 'free'),
               verificationStatus: data.verificationStatus || '',
+              isPremium: data.isPremium || false,
             };
           });
 
@@ -148,7 +150,15 @@ export default function LatestServices() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((svc) => {
+          {/* Sort: premium providers first, then by original order */}
+          {[...services]
+            .sort((a, b) => {
+              const aPremium = companies[a.providerId]?.isPremium ? 1 : 0;
+              const bPremium = companies[b.providerId]?.isPremium ? 1 : 0;
+              return bPremium - aPremium;
+            })
+            .slice(0, 6)
+            .map((svc) => {
             const company = companies[svc.providerId];
             const portfolioPath = company ? getCompanyPortfolioPath(company) : '#';
             const companyLogo = company?.logoUrl || '';

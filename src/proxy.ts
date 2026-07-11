@@ -22,8 +22,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`${newPath}${search}`, request.url), 308);
   }
 
-  // /service/* → /business/*
-  if (pathname.startsWith('/service')) {
+  // /service/* → /business/* (legacy single service-provider dashboard)
+  // IMPORTANT: Must NOT match /services (public services catalogue)
+  if (pathname === '/service' || pathname.startsWith('/service/')) {
     const newPath = pathname.replace(/^\/service/, '/business');
     return NextResponse.redirect(new URL(`${newPath}${search}`, request.url), 308);
   }

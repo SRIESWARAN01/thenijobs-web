@@ -19,6 +19,7 @@ const ADMIN_NAV = [
   { label: 'Jobs', tamilLabel: 'வேலைகள்', icon: 'Briefcase', href: '/admin/jobs' },
   { label: 'Leads', tamilLabel: 'விசாரணைகள்', icon: 'TrendingUp', href: '/admin/leads' },
   { label: 'Services', tamilLabel: 'சேவைகள்', icon: 'Globe', href: '/admin/services' },
+  { label: 'Service Bookings', tamilLabel: 'சேவை முன்பதிவுகள்', icon: 'CalendarCheck', href: '/admin/bookings' },
   { label: 'Subscriptions', tamilLabel: 'சந்தாக்கள்', icon: 'CreditCard', href: '/admin/subscriptions' },
   { label: 'Expiry Monitoring', tamilLabel: 'காலாவதி கண்காணிப்பு', icon: 'Clock', href: '/admin/monitoring' },
   { label: 'Marketing', tamilLabel: 'மார்க்கெட்டிங்', icon: 'Megaphone', href: '/admin/marketing' },

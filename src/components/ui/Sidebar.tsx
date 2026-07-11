@@ -90,6 +90,9 @@ import {
   Megaphone,
   ShoppingBag,
   UserCircle,
+  CalendarCheck,
+  Ticket,
+  Tv,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -109,6 +112,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   ChevronDown, ArrowLeft, ArrowRight, Flag, Target, Lightbulb,
   Sparkles, Crown, Gem, Menu, X, LogOut, PanelLeft, PanelLeftClose,
   User, Send, GraduationCap, Megaphone, ShoppingBag, UserCircle,
+  CalendarCheck, Ticket, Tv,
 };
 
 /* ------------------------------------------------------------------ */

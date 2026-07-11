@@ -147,11 +147,12 @@ function LoginPageContent() {
     setLoading(true);
     setLocalError(null);
     try {
-      // For login, don't pass a default role — let the backend detect new vs existing user
-      await signInWithGoogle(undefined as any);
-      // After successful login, the useEffect above will redirect existing users via getSafePostLoginRedirect.
-      // If the user has no role (new Google user), getSafePostLoginRedirect sends to /role-selection.
-      // Instead, we want to send new Google users to /register?method=google for proper registration.
+      // For login, don't pass any role — let the backend detect new vs existing user
+      await signInWithGoogle(null);
+      // After successful sign-in:
+      // - Existing users with a role: the useEffect above will redirect via getSafePostLoginRedirect
+      // - New users (no role): getSafePostLoginRedirect returns /register?method=google
+      // The redirect is handled by the useEffect watching `user` state
     } catch (err: any) {
       setLocalError(mapAuthError(err));
     } finally {

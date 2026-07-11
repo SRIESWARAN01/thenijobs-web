@@ -50,8 +50,8 @@ export interface AuthState {
 export interface AuthActions {
   /** Email + password sign-in */
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  /** Google account sign-in */
-  signInWithGoogle: (role?: UserRole, phone?: string) => Promise<void>;
+  /** Google account sign-in (role is optional — null for login flow, set for registration flow) */
+  signInWithGoogle: (role?: UserRole | null, phone?: string) => Promise<void>;
   /** Create a new account (email + password) and seed Firestore user doc */
   createAccount: (
     email: string,
@@ -438,9 +438,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [handleError, rejectUnverifiedEmail],
   );
 
-  // ── Create account (email + password) ─────────────────────────
+  // ── Google Sign-In ────────────────────────────────────────────
   const signInWithGoogle = useCallback(
-    async (role: UserRole = 'job_seeker', phoneParam?: string) => {
+    async (role?: UserRole | null, phoneParam?: string) => {
       setError(null);
       setLoading(true);
       try {
@@ -469,7 +469,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const res = await fetch('/api/auth/google-signin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken, role, phone: phoneParam }),
+          body: JSON.stringify({ idToken, role: role || null, phone: phoneParam }),
         });
         const data = await res.json();
         
@@ -486,6 +486,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (profile) {
           setUser(profile);
         } else {
+          // New user with no Firestore profile yet — set null so redirect logic catches it
           setUser(null);
         }
         

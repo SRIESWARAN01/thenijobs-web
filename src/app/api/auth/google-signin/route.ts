@@ -44,25 +44,35 @@ export async function POST(request: Request) {
         updatedAt: FieldValue.serverTimestamp(),
       });
     } else {
-      // New user! Create Firestore user document with role & phone
+      // New user! Create Firestore user document
+      // If role is explicitly provided (from registration flow), use it.
+      // If not (from login flow), leave role as null — user will be redirected to complete profile.
       const displayName = decodedToken.name || email.split('@')[0] || 'User';
       const photoURL = decodedToken.picture || '';
       const finalRole = (role === 'job_seeker' || role === 'business') ? role : null;
       const normalizedPhone = phone ? `+91${phone.replace(/\D/g, '').slice(-10)}` : null;
 
-      await adminDb.doc(`users/${uid}`).set({
+      const newUserDoc: Record<string, any> = {
         email,
         displayName,
         photoURL,
-        role: finalRole,
-        phone: normalizedPhone,
-        mobileNumber: normalizedPhone,
         isVerified: true,
         emailVerified: true,
         createdAt: FieldValue.serverTimestamp(),
         lastLoginAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
-      });
+      };
+
+      // Only set role if explicitly provided (from registration flow)
+      if (finalRole) {
+        newUserDoc.role = finalRole;
+      }
+      if (normalizedPhone) {
+        newUserDoc.phone = normalizedPhone;
+        newUserDoc.mobileNumber = normalizedPhone;
+      }
+
+      await adminDb.doc(`users/${uid}`).set(newUserDoc);
 
       resolvedUid = uid;
       userRole = finalRole;

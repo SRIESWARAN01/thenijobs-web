@@ -9,7 +9,7 @@ const firestore_1 = require("firebase-admin/firestore");
 exports.healthCheck = (0, https_1.onCall)({ region: config_1.REGION }, async () => {
     firebase_functions_1.logger.info('Functions health check called.');
     let statsSynced = false;
-    let counts = { users: 0, seekers: 0 };
+    const counts = { users: 0, seekers: 0 };
     try {
         const usersCount = await config_2.db.collection('users').count().get();
         const seekersCount = await config_2.db.collection('users').where('role', '==', 'job_seeker').count().get();

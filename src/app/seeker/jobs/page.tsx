@@ -168,7 +168,7 @@ export default function SeekerJobsPage() {
 
   useEffect(() => {
     loadJobs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Fetch saved jobs for the user

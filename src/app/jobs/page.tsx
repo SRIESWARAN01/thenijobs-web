@@ -318,7 +318,7 @@ export default function JobsPage() {
     );
 
     return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Load more jobs (pagination) — uses getDocs for subsequent pages

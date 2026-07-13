@@ -476,7 +476,7 @@ export default function WebsiteBuilderAppearancePage() {
                     <label className="text-[10px] font-bold text-gray-400">Primary Brand Logo</label>
                     <button type="button" onClick={() => logoInputRef.current?.click()} className="w-full py-4 border border-dashed border-white/10 hover:border-purple-500/30 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] flex flex-col items-center justify-center gap-2">
                       {company.logoUrl ? (
-                        <img src={company.logoUrl} className="w-10 h-10 object-cover rounded-full" />
+                        <img src={company.logoUrl} alt="Business logo" className="w-10 h-10 object-cover rounded-full" />
                       ) : (
                         <ImagePlus size={18} className="text-gray-500" />
                       )}
@@ -490,7 +490,7 @@ export default function WebsiteBuilderAppearancePage() {
                     <label className="text-[10px] font-bold text-gray-400">Cover Banner</label>
                     <button type="button" onClick={() => coverInputRef.current?.click()} className="w-full py-4 border border-dashed border-white/10 hover:border-purple-500/30 rounded-xl bg-white/[0.01] hover:bg-white/[0.03] flex flex-col items-center justify-center gap-2">
                       {company.coverImageUrl || company.coverUrl ? (
-                        <img src={company.coverImageUrl || company.coverUrl} className="w-14 h-8 object-cover rounded" />
+                        <img src={company.coverImageUrl || company.coverUrl} alt="Cover banner" className="w-14 h-8 object-cover rounded" />
                       ) : (
                         <ImagePlus size={18} className="text-gray-500" />
                       )}

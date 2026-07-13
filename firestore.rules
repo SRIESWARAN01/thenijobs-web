@@ -154,7 +154,16 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (
           isOwner(userId)
-          && unchanged('role')
+          // Role: either unchanged, or being set for the first time (registration)
+          // when the existing document has no role field yet
+          && (
+            unchanged('role')
+            || (
+              !resource.data.keys().hasAny(['role'])
+              && request.resource.data.keys().hasAny(['role'])
+              && isEndUserRole(request.resource.data.role)
+            )
+          )
           && (
             unchanged('isVerified') ||
             (

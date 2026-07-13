@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import {
   Building2, Search, ChevronDown, Eye, CheckCircle, XCircle,
   Star, Crown, MapPin, Phone, Globe, LayoutGrid, List,
-  Download, BadgeCheck, Clock, Loader2, Ban, Check, Settings, Ticket, ShieldCheck
+  Download, BadgeCheck, Clock, Loader2, Ban, Check, Settings, Ticket, ShieldCheck,
+  RefreshCw, Mail
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +13,7 @@ import {
   approveCompany,
   rejectCompany,
   featureCompany,
+  requestChangesCompany,
   updateDocument,
 } from '@/lib/firebase/firestoreService';
 import { LAUNCH_DISTRICT } from '@/lib/types';
@@ -30,7 +32,7 @@ interface BusinessDoc {
   services?: string[];
   ownerName?: string;
   phone?: string;
-  verificationStatus?: 'pending' | 'verified' | 'rejected';
+  verificationStatus?: 'pending' | 'verified' | 'rejected' | 'changes_requested';
   isActive?: boolean;
   isFeatured?: boolean;
   isPremium?: boolean;
@@ -46,6 +48,16 @@ interface BusinessDoc {
   businessRegNumber?: string;
   verificationDocUrl?: string;
   verificationDocName?: string;
+  email?: string;
+  logoUrl?: string;
+  logo?: string;
+  approvedBy?: string;
+  approvedAt?: any;
+  rejectionReason?: string;
+  changesFeedback?: string;
+  changesRequestedBy?: string;
+  changesRequestedAt?: any;
+  status?: string;
 };
 
 // ===== CONSTANTS =====
@@ -53,6 +65,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; b
   pending: { label: 'Pending', bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/30' },
   verified: { label: 'Verified', bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   rejected: { label: 'Rejected', bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/20' },
+  changes_requested: { label: 'Changes Requested', bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/20' },
 };
 
 const TABS = ['All', 'Pending', 'Verified', 'Rejected', 'Featured'] as const;
@@ -157,6 +170,19 @@ export default function BusinessesPage() {
       await featureCompany(id, !currentFeatured);
     } catch (err) {
       console.error('Feature company error:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRequestChanges = async (id: string) => {
+    const feedback = window.prompt('Enter feedback for the business owner (what needs to be changed):');
+    if (!feedback) return;
+    setActionLoading(id);
+    try {
+      await requestChangesCompany(id, currentUser?.uid || 'admin', feedback);
+    } catch (err) {
+      console.error('Request changes error:', err);
     } finally {
       setActionLoading(null);
     }
@@ -540,8 +566,12 @@ export default function BusinessesPage() {
 
                 <div className={`flex items-start gap-4 flex-1 min-w-0 ${viewMode === 'list' ? '' : 'pl-6 mb-4'}`}>
                   {/* Logo/Avatar */}
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${initialBg} flex items-center justify-center flex-shrink-0`}>
-                    <span className="text-white text-sm font-bold">{initials}</span>
+                  <div className={`w-12 h-12 rounded-xl ${(biz.logoUrl || biz.logo) ? '' : `bg-gradient-to-br ${initialBg}`} flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+                    {(biz.logoUrl || biz.logo) ? (
+                      <img src={biz.logoUrl || biz.logo} alt={biz.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-sm font-bold">{initials}</span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -567,7 +597,7 @@ export default function BusinessesPage() {
                     <Loader2 size={16} className="text-violet-400 animate-spin mx-auto" />
                   ) : (
                     <>
-                      {bizStatus === 'pending' && (
+                      {(bizStatus === 'pending' || bizStatus === 'changes_requested') && (
                         <>
                           <button
                             onClick={() => handleApprove(biz.id)}
@@ -580,6 +610,12 @@ export default function BusinessesPage() {
                             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium hover:bg-rose-500/20 transition-colors"
                           >
                             <XCircle size={14} /> Reject
+                          </button>
+                          <button
+                            onClick={() => handleRequestChanges(biz.id)}
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-orange-500/10 text-orange-400 text-xs font-medium hover:bg-orange-500/20 transition-colors"
+                          >
+                            <RefreshCw size={14} /> Changes
                           </button>
                         </>
                       )}
@@ -671,6 +707,14 @@ export default function BusinessesPage() {
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Owner Details</h4>
                 <p className="text-sm font-semibold text-white">{selectedBiz.ownerName || 'N/A'}</p>
                 <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5"><Phone size={12} /> {selectedBiz.phone || 'N/A'}</p>
+                {selectedBiz.email && (
+                  <p className="text-xs text-gray-400 mt-1 flex items-center gap-1.5"><Mail size={12} /> {selectedBiz.email}</p>
+                )}
+                {selectedBiz.createdAt && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Registered: {selectedBiz.createdAt?.toDate ? selectedBiz.createdAt.toDate().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
+                  </p>
+                )}
               </div>
               <div className="bg-white/[0.02] border border-white/[0.04] p-4 rounded-xl">
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Platform Details</h4>
@@ -680,6 +724,20 @@ export default function BusinessesPage() {
                 <p className="text-xs text-gray-400 mt-1">
                   Status: <span className="capitalize">{selectedBiz.subscriptionStatus || 'N/A'}</span>
                 </p>
+                {selectedBiz.approvedBy && (
+                  <p className="text-xs text-emerald-400/70 mt-2">Approved By: {selectedBiz.approvedBy}</p>
+                )}
+                {selectedBiz.approvedAt && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Approved: {selectedBiz.approvedAt?.toDate ? selectedBiz.approvedAt.toDate().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
+                  </p>
+                )}
+                {selectedBiz.rejectionReason && (
+                  <p className="text-xs text-rose-400/70 mt-2">Rejection Reason: {selectedBiz.rejectionReason}</p>
+                )}
+                {selectedBiz.changesFeedback && (
+                  <p className="text-xs text-orange-400/70 mt-2">Changes Feedback: {selectedBiz.changesFeedback}</p>
+                )}
               </div>
             </div>
 
@@ -839,13 +897,19 @@ export default function BusinessesPage() {
               >
                 Close
               </button>
-              {selectedBiz.verificationStatus === 'pending' && (
+              {(selectedBiz.verificationStatus === 'pending' || selectedBiz.verificationStatus === 'changes_requested' || selectedBiz.status === 'pending' || selectedBiz.status === 'changes_requested') && (
                 <>
                   <button
                     onClick={() => { handleApprove(selectedBiz.id); setSelectedBiz(null); }}
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition-colors flex items-center gap-1.5"
                   >
                     <Check size={14} /> Approve
+                  </button>
+                  <button
+                    onClick={() => { handleRequestChanges(selectedBiz.id); setSelectedBiz(null); }}
+                    className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-xs font-bold text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <RefreshCw size={14} /> Request Changes
                   </button>
                   <button
                     onClick={() => { handleReject(selectedBiz.id); setSelectedBiz(null); }}

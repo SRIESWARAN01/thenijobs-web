@@ -754,8 +754,8 @@ export async function approveCompany(companyId: string, adminId: string) {
       createNotification({
         userId: ownerId,
         type: 'system',
-        title: 'Business Approved!',
-        message: `Your business "${company.name}" has been approved and is now live on THENIJOBS.`,
+        title: '🎉 Congratulations! Business Approved!',
+        message: `Your business "${company.name}" has been approved and is now live on Theni Jobs. Your business profile is now publicly visible to thousands of users.`,
         actionUrl: `/business/company-profile`,
       }),
     );
@@ -815,6 +815,50 @@ export async function rejectCompany(
   );
 }
 
+export async function requestChangesCompany(
+  companyId: string,
+  adminId: string,
+  feedback: string,
+) {
+  await updateDoc(doc(db, 'companies', companyId), {
+    status: 'changes_requested',
+    verificationStatus: 'changes_requested',
+    changesFeedback: feedback,
+    changesRequestedBy: adminId,
+    changesRequestedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  const company = await fetchDocument<{ ownerId?: string; name?: string }>(
+    'companies',
+    companyId,
+  );
+
+  const ownerId = company?.ownerId;
+  if (ownerId) {
+    await runSideEffect('create company changes requested notification', () =>
+      createNotification({
+        userId: ownerId,
+        type: 'system',
+        title: 'Changes Requested for Your Business',
+        message: `Your business "${company.name}" requires some changes before approval: ${feedback}`,
+        actionUrl: `/company/register`,
+      }),
+    );
+  }
+
+  await runSideEffect('log company changes requested activity', () =>
+    logActivity({
+      userId: adminId,
+      userName: 'Admin',
+      action: 'Business changes requested',
+      target: company?.name || companyId,
+      targetId: companyId,
+      details: feedback,
+    }),
+  );
+}
+
 export async function featureCompany(companyId: string, isFeatured: boolean) {
   await updateDoc(doc(db, 'companies', companyId), {
     isFeatured,
@@ -827,6 +871,31 @@ export async function verifyCompany(companyId: string) {
     'verificationBadges.businessVerified': true,
     updatedAt: serverTimestamp(),
   });
+}
+
+/**
+ * Notify all admin users about a new business registration.
+ * Called from the registration page after successful company creation.
+ */
+export async function notifyAdminsNewRegistration(companyName: string, companyId: string) {
+  try {
+    const admins = await fetchCollection<{ id: string; role?: string }>('users', [
+      where('role', 'in', ['admin', 'super_admin']),
+    ]);
+    await Promise.allSettled(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: 'system',
+          title: '🏢 New Business Registration',
+          message: `"${companyName}" has submitted a business registration and is waiting for admin approval.`,
+          actionUrl: '/admin/businesses',
+        }),
+      ),
+    );
+  } catch (err) {
+    console.error('[notifyAdminsNewRegistration] Failed:', err);
+  }
 }
 
 export async function approveJob(jobId: string, adminId: string) {

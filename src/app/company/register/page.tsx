@@ -16,10 +16,10 @@ import { BUSINESS_CATEGORIES } from '@/lib/types';
 import { useLocations } from '@/hooks/useLocations';
 import { Select } from '@/components/ui/Select';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
-import { getAvailableCompanySlug } from '@/lib/firebase/firestoreService';
+import { getAvailableCompanySlug, notifyAdminsNewRegistration } from '@/lib/firebase/firestoreService';
 import { getCompanyPortfolioPath, normalizeExternalUrl, slugifyCompanyName } from '@/lib/companyPortfolio';
 
 const STEPS: Array<{ id: number; label: string; icon: LucideIcon }> = [
@@ -67,6 +67,13 @@ export default function CompanyRegisterPage() {
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropType, setCropType] = useState<'logo' | 'cover' | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+
+  // Auto-fill email from authenticated user
+  useEffect(() => {
+    if (user?.email && !form.email) {
+      setForm(f => ({ ...f, email: user.email || '' }));
+    }
+  }, [user?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -214,6 +221,18 @@ export default function CompanyRegisterPage() {
     }
     setLoading(true);
     try {
+      // Check for duplicate registration
+      const existingQuery = query(
+        collection(db, 'companies'),
+        where('ownerId', '==', user.uid)
+      );
+      const existingSnap = await getDocs(existingQuery);
+      if (!existingSnap.empty) {
+        setSubmitError('You have already registered a business. You can manage it from your Business Dashboard.');
+        setLoading(false);
+        return;
+      }
+
       const slug = await getAvailableCompanySlug(form.name);
       setValidatedSlug(slug);
       setSlugStatus(slug === generateSlug(form.name) ? 'available' : 'taken');
@@ -229,6 +248,7 @@ export default function CompanyRegisterPage() {
         foundedYear: form.foundedYear ? parseInt(form.foundedYear) : '',
         services,
         ownerId: user.uid,
+        ownerName: user.displayName || form.name,
         status: 'pending',
         verificationStatus: 'pending',
         isVerified: false,
@@ -252,19 +272,36 @@ export default function CompanyRegisterPage() {
       });
 
       if (gstNumber || registrationNumber) {
-        await setDoc(doc(db, 'companies', docRef.id, 'private', 'verification'), {
-          gstNumber: gstNumber || '',
-          registrationNumber: registrationNumber || '',
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+        try {
+          await setDoc(doc(db, 'companies', docRef.id, 'private', 'verification'), {
+            gstNumber: gstNumber || '',
+            registrationNumber: registrationNumber || '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        } catch (subDocErr) {
+          // Subcollection write can occasionally fail right after parent creation;
+          // log but don't block the registration flow.
+          console.warn('[CompanyRegister] Verification subcollection write failed:', subDocErr);
+        }
       }
 
+      // Notify all admin users about the new registration (fire-and-forget)
+      notifyAdminsNewRegistration(form.name, docRef.id).catch((notifErr) => {
+        console.warn('[CompanyRegister] Admin notification failed:', notifErr);
+      });
+
       setSubmitSuccess(true);
-      setTimeout(() => router.push('/employer/dashboard'), 2000);
-    } catch (err) {
-      console.error(err);
-      setSubmitError('Error registering business. Please try again.');
+      setTimeout(() => router.push('/business/pending'), 2000);
+    } catch (err: any) {
+      console.error('[CompanyRegister] Registration error:', err);
+      if (err?.code === 'permission-denied' || err?.message?.includes('Missing or insufficient permissions')) {
+        setSubmitError('Unable to save your registration. Please make sure you are logged in and try again. If the issue persists, please contact support.');
+      } else if (err?.code === 'unavailable') {
+        setSubmitError('Network error. Please check your internet connection and try again.');
+      } else {
+        setSubmitError('Something went wrong while registering your business. Please try again or contact support.');
+      }
     } finally {
       setLoading(false);
     }

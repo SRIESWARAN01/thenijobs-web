@@ -114,6 +114,11 @@ export default function BusinessLayout({ children }: { children: React.ReactNode
 
   if (!user) return null;
 
+  // Pending page has its own standalone layout — skip sidebar
+  if (pathname === '/business/pending') {
+    return <>{children}</>;
+  }
+
   const handleLogout = async () => {
     try {
       await signOut(auth);

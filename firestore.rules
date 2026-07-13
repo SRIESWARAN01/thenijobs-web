@@ -183,7 +183,8 @@ service cloud.firestore {
           request.resource.data.status == 'pending'
         )
         && optionalFalse('isFeatured')
-        && optionalFalse('isPremium');
+        && optionalFalse('isPremium')
+        && optionalFalse('isVerified');
       // Admin: full update access (can approve/reject, feature, premium, activate)
       allow update: if isAdmin()
         && request.resource.data.ownerId == resource.data.ownerId;
@@ -197,8 +198,29 @@ service cloud.firestore {
         && request.resource.data.get('isActive', false) == resource.data.get('isActive', false);
       allow delete: if isAdmin();
 
+      // Private subcollection: allow owner write even immediately after company creation.
+      // isCompanyOwner() can fail due to eventual consistency right after addDoc,
+      // so we also allow direct ownerId lookup as a fallback.
       match /private/verification {
-        allow read, write: if isAdmin() || isCompanyOwner(companyId);
+        allow read, write: if isAdmin()
+          || isCompanyOwner(companyId)
+          || (
+            isAuthenticated()
+            && exists(/databases/$(database)/documents/companies/$(companyId))
+            && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+          );
+      }
+
+      // Private subcollection for approval history
+      match /private/approvalHistory {
+        allow read: if isAdmin()
+          || isCompanyOwner(companyId)
+          || (
+            isAuthenticated()
+            && exists(/databases/$(database)/documents/companies/$(companyId))
+            && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+          );
+        allow write: if isAdmin();
       }
     }
 

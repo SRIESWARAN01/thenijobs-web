@@ -10,6 +10,8 @@ import Sidebar from '@/components/ui/Sidebar';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { auth } from '@/lib/firebase/config';
+import { useCollection } from '@/hooks/useFirestore';
+import { where } from 'firebase/firestore';
 
 const ADMIN_NAV = [
   { label: 'Dashboard', tamilLabel: 'டாஷ்போர்டு', icon: 'LayoutDashboard', href: '/admin/dashboard' },
@@ -54,6 +56,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
+
+  // Pending businesses count for badge
+  const { data: pendingCompanies } = useCollection<{ id: string }>('companies', [
+    where('status', 'in', ['pending', 'changes_requested']),
+  ], { skip: isLoginPage || authLoading || !user });
+  const pendingBizCount = pendingCompanies.length;
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -104,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-[#0a0a1a] flex">
       {/* Sidebar */}
       <Sidebar
-        items={ADMIN_NAV}
+        items={ADMIN_NAV.map(item => item.href === '/admin/businesses' && pendingBizCount > 0 ? { ...item, badge: pendingBizCount } : item)}
         collapsed={collapsed}
         onToggle={() => setCollapsed(!collapsed)}
         portalTitle="THENIJOBS"

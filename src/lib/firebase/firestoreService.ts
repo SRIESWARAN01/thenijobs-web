@@ -859,6 +859,46 @@ export async function requestChangesCompany(
   );
 }
 
+export async function deleteCompany(companyId: string, adminId: string) {
+  const company = await fetchDocument<{ ownerId?: string; name?: string }>(
+    'companies',
+    companyId,
+  );
+
+  await updateDoc(doc(db, 'companies', companyId), {
+    status: 'deleted',
+    verificationStatus: 'deleted',
+    isActive: false,
+    isVerified: false,
+    deletedBy: adminId,
+    deletedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  const ownerId = company?.ownerId;
+  if (ownerId) {
+    await runSideEffect('create company deletion notification', () =>
+      createNotification({
+        userId: ownerId,
+        type: 'system',
+        title: 'Business Registration Removed',
+        message: `Your business "${company.name}" has been removed from Theni Jobs by an admin. If you believe this is an error, please contact support.`,
+        actionUrl: `/`,
+      }),
+    );
+  }
+
+  await runSideEffect('log company deletion activity', () =>
+    logActivity({
+      userId: adminId,
+      userName: 'Admin',
+      action: 'Business deleted',
+      target: company?.name || companyId,
+      targetId: companyId,
+    }),
+  );
+}
+
 export async function featureCompany(companyId: string, isFeatured: boolean) {
   await updateDoc(doc(db, 'companies', companyId), {
     isFeatured,
@@ -889,7 +929,7 @@ export async function notifyAdminsNewRegistration(companyName: string, companyId
           type: 'system',
           title: '🏢 New Business Registration',
           message: `"${companyName}" has submitted a business registration and is waiting for admin approval.`,
-          actionUrl: '/admin/businesses',
+          actionUrl: `/admin/businesses?highlight=${companyId}`,
         }),
       ),
     );

@@ -67,6 +67,7 @@ export default function CompanyRegisterPage() {
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [cropType, setCropType] = useState<'logo' | 'cover' | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [quickMode, setQuickMode] = useState(true);
 
   // Auto-fill email from authenticated user
   useEffect(() => {
@@ -211,13 +212,16 @@ export default function CompanyRegisterPage() {
       setSubmitError('Please enter a valid email address.');
       return;
     }
-    if (!form.location) {
-      setSubmitError('Please select your area / town.');
-      return;
-    }
-    if (!form.district || !form.state) {
-      setSubmitError('Please select your state and district.');
-      return;
+    // Location/district/state validation only in full mode
+    if (!quickMode) {
+      if (!form.location) {
+        setSubmitError('Please select your area / town.');
+        return;
+      }
+      if (!form.district || !form.state) {
+        setSubmitError('Please select your state and district.');
+        return;
+      }
     }
     setLoading(true);
     try {
@@ -321,7 +325,104 @@ export default function CompanyRegisterPage() {
           </p>
         </div>
 
-        {/* Step Indicator */}
+        {/* Quick Registration Mode */}
+        {quickMode ? (
+          <div className="glass-card rounded-3xl p-6 sm:p-8">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-6">
+              <Building2 size={18} className="text-violet-400" /> Quick Business Registration
+            </h2>
+
+            <div className="space-y-4">
+              {/* Owner Name (auto-filled, read-only) */}
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Owner Name</label>
+                <input type="text" value={user?.displayName || ''} readOnly
+                  className="search-input w-full px-4 py-3 text-sm opacity-70 cursor-not-allowed" />
+              </div>
+
+              {/* Email (auto-filled, read-only) */}
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Email (Verified ✓)</label>
+                <div className="relative">
+                  <input type="email" value={form.email} readOnly
+                    className="search-input w-full px-4 py-3 text-sm opacity-70 cursor-not-allowed pr-10" />
+                  <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" />
+                </div>
+              </div>
+
+              {/* Business Name */}
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Business Name *</label>
+                <input type="text" placeholder="e.g. Theni Fresh Fruits"
+                  value={form.name} onChange={e => update('name', e.target.value)}
+                  className="search-input w-full px-4 py-3 text-sm" />
+                {form.name.trim() && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-gray-500">URL: thenijobs.com/company/<span className="text-violet-400">{validatedSlug || generateSlug(form.name) || 'your-business'}</span></p>
+                    {slugStatus === 'checking' && <Loader2 size={12} className="animate-spin text-gray-400" />}
+                    {slugStatus === 'available' && <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-semibold"><CheckCircle2 size={11} /> Available</span>}
+                  </div>
+                )}
+              </div>
+
+              {/* Business Category */}
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Business Category *</label>
+                <Select
+                  value={form.category}
+                  onChange={(val) => update('category', val)}
+                  options={CATEGORY_OPTIONS}
+                  placeholder="Select category"
+                />
+              </div>
+
+              {/* Mobile Number */}
+              <div>
+                <label className="text-xs text-gray-400 font-medium block mb-1.5">Mobile Number *</label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 py-3 rounded-l-xl bg-white/[0.04] border border-r-0 border-white/[0.08] text-sm text-gray-400">+91</span>
+                  <input type="tel" maxLength={10} placeholder="98765 43210"
+                    value={form.phone} onChange={e => update('phone', e.target.value.replace(/\D/g, ''))}
+                    className="search-input flex-1 px-4 py-3 text-sm rounded-l-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Error / Success Messages */}
+            {submitError && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 mt-4">
+                <AlertCircle size={16} className="text-rose-400 shrink-0" />
+                <p className="text-xs text-rose-300 font-medium">{submitError}</p>
+              </div>
+            )}
+            {submitSuccess && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mt-4">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                <p className="text-xs text-emerald-300 font-medium">Business registered successfully! Redirecting...</p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <button
+              onClick={handleSubmit}
+              disabled={loading || submitSuccess}
+              className="w-full btn-gradient py-3.5 rounded-2xl font-semibold text-sm mt-6 flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              {loading ? 'Submitting...' : 'Submit for Approval'}
+            </button>
+
+            {/* Toggle to full form */}
+            <button
+              onClick={() => { setQuickMode(false); setStep(1); }}
+              className="w-full text-center text-xs text-gray-500 hover:text-violet-400 mt-4 transition-colors"
+            >
+              Want to add more details? Use the full registration form →
+            </button>
+          </div>
+        ) : (
+          <>
+        {/* Step Indicator (full mode only) */}
         <div className="overflow-x-auto no-scrollbar mb-8">
           <div className="flex items-center gap-1 min-w-max mx-auto justify-center">
             {STEPS.map((s, i) => {
@@ -755,8 +856,11 @@ export default function CompanyRegisterPage() {
             </button>
           </div>
         </div>
-      </div>
       <BottomNav />
+      </>
+      )}
+      </div>
+      {!quickMode && <BottomNav />}
       {showCropper && cropFile && (
         <ImageCropperModal
           open={showCropper}

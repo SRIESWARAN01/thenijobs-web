@@ -14,6 +14,7 @@ import {
   rejectCompany,
   featureCompany,
   requestChangesCompany,
+  deleteCompany,
   updateDocument,
 } from '@/lib/firebase/firestoreService';
 import { LAUNCH_DISTRICT } from '@/lib/types';
@@ -66,9 +67,11 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; b
   verified: { label: 'Verified', bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   rejected: { label: 'Rejected', bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/20' },
   changes_requested: { label: 'Changes Requested', bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/20' },
+  suspended: { label: 'Suspended', bg: 'bg-red-500/15', text: 'text-red-400', border: 'border-red-500/20' },
+  deleted: { label: 'Deleted', bg: 'bg-gray-500/15', text: 'text-gray-400', border: 'border-gray-500/20' },
 };
 
-const TABS = ['All', 'Pending', 'Verified', 'Rejected', 'Featured'] as const;
+const TABS = ['All', 'Pending', 'Verified', 'Rejected', 'Suspended', 'Featured'] as const;
 const CATEGORIES = ['All Categories', 'IT & Software', 'Agriculture', 'Food & Beverage', 'Healthcare', 'Education', 'Retail', 'Construction', 'Transport', 'Manufacturing', 'Textiles'];
 
 
@@ -122,13 +125,15 @@ export default function BusinessesPage() {
       biz.services || [],
     ]);
     
-    const status = biz.verificationStatus || 'pending';
-    let matchTab = activeTab === 'All';
+    const status = biz.verificationStatus || biz.status || 'pending';
+    let matchTab = activeTab === 'All' && status !== 'deleted';
     if (activeTab === 'Featured') {
       matchTab = !!biz.isFeatured;
     } else if (activeTab === 'Verified') {
       matchTab = status === 'verified';
-    } else {
+    } else if (activeTab === 'Suspended') {
+      matchTab = status === 'suspended';
+    } else if (activeTab !== 'All') {
       matchTab = status === activeTab.toLowerCase();
     }
 
@@ -183,6 +188,34 @@ export default function BusinessesPage() {
       await requestChangesCompany(id, currentUser?.uid || 'admin', feedback);
     } catch (err) {
       console.error('Request changes error:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSuspend = async (id: string) => {
+    if (!window.confirm('Are you sure you want to suspend this business? The business will be hidden from public view.')) return;
+    setActionLoading(id);
+    try {
+      await updateDocument('companies', id, {
+        status: 'suspended',
+        verificationStatus: 'suspended',
+        isActive: false,
+      });
+    } catch (err) {
+      console.error('Suspend company error:', err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('⚠️ Are you sure you want to delete this business? This action will remove the business from the platform.')) return;
+    setActionLoading(id);
+    try {
+      await deleteCompany(id, currentUser?.uid || 'admin');
+    } catch (err) {
+      console.error('Delete company error:', err);
     } finally {
       setActionLoading(null);
     }
@@ -634,15 +667,22 @@ export default function BusinessesPage() {
                         <Crown size={15} />
                       </button>
                       <button
-                        onClick={() => handleToggleActive(biz.id, biz.isActive !== false)}
+                        onClick={() => biz.status === 'suspended' ? handleApprove(biz.id) : handleSuspend(biz.id)}
                         className={`p-2 rounded-lg transition-all ${
-                          biz.isActive === false
+                          biz.status === 'suspended'
                             ? 'text-rose-400 bg-rose-500/10 hover:bg-rose-500/20'
                             : 'text-gray-400 hover:text-rose-400 hover:bg-rose-500/10'
                         }`}
-                        title={biz.isActive === false ? 'Activate Business' : 'Suspend Business'}
+                        title={biz.status === 'suspended' ? 'Unsuspend Business' : 'Suspend Business'}
                       >
                         <Ban size={15} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(biz.id)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                        title="Delete Business"
+                      >
+                        <XCircle size={15} />
                       </button>
                       <button
                         onClick={() => setSelectedBiz(biz)}
@@ -918,6 +958,22 @@ export default function BusinessesPage() {
                     <Ban size={14} /> Reject
                   </button>
                 </>
+              )}
+              {selectedBiz.status !== 'suspended' && selectedBiz.status !== 'deleted' && (
+                <button
+                  onClick={() => { handleSuspend(selectedBiz.id); setSelectedBiz(null); }}
+                  className="px-4 py-2 rounded-xl bg-red-600/80 hover:bg-red-500 text-xs font-bold text-white transition-colors flex items-center gap-1.5"
+                >
+                  <Ban size={14} /> Suspend
+                </button>
+              )}
+              {selectedBiz.status !== 'deleted' && (
+                <button
+                  onClick={() => { handleDelete(selectedBiz.id); setSelectedBiz(null); }}
+                  className="px-4 py-2 rounded-xl bg-gray-600 hover:bg-gray-500 text-xs font-bold text-white transition-colors flex items-center gap-1.5"
+                >
+                  <XCircle size={14} /> Delete
+                </button>
               )}
             </div>
           </div>

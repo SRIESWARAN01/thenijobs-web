@@ -134,7 +134,7 @@ function RegisterPageContent() {
             updatedAt: serverTimestamp(),
           });
           // Use router.replace for clean navigation (avoids race condition with window.location.href)
-          const dest = getDashboardPathForRole(role as UserRole);
+          const dest = (role === 'business') ? '/company/register' : getDashboardPathForRole(role as UserRole);
           router.replace(dest);
           // Fallback: if router doesn't trigger within 5s, force navigation
           setTimeout(() => {

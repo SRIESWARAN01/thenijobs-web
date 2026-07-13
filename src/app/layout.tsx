@@ -139,11 +139,16 @@ export const metadata: Metadata = {
     title: "THENIJOBS - Search, Connect, Hire and Grow",
     description: "Find jobs, businesses, leads and services across Theni district",
     images: ["/og-image.jpg"],
+    creator: "@thenijobs",
   },
+  alternates: {
+    canonical: "https://thenijobs.com",
+  },
+  category: "Jobs & Recruitment",
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true },
+    googleBot: { index: true, follow: true, "max-image-preview": "large" as const, "max-snippet": -1, "max-video-preview": -1 },
   },
   manifest: "/manifest.json",
 };

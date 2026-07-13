@@ -424,7 +424,7 @@ export default function PricingPage() {
     user?.role === 'job_seeker' ? 'seeker' : 'employer';
 
   return (
-    <main className="min-h-screen bg-[#0a0a1a] blob-bg grid-pattern text-slate-900">
+    <main id="main-content" className="min-h-screen bg-[#0a0a1a] blob-bg grid-pattern text-slate-900">
       <Header />
 
       <section className="px-4 pb-20 pt-28 sm:px-6">

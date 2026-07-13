@@ -510,7 +510,7 @@ export default function JobsPage() {
 
 
   return (
-    <main className="min-h-screen bg-[#0a0a1a]">
+    <main id="main-content" className="min-h-screen bg-[#0a0a1a]">
       <Header />
 
       {/* Search Bar – Sticky */}

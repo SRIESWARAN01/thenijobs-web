@@ -187,7 +187,7 @@ export default function ServicesPage() {
   const activeFiltersCount = (selectedCategory !== 'All' ? 1 : 0) + (selectedDistrict !== 'All' ? 1 : 0) + (showVerifiedOnly ? 1 : 0);
 
   return (
-    <main className="min-h-screen bg-[#0a0a1a]">
+    <main id="main-content" className="min-h-screen bg-[#0a0a1a]">
       <Header />
 
       {/* Sticky Search bar */}

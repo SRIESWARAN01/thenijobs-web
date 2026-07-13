@@ -91,7 +91,7 @@ export default function NotificationSettings() {
       {justEnabled && permission === 'granted' && (
         <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/15 p-3 mb-3">
           <p className="text-xs text-emerald-400 font-semibold">
-            ✅ Push notifications enabled! You'll receive alerts for new jobs, application updates, and subscription reminders.
+            ✅ Push notifications enabled! You&apos;ll receive alerts for new jobs, application updates, and subscription reminders.
           </p>
         </div>
       )}

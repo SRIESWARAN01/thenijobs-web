@@ -31,7 +31,7 @@ export async function fetchSeoJobs(
   maxResults = 40,
 ): Promise<SeoJob[]> {
   try {
-    let queryRef = adminDb
+    const queryRef = adminDb
       .collection('jobs')
       .where('isActive', '==', true)
       .where(filterField, '==', filterValue)

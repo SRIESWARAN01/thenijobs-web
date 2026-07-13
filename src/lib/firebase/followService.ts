@@ -2,17 +2,13 @@
 
 import { db } from '@/lib/firebase/config';
 import {
-  collection,
   doc,
   setDoc,
   deleteDoc,
-  query,
-  where,
   onSnapshot,
   increment,
   updateDoc,
   serverTimestamp,
-  getDocs,
 } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 

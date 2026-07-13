@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -9,6 +10,18 @@ import SplashIntro from "@/components/ui/SplashIntro";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import MobileAuthGate from "@/components/auth/MobileAuthGate";
 import PWAInstallPrompt from "@/components/ui/PWAInstallPrompt";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-outfit",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
@@ -143,12 +156,55 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const jsonLdOrganization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "THENIJOBS",
+    url: "https://thenijobs.com",
+    logo: "https://thenijobs.com/icon-512.png",
+    sameAs: [],
+    description:
+      "THENIJOBS helps people find jobs, discover businesses, generate B2B leads and hire talent across Theni district, Tamil Nadu.",
+    address: {
+      "@type": "PostalAddress",
+      addressRegion: "Tamil Nadu",
+      addressCountry: "IN",
+    },
+  };
+
+  const jsonLdWebSite = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "THENIJOBS",
+    url: "https://thenijobs.com",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://thenijobs.com/jobs?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
-    <html lang="en-IN" suppressHydrationWarning>
+    <html lang="en-IN" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebSite) }}
+        />
       </head>
       <body className="font-sans antialiased bg-[#0a0a1a] text-white">
+        {/* Skip to content — WCAG 2.1 Level A accessibility requirement */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-violet-600 focus:text-white focus:text-sm focus:font-bold focus:shadow-lg focus:outline-none"
+        >
+          Skip to main content
+        </a>
         <ToastProvider>
           <PreferencesProvider>
             <ThemeProvider>

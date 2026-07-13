@@ -9,7 +9,7 @@ export const healthCheck = onCall({ region: REGION }, async () => {
   logger.info('Functions health check called.');
   
   let statsSynced = false;
-  let counts = { users: 0, seekers: 0 };
+  const counts = { users: 0, seekers: 0 };
   try {
     const usersCount = await db.collection('users').count().get();
     const seekersCount = await db.collection('users').where('role', '==', 'job_seeker').count().get();

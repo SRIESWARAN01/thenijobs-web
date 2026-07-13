@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { BadgeCheck, MapPin, QrCode, ShieldCheck, Download, Crown, Lock, Info, Sparkles, Check, User } from 'lucide-react';
 import { useDocument } from '@/hooks/useFirestore';
@@ -233,12 +234,12 @@ export default function DigitalIdCardPageClient({ uid }: { uid: string }) {
           <p className="mt-2 text-sm text-gray-400">
             This candidate ID card has been suspended, removed, or is currently undergoing review.
           </p>
-          <a
+          <Link
             href="/"
             className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
           >
             Go Back Home
-          </a>
+          </Link>
         </div>
       </main>
     );

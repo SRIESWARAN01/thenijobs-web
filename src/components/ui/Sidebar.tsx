@@ -208,7 +208,7 @@ export function Sidebar({
       )}
 
       {/* ── Nav items ── */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5 no-scrollbar">
+      <nav className="flex-1 overflow-y-auto py-3 px-2.5 space-y-0.5 no-scrollbar" aria-label={`${portalTitle} navigation`}>
         {items.map((item, idx) => {
           const Icon = resolveIcon(item.icon);
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -349,6 +349,7 @@ export function Sidebar({
                 className="shrink-0 p-1.5 rounded-lg text-white/30 hover:text-rose-400
                   hover:bg-rose-500/10 transition-all"
                 title="Logout"
+                aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -364,6 +365,7 @@ export function Sidebar({
             onClick={onToggle}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
               text-white/30 hover:text-white/60 hover:bg-white/[0.04] transition-all text-xs"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
               <PanelLeft className="w-4 h-4" />

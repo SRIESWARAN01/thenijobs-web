@@ -40,10 +40,27 @@ if (missingFirebaseConfig.length > 0) {
   }
 }
 
-/** Firebase app instance (singleton) */
-const app = getApps().length === 0
-  ? initializeApp((firebaseConfig.apiKey ? firebaseConfig : { apiKey: 'mock', projectId: 'mock-id' }) as FirebaseOptions)
-  : getApp();
+/**
+ * Firebase app instance (singleton).
+ *
+ * During Next.js builds, server-side modules may be evaluated before
+ * environment variables are injected. The mock fallback prevents build
+ * failures — it is never used at runtime because the env-var guard
+ * above throws on the client and warns on the server.
+ */
+const app = (() => {
+  if (getApps().length > 0) return getApp();
+
+  if (firebaseConfig.apiKey) {
+    return initializeApp(firebaseConfig as FirebaseOptions);
+  }
+
+  // Build-time fallback — should never be reached at runtime
+  if (typeof window === 'undefined') {
+    console.warn('[Firebase Config] Using mock Firebase app (build-time only).');
+  }
+  return initializeApp({ apiKey: 'build-placeholder', projectId: 'build-placeholder' } as FirebaseOptions);
+})();
 
 /** Firebase App Check (client-only, requires Firebase console enforcement setup). */
 export const appCheck: AppCheck | null = (() => {

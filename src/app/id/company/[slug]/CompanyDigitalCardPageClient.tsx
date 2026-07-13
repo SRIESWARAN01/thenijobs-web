@@ -110,48 +110,19 @@ export default function CompanyDigitalCardPageClient({
     }
   }, [plan]);
 
-  if (dbLoading && !company) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070714] text-white">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500/30 border-t-purple-400" />
-      </main>
-    );
-  }
-
-  if (!company) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
-          <Info size={40} className="mx-auto text-amber-400 mb-4 animate-bounce" />
-          <h1 className="text-xl font-bold tracking-tight">Business card not available</h1>
-          <p className="mt-2 text-sm text-gray-400">Complete the business profile first to generate this card.</p>
-        </div>
-      </main>
-    );
-  }
-
-  const name = company.name || company.businessName || company.companyName || 'Business Partner';
-  const logoUrl = company.logoUrl || '';
-  const email = company.email || 'contact@business.com';
-  const phone = company.phone || 'N/A';
-  const category = company.category || 'Business Services';
-  const district = company.district || 'Theni';
-  const address = company.address || 'Theni, Tamil Nadu';
-  const description = company.description || 'Verified Business Partner listing on THENIJOBS.';
-  const tagline = company.tagline || 'Verified Local Partner';
-
-  const isPremium = plan === 'premium' || plan === 'enterprise';
-  const isVerified = plan !== 'free' || company.verificationStatus === 'verified';
-  
-  const uniqueId = `TNI-BUS-${(company.id || company.uid || 'unknown').slice(0, 8).toUpperCase()}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(profileUrl)}`;
-  const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(profileUrl)}`;
-
+  // Image-to-base64 state (must be above early returns per Rules of Hooks)
   const [logoBase64, setLogoBase64] = useState<string>('');
   const [qrBase64, setQrBase64] = useState<string>('');
   const [useFallbackLogo, setUseFallbackLogo] = useState<boolean>(false);
 
+  const logoUrl = company?.logoUrl || '';
+  const qrUrl = company
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=6&ecc=H&color=000000&bgcolor=ffffff&data=${encodeURIComponent(profileUrl)}`
+    : '';
+
   useEffect(() => {
+    if (!company) return;
+
     const getBase64FromUrl = async (url: string): Promise<string> => {
       if (!url) return '';
       if (url.startsWith('data:')) return url;
@@ -190,10 +161,43 @@ export default function CompanyDigitalCardPageClient({
       }
     };
 
-    if (company) {
-      convertImages();
-    }
+    convertImages();
   }, [logoUrl, qrUrl, company]);
+
+  if (dbLoading && !company) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] text-white">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500/30 border-t-purple-400" />
+      </main>
+    );
+  }
+
+  if (!company) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#070714] px-6 text-center text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 max-w-md backdrop-blur-md shadow-2xl">
+          <Info size={40} className="mx-auto text-amber-400 mb-4 animate-bounce" />
+          <h1 className="text-xl font-bold tracking-tight">Business card not available</h1>
+          <p className="mt-2 text-sm text-gray-400">Complete the business profile first to generate this card.</p>
+        </div>
+      </main>
+    );
+  }
+
+  const name = company.name || company.businessName || company.companyName || 'Business Partner';
+  const email = company.email || 'contact@business.com';
+  const phone = company.phone || 'N/A';
+  const category = company.category || 'Business Services';
+  const district = company.district || 'Theni';
+  const address = company.address || 'Theni, Tamil Nadu';
+  const description = company.description || 'Verified Business Partner listing on THENIJOBS.';
+  const tagline = company.tagline || 'Verified Local Partner';
+
+  const isPremium = plan === 'premium' || plan === 'enterprise';
+  const isVerified = plan !== 'free' || company.verificationStatus === 'verified';
+  
+  const uniqueId = `TNI-BUS-${(company.id || company.uid || 'unknown').slice(0, 8).toUpperCase()}`;
+  const backupQrUrl = `https://quickchart.io/qr?size=500&margin=6&text=${encodeURIComponent(profileUrl)}`;
 
   // Premium themes config for visiting card background
   const themeGradients: Record<CardThemeName, {
@@ -238,7 +242,7 @@ export default function CompanyDigitalCardPageClient({
   const downloadPng = async (side: 'front' | 'back') => {
     setExporting(side === 'front' ? 'png-front' : 'png-back');
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      const html2canvas = (await import('html2canvas-pro')).default;
       const element = document.getElementById(side === 'front' ? 'business-card-front' : 'business-card-back');
       if (!element) return;
 
@@ -265,7 +269,7 @@ export default function CompanyDigitalCardPageClient({
   const downloadPdf = async () => {
     setExporting('pdf');
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      const html2canvas = (await import('html2canvas-pro')).default;
       const { jsPDF } = await import('jspdf');
 
       const frontElement = document.getElementById('business-card-front');
@@ -341,7 +345,7 @@ export default function CompanyDigitalCardPageClient({
     const shareText = `Scan our Business Card to view products, services, and profile on THENIJOBS: ${profileUrl}`;
 
     try {
-      const html2canvas = (await import('html2canvas')).default;
+      const html2canvas = (await import('html2canvas-pro')).default;
       const frontElement = document.getElementById('business-card-front');
 
       if (frontElement && navigator.share && navigator.canShare) {

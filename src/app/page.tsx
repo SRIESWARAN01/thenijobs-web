@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-theme-main text-theme-body">
+    <main id="main-content" className="min-h-screen bg-theme-main text-theme-body">
       <Header />
       <HeroSection />
       <SearchHub />

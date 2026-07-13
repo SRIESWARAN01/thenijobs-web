@@ -293,21 +293,7 @@ service cloud.firestore {
       );
     }
 
-    // ===== REVIEWS =====
-    match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isAuthenticated()
-        && request.resource.data.reviewerId == request.auth.uid
-        && optionalFalse('isVerified');
-      allow update: if isAdmin()
-        || (
-          resource.data.reviewerId == request.auth.uid
-          && request.resource.data.reviewerId == resource.data.reviewerId
-          && request.resource.data.isVerified == resource.data.isVerified
-        );
-      allow delete: if isAdmin()
-        || (isAuthenticated() && resource.data.reviewerId == request.auth.uid);
-    }
+    // ===== REVIEWS ===== (see consolidated rules below near enquiries)
 
     // ===== SEEKER PROFILES =====
     match /seekerProfiles/{userId} {
@@ -332,13 +318,15 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (isAuthenticated() && resource.data.userId == request.auth.uid)
         || (resource.data.companyId != null && isCompanyOwner(resource.data.companyId));
-      allow create: if request.resource.data.contactName is string
+      allow create: if isAuthenticated()
+        && request.resource.data.contactName is string
         && request.resource.data.contactName.size() <= 100
         && (request.resource.data.contactPhone == 'N/A' || (request.resource.data.contactPhone is string && request.resource.data.contactPhone.size() >= 10 && request.resource.data.contactPhone.size() <= 15))
         && request.resource.data.type in ['candidate', 'business', 'service']
         && request.resource.data.status == 'new'
         && (!request.resource.data.keys().hasAny(['userId']) || request.resource.data.userId == request.auth.uid)
-        && (!request.resource.data.keys().hasAny(['message']) || (request.resource.data.message is string && request.resource.data.message.size() <= 1000));
+        && (!request.resource.data.keys().hasAny(['message']) || (request.resource.data.message is string && request.resource.data.message.size() <= 1000))
+        && request.resource.data.keys().size() <= 15;
       allow update: if isAdmin()
         || (resource.data.companyId != null && isCompanyOwner(resource.data.companyId));
       allow delete: if isAdmin();
@@ -483,10 +471,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /advertisements/{advertisementId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
+    // advertisements rules are consolidated below (near adPlans)
 
     // ===== SHOP PRODUCTS =====
     match /products/{productId} {
@@ -689,14 +674,24 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // ===== REVIEWS =====
+    // ===== REVIEWS (consolidated) =====
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if isAuthenticated()
-        && request.resource.data.status == 'pending';
+        && request.resource.data.reviewerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && optionalFalse('isVerified');
       allow update: if isAdmin()
-        || (isAuthenticated() && isCompanyOwner(resource.data.companyId));
-      allow delete: if isAdmin();
+        || (isAuthenticated() && isCompanyOwner(resource.data.companyId))
+        || (
+          isAuthenticated()
+          && resource.data.reviewerId == request.auth.uid
+          && request.resource.data.reviewerId == resource.data.reviewerId
+          && request.resource.data.isVerified == resource.data.isVerified
+          && request.resource.data.status == resource.data.status
+        );
+      allow delete: if isAdmin()
+        || (isAuthenticated() && resource.data.reviewerId == request.auth.uid);
     }
 
     // ===== ENQUIRIES =====
@@ -728,6 +723,20 @@ service cloud.firestore {
         && request.resource.data.eventType.size() <= 50
         && request.resource.data.companyId is string
         && request.resource.data.keys().size() <= 15;
+      allow update, delete: if false;
+    }
+
+    // ===== ACTIVITY LOGS (public feed on homepage) =====
+    match /activityLogs/{logId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ===== ADMIN ACTIVITY LOGS =====
+    match /adminActivityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
       allow update, delete: if false;
     }
 

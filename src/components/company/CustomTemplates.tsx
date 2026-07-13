@@ -1046,7 +1046,7 @@ function AboutSection({ company, customization }: { company: any; customization:
         </p>
         {company.tagline && (
           <div className="p-4 rounded-xl bg-[var(--theme-bg)] border border-[var(--theme-border)] text-xs text-[var(--theme-text)]/70 italic">
-            "{company.tagline}"
+            &ldquo;{company.tagline}&rdquo;
           </div>
         )}
       </div>
@@ -1437,7 +1437,7 @@ function ReviewsSection({ company, reviews, customization, isPreview }: { compan
                   ))}
                 </div>
                 <p className="text-xs text-[var(--theme-text)]/80 leading-relaxed italic">
-                  "{rev.comment || rev.content}"
+                  &ldquo;{rev.comment || rev.content}&rdquo;
                 </p>
               </div>
             ))
@@ -3104,7 +3104,7 @@ Website: ${company.website || 'N/A'}
                   </div>
 
                   <p className="text-xs text-[var(--theme-text)]/80 leading-relaxed italic">
-                    "{rev.content || rev.comment}"
+                    &ldquo;{rev.content || rev.comment}&rdquo;
                   </p>
 
                   {/* Business reply */}
@@ -3366,7 +3366,7 @@ Website: ${company.website || 'N/A'}
           <h2 className="text-xl sm:text-2xl font-black text-[var(--theme-text)] flex items-center gap-2">
             <Users className="text-[var(--theme-primary)]" size={22} /> Recommended Businesses
           </h2>
-          <p className="text-xs text-[var(--theme-text)]/60">Similar service providers in the category "{company.category}"</p>
+          <p className="text-xs text-[var(--theme-text)]/60">Similar service providers in the category &ldquo;{company.category}&rdquo;</p>
         </div>
 
         <div className="grid sm:grid-cols-3 gap-5">

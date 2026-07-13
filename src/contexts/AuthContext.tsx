@@ -219,7 +219,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const syncVerifiedUserDocument = useCallback(async (fbUser: FirebaseUser, profile?: User | null) => {
-    const dataToSave: any = {
+    const dataToSave: Record<string, unknown> = {
       email: fbUser.email || profile?.email || '',
       displayName: fbUser.displayName || profile?.displayName || fbUser.phoneNumber || 'User',
       photoURL: fbUser.photoURL || profile?.photoURL || '',
@@ -255,10 +255,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!profile && dataToSave.role) {
       await ensureFreeYearlySubscription({
         uid: fbUser.uid,
-        displayName: dataToSave.displayName,
-        email: dataToSave.email,
+        displayName: dataToSave.displayName as string | undefined,
+        email: dataToSave.email as string | undefined,
         phone: fbUser.phoneNumber || undefined,
-        role: dataToSave.role,
+        role: dataToSave.role as UserRole,
       });
     }
   }, [ensureFreeYearlySubscription]);

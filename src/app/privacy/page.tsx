@@ -129,7 +129,7 @@ export default function PrivacyPolicyPage() {
             <div>
               <h2 className="flex items-center gap-2.5 font-outfit font-bold text-lg sm:text-xl text-white mb-4 border-b border-white/5 pb-2">
                 <Shield size={20} className="text-violet-400" />
-                6. Children's Privacy
+                6. Children&apos;s Privacy
               </h2>
               <p className="text-sm leading-relaxed text-slate-300">
                 THENIJOBS does not knowingly collect or solicit personal information from anyone under the age of 13. If we discover that we have collected personal data from a child under 13, we will delete that information immediately.

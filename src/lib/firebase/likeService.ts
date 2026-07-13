@@ -13,7 +13,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 
 // ─── Deterministic doc ID ───────────────────────────────────────
 function likeDocId(userId: string, productId: string) {

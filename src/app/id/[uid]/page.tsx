@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import DigitalIdCardPageClient from './DigitalIdCardPageClient';
@@ -66,12 +67,12 @@ export default async function DigitalIdDynamicPage({ params }: PageProps) {
           <p className="mt-2 text-sm text-gray-400">
             This candidate ID card has been suspended, removed, or is currently undergoing review.
           </p>
-          <a
+          <Link
             href="/"
             className="mt-6 inline-flex min-h-10 items-center justify-center rounded-xl bg-violet-600 px-6 text-xs font-bold text-white hover:bg-violet-700 transition-all shadow-md active:scale-95"
           >
             Go Back Home
-          </a>
+          </Link>
         </div>
       </main>
     );

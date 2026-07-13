@@ -6,6 +6,14 @@ import BottomNav from '../components/navigation/BottomNav';
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+  }),
 }));
 
 // Mutable mock state for useAuth
@@ -44,11 +52,11 @@ describe('BottomNav Component', () => {
   it('renders job seeker nav items correctly', () => {
     mockUser = { uid: 'u1', role: 'job_seeker' };
     render(<BottomNav />);
-    expect(screen.getByText('Home')).toBeDefined();
-    expect(screen.getByText('Jobs')).toBeDefined();
+    expect(screen.getByText('Dashboard')).toBeDefined();
+    expect(screen.getByText('Job Search')).toBeDefined();
     expect(screen.getByText('Applications')).toBeDefined();
-    expect(screen.getByText('Messages')).toBeDefined();
-    expect(screen.getByText('Profile')).toBeDefined();
+    expect(screen.getByText('Companies')).toBeDefined();
+    expect(screen.getByText('More')).toBeDefined();
   });
 
   it('renders employer nav items correctly', () => {

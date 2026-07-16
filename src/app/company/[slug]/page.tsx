@@ -124,6 +124,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       alternates: {
         canonical: canonicalUrl,
       },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: { index: true, follow: true, 'max-image-preview': 'large' as const, 'max-snippet': -1 },
+      },
+      openGraph: {
+        title: `${name} — THENIJOBS`,
+        description: defaultDescription,
+        type: 'website',
+        url: canonicalUrl,
+      },
     };
   } else if (activePlan === 'basic') {
     // Standard (basic): Enhanced SEO (custom seoTitle / seoDescription if available)
@@ -134,6 +145,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       alternates: {
         canonical: canonicalUrl,
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: { index: true, follow: true, 'max-image-preview': 'large' as const, 'max-snippet': -1 },
+      },
+      openGraph: {
+        title: `${title} — THENIJOBS`,
+        description,
+        type: 'website',
+        url: canonicalUrl,
       },
     };
   } else if (activePlan === 'premium') {

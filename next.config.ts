@@ -6,6 +6,7 @@ const appRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   // output: 'export', // disabled — project uses dynamic API routes (auth, otp, razorpay, proxy-image)
+  trailingSlash: false, // Must match firebase.json "trailingSlash": false
   devIndicators: false,
   turbopack: {
     root: appRoot,

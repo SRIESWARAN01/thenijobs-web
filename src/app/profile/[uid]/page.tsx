@@ -60,6 +60,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical: profileUrl,
     },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large' as const, 'max-snippet': -1 },
+    },
     openGraph: {
       title: `${name} | ${role} on THENIJOBS`,
       description,

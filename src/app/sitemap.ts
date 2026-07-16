@@ -24,10 +24,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/jobs/coimbatore`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
     { url: `${BASE}/jobs/freshers`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
     { url: `${BASE}/jobs/part-time`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
+    // Theni sub-location pages
+    { url: `${BASE}/jobs/cumbum`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    { url: `${BASE}/jobs/bodinayakanur`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    { url: `${BASE}/jobs/periyakulam`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    { url: `${BASE}/jobs/uthamapalayam`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    { url: `${BASE}/jobs/andipatti`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    { url: `${BASE}/jobs/chinnamanur`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    { url: `${BASE}/jobs/dindigul`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    // Category/role-based job pages
+    { url: `${BASE}/jobs/government`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
+    { url: `${BASE}/jobs/walk-in`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    { url: `${BASE}/jobs/work-from-home`, changeFrequency: 'daily', priority: 0.8, lastModified: now },
+    // Core pages
     { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
     { url: `${BASE}/services`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
     { url: `${BASE}/about`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
+    { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
     { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.4, lastModified: now },
+    { url: `${BASE}/terms`, changeFrequency: 'monthly', priority: 0.4, lastModified: now },
     { url: `${BASE}/academy`, changeFrequency: 'weekly', priority: 0.7, lastModified: now },
     { url: `${BASE}/pricing`, changeFrequency: 'weekly', priority: 0.7, lastModified: now },
   ];

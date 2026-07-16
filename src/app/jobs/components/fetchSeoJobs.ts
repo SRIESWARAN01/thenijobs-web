@@ -26,7 +26,7 @@ export interface SeoJob {
  * Used at build/request time in page.tsx server components.
  */
 export async function fetchSeoJobs(
-  filterField: 'district' | 'jobType',
+  filterField: 'district' | 'jobType' | 'location',
   filterValue: string,
   maxResults = 40,
 ): Promise<SeoJob[]> {

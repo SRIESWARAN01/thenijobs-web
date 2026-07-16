@@ -14,7 +14,7 @@ interface SeoJobsLandingProps {
   title: string;
   subtitle: string;
   metaDescription: string;
-  filterField: 'district' | 'jobType';
+  filterField: 'district' | 'jobType' | 'location';
   filterValue: string;
   /** Server-fetched initial jobs for SSR. If provided, skips client-side fetch. */
   initialJobs?: SeoJob[];
@@ -42,24 +42,14 @@ export default function SeoJobsLanding({
         setLoading(true);
         const jobsRef = collection(db, 'jobs');
 
-        let q;
-        if (filterField === 'district') {
-          q = query(
-            jobsRef,
-            where('isActive', '==', true),
-            where('district', '==', filterValue),
-            orderBy('createdAt', 'desc'),
-            fbLimit(40)
-          );
-        } else {
-          q = query(
-            jobsRef,
-            where('isActive', '==', true),
-            where('jobType', '==', filterValue),
-            orderBy('createdAt', 'desc'),
-            fbLimit(40)
-          );
-        }
+        const filterKey = filterField === 'district' ? 'district' : filterField === 'location' ? 'location' : 'jobType';
+        const q = query(
+          jobsRef,
+          where('isActive', '==', true),
+          where(filterKey, '==', filterValue),
+          orderBy('createdAt', 'desc'),
+          fbLimit(40)
+        );
 
         const snapshot = await getDocs(q);
         const fetched = snapshot.docs

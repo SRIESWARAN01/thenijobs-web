@@ -135,7 +135,7 @@ export default function TrendingJobs() {
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className="group rounded-2xl border border-theme bg-theme-card hover:border-[var(--theme-primary)]/30 hover:bg-white/[0.05] p-5 shadow-xl transition-all duration-300 flex flex-col justify-between h-full relative"
+                  className="group rounded-2xl border border-theme bg-theme-card hover:border-[var(--theme-primary)]/30 hover:bg-white/[0.05] p-4 sm:p-5 shadow-xl transition-all duration-300 flex flex-col justify-between h-full relative min-w-0 overflow-hidden"
                 >
                   <div>
                     <div className="mb-4 flex items-start justify-between gap-3">
@@ -156,7 +156,7 @@ export default function TrendingJobs() {
                           <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-450">{job.company}</p>
                         </div>
                       </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
+                      <div className="flex shrink-0 flex-col items-end gap-1 min-w-0">
                         {job.isUrgent && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-bold text-amber-400 uppercase tracking-wide">
                             <Zap size={9} className="fill-current" /> Urgent
@@ -170,7 +170,7 @@ export default function TrendingJobs() {
                       </div>
                     </div>
 
-                    <div className="mb-4 flex flex-wrap gap-1.5">
+                    <div className="mb-4 flex flex-wrap gap-1.5 overflow-hidden">
                       {job.skills.slice(0, 3).map((skill) => (
                         <span key={skill} className="rounded-full bg-white/5 border border-theme px-2.5 py-0.5 text-[10px] font-semibold text-slate-300">
                           {skill}

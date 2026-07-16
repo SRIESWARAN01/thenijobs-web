@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, type FormEvent } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, Menu } from 'lucide-react';
 import Sidebar from '@/components/ui/Sidebar';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
@@ -33,8 +33,15 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
   const { data: seekerProfile } = useDocument<JobSeekerProfile>('seekerProfiles', user?.uid);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [headerSearch, setHeaderSearch] = useState('');
+  const pathname = usePathname();
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   if (authLoading) {
     return (
@@ -87,6 +94,8 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
           email: user?.email || undefined,
         }}
         onLogout={handleLogout}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
       >
         <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
           <div className="flex items-center justify-between mb-2">
@@ -100,9 +109,17 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
       </Sidebar>
 
       {/* Main Content Area */}
-      <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? 'lg:ml-[72px]' : 'lg:ml-[280px]'}`}>
+      <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? 'md:ml-[72px]' : 'md:ml-[280px]'}`}>
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 h-16 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-white/[0.06] flex items-center px-4 lg:px-6 gap-4">
+        <header className="sticky top-0 z-30 h-16 bg-[#0a0a1a]/80 backdrop-blur-xl border-b border-white/[0.06] flex items-center px-4 md:px-6 gap-4">
+          {/* Mobile Menu Toggle */}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="md:hidden h-12 w-12 flex items-center justify-center rounded-xl text-gray-400 hover:text-white hover:bg-white/[0.06] transition-all"
+          >
+            <Menu size={20} />
+          </button>
+
           <form onSubmit={handleHeaderSearch} className="flex-1 max-w-lg relative hidden sm:block" aria-label="Search jobs">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
             <input
@@ -204,7 +221,7 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
           {children}
         </main>
       </div>

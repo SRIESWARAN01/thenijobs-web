@@ -26,11 +26,15 @@ export const metadata: Metadata = {
   title: 'Business Hub — Employer, Business, Supplier & Service Portals',
   description:
     'Access all THENIJOBS business portals from one place. Post jobs, manage products, connect with suppliers, and offer services across Theni district.',
+  alternates: {
+    canonical: 'https://thenijobs.com/hub',
+  },
   openGraph: {
     title: 'Business Hub — THENIJOBS',
     description:
       'Your gateway to Employer, Business, Supplier & Service portals on THENIJOBS.',
     type: 'website',
+    url: 'https://thenijobs.com/hub',
   },
 };
 

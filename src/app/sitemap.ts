@@ -6,7 +6,11 @@ import { adminDb } from '@/lib/firebaseAdmin';
  * jobs, companies, and profiles appear immediately for Google.
  *
  * Previously this used `force-static` which froze the sitemap at build time.
+ * We now force-dynamic to ensure Firebase data is always fresh.
  */
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE = 'https://thenijobs.com';
   const now = new Date();
@@ -25,7 +29,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/about`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
     { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.4, lastModified: now },
     { url: `${BASE}/academy`, changeFrequency: 'weekly', priority: 0.7, lastModified: now },
-    { url: `${BASE}/company/register`, changeFrequency: 'monthly', priority: 0.8, lastModified: now },
     { url: `${BASE}/pricing`, changeFrequency: 'weekly', priority: 0.7, lastModified: now },
   ];
 

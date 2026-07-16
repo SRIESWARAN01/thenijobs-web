@@ -145,6 +145,10 @@ export interface SidebarProps {
   onLogout?: () => void;
   className?: string;
   children?: React.ReactNode;
+  /** Controlled mobile drawer open state (from parent layout) */
+  mobileOpen?: boolean;
+  /** Callback when the mobile drawer requests closing */
+  onMobileClose?: () => void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -169,10 +173,19 @@ export function Sidebar({
   onLogout,
   className = '',
   children,
+  mobileOpen: externalMobileOpen,
+  onMobileClose,
 }: SidebarProps) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+
+  // Use controlled props when provided, otherwise fall back to internal state
+  const isControlled = externalMobileOpen !== undefined;
+  const mobileOpen = isControlled ? externalMobileOpen : internalMobileOpen;
+  const setMobileOpen = isControlled
+    ? (open: boolean) => { if (!open && onMobileClose) onMobileClose(); }
+    : setInternalMobileOpen;
 
   const PortalIcon = useMemo(() => resolveIcon(portalIcon), [portalIcon]);
 
@@ -398,16 +411,18 @@ export function Sidebar({
         {navContent(false)}
       </motion.aside>
 
-      {/* ── Mobile hamburger ── */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2.5 rounded-xl
-          bg-[rgba(10,10,26,0.9)] border border-white/[0.08] backdrop-blur-xl
-          text-white/60 hover:text-white transition-colors"
-        aria-label="Open menu"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {/* ── Mobile hamburger (only shown when NOT controlled by parent layout) ── */}
+      {!isControlled && (
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="md:hidden fixed top-3 left-3 z-50 p-2.5 rounded-xl
+            bg-[rgba(10,10,26,0.9)] border border-white/[0.08] backdrop-blur-xl
+            text-white/60 hover:text-white transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
 
       {/* ── Mobile drawer ── */}
       <AnimatePresence>

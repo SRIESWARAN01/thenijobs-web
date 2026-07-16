@@ -167,18 +167,18 @@ export default function StatsSection() {
   return (
     <section className="px-4 py-8 sm:px-6 bg-[#0a0a1a]">
       <div className="mx-auto max-w-7xl">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 shadow-xl sm:p-5 backdrop-blur-md hover:border-white/10 transition-all duration-300">
+              <div key={stat.label} className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 sm:p-4 shadow-xl sm:p-5 backdrop-blur-md hover:border-white/10 transition-all duration-300 min-w-0">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-300">
                   <Icon size={18} />
                 </div>
-                <div className={`font-outfit text-2xl font-black sm:text-3xl ${stat.color}`}>
+                <div className={`font-outfit text-xl font-black sm:text-2xl md:text-3xl ${stat.color}`}>
                   {stat.loading ? '...' : <AnimatedNumber target={stat.value} />}
                 </div>
-                <div className="mt-1 text-sm font-bold text-white leading-tight">{stat.label}</div>
+                <div className="mt-1 text-xs sm:text-sm font-bold text-white leading-tight">{stat.label}</div>
                 <div className="mt-0.5 text-xs text-slate-400">{stat.detail}</div>
               </div>
             );

@@ -5,6 +5,9 @@ import ShopNavbar from '@/components/shop/ShopNavbar';
 export const metadata: Metadata = {
   title: 'THENIJOBS Store',
   description: 'Shop local products from Theni',
+  alternates: {
+    canonical: 'https://thenijobs.com/shop',
+  },
 };
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {

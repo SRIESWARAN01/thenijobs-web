@@ -95,8 +95,8 @@ export default function HeroSection() {
   return (
     <section className="relative overflow-hidden bg-theme-main px-4 pb-12 pt-24 sm:px-6 lg:pb-16 lg:pt-32 border-b border-theme text-theme-body">
       {/* Background glow effects */}
-      <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full blur-[120px] pointer-events-none opacity-20" style={{ backgroundColor: 'var(--theme-primary)' }} />
-      <div className="absolute top-1/3 right-1/4 h-[350px] w-[350px] rounded-full blur-[100px] pointer-events-none opacity-20" style={{ backgroundColor: 'var(--theme-accent)' }} />
+      <div className="absolute top-0 left-1/4 rounded-full blur-[120px] pointer-events-none opacity-20" style={{ backgroundColor: 'var(--theme-primary)', width: 'clamp(200px, 40vw, 384px)', height: 'clamp(200px, 40vw, 384px)' }} />
+      <div className="absolute top-1/3 right-1/4 rounded-full blur-[100px] pointer-events-none opacity-20" style={{ backgroundColor: 'var(--theme-accent)', width: 'clamp(180px, 35vw, 350px)', height: 'clamp(180px, 35vw, 350px)' }} />
       
       <div className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div className="z-10">
@@ -105,7 +105,7 @@ export default function HeroSection() {
             Theni local jobs + business directory
           </div>
 
-          <h1 className="max-w-3xl font-outfit text-4xl font-extrabold leading-[1.08] text-white sm:text-5xl lg:text-6xl tracking-tight">
+          <h1 className="max-w-3xl font-outfit font-extrabold text-white tracking-tight" style={{ fontSize: 'clamp(1.75rem, 4vw + 0.5rem, 3.75rem)', lineHeight: 1.08 }}>
             {t('home.heroTitle')}
           </h1>
 
@@ -114,7 +114,7 @@ export default function HeroSection() {
           </p>
 
           <div className="mt-7 rounded-2xl border border-theme bg-theme-card p-3 shadow-2xl backdrop-blur-md">
-            <div className="grid gap-2 sm:grid-cols-[1fr_180px_auto]">
+            <div className="grid gap-2 sm:grid-cols-[1fr_180px] md:grid-cols-[1fr_180px_auto]">
               <label className="flex min-h-12 items-center gap-3 rounded-xl border border-theme bg-white/5 px-4 focus-within:border-[var(--theme-primary)] focus-within:bg-white/[0.08] transition-all">
                 <Search size={18} className="shrink-0 text-slate-500" />
                 <input
@@ -145,7 +145,7 @@ export default function HeroSection() {
               <button
                 type="button"
                 onClick={handleSearch}
-                className="min-h-12 rounded-xl btn-theme-primary px-6 text-sm font-bold transition-all shadow-lg active:scale-95 cursor-pointer"
+                className="min-h-12 rounded-xl btn-theme-primary px-6 text-sm font-bold transition-all shadow-lg active:scale-95 cursor-pointer sm:col-span-2 md:col-span-1"
               >
                 Search
               </button>
@@ -170,9 +170,9 @@ export default function HeroSection() {
 
           <div className="mt-8 grid gap-3 grid-cols-3">
             {statsList.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 backdrop-blur-md">
-                <div className="text-xl sm:text-2xl font-black text-white">{stat.value}</div>
-                <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{stat.label}</div>
+              <div key={stat.label} className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 sm:p-4 backdrop-blur-md min-w-0">
+                <div className="text-lg sm:text-2xl font-black text-white truncate">{stat.value}</div>
+                <div className="mt-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">{stat.label}</div>
               </div>
             ))}
           </div>

@@ -125,14 +125,14 @@ export default function CategoriesSection() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-violet-400">Popular Categories</p>
-            <h2 className="mt-1 font-outfit text-2xl font-black text-white sm:text-3xl tracking-tight">
+            <h2 className="mt-1 font-outfit text-2xl font-black text-white sm:text-3xl tracking-tight" style={{ fontSize: 'clamp(1.35rem, 3vw + 0.25rem, 1.875rem)' }}>
               Jobs & Businesses by Industry
             </h2>
             <p className="mt-1 text-sm text-slate-400">Dynamically updated live business listings and active careers count.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {categoryDefs.map((cat) => {
             const Icon = cat.icon;
             const categoryData = stats[cat.label];
@@ -141,22 +141,22 @@ export default function CategoriesSection() {
               <Link
                 key={cat.label}
                 href={cat.href}
-                className="group rounded-2xl border border-white/5 bg-white/[0.02] hover:border-violet-500/30 hover:bg-white/[0.04] p-5 shadow-xl transition-all duration-300 flex flex-col justify-between"
+                className="group rounded-2xl border border-white/5 bg-white/[0.02] hover:border-violet-500/30 hover:bg-white/[0.04] p-4 sm:p-5 shadow-xl transition-all duration-300 flex flex-col justify-between min-w-0"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${cat.color} group-hover:scale-105 transition-transform`}>
+                    <span className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl ${cat.color} group-hover:scale-105 transition-transform`}>
                       <Icon size={20} />
                     </span>
                     <ChevronRight size={14} className="text-slate-500 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
                   </div>
-                  <span className="block text-base font-bold text-white group-hover:text-violet-300 transition-colors leading-tight">
+                  <span className="block text-sm sm:text-base font-bold text-white group-hover:text-violet-300 transition-colors leading-tight">
                     {cat.label}
                   </span>
                   <span className="mt-0.5 block text-xs text-slate-500 font-semibold">{cat.tamil}</span>
                 </div>
 
-                <div className="mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] font-bold">
+                <div className="mt-4 sm:mt-6 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
                   <div className="text-slate-400">
                     Businesses:{' '}
                     <span className="text-white">

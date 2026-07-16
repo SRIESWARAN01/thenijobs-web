@@ -4,6 +4,9 @@ export const metadata: Metadata = {
   title: 'Community Feed — Latest Updates from Local Businesses',
   description:
     'Stay updated with the latest posts, job announcements, product launches, and business updates from verified companies across Theni district on THENIJOBS.',
+  alternates: {
+    canonical: 'https://thenijobs.com/feed',
+  },
 };
 
 export default function FeedLayout({ children }: { children: React.ReactNode }) {

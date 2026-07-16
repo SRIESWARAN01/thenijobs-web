@@ -141,9 +141,10 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
     creator: "@thenijobs",
   },
-  alternates: {
-    canonical: "https://thenijobs.com",
-  },
+  // NOTE: Do NOT set alternates.canonical here — it cascades to ALL child pages
+  // and tells Google they're duplicates of the homepage. Each indexable page
+  // must define its own canonical in its own metadata export.
+  
   category: "Jobs & Recruitment",
   robots: {
     index: true,

@@ -176,7 +176,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const ogTitleVal = companyData.ogTitle || `${title} — THENIJOBS Enterprise VIP Partner`;
     const ogDescVal = companyData.ogDescription || description;
     const ogImageVal = companyData.socialShareImage || bannerUrl || logoUrl;
-    const canonical = companyData.canonicalUrl || canonicalUrl;
+    // Only accept custom canonicals that point to thenijobs.com — external
+    // canonicals would tell Google this page is a duplicate of another site.
+    const rawCanonical = companyData.canonicalUrl || '';
+    const canonical = rawCanonical.startsWith('https://thenijobs.com') ? rawCanonical : canonicalUrl;
 
     return {
       title,

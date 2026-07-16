@@ -121,7 +121,7 @@ export default function SearchHub() {
             })}
           </div>
 
-          <div className="mt-4 grid gap-2 md:grid-cols-[1fr_180px_auto]">
+          <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_180px] md:grid-cols-[1fr_180px_auto]">
             <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 focus-within:border-violet-500 focus-within:bg-white/[0.08] transition-all">
               <Search size={18} className="shrink-0 text-slate-500" />
               <input

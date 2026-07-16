@@ -556,7 +556,7 @@ export default function AdminDashboard() {
       {activeBiTab === 'overview' && (
         <div className="space-y-6">
           {/* Stat Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {statsConfig.map((card, i) => (
               <StatCard key={i} {...card} />
             ))}
@@ -784,7 +784,7 @@ export default function AdminDashboard() {
                     <div key={biz.name} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-xs">
                       <div className="flex items-center gap-2">
                         <span className="text-gray-500 font-bold">#{idx + 1}</span>
-                        <span className="font-bold text-white truncate max-w-[180px]">{biz.name}</span>
+                        <span className="font-bold text-white truncate max-w-[120px] sm:max-w-[180px]">{biz.name}</span>
                       </div>
                       <span className="font-black text-emerald-400">₹{biz.value.toLocaleString('en-IN')}</span>
                     </div>
@@ -801,7 +801,7 @@ export default function AdminDashboard() {
       {/* 4. LEADS TAB */}
       {activeBiTab === 'leads' && (
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
             {[
               { label: 'Total Leads Generated', value: leadsStats.total, tone: 'text-violet-400' },
               { label: 'WhatsApp Clicks', value: leadsStats.whatsappLeads, tone: 'text-green-400' },

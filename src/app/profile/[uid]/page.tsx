@@ -138,12 +138,27 @@ export default async function PublicProfileDynamicPage({ params }: PageProps) {
     ]
   };
 
+  const personLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: profile?.name || profile?.displayName || 'THENIJOBS Member',
+    jobTitle: profile?.currentRole || profile?.qualification || 'Job Seeker',
+    url: `https://thenijobs.com/profile/${uid}`,
+    ...(profile?.photoUrl || profile?.profilePhotoUrl || profile?.photoURL
+      ? { image: profile.photoUrl || profile.profilePhotoUrl || profile.photoURL }
+      : {}),
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: profile?.district || 'Theni',
+      addressRegion: 'Tamil Nadu',
+      addressCountry: 'IN',
+    },
+  };
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personLd) }} />
       <PublicProfilePageClient uid={uid} />
     </>
   );

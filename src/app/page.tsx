@@ -37,8 +37,20 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://thenijobs.com' },
+    ],
+  };
+
   return (
     <main id="main-content" className="min-h-screen bg-theme-main text-theme-body">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       <Header />
       <HeroSection />
       <SearchHub />

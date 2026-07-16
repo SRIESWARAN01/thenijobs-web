@@ -161,12 +161,20 @@ export default async function ServiceDetailPage({ params }: PageProps) {
     } : undefined
   };
 
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://thenijobs.com' },
+      { '@type': 'ListItem', position: 2, name: 'Services', item: 'https://thenijobs.com/services' },
+      { '@type': 'ListItem', position: 3, name: service.name, item: `https://thenijobs.com/services/${id}` },
+    ],
+  };
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ServiceDetailPageClient
         service={service}
         company={company}

@@ -62,6 +62,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     alternates: {
       canonical: `https://thenijobs.com/jobs/${id}`,
     },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large' as const, 'max-snippet': -1 },
+    },
     openGraph: {
       title: `${title} — THENIJOBS`,
       description,

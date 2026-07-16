@@ -331,8 +331,21 @@ export default async function CompanyProfilePage({ params }: PageProps) {
     }] : [])
   ] : null;
 
+  const name = companyData?.name || companyData?.businessName || companyData?.companyName || 'Business';
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://thenijobs.com' },
+      { '@type': 'ListItem', position: 2, name: 'Businesses', item: 'https://thenijobs.com/businesses' },
+      { '@type': 'ListItem', position: 3, name, item: `https://thenijobs.com/company/${slug}` },
+    ],
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       {jsonLdList && jsonLdList.map((ld, index) => (
         <script
           key={index}

@@ -16,8 +16,29 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicyPage() {
+  const webPageLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'Privacy Policy',
+    description: 'Learn how THENIJOBS collects, protects, uses, and handles user data.',
+    url: 'https://thenijobs.com/privacy',
+    inLanguage: 'en-IN',
+    isPartOf: { '@type': 'WebSite', name: 'THENIJOBS', url: 'https://thenijobs.com' },
+  };
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://thenijobs.com' },
+      { '@type': 'ListItem', position: 2, name: 'Privacy Policy', item: 'https://thenijobs.com/privacy' },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-[#04040d] text-slate-100 font-sans selection:bg-violet-600/30">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <Header />
 
       <main className="mx-auto max-w-4xl px-4 py-28 sm:px-6">

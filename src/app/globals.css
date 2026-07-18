@@ -1,8 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: var(--font-inter), "Inter", "Outfit", system-ui, sans-serif;
   --font-outfit: var(--font-outfit), "Outfit", "Inter", system-ui, sans-serif;
+  --font-sora: "Sora", var(--font-sans), sans-serif;
+
+  /* Semantic OKLCH tokens for THENIJOBS */
+  --color-primary-teal: oklch(0.35 0.08 195);
+  --color-accent-saffron: oklch(0.76 0.17 76);
+  --color-bg-warm: oklch(0.98 0.01 70);
+  --color-text-main: oklch(0.20 0.02 195);
+  --color-text-muted: oklch(0.45 0.02 195);
+  --color-card-bg: oklch(1.0 0.0 0);
+  --color-border-warm: oklch(0.93 0.01 70);
 }
 
 @layer base {

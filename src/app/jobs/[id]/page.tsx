@@ -100,6 +100,64 @@ export async function generateStaticParams() {
   }
 }
 
+/**
+ * Postal code lookup for known localities in the Theni region.
+ * Used as fallbacks when the job document doesn't store a postal code.
+ */
+const LOCATION_POSTAL_CODES: Record<string, string> = {
+  'Theni':            '625531',
+  'Bodinayakanur':    '625513',
+  'Periyakulam':      '625601',
+  'Cumbum':           '625516',
+  'Uthamapalayam':    '625533',
+  'Andipatti':        '625512',
+  'Chinnamanur':      '625515',
+  'Bodi':             '625513',
+  'Kambam':           '625516',
+  'Madurai':          '625001',
+  'Dindigul':         '624001',
+  'Coimbatore':       '641001',
+};
+
+/** Default fallback when no location match is found */
+const DEFAULT_POSTAL_CODE = '625531';
+const DEFAULT_STREET_ADDRESS = 'Main Road';
+
+/**
+ * Resolve a PostalAddress object from job data with full Schema.org
+ * recommended fields. Prefers dynamic DB values, falls back to the
+ * location-based lookup map, then to configurable defaults.
+ */
+function resolvePostalAddress(jobData: Record<string, any>) {
+  const locality  = jobData.location || jobData.district || 'Theni';
+  const region    = jobData.state || 'Tamil Nadu';
+
+  // streetAddress: prefer DB → company address → configurable default
+  const streetAddress =
+    jobData.streetAddress ||
+    jobData.address ||
+    jobData.companyAddress ||
+    `${DEFAULT_STREET_ADDRESS}, ${locality}`;
+
+  // postalCode: prefer DB → lookup map → default
+  const postalCode =
+    jobData.postalCode ||
+    jobData.pinCode ||
+    jobData.pincode ||
+    jobData.companyPinCode ||
+    LOCATION_POSTAL_CODES[locality] ||
+    DEFAULT_POSTAL_CODE;
+
+  return {
+    '@type': 'PostalAddress' as const,
+    'streetAddress': streetAddress,
+    'addressLocality': locality,
+    'addressRegion': region,
+    'postalCode': postalCode,
+    'addressCountry': 'IN',
+  };
+}
+
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
   const jobData = await getJobData(id);
@@ -113,6 +171,9 @@ export default async function JobDetailPage({ params }: PageProps) {
   if (isSuspendedOrDeleted) {
     notFound();
   }
+
+  // Build the shared PostalAddress once — used by JobPosting & LocalBusiness
+  const postalAddress = jobData ? resolvePostalAddress(jobData) : null;
 
   const jsonLd = jobData ? {
     '@context': 'https://schema.org',
@@ -129,12 +190,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     },
     'jobLocation': {
       '@type': 'Place',
-      'address': {
-        '@type': 'PostalAddress',
-        'addressLocality': jobData.location || jobData.district || 'Theni',
-        'addressRegion': 'Tamil Nadu',
-        'addressCountry': 'IN',
-      }
+      'address': postalAddress,
     },
     'baseSalary': jobData.salaryMin ? {
       '@type': 'MonetaryAmount',
@@ -163,12 +219,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     'image': jobData.companyLogoUrl || undefined,
     'telephone': jobData.phone || undefined,
     'email': jobData.email || undefined,
-    'address': {
-      '@type': 'PostalAddress',
-      'addressLocality': jobData.location || jobData.district || 'Theni',
-      'addressRegion': 'Tamil Nadu',
-      'addressCountry': 'IN'
-    }
+    'address': postalAddress,
   } : null;
 
   return (

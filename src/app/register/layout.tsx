@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://thenijobs.com/register',
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
   openGraph: {
     title: 'Create Your Free Account | THENIJOBS',
     description:

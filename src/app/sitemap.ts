@@ -107,27 +107,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Failed to fetch companies for sitemap:', err);
   }
 
-  // ── Public profiles from Firestore ──
-  let profilePages: MetadataRoute.Sitemap = [];
+  // ── Public service listings from Firestore ──
+  let servicePages: MetadataRoute.Sitemap = [];
   try {
-    const profilesSnap = await adminDb.collection('publicProfiles')
+    const servicesSnap = await adminDb.collection('services')
+      .where('isActive', '==', true)
       .limit(5000)
       .get();
-    profilePages = profilesSnap.docs.map((docSnap) => {
+    servicePages = servicesSnap.docs.map((docSnap) => {
       const d = docSnap.data();
       const lastModified = d.updatedAt ? (
         typeof d.updatedAt.toDate === 'function' ? d.updatedAt.toDate() : new Date(d.updatedAt)
       ) : now;
       return {
-        url: `${BASE}/profile/${docSnap.id}`,
+        url: `${BASE}/services/${docSnap.id}`,
         changeFrequency: 'weekly' as const,
-        priority: 0.6,
+        priority: 0.7,
         lastModified,
       };
     });
   } catch (err) {
-    console.error('Failed to fetch public profiles for sitemap:', err);
+    console.error('Failed to fetch services for sitemap:', err);
   }
 
-  return [...staticPages, ...categoryPages, ...jobPages, ...companyPages, ...profilePages];
+  return [...staticPages, ...categoryPages, ...jobPages, ...companyPages, ...servicePages];
 }

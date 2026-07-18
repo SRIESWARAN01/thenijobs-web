@@ -10,9 +10,9 @@ export const metadata: Metadata = {
     'Job Vacancy', 'Latest Jobs', 'Employment', 'Recruitment', 'Career Opportunities',
     'Work From Home Jobs', 'Internship Tamil Nadu', 'Job Search', 'Hiring',
   ],
-  alternates: {
-    canonical: 'https://thenijobs.com/jobs',
-  },
+  // NOTE: Do NOT set alternates.canonical here — it cascades to ALL child
+  // pages (/jobs/theni, /jobs/[id], etc.) and tells Google they are duplicates
+  // of /jobs. Each indexable sub-page defines its own canonical.
   robots: {
     index: true,
     follow: true,

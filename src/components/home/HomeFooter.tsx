@@ -17,11 +17,11 @@ const seekerLinks = [
   { label: 'Companies', href: '/businesses' },
 ];
 const employerLinks = [
-  { label: 'Post a Job', href: '/employer/post-job' },
+  { label: 'Post a Job', href: '/pricing' },
   { label: 'Register Company', href: '/company/register' },
-  { label: 'Browse Candidates', href: '/employer/talent-search' },
+  { label: 'Browse Candidates', href: '/businesses' },
   { label: 'Pricing Plans', href: '/pricing' },
-  { label: 'Dashboard', href: '/employer/dashboard' },
+  { label: 'Services', href: '/services' },
 ];
 
 const mobileNumbers = [

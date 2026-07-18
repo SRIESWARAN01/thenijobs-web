@@ -26,7 +26,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
   title: {
-    default: "THENIJOBS - Search, Connect, Hire and Grow",
+    default: "THENIJOBS — Theni Jobs | #1 Job Portal, Business Directory & Service Marketplace in Tamil Nadu",
     template: "%s | THENIJOBS",
   },
   description:
@@ -168,13 +168,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     name: "THENIJOBS",
     url: "https://thenijobs.com",
     logo: "https://thenijobs.com/icon-512.png",
-    sameAs: [],
+    sameAs: [
+      "https://www.facebook.com/thenijobs",
+      "https://www.instagram.com/thenijobs",
+      "https://www.linkedin.com/company/thenijobs",
+      "https://www.youtube.com/@thenijobs",
+    ],
     description:
       "THENIJOBS helps people find jobs, discover businesses, generate B2B leads and hire talent across Theni district, Tamil Nadu.",
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+91-70948-26586",
+      contactType: "customer service",
+      areaServed: "IN",
+      availableLanguage: ["en", "ta"],
+    },
     address: {
       "@type": "PostalAddress",
+      streetAddress: "North Street, A.M. Patty",
+      addressLocality: "Uthamapalayam",
       addressRegion: "Tamil Nadu",
+      postalCode: "625526",
       addressCountry: "IN",
+    },
+    areaServed: {
+      "@type": "AdministrativeArea",
+      name: "Theni District, Tamil Nadu",
     },
   };
 
@@ -185,7 +204,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     url: "https://thenijobs.com",
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://thenijobs.com/jobs?q={search_term_string}",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://thenijobs.com/jobs?q={search_term_string}",
+      },
       "query-input": "required name=search_term_string",
     },
   };

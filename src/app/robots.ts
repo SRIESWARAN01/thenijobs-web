@@ -1,11 +1,9 @@
 import { MetadataRoute } from 'next';
 
 /**
- * robots.txt — dynamically generated (no force-static).
+ * robots.txt — content is static (no DB calls), so no need for force-dynamic.
  * Disallows dashboard/auth pages and points to the sitemap.
  */
-export const dynamic = 'force-dynamic';
-
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -21,6 +19,8 @@ export default function robots(): MetadataRoute.Robots {
           '/service/',
           '/id/',
           '/id',
+          '/feed',
+          '/hub',
           '/profile-setup',
           '/role-selection',
           '/forgot-password',

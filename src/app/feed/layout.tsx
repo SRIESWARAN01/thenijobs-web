@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://thenijobs.com/feed',
   },
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function FeedLayout({ children }: { children: React.ReactNode }) {

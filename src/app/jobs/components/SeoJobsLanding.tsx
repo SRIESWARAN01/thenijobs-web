@@ -211,8 +211,8 @@ export default function SeoJobsLanding({
 
         {/* SEO Cross Navigation Footer */}
         <div className="mt-16 pt-8 border-t border-white/5">
-          <h3 className="text-sm font-bold text-gray-300 mb-4">Popular Jobs in Tamil Nadu</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <h3 className="text-sm font-bold text-gray-300 mb-4">Browse Jobs by Location</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6">
             <Link href="/jobs/theni" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
               Jobs in Theni
             </Link>
@@ -222,14 +222,53 @@ export default function SeoJobsLanding({
             <Link href="/jobs/coimbatore" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
               Jobs in Coimbatore
             </Link>
+            <Link href="/jobs/dindigul" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Jobs in Dindigul
+            </Link>
+            <Link href="/jobs/bodinayakanur" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Bodinayakanur Jobs
+            </Link>
+            <Link href="/jobs/cumbum" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Cumbum Jobs
+            </Link>
+            <Link href="/jobs/periyakulam" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Periyakulam Jobs
+            </Link>
+            <Link href="/jobs/uthamapalayam" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Uthamapalayam Jobs
+            </Link>
+            <Link href="/jobs/andipatti" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Andipatti Jobs
+            </Link>
+            <Link href="/jobs/chinnamanur" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Chinnamanur Jobs
+            </Link>
+          </div>
+          <h3 className="text-sm font-bold text-gray-300 mb-4">Browse Jobs by Category</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <Link href="/jobs/freshers" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
-              Jobs for Freshers
+              Fresher Jobs
             </Link>
             <Link href="/jobs/part-time" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
               Part-Time Jobs
             </Link>
+            <Link href="/jobs/government" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Government Jobs
+            </Link>
+            <Link href="/jobs/walk-in" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Walk-in Jobs
+            </Link>
+            <Link href="/jobs/work-from-home" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Work From Home
+            </Link>
             <Link href="/jobs" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
               All Tamil Nadu Jobs
+            </Link>
+            <Link href="/businesses" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Business Directory
+            </Link>
+            <Link href="/services" className="text-xs text-gray-500 hover:text-cyan-400 transition-colors font-semibold">
+              Local Services
             </Link>
           </div>
         </div>

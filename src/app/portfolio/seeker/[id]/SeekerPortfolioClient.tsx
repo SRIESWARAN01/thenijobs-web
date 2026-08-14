@@ -269,9 +269,9 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
 
               {/* ID Tag & Verification */}
               <div className="flex items-center justify-between text-xs text-blue-100/80 mb-6">
-                <Link href="/" className="flex items-center gap-1 hover:text-white transition-colors">
-                  <div className="w-5 h-5 rounded bg-white text-blue-700 font-bold flex items-center justify-center text-[10px]">T</div>
-                  <span className="font-bold">Theni Jobs</span>
+                <Link href="/" className="flex items-center gap-1.5 hover:text-white transition-colors">
+                  <img src="/logo.png" alt="THENIJOBS" className="h-5 w-auto object-contain bg-white/90 rounded p-0.5" />
+                  <span className="font-extrabold tracking-tight">THENIJOBS</span>
                 </Link>
                 <span className="bg-white/10 px-2.5 py-1 rounded-full text-[10px] font-mono tracking-wider font-semibold">
                   ID: {tnjId}
@@ -725,9 +725,9 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
 
             {/* Footer Branding */}
             <footer className="text-center pt-6 pb-4">
-              <Link href="/" className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-blue-600 transition-colors">
-                <div className="w-5 h-5 rounded-md flex items-center justify-center text-white font-bold text-[9px] bg-blue-600">T</div>
-                <span>Powered by <strong className="font-semibold">THENIJOBS</strong></span>
+              <Link href="/" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-blue-600 transition-colors">
+                <img src="/logo.png" alt="THENIJOBS" className="h-5 w-auto object-contain" />
+                <span>Powered by <strong className="font-bold text-gray-800">THENIJOBS</strong></span>
                 <ChevronRight size={12} />
               </Link>
             </footer>

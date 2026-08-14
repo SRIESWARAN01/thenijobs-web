@@ -111,7 +111,7 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
               {/* Top: Brand */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-xs font-bold">T</div>
+                  <img src="/logo.png" alt="THENIJOBS" className="h-6 w-auto object-contain bg-white/90 rounded p-0.5" />
                   <span className="text-xs font-semibold opacity-80" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
                 </div>
                 <span className="text-[9px] font-mono bg-white/15 px-2 py-0.5 rounded-full">{companyId}</span>
@@ -166,8 +166,8 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
               <div className="flex-1 flex flex-col justify-between min-w-0">
                 {/* Brand */}
                 <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center text-white text-[8px] font-bold">T</div>
-                  <span className="text-[9px] font-bold text-gray-400">THENIJOBS COMPANY ID</span>
+                  <img src="/logo.png" alt="THENIJOBS" className="h-5 w-auto object-contain" />
+                  <span className="text-[9px] font-bold text-gray-600">THENIJOBS COMPANY ID</span>
                 </div>
 
                 {/* Details */}

@@ -526,7 +526,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-xs">T</div>
+              <img src="/logo.png" alt="THENIJOBS" className="h-7 w-auto object-contain" />
               <span className="font-extrabold text-sm text-gray-900">THENIJOBS</span>
             </div>
             <p className="text-[11px] text-gray-500 leading-relaxed">Search, connect, hire and grow. Theni jobs and business discovery platform.</p>

@@ -55,11 +55,11 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm animate-fade-in-up">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center mb-4 glow-purple">
-            <Shield size={32} className="text-white" />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 font-outfit">THENIJOBS Admin</h1>
-          <p className="text-xs text-gray-500 mt-1">Secure Administrative Access</p>
+          <Link href="/" className="flex flex-col items-center mb-2">
+            <img src="/logo.png" alt="THENIJOBS" className="h-14 w-auto object-contain mb-3" />
+            <h1 className="text-2xl font-extrabold text-gray-900 font-outfit tracking-tight">THENIJOBS Admin</h1>
+          </Link>
+          <p className="text-xs text-gray-500 font-medium">Secure Administrative Access</p>
         </div>
 
         <div className="glass-card rounded-3xl p-7 shadow-2xl">

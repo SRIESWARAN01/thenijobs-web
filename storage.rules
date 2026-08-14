@@ -1,0 +1,105 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ===== HELPER FUNCTIONS =====
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    function isUnder10MB() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+
+    // P0 FIX: Company owner verification via Firestore lookup
+    // Note: Storage rules can read Firestore using firestore.get()
+    function isCompanyOwner(companyId) {
+      return isAuthenticated() &&
+        firestore.get(/databases/(default)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'super_admin'
+      );
+    }
+
+    // ===== USER PROFILE PHOTOS =====
+    match /users/{userId}/profile/{fileName} {
+      allow read:  if true;  // Profile photos are public
+      allow write: if isOwner(userId) && isImage() && isUnder5MB();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ===== COMPANY LOGOS =====
+    // P0 FIX: Only the company owner (not any authenticated user) can upload
+    match /companies/{companyId}/logo/{fileName} {
+      allow read:  if true;
+      allow write: if isCompanyOwner(companyId) && isImage() && isUnder5MB();
+      allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
+    // ===== COMPANY COVER PHOTOS =====
+    match /companies/{companyId}/cover/{fileName} {
+      allow read:  if true;
+      allow write: if isCompanyOwner(companyId) && isImage() && isUnder10MB();
+      allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
+    // ===== COMPANY GALLERY =====
+    match /companies/{companyId}/gallery/{fileName} {
+      allow read:  if true;
+      allow write: if isCompanyOwner(companyId) &&
+        (isImage() || request.resource.contentType.matches('video/.*')) &&
+        isUnder10MB();
+      allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
+    // ===== RESUMES =====
+    // P0 FIX: Only the owner OR employer/admin can read; only owner can write
+    match /resumes/{userId}/{fileName} {
+      allow read:  if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && (isPDF() || isImage()) && isUnder5MB();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ===== GST / VERIFICATION DOCUMENTS =====
+    // P0 FIX: Only company owner (for their own company) or admin can read/write
+    match /verification/{companyId}/{fileName} {
+      allow read:  if isCompanyOwner(companyId) || isAdmin();
+      allow write: if isCompanyOwner(companyId) &&
+        (isImage() || isPDF()) && isUnder5MB();
+      allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
+    // ===== SEEKER SKILLS / CERTIFICATES =====
+    match /certificates/{userId}/{fileName} {
+      allow read:  if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && (isImage() || isPDF()) && isUnder5MB();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ===== CATCH-ALL: Deny everything else =====
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -37,7 +37,7 @@ export default function CreativeBusiness({ site }: Props) {
           <div className="flex items-center gap-3">
             {contact?.whatsapp && (
               <a href={`https://wa.me/${contact.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noopener" className="px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-lg shadow-pink-500/20" style={{ background: grad }}>
-                Let's Talk <ArrowUpRight size={14} className="inline ml-1" />
+                Let&apos;s Talk <ArrowUpRight size={14} className="inline ml-1" />
               </a>
             )}
           </div>

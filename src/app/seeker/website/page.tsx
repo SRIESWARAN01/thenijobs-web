@@ -7,7 +7,7 @@ import {
   Sparkles, QrCode, Copy, Check, Share2, ArrowUpRight, UserCheck
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection } from '@/hooks/useFirestore';
+import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { PORTFOLIO_TEMPLATES } from '@/lib/constants';
 import { getTemplatesForPlan } from '@/lib/plans';
@@ -18,10 +18,7 @@ export default function SeekerPortfolioPage() {
   const { user } = useAuth();
   const [copied, setCopied] = useState(false);
 
-  const { data: profiles, loading: profLoading } = useCollection<any>('jobSeekers', [
-    where('uid', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const profile = profiles?.[0];
+  const { data: profile, loading: profLoading } = useDocument<any>('seekerProfiles', user?.uid);
 
   const { data: sites, loading: siteLoading } = useCollection<any>('portfolioSites', [
     where('ownerId', '==', user?.uid || '')

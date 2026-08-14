@@ -380,7 +380,7 @@ export default function AdminAISettingsPage() {
         <ul className="text-xs text-blue-700 space-y-1">
           <li>• API keys are stored in Firestore, readable only by admin accounts</li>
           <li>• Keys are never exposed to the browser frontend</li>
-          <li>• The active provider's key is used server-side in the AI API route</li>
+          <li>• The active provider&apos;s key is used server-side in the AI API route</li>
           <li>• Changing the active provider instantly affects all AI features (Resume Builder, Chatbot, etc.)</li>
           <li>• If the active provider fails, the fallback provider is used automatically</li>
         </ul>

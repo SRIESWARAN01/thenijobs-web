@@ -103,7 +103,7 @@ export default function CorporatePremium({ site }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">{testimonials?.items?.map(t2 => (
           <div key={t2.id} className="p-6 border" style={{ borderRadius: r, borderColor: `${m}08` }}>
             <div className="flex gap-0.5 mb-3">{Array.from({length:t2.rating||5}).map((_,i) => <Star key={i} size={13} fill="#FBBF24" className="text-yellow-400" />)}</div>
-            <p className="text-sm italic leading-relaxed" style={{ color: m }}>"{t2.content}"</p>
+            <p className="text-sm italic leading-relaxed" style={{ color: m }}>&ldquo;{t2.content}&rdquo;</p>
             <div className="flex items-center gap-3 mt-4">{t2.photo && <img src={t2.photo} alt="" className="w-10 h-10 rounded-full object-cover" />}<div><p className="text-xs font-bold">{t2.name}</p><p className="text-[10px]" style={{ color: m }}>{t2.role}{t2.company ? `, ${t2.company}` : ''}</p></div></div>
           </div>
         ))}</div>

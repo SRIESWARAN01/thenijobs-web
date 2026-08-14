@@ -98,7 +98,7 @@ export default function BusinessShowcase({ site }: Props) {
               {testimonials?.items?.map(r2 => (
                 <div key={r2.id} className="bg-white p-5 border" style={{ borderRadius: r, borderColor: `${m}10` }}>
                   <div className="flex gap-0.5 mb-2">{Array.from({length:r2.rating||5}).map((_,i) => <Star key={i} size={12} fill="#FBBF24" className="text-yellow-400" />)}</div>
-                  <p className="text-xs italic" style={{ color: m }}>"{r2.content}"</p>
+                  <p className="text-xs italic" style={{ color: m }}>&ldquo;{r2.content}&rdquo;</p>
                   <p className="text-xs font-bold mt-2">{r2.name}</p>
                 </div>
               ))}

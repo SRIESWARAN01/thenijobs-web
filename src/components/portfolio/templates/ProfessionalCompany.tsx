@@ -136,7 +136,7 @@ export default function ProfessionalCompany({ site }: Props) {
                   <div className="flex items-center gap-0.5 mb-2">
                     {Array.from({ length: rev.rating || 5 }).map((_, i) => <Star key={i} size={12} fill="#FBBF24" className="text-yellow-400" />)}
                   </div>
-                  <p className="text-xs italic leading-relaxed" style={{ color: m }}>"{rev.content}"</p>
+                  <p className="text-xs italic leading-relaxed" style={{ color: m }}>&ldquo;{rev.content}&rdquo;</p>
                   <div className="flex items-center gap-2 mt-3">
                     {rev.photo && <img src={rev.photo} alt="" className="w-8 h-8 rounded-full object-cover" />}
                     <div>

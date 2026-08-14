@@ -330,7 +330,7 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Business Not Found</h1>
           <p className="text-sm text-gray-500 max-w-md mb-6 leading-relaxed">
-            This company profile doesn't exist yet, or is currently under review by our verification team.
+            This company profile doesn&apos;t exist yet, or is currently under review by our verification team.
             If you own this business, you can register it on THENIJOBS.
           </p>
           <div className="flex items-center gap-3">

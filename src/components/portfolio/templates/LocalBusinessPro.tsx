@@ -123,7 +123,7 @@ export default function LocalBusinessPro({ site }: Props) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{testimonials?.items?.map(r2 => (
               <div key={r2.id} className="bg-white p-4 border" style={{ borderRadius: r, borderColor: `${m}10` }}>
                 <div className="flex gap-0.5 mb-1">{Array.from({length:r2.rating||5}).map((_,i)=><Star key={i} size={11} fill="#FBBF24" className="text-yellow-400" />)}</div>
-                <p className="text-xs italic" style={{ color: m }}>"{r2.content}"</p>
+                <p className="text-xs italic" style={{ color: m }}>&ldquo;{r2.content}&rdquo;</p>
                 <p className="text-xs font-bold mt-2">{r2.name}</p>
               </div>
             ))}</div>

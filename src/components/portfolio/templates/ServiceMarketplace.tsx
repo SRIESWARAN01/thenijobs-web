@@ -64,7 +64,7 @@ export default function ServiceMarketplace({ site }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{testimonials?.items?.map(t2 => (
           <div key={t2.id} className="bg-white p-5 border" style={{ borderRadius: r, borderColor: `${m}08` }}>
             <div className="flex gap-0.5 mb-2">{Array.from({length:t2.rating||5}).map((_,i) => <Star key={i} size={12} fill="#FBBF24" className="text-yellow-400" />)}</div>
-            <p className="text-xs italic" style={{ color: m }}>"{t2.content}"</p>
+            <p className="text-xs italic" style={{ color: m }}>&ldquo;{t2.content}&rdquo;</p>
             <p className="text-xs font-bold mt-2">{t2.name}</p>
           </div>
         ))}</div>

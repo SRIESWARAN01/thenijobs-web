@@ -147,7 +147,7 @@ export default function WebsiteSettingsPage() {
             </div>
             {!site.googleIndex && (
               <div className="p-2.5 rounded-lg bg-amber-50 text-amber-700 text-[10px] flex items-center gap-1.5">
-                <AlertCircle size={12} className="flex-shrink-0" /> Site includes noindex tag. Search engines won't list it.
+                <AlertCircle size={12} className="flex-shrink-0" /> Site includes noindex tag. Search engines won&apos;t list it.
               </div>
             )}
           </div>

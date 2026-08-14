@@ -10,21 +10,93 @@ import TestimonialsSection from '@/components/home/TestimonialsSection';
 import HomeFooter from '@/components/home/HomeFooter';
 
 export const metadata: Metadata = {
-  title: 'THENIJOBS — Find Jobs, Companies & Services in Theni, Tamil Nadu',
+  title: 'Theni Jobs | Jobs in Theni, Vacancies & Freshers Openings | THENIJOBS',
   description:
-    'The #1 local job portal for Theni & Tamil Nadu. Search verified jobs, discover businesses, contact employers directly. 1200+ active jobs.',
-  keywords: 'theni jobs, tamil jobs, madurai jobs, dindigul jobs, tamilnadu jobs',
+    'THENIJOBS is the #1 verified job portal for Theni, Cumbum, Periyakulam, Bodinayakanur & Tamil Nadu. Search 1,200+ active private, fresher, and full-time jobs with instant direct apply.',
+  keywords: [
+    'Theni Jobs',
+    'Jobs in Theni',
+    'Theni job vacancy',
+    'Theni jobs for freshers',
+    'Private jobs in Theni',
+    'Government jobs in Theni',
+    'Jobs in Cumbum',
+    'Jobs in Periyakulam',
+    'Jobs in Bodinayakanur',
+    'Jobs in Chinnamanur',
+    'Jobs in Uthamapalayam',
+    'Jobs in Andipatti',
+    'Jobs in Madurai',
+    'Jobs in Dindigul',
+    'Tamil Nadu Jobs',
+  ],
+  alternates: {
+    canonical: 'https://thenijobs.com',
+  },
   openGraph: {
-    title: 'THENIJOBS — Find Jobs in Theni, Tamil Nadu',
-    description: 'Search verified jobs, local businesses and services in Theni & Tamil Nadu.',
+    title: 'Theni Jobs | Find Verified Job Vacancies | THENIJOBS',
+    description: 'Connect with top local employers in Theni and Tamil Nadu. 1,200+ active jobs with direct apply.',
+    url: 'https://thenijobs.com',
     type: 'website',
     locale: 'en_IN',
+    siteName: 'THENIJOBS',
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'THENIJOBS Portal' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Theni Jobs | Find Verified Job Vacancies | THENIJOBS',
+    description: 'The #1 verified local job portal for Theni & Tamil Nadu.',
+    images: ['/og-image.jpg'],
+  },
+};
+
+const homeStructuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': 'https://thenijobs.com/#website',
+      url: 'https://thenijobs.com',
+      name: 'THENIJOBS',
+      description: 'The #1 Local Job Portal for Theni & Tamil Nadu',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: 'https://thenijobs.com/jobs?search={search_term_string}',
+        },
+        'query-input': 'required name=search_term_string',
+      },
+      inLanguage: 'en-IN',
+    },
+    {
+      '@type': 'Organization',
+      '@id': 'https://thenijobs.com/#organization',
+      name: 'THENIJOBS',
+      url: 'https://thenijobs.com',
+      logo: 'https://thenijobs.com/logo.png',
+      sameAs: [
+        'https://thenijobs.com',
+        'https://wa.me/919876543210',
+      ],
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Theni',
+        addressRegion: 'Tamil Nadu',
+        postalCode: '625531',
+        addressCountry: 'IN',
+      },
+    },
+  ],
 };
 
 export default function HomePage() {
   return (
     <main style={{ background: '#F8FAFC' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}
+      />
       <Header />
       <HeroSection />
       <TrendingJobs />

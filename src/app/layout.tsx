@@ -36,11 +36,13 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
   icons: {
     icon: [
+      { url: "/logo.png", type: "image/png", sizes: "512x512" },
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/logo.png", type: "image/png" },
     ],
-    shortcut: "/favicon.ico",
-    apple: "/logo.png",
+    shortcut: "/logo.png",
+    apple: [
+      { url: "/logo.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   manifest: "/manifest.json",
 };
@@ -59,8 +61,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Google Fonts preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
         <link rel="apple-touch-icon" href="/logo.png" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body className="font-sans antialiased bg-[#F8FAFC] text-[#111827]">
         <ErrorBoundary>

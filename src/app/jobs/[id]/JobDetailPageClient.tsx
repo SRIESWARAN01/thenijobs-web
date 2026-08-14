@@ -18,6 +18,7 @@ import { followCompany, unfollowCompany, isFollowingCompany, applyToJob } from '
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, addDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, limit as fbLimit } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
+import { generateJobPostingSchema } from '@/lib/seo/jobSchema';
 
 interface JobRecord {
   id: string;
@@ -364,14 +365,45 @@ export default function JobDetailPageClient({ id }: { id: string }) {
   return (
     <main className="public-light-page min-h-screen bg-[#F8FAFC] font-outfit text-[#111827]">
       <Header />
+      {job && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              generateJobPostingSchema({
+                id: job.id,
+                title: job.title,
+                description: job.description || `${job.title} at ${job.companyName}`,
+                companyName: job.companyName,
+                district: job.district,
+                location: job.location,
+                state: job.state,
+                salaryMin: job.salaryMin,
+                salaryMax: job.salaryMax,
+                jobType: job.jobType,
+                postedDate: job.posted,
+                expiryDate: job.deadline,
+                responsibilities: job.responsibilities,
+                requirements: job.requirements,
+                skills: job.skills,
+                benefits: job.benefits,
+              })
+            ),
+          }}
+        />
+      )}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-28 md:pb-12">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-gray-500 mt-4 mb-6">
-          <Link href="/" className="hover:text-blue-700 transition-colors">Home</Link>
-          <ChevronRight size={11} />
-          <Link href="/jobs" className="hover:text-blue-700 transition-colors">Jobs</Link>
-          <ChevronRight size={11} />
-          <span className="text-slate-900 truncate max-w-[200px]">{job.title}</span>
+        <nav className="flex items-center gap-1.5 text-xs text-gray-600 mt-4 mb-6" aria-label="Breadcrumbs">
+          <Link href="/" className="hover:text-blue-700 font-medium transition-colors">Home</Link>
+          <ChevronRight size={11} className="text-gray-400" />
+          <Link href="/jobs" className="hover:text-blue-700 font-medium transition-colors">Jobs</Link>
+          <ChevronRight size={11} className="text-gray-400" />
+          <Link href={`/jobs-in-${(job.district || 'theni').toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-blue-700 font-semibold transition-colors">
+            Jobs in {job.district || 'Theni'}
+          </Link>
+          <ChevronRight size={11} className="text-gray-400" />
+          <span className="text-slate-900 font-bold truncate max-w-[200px]">{job.title}</span>
         </nav>
 
         <div className="grid lg:grid-cols-3 gap-6">

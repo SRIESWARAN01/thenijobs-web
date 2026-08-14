@@ -122,12 +122,12 @@ function LoginPageContent() {
           style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, white 0%, transparent 50%), radial-gradient(circle at 80% 20%, white 0%, transparent 50%)' }} />
 
         <Link href="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold text-base">T</div>
-          <span className="font-bold text-xl text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>Theni Jobs</span>
+          <img src="/logo.png" alt="THENIJOBS" className="h-10 w-auto" />
+          <span className="font-extrabold text-xl text-white tracking-wide" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
         </Link>
 
         <div className="relative z-10">
-          <h2 className="text-4xl font-bold text-white leading-tight mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <h2 className="text-4xl font-extrabold text-white leading-tight mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Find Your Dream Job in Theni
           </h2>
           <p className="text-blue-100 text-base leading-relaxed mb-8">
@@ -135,15 +135,15 @@ function LoginPageContent() {
           </p>
           <div className="grid grid-cols-3 gap-4">
             {[['1200+', 'Active Jobs'], ['500+', 'Companies'], ['98%', 'Satisfaction']].map(([v, l]) => (
-              <div key={l} className="text-center p-4 rounded-2xl bg-white/10 backdrop-blur">
-                <p className="text-2xl font-bold text-gray-900">{v}</p>
-                <p className="text-xs text-blue-100 mt-1">{l}</p>
+              <div key={l} className="text-center p-4 rounded-2xl bg-white/15 backdrop-blur border border-white/20">
+                <p className="text-2xl font-bold text-white">{v}</p>
+                <p className="text-xs text-blue-100 font-medium mt-1">{l}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="text-blue-200 text-xs relative z-10">© 2024 THENIJOBS. All rights reserved.</p>
+        <p className="text-blue-200 text-xs relative z-10">© {new Date().getFullYear()} THENIJOBS. All rights reserved.</p>
       </div>
 
       {/* Right panel — login form */}
@@ -153,8 +153,8 @@ function LoginPageContent() {
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold" style={{ background: '#2563EB' }}>T</div>
-              <span className="font-bold text-xl text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Theni Jobs</span>
+              <img src="/logo.png" alt="THENIJOBS" className="h-9 w-auto" />
+              <span className="font-extrabold text-xl text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
             </Link>
           </div>
 

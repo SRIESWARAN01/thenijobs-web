@@ -60,11 +60,16 @@ export default function Header() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="THENIJOBS home">
-            <img src="/logo.png" alt="THENIJOBS" className="h-9 w-auto" />
-            <span className="font-bold text-lg text-gray-900 hidden sm:block" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              THENIJOBS
-            </span>
+          <Link href="/" className="flex items-center gap-2.5 flex-shrink-0" aria-label="THENIJOBS home">
+            <img src="/logo.png" alt="THENIJOBS" className="h-9 sm:h-10 w-auto object-contain" />
+            <div className="flex flex-col">
+              <span className="font-extrabold text-base sm:text-lg text-[#0F172A] tracking-tight leading-none" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                THENI<span className="text-[#2563EB]">JOBS</span>
+              </span>
+              <span className="text-[10px] text-gray-700 font-medium tracking-wide hidden sm:block">
+                Search • Connect • Hire
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Nav */}

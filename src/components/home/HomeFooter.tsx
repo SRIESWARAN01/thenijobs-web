@@ -92,15 +92,56 @@ export default function HomeFooter() {
           ))}
         </div>
 
+        {/* SEO Locations & Categories Link Cloud */}
+        <div className="py-6 border-b border-gray-700">
+          <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">Popular Locations</h4>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-300 mb-4">
+            <Link href="/jobs-in-theni" className="hover:text-white transition-colors">Jobs in Theni</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-cumbum" className="hover:text-white transition-colors">Jobs in Cumbum</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-periyakulam" className="hover:text-white transition-colors">Jobs in Periyakulam</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-bodinayakanur" className="hover:text-white transition-colors">Jobs in Bodinayakanur</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-chinnamanur" className="hover:text-white transition-colors">Jobs in Chinnamanur</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-uthamapalayam" className="hover:text-white transition-colors">Jobs in Uthamapalayam</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-andipatti" className="hover:text-white transition-colors">Jobs in Andipatti</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-madurai" className="hover:text-white transition-colors">Jobs in Madurai</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-dindigul" className="hover:text-white transition-colors">Jobs in Dindigul</Link>
+          </div>
+
+          <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">Popular Categories in Theni</h4>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-300">
+            <Link href="/jobs-in-theni/freshers" className="hover:text-white transition-colors">Fresher Jobs in Theni</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-theni/sales" className="hover:text-white transition-colors">Sales Jobs in Theni</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-theni/it" className="hover:text-white transition-colors">IT Jobs in Theni</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-theni/part-time" className="hover:text-white transition-colors">Part-Time Jobs in Theni</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-theni/work-from-home" className="hover:text-white transition-colors">Work From Home Jobs</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-theni/healthcare" className="hover:text-white transition-colors">Healthcare Jobs in Theni</Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/jobs-in-theni/education" className="hover:text-white transition-colors">Teaching &amp; Education Jobs</Link>
+          </div>
+        </div>
+
         {/* Bottom */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs text-gray-500">
-            © 2024 THENIJOBS. All rights reserved. Made with ❤️ in Tamil Nadu.
+          <p className="text-xs text-gray-400">
+            © {new Date().getFullYear()} THENIJOBS. All rights reserved. The #1 Job Portal for Theni &amp; Tamil Nadu.
           </p>
           <div className="flex items-center gap-4">
-            <Link href="/privacy" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Terms</Link>
-            <Link href="/cookies" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Cookies</Link>
+            <Link href="/privacy" className="text-xs text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="text-xs text-gray-400 hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/cookies" className="text-xs text-gray-400 hover:text-white transition-colors">Cookies</Link>
           </div>
         </div>
       </div>

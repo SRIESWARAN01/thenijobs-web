@@ -100,8 +100,8 @@ export default function RegisterPage() {
       <div className="w-full max-w-lg">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 justify-center mb-7">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ background: '#2563EB' }}>T</div>
-          <span className="font-bold text-xl text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Theni Jobs</span>
+          <img src="/logo.png" alt="THENIJOBS" className="h-10 w-auto" />
+          <span className="font-extrabold text-2xl text-gray-900 tracking-wide" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
         </Link>
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-lg p-7">

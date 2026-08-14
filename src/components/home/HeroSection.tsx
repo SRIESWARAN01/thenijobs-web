@@ -67,47 +67,47 @@ export default function HeroSection() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-bold leading-tight text-gray-900 mb-4"
+            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-extrabold leading-tight text-[#0F172A] mb-4"
               style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Find Your{' '}
+              Find The Latest{' '}
               <span style={{
                 background: 'linear-gradient(135deg, #2563EB, #10B981)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
-              }}>Dream Job</span>
-              {' '}in Theni
+              }}>Theni Jobs</span>
+              {' '}&amp; Vacancies
             </h1>
 
-            <p className="text-base sm:text-lg text-gray-500 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Connect with top employers across Theni, Madurai &amp; Tamil Nadu.
-              Discover verified jobs, local businesses and services near you.
+            <p className="text-base sm:text-lg text-[#334155] mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
+              Connect with top local employers across Theni, Cumbum, Periyakulam, Bodinayakanur &amp; Tamil Nadu.
+              Search verified private, fresher, and full-time jobs with instant direct apply.
             </p>
 
             {/* Search bar */}
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto lg:mx-0 mb-5">
               <div className="relative flex-1">
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder="Job title, skill, company..."
-                  className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 text-sm focus:border-blue-500 focus:outline-none focus:ring-0 shadow-sm transition-all"
+                  placeholder="Job title, skills, or company (e.g. Sales, Driver, IT)..."
+                  className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] placeholder-gray-500 text-sm focus:border-blue-600 focus:outline-none focus:ring-0 shadow-sm transition-all"
                 />
               </div>
-              <div className="relative sm:w-44">
-                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <div className="relative sm:w-48">
+                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                 <select
                   value={district}
                   onChange={e => setDistrict(e.target.value)}
-                  className="w-full pl-9 pr-3 py-3.5 bg-white border-2 border-gray-200 rounded-xl text-gray-700 text-sm focus:border-blue-500 focus:outline-none appearance-none shadow-sm cursor-pointer"
+                  className="w-full pl-9 pr-3 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] font-medium text-sm focus:border-blue-600 focus:outline-none appearance-none shadow-sm cursor-pointer"
                 >
                   {DISTRICTS.map(d => <option key={d}>{d}</option>)}
                 </select>
               </div>
               <button
                 type="submit"
-                className="px-6 py-3.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 shadow-md flex items-center justify-center gap-2 whitespace-nowrap"
+                className="px-6 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-95 shadow-md flex items-center justify-center gap-2 whitespace-nowrap active:scale-[0.98]"
                 style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
               >
                 <Search size={16} />
@@ -117,12 +117,12 @@ export default function HeroSection() {
 
             {/* Popular tags */}
             <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-              <span className="text-xs text-gray-400 font-medium self-center">Popular:</span>
+              <span className="text-xs text-gray-600 font-semibold self-center">Popular:</span>
               {popularTags.map(tag => (
                 <button
                   key={tag}
                   onClick={() => { setQuery(tag); }}
-                  className="px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 rounded-full text-gray-600 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                  className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-300 rounded-full text-gray-700 hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-all shadow-xs"
                 >
                   {tag}
                 </button>

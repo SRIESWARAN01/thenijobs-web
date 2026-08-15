@@ -44,7 +44,7 @@ export default function HeroSection() {
   const counts = [jobCount || 1200, companyCount || 340, 8500];
 
   return (
-    <section className="relative overflow-hidden pt-16" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <section className="relative overflow-hidden pt-2 sm:pt-4" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Background */}
       <div className="absolute inset-0 -z-10" style={{
         background: 'linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 55%, #FFFBEB 100%)'

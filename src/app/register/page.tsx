@@ -99,9 +99,13 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: '#F8FAFC', fontFamily: "'Inter', sans-serif" }}>
       <div className="w-full max-w-lg">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 justify-center mb-7">
-          <img src="/logo.png" alt="THENIJOBS" className="h-10 w-auto" />
-          <span className="font-extrabold text-2xl text-gray-900 tracking-wide" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
+        <Link href="/" className="flex items-center gap-3 justify-center mb-7 select-none">
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-xs">
+            <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+          </div>
+          <span className="font-extrabold text-2xl text-slate-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            THENI<span className="text-blue-600">JOBS</span>
+          </span>
         </Link>
 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-lg p-7">

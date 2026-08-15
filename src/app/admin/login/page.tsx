@@ -54,10 +54,12 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-white flex items-center justify-center px-4 blob-bg grid-pattern">
       <div className="w-full max-w-sm animate-fade-in-up">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-8 select-none">
           <Link href="/" className="flex flex-col items-center mb-2">
-            <img src="/logo.png" alt="THENIJOBS" className="h-14 w-auto object-contain mb-3" />
-            <h1 className="text-2xl font-extrabold text-gray-900 font-outfit tracking-tight">THENIJOBS Admin</h1>
+            <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1.5 flex items-center justify-center shrink-0 shadow-md mb-3">
+              <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+            </div>
+            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS Admin</h1>
           </Link>
           <p className="text-xs text-gray-500 font-medium">Secure Administrative Access</p>
         </div>

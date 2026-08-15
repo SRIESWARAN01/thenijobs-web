@@ -21,9 +21,11 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-4 py-12" style={{ fontFamily: "'Inter', sans-serif" }}>
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 justify-center mb-8">
-          <img src="/logo.png" alt="THENIJOBS" className="h-10 w-auto object-contain" />
-          <span className="font-extrabold text-2xl text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+        <Link href="/" className="flex items-center gap-3 justify-center mb-8 select-none">
+          <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-xs">
+            <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+          </div>
+          <span className="font-extrabold text-2xl text-slate-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
             THENI<span className="text-blue-600">JOBS</span>
           </span>
         </Link>

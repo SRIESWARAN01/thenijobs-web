@@ -76,13 +76,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         bg-white border-r border-gray-100 shadow-sm`}
       >
         {/* Brand */}
-        <div className={`flex items-center h-16 px-4 border-b border-gray-100 ${collapsed ? 'justify-center' : 'gap-3'}`}>
+        <div className={`flex items-center h-16 px-4 border-b border-gray-100 ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
           {!collapsed && (
             <>
-              <img src="/logo.png" alt="THENIJOBS" className="h-8 w-auto flex-shrink-0" />
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 p-0.5 flex items-center justify-center shrink-0 shadow-xs">
+                <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</p>
-                <p className="text-[10px] font-semibold" style={{ color: '#7C3AED' }}>Admin Panel</p>
+                <p className="text-[10px] font-semibold text-purple-600">Admin Portal</p>
               </div>
               <button onClick={() => setMobileOpen(false)} className="lg:hidden text-gray-400">
                 <X size={16} />
@@ -90,7 +92,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </>
           )}
           {collapsed && (
-            <img src="/logo.png" alt="THENIJOBS" className="h-8 w-auto" />
+            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 p-0.5 flex items-center justify-center shrink-0 shadow-xs">
+              <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+            </div>
           )}
         </div>
 

@@ -299,9 +299,11 @@ function LoginPageContent() {
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, white 0%, transparent 50%), radial-gradient(circle at 80% 20%, white 0%, transparent 50%)' }} />
 
-        <Link href="/" className="flex items-center gap-2.5 relative z-10">
-          <img src="/logo.png" alt="THENIJOBS" className="h-10 w-auto" />
-          <span className="font-extrabold text-xl text-white tracking-wide" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
+        <Link href="/" className="flex items-center gap-3 relative z-10 select-none">
+          <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
+            <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+          </div>
+          <span className="font-extrabold text-2xl text-white tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
         </Link>
 
         <div className="relative z-10">
@@ -333,9 +335,13 @@ function LoginPageContent() {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-6">
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="THENIJOBS" className="h-9 w-auto" />
-              <span className="font-extrabold text-xl text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
+            <Link href="/" className="flex items-center gap-2.5 select-none">
+              <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-xs">
+                <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+              </div>
+              <span className="font-extrabold text-xl text-slate-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                THENI<span className="text-blue-600">JOBS</span>
+              </span>
             </Link>
           </div>
 

@@ -33,10 +33,12 @@ export default function HomeFooter() {
 
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2.5 mb-4">
-              <img src="/logo.png" alt="THENIJOBS" className="h-9 w-auto" />
-              <span className="font-bold text-lg text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                THENIJOBS
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
+                <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+              </div>
+              <span className="font-extrabold text-xl text-white tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                THENI<span className="text-blue-400">JOBS</span>
               </span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-xs">

@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { MapPin, Phone, Globe, MessageCircle, Building2, Mail, Briefcase } from 'lucide-react';
+import {
+  MapPin, Phone, Globe, MessageCircle, Building2, Mail, Briefcase,
+  Download, Share2, RefreshCw, CheckCircle2, ShieldCheck, Sparkles
+} from 'lucide-react';
 import QRCodeGenerator from './QRCodeGenerator';
 
 interface CompanyIDCardProps {
@@ -9,15 +12,16 @@ interface CompanyIDCardProps {
     id: string;
     name: string;
     slug: string;
-    category: string;
-    description: string;
+    category?: string;
+    tagline?: string;
+    description?: string;
     phone: string;
     whatsapp?: string;
     email: string;
     website?: string;
-    address: string;
-    district: string;
-    state: string;
+    address?: string;
+    district?: string;
+    state?: string;
     logoUrl?: string;
     verificationStatus?: string;
   };
@@ -27,205 +31,221 @@ const BASE_URL = 'https://thenijobs.com';
 
 export default function CompanyIDCard({ company }: CompanyIDCardProps) {
   const [flipped, setFlipped] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  
   const companyId = `TNJ-C-${company.id.slice(0, 8).toUpperCase()}`;
-  const portfolioUrl = `${BASE_URL}/company/${company.slug}`;
-  const shortDesc = company.description?.length > 80
-    ? company.description.slice(0, 77) + '...'
-    : company.description || '';
-
-  const handleDownload = useCallback(async () => {
-    if (!cardRef.current) return;
-    const html2canvas = (await import('html2canvas')).default;
-
-    // Capture both sides
-    const wasFlipped = flipped;
-
-    // Capture front
-    setFlipped(false);
-    await new Promise(r => setTimeout(r, 400));
-    const frontCanvas = await html2canvas(cardRef.current, {
-      scale: 3, backgroundColor: null, useCORS: true,
-    });
-
-    // Capture back
-    setFlipped(true);
-    await new Promise(r => setTimeout(r, 400));
-    const backCanvas = await html2canvas(cardRef.current, {
-      scale: 3, backgroundColor: null, useCORS: true,
-    });
-
-    // Combine into one image (front on top, back below)
-    const combined = document.createElement('canvas');
-    combined.width = frontCanvas.width;
-    combined.height = frontCanvas.height + backCanvas.height + 40;
-    const ctx = combined.getContext('2d')!;
-    ctx.fillStyle = '#F1F5F9';
-    ctx.fillRect(0, 0, combined.width, combined.height);
-    ctx.drawImage(frontCanvas, 0, 0);
-    ctx.drawImage(backCanvas, 0, frontCanvas.height + 40);
-
-    const link = document.createElement('a');
-    link.download = `${company.slug}-id-card.png`;
-    link.href = combined.toDataURL('image/png');
-    link.click();
-
-    setFlipped(wasFlipped);
-  }, [company.slug, flipped]);
-
+  const portfolioUrl = `${BASE_URL}/company/${company.slug || company.id}`;
   const initial = company.name?.[0]?.toUpperCase() || 'C';
 
+  const handleDownload = useCallback(async () => {
+    if (!cardRef.current || downloading) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+
+      // Capture both sides
+      const wasFlipped = flipped;
+
+      // Front
+      setFlipped(false);
+      await new Promise(r => setTimeout(r, 350));
+      const frontCanvas = await html2canvas(cardRef.current, {
+        scale: 3,
+        backgroundColor: null,
+        useCORS: true,
+      });
+
+      // Back
+      setFlipped(true);
+      await new Promise(r => setTimeout(r, 350));
+      const backCanvas = await html2canvas(cardRef.current, {
+        scale: 3,
+        backgroundColor: null,
+        useCORS: true,
+      });
+
+      // Combine side-by-side or stacked
+      const combined = document.createElement('canvas');
+      combined.width = frontCanvas.width;
+      combined.height = frontCanvas.height + backCanvas.height + 40;
+      const ctx = combined.getContext('2d')!;
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(0, 0, combined.width, combined.height);
+      ctx.drawImage(frontCanvas, 0, 0);
+      ctx.drawImage(backCanvas, 0, frontCanvas.height + 40);
+
+      const link = document.createElement('a');
+      link.download = `${company.slug || 'company'}-visiting-card.png`;
+      link.href = combined.toDataURL('image/png');
+      link.click();
+
+      setFlipped(wasFlipped);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDownloading(false);
+    }
+  }, [company.slug, flipped, downloading]);
+
+  const handleShareWhatsApp = () => {
+    const text = `📇 *${company.name}* - Official Digital Business Card\n📍 ${company.district || 'Theni'}, Tamil Nadu\n🌐 View our catalog & job openings on THENIJOBS:\n${portfolioUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Card Container */}
+    <div className="flex flex-col items-center gap-5 w-full max-w-md mx-auto font-outfit">
+      {/* Interactive 3D Flip Card Container */}
       <div
-        className="cursor-pointer"
+        className="w-full flex justify-center cursor-pointer select-none"
         style={{ perspective: '1200px' }}
         onClick={() => setFlipped(!flipped)}
       >
         <div
           ref={cardRef}
-          className="relative transition-transform duration-700"
+          className="relative transition-transform duration-700 w-full max-w-[360px] sm:max-w-[400px] h-[225px] sm:h-[245px]"
           style={{
-            width: 380, height: 240,
             transformStyle: 'preserve-3d',
             transform: flipped ? 'rotateY(180deg)' : 'rotateY(0)',
           }}
         >
-          {/* ─── FRONT ─── */}
+          {/* ─── FRONT SIDE: Company Visiting Card ─── */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+            className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl border border-white/20"
             style={{
               backfaceVisibility: 'hidden',
-              background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%)',
+              background: 'linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%)',
             }}
           >
-            {/* Pattern overlay */}
-            <div className="absolute inset-0 opacity-10"
+            {/* Elegant Background Micro Mesh */}
+            <div
+              className="absolute inset-0 opacity-15 pointer-events-none"
               style={{
-                backgroundImage: 'radial-gradient(circle at 25% 75%, white 0%, transparent 50%), radial-gradient(circle at 75% 25%, white 0%, transparent 50%)',
+                backgroundImage: 'radial-gradient(circle at 10% 20%, white 0%, transparent 40%), radial-gradient(circle at 90% 80%, #38BDF8 0%, transparent 50%)',
               }}
             />
 
-            <div className="relative h-full p-5 flex flex-col justify-between text-white">
-              {/* Top: Brand */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <img src="/logo.png" alt="THENIJOBS" className="h-6 w-auto object-contain bg-white/90 rounded p-0.5" />
-                  <span className="text-xs font-semibold opacity-80" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
+            <div className="relative h-full p-4 sm:p-5 flex flex-col justify-between text-white z-10">
+              {/* Top Row: Company Category & Subtle THENIJOBS Badge */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white/15 backdrop-blur-xs text-blue-100 uppercase tracking-wider border border-white/20 truncate max-w-[170px]">
+                  {company.category || 'Business Member'}
+                </span>
+
+                {/* Discrete THENIJOBS Partner Branding */}
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-xs border border-white/15 text-[9px] font-bold text-blue-200">
+                  <ShieldCheck size={11} className="text-emerald-400" />
+                  <span>THENIJOBS Verified</span>
                 </div>
-                <span className="text-[9px] font-mono bg-white/15 px-2 py-0.5 rounded-full">{companyId}</span>
               </div>
 
-              {/* Middle: Company info */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shrink-0">
+              {/* Middle Row: Prominent Company Logo & Business Name */}
+              <div className="flex items-center gap-3.5 my-auto">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0 shadow-lg border-2 border-white/60 overflow-hidden">
                   {company.logoUrl ? (
-                    <img src={company.logoUrl} alt={company.name} className="w-12 h-12 rounded-lg object-cover" />
+                    <img
+                      src={company.logoUrl}
+                      alt={company.name}
+                      className="w-full h-full object-contain"
+                    />
                   ) : (
-                    <span className="text-2xl font-bold">{initial}</span>
+                    <div className="w-full h-full rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl">
+                      {initial}
+                    </div>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg font-bold truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>
+
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base sm:text-lg font-black text-white leading-tight truncate">
                     {company.name}
                   </h2>
-                  <div className="flex items-center gap-1.5 text-xs text-blue-100 mt-0.5">
-                    <Briefcase size={10} />
-                    <span>{company.category}</span>
-                  </div>
-                  <p className="text-[10px] text-blue-200 mt-1 line-clamp-2 leading-relaxed">{shortDesc}</p>
+                  <p className="text-[10px] sm:text-xs text-blue-200 font-medium truncate mt-0.5">
+                    {company.tagline || `${company.district || 'Theni'} · Tamil Nadu`}
+                  </p>
+                  <span className="inline-block mt-1 text-[9px] font-mono text-cyan-300 font-bold tracking-wider">
+                    ID: {companyId}
+                  </span>
                 </div>
               </div>
 
-              {/* Bottom: Contact */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs text-blue-100">
-                  <Phone size={10} />
-                  <span>{company.phone}</span>
+              {/* Bottom Row: Contact info */}
+              <div className="pt-2 border-t border-white/15 grid grid-cols-2 gap-2 text-[10px] sm:text-[11px] text-blue-100">
+                <div className="flex items-center gap-1.5 truncate">
+                  <Phone size={11} className="text-emerald-400 shrink-0" />
+                  <span className="truncate font-semibold">{company.phone}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-blue-100">
-                  <MapPin size={10} />
-                  <span>{company.district}</span>
+                <div className="flex items-center gap-1.5 justify-end truncate">
+                  <MapPin size={11} className="text-amber-400 shrink-0" />
+                  <span className="truncate font-semibold">{company.district || 'Theni'}, TN</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ─── BACK ─── */}
+          {/* ─── BACK SIDE: QR Code & Verification Portfolio ─── */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl"
+            className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl border border-white/20"
             style={{
               backfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
-              background: 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)',
+              background: 'linear-gradient(135deg, #0F172A 0%, #111827 60%, #1E293B 100%)',
             }}
           >
-            <div className="h-full p-5 flex gap-4">
-              {/* Left: Details */}
-              <div className="flex-1 flex flex-col justify-between min-w-0">
-                {/* Brand */}
-                <div className="flex items-center gap-1.5">
-                  <img src="/logo.png" alt="THENIJOBS" className="h-5 w-auto object-contain" />
-                  <span className="text-[9px] font-bold text-gray-600">THENIJOBS COMPANY ID</span>
-                </div>
-
-                {/* Details */}
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <MapPin size={11} className="text-gray-400 mt-0.5 shrink-0" />
-                    <span className="text-[10px] text-gray-600 leading-relaxed">{company.address}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone size={11} className="text-gray-400 shrink-0" />
-                    <span className="text-[10px] text-gray-600">{company.phone}</span>
-                  </div>
-                  {company.whatsapp && (
-                    <div className="flex items-center gap-2">
-                      <MessageCircle size={11} className="text-gray-400 shrink-0" />
-                      <span className="text-[10px] text-gray-600">{company.whatsapp}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Mail size={11} className="text-gray-400 shrink-0" />
-                    <span className="text-[10px] text-gray-600 truncate">{company.email}</span>
-                  </div>
-                  {company.website && (
-                    <div className="flex items-center gap-2">
-                      <Globe size={11} className="text-gray-400 shrink-0" />
-                      <span className="text-[10px] text-blue-600 truncate">{company.website}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Scan instruction */}
-                <p className="text-[8px] text-gray-400">Scan QR to view company portfolio →</p>
+            <div className="relative h-full p-4 sm:p-5 flex flex-col items-center justify-between text-center text-white z-10">
+              <div className="w-full flex items-center justify-between text-[9px] text-gray-400 font-mono">
+                <span>OFFICIAL DIGITAL PASS</span>
+                <span>{companyId}</span>
               </div>
 
-              {/* Right: QR Code */}
-              <div className="flex flex-col items-center justify-center gap-2 shrink-0">
-                <QRCodeGenerator url={portfolioUrl} size={110} darkColor="#1E3A8A" lightColor="#FFFFFF" />
-                <span className="text-[8px] font-mono text-gray-400">{companyId}</span>
+              {/* Sharp QR Code container */}
+              <div className="p-2 rounded-2xl bg-white shadow-xl flex items-center justify-center my-auto">
+                <QRCodeGenerator url={portfolioUrl} size={90} />
+              </div>
+
+              <div className="space-y-0.5">
+                <p className="text-xs font-black text-white">Scan to View Portfolio &amp; Openings</p>
+                <p className="text-[9px] text-blue-300 font-mono truncate max-w-[280px]">
+                  thenijobs.com/company/{company.slug || company.id}
+                </p>
+              </div>
+
+              <div className="w-full pt-1.5 border-t border-white/10 text-[9px] text-gray-400 flex justify-between items-center">
+                <span>Certified Business Profile</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <CheckCircle2 size={10} /> Active Partner
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Flip hint */}
-      <p className="text-xs text-gray-400">
-        {flipped ? 'Showing back side' : 'Showing front side'} · Click card to flip
+      {/* Card Helper Note */}
+      <p className="text-xs text-gray-500 text-center font-medium flex items-center gap-1.5">
+        <RefreshCw size={12} className="text-blue-600 animate-spin" style={{ animationDuration: '6s' }} />
+        <span>Tap card above to flip front &amp; back</span>
       </p>
 
-      {/* Download Button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); handleDownload(); }}
-        className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold text-white shadow-lg hover:opacity-90 transition-all"
-        style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
-      >
-        <Building2 size={16} />
-        Download ID Card (PNG)
-      </button>
+      {/* Action Buttons */}
+      <div className="grid grid-cols-2 gap-2.5 w-full">
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={downloading}
+          className="py-3 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
+        >
+          <Download size={14} /> {downloading ? 'Exporting PNG...' : 'Download Card'}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleShareWhatsApp}
+          className="py-3 px-3 rounded-2xl text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
+          style={{ background: '#25D366' }}
+        >
+          <Share2 size={14} /> Share on WhatsApp
+        </button>
+      </div>
     </div>
   );
 }

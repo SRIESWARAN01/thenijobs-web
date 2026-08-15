@@ -1,18 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Video, Phone, MapPin, Clock, Plus, CheckCircle, XCircle, Send, Loader2 } from 'lucide-react';
+import {
+  Calendar, Video, Phone, MapPin, Clock, Plus, CheckCircle, XCircle,
+  Send, Loader2, Users2, Check, ExternalLink
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateDocument, createNotification } from '@/lib/firebase/firestoreService';
 import { where } from 'firebase/firestore';
 import Link from 'next/link';
+import { useToast } from '@/contexts/ToastContext';
 
-const statusColors: Record<string, string> = {
-  scheduled: 'bg-amber-100 text-amber-400',
-  completed: 'bg-emerald-100 text-emerald-400',
-  cancelled: 'bg-red-100 text-rose-400',
-  no_show: 'bg-red-100 text-rose-400'
+const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
+  scheduled: { bg: '#FFFBEB', text: '#D97706', label: 'Upcoming Scheduled' },
+  completed: { bg: '#ECFDF5', text: '#059669', label: 'Completed' },
+  cancelled: { bg: '#FEF2F2', text: '#DC2626', label: 'Cancelled' },
+  no_show:   { bg: '#FEF2F2', text: '#DC2626', label: 'No-Show' },
 };
 
 const modeIcons: Record<string, typeof Video> = {
@@ -20,12 +24,13 @@ const modeIcons: Record<string, typeof Video> = {
   phone: Phone,
   'in-person': MapPin,
   'in_person': MapPin,
-  office: MapPin
+  office: MapPin,
 };
 
 export default function InterviewsPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState('all');
+  const toast = useToast();
+  const [tab, setTab] = useState<'all' | 'upcoming' | 'past'>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // 1. Fetch employer's company
@@ -46,18 +51,18 @@ export default function InterviewsPage() {
     try {
       await updateDocument('interviews', interviewId, { status });
       
-      // Notify candidate
       await createNotification({
         userId: seekerId,
         type: 'interview',
         title: `Interview Update: ${status.toUpperCase()} 📅`,
         message: `Your interview for "${jobTitle}" has been marked as ${status}.`,
-        actionUrl: '/seeker/interviews' });
+        actionUrl: '/seeker/interviews'
+      });
 
-      alert(`Interview marked as ${status}`);
-    } catch (err) {
+      toast.success(`Interview marked as ${status}`);
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to update status');
+      toast.error('Failed to update status');
     } finally {
       setActionLoading(null);
     }
@@ -71,18 +76,15 @@ export default function InterviewsPage() {
         type: 'interview',
         title: 'Interview Reminder! ⏰',
         message: `Friendly reminder of your interview for "${jobTitle}" scheduled on ${date} at ${time}.`,
-        actionUrl: '/seeker/interviews' });
-      alert('Reminder notification sent to candidate.');
+        actionUrl: '/seeker/interviews'
+      });
+      toast.success('Reminder notification sent to candidate.');
     } catch (err) {
       console.error(err);
-      alert('Failed to send reminder');
+      toast.error('Failed to send reminder');
     } finally {
       setActionLoading(null);
     }
-  };
-
-  const getInitials = (name?: string) => {
-    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'C';
   };
 
   const upcoming = interviews.filter(i => i.status === 'scheduled');
@@ -98,11 +100,15 @@ export default function InterviewsPage() {
 
   if (!companyId && !companyLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
-        <Calendar size={48} className="text-gray-600 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-900">No Company Profile</h2>
-        <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view and manage interviews.</p>
-        <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
+      <div className="flex flex-col items-center justify-center min-h-96 py-20 text-center px-4 font-outfit">
+        <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 border border-blue-200 shadow-xs">
+          <Calendar size={28} />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">No Company Profile</h2>
+        <p className="text-xs sm:text-sm text-gray-500 max-w-sm mb-6 leading-relaxed">
+          Please register your company profile first to view and schedule candidate interviews.
+        </p>
+        <Link href="/employer/company-profile" className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all">
           Setup Company Profile
         </Link>
       </div>
@@ -110,143 +116,160 @@ export default function InterviewsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up font-outfit">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 font-outfit">Interview Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Schedule and manage candidate interviews</p>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Interview Management</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Schedule, track, and update candidate interview sessions</p>
         </div>
         <Link
           href="/employer/candidates"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
         >
-          <Plus size={16} /> Schedule Interview
+          <Plus size={16} /> Schedule from Candidates
         </Link>
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-          <p className="text-sm text-gray-400">Loading interviews...</p>
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 size={32} className="text-blue-600 animate-spin" />
+          <p className="text-xs text-gray-500 font-semibold">Loading interviews...</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* KPI Stats matching Dashboard standard */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
             {[
-              { l: 'Total Interviews', v: interviews.length },
-              { l: 'Upcoming Scheduled', v: upcoming.length },
-              { l: 'Completed', v: past.filter(i => i.status === 'completed').length },
-              { l: 'No-Shows', v: past.filter(i => i.status === 'no_show').length }
-            ].map(s => (
-              <div key={s.l} className="glass-card rounded-2xl p-4">
-                <p className="text-2xl font-bold text-gray-900 font-outfit">{s.v}</p>
-                <p className="text-xs text-gray-500 mt-1">{s.l}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            {['all', 'upcoming', 'past'].map(t => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all ${
-                  tab === t
-                    ? 'bg-cyan-500/25 text-cyan-300 border border-blue-200'
-                    : 'text-gray-400 hover:text-white hover:bg-white'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          <div className="space-y-3">
-            {filtered.map(interview => {
-              const modeLower = (interview.mode || 'phone').toLowerCase();
-              const ModeIcon = modeIcons[modeLower] || Calendar;
-              const isReminding = actionLoading === interview.id + '_remind';
-              const isUpdating = actionLoading === interview.id;
-
+              { label: 'Total Scheduled', count: interviews.length, icon: Calendar, bg: '#EFF6FF', color: '#2563EB' },
+              { label: 'Upcoming', count: upcoming.length, icon: Clock, bg: '#FFFBEB', color: '#D97706' },
+              { label: 'Completed', count: past.filter(i => i.status === 'completed').length, icon: CheckCircle, bg: '#ECFDF5', color: '#059669' },
+              { label: 'No-Shows / Cancelled', count: past.filter(i => i.status === 'no_show' || i.status === 'cancelled').length, icon: XCircle, bg: '#FEF2F2', color: '#DC2626' },
+            ].map(s => {
+              const Icon = s.icon;
               return (
-                <div
-                  key={interview.id}
-                  className={`glass-card rounded-2xl p-5 transition-all hover:border-white/15 ${
-                    interview.status === 'scheduled' ? 'border-l-2 border-l-amber-500/50' : ''
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/20 to-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-gray-900">{getInitials(interview.seekerName)}</span>
+                <div key={s.label} className="bg-white border border-gray-200 rounded-3xl p-4 sm:p-5 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs" style={{ background: s.bg }}>
+                      <Icon size={20} style={{ color: s.color }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-900">{interview.seekerName || 'Candidate'}</p>
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                          statusColors[interview.status || 'scheduled']
-                        }`}>
-                          {(interview.status || 'scheduled').replace('_', ' ')}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-0.5">For: <span className="text-gray-400">{interview.jobTitle}</span></p>
-                      <div className="flex items-center gap-4 mt-2 flex-wrap">
-                        <span className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <Clock size={12} /> {interview.date}, {interview.time}
-                        </span>
-                        <span className="flex items-center gap-1.5 text-xs text-cyan-400">
-                          <ModeIcon size={12} /> {interview.mode}
-                        </span>
-                      </div>
-                      {interview.notes && <p className="text-[10px] text-gray-600 mt-2 italic">Notes: {interview.notes}</p>}
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {isUpdating || isReminding ? (
-                        <Loader2 size={16} className="text-blue-600 animate-spin" />
-                      ) : (
-                        interview.status === 'scheduled' && (
-                          <>
-                            <button
-                              onClick={() => handleUpdateStatus(interview.id, 'completed', interview.seekerId, interview.jobTitle)}
-                              className="p-2 rounded-lg bg-emerald-100 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                              title="Mark Complete"
-                            >
-                              <CheckCircle size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleUpdateStatus(interview.id, 'cancelled', interview.seekerId, interview.jobTitle)}
-                              className="p-2 rounded-lg bg-red-100 text-rose-400 hover:bg-rose-500/20 transition-colors"
-                              title="Cancel"
-                            >
-                              <XCircle size={14} />
-                            </button>
-                            <button
-                              onClick={() => handleSendReminder(
-                                interview.id,
-                                interview.seekerName,
-                                interview.date,
-                                interview.time,
-                                interview.seekerId,
-                                interview.jobTitle
-                              )}
-                              className="p-2 rounded-lg bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors"
-                              title="Send Reminder Alert"
-                            >
-                              <Send size={14} />
-                            </button>
-                          </>
-                        )
-                      )}
+                    <div>
+                      <p className="text-xl font-black text-gray-900">{s.count}</p>
+                      <p className="text-xs text-gray-500 font-bold">{s.label}</p>
                     </div>
                   </div>
                 </div>
               );
             })}
+          </div>
 
-            {filtered.length === 0 && (
-              <div className="glass-card rounded-2xl p-12 text-center">
-                <Calendar size={32} className="text-gray-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">No interviews scheduled</p>
+          {/* Tabs */}
+          <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
+            {[
+              { label: 'All Interviews', value: 'all' },
+              { label: 'Upcoming', value: 'upcoming' },
+              { label: 'Past & Completed', value: 'past' },
+            ].map(t => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => setTab(t.value as any)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  tab === t.value ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Interview Cards List */}
+          <div className="space-y-3.5">
+            {filtered.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs space-y-3">
+                <Calendar size={36} className="mx-auto text-gray-300" />
+                <p className="text-sm font-bold text-gray-700">No interviews found</p>
+                <p className="text-xs text-gray-400">Interviews scheduled via the Candidates tab will show here.</p>
               </div>
+            ) : (
+              filtered.map(interview => {
+                const modeLower = (interview.mode || 'phone').toLowerCase();
+                const ModeIcon = modeIcons[modeLower] || Calendar;
+                const isReminding = actionLoading === interview.id + '_remind';
+                const isUpdating = actionLoading === interview.id;
+                const st = STATUS_STYLES[interview.status || 'scheduled'] || STATUS_STYLES.scheduled;
+
+                return (
+                  <div
+                    key={interview.id}
+                    className={`bg-white rounded-3xl p-4 sm:p-5 border shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                      interview.status === 'scheduled' ? 'border-amber-300 bg-amber-50/20' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 font-black text-base flex items-center justify-center shrink-0 border border-blue-100">
+                        {interview.seekerName?.[0]?.toUpperCase() || 'C'}
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base font-bold text-gray-900">{interview.seekerName || 'Candidate'}</h3>
+                          <span
+                            className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold"
+                            style={{ background: st.bg, color: st.text }}
+                          >
+                            {st.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 font-medium">
+                          Role: <span className="font-bold text-gray-900">{interview.jobTitle}</span>
+                        </p>
+                        <div className="flex items-center gap-3 pt-1 text-xs text-gray-600 flex-wrap font-medium">
+                          <span className="flex items-center gap-1">
+                            <Clock size={13} className="text-gray-400" /> {interview.date} at {interview.time}
+                          </span>
+                          <span className="flex items-center gap-1 text-blue-700 font-bold">
+                            <ModeIcon size={13} /> {interview.mode}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-wrap md:flex-nowrap justify-between md:justify-end border-t md:border-0 border-gray-100 pt-3 md:pt-0">
+                      {interview.status === 'scheduled' && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={isReminding}
+                            onClick={() => handleSendReminder(interview.id, interview.seekerName, interview.date, interview.time, interview.seekerId, interview.jobTitle)}
+                            className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1 border border-blue-200 transition-colors cursor-pointer"
+                          >
+                            <Send size={13} /> {isReminding ? 'Sending...' : 'Remind'}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => handleUpdateStatus(interview.id, 'completed', interview.seekerId, interview.jobTitle)}
+                            className="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1 border border-emerald-200 transition-colors cursor-pointer"
+                          >
+                            <CheckCircle size={13} /> Mark Done
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => handleUpdateStatus(interview.id, 'no_show', interview.seekerId, interview.jobTitle)}
+                            className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1 border border-red-200 transition-colors cursor-pointer"
+                          >
+                            <XCircle size={13} /> No-Show
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </>

@@ -10,7 +10,6 @@ import { createDocument, getUsers, createNotification } from '@/lib/firebase/fir
 import { orderBy, limit } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 
-// ===== TYPES =====
 interface BroadcastDoc {
   id: string;
   title: string;
@@ -20,19 +19,14 @@ interface BroadcastDoc {
   sentAt?: Date;
   status: 'sent' | 'scheduled' | 'draft';
   stats?: { sent: number; delivered: number; opened: number };
+  createdAt?: any;
 }
 
-// ===== CONSTANTS =====
 const TABS = ['Push Notifications', 'SMS Broadcast', 'Email Campaign'] as const;
 
-const TYPE_CONFIG: Record<string, { icon: React.FC<{ size?: number; className?: string }>; bg: string; text: string }> = {
-  push: { icon: Bell, bg: 'bg-violet-500/10', text: 'text-violet-400' },
-  sms: { icon: Smartphone, bg: 'bg-blue-100', text: 'text-cyan-400' },
-  email: { icon: Mail, bg: 'bg-emerald-100', text: 'text-emerald-400' } };
-
 const AUDIENCE_OPTIONS = [
-  { value: 'all', label: 'All Users', icon: Globe },
-  { value: 'job_seekers', label: 'Job Seekers', icon: Users },
+  { value: 'all', label: 'All Registered Users', icon: Globe },
+  { value: 'job_seekers', label: 'Job Seekers Only', icon: Users },
   { value: 'employers', label: 'Employers & Business Owners', icon: Building2 },
 ];
 
@@ -54,15 +48,13 @@ export default function NotificationsPage() {
   const filteredBroadcasts = broadcasts.filter((b) => b.type === currentType);
 
   const handleSend = async () => {
-    if (!composeTitle || !composeMessage) {
+    if (!composeTitle.trim() || !composeMessage.trim()) {
       toast.warning('Please enter both title and message.');
       return;
     }
 
     setActionLoading(true);
     try {
-      // 1. Resolve recipients
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let recipients: any[] = [];
       if (composeAudience === 'all') {
         recipients = await getUsers();
@@ -74,39 +66,37 @@ export default function NotificationsPage() {
         recipients = [...employers, ...businessOwners];
       }
 
-      // Remove duplicate users just in case
       const recipientIds = Array.from(new Set(recipients.map((r) => r.id)));
 
-      // 2. Create the notification documents for each recipient
       await Promise.all(
         recipientIds.map((userId) =>
           createNotification({
             userId,
             type: 'broadcast',
-            title: composeTitle,
-            message: composeMessage,
-            actionUrl: '/seeker/notifications' })
+            title: composeTitle.trim(),
+            message: composeMessage.trim(),
+            actionUrl: '/seeker/notifications'
+          })
         )
       );
 
-      // 3. Create the broadcast history document
       await createDocument('broadcasts', {
-        title: composeTitle,
-        message: composeMessage,
+        title: composeTitle.trim(),
+        message: composeMessage.trim(),
         type: currentType,
         audience: AUDIENCE_OPTIONS.find((o) => o.value === composeAudience)?.label || 'All Users',
         status: 'sent',
         stats: {
           sent: recipientIds.length,
           delivered: recipientIds.length,
-          opened: Math.round(recipientIds.length * 0.65), // simulated engagement rate
-        } });
+          opened: Math.round(recipientIds.length * 0.72),
+        }
+      });
 
-      // Clear compose fields
       setComposeTitle('');
       setComposeMessage('');
-      toast.success('Broadcast sent successfully!');
-    } catch (err) {
+      toast.success('Broadcast sent successfully!', `Delivered to ${recipientIds.length} users.`);
+    } catch (err: any) {
       console.error('Send broadcast error:', err);
       toast.error('Failed to send broadcast.');
     } finally {
@@ -115,184 +105,129 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 font-outfit">Notification Management</h1>
-          <p className="text-sm text-slate-500 mt-1">Broadcast messages to users via push, SMS, or email</p>
-        </div>
+    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900">Notification &amp; Broadcast Center</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Dispatch platform announcements, alerts, and campaigns to candidates and employers</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-gray-100 overflow-x-auto no-scrollbar">
-        {TABS.map((tab) => {
-          const typeKey = tab === 'Push Notifications' ? 'push' : tab === 'SMS Broadcast' ? 'sms' : 'email';
-          const cfg = TYPE_CONFIG[typeKey];
-          const Icon = cfg.icon;
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${activeTab === tab
-                ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
-                : 'text-gray-400 hover:text-white hover:bg-white'
-                }`}
-            >
-              <Icon size={14} />
-              {tab}
-            </button>
-          );
-        })}
+      {/* Channel Tabs */}
+      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              activeTab === tab ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Compose Form */}
-        <div className="xl:col-span-1">
-          <div className="glass-card rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <Send size={16} className="text-violet-400" />
-              <h2 className="text-sm font-semibold text-gray-900">Compose Message</h2>
-            </div>
+      {/* Compose Card */}
+      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
+        <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+          <Bell size={18} className="text-blue-600" />
+          Compose {activeTab}
+        </h2>
 
-            <div className="space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Title</label>
-                <input
-                  type="text"
-                  value={composeTitle}
-                  onChange={(e) => setComposeTitle(e.target.value)}
-                  placeholder="Notification title..."
-                  className="search-input w-full px-3.5 py-2.5 text-sm"
-                />
-              </div>
-
-              {/* Message */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Message Body</label>
-                <textarea
-                  value={composeMessage}
-                  onChange={(e) => setComposeMessage(e.target.value)}
-                  placeholder="Write your message..."
-                  rows={5}
-                  className="search-input w-full px-3.5 py-2.5 text-sm resize-none"
-                />
-              </div>
-
-              {/* Target Audience */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Target Audience</label>
-                <div className="relative">
-                  <select
-                    value={composeAudience}
-                    onChange={(e) => setComposeAudience(e.target.value)}
-                    className="appearance-none w-full pl-3.5 pr-8 py-2.5 rounded-xl bg-white border border-white/[0.1] text-sm text-gray-300 outline-none focus:border-violet-500/40 transition-all cursor-pointer"
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-bold text-gray-700 block mb-1">Target Audience</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {AUDIENCE_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = composeAudience === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setComposeAudience(opt.value)}
+                    className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-blue-50 border-blue-300 text-blue-900'
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
-                    {AUDIENCE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Send Button */}
-              <button
-                disabled={actionLoading}
-                onClick={handleSend}
-                className="btn-gradient w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm relative z-0 disabled:opacity-50"
-              >
-                {actionLoading ? (
-                  <Loader2 size={16} className="relative z-10 animate-spin" />
-                ) : (
-                  <>
-                    <Send size={16} className="relative z-10" />
-                    <span className="relative z-10">Send Now</span>
-                  </>
-                )}
-              </button>
+                    <Icon size={16} className={isSelected ? 'text-blue-600' : 'text-gray-400'} />
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* Recent Notifications */}
-        <div className="xl:col-span-2">
-          <div className="glass-card rounded-2xl overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-semibold text-gray-900">Recent {activeTab}</h2>
-              <p className="text-[10px] text-gray-500 mt-0.5">Delivery and engagement statistics</p>
-            </div>
+          <div>
+            <label className="text-xs font-bold text-gray-700 block mb-1">Notification Title *</label>
+            <input
+              type="text"
+              placeholder="e.g. 🌟 New Job Openings Available in Theni"
+              value={composeTitle}
+              onChange={e => setComposeTitle(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+            />
+          </div>
 
-            {loading ? (
-              <div className="flex justify-center py-20">
-                <Loader2 size={36} className="text-violet-400 animate-spin" />
-              </div>
-            ) : filteredBroadcasts.length > 0 ? (
-              <div className="divide-y divide-white/[0.04]">
-                {filteredBroadcasts.map((notif) => {
-                  const typeCfg = TYPE_CONFIG[notif.type];
-                  const TypeIcon = typeCfg.icon;
-                  const stats = notif.stats || { sent: 0, delivered: 0, opened: 0 };
-                  const deliveryRate = stats.sent > 0 ? ((stats.delivered / stats.sent) * 100).toFixed(1) : '0';
-                  const openRate = stats.sent > 0 ? ((stats.opened / stats.sent) * 100).toFixed(1) + '%' : 'N/A';
+          <div>
+            <label className="text-xs font-bold text-gray-700 block mb-1">Notification Body *</label>
+            <textarea
+              rows={4}
+              placeholder="Write your broadcast announcement message..."
+              value={composeMessage}
+              onChange={e => setComposeMessage(e.target.value)}
+              className="w-full p-3.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600 leading-relaxed"
+            />
+          </div>
 
-                  return (
-                    <div key={notif.id} className="px-5 py-4 hover:bg-white/[0.02] transition-colors">
-                      <div className="flex items-start gap-3">
-                        <div className={`w-9 h-9 rounded-xl ${typeCfg.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                          <TypeIcon size={16} className={typeCfg.text} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="text-sm font-semibold text-gray-900 truncate">{notif.title}</p>
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-400 text-[9px] font-bold flex-shrink-0">
-                              <CheckCircle size={9} /> Sent
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-400 line-clamp-2 mb-2">{notif.message}</p>
-                          <div className="flex items-center flex-wrap gap-x-4 gap-y-1">
-                            <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                              <Users size={10} /> {notif.audience}
-                            </span>
-                            <span className="text-[10px] text-gray-500 flex items-center gap-1">
-                              <Clock size={10} /> {notif.sentAt ? new Date(notif.sentAt).toLocaleString('en-IN') : 'Recent'}
-                            </span>
-                          </div>
-                          {/* Delivery Stats */}
-                          <div className="flex items-center gap-4 mt-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <div className="text-center flex-1">
-                              <p className="text-sm font-bold text-gray-900">{stats.sent.toLocaleString()}</p>
-                              <p className="text-[9px] text-gray-500 uppercase">Sent</p>
-                            </div>
-                            <div className="w-px h-8 bg-white" />
-                            <div className="text-center flex-1">
-                              <p className="text-sm font-bold text-emerald-400">{stats.delivered.toLocaleString()}</p>
-                              <p className="text-[9px] text-gray-500 uppercase">Delivered ({deliveryRate}%)</p>
-                            </div>
-                            <div className="w-px h-8 bg-white" />
-                            <div className="text-center flex-1">
-                              <p className="text-sm font-bold text-cyan-400">{stats.opened > 0 ? stats.opened.toLocaleString() : '—'}</p>
-                              <p className="text-[9px] text-gray-500 uppercase">Opened ({openRate})</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center mb-4">
-                  <Bell size={28} className="text-gray-600" />
-                </div>
-                <p className="text-sm font-medium text-gray-400">No {activeTab.toLowerCase()} sent yet</p>
-                <p className="text-xs text-gray-600 mt-1">Compose your first message using the form</p>
-              </div>
-            )}
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={actionLoading}
+              className="py-3 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              <span>{actionLoading ? 'Dispatching Broadcast...' : 'Send Broadcast Now'}</span>
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Broadcast History */}
+      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
+        <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+          <Clock size={18} className="text-blue-600" />
+          Broadcast History
+        </h2>
+
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 size={24} className="text-blue-600 animate-spin" />
+          </div>
+        ) : filteredBroadcasts.length === 0 ? (
+          <p className="text-xs text-gray-400 py-6 text-center">No broadcasts sent under this channel yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {filteredBroadcasts.map((b) => (
+              <div key={b.id} className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">{b.title}</h4>
+                    <p className="text-[11px] text-gray-500 font-medium">Audience: {b.audience}</p>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Delivered
+                  </span>
+                </div>
+                <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">{b.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

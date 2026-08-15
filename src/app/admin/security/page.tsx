@@ -3,27 +3,28 @@
 import { useState, useEffect } from 'react';
 import {
   Shield, Activity, Users, Key, Database,
-  CheckCircle, XCircle, Loader2
+  CheckCircle, XCircle, Loader2, Lock, ShieldCheck
 } from 'lucide-react';
 import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { updateDocument } from '@/lib/firebase/firestoreService';
 import { orderBy, limit, where } from 'firebase/firestore';
 
 const PERMISSIONS = [
-  { module: 'Users', super_admin: true, admin: true, moderator: false, support: true, sales: false, franchise: false },
-  { module: 'Businesses', super_admin: true, admin: true, moderator: true, support: false, sales: false, franchise: true },
-  { module: 'Jobs', super_admin: true, admin: true, moderator: true, support: false, sales: false, franchise: true },
-  { module: 'Leads', super_admin: true, admin: true, moderator: false, support: false, sales: true, franchise: true },
-  { module: 'Subscriptions', super_admin: true, admin: true, moderator: false, support: false, sales: true, franchise: false },
-  { module: 'Reports', super_admin: true, admin: true, moderator: false, support: false, sales: true, franchise: true },
-  { module: 'Settings', super_admin: true, admin: false, moderator: false, support: false, sales: false, franchise: false },
-  { module: 'Security', super_admin: true, admin: false, moderator: false, support: false, sales: false, franchise: false },
+  { module: 'Users & Candidates', super_admin: true, admin: true, moderator: false, support: true },
+  { module: 'Companies & Verification', super_admin: true, admin: true, moderator: true, support: false },
+  { module: 'Job Approvals', super_admin: true, admin: true, moderator: true, support: false },
+  { module: 'Subscriptions & Billing', super_admin: true, admin: true, moderator: false, support: false },
+  { module: 'Reviews Moderation', super_admin: true, admin: true, moderator: true, support: false },
+  { module: 'Platform Reports', super_admin: true, admin: true, moderator: false, support: false },
+  { module: 'AI & SEO Engine', super_admin: true, admin: true, moderator: false, support: false },
+  { module: 'Security & Access Control', super_admin: true, admin: false, moderator: false, support: false },
 ];
 
 const roleColors: Record<string, string> = {
-  'super_admin': 'text-purple-400 bg-purple-500/10',
-  'admin': 'text-violet-400 bg-violet-500/10',
-  'moderator': 'text-cyan-400 bg-cyan-500/10' };
+  'super_admin': 'text-purple-700 bg-purple-50 border-purple-200',
+  'admin': 'text-blue-700 bg-blue-50 border-blue-200',
+  'moderator': 'text-emerald-700 bg-emerald-50 border-emerald-200',
+};
 
 interface LogDoc {
   id: string;
@@ -59,7 +60,6 @@ export default function SecurityPage() {
   const [sessionTimeout, setSessionTimeout] = useState('30');
   const [saveLoading, setSaveLoading] = useState(false);
 
-  // Sync settings
   useEffect(() => {
     if (globalSettings) {
       if (globalSettings.twoFa !== undefined) setTwoFa(globalSettings.twoFa);
@@ -94,7 +94,7 @@ export default function SecurityPage() {
 
   const formatTime = (timestamp: any) => {
     if (!timestamp) return 'Just now';
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    const date = timestamp instanceof Date ? timestamp : (timestamp.toMillis ? new Date(timestamp.toMillis()) : new Date(timestamp));
     const diff = Date.now() - date.getTime();
     const mins = Math.floor(diff / 60000);
     if (mins < 1) return 'Just now';
@@ -105,54 +105,54 @@ export default function SecurityPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 font-outfit">Security & Access Control</h1>
-          <p className="text-sm text-gray-400 mt-1">Manage admin roles, permissions, and platform security</p>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Security &amp; Access Control</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Manage administrator privileges, activity logs, and authentication security</p>
         </div>
         {saveLoading && (
-          <span className="text-xs text-violet-400 flex items-center gap-1.5">
-            <Loader2 size={12} className="animate-spin" /> Saving...
+          <span className="text-xs text-blue-600 font-bold flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">
+            <Loader2 size={13} className="animate-spin" /> Updating Security...
           </span>
         )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Activity Logs */}
-        <div className="xl:col-span-2">
-          <div className="glass-card rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Activity size={16} className="text-blue-600" />
-                </div>
-                <h2 className="text-sm font-bold text-gray-900">Activity Logs</h2>
+        <div className="xl:col-span-2 space-y-4">
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
+            <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-100">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                <Activity size={16} />
               </div>
+              <h2 className="text-sm font-bold text-gray-900">Platform Activity Audit Log</h2>
             </div>
+
             <div className="overflow-x-auto">
               {logsLoading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-                  <p className="text-sm text-gray-500 font-medium">Loading platform activity...</p>
+                <div className="flex flex-col items-center justify-center py-16 gap-2">
+                  <Loader2 size={28} className="text-blue-600 animate-spin" />
+                  <p className="text-xs text-gray-500 font-semibold">Loading logs...</p>
                 </div>
               ) : (
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-bold">Action</th>
-                      <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-bold">User</th>
-                      <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-bold hidden md:table-cell">Target</th>
-                      <th className="text-right px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-bold">Time</th>
+                    <tr className="bg-gray-50/80 border-b border-gray-200">
+                      <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Event</th>
+                      <th className="text-left px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Staff / User</th>
+                      <th className="text-left px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Target</th>
+                      <th className="text-right px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Time</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {logs.map(log => (
-                      <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-5 py-3 text-sm text-gray-900 font-medium">{log.action}</td>
-                        <td className="px-3 py-3 text-sm text-gray-600 font-medium">{log.userName || 'System'}</td>
-                        <td className="px-3 py-3 text-sm text-gray-500 hidden md:table-cell truncate max-w-[200px]">{log.target || '—'}</td>
-                        <td className="px-5 py-3 text-xs text-gray-500 text-right whitespace-nowrap">{formatTime(log.timestamp)}</td>
+                      <tr key={log.id} className="hover:bg-gray-50/60 transition-colors">
+                        <td className="px-5 py-3 text-xs font-bold text-gray-900">{log.action}</td>
+                        <td className="px-3 py-3 text-xs text-gray-600 font-medium">{log.userName || 'Admin'}</td>
+                        <td className="px-3 py-3 text-xs text-gray-500 hidden md:table-cell truncate max-w-[200px]">{log.target || '—'}</td>
+                        <td className="px-5 py-3 text-xs text-gray-400 text-right whitespace-nowrap font-medium">{formatTime(log.timestamp)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -162,29 +162,40 @@ export default function SecurityPage() {
           </div>
         </div>
 
-        {/* Security Settings */}
+        {/* Security Settings Card */}
         <div className="space-y-4">
-          <div className="glass-card rounded-2xl p-5">
-            <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2"><Shield size={16} className="text-blue-600" /> Security Settings</h3>
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <Shield size={16} className="text-blue-600" /> Security Controls
+            </h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-gray-100">
                 <div>
-                  <p className="text-sm text-gray-900 font-medium">Two-Factor Auth</p>
-                  <p className="text-[10px] text-gray-500">Require 2FA for admin login</p>
+                  <p className="text-xs font-bold text-gray-900">Two-Factor Auth (2FA)</p>
+                  <p className="text-[10px] text-gray-500">Require 2FA for Admin login</p>
                 </div>
-                <button onClick={handleToggleTwoFa} className={`w-11 h-6 rounded-full transition-colors ${twoFa ? 'bg-emerald-600' : 'bg-gray-200'} relative`}>
+                <button
+                  type="button"
+                  onClick={handleToggleTwoFa}
+                  className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${twoFa ? 'bg-emerald-600' : 'bg-gray-300'}`}
+                >
                   <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${twoFa ? 'left-6' : 'left-1'}`} />
                 </button>
               </div>
-              <div className="flex items-center justify-between">
+
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-gray-100">
                 <div>
-                  <p className="text-sm text-gray-900 font-medium">Session Timeout</p>
-                  <p className="text-[10px] text-gray-500">Auto-logout inactive admins</p>
+                  <p className="text-xs font-bold text-gray-900">Session Timeout</p>
+                  <p className="text-[10px] text-gray-500">Auto-logout inactive sessions</p>
                 </div>
-                <select value={sessionTimeout} onChange={e => handleTimeoutChange(e.target.value)} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 font-semibold outline-none">
+                <select
+                  value={sessionTimeout}
+                  onChange={e => handleTimeoutChange(e.target.value)}
+                  className="bg-white border border-gray-300 rounded-xl px-2.5 py-1 text-xs text-gray-900 font-bold outline-none cursor-pointer"
+                >
                   <option value="15">15 min</option>
                   <option value="30">30 min</option>
-                  <option value="60">1 hr</option>
+                  <option value="60">60 min</option>
                 </select>
               </div>
             </div>
@@ -192,58 +203,55 @@ export default function SecurityPage() {
         </div>
       </div>
 
-      {/* Admin Roles */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+      {/* Admin Roles List */}
+      <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Users size={16} className="text-blue-600" /> Admin Staff ({admins.length})</h2>
+          <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <Users size={16} className="text-blue-600" /> Authorized Admin Staff ({admins.length})
+          </h2>
         </div>
         <div className="divide-y divide-gray-100">
-          {adminsLoading ? (
-            <div className="p-5 flex justify-center">
-              <Loader2 size={24} className="text-violet-400 animate-spin" />
-            </div>
-          ) : (
-            admins.map(admin => (
-              <div key={admin.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500/30 to-cyan-500/30 flex items-center justify-center">
-                  <span className="text-xs font-bold text-gray-900">{(admin.displayName || admin.name || 'A')[0].toUpperCase()}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{admin.displayName || admin.name || 'Admin'}</p>
-                  <p className="text-[10px] text-gray-500">{admin.email}</p>
-                </div>
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${roleColors[admin.role] || 'text-gray-400 bg-gray-500/10'}`}>{admin.role}</span>
-                <span className="text-[10px] text-gray-600 hidden sm:block">
-                  {admin.lastLogin ? formatTime(admin.lastLogin) : 'Active now'}
-                </span>
+          {admins.map(admin => (
+            <div key={admin.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/60 transition-colors">
+              <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-700 font-black text-xs flex items-center justify-center shrink-0 border border-blue-100">
+                {(admin.displayName || admin.name || 'A')[0].toUpperCase()}
               </div>
-            ))
-          )}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-bold text-gray-900">{admin.displayName || admin.name || 'Admin'}</p>
+                <p className="text-[11px] text-gray-500">{admin.email}</p>
+              </div>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${roleColors[admin.role] || 'text-gray-700 bg-gray-50 border-gray-200'}`}>
+                {admin.role.replace('_', ' ')}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Permission Matrix */}
-      <div className="glass-card rounded-2xl overflow-hidden font-outfit">
-        <div className="px-5 py-4 border-b border-white/[0.06]">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Key size={16} className="text-amber-400" /> Permission Matrix</h2>
+      <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <Key size={16} className="text-blue-600" /> Role Permission Matrix
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-white/[0.06]">
-                <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Module</th>
-                {['Super Admin', 'Admin', 'Moderator', 'Support', 'Sales', 'Franchise'].map(r => (
-                  <th key={r} className="text-center px-2 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{r}</th>
+              <tr className="bg-gray-50/80 border-b border-gray-200">
+                <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Module / Area</th>
+                {['Super Admin', 'Admin', 'Moderator', 'Support Staff'].map(r => (
+                  <th key={r} className="text-center px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">{r}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-gray-100">
               {PERMISSIONS.map(p => (
-                <tr key={p.module} className="hover:bg-white/[0.02]">
-                  <td className="px-5 py-3 text-sm text-white">{p.module}</td>
-                  {[p.super_admin, p.admin, p.moderator, p.support, p.sales, p.franchise].map((has, i) => (
-                    <td key={i} className="text-center px-2 py-3">
-                      {has ? <CheckCircle size={14} className="text-emerald-400 mx-auto" /> : <XCircle size={14} className="text-gray-700 mx-auto" />}
+                <tr key={p.module} className="hover:bg-gray-50/60 transition-colors">
+                  <td className="px-5 py-3 text-xs font-bold text-gray-900">{p.module}</td>
+                  {[p.super_admin, p.admin, p.moderator, p.support].map((has, i) => (
+                    <td key={i} className="text-center px-3 py-3">
+                      {has ? <CheckCircle size={15} className="text-emerald-600 mx-auto" /> : <XCircle size={15} className="text-gray-300 mx-auto" />}
                     </td>
                   ))}
                 </tr>

@@ -3,6 +3,7 @@
 import React, { Component, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import Link from 'next/link';
+import { trackComponentError } from '@/lib/firebase/errorService';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -32,8 +33,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Log to console for now; production error tracking (e.g. Sentry) is a planned future integration
+    // Log to console for development
     console.error('[ErrorBoundary] Uncaught error:', error, info.componentStack);
+    // Persist to Firestore for admin dashboard visibility
+    trackComponentError('ErrorBoundary', error, info.componentStack || undefined).catch(() => {});
     this.props.onError?.(error, info);
   }
 

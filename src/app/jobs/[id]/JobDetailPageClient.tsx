@@ -18,7 +18,6 @@ import { followCompany, unfollowCompany, isFollowingCompany, applyToJob } from '
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, addDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, limit as fbLimit } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
-import { generateJobPostingSchema } from '@/lib/seo/jobSchema';
 
 interface JobRecord {
   id: string;
@@ -48,13 +47,72 @@ interface JobRecord {
   benefits?: string[];
 }
 
-export default function JobDetailPageClient({ id }: { id: string }) {
+interface InitialJobData {
+  id: string;
+  title: string;
+  companyName: string;
+  companyId: string;
+  location: string;
+  district: string;
+  state: string;
+  salaryMin: number;
+  salaryMax: number;
+  jobType: string;
+  openings: number;
+  isUrgent: boolean;
+  isVerified: boolean;
+  whatsapp?: string;
+  phone?: string;
+  experience?: string;
+  education?: string;
+  description: string;
+  responsibilities: string[];
+  requirements: string[];
+  skills: string[];
+  benefits: string[];
+  posted: string;
+  deadline: string;
+  logo: string;
+  isExpired?: boolean;
+  expiredMessage?: string;
+}
+
+export default function JobDetailPageClient({ id, initialJob }: { id: string; initialJob?: InitialJobData }) {
   const router = useRouter();
   const { user } = useAuth();
   const uid = user?.uid;
 
-  const [job, setJob] = useState<JobRecord | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Use initialJob from server for instant hydration — avoid empty page for Google
+  const [job, setJob] = useState<JobRecord | null>(
+    initialJob ? {
+      id: initialJob.id,
+      title: initialJob.title,
+      companyName: initialJob.companyName,
+      companyId: initialJob.companyId,
+      location: initialJob.location,
+      district: initialJob.district,
+      state: initialJob.state,
+      salaryMin: initialJob.salaryMin,
+      salaryMax: initialJob.salaryMax,
+      jobType: initialJob.jobType,
+      posted: initialJob.posted || 'Recently',
+      openings: initialJob.openings,
+      logo: initialJob.logo,
+      isUrgent: initialJob.isUrgent,
+      isVerified: initialJob.isVerified,
+      whatsapp: initialJob.whatsapp,
+      phone: initialJob.phone,
+      experience: initialJob.experience,
+      education: initialJob.education,
+      deadline: initialJob.deadline || 'N/A',
+      description: initialJob.description,
+      responsibilities: initialJob.responsibilities,
+      requirements: initialJob.requirements,
+      skills: initialJob.skills,
+      benefits: initialJob.benefits,
+    } : null
+  );
+  const [loading, setLoading] = useState(!initialJob);
   const [saved, setSaved] = useState(false);
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
@@ -76,6 +134,8 @@ export default function JobDetailPageClient({ id }: { id: string }) {
   // 1. Fetch job details from Firestore
   useEffect(() => {
     if (!id) return;
+    // Skip Firestore fetch if we already have initialJob from server
+    if (initialJob) { setLoading(false); return; }
     async function loadJob() {
       try {
         setLoading(true);
@@ -365,34 +425,21 @@ export default function JobDetailPageClient({ id }: { id: string }) {
   return (
     <main className="public-light-page min-h-screen bg-[#F8FAFC] font-outfit text-[#111827]">
       <Header />
-      {job && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
-              generateJobPostingSchema({
-                id: job.id,
-                title: job.title,
-                description: job.description || `${job.title} at ${job.companyName}`,
-                companyName: job.companyName,
-                district: job.district,
-                location: job.location,
-                state: job.state,
-                salaryMin: job.salaryMin,
-                salaryMax: job.salaryMax,
-                jobType: job.jobType,
-                postedDate: job.posted,
-                expiryDate: job.deadline,
-                responsibilities: job.responsibilities,
-                requirements: job.requirements,
-                skills: job.skills,
-                benefits: job.benefits,
-              })
-            ),
-          }}
-        />
-      )}
+      {/* JSON-LD is now injected server-side in page.tsx for Google visibility */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-28 md:pb-12">
+        {/* Expired Job Banner */}
+        {initialJob?.isExpired && (
+          <div className="mt-4 mb-4 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 flex items-start gap-3">
+            <AlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-amber-800">This job is no longer accepting applications</p>
+              <p className="text-xs text-amber-700 mt-1">{initialJob.expiredMessage || 'This job posting has expired or been closed.'}</p>
+              <Link href="/jobs" className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-blue-700 hover:text-blue-800">
+                Browse Active Jobs <ChevronRight size={12} />
+              </Link>
+            </div>
+          </div>
+        )}
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-xs text-gray-600 mt-4 mb-6" aria-label="Breadcrumbs">
           <Link href="/" className="hover:text-blue-700 font-medium transition-colors">Home</Link>

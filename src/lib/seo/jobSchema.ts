@@ -1,7 +1,17 @@
 /**
  * THENIJOBS — Google Jobs & Schema.org Structured Data Generator
  * Formats JobPosting and BreadcrumbList structured data according to Google Search Guidelines.
+ *
+ * Key Google requirements met:
+ * - datePosted, description, hiringOrganization, jobLocation, title (required)
+ * - baseSalary (recommended, included when salary data exists)
+ * - directApply (conditional — only true when THENIJOBS has direct apply)
+ * - identifier (unique per job)
+ * - validThrough (recommended)
+ * - employmentType (recommended)
  */
+
+import { toISODateString, toISOExpiryString } from './expiredJobUtils';
 
 export interface JobSchemaInput {
   id: string;
@@ -25,6 +35,10 @@ export interface JobSchemaInput {
   requirements?: string[];
   skills?: string[];
   benefits?: string[];
+  experience?: string;
+  education?: string;
+  category?: string;
+  directApply?: boolean;
 }
 
 /**
@@ -41,7 +55,8 @@ export function normalizeEmploymentType(jobType?: string): string {
 }
 
 /**
- * Builds HTML description suitable for JobPosting description property
+ * Builds HTML description suitable for JobPosting description property.
+ * Google requires the description to contain the complete job information.
  */
 export function buildHtmlDescription(job: JobSchemaInput): string {
   let html = `<p>${job.description.replace(/\n/g, '<br/>')}</p>`;
@@ -58,6 +73,14 @@ export function buildHtmlDescription(job: JobSchemaInput): string {
     html += `<h3>Required Skills:</h3><p>${job.skills.join(', ')}</p>`;
   }
 
+  if (job.experience) {
+    html += `<p><strong>Experience:</strong> ${job.experience}</p>`;
+  }
+
+  if (job.education) {
+    html += `<p><strong>Education:</strong> ${job.education}</p>`;
+  }
+
   if (job.benefits && job.benefits.length > 0) {
     html += `<h3>Benefits & Perks:</h3><ul>${job.benefits.map(b => `<li>${b}</li>`).join('')}</ul>`;
   }
@@ -67,30 +90,23 @@ export function buildHtmlDescription(job: JobSchemaInput): string {
 }
 
 /**
- * Creates Schema.org JobPosting JSON-LD object for Google Jobs
+ * Creates Schema.org JobPosting JSON-LD object for Google Jobs.
+ * Follows Google's structured data guidelines for JobPosting.
  */
 export function generateJobPostingSchema(job: JobSchemaInput) {
-  // Format Date Posted
-  const posted = job.postedDate
-    ? (typeof job.postedDate === 'string' ? job.postedDate.slice(0, 10) : job.postedDate.toISOString().slice(0, 10))
-    : new Date().toISOString().slice(0, 10);
+  // Format Date Posted — must be valid ISO date
+  const posted = toISODateString(job.postedDate);
 
-  // Format Expiry Date (default 30 days from posted date if not provided)
-  let validThrough: string;
-  if (job.expiryDate) {
-    validThrough = typeof job.expiryDate === 'string' ? job.expiryDate : job.expiryDate.toISOString();
-  } else {
-    const exp = new Date(posted);
-    exp.setDate(exp.getDate() + 30);
-    validThrough = exp.toISOString();
-  }
+  // Format Expiry Date
+  const validThrough = toISOExpiryString(job.expiryDate);
 
   const district = job.district || job.location || 'Theni';
   const state = job.state || 'Tamil Nadu';
   const postalCode = job.postalCode || '625531';
   const streetAddress = job.streetAddress || `${district}, ${state}`;
 
-  const schema: any = {
+  // Build the core schema object
+  const schema: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
     title: job.title,
@@ -120,21 +136,45 @@ export function generateJobPostingSchema(job: JobSchemaInput) {
         addressCountry: 'IN',
       },
     },
-    directApply: true,
   };
 
-  // Base salary structured object if provided
+  // directApply — only set to true when the application is genuinely short + direct on THENIJOBS
+  // Default to true since THENIJOBS has a built-in apply flow, but allow override
+  if (job.directApply !== undefined) {
+    schema.directApply = job.directApply;
+  } else {
+    schema.directApply = true;
+  }
+
+  // Base salary — only include when real salary data exists
+  // Google warns against fake/misleading salary values
   if (job.salaryMin && job.salaryMin > 0) {
-    schema.baseSalary = {
-      '@type': 'MonetaryAmount',
-      currency: 'INR',
-      value: {
-        '@type': 'QuantitativeValue',
-        minValue: job.salaryMin,
-        maxValue: job.salaryMax && job.salaryMax > job.salaryMin ? job.salaryMax : job.salaryMin,
-        unitText: 'MONTH',
-      },
-    };
+    const maxSalary = job.salaryMax && job.salaryMax > job.salaryMin ? job.salaryMax : job.salaryMin;
+
+    if (job.salaryMin === maxSalary) {
+      // Single value salary
+      schema.baseSalary = {
+        '@type': 'MonetaryAmount',
+        currency: 'INR',
+        value: {
+          '@type': 'QuantitativeValue',
+          value: job.salaryMin,
+          unitText: 'MONTH',
+        },
+      };
+    } else {
+      // Range salary
+      schema.baseSalary = {
+        '@type': 'MonetaryAmount',
+        currency: 'INR',
+        value: {
+          '@type': 'QuantitativeValue',
+          minValue: job.salaryMin,
+          maxValue: maxSalary,
+          unitText: 'MONTH',
+        },
+      };
+    }
   }
 
   // Remote / Telecommute handling
@@ -144,6 +184,29 @@ export function generateJobPostingSchema(job: JobSchemaInput) {
       '@type': 'Country',
       name: 'India',
     };
+  }
+
+  // Experience requirements (when available)
+  if (job.experience && job.experience !== 'Not specified') {
+    schema.experienceRequirements = job.experience;
+  }
+
+  // Education requirements (when available)
+  if (job.education && job.education !== 'Not specified') {
+    schema.educationRequirements = {
+      '@type': 'EducationalOccupationalCredential',
+      credentialCategory: job.education,
+    };
+  }
+
+  // Occupational category (when available)
+  if (job.category) {
+    schema.occupationalCategory = job.category;
+  }
+
+  // Job benefits (when available)
+  if (job.benefits && job.benefits.length > 0) {
+    schema.jobBenefits = job.benefits.join(', ');
   }
 
   return schema;

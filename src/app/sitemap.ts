@@ -1,6 +1,15 @@
 import { MetadataRoute } from 'next';
+import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap } from '@/lib/firebase/firestoreServer';
 
-export const dynamic = 'force-static';
+/**
+ * THENIJOBS Dynamic Sitemap
+ * Includes individual active job URLs, location/category pages, and company pages.
+ * Uses Firestore REST API for server-safe data fetching.
+ *
+ * Architecture (per checklist item #10):
+ * /sitemap.xml → This file generates all URLs in a single sitemap.
+ * As the job count grows beyond 50,000, use generateSitemaps() to split.
+ */
 
 const LOCATIONS = [
   'theni',
@@ -32,7 +41,7 @@ const CATEGORIES = [
   'work-from-home',
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE = 'https://thenijobs.com';
   const now = new Date();
 
@@ -82,26 +91,61 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: now,
   }));
 
-  // Company pages
-  const companyPages: MetadataRoute.Sitemap = [
-    'digital-theni-solutions',
-    'arasu-pandi-farm-services',
-    'greenfield-agro-exports',
-    'quickdeliver-logistics',
-    'theni-textiles',
-    'thenijobs-demo-company',
-  ].map(slug => ({
-    url: `${BASE}/company/${slug}`,
-    changeFrequency: 'weekly',
-    priority: 0.8,
-    lastModified: now,
-  }));
+  // ── DYNAMIC: Individual active job URLs from Firestore ──────────────────
+  let jobPages: MetadataRoute.Sitemap = [];
+  try {
+    const activeJobs = await getActiveJobsForSitemap();
+    jobPages = activeJobs.map(job => {
+      // Use accurate lastmod from job.updatedAt
+      let lastMod = now;
+      if (job.updatedAt) {
+        try {
+          const d = new Date(job.updatedAt);
+          if (!isNaN(d.getTime())) lastMod = d;
+        } catch { /* use now */ }
+      }
+
+      return {
+        url: `${BASE}/jobs/${job.id}`,
+        changeFrequency: 'daily' as const,
+        priority: 0.85,
+        lastModified: lastMod,
+      };
+    });
+  } catch (error) {
+    console.error('[Sitemap] Error fetching active jobs:', error);
+  }
+
+  // ── DYNAMIC: Verified company pages from Firestore ──────────────────────
+  let companyPages: MetadataRoute.Sitemap = [];
+  try {
+    const companies = await getVerifiedCompanySlugsForSitemap();
+    companyPages = companies.map(c => {
+      let lastMod = now;
+      if (c.updatedAt) {
+        try {
+          const d = new Date(c.updatedAt);
+          if (!isNaN(d.getTime())) lastMod = d;
+        } catch { /* use now */ }
+      }
+
+      return {
+        url: `${BASE}/company/${c.slug}`,
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+        lastModified: lastMod,
+      };
+    });
+  } catch (error) {
+    console.error('[Sitemap] Error fetching companies:', error);
+  }
 
   return [
     ...staticPages,
     ...locationPages,
     ...locationCategoryPages,
     ...businessCategoryPages,
+    ...jobPages,
     ...companyPages,
   ];
 }

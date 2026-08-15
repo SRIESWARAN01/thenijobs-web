@@ -1,113 +1,132 @@
 'use client';
 
-import { Check, Star, Award, Zap, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Star, Award, Zap, Loader2, Crown, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
+import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 
 const BENEFITS = [
-  'Featured profile badge shown to employers first',
+  'Featured candidate badge shown to recruiters first',
   'Direct WhatsApp chat links with verified employers',
   'Priority application review (marked as Premium Candidate)',
   'Unlimited active job alerts (Free is limited to 2)',
-  'AI Coach mock interviews',
-  'Resume rating and keyword suggestions'
+  'AI Coach mock interviews & resume review',
+  'Instant SMS & WhatsApp alerts for high-match jobs',
 ];
 
 export default function SeekerSubscriptionPage() {
   const { user } = useAuth();
   const uid = user?.uid;
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // Fetch seekerProfile to see if they have any active subscription
   const { data: profile, loading } = useDocument<any>('seekerProfiles', uid);
 
   const isPremium = profile?.isPremium === true;
 
+  const seekerPlan: PlanDetails = {
+    name: 'Pro Candidate',
+    slug: 'seeker_pro',
+    price: 199,
+    dailyEquivalent: 2,
+    period: 'quarterly',
+    features: BENEFITS,
+  };
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 font-outfit text-gray-900">
-        <Loader2 size={36} className="text-emerald-400 animate-spin mb-4" />
-        <p className="text-sm text-gray-400">Loading plan details...</p>
+      <div className="flex flex-col items-center justify-center py-20 font-sans">
+        <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
+        <p className="text-xs text-gray-500 font-medium">Loading plan details...</p>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in-up space-y-6 max-w-4xl mx-auto font-outfit text-gray-900">
+    <div className="space-y-6 max-w-4xl mx-auto font-sans text-gray-900 animate-in fade-in">
       {/* Header */}
       <div className="text-center max-w-xl mx-auto py-4">
-        <h1 className="text-2xl font-bold text-gray-900">Choose Your Plan</h1>
-        <p className="text-sm text-gray-400 mt-2">Accelerate your job search and stand out to top employers in Theni</p>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-3 border border-blue-100">
+          <Zap size={13} className="text-blue-600" /> Accelerate Your Career in Theni
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          Choose Your Candidate Plan
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+          Accelerate your job search and stand out to 500+ verified employers in Theni &amp; Tamil Nadu
+        </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 items-stretch">
         {/* Free Plan */}
-        <div className="glass-card rounded-2xl p-6 flex flex-col justify-between border-gray-100 bg-white/[0.01]">
+        <div className="bg-white rounded-3xl p-6 flex flex-col justify-between border border-gray-200 shadow-sm">
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Basic Tier</span>
               {!isPremium && (
-                <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.08] text-gray-300 font-bold uppercase">
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold uppercase">
                   Active
                 </span>
               )}
             </div>
             <h2 className="text-xl font-bold text-gray-900">Free Plan</h2>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold text-white">₹0</span>
-              <span className="text-xs text-gray-500">/ forever</span>
+              <span className="text-3xl font-extrabold text-gray-900">₹0</span>
+              <span className="text-xs text-gray-500 font-normal">/ forever</span>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Essential features to search and apply to local jobs.</p>
+            <p className="text-xs text-gray-500 mt-2">Essential features to search and apply to local jobs.</p>
 
             <div className="mt-6 space-y-3">
-              <div className="flex items-start gap-2.5 text-xs text-gray-300">
-                <Check size={14} className="text-emerald-400 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2.5 text-xs text-gray-700">
+                <Check size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                 <span>Apply to standard local jobs</span>
               </div>
-              <div className="flex items-start gap-2.5 text-xs text-gray-300">
-                <Check size={14} className="text-emerald-400 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2.5 text-xs text-gray-700">
+                <Check size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                 <span>Basic profile and resume upload</span>
               </div>
-              <div className="flex items-start gap-2.5 text-xs text-gray-300">
-                <Check size={14} className="text-emerald-400 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2.5 text-xs text-gray-700">
+                <Check size={14} className="text-emerald-600 mt-0.5 shrink-0" />
                 <span>Up to 2 active job alerts</span>
               </div>
             </div>
           </div>
           <button
             disabled
-            className="w-full mt-8 py-3 rounded-xl bg-white border border-gray-200 text-xs font-semibold text-gray-400 cursor-not-allowed"
+            className="w-full mt-8 py-3 rounded-xl bg-gray-100 border border-gray-200 text-xs font-bold text-gray-400 cursor-default"
           >
-            {isPremium ? 'Downgrade' : 'Current Plan'}
+            {isPremium ? 'Standard Free Plan' : 'Current Active Plan'}
           </button>
         </div>
 
         {/* Premium Plan */}
-        <div className="glass-card rounded-2xl p-6 flex flex-col justify-between border-emerald-200 bg-gradient-to-b from-emerald-500/5 to-transparent relative overflow-hidden">
-          <div className="absolute top-3 right-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-            Popular
+        <div className="bg-white rounded-3xl p-6 flex flex-col justify-between border-2 border-blue-500 shadow-md relative overflow-hidden ring-4 ring-blue-50">
+          <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+            Recommended
           </div>
           <div>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                <Zap size={12} /> Pro Seeker
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-600 flex items-center gap-1">
+                <Crown size={14} /> Pro Candidate
               </span>
               {isPremium && (
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-200 font-bold uppercase">
-                  Active
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold uppercase">
+                  Active Plan
                 </span>
               )}
             </div>
             <h2 className="text-xl font-bold text-gray-900">Premium Candidate</h2>
             <div className="mt-3 flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold text-white">₹199</span>
-              <span className="text-xs text-gray-500">/ 3 months</span>
+              <span className="text-3xl font-extrabold text-gray-900">₹199</span>
+              <span className="text-xs text-gray-500 font-normal">/ 3 months (~₹2/day)</span>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Get noticed by recruiters, unlock direct chats, and boost your job search.</p>
+            <p className="text-xs text-gray-500 mt-2">Get noticed by recruiters, unlock direct chats, and boost your job applications.</p>
 
             <div className="mt-6 space-y-3">
               {BENEFITS.map((b, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 text-xs text-gray-300">
-                  <Check size={14} className="text-emerald-400 mt-0.5 shrink-0" />
+                <div key={idx} className="flex items-start gap-2.5 text-xs text-gray-700 font-medium">
+                  <CheckCircle2 size={14} className="text-blue-600 mt-0.5 shrink-0" />
                   <span>{b}</span>
                 </div>
               ))}
@@ -115,11 +134,12 @@ export default function SeekerSubscriptionPage() {
           </div>
           
           <button
+            onClick={() => setIsCheckoutOpen(true)}
             disabled={isPremium}
-            className="w-full mt-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-semibold text-xs hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
+            className="w-full mt-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs hover:opacity-95 transition-all flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50"
           >
-            <Star size={12} />
-            {isPremium ? 'Active Plan' : 'Upgrade Now'}
+            <Star size={14} className="fill-current" />
+            {isPremium ? 'Plan Active' : 'Upgrade to Pro — ₹199'}
           </button>
         </div>
       </div>
@@ -127,24 +147,31 @@ export default function SeekerSubscriptionPage() {
       {/* Trust Badges */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         {[
-          { icon: Award, title: 'Verified Jobs Only', desc: 'Every employer is manually checked' },
-          { icon: Star, title: 'Job Matching', desc: 'Get matched with high quality openings' },
-          { icon: Zap, title: 'Instant Delivery', desc: 'WhatsApp and SMS alerts' },
+          { icon: Award, title: 'Verified Jobs Only', desc: 'Every employer is verified in Theni' },
+          { icon: Star, title: 'Top Candidate Badge', desc: 'Get shown at top of employer applicant lists' },
+          { icon: Zap, title: 'Instant Delivery', desc: 'WhatsApp and SMS direct alerts' },
         ].map((item, idx) => {
           const Icon = item.icon;
           return (
-            <div key={idx} className="glass-card rounded-2xl p-4 flex items-center gap-3 border-white/[0.04] bg-white/[0.01]">
-              <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0">
-                <Icon size={16} className="text-emerald-400" />
+            <div key={idx} className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-gray-200 shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <Icon size={18} />
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-gray-900">{item.title}</h3>
-                <p className="text-[10px] text-gray-500 mt-0.5">{item.desc}</p>
+                <h3 className="text-xs font-bold text-gray-900">{item.title}</h3>
+                <p className="text-[11px] text-gray-500 mt-0.5">{item.desc}</p>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Checkout Modal */}
+      <PaymentCheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        plan={seekerPlan}
+      />
     </div>
   );
 }

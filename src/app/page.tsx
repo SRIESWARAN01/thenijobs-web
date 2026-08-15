@@ -10,9 +10,9 @@ import TestimonialsSection from '@/components/home/TestimonialsSection';
 import HomeFooter from '@/components/home/HomeFooter';
 
 export const metadata: Metadata = {
-  title: 'Theni Jobs | Jobs in Theni, Vacancies & Freshers Openings | THENIJOBS',
+  title: 'THENIJOBS – Latest Jobs in Theni | Private Jobs, Fresher Jobs & Vacancies',
   description:
-    'THENIJOBS is the #1 verified job portal for Theni, Cumbum, Periyakulam, Bodinayakanur & Tamil Nadu. Search 1,200+ active private, fresher, and full-time jobs with instant direct apply.',
+    'THENIJOBS is the #1 verified local job portal connecting job seekers with companies and job opportunities across Theni, Cumbum, Periyakulam, Bodinayakanur, Uthamapalayam and nearby areas in Tamil Nadu. Search 1,200+ active private, fresher, and full-time jobs with instant direct apply.',
   keywords: [
     'Theni Jobs',
     'Jobs in Theni',
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
     canonical: 'https://thenijobs.com',
   },
   openGraph: {
-    title: 'Theni Jobs | Find Verified Job Vacancies | THENIJOBS',
-    description: 'Connect with top local employers in Theni and Tamil Nadu. 1,200+ active jobs with direct apply.',
+    title: 'THENIJOBS – Latest Jobs in Theni | Private & Fresher Jobs',
+    description: 'THENIJOBS is a local job portal connecting job seekers with companies and job opportunities across Theni, Cumbum, Periyakulam, Bodinayakanur, Uthamapalayam and nearby areas.',
     url: 'https://thenijobs.com',
     type: 'website',
     locale: 'en_IN',

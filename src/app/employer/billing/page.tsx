@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { CreditCard, Check, ShieldCheck, Zap, Shield, Crown, Building2, Loader2, Star, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
+import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 
 export default function EmployerBillingPage() {
   const { user } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -19,7 +23,7 @@ export default function EmployerBillingPage() {
   const companyId = company?.id;
 
   // 2. Fetch active subscriptions
-  const { data: subscriptions, loading: subLoading } = useCollection<any>('subscriptions', [
+  const { data: subscriptions, loading: subLoading, refresh } = useCollection<any>('subscriptions', [
     where('companyId', '==', companyId || ''),
     where('status', '==', 'active')
   ], { skip: !companyId });
@@ -35,6 +39,17 @@ export default function EmployerBillingPage() {
   const currentPlan = SUBSCRIPTION_PLANS.find(p => p.slug === currentPlanSlug) || SUBSCRIPTION_PLANS[0];
 
   const loading = companyLoading || subLoading;
+
+  const handleOpenCheckout = (plan: any) => {
+    setSelectedPlan({
+      name: plan.name,
+      slug: plan.slug,
+      price: plan.price,
+      dailyEquivalent: plan.dailyEquivalent,
+      features: plan.features,
+    });
+    setIsCheckoutOpen(true);
+  };
 
   if (!companyId && !companyLoading) {
     return (
@@ -55,7 +70,7 @@ export default function EmployerBillingPage() {
     <div className="p-4 sm:p-6 space-y-6 font-sans">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Pricing & Subscriptions</h1>
+        <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Pricing &amp; Subscriptions</h1>
         <p className="text-xs text-gray-500 mt-0.5">Manage your annual recruitment subscription and feature unlocks</p>
       </div>
 
@@ -66,55 +81,54 @@ export default function EmployerBillingPage() {
         </div>
       ) : (
         <>
-          {/* Current plan status banner */}
-          <div className="bg-white rounded-3xl p-6 border border-blue-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <CreditCard size={22} />
+          {/* Current Active Plan Overview Card */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Crown size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900">{currentPlan.name} Plan Active</h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                      CURRENT PLAN
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {currentPlan.price === 0 ? 'Free tier account' : `₹${currentPlan.price.toLocaleString('en-IN')}/year (~₹${currentPlan.dailyEquivalent}/day)`}
+                  </p>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Current Tier</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                    {currentPlan.name} Plan
-                  </span>
+
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase">Active Jobs</p>
+                  <p className="text-base font-extrabold text-gray-900">{jobs.length}</p>
                 </div>
-                <div className="text-sm font-bold text-gray-900 mt-1">
-                  {currentPlan.price === 0 ? 'Free Access' : `₹${currentPlan.price}/year (~₹${currentPlan.dailyEquivalent}/day)`}
+                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase">Status</p>
+                  <p className="text-base font-extrabold text-emerald-600">Active</p>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Active Jobs: <strong className="text-gray-900">{jobs?.length || 0}</strong> posted
-                </p>
               </div>
             </div>
-
-            {activeSub && (
-              <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 flex items-center gap-1.5 self-start sm:self-auto">
-                <ShieldCheck size={15} /> Active Subscription
-              </span>
-            )}
           </div>
 
-          {/* Plans Grid (5 Tiers) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 pt-2">
+          {/* Pricing Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {SUBSCRIPTION_PLANS.map((plan) => {
-              const isCurrent = currentPlan.slug === plan.slug;
-              const isStandard = plan.slug === 'standard';
-
+              const isCurrent = plan.slug === currentPlanSlug;
               return (
                 <div
-                  key={plan.slug}
-                  className={`bg-white rounded-3xl p-5 flex flex-col justify-between border relative shadow-sm transition-all ${
-                    isCurrent ? 'ring-2 ring-blue-600 border-blue-600 bg-blue-50/20' : isStandard ? 'border-blue-400' : 'border-gray-100'
+                  key={plan.id}
+                  className={`rounded-3xl p-5 border transition-all flex flex-col justify-between relative bg-white ${
+                    plan.recommended
+                      ? 'border-blue-500 shadow-md ring-2 ring-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  {isCurrent && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold uppercase">
-                      Current Plan
-                    </span>
-                  )}
-                  {plan.badge && !isCurrent && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold whitespace-nowrap">
+                  {plan.badge && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white shadow-sm">
                       {plan.badge}
                     </span>
                   )}
@@ -154,7 +168,7 @@ export default function EmployerBillingPage() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => alert(`Upgrading to ${plan.name} Plan (₹${plan.price}/year). Online payment processing!`)}
+                        onClick={() => handleOpenCheckout(plan)}
                         className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm"
                       >
                         Upgrade to {plan.name}
@@ -166,6 +180,20 @@ export default function EmployerBillingPage() {
             })}
           </div>
         </>
+      )}
+
+      {/* Checkout Modal */}
+      {selectedPlan && (
+        <PaymentCheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          plan={selectedPlan}
+          companyId={companyId}
+          companyName={company?.name}
+          onSuccess={() => {
+            refresh?.();
+          }}
+        />
       )}
     </div>
   );

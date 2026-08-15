@@ -25,6 +25,7 @@ const ADMIN_NAV = [
   { label: 'Advertisements', icon: Megaphone, href: '/admin/ads' },
   { label: 'Reviews', icon: Star, href: '/admin/reviews' },
   { label: 'Reports', icon: BarChart3, href: '/admin/reports' },
+  { label: 'Error Monitoring', icon: AlertTriangle, href: '/admin/errors' },
   { label: 'Notifications', icon: Bell, href: '/admin/notifications' },
   { label: 'AI Settings', icon: Sparkles, href: '/admin/ai-settings' },
   { label: 'Security', icon: Shield, href: '/admin/security' },

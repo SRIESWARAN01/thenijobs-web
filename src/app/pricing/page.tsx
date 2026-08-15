@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Check, X, Zap, ArrowRight, ChevronDown, ChevronUp, Star, Shield, Crown, Building2, Sparkles, CheckCircle2 } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
+import { useAuth } from '@/hooks/useAuth';
+import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 
 const COMPARISON_MATRIX = [
   { feature: 'Basic Company Profile', free: '✅', basic: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
@@ -32,7 +35,32 @@ const FAQS = [
 ];
 
 export default function PricingPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  const handleSelectPlan = (plan: any) => {
+    if (plan.price === 0) {
+      router.push('/company/register');
+      return;
+    }
+
+    if (!user) {
+      router.push('/login?redirect=/pricing');
+      return;
+    }
+
+    setSelectedPlan({
+      name: plan.name,
+      slug: plan.slug,
+      price: plan.price,
+      dailyEquivalent: plan.dailyEquivalent,
+      features: plan.features,
+    });
+    setIsCheckoutOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-sans pb-24">
@@ -48,7 +76,7 @@ export default function PricingPage() {
             Simple, Honest Pricing
           </h1>
           <p className="text-blue-100 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-            Grow your company with local job postings, digital ID cards, verified portfolios, and recruitment tools in Theni & Tamil Nadu.
+            Grow your company with local job postings, digital ID cards, verified portfolios, and recruitment tools in Theni &amp; Tamil Nadu.
           </p>
         </div>
       </div>
@@ -111,8 +139,9 @@ export default function PricingPage() {
                 </div>
 
                 <div className="pt-5 mt-4 border-t border-gray-100">
-                  <Link
-                    href="/company/register"
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPlan(plan)}
                     className={`w-full py-2.5 rounded-xl text-xs font-bold text-center block transition-all ${
                       isStandard
                         ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
@@ -120,7 +149,7 @@ export default function PricingPage() {
                     }`}
                   >
                     {plan.price === 0 ? 'Start Free' : `Select ${plan.name}`}
-                  </Link>
+                  </button>
                 </div>
               </div>
             );
@@ -186,6 +215,18 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* Checkout Modal */}
+      {selectedPlan && (
+        <PaymentCheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          plan={selectedPlan}
+          onSuccess={() => {
+            router.push('/employer/billing');
+          }}
+        />
+      )}
 
       <BottomNav />
     </div>

@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
           '/login',
           '/register',
           '/forgot-password',
+          '/profile',
+          '/jobs?',  // Prevent indexing of filter/search query pages
         ],
       },
     ],

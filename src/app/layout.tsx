@@ -4,19 +4,20 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { GlobalErrorTracker } from "@/lib/firebase/errorTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
   title: {
-    default: "THENIJOBS - Search, Connect, Hire and Grow",
+    default: "THENIJOBS – Jobs in Theni, Tamil Nadu | Local Job Portal",
     template: "%s | THENIJOBS",
   },
   description:
-    "THENIJOBS helps people find jobs, discover businesses, generate B2B leads and hire talent in Theni and across Tamil Nadu.",
+    "THENIJOBS is the #1 local job portal for Theni and Tamil Nadu. Find verified private, fresher, and full-time jobs across Theni, Cumbum, Periyakulam, Bodinayakanur and nearby areas. Apply directly online.",
   keywords: [
-    "Theni jobs", "jobs in theni", "business directory theni",
-    "job portal tamil nadu", "hire candidates theni", "thenijobs",
-    "local business listing", "recruitment theni", "author theni",
+    "Theni jobs", "jobs in theni", "theni job vacancy", "theni jobs for freshers",
+    "private jobs in theni", "job portal tamil nadu", "hire candidates theni", "thenijobs",
+    "jobs in cumbum", "jobs in periyakulam", "jobs in bodinayakanur",
   ],
   authors: [{ name: "THENIJOBS" }],
   creator: "THENIJOBS",
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body className="font-sans antialiased bg-[#F8FAFC] text-[#111827]">
+        <GlobalErrorTracker />
         <ErrorBoundary>
           <AuthProvider>
             <NotificationProvider>

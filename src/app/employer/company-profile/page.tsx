@@ -6,7 +6,8 @@ import {
   Link2, Heart, Briefcase as LinkedinIcon, Play, Plus, Save,
   CheckCircle, AlertCircle, Shield, Smartphone, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2, Clock, XCircle, Eye, ExternalLink,
-  Package, Wrench, FolderGit2, User, LayoutGrid, MessageSquare, Sparkles, Lock
+  Package, Wrench, FolderGit2, User, LayoutGrid, MessageSquare, Sparkles, Lock,
+  ChevronRight, ArrowRight
 } from 'lucide-react';
 import { TN_DISTRICTS, FounderProfile } from '@/lib/types';
 import { hasFeaturePermission } from '@/lib/plans';
@@ -248,59 +249,59 @@ export default function CompanyProfilePage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 font-outfit">
         <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-        <p className="text-sm text-gray-400">Loading company profile...</p>
+        <p className="text-sm font-semibold text-gray-600">Loading company profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up font-outfit">
+    <div className="space-y-5 sm:space-y-6 animate-fade-in-up font-outfit pb-24 sm:pb-12 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 font-outfit">Company Profile</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage your company information, branding, and portfolio</p>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Company Profile</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Manage your company branding, products, services, and branches</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           <button
             type="button"
             onClick={() => setShowPreviewModal(true)}
-            className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-2xl border border-blue-200 bg-blue-50 px-3.5 py-2.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-blue-700 hover:bg-blue-600 hover:text-white transition-all shadow-xs cursor-pointer"
           >
-            <Eye size={16} />
-            <span>Live Device Preview</span>
+            <Eye size={15} />
+            <span>Preview</span>
           </button>
 
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md shadow-blue-500/20"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md shadow-blue-500/20 cursor-pointer"
           >
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            <span>{saving ? 'Saving...' : 'Save Profile'}</span>
+            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+            <span>{saving ? 'Saving...' : 'Save Changes'}</span>
           </button>
         </div>
       </div>
 
       {/* Profile Completion Banner */}
       {completion < 100 && (
-        <div className="glass-card rounded-2xl p-4 border border-amber-200 bg-amber-50">
+        <div className="rounded-3xl p-4 sm:p-5 border border-amber-200 bg-amber-50/80 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-              <AlertCircle size={18} className="text-amber-400" />
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+              <AlertCircle size={18} className="text-amber-700" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-300">
+              <p className="text-xs sm:text-sm font-bold text-amber-950">
                 Profile {completion}% Complete
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Complete your profile to attract more candidates and build trust
+              <p className="text-[11px] sm:text-xs text-amber-800 mt-0.5">
+                Complete your details to build trust with applicants and customers
               </p>
             </div>
           </div>
-          <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="mt-3 h-2 bg-amber-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all duration-500"
               style={{ width: `${completion}%` }}
@@ -310,47 +311,46 @@ export default function CompanyProfilePage() {
       )}
 
       {uploading && (
-        <div className="glass-card rounded-2xl p-4 border border-blue-200 bg-blue-50 flex items-center gap-3">
+        <div className="rounded-2xl p-3.5 border border-blue-200 bg-blue-50 flex items-center gap-3 shadow-xs animate-pulse">
           <Loader2 size={18} className="text-blue-600 animate-spin" />
-          <span className="text-xs text-gray-300">Uploading file... {uploadProgress}%</span>
+          <span className="text-xs font-semibold text-blue-900">Uploading file... {uploadProgress}%</span>
         </div>
       )}
 
       {/* ── Moderation status banners ─────────────────────────────────── */}
       {resolvedCompany?.verificationStatus === 'pending' && (
-        <div className="glass-card rounded-2xl p-4 border border-amber-200 bg-amber-50 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Clock size={16} className="text-amber-400" />
+        <div className="rounded-3xl p-4 sm:p-5 border border-amber-200 bg-amber-50/90 flex items-start gap-3 shadow-xs">
+          <div className="w-9 h-9 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+            <Clock size={16} className="text-amber-700" />
           </div>
-          <div>
-            <p className="text-sm font-semibold text-amber-300">Under Review — Pending Approval</p>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Your business profile has been submitted and is awaiting admin review.
-              It will go live once approved. You can still update your profile here.
+          <div className="text-xs sm:text-sm">
+            <p className="font-bold text-amber-950">Under Review — Pending Approval</p>
+            <p className="text-amber-800 mt-0.5 text-xs leading-relaxed">
+              Your business profile has been submitted and is awaiting admin verification. You can continue updating your details here.
             </p>
           </div>
         </div>
       )}
 
       {resolvedCompany?.verificationStatus === 'rejected' && (
-        <div className="glass-card rounded-2xl p-4 border border-red-200 bg-red-50">
+        <div className="rounded-3xl p-4 sm:p-5 border border-red-200 bg-red-50/90 shadow-xs">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <XCircle size={16} className="text-rose-400" />
+            <div className="w-9 h-9 rounded-2xl bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+              <XCircle size={16} className="text-red-700" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-rose-300">Profile Not Approved</p>
-              <p className="text-xs text-slate-500 mt-0.5">
+            <div className="flex-1 min-w-0 text-xs sm:text-sm">
+              <p className="font-bold text-red-950">Profile Requires Revision</p>
+              <p className="text-red-800 mt-0.5 text-xs">
                 Your business profile requires changes before it can go live.
               </p>
               {resolvedCompany?.rejectionReason && (
-                <div className="mt-2 px-3 py-2 rounded-xl bg-red-100 border border-red-200">
-                  <span className="text-xs text-rose-300 font-semibold">Reason: </span>
-                  <span className="text-xs text-rose-200">{resolvedCompany.rejectionReason}</span>
+                <div className="mt-2 p-3 rounded-2xl bg-white border border-red-200">
+                  <span className="text-xs text-red-900 font-bold">Reason: </span>
+                  <span className="text-xs text-red-800">{resolvedCompany.rejectionReason}</span>
                 </div>
               )}
-              <p className="text-xs text-gray-500 mt-2">
-                Update your profile and save — it will be re-submitted for admin review automatically.
+              <p className="text-[11px] text-gray-500 mt-2">
+                Update your profile below and click Save — it will be re-submitted for admin review automatically.
               </p>
             </div>
           </div>
@@ -358,14 +358,14 @@ export default function CompanyProfilePage() {
       )}
 
       {resolvedCompany?.verificationStatus === 'verified' && (
-        <div className="glass-card rounded-2xl p-3 border border-emerald-200 bg-emerald-50 flex items-center gap-3">
-          <CheckCircle size={16} className="text-emerald-400 flex-shrink-0" />
-          <p className="text-xs text-emerald-700 font-medium">Your business is verified and live on THENIJOBS.</p>
+        <div className="rounded-2xl p-3.5 border border-emerald-200 bg-emerald-50/80 flex items-center gap-2.5 shadow-xs">
+          <CheckCircle size={16} className="text-emerald-600 shrink-0" />
+          <p className="text-xs text-emerald-800 font-bold">Your business is verified and live on THENIJOBS.</p>
         </div>
       )}
 
-      {/* Company Website Builder Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-1 no-scrollbar">
+      {/* Company Website Builder Navigation Tabs (Touch Scrollable) */}
+      <div className="flex items-center gap-1.5 border-b border-slate-200 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
         {[
           { key: 'basic', label: 'Basic Info & Branding', icon: Building2 },
           { key: 'products', label: 'Products Catalogue', icon: Package, locked: !hasFeaturePermission(resolvedCompany?.subscriptionPlan, 'productsListing') },
@@ -382,10 +382,10 @@ export default function CompanyProfilePage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 sm:px-4 text-xs font-bold rounded-2xl whitespace-nowrap transition-all shrink-0 cursor-pointer active:scale-95 ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 bg-white border border-slate-200'
               }`}
             >
               <TabIcon size={14} />
@@ -402,7 +402,7 @@ export default function CompanyProfilePage() {
 
       {/* Tab Contents */}
       {activeTab === 'products' && (
-        <div className="glass-card rounded-2xl p-6">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs">
           <CompanyProductsManager
             products={company.products || []}
             planSlug={resolvedCompany?.subscriptionPlan || 'free'}
@@ -417,7 +417,7 @@ export default function CompanyProfilePage() {
       )}
 
       {activeTab === 'services' && (
-        <div className="glass-card rounded-2xl p-6">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs">
           <CompanyServicesManager
             services={company.services || []}
             planSlug={resolvedCompany?.subscriptionPlan || 'free'}
@@ -432,7 +432,7 @@ export default function CompanyProfilePage() {
       )}
 
       {activeTab === 'portfolio' && (
-        <div className="glass-card rounded-2xl p-6">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs">
           <CompanyPortfolioManager
             portfolioProjects={company.portfolioProjects || []}
             planSlug={resolvedCompany?.subscriptionPlan || 'free'}
@@ -442,7 +442,7 @@ export default function CompanyProfilePage() {
       )}
 
       {activeTab === 'founder' && (
-        <div className="glass-card rounded-2xl p-6">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs">
           <CompanyFounderManager
             founder={company.founder}
             planSlug={resolvedCompany?.subscriptionPlan || 'free'}
@@ -452,13 +452,13 @@ export default function CompanyProfilePage() {
       )}
 
       {activeTab === 'reviews' && (
-        <div className="glass-card rounded-2xl p-6">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs">
           <CompanyReviewsManager companyId={resolvedCompany?.id || ''} />
         </div>
       )}
 
       {activeTab === 'sections' && (
-        <div className="glass-card rounded-2xl p-6">
+        <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs">
           <CompanySectionToggler
             enabledSections={company.enabledSections || {}}
             planSlug={resolvedCompany?.subscriptionPlan || 'free'}
@@ -468,479 +468,492 @@ export default function CompanyProfilePage() {
       )}
 
       {activeTab === 'basic' && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Main Form */}
-        <div className="xl:col-span-2 space-y-6">
-          {/* Logo & Cover */}
-          <div className="glass-card rounded-2xl overflow-hidden">
-            {/* Cover Banner Upload */}
-            <div
-              className="relative h-44 sm:h-52 bg-slate-950 border-b border-gray-100 group cursor-pointer flex items-center justify-center overflow-hidden"
-              onClick={() => coverInputRef.current?.click()}
-            >
-              {company.coverUrl ? (
-                <>
-                  <div
-                    className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
-                    style={{ backgroundImage: `url(${company.coverUrl})` }}
-                  />
-                  <img
-                    src={company.coverUrl}
-                    alt="Cover Banner"
-                    className="relative z-10 w-full h-full object-contain object-center"
-                  />
-                </>
-              ) : (
-                <div className="text-center text-gray-400 p-4">
-                  <Upload size={24} className="mx-auto mb-1.5 opacity-60 text-white" />
-                  <span className="text-xs font-semibold text-gray-200 block">Click to Upload Business Banner</span>
-                  <span className="text-[10px] text-gray-400">Recommended: 1200 × 400px</span>
-                </div>
-              )}
-              <input
-                ref={coverInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleUploadCover}
-              />
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 backdrop-blur-xs text-white text-xs font-bold transition-all shadow-md">
-                  <Upload size={14} /> Change Cover Banner
-                </button>
-              </div>
-            </div>
-
-            {/* Logo Upload */}
-            <div className="px-6 pb-6 -mt-12 relative z-10">
-              <div className="flex items-end gap-5">
-                <div
-                  className="relative group cursor-pointer"
-                  onClick={() => logoInputRef.current?.click()}
-                >
-                  <input
-                    ref={logoInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleUploadLogo}
-                  />
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-emerald-100 border-4 border-white flex items-center justify-center overflow-hidden">
-                    {company.logoUrl ? (
-                      <img src={company.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                      <Building2 size={32} className="text-cyan-400" />
-                    )}
-                  </div>
-                  <button className="absolute inset-0 w-24 h-24 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera size={20} className="text-white" />
-                  </button>
-                </div>
-                <div className="pb-1 flex-1">
-                  <input
-                    type="text"
-                    placeholder="Enter Company Name *"
-                    value={company.name}
-                    onChange={(e) => update('name', e.target.value)}
-                    className="bg-transparent text-lg font-bold text-gray-900 border-b border-transparent hover:border-gray-200 focus:border-cyan-500 focus:outline-none w-full pb-1"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Company tagline"
-                    value={company.tagline}
-                    onChange={(e) => update('tagline', e.target.value)}
-                    className="bg-transparent text-xs text-gray-400 border-b border-transparent hover:border-gray-200 focus:border-cyan-500 focus:outline-none w-full mt-1 pb-0.5"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* About Company */}
-          <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <FileText size={16} className="text-cyan-400" />
-              About Company
-            </h3>
-            <div>
-              <textarea
-                rows={6}
-                value={company.description}
-                onChange={(e) => handleDescChange(e.target.value)}
-                placeholder="Describe your company, what you do, your mission, and details candidates would want to know..."
-                className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white outline-none transition-all resize-none leading-relaxed"
-              />
-              <div className="flex justify-end mt-1.5">
-                <span className={`text-[10px] font-medium ${charCount > 900 ? 'text-amber-400' : 'text-gray-500'}`}>
-                  {charCount}/1000 characters
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Phone size={16} className="text-cyan-400" />
-              Contact Information
-            </h3>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5">Phone *</label>
-                <div className="relative">
-                  <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="tel"
-                    placeholder="+91 XXXXX XXXXX"
-                    value={company.phone}
-                    onChange={(e) => update('phone', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5">Email *</label>
-                <div className="relative">
-                  <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="email"
-                    placeholder="contact@company.com"
-                    value={company.email}
-                    onChange={(e) => update('email', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5">WhatsApp</label>
-                <div className="relative">
-                  <MessageCircle size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="tel"
-                    placeholder="+91 XXXXX XXXXX"
-                    value={company.whatsapp}
-                    onChange={(e) => update('whatsapp', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5">Website</label>
-                <div className="relative">
-                  <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-                  <input
-                    type="url"
-                    placeholder="https://www.example.com"
-                    value={company.website}
-                    onChange={(e) => update('website', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <MapPin size={16} className="text-cyan-400" />
-              Location
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5">Full Address *</label>
-                <input
-                  type="text"
-                  placeholder="Street, Area, Building Details"
-                  value={company.address}
-                  onChange={(e) => update('address', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5">District *</label>
-                <select
-                  value={company.district}
-                  onChange={(e) => update('district', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 focus:border-blue-500 outline-none transition-all"
-                >
-                  <option value="">Select district</option>
-                  {TN_DISTRICTS.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Media Links */}
-          <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Globe size={16} className="text-cyan-400" />
-              Social Media Links
-            </h3>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5 flex items-center gap-1.5">
-                  <Link2 size={12} className="text-blue-400" /> Facebook
-                </label>
-                <input
-                  type="url"
-                  value={company.facebook}
-                  onChange={(e) => update('facebook', e.target.value)}
-                  placeholder="https://facebook.com/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5 flex items-center gap-1.5">
-                  <Heart size={12} className="text-pink-400" /> Instagram
-                </label>
-                <input
-                  type="url"
-                  value={company.instagram}
-                  onChange={(e) => update('instagram', e.target.value)}
-                  placeholder="https://instagram.com/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5 flex items-center gap-1.5">
-                  <LinkedinIcon size={12} className="text-blue-500" /> LinkedIn
-                </label>
-                <input
-                  type="url"
-                  value={company.linkedin}
-                  onChange={(e) => update('linkedin', e.target.value)}
-                  placeholder="https://linkedin.com/company/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-slate-600 font-medium block mb-1.5 flex items-center gap-1.5">
-                  <Play size={12} className="text-red-400" /> YouTube
-                </label>
-                <input
-                  type="url"
-                  value={company.youtube}
-                  onChange={(e) => update('youtube', e.target.value)}
-                  placeholder="https://youtube.com/..."
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Gallery */}
-          <div className="glass-card rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <ImagePlus size={16} className="text-cyan-400" />
-                Gallery
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {company.gallery.map((imgUrl, i) => (
-                <div
-                  key={i}
-                  className="aspect-square rounded-xl bg-white/[0.03] border border-dashed border-gray-200 flex items-center justify-center group hover:border-cyan-500/30 transition-all cursor-pointer relative overflow-hidden"
-                  onClick={() => galleryInputRefs[i].current?.click()}
-                >
-                  <input
-                    ref={galleryInputRefs[i]}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleUploadGallery(e, i)}
-                  />
-                  {imgUrl ? (
-                    <>
-                      <img src={imgUrl} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Upload size={18} className="text-white" />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center">
-                      <Upload size={20} className="text-gray-600 mx-auto mb-1 group-hover:text-cyan-400 transition-colors" />
-                      <p className="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors">Upload</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Branch Locations */}
-          <div className="glass-card rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <Building2 size={16} className="text-cyan-400" />
-                Branch Locations
-              </h3>
-              <button
-                onClick={() => setShowBranchForm(true)}
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-medium flex items-center gap-1"
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6">
+          {/* Main Form Area */}
+          <div className="xl:col-span-2 space-y-5 sm:space-y-6">
+            {/* Logo & Cover Card */}
+            <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs">
+              {/* Cover Banner Upload */}
+              <div
+                className="relative h-36 sm:h-48 md:h-56 bg-slate-950 border-b border-gray-100 group cursor-pointer flex items-center justify-center overflow-hidden"
+                onClick={() => coverInputRef.current?.click()}
               >
-                <Plus size={14} /> Add Branch
-              </button>
-            </div>
-            <div className="space-y-3">
-              {company.branches?.map((branch) => (
-                <div
-                  key={branch.id}
-                  className="flex items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-gray-100 group"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{branch.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{branch.address}</p>
-                    <span className="inline-block mt-1 text-[10px] text-cyan-400 bg-blue-100 px-2 py-0.5 rounded-full font-medium">
-                      {branch.district}
-                    </span>
+                {company.coverUrl ? (
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
+                      style={{ backgroundImage: `url(${company.coverUrl})` }}
+                    />
+                    <img
+                      src={company.coverUrl}
+                      alt="Cover Banner"
+                      className="relative z-10 w-full h-full object-contain object-center"
+                    />
+                  </>
+                ) : (
+                  <div className="text-center text-gray-400 p-4">
+                    <Upload size={24} className="mx-auto mb-1.5 opacity-60 text-white" />
+                    <span className="text-xs font-semibold text-gray-200 block">Click to Upload Business Banner</span>
+                    <span className="text-[10px] text-gray-400">Recommended: 1200 × 400px</span>
                   </div>
-                  <button
-                    onClick={() => removeBranch(branch.id)}
-                    className="p-2 rounded-lg text-gray-600 hover:text-rose-400 hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-all"
-                  >
-                    <Trash2 size={14} />
+                )}
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUploadCover}
+                />
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/60 backdrop-blur-xs text-white text-xs font-bold transition-all shadow-md">
+                    <Upload size={14} /> Change Cover Banner
                   </button>
                 </div>
-              ))}
+              </div>
 
-              {showBranchForm && (
-                <div className="p-4 rounded-xl bg-white border border-blue-200 space-y-3">
+              {/* Logo Upload & Title Details */}
+              <div className="p-4 sm:p-6 -mt-10 sm:-mt-12 relative z-10">
+                <div className="flex flex-col sm:flex-row items-center sm:items-end gap-3.5 sm:gap-5 text-center sm:text-left">
+                  <div
+                    className="relative group cursor-pointer shrink-0"
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleUploadLogo}
+                    />
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 border-4 border-white shadow-md flex items-center justify-center overflow-hidden">
+                      {company.logoUrl ? (
+                        <img src={company.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                      ) : (
+                        <Building2 size={32} className="text-blue-600" />
+                      )}
+                    </div>
+                    <button className="absolute inset-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera size={20} className="text-white" />
+                    </button>
+                  </div>
+
+                  <div className="w-full sm:flex-1 pb-1">
+                    <input
+                      type="text"
+                      placeholder="Enter Business Name *"
+                      value={company.name}
+                      onChange={(e) => update('name', e.target.value)}
+                      className="text-base sm:text-xl font-black text-gray-900 bg-gray-50/60 sm:bg-transparent rounded-xl sm:rounded-none px-3 py-2 sm:p-0 border sm:border-0 border-gray-200 sm:border-b sm:border-transparent hover:border-gray-300 focus:border-blue-600 focus:outline-none w-full text-center sm:text-left"
+                    />
+                    <input
+                      type="text"
+                      placeholder="e.g. Leading Spices & Agro Manufacturer in Theni"
+                      value={company.tagline}
+                      onChange={(e) => update('tagline', e.target.value)}
+                      className="text-xs text-gray-500 bg-gray-50/40 sm:bg-transparent rounded-xl sm:rounded-none px-3 py-1.5 sm:p-0 border sm:border-0 border-gray-200 sm:border-b sm:border-transparent hover:border-gray-300 focus:border-blue-600 focus:outline-none w-full mt-1.5 text-center sm:text-left font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* About Company */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <FileText size={16} className="text-blue-600" /> About Business
+              </h3>
+              <div>
+                <textarea
+                  rows={5}
+                  value={company.description}
+                  onChange={(e) => handleDescChange(e.target.value)}
+                  placeholder="Describe your company, products, work culture, services, and career opportunities..."
+                  className="w-full p-3.5 rounded-2xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none transition-all resize-none leading-relaxed font-medium"
+                />
+                <div className="flex justify-end mt-1">
+                  <span className={`text-[10px] font-bold ${charCount > 900 ? 'text-amber-600' : 'text-gray-400'}`}>
+                    {charCount}/1000 characters
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs space-y-4">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Phone size={16} className="text-blue-600" /> Contact Details
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1">Primary Calling Phone *</label>
+                  <div className="relative">
+                    <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="tel"
+                      placeholder="+91 93605 19460"
+                      value={company.phone}
+                      onChange={(e) => update('phone', e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1">Official Email *</label>
+                  <div className="relative">
+                    <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="email"
+                      placeholder="contact@company.com"
+                      value={company.email}
+                      onChange={(e) => update('email', e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1">WhatsApp Number</label>
+                  <div className="relative">
+                    <MessageCircle size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500" />
+                    <input
+                      type="tel"
+                      placeholder="+91 70948 26886"
+                      value={company.whatsapp}
+                      onChange={(e) => update('whatsapp', e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium font-mono"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1">Company Website URL</label>
+                  <div className="relative">
+                    <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="url"
+                      placeholder="https://www.example.com"
+                      value={company.website}
+                      onChange={(e) => update('website', e.target.value)}
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs space-y-4">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <MapPin size={16} className="text-blue-600" /> Location &amp; Address
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                <div className="sm:col-span-2">
+                  <label className="text-xs text-gray-700 font-bold block mb-1">Full Door Address *</label>
                   <input
                     type="text"
-                    placeholder="Branch name"
-                    value={newBranch.name}
-                    onChange={(e) => setNewBranch((p) => ({ ...p, name: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
+                    placeholder="Door No, Street Name, Area, Landmark, Pincode"
+                    value={company.address}
+                    onChange={(e) => update('address', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
                   />
-                  <input
-                    type="text"
-                    placeholder="Address"
-                    value={newBranch.address}
-                    onChange={(e) => setNewBranch((p) => ({ ...p, address: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
-                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1">District / Region *</label>
                   <select
-                    value={newBranch.district}
-                    onChange={(e) => setNewBranch((p) => ({ ...p, district: e.target.value }))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 focus:border-blue-500 outline-none transition-all"
+                    value={company.district}
+                    onChange={(e) => update('district', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 focus:border-blue-600 outline-none font-medium"
                   >
                     <option value="">Select district</option>
                     {TN_DISTRICTS.map((d) => (
                       <option key={d} value={d}>{d}</option>
                     ))}
                   </select>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={addBranch}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-                    >
-                      Add
-                    </button>
-                    <button
-                      onClick={() => setShowBranchForm(false)}
-                      className="px-4 py-2 rounded-xl bg-white text-gray-400 text-sm font-medium hover:text-white transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
                 </div>
-              )}
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1">Established Year</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 2018"
+                    value={company.establishedYear}
+                    onChange={(e) => update('establishedYear', e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Save Button */}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {saving ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
-            {saving ? 'Saving...' : 'Save Company Profile'}
-          </button>
-        </div>
+            {/* Social Media Links */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs space-y-4">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Globe size={16} className="text-blue-600" /> Social Media Links
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                    <Link2 size={13} className="text-blue-600" /> Facebook
+                  </label>
+                  <input
+                    type="url"
+                    value={company.facebook}
+                    onChange={(e) => update('facebook', e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                    <Heart size={13} className="text-pink-600" /> Instagram
+                  </label>
+                  <input
+                    type="url"
+                    value={company.instagram}
+                    onChange={(e) => update('instagram', e.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                    <LinkedinIcon size={13} className="text-blue-700" /> LinkedIn
+                  </label>
+                  <input
+                    type="url"
+                    value={company.linkedin}
+                    onChange={(e) => update('linkedin', e.target.value)}
+                    placeholder="https://linkedin.com/company/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                    <Play size={13} className="text-red-600" /> YouTube
+                  </label>
+                  <input
+                    type="url"
+                    value={company.youtube}
+                    onChange={(e) => update('youtube', e.target.value)}
+                    placeholder="https://youtube.com/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                  />
+                </div>
+              </div>
+            </div>
 
-        {/* Sidebar — Verification Status */}
-        <div className="xl:col-span-1 font-outfit">
-          <div className="glass-card rounded-2xl p-6 sticky top-24">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Shield size={16} className="text-cyan-400" />
-              Verification Status
-            </h3>
-            <div className="space-y-3">
-              {[
-                { label: 'Mobile Verified', icon: Smartphone, verified: company.verification.mobile },
-                { label: 'Email Verified', icon: Mail, verified: company.verification.email },
-                { label: 'GST Verified', icon: FileText, verified: company.verification.gst },
-                { label: 'Business Verified', icon: Building2, verified: company.verification.business },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
+            {/* Gallery */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <ImagePlus size={16} className="text-blue-600" /> Photo Gallery
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                {company.gallery.map((imgUrl, i) => (
                   <div
-                    key={item.label}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                      item.verified
-                        ? 'bg-emerald-50 border-emerald-200'
-                        : 'bg-white/[0.02] border-gray-100'
-                    }`}
+                    key={i}
+                    className="aspect-square rounded-2xl bg-gray-50 border-2 border-dashed border-gray-300 hover:border-blue-500 flex items-center justify-center group transition-all cursor-pointer relative overflow-hidden"
+                    onClick={() => galleryInputRefs[i].current?.click()}
                   >
-                    <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        item.verified ? 'bg-emerald-100' : 'bg-white'
-                      }`}
-                    >
-                      <Icon size={14} className={item.verified ? 'text-emerald-400' : 'text-gray-500'} />
-                    </div>
-                    <span className={`text-sm font-medium flex-1 ${item.verified ? 'text-emerald-300' : 'text-gray-400'}`}>
-                      {item.label}
-                    </span>
-                    {item.verified && (
-                      <CheckCircle size={16} className="text-emerald-400" />
+                    <input
+                      ref={galleryInputRefs[i]}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleUploadGallery(e, i)}
+                    />
+                    {imgUrl ? (
+                      <>
+                        <img src={imgUrl} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Upload size={18} className="text-white" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-2">
+                        <Upload size={18} className="text-gray-400 mx-auto mb-1 group-hover:text-blue-600 transition-colors" />
+                        <p className="text-[10px] font-bold text-gray-500">Photo {i + 1}</p>
+                      </div>
                     )}
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
 
-            {/* Trust Score */}
-            <div className="mt-5 pt-4 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400">Trust Score</span>
-                <span className="text-sm font-bold text-cyan-400">
-                  {Math.round(
-                    ((Object.values(company.verification).filter(Boolean).length) /
-                      Object.keys(company.verification).length) *
-                      100
-                  )}%
-                </span>
+            {/* Branch Locations */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <Building2 size={16} className="text-blue-600" /> Branch Locations
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowBranchForm(true)}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus size={14} /> Add Branch
+                </button>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full"
-                  style={{
-                    width: `${
+
+              <div className="space-y-2.5">
+                {company.branches?.map((branch) => (
+                  <div
+                    key={branch.id}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-200"
+                  >
+                    <div>
+                      <p className="text-xs sm:text-sm font-bold text-gray-900">{branch.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{branch.address}</p>
+                      <span className="inline-block mt-1 text-[10px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full font-bold border border-blue-200">
+                        {branch.district}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeBranch(branch.id)}
+                      className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                ))}
+
+                {showBranchForm && (
+                  <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-3 animate-fade-in">
+                    <input
+                      type="text"
+                      placeholder="Branch name (e.g. Cumbum Branch)"
+                      value={newBranch.name}
+                      onChange={(e) => setNewBranch((p) => ({ ...p, name: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Branch address"
+                      value={newBranch.address}
+                      onChange={(e) => setNewBranch((p) => ({ ...p, address: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    />
+                    <select
+                      value={newBranch.district}
+                      onChange={(e) => setNewBranch((p) => ({ ...p, district: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    >
+                      <option value="">Select district</option>
+                      {TN_DISTRICTS.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={addBranch}
+                        className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all cursor-pointer"
+                      >
+                        Add Branch
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowBranchForm(false)}
+                        className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-100 transition-all cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar — Verification Status */}
+          <div className="xl:col-span-1">
+            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-xs sticky top-24 space-y-4">
+              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <Shield size={16} className="text-blue-600" /> Verification Status
+              </h3>
+              <div className="space-y-2.5">
+                {[
+                  { label: 'Mobile Verified', icon: Smartphone, verified: company.verification.mobile },
+                  { label: 'Email Verified', icon: Mail, verified: company.verification.email },
+                  { label: 'GST Verified', icon: FileText, verified: company.verification.gst },
+                  { label: 'Business Verified', icon: Building2, verified: company.verification.business },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.label}
+                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                        item.verified
+                          ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                          : 'bg-gray-50 border-gray-200 text-gray-600'
+                      }`}
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          item.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-gray-400'
+                        }`}
+                      >
+                        <Icon size={14} />
+                      </div>
+                      <span className="text-xs font-bold flex-1">
+                        {item.label}
+                      </span>
+                      {item.verified && (
+                        <CheckCircle size={15} className="text-emerald-600" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Trust Score */}
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-gray-600">Trust Score</span>
+                  <span className="text-xs font-black text-blue-700">
+                    {Math.round(
                       ((Object.values(company.verification).filter(Boolean).length) /
                         Object.keys(company.verification).length) *
-                      100
-                    }%`
-                  }}
-                />
+                        100
+                    )}%
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full"
+                    style={{
+                      width: `${
+                        ((Object.values(company.verification).filter(Boolean).length) /
+                          Object.keys(company.verification).length) *
+                        100
+                      }%`
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">
+                  Verification status is managed by administrators to ensure platform safety and genuine employer trust.
+                </p>
               </div>
-              <p className="text-[10px] text-gray-500 mt-2">
-                Verification status is managed by administrators to ensure platform safety and trust.
-              </p>
             </div>
           </div>
         </div>
-      </div>
       )}
+
+      {/* Floating Bottom Action Bar for Mobile View */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-200 z-40 flex items-center gap-2 shadow-lg">
+        <button
+          type="button"
+          onClick={() => setShowPreviewModal(true)}
+          className="flex-1 py-3 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+        >
+          <Eye size={15} /> Preview
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex-[2] py-3 rounded-2xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer active:scale-95 transition-all disabled:opacity-50"
+        >
+          {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+          <span>{saving ? 'Saving...' : 'Save Profile'}</span>
+        </button>
+      </div>
 
       {/* Live Device Portfolio Preview Modal */}
       <DeviceLivePreviewModal

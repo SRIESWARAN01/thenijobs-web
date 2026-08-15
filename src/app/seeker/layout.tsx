@@ -7,7 +7,8 @@ import {
   LayoutDashboard, User, FileText, Search, Bookmark,
   Bell, Calendar, Building2, Settings, LogOut,
   ChevronLeft, ChevronRight, Menu, X, Sparkles,
-  Send, GraduationCap, Loader2, CreditCard
+  Send, GraduationCap, Loader2, CreditCard, Briefcase,
+  ArrowRight, ShieldCheck
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -19,6 +20,7 @@ const SEEKER_NAV = [
   { label: 'My Profile', icon: User, href: '/seeker/profile' },
   { label: 'Resume', icon: FileText, href: '/seeker/resume' },
   { label: 'Browse Jobs', icon: Search, href: '/jobs', external: true },
+  { label: 'Post Job / Employer', icon: Briefcase, href: '/seeker/become-employer', highlight: true },
   { label: 'Applications', icon: Send, href: '/seeker/applications' },
   { label: 'Saved Jobs', icon: Bookmark, href: '/seeker/saved-jobs' },
   { label: 'Job Alerts', icon: Bell, href: '/seeker/job-alerts' },
@@ -63,6 +65,8 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
     ? user.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
     : (user.email?.[0]?.toUpperCase() || 'JS');
   const displayName = user.displayName || user.email?.split('@')[0] || 'Job Seeker';
+  const isEmployer = (user as any)?.isEmployer || (user as any)?.role === 'employer' || (user as any)?.employerApplication?.status === 'verified';
+  const isPendingEmployer = (user as any)?.employerApplication?.status === 'pending';
 
   return (
     <div className="min-h-screen flex" style={{ background: '#F8FAFC', fontFamily: "'Inter', sans-serif" }}>
@@ -112,7 +116,7 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
                   <div className="h-1 flex-1 bg-gray-200 rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: '65%', background: '#10B981' }} />
                   </div>
-                  <span className="text-[10px] text-emerald-600 font-semibold">65%</span>
+                  <span className="text-[10px] text-emerald-600 font-semibold">Active</span>
                 </div>
               </div>
             </div>
@@ -124,18 +128,22 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
           {SEEKER_NAV.map(item => {
             const Icon = item.icon;
             const active = pathname === item.href || (!item.external && item.href !== '/seeker/dashboard' && pathname.startsWith(item.href));
+            const isHighlight = (item as any).highlight;
+
             return (
               <Link key={item.href} href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${active
                     ? 'bg-emerald-50 text-emerald-600 font-semibold'
-                    : (item as any).accent
-                      ? 'bg-purple-50 text-purple-600 hover:bg-purple-100'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    : isHighlight
+                      ? 'bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 border border-blue-200'
+                      : (item as any).accent
+                        ? 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   } ${collapsed ? 'justify-center' : ''}`}
               >
-                <Icon size={17} className="flex-shrink-0" />
+                <Icon size={17} className={`flex-shrink-0 ${isHighlight ? 'text-blue-600' : ''}`} />
                 {!collapsed && <span className="truncate">{item.label}</span>}
                 {!collapsed && active && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: '#10B981' }} />}
               </Link>
@@ -145,6 +153,19 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
 
         {/* Footer */}
         <div className="border-t border-gray-100 p-3 space-y-2">
+          {/* Dual-role switch banner */}
+          {!collapsed && isEmployer && (
+            <Link
+              href="/employer/dashboard"
+              className="w-full py-2 px-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-between transition-all shadow-xs"
+            >
+              <span className="flex items-center gap-1.5">
+                <Building2 size={13} className="text-blue-400" /> Employer Portal
+              </span>
+              <ArrowRight size={13} />
+            </Link>
+          )}
+
           <div className={`flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}>
             <button onClick={handleLogout}
               className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition-all ${collapsed ? '' : 'flex-1'}`}>
@@ -168,8 +189,32 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
           </button>
           {/* Breadcrumb */}
           <div className="flex-1 flex items-center gap-2 text-sm text-gray-500">
-            <span className="font-medium text-gray-900">My Account</span>
+            <span className="font-medium text-gray-900">Job Seeker Portal</span>
           </div>
+
+          {/* Quick Employer Action CTA */}
+          {isEmployer ? (
+            <Link
+              href="/employer/dashboard"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-blue-700 font-bold bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition-all"
+            >
+              <Building2 size={13} /> Employer Dashboard
+            </Link>
+          ) : isPendingEmployer ? (
+            <Link
+              href="/seeker/become-employer"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-amber-700 font-bold bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl hover:bg-amber-100 transition-all"
+            >
+              ⏳ Review Pending
+            </Link>
+          ) : (
+            <Link
+              href="/seeker/become-employer"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-blue-600 font-bold bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl hover:bg-blue-100 transition-all"
+            >
+              <Briefcase size={13} /> Post a Job
+            </Link>
+          )}
 
           <Link href="/seeker/notifications" className="relative p-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-800 transition-all">
             <Bell size={16} />

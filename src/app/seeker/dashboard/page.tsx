@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Briefcase, Send, Bookmark, Calendar, Bell, Eye, Clock,
   ChevronRight, MapPin, FileText, Sparkles, TrendingUp,
-  User, Search, Building2, ArrowUpRight, CheckCircle2, AlertCircle, Award
+  User, Search, Building2, ArrowUpRight, CheckCircle2, AlertCircle, Award, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -121,6 +121,36 @@ export default function SeekerDashboard() {
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Employer Upgrade / Post a Job Callout */}
+      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-5 sm:p-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300 shrink-0">
+            <Building2 size={24} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-md bg-amber-400 text-amber-950 text-[10px] font-extrabold uppercase tracking-wide">
+                Hiring Talent?
+              </span>
+              <span className="text-xs text-blue-200">For Business Owners &amp; Recruiters</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-white mt-1">
+              Post Jobs &amp; Hire Local Talent in Theni
+            </h3>
+            <p className="text-xs text-blue-200/80 mt-0.5">
+              Register your business, publish job openings, and receive verified candidate applications directly.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/seeker/become-employer"
+          className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer"
+        >
+          <Briefcase size={14} /> Post a Job / Become Employer <ArrowRight size={14} />
+        </Link>
       </div>
 
       {loading ? (

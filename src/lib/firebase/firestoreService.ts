@@ -581,6 +581,7 @@ export async function markAllNotificationsRead(userId: string) {
 export async function approveCompany(companyId: string, adminId: string) {
   await updateDoc(doc(db, 'companies', companyId), {
     verificationStatus: 'verified',
+    isVerified: true,
     isActive: true,
     updatedAt: serverTimestamp() });
 
@@ -590,12 +591,22 @@ export async function approveCompany(companyId: string, adminId: string) {
   );
 
   if (company?.ownerId) {
+    try {
+      await updateDoc(doc(db, 'users', company.ownerId), {
+        isEmployer: true,
+        companyId: companyId,
+        canPostJobs: true,
+        'employerApplication.status': 'verified',
+        updatedAt: serverTimestamp(),
+      });
+    } catch { /* ignore if user doc does not exist yet */ }
+
     await createNotification({
       userId: company.ownerId,
       type: 'system',
-      title: 'Business Approved! 🎉',
-      message: `Your business "${company.name}" has been approved and is now live on THENIJOBS.`,
-      actionUrl: `/employer/company-profile` });
+      title: 'Business & Employer Access Approved! 🎉',
+      message: `Your company "${company.name}" has been approved. You can now post jobs and access the Employer Dashboard.`,
+      actionUrl: `/employer/dashboard` });
   }
 
   await logActivity({
@@ -613,6 +624,7 @@ export async function rejectCompany(
 ) {
   await updateDoc(doc(db, 'companies', companyId), {
     verificationStatus: 'rejected',
+    isVerified: false,
     isActive: false,
     rejectionReason: reason || '',
     updatedAt: serverTimestamp() });
@@ -623,12 +635,20 @@ export async function rejectCompany(
   );
 
   if (company?.ownerId) {
+    try {
+      await updateDoc(doc(db, 'users', company.ownerId), {
+        'employerApplication.status': 'rejected',
+        'employerApplication.rejectionReason': reason || '',
+        updatedAt: serverTimestamp(),
+      });
+    } catch { /* ignore */ }
+
     await createNotification({
       userId: company.ownerId,
       type: 'system',
-      title: 'Business Review Update',
-      message: `Your business "${company.name}" requires changes. ${reason || ''}`,
-      actionUrl: `/employer/company-profile` });
+      title: 'Employer Application Requires Update',
+      message: `Your business application "${company.name}" was not approved: ${reason || 'Please update your business details.'}`,
+      actionUrl: `/seeker/become-employer` });
   }
 
   await logActivity({

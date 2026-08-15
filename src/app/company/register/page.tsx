@@ -48,24 +48,29 @@ export default function CompanyRegisterPage() {
   const addService = () => { if (newService.trim()) { setServices(s => [...s, newService.trim()]); setNewService(''); } };
   const removeService = (i: number) => setServices(s => s.filter((_, idx) => idx !== i));
 
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
+
   const handleSubmit = async () => {
-    if (!user) {
-      alert('Please login to register a business.');
-      router.push('/login?redirect=/company/register');
+    if (!form.name.trim() || !form.phone.trim() || !form.district.trim()) {
+      alert('Please fill in Company Name, Phone Number, and District.');
       return;
     }
+
     setLoading(true);
     try {
       const slug = form.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
+        .replace(/(^-|-$)+/g, '') || `company-${Date.now()}`;
+
+      const ownerId = user ? user.uid : `guest_${form.phone.replace(/[^0-9]/g, '') || Date.now()}`;
 
       await addDoc(collection(db, 'companies'), {
         ...form,
         foundedYear: form.foundedYear ? parseInt(form.foundedYear) : '',
         services,
-        ownerId: user.uid,
+        ownerId,
+        ownerEmail: user?.email || form.email || '',
         verificationStatus: 'pending',
         isActive: false,
         isVerified: false,
@@ -83,18 +88,18 @@ export default function CompanyRegisterPage() {
           businessVerified: false },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp() });
+
       // Notify all admins about the new registration
       await notifyAllAdmins(
         'New Company Registration 🏢',
-        `${form.name} (${form.category}, ${form.district}) has registered and is awaiting approval.`,
+        `"${form.name}" (${form.category || 'General'}, ${form.district}) submitted registration and is awaiting approval. Phone: ${form.phone}`,
         '/admin/businesses',
       );
 
-      alert('Business registered successfully! Pending admin approval.');
-      router.push('/employer/dashboard');
-    } catch (err) {
+      setSubmittedSuccess(true);
+    } catch (err: any) {
       console.error(err);
-      alert('Error registering business. Please try again.');
+      alert('Error registering business. Please try again: ' + (err.message || ''));
     } finally {
       setLoading(false);
     }
@@ -114,33 +119,72 @@ export default function CompanyRegisterPage() {
           </p>
         </div>
 
-        {/* Step Indicator */}
-        <div className="overflow-x-auto no-scrollbar mb-8">
-          <div className="flex items-center gap-1 min-w-max mx-auto justify-center">
-            {STEPS.map((s, i) => {
-              const Icon = s.icon;
-              const isDone = step > s.id;
-              const isCurrent = step === s.id;
-              return (
-                <div key={s.id} className="flex items-center gap-1">
-                  <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all
-                    ${isDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : isCurrent ? 'bg-violet-600 text-white'
-                        : 'bg-white/5 text-gray-500 border border-gray-200'}`}>
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center">
-                      {isDone ? <Check size={12} /> : <Icon size={12} />}
-                    </div>
-                    <span className="hidden sm:inline">{s.label}</span>
-                  </div>
-                  {i < STEPS.length - 1 && <ChevronRight size={14} className="text-gray-700" />}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        {submittedSuccess ? (
+          <div className="bg-white rounded-3xl border border-emerald-200 p-8 sm:p-10 text-center space-y-5 shadow-lg animate-fade-in font-outfit">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+              <BadgeCheck size={36} />
+            </div>
+            <div>
+              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold uppercase tracking-wide">
+                ⏳ Verification Pending
+              </span>
+              <h2 className="text-2xl font-black text-gray-900 mt-2">Registration Submitted!</h2>
+              <p className="text-xs text-gray-600 mt-1.5 max-w-md mx-auto leading-relaxed">
+                Thank you for registering <strong>&quot;{form.name}&quot;</strong>. Your business details have been sent to the THENIJOBS verification queue. Admin will review and verify your listing within <strong>2 to 4 hours</strong>.
+              </p>
+            </div>
 
-        {/* Form Card */}
-        <div className="glass-card rounded-3xl p-6 sm:p-8">
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-xs text-left max-w-md mx-auto space-y-2 text-gray-700">
+              <p className="flex justify-between"><span className="text-gray-400">Business:</span> <strong>{form.name}</strong></p>
+              <p className="flex justify-between"><span className="text-gray-400">Category:</span> <strong>{form.category || 'General'}</strong></p>
+              <p className="flex justify-between"><span className="text-gray-400">District:</span> <strong>{form.district}</strong></p>
+              <p className="flex justify-between"><span className="text-gray-400">Contact:</span> <strong>{form.phone}</strong></p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
+              <Link
+                href="/login"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition-all text-center"
+              >
+                Login to Portal / Track Status
+              </Link>
+              <Link
+                href="/"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-all text-center"
+              >
+                Return to Home
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Step Indicator */}
+            <div className="overflow-x-auto no-scrollbar mb-8">
+              <div className="flex items-center gap-1 min-w-max mx-auto justify-center">
+                {STEPS.map((s, i) => {
+                  const Icon = s.icon;
+                  const isDone = step > s.id;
+                  const isCurrent = step === s.id;
+                  return (
+                    <div key={s.id} className="flex items-center gap-1">
+                      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all
+                        ${isDone ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : isCurrent ? 'bg-violet-600 text-white'
+                            : 'bg-white/5 text-gray-500 border border-gray-200'}`}>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center">
+                          {isDone ? <Check size={12} /> : <Icon size={12} />}
+                        </div>
+                        <span className="hidden sm:inline">{s.label}</span>
+                      </div>
+                      {i < STEPS.length - 1 && <ChevronRight size={14} className="text-gray-700" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Form Card */}
+            <div className="glass-card rounded-3xl p-6 sm:p-8">
 
           {/* STEP 1 — Basic Info */}
           {step === 1 && (
@@ -459,6 +503,8 @@ export default function CompanyRegisterPage() {
             </button>
           </div>
         </div>
+      </>
+      )}
       </div>
       <BottomNav />
     </main>

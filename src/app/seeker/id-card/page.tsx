@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
-import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
+import { Loader2, CreditCard, AlertCircle, Sparkles, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import SeekerIDCard from '@/components/id-card/SeekerIDCard';
 
@@ -15,8 +15,9 @@ export default function SeekerIDCardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="animate-spin text-emerald-500" size={28} />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 font-outfit">
+        <Loader2 className="animate-spin text-emerald-600" size={32} />
+        <p className="text-xs text-gray-500 font-semibold">Generating your digital candidate pass...</p>
       </div>
     );
   }
@@ -24,10 +25,10 @@ export default function SeekerIDCardPage() {
   const seekerData = {
     uid: user?.uid || '',
     name: profile?.name || user?.displayName || user?.email?.split('@')[0] || 'Job Seeker',
-    phone: profile?.phone || '',
+    phone: profile?.phone || (user as any)?.phoneNumber || (user as any)?.phone || '',
     email: profile?.email || user?.email || '',
-    profilePhotoUrl: profile?.profilePhotoUrl || user?.photoURL || '',
-    district: profile?.district || '',
+    profilePhotoUrl: profile?.photoUrl || profile?.profilePhotoUrl || user?.photoURL || '',
+    district: profile?.district || 'Theni',
     state: profile?.state || 'Tamil Nadu',
     address: profile?.address || '',
     skills: profile?.skills || [],
@@ -36,53 +37,63 @@ export default function SeekerIDCardPage() {
     education: profile?.education || [],
   };
 
-  const isProfileComplete = seekerData.name && seekerData.skills?.length > 0;
+  const isProfileComplete = Boolean(seekerData.name && seekerData.skills?.length > 0);
 
   return (
-    <div className="p-6 sm:p-8 max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto font-outfit text-gray-900 pb-20">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-            <CreditCard size={20} className="text-emerald-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              My Digital ID Card
-            </h1>
-            <p className="text-xs text-gray-500">Your professional THENIJOBS identity card</p>
-          </div>
-        </div>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+          Digital Candidate Pass &amp; ID Card
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+          Your official THENIJOBS verified candidate identity card with live portfolio QR code
+        </p>
       </div>
 
       {!isProfileComplete && (
-        <div className="mb-6 flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
-          <AlertCircle size={16} className="text-amber-500 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-amber-800">Complete Your Profile</p>
-            <p className="text-xs text-amber-600 mt-0.5">
-              Add your skills, education, and experience to make your ID Card more professional.
+        <div className="p-4 rounded-3xl bg-amber-50 border border-amber-200 flex items-start gap-3 shadow-xs">
+          <AlertCircle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-xs sm:text-sm font-bold text-amber-950">Enhance Your Digital ID Card</p>
+            <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+              Add your top skills, education, and career experience to showcase on your digital card.
             </p>
-            <Link href="/seeker/profile" className="text-xs text-amber-700 font-semibold underline mt-1 inline-block">
-              Complete Profile →
+            <Link href="/seeker/profile" className="text-xs text-amber-950 font-black underline mt-1.5 inline-block">
+              Complete Profile Now →
             </Link>
           </div>
         </div>
       )}
 
-      {/* Card */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm flex flex-col items-center">
+      {/* Card Container */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-10 shadow-xs flex flex-col items-center">
         <SeekerIDCard seeker={seekerData} />
       </div>
 
-      {/* Info */}
-      <div className="mt-6 bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
-        <h3 className="text-sm font-semibold text-emerald-800 mb-2">💡 How to use your Digital ID Card</h3>
-        <ul className="space-y-1.5 text-xs text-emerald-700">
-          <li>• Share with employers when applying for jobs</li>
-          <li>• Present at job interviews as a quick reference</li>
-          <li>• QR code links to your private THENIJOBS portfolio</li>
-          <li>• Download as PNG for sharing via WhatsApp or email</li>
+      {/* Usage Guide */}
+      <div className="bg-emerald-50/70 rounded-3xl p-5 sm:p-6 border border-emerald-200 space-y-3">
+        <h3 className="text-xs sm:text-sm font-bold text-emerald-950 flex items-center gap-2">
+          <Sparkles size={16} className="text-emerald-600" />
+          How to utilize your Verified Candidate Pass:
+        </h3>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-emerald-900 font-medium">
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-600 font-bold">•</span>
+            <span>Share via WhatsApp to hiring managers for instant 1-click CV verification</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-600 font-bold">•</span>
+            <span>Show at direct job interviews and walk-in drives across Theni district</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-600 font-bold">•</span>
+            <span>QR code opens your live mobile-responsive portfolio and verified qualifications</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-emerald-600 font-bold">•</span>
+            <span>Download anytime in high-resolution vector PNG format</span>
+          </li>
         </ul>
       </div>
     </div>

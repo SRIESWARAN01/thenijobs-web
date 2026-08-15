@@ -593,6 +593,7 @@ export async function approveCompany(companyId: string, adminId: string) {
   if (company?.ownerId) {
     try {
       await updateDoc(doc(db, 'users', company.ownerId), {
+        role: 'employer',
         isEmployer: true,
         companyId: companyId,
         canPostJobs: true,

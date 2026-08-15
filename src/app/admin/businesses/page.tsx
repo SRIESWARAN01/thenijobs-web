@@ -4,7 +4,8 @@ import { useState } from 'react';
 import {
   Building2, Search, CheckCircle, XCircle,
   Star, Crown, MapPin, BadgeCheck, Clock, Loader2, Download,
-  Phone, MessageCircle, AlertCircle, X, Send, Eye, RefreshCw
+  Phone, MessageCircle, AlertCircle, X, Send, Eye, RefreshCw,
+  Globe, Mail, ShieldCheck, User, ExternalLink, FileText, Check
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,9 +20,15 @@ interface BusinessDoc {
   address?: string;
   ownerName?: string;
   contactPerson?: string;
+  designation?: string;
   phone?: string;
   whatsapp?: string;
   email?: string;
+  website?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
+  services?: string[];
+  employeeCount?: string;
   verificationStatus?: 'pending' | 'under_review' | 'verified' | 'rejected';
   rejectionReason?: string;
   isActive?: boolean;
@@ -29,6 +36,7 @@ interface BusinessDoc {
   isPremium?: boolean;
   createdAt?: any;
   description?: string;
+  tagline?: string;
   proofType?: string;
   proofNumber?: string;
 }
@@ -37,7 +45,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   pending:      { bg: '#FFFBEB', text: '#D97706', label: 'Pending Verification' },
   under_review: { bg: '#EFF6FF', text: '#2563EB', label: 'Under Review' },
   verified:     { bg: '#ECFDF5', text: '#059669', label: 'Verified & Active' },
-  rejected:     { bg: '#FEF2F2', text: '#DC2626', label: 'Rejected' },
+  rejected:     { bg: '#FEF2F2', text: '#DC2626', label: 'Rejected / Needs Revision' },
 };
 
 const TABS = ['All', 'Pending', 'Verified', 'Rejected', 'Featured'] as const;
@@ -65,6 +73,9 @@ export default function BusinessesPage() {
   const [districtFilter, setDistrictFilter] = useState('All Districts');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Preview Modal State
+  const [previewBiz, setPreviewBiz] = useState<BusinessDoc | null>(null);
+
   // Reject Modal State
   const [rejectingBiz, setRejectingBiz] = useState<BusinessDoc | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -82,6 +93,7 @@ export default function BusinessesPage() {
   const filtered = businesses.filter(biz => {
     const matchSearch = biz.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       (biz.ownerName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (biz.contactPerson || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (biz.phone || '').includes(searchQuery);
     const status = biz.verificationStatus || 'pending';
     let matchTab = activeTab === 'All';
@@ -104,6 +116,10 @@ export default function BusinessesPage() {
       if (cleanWa) {
         const msg = `🎉 *CONGRATULATIONS FROM THENIJOBS!*\n\nYour business *"${biz.name}"* has been approved and verified.\n\nYou can now post jobs and manage applicants on https://thenijobs.com/employer/dashboard`;
         window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, '_blank');
+      }
+
+      if (previewBiz?.id === biz.id) {
+        setPreviewBiz({ ...previewBiz, verificationStatus: 'verified' });
       }
     } catch (e: any) {
       console.error(e);
@@ -138,6 +154,10 @@ export default function BusinessesPage() {
         }
       }
 
+      if (previewBiz?.id === rejectingBiz.id) {
+        setPreviewBiz({ ...previewBiz, verificationStatus: 'rejected', rejectionReason: rejectionReason.trim() });
+      }
+
       setRejectingBiz(null);
       setRejectionReason('');
     } catch (e: any) {
@@ -165,21 +185,19 @@ export default function BusinessesPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 font-outfit" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Business &amp; Employer Management
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Review employer applications, verify registrations, make calls &amp; WhatsApp verification
-          </p>
-        </div>
+      <div>
+        <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+          Business &amp; Employer Management
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+          Review employer applications, verify registrations, make calls &amp; WhatsApp verification
+        </p>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* KPI stats matching Dashboard standard */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {[
           { label: 'Total Businesses', value: businesses.length, icon: Building2, bg: '#EFF6FF', color: '#2563EB' },
           { label: 'Pending Review', value: pendingCount, icon: Clock, bg: '#FFFBEB', color: '#D97706' },
@@ -188,14 +206,14 @@ export default function BusinessesPage() {
         ].map(s => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+            <div key={s.label} className="bg-white border border-gray-200 rounded-3xl p-4 sm:p-5 shadow-xs">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: s.bg }}>
-                  <Icon size={18} style={{ color: s.color }} />
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs" style={{ background: s.bg }}>
+                  <Icon size={20} style={{ color: s.color }} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">{s.value}</p>
-                  <p className="text-xs text-gray-500">{s.label}</p>
+                  <p className="text-xl font-black text-gray-900">{s.value}</p>
+                  <p className="text-xs text-gray-500 font-bold">{s.label}</p>
                 </div>
               </div>
             </div>
@@ -203,18 +221,20 @@ export default function BusinessesPage() {
         })}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5 border-b border-gray-200 pb-2 overflow-x-auto">
+      {/* Filter Tabs */}
+      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
         {TABS.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === tab
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}>
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              activeTab === tab ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
             {tab}
             {tab === 'Pending' && pendingCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-white text-[9px] font-bold bg-amber-500">
+              <span className="ml-1.5 px-2 py-0.5 rounded-full text-white text-[9px] font-black bg-amber-500">
                 {pendingCount}
               </span>
             )}
@@ -222,39 +242,46 @@ export default function BusinessesPage() {
         ))}
       </div>
 
-      {/* Search + filters */}
-      <div className="flex flex-col lg:flex-row gap-3">
+      {/* Search & Select Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input type="text" placeholder="Search by business name, phone, or owner..." value={searchQuery}
+          <input
+            type="text"
+            placeholder="Search by business name, phone, or contact person..."
+            value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all" />
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+          />
         </div>
         <div className="flex gap-2 flex-wrap">
-          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-            className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 outline-none cursor-pointer">
+          <select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+          >
             {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
-          <select value={districtFilter} onChange={e => setDistrictFilter(e.target.value)}
-            className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 outline-none cursor-pointer">
+          <select
+            value={districtFilter}
+            onChange={e => setDistrictFilter(e.target.value)}
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+          >
             {DISTRICTS.map(d => <option key={d}>{d}</option>)}
           </select>
         </div>
       </div>
 
-      {/* Business cards */}
+      {/* Business Cards Grid */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Loading businesses...</p>
+          <Loader2 size={32} className="text-blue-600 animate-spin" />
+          <p className="text-xs text-gray-500 font-semibold">Loading business applications...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl flex flex-col items-center justify-center py-16 shadow-sm">
-          <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
-            <Building2 size={28} className="text-gray-300" />
-          </div>
-          <p className="text-sm font-semibold text-gray-500">No businesses found</p>
-          <p className="text-xs text-slate-500 mt-1">Try adjusting your filters or search</p>
+        <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
+          <Building2 size={36} className="mx-auto text-gray-300 mb-2" />
+          <p className="text-sm font-bold text-gray-700">No businesses match your filter</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -266,38 +293,45 @@ export default function BusinessesPage() {
             const cleanWa = (biz.whatsapp || biz.phone || '').replace(/[^0-9]/g, '');
 
             return (
-              <div key={biz.id} className={`bg-white rounded-3xl p-5 shadow-sm transition-all hover:shadow-md border flex flex-col justify-between gap-3 ${
-                bizStatus === 'pending' ? 'border-amber-300 ring-2 ring-amber-100' : 'border-gray-200'
-              }`}>
+              <div
+                key={biz.id}
+                className={`bg-white rounded-3xl p-5 shadow-xs transition-all hover:shadow-md border flex flex-col justify-between gap-3.5 ${
+                  bizStatus === 'pending' ? 'border-amber-300 ring-2 ring-amber-100/50' : 'border-gray-200'
+                }`}
+              >
                 <div>
                   {/* Top Row: Avatar & Status */}
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm flex-shrink-0 shadow-xs"
-                      style={{ background: bg, color }}>
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs"
+                      style={{ background: bg, color }}
+                    >
                       {getInitials(biz.name)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-sm font-bold text-gray-900 truncate">{biz.name}</h3>
-                        {bizStatus === 'verified' && <BadgeCheck size={14} className="text-emerald-600 shrink-0" />}
-                        {biz.isPremium && <Crown size={14} className="text-amber-500 shrink-0" />}
+                        {bizStatus === 'verified' && <BadgeCheck size={15} className="text-emerald-600 shrink-0" />}
+                        {biz.isPremium && <Crown size={15} className="text-amber-500 shrink-0" />}
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{biz.category || 'General'}</p>
-                      <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-gray-500 font-medium mt-0.5">{biz.category || 'General'}</p>
+                      <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1 font-medium">
                         <MapPin size={11} className="text-gray-400" /> {biz.district || 'Theni'}
                       </p>
                     </div>
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold flex-shrink-0"
-                      style={{ background: st.bg, color: st.text }}>
+                    <span
+                      className="px-2.5 py-1 rounded-full text-[10px] font-extrabold flex-shrink-0"
+                      style={{ background: st.bg, color: st.text }}
+                    >
                       {st.label}
                     </span>
                   </div>
 
-                  {/* Owner & Proof Details */}
-                  <div className="bg-gray-50 rounded-xl p-2.5 text-xs text-gray-700 space-y-1 mb-3 border border-gray-100">
+                  {/* Owner & Proof Info */}
+                  <div className="bg-gray-50 rounded-2xl p-3 text-xs text-gray-700 space-y-1.5 mb-3 border border-gray-100 font-medium">
                     <p className="flex justify-between">
                       <span className="text-gray-500">Contact:</span>
-                      <span className="font-semibold text-gray-900">{biz.contactPerson || biz.ownerName || '—'}</span>
+                      <span className="font-bold text-gray-900">{biz.contactPerson || biz.ownerName || '—'}</span>
                     </p>
                     <p className="flex justify-between">
                       <span className="text-gray-500">Phone:</span>
@@ -305,50 +339,60 @@ export default function BusinessesPage() {
                     </p>
                     {biz.proofNumber && (
                       <p className="flex justify-between">
-                        <span className="text-gray-500">{biz.proofType || 'Proof'}:</span>
+                        <span className="text-gray-500">{biz.proofType || 'Govt Proof'}:</span>
                         <span className="font-mono text-[11px] font-bold text-blue-700">{biz.proofNumber}</span>
                       </p>
                     )}
                   </div>
 
-                  {/* Rejection Note if Rejected */}
+                  {/* Rejection Note */}
                   {bizStatus === 'rejected' && biz.rejectionReason && (
-                    <p className="text-[11px] text-red-700 bg-red-50 p-2 rounded-xl border border-red-200 mb-3">
-                      <strong>Rejection Reason:</strong> {biz.rejectionReason}
+                    <p className="text-[11px] text-red-700 bg-red-50 p-2.5 rounded-2xl border border-red-200 mb-3 leading-relaxed">
+                      <strong>Rejection Note:</strong> {biz.rejectionReason}
                     </p>
                   )}
 
                   {/* Description */}
-                  <p className="text-xs text-gray-500 line-clamp-2">{biz.description || biz.address || 'No description.'}</p>
+                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                    {biz.description || biz.address || 'Local business registered on THENIJOBS.'}
+                  </p>
                 </div>
 
                 {/* Bottom Actions */}
                 <div className="space-y-2 pt-2 border-t border-gray-100">
                   {/* Direct Contact Buttons */}
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewBiz(biz)}
+                      className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                    >
+                      <Eye size={13} /> Details
+                    </button>
+
                     {cleanPhone ? (
                       <a
                         href={`tel:${cleanPhone}`}
-                        className="py-1.5 px-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all border border-indigo-200 cursor-pointer"
+                        className="py-2 px-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-indigo-200 cursor-pointer"
                       >
-                        <Phone size={12} /> Call Owner
+                        <Phone size={13} /> Call
                       </a>
                     ) : (
-                      <span className="py-1.5 text-center text-[10px] text-gray-400">No Phone</span>
+                      <span className="py-2 text-center text-[10px] text-gray-400">No Phone</span>
                     )}
 
                     {cleanWa ? (
                       <a
-                        href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${biz.name}, this is THENIJOBS Admin regarding your business verification request on our platform.`)}`}
+                        href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${biz.name}, this is THENIJOBS Admin regarding your business verification request.`)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="py-1.5 px-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        className="py-2 px-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
                         style={{ background: '#25D366' }}
                       >
-                        <MessageCircle size={12} /> WhatsApp
+                        <MessageCircle size={13} /> WhatsApp
                       </a>
                     ) : (
-                      <span className="py-1.5 text-center text-[10px] text-gray-400">No WhatsApp</span>
+                      <span className="py-2 text-center text-[10px] text-gray-400">No WA</span>
                     )}
                   </div>
 
@@ -362,22 +406,24 @@ export default function BusinessesPage() {
                       <>
                         {bizStatus !== 'verified' && (
                           <button
+                            type="button"
                             onClick={() => doApprove(biz)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-white transition-all shadow-xs cursor-pointer hover:opacity-90"
-                            style={{ background: '#10B981' }}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold text-white transition-all shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700"
                           >
-                            <CheckCircle size={13} /> Approve
+                            <CheckCircle size={14} /> Approve
                           </button>
                         )}
                         {bizStatus !== 'rejected' && (
                           <button
+                            type="button"
                             onClick={() => openRejectModal(biz)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border border-red-200 text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border border-red-200 text-red-600 hover:bg-red-50 transition-all cursor-pointer"
                           >
-                            <XCircle size={13} /> Reject
+                            <XCircle size={14} /> Reject
                           </button>
                         )}
                         <button
+                          type="button"
                           onClick={() => doToggleFeatured(biz.id, biz.isFeatured)}
                           className={`p-2 rounded-xl transition-all cursor-pointer ${biz.isFeatured ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400 hover:text-amber-500'}`}
                           title={biz.isFeatured ? 'Remove Featured' : 'Feature Business'}
@@ -385,6 +431,7 @@ export default function BusinessesPage() {
                           <Star size={14} />
                         </button>
                         <button
+                          type="button"
                           onClick={() => doTogglePremium(biz.id, biz.isPremium)}
                           className={`p-2 rounded-xl transition-all cursor-pointer ${biz.isPremium ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400 hover:text-purple-500'}`}
                           title={biz.isPremium ? 'Remove Premium' : 'Make Premium'}
@@ -398,6 +445,116 @@ export default function BusinessesPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* FULL BUSINESS PREVIEW MODAL */}
+      {previewBiz && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs font-outfit" onClick={() => setPreviewBiz(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 p-6 sm:p-8 space-y-5 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-sm border border-blue-100">
+                  {getInitials(previewBiz.name)}
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-gray-900">{previewBiz.name}</h2>
+                  <p className="text-xs text-gray-500">{previewBiz.category} • {previewBiz.district}</p>
+                </div>
+              </div>
+              <button onClick={() => setPreviewBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Banner preview if available */}
+            {previewBiz.bannerUrl && (
+              <div className="w-full h-36 rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+                <img src={previewBiz.bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+              </div>
+            )}
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
+                <span className="text-gray-400 font-bold block">Contact Person</span>
+                <span className="font-bold text-gray-900 text-sm">{previewBiz.contactPerson || previewBiz.ownerName || '—'}</span>
+                <span className="text-[11px] text-gray-500 block">{previewBiz.designation || 'Owner / Representative'}</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
+                <span className="text-gray-400 font-bold block">Calling &amp; WhatsApp</span>
+                <span className="font-mono font-bold text-gray-900 text-sm">{previewBiz.phone || '—'}</span>
+                <span className="text-[11px] text-gray-500 block">WA: {previewBiz.whatsapp || previewBiz.phone || '—'}</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1 sm:col-span-2">
+                <span className="text-gray-400 font-bold block">Office Address</span>
+                <span className="font-semibold text-gray-900">{previewBiz.address || '—'}</span>
+              </div>
+              {previewBiz.proofNumber && (
+                <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 space-y-1 sm:col-span-2 text-blue-900">
+                  <span className="text-blue-600 font-bold block">Government Verification Proof ({previewBiz.proofType})</span>
+                  <span className="font-mono font-bold text-blue-950 text-sm">{previewBiz.proofNumber}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Description & Services */}
+            {previewBiz.description && (
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-gray-700">About Business</span>
+                <p className="text-xs text-gray-600 bg-gray-50 p-3 rounded-2xl border border-gray-100 leading-relaxed">
+                  {previewBiz.description}
+                </p>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center gap-2">
+                {previewBiz.phone && (
+                  <a
+                    href={`tel:${previewBiz.phone}`}
+                    className="py-2 px-3 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200 flex items-center gap-1"
+                  >
+                    <Phone size={13} /> Call
+                  </a>
+                )}
+                {previewBiz.phone && (
+                  <a
+                    href={`https://wa.me/${previewBiz.phone.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2 px-3 rounded-xl text-white text-xs font-bold flex items-center gap-1 shadow-xs"
+                    style={{ background: '#25D366' }}
+                  >
+                    <MessageCircle size={13} /> WhatsApp
+                  </a>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {previewBiz.verificationStatus !== 'verified' && (
+                  <button
+                    type="button"
+                    onClick={() => doApprove(previewBiz)}
+                    className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <CheckCircle size={14} /> Approve Business
+                  </button>
+                )}
+                {previewBiz.verificationStatus !== 'rejected' && (
+                  <button
+                    type="button"
+                    onClick={() => { setPreviewBiz(null); openRejectModal(previewBiz); }}
+                    className="py-2.5 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <XCircle size={14} /> Reject Application
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -430,7 +587,7 @@ export default function BusinessesPage() {
                     key={i}
                     type="button"
                     onClick={() => setRejectionReason(r)}
-                    className="text-[11px] px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-700 text-left border border-gray-200 transition-colors"
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-700 text-left border border-gray-200 transition-colors cursor-pointer"
                   >
                     {r}
                   </button>
@@ -455,17 +612,17 @@ export default function BusinessesPage() {
               <button
                 type="button"
                 onClick={() => handleConfirmReject(false)}
-                className="py-2.5 px-3 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold transition-all"
+                className="py-2.5 px-3 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold transition-all cursor-pointer"
               >
                 Save &amp; Reject Only
               </button>
               <button
                 type="button"
                 onClick={() => handleConfirmReject(true)}
-                className="py-2.5 px-3 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                className="py-2.5 px-3 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
                 style={{ background: '#25D366' }}
               >
-                <MessageCircle size={13} /> Reject &amp; Send on WhatsApp
+                <MessageCircle size={13} /> Reject &amp; WhatsApp
               </button>
             </div>
           </div>

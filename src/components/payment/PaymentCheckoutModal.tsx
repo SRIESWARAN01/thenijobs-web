@@ -12,6 +12,7 @@ import { useToast } from '@/contexts/ToastContext';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { SITE_CONTACT } from '@/lib/constants';
+import { getReceiptGrowthSlogan } from '@/lib/branding/slogans';
 
 export interface PlanDetails {
   name: string;
@@ -323,6 +324,14 @@ export default function PaymentCheckoutModal({
     pdf.text(`₹${transactionDetails.amount.toLocaleString('en-IN')}`, pageWidth - margin - 4, y, { align: 'right' });
     y += 16;
 
+    // Dynamic Enterprise Slogan
+    const slogan = getReceiptGrowthSlogan(plan.slug, transactionDetails.receiptNo);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(37, 99, 235);
+    pdf.text(`"${slogan}"`, pageWidth / 2, y, { align: 'center' });
+    y += 10;
+
     // Official Footer Notice
     pdf.setDrawColor(240, 240, 240);
     pdf.setFillColor(248, 250, 252);
@@ -566,6 +575,13 @@ export default function PaymentCheckoutModal({
                     <span>Total Paid</span>
                     <span className="text-emerald-700 font-black">₹{transactionDetails.amount.toLocaleString('en-IN')}</span>
                   </div>
+                </div>
+
+                {/* Dynamic Enterprise Growth Slogan */}
+                <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 text-center">
+                  <p className="text-[11px] font-semibold text-blue-900 italic">
+                    &ldquo;{getReceiptGrowthSlogan(plan.slug, transactionDetails.receiptNo)}&rdquo;
+                  </p>
                 </div>
 
                 {/* Payment Reference & Support */}

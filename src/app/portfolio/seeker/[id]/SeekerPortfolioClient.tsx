@@ -15,6 +15,7 @@ import { db } from '@/lib/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import SeekerIDCard from '@/components/id-card/SeekerIDCard';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { getSeekerGrowthSlogan } from '@/lib/branding/slogans';
 
 interface SeekerData {
   name: string;
@@ -317,6 +318,11 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
 
                   <p className="text-blue-100 text-sm sm:text-base font-semibold mt-1">
                     {currentRole}
+                  </p>
+
+                  {/* Dynamic Motivational Slogan */}
+                  <p className="text-xs text-blue-200/95 italic font-medium mt-1 max-w-md mx-auto">
+                    &ldquo;{getSeekerGrowthSlogan({ name, currentRole, skills: rawSkills.map(s => (typeof s === 'string' ? s : s.name)), uid: seekerId })}&rdquo;
                   </p>
 
                   <div className="flex items-center justify-center gap-3 text-xs text-blue-200/90 mt-1.5 flex-wrap">

@@ -48,29 +48,33 @@ export default function HomeFooter() {
             {/* Contact */}
             <div className="space-y-2 mb-5">
               <div className="flex items-center gap-2 text-sm text-gray-400">
-                <MapPin size={14} className="text-gray-500" />
+                <MapPin size={14} className="text-gray-500 shrink-0" />
                 <span>Theni, Tamil Nadu, India</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Phone size={14} className="text-gray-500" />
-                <span>+91 98765 43210</span>
+                <Phone size={14} className="text-blue-400 shrink-0" />
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                  <a href="tel:+919360519460" className="hover:text-white transition-colors font-medium">+91 93605 19460</a>
+                  <span className="text-gray-600 hidden sm:inline">•</span>
+                  <a href="tel:+917094826886" className="hover:text-white transition-colors font-medium">+91 70948 26886</a>
+                </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Mail size={14} className="text-gray-500" />
-                <span>info@thenijobs.com</span>
+                <Mail size={14} className="text-gray-500 shrink-0" />
+                <a href="mailto:info@thenijobs.com" className="hover:text-white transition-colors">info@thenijobs.com</a>
               </div>
             </div>
 
             {/* Social */}
             <div className="flex items-center gap-3">
               {[
-                { Icon: Globe2, href: 'https://thenijobs.com' },
-                { Icon: MessageCircle, href: 'https://wa.me/919876543210' },
-                { Icon: Share2, href: 'https://www.linkedin.com' },
-                { Icon: Play, href: 'https://www.youtube.com' },
-              ].map(({ Icon, href }, i) => (
-                <a key={i} href={href}
-                  className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-all">
+                { Icon: Globe2, href: 'https://thenijobs.com', label: 'Website' },
+                { Icon: MessageCircle, href: 'https://wa.me/919360519460', label: 'WhatsApp' },
+                { Icon: Share2, href: 'https://www.linkedin.com', label: 'LinkedIn' },
+                { Icon: Play, href: 'https://www.youtube.com', label: 'YouTube' },
+              ].map(({ Icon, href, label }, i) => (
+                <a key={i} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
+                  className="w-9 h-9 rounded-xl bg-gray-800 hover:bg-blue-600 flex items-center justify-center text-gray-400 hover:text-white transition-all shadow-xs">
                   <Icon size={16} />
                 </a>
               ))}

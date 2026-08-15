@@ -77,7 +77,23 @@ const homeStructuredData = {
       logo: 'https://thenijobs.com/logo.png',
       sameAs: [
         'https://thenijobs.com',
-        'https://wa.me/919876543210',
+        'https://wa.me/919360519460',
+      ],
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          telephone: '+91-93605-19460',
+          contactType: 'customer service',
+          areaServed: 'IN',
+          availableLanguage: ['Tamil', 'English'],
+        },
+        {
+          '@type': 'ContactPoint',
+          telephone: '+91-70948-26886',
+          contactType: 'sales',
+          areaServed: 'IN',
+          availableLanguage: ['Tamil', 'English'],
+        },
       ],
       address: {
         '@type': 'PostalAddress',

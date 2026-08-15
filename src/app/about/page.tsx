@@ -559,8 +559,12 @@ export default function AboutPage() {
             <p>North Street, A.M. Patty,</p>
             <p>Uthamapalayam, Theni District,</p>
             <p>Tamil Nadu, India.</p>
-            <p className="pt-2 font-bold text-blue-600">+91 93605 19460</p>
-            <p className="font-bold text-blue-600">+91 70948 26886 | +91 70948 26586</p>
+            <p className="pt-2 font-bold text-blue-600">
+              <a href="tel:+919360519460" className="hover:underline">+91 93605 19460</a>
+            </p>
+            <p className="font-bold text-blue-600">
+              <a href="tel:+917094826886" className="hover:underline">+91 70948 26886</a>
+            </p>
           </div>
         </div>
 

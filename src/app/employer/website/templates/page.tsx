@@ -343,7 +343,7 @@ function getMockData(sectionType: string, company?: any): any {
       { id: '1', name: 'Premium Package', description: 'Our best-selling package', image: '', price: '5,999', category: 'Featured', inStock: true, whatsappLink: '' },
       { id: '2', name: 'Standard Package', description: 'Great value for money', image: '', price: '2,999', category: 'Popular', inStock: true, whatsappLink: '' },
     ]};
-    case 'contact': return { address: 'Theni, Tamil Nadu, India', phone: '+91 98765 43210', email: 'info@company.com', whatsapp: '919876543210', googleMapsEmbed: '', showForm: true, socialLinks: [] };
+    case 'contact': return { address: 'Theni, Tamil Nadu, India', phone: '+91 93605 19460', email: 'info@thenijobs.com', whatsapp: '919360519460', googleMapsEmbed: '', showForm: true, socialLinks: [] };
     case 'testimonials': return { items: [
       { id: '1', name: 'Raj Kumar', role: 'Business Owner', company: 'Tech Solutions', photo: '', content: 'Excellent service! They delivered exactly what we needed.', rating: 5 },
       { id: '2', name: 'Priya S', role: 'Manager', company: 'Local Business', photo: '', content: 'Very professional and reliable. Highly recommended!', rating: 5 },

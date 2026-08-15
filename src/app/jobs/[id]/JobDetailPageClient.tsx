@@ -165,7 +165,7 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
             logo: d.logo || '',
             isUrgent: d.isUrgent || false,
             isVerified: d.isVerified || false,
-            whatsapp: d.whatsapp || d.phone || '919876543210',
+            whatsapp: d.whatsapp || d.phone || '919360519460',
             phone: d.phone || '',
             experience: d.experience || 'Not specified',
             education: d.education || 'Not specified',

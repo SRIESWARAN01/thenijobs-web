@@ -1,6 +1,6 @@
 'use client';
 
-export default function FloatingWhatsApp({ number = '919876543210' }: { number?: string }) {
+export default function FloatingWhatsApp({ number = '919360519460' }: { number?: string }) {
   return (
     <a
       href={`https://wa.me/${number}?text=Hi%2C%20I%20found%20you%20on%20THENIJOBS`}

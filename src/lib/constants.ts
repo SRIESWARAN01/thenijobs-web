@@ -4,6 +4,22 @@
 
 import type { SubscriptionPlan } from '@/lib/types';
 
+// ===== OFFICIAL CONTACT NUMBERS & DETAILS =====
+export const SITE_CONTACT = {
+  phone1: '+91 93605 19460',
+  phone1Raw: '+919360519460',
+  phone2: '+91 70948 26886',
+  phone2Raw: '+917094826886',
+  whatsapp: '919360519460',
+  whatsappUrl: 'https://wa.me/919360519460',
+  email: 'info@thenijobs.com',
+  supportEmail: 'support@thenijobs.com',
+  addressLine1: 'North Street, A.M. Patty',
+  addressLine2: 'Uthamapalayam, Theni District, Tamil Nadu - 625533, India',
+  fullAddress: 'North Street, A.M. Patty, Uthamapalayam, Theni District, Tamil Nadu, India.',
+  location: 'Theni, Tamil Nadu, India',
+};
+
 // ===== SUBSCRIPTION PLANS (ANNUAL PRICING STRATEGY — 4 TIERS) =====
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {

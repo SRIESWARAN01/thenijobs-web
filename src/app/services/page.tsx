@@ -78,8 +78,8 @@ export default function ServicesPage() {
             logo: d.name ? d.name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase() : 'C',
             logoUrl: d.logoUrl || d.logo || '',
             coverUrl: d.coverUrl || d.coverImage || '',
-            phone: d.phone || '9487654321',
-            whatsapp: d.whatsapp || d.phone || '9487654321',
+            phone: d.phone || '9360519460',
+            whatsapp: d.whatsapp || d.phone || '9360519460',
             website: d.website || '',
             products: d.products || [
               {

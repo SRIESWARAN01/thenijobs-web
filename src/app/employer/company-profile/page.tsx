@@ -465,14 +465,28 @@ export default function CompanyProfilePage() {
           <div className="glass-card rounded-2xl overflow-hidden">
             {/* Cover Banner Upload */}
             <div
-              className="relative h-40 bg-gradient-to-r from-blue-50 to-emerald-50 border-b border-gray-100 group cursor-pointer"
+              className="relative h-44 sm:h-52 bg-slate-950 border-b border-gray-100 group cursor-pointer flex items-center justify-center overflow-hidden"
               onClick={() => coverInputRef.current?.click()}
-              style={{
-                backgroundImage: company.coverUrl ? `url(${company.coverUrl})` : undefined,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
             >
+              {company.coverUrl ? (
+                <>
+                  <div
+                    className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
+                    style={{ backgroundImage: `url(${company.coverUrl})` }}
+                  />
+                  <img
+                    src={company.coverUrl}
+                    alt="Cover Banner"
+                    className="relative z-10 w-full h-full object-contain object-center"
+                  />
+                </>
+              ) : (
+                <div className="text-center text-gray-400 p-4">
+                  <Upload size={24} className="mx-auto mb-1.5 opacity-60 text-white" />
+                  <span className="text-xs font-semibold text-gray-200 block">Click to Upload Business Banner</span>
+                  <span className="text-[10px] text-gray-400">Recommended: 1200 × 400px</span>
+                </div>
+              )}
               <input
                 ref={coverInputRef}
                 type="file"
@@ -480,14 +494,10 @@ export default function CompanyProfilePage() {
                 className="hidden"
                 onChange={handleUploadCover}
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/40 backdrop-blur-sm text-white/70 text-sm font-medium hover:bg-black/60 hover:text-white transition-all">
-                  <Upload size={16} />
-                  Upload Cover Banner
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 backdrop-blur-xs text-white text-xs font-bold transition-all shadow-md">
+                  <Upload size={14} /> Change Cover Banner
                 </button>
-              </div>
-              <div className="absolute bottom-2 right-3 text-[10px] text-gray-400 bg-black/40 px-2 py-0.5 rounded">
-                Recommended: 1200 × 300px
               </div>
             </div>
 

@@ -33,14 +33,20 @@ function BusinessCard({ biz }: { biz: Company }) {
     <Link href={`/company/${biz.slug || biz.id}`} className="block group">
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md hover:border-blue-100 transition-all duration-200 h-full flex flex-col">
         {/* Cover */}
-        <div className="h-28 sm:h-32 w-full relative bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 overflow-hidden flex items-center justify-center">
+        <div className="h-32 sm:h-36 w-full relative bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 overflow-hidden flex items-center justify-center">
           {biz.coverUrl ? (
-            <img src={biz.coverUrl} alt={biz.name} className="w-full h-full object-cover sm:object-contain object-center" />
+            <>
+              <div
+                className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
+                style={{ backgroundImage: `url(${biz.coverUrl})` }}
+              />
+              <img src={biz.coverUrl} alt={biz.name} className="relative z-10 w-full h-full object-contain object-center p-1" />
+            </>
           ) : (
             <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px]" />
           )}
           {biz.isPremium && (
-            <div className="absolute top-2 right-2 px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-400 text-amber-950 shadow-xs">
+            <div className="absolute top-2 right-2 z-20 px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-amber-400 text-amber-950 shadow-xs">
               ⭐ PREMIUM
             </div>
           )}

@@ -332,9 +332,15 @@ export default function ServicesPage() {
 
               return (
                 <div key={p.id} className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col group">
-                  <div className="h-28 sm:h-32 w-full bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 relative overflow-hidden flex items-center justify-center">
+                  <div className="h-32 sm:h-36 w-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden flex items-center justify-center">
                     {p.coverUrl ? (
-                      <img src={p.coverUrl} alt={p.name} className="w-full h-full object-cover sm:object-contain object-center" />
+                      <>
+                        <div
+                          className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
+                          style={{ backgroundImage: `url(${p.coverUrl})` }}
+                        />
+                        <img src={p.coverUrl} alt={p.name} className="relative z-10 w-full h-full object-contain object-center p-1" />
+                      </>
                     ) : (
                       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px]" />
                     )}

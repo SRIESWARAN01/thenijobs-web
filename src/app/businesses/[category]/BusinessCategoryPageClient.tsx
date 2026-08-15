@@ -146,14 +146,20 @@ export default function BusinessCategoryPageClient({ category }: { category: str
               return (
                 <div key={biz.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md hover:border-blue-100 transition-all group">
                   {/* Cover Banner */}
-                  <div className="h-28 sm:h-32 w-full relative bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 overflow-hidden flex items-center justify-center">
+                  <div className="h-32 sm:h-36 w-full relative bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 overflow-hidden flex items-center justify-center">
                     {biz.coverUrl ? (
-                      <img src={biz.coverUrl} alt={biz.name} className="w-full h-full object-cover sm:object-contain object-center" />
+                      <>
+                        <div
+                          className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
+                          style={{ backgroundImage: `url(${biz.coverUrl})` }}
+                        />
+                        <img src={biz.coverUrl} alt={biz.name} className="relative z-10 w-full h-full object-contain object-center p-1" />
+                      </>
                     ) : (
                       <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px]" />
                     )}
                     {biz.isPremium && (
-                      <span className="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded-full font-extrabold bg-amber-400 text-amber-950 shadow-xs">
+                      <span className="absolute top-2 right-2 z-20 text-[9px] px-2 py-0.5 rounded-full font-extrabold bg-amber-400 text-amber-950 shadow-xs">
                         ⭐ FEATURED
                       </span>
                     )}

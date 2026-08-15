@@ -79,7 +79,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 <img
                   src={company.coverUrl || company.coverImage}
                   alt={company.name}
-                  className="relative z-10 w-full h-full object-cover sm:object-contain object-center"
+                  className="relative z-10 w-full h-full object-contain object-center"
                 />
               </>
             ) : (

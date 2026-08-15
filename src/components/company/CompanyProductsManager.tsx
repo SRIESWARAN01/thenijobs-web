@@ -5,7 +5,7 @@ import { ProductItem } from '@/lib/types';
 import { hasFeaturePermission } from '@/lib/plans';
 import {
   Package, Plus, Trash2, Edit3, ImagePlus, Lock, Sparkles,
-  Phone, MessageCircle, Check, X, ShieldAlert
+  Phone, MessageCircle, Check, X, ShieldAlert, ExternalLink, Eye, ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
@@ -13,16 +13,35 @@ import { useToast } from '@/contexts/ToastContext';
 interface CompanyProductsManagerProps {
   products: ProductItem[];
   planSlug?: string;
+  companyName?: string;
+  companySlug?: string;
+  phone?: string;
+  whatsapp?: string;
+  district?: string;
   onChange: (products: ProductItem[]) => void;
 }
+
+const PLAN_PRODUCT_LIMITS: Record<string, number> = {
+  free: 3,
+  basic: 5,
+  standard: 20,
+  premium: 100,
+  enterprise: 999
+};
 
 export default function CompanyProductsManager({
   products = [],
   planSlug = 'free',
+  companyName = 'Company',
+  companySlug = '',
+  phone = '9360519460',
+  whatsapp = '9360519460',
+  district = 'Theni',
   onChange,
 }: CompanyProductsManagerProps) {
-  const isEnabled = hasFeaturePermission(planSlug, 'productsListing');
   const toast = useToast();
+  const maxLimit = PLAN_PRODUCT_LIMITS[planSlug.toLowerCase()] || 3;
+  const isLimitReached = products.length >= maxLimit;
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,7 +65,12 @@ export default function CompanyProductsManager({
       return;
     }
 
-    const cleanFeatures = (form.features || []).filter(f => f.trim() !== '');
+    if (!editingId && isLimitReached) {
+      toast.error(`Plan Limit Reached (${maxLimit} Products)`, `Your current ${planSlug.toUpperCase()} plan allows up to ${maxLimit} products. Please upgrade to list more.`);
+      return;
+    }
+
+    const cleanFeatures = (form.features || []).filter(f => f && f.trim() !== '');
 
     if (editingId) {
       const updated = products.map(p =>
@@ -55,6 +79,7 @@ export default function CompanyProductsManager({
           : p
       );
       onChange(updated);
+      toast.success('Product updated successfully!');
     } else {
       const newItem: ProductItem = {
         id: Date.now().toString(),
@@ -65,9 +90,11 @@ export default function CompanyProductsManager({
         category: form.category || 'General',
         imageUrl: form.imageUrl || '',
         features: cleanFeatures,
+        websiteUrl: form.websiteUrl || '',
         whatsappEnquiry: form.whatsappEnquiry !== false,
       };
       onChange([...products, newItem]);
+      toast.success('New product added to your catalogue!');
     }
 
     resetForm();
@@ -75,13 +102,17 @@ export default function CompanyProductsManager({
 
   const handleEdit = (p: ProductItem) => {
     setEditingId(p.id);
-    setForm(p);
+    setForm({
+      ...p,
+      features: p.features && p.features.length > 0 ? p.features : ['']
+    });
     setShowAddForm(true);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to remove this product?')) {
+    if (confirm('Are you sure you want to remove this product from your catalogue?')) {
       onChange(products.filter(p => p.id !== id));
+      toast.info('Product removed.');
     }
   };
 
@@ -102,198 +133,293 @@ export default function CompanyProductsManager({
     setShowAddForm(false);
   };
 
-  if (!isEnabled) {
-    return (
-      <div className="relative overflow-hidden rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-500/5 via-white to-amber-500/10 p-8 text-center shadow-md font-outfit">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 border border-amber-500/30">
-          <Lock size={32} />
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-amber-700">
-          <Sparkles size={13} /> Premium Feature
-        </span>
-        <h3 className="mt-3 text-xl font-bold text-slate-900">Product Catalogue Disabled</h3>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-          Upgrade to our <strong className="text-slate-900 font-semibold">Standard Package (₹480/yr)</strong> or higher to showcase products, price ranges, features, and receive direct WhatsApp customer enquiries.
-        </p>
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <Link
-            href="/employer/subscription"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:scale-105"
-          >
-            <span>Upgrade Subscription</span>
-            <Sparkles size={16} />
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const testWhatsAppOrder = (item: ProductItem) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com';
+    const pageUrl = companySlug ? `${origin}/company/${companySlug}` : `${origin}/services`;
+    const priceDisplay = item.price ? `₹${item.price.toLocaleString('en-IN')}` : item.priceRange || 'Contact for Price';
+
+    let msg = `🛍️ *NEW PRODUCT ORDER / ENQUIRY*\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `🏢 *Company:* ${companyName}\n`;
+    msg += `📦 *Product:* ${item.name}\n`;
+    msg += `💰 *Price:* ${priceDisplay}\n`;
+    msg += `📍 *Location:* ${district}, Tamil Nadu\n`;
+    if (item.imageUrl) msg += `🖼️ *Photo Reference:* ${item.imageUrl}\n`;
+    if (item.websiteUrl) msg += `🌐 *Product Link:* ${item.websiteUrl}\n`;
+    msg += `🔗 *THENIJOBS Page:* ${pageUrl}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `Hello, I found your listing on THENIJOBS Marketplace and would like to order this item. Please share payment and delivery details.`;
+
+    window.open(`https://wa.me/${(whatsapp || phone).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
 
   return (
     <div className="space-y-6 font-outfit">
-      {/* Header & Add Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      {/* Header & Plan Quota */}
+      <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Package size={20} className="text-blue-600" /> Products Catalogue ({products.length})
-          </h3>
-          <p className="text-xs text-slate-500">Showcase products with pricing, photos, and direct WhatsApp lead buttons</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Package size={20} className="text-blue-600" /> Products Catalogue ({products.length} / {maxLimit === 999 ? 'Unlimited' : maxLimit})
+            </h3>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-800 border border-blue-200 uppercase">
+              {planSlug} Plan
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {isLimitReached
+              ? `You have reached your plan limit of ${maxLimit} products. Upgrade to list more.`
+              : `You have ${maxLimit - products.length} product listings remaining in your current plan.`}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={() => { resetForm(); setShowAddForm(true); }}
-          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-all"
-        >
-          <Plus size={15} />
-          <span>Add Product</span>
-        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isLimitReached && (
+            <Link
+              href="/employer/subscription"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all"
+            >
+              <Sparkles size={13} /> Upgrade Plan
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (isLimitReached) {
+                toast.warning(`Product limit reached (${maxLimit} max). Upgrade plan to add more.`);
+                return;
+              }
+              resetForm();
+              setShowAddForm(true);
+            }}
+            disabled={isLimitReached}
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <Plus size={15} />
+            <span>Add Product</span>
+          </button>
+        </div>
       </div>
 
       {/* Add / Edit Form Modal / Panel */}
       {showAddForm && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5 space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-slate-900">
-              {editingId ? 'Edit Product' : 'Add New Product'}
+        <div className="rounded-3xl border border-blue-200 bg-blue-50/50 p-6 space-y-4 animate-fade-in shadow-sm">
+          <div className="flex items-center justify-between border-b border-blue-200/60 pb-3">
+            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+              <Package size={16} className="text-blue-600" />
+              {editingId ? 'Edit Product' : 'Add New Product to Catalogue'}
             </h4>
-            <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600 font-bold p-1">
               <X size={16} />
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Product Name *</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Product Name *</label>
               <input
                 type="text"
                 value={form.name || ''}
                 onChange={e => setForm({ ...form, name: e.target.value })}
-                placeholder="Product name"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="e.g. Pure Theni Cardamom 1kg / PVC Pipes"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Category</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Category / Group</label>
               <input
                 type="text"
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
-                placeholder="Category"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="e.g. Agriculture / Spices / Electronics"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Price (₹) / Price Range</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Price (₹) or Price Range</label>
               <input
                 type="text"
                 value={form.priceRange || (form.price ? `₹${form.price}` : '')}
-                onChange={e => setForm({ ...form, priceRange: e.target.value })}
-                placeholder="Price or price range"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                onChange={e => {
+                  const val = e.target.value;
+                  const num = Number(val.replace(/[^0-9]/g, ''));
+                  setForm({ ...form, priceRange: val, price: isNaN(num) || num === 0 ? undefined : num });
+                }}
+                placeholder="e.g. ₹1,200 or ₹500 - ₹1,500"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Product Image URL</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Product Image URL</label>
               <input
                 type="url"
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
-                placeholder="https://..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="https://images.unsplash.com/..."
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Product Description</label>
-            <textarea
-              rows={3}
-              value={form.description || ''}
-              onChange={e => setForm({ ...form, description: e.target.value })}
-              placeholder="Provide key details about this product..."
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Keywords (comma-separated)</label>
-              <input
-                type="text"
-                value={(form.keywords || []).join(', ')}
-                onChange={e => setForm({ ...form, keywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean) })}
-                placeholder="toys, kids, education"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Website URL</label>
+            <div className="sm:col-span-2">
+              <label className="text-xs font-bold text-gray-700 block mb-1">Product / Website URL (Optional)</label>
               <input
                 type="url"
                 value={form.websiteUrl || ''}
                 onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
-                placeholder="https://..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="https://yourcompany.com/product-link"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs font-bold text-gray-700 block mb-1">Product Description</label>
+              <textarea
+                rows={3}
+                value={form.description || ''}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                placeholder="Describe product quality, dimensions, specifications, bulk order discounts..."
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
+              />
+            </div>
+            <div className="sm:col-span-2 space-y-2">
+              <label className="text-xs font-bold text-gray-700 block">Key Specifications / Bullet Highlights</label>
+              {(form.features || ['']).map((feat, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={feat}
+                    onChange={e => {
+                      const copy = [...(form.features || [])];
+                      copy[i] = e.target.value;
+                      setForm({ ...form, features: copy });
+                    }}
+                    placeholder={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`}
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none font-medium"
+                  />
+                  {(form.features || []).length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, features: (form.features || []).filter((_, idx) => idx !== i) })}
+                      className="text-gray-400 hover:text-red-600 px-2"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, features: [...(form.features || []), ''] })}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer pt-1"
+              >
+                <Plus size={13} /> Add Another Specification
+              </button>
             </div>
           </div>
 
-          {/* Action Footer */}
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-blue-200/60">
             <button
               type="button"
               onClick={resetForm}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-100 transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSaveProduct}
-              className="px-4 py-1.5 rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700"
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
             >
-              Save Product
+              {editingId ? 'Update Product' : 'Save Product'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Product List Grid */}
+      {/* Products Grid */}
       {products.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-400">
-          <Package size={32} className="mx-auto mb-2 text-slate-300" />
-          No products added yet. Click &quot;Add Product&quot; to build your catalogue.
+        <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-3 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <Package size={28} />
+          </div>
+          <h4 className="text-base font-bold text-gray-900">No Products in Catalogue Yet</h4>
+          <p className="text-xs text-gray-500 max-w-sm mx-auto">
+            Showcase your retail items, wholesale goods, or manufactured products with pricing and direct WhatsApp orders.
+          </p>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+          >
+            Add Your First Product
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {products.map(p => (
-            <div key={p.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 hover:shadow-md transition-all relative group">
-              <div className="aspect-video rounded-xl bg-slate-100 overflow-hidden relative">
-                {p.imageUrl ? (
-                  <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300">
-                    <Package size={32} />
-                  </div>
-                )}
-                {p.category && (
-                  <span className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                    {p.category}
-                  </span>
-                )}
-              </div>
-
+            <div
+              key={p.id}
+              className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+            >
               <div>
-                <h4 className="text-sm font-bold text-slate-900 line-clamp-1">{p.name}</h4>
-                <p className="text-xs font-semibold text-blue-600 mt-0.5">{p.priceRange || (p.price ? `₹${p.price}` : 'Price on Enquiry')}</p>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{p.description || 'No description provided.'}</p>
+                {/* Product Image */}
+                <div className="h-44 w-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden flex items-center justify-center border-b border-gray-100">
+                  {p.imageUrl ? (
+                    <>
+                      <div
+                        className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
+                        style={{ backgroundImage: `url(${p.imageUrl})` }}
+                      />
+                      <img src={p.imageUrl} alt={p.name} className="relative z-10 w-full h-full object-contain object-center p-2" />
+                    </>
+                  ) : (
+                    <div className="text-center text-gray-500 p-4">
+                      <Package size={36} className="mx-auto opacity-40 mb-1" />
+                      <span className="text-[10px] font-semibold">No Image</span>
+                    </div>
+                  )}
+                  <span className="absolute bottom-2 right-2 z-20 px-2.5 py-1 rounded-lg bg-slate-950/85 text-white font-black text-xs shadow-xs border border-white/20">
+                    {p.price ? `₹${Number(p.price).toLocaleString('en-IN')}` : p.priceRange || 'Price on Enquiry'}
+                  </span>
+                </div>
+
+                <div className="p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                      {p.category || 'General'}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleEdit(p)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Edit product"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Delete product"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <h4 className="text-sm font-bold text-gray-900 leading-snug">{p.name}</h4>
+                  {p.description && (
+                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{p.description}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button onClick={() => handleEdit(p)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
-                  <Edit3 size={14} />
-                </button>
-                <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
-                  <Trash2 size={14} />
+              {/* Card Footer: 1-Click WhatsApp Test */}
+              <div className="p-4 pt-0 border-t border-gray-50 mt-2">
+                <button
+                  type="button"
+                  onClick={() => testWhatsAppOrder(p)}
+                  className="w-full py-2 rounded-xl text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  style={{ background: '#25D366' }}
+                  title="Test WhatsApp customer order message"
+                >
+                  <MessageCircle size={13} /> Test WhatsApp Order
                 </button>
               </div>
             </div>

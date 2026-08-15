@@ -406,6 +406,11 @@ export default function CompanyProfilePage() {
           <CompanyProductsManager
             products={company.products || []}
             planSlug={resolvedCompany?.subscriptionPlan || 'free'}
+            companyName={company.name || 'Company'}
+            companySlug={resolvedCompany?.slug || ''}
+            phone={company.phone || '9360519460'}
+            whatsapp={company.whatsapp || company.phone || '9360519460'}
+            district={company.district || 'Theni'}
             onChange={products => setCompany({ ...company, products })}
           />
         </div>
@@ -416,6 +421,11 @@ export default function CompanyProfilePage() {
           <CompanyServicesManager
             services={company.services || []}
             planSlug={resolvedCompany?.subscriptionPlan || 'free'}
+            companyName={company.name || 'Company'}
+            companySlug={resolvedCompany?.slug || ''}
+            phone={company.phone || '9360519460'}
+            whatsapp={company.whatsapp || company.phone || '9360519460'}
+            district={company.district || 'Theni'}
             onChange={services => setCompany({ ...company, services })}
           />
         </div>

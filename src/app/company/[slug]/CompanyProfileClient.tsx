@@ -657,12 +657,25 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                         {/* CTA Buttons */}
                         <div className="flex gap-2 pt-2 border-t border-gray-100">
                           {cleanPhone && (
-                            <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(`Hi, I found your product "${p.name}" on THENIJOBS. I would like to know more about this product.`)}`}
+                            <a
+                              href={`https://wa.me/${waNum}?text=${encodeURIComponent(
+                                `🛍️ *PRODUCT ORDER / INQUIRY*\n` +
+                                `━━━━━━━━━━━━━━━━━━━━\n` +
+                                `🏢 *Company:* ${company.name}\n` +
+                                `📦 *Item:* ${p.name}\n` +
+                                `💰 *Price:* ${p.priceRange || (p.price ? `₹${Number(p.price).toLocaleString('en-IN')}` : 'Price on Request')}\n` +
+                                `📍 *Location:* ${company.district || 'Theni'}, Tamil Nadu\n` +
+                                (p.imageUrl ? `🖼️ *Photo:* ${p.imageUrl}\n` : '') +
+                                (p.websiteUrl ? `🌐 *Product Link:* ${p.websiteUrl}\n` : '') +
+                                `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug || company.id}\n` +
+                                `━━━━━━━━━━━━━━━━━━━━\n` +
+                                `Hello, I found your product on THENIJOBS Marketplace and would like to order / inquire about this. Please share availability and delivery options.`
+                              )}`}
                               target="_blank" rel="noopener noreferrer"
                               onClick={e => e.stopPropagation()}
-                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-bold hover:opacity-90 transition-all"
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-bold hover:opacity-90 transition-all shadow-xs"
                               style={{ background: '#25D366' }}>
-                              <MessageCircle size={13} /> WhatsApp
+                              <MessageCircle size={13} /> Order via WhatsApp
                             </a>
                           )}
                           {cleanPhone && (
@@ -943,11 +956,24 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 {/* Primary CTAs */}
                 <div className="flex gap-3 pt-2">
                   {cleanPhone && (
-                    <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(`Hi, I found your ${isProduct ? 'product' : 'service'} "${itemName}" on THENIJOBS. I would like to know more about this ${isProduct ? 'product' : 'service'}.`)}`}
+                    <a
+                      href={`https://wa.me/${waNum}?text=${encodeURIComponent(
+                        `🛍️ *NEW ${isProduct ? 'PRODUCT ORDER' : 'SERVICE BOOKING'}*\n` +
+                        `━━━━━━━━━━━━━━━━━━━━\n` +
+                        `🏢 *Company:* ${company.name}\n` +
+                        `${isProduct ? '📦 *Product:*' : '🔧 *Service:*'} ${itemName}\n` +
+                        `💰 *Pricing:* ${priceDisplay}\n` +
+                        `📍 *Location:* ${company.district || 'Theni'}, Tamil Nadu\n` +
+                        (item.imageUrl ? `🖼️ *Photo Reference:* ${item.imageUrl}\n` : '') +
+                        (item.websiteUrl ? `🌐 *Direct Link:* ${item.websiteUrl}\n` : '') +
+                        `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug || company.id}\n` +
+                        `━━━━━━━━━━━━━━━━━━━━\n` +
+                        `Hello, I found your ${isProduct ? 'product' : 'service'} on THENIJOBS Marketplace and would like to order / book this. Please share availability and payment/delivery details.`
+                      )}`}
                       target="_blank" rel="noopener noreferrer"
                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-bold hover:opacity-90 transition-all shadow-md"
                       style={{ background: '#25D366' }}>
-                      <MessageCircle size={16} /> Enquire Now
+                      <MessageCircle size={16} /> Order / Book via WhatsApp
                     </a>
                   )}
                   {cleanPhone && (

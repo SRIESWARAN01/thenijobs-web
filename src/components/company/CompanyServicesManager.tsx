@@ -5,7 +5,7 @@ import { ServiceItem } from '@/lib/types';
 import { hasFeaturePermission } from '@/lib/plans';
 import {
   Wrench, Plus, Trash2, Edit3, Lock, Sparkles,
-  Phone, MessageCircle, Check, X
+  Phone, MessageCircle, Check, X, ExternalLink
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
@@ -13,16 +13,34 @@ import { useToast } from '@/contexts/ToastContext';
 interface CompanyServicesManagerProps {
   services: (ServiceItem | string)[];
   planSlug?: string;
+  companyName?: string;
+  companySlug?: string;
+  phone?: string;
+  whatsapp?: string;
+  district?: string;
   onChange: (services: ServiceItem[]) => void;
 }
+
+const PLAN_SERVICE_LIMITS: Record<string, number> = {
+  free: 3,
+  basic: 3,
+  standard: 10,
+  premium: 50,
+  enterprise: 999
+};
 
 export default function CompanyServicesManager({
   services = [],
   planSlug = 'free',
+  companyName = 'Company',
+  companySlug = '',
+  phone = '9360519460',
+  whatsapp = '9360519460',
+  district = 'Theni',
   onChange,
 }: CompanyServicesManagerProps) {
-  const isEnabled = hasFeaturePermission(planSlug, 'servicesListing');
   const toast = useToast();
+  const maxLimit = PLAN_SERVICE_LIMITS[planSlug.toLowerCase()] || 3;
 
   // Normalize string[] or ServiceItem[] to ServiceItem[]
   const normalizedServices: ServiceItem[] = services.map((s, idx) => {
@@ -31,6 +49,8 @@ export default function CompanyServicesManager({
     }
     return s;
   });
+
+  const isLimitReached = normalizedServices.length >= maxLimit;
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,7 +74,12 @@ export default function CompanyServicesManager({
       return;
     }
 
-    const cleanDetails = (form.details || []).filter(d => d.trim() !== '');
+    if (!editingId && isLimitReached) {
+      toast.error(`Service Limit Reached (${maxLimit} Max)`, `Your current ${planSlug.toUpperCase()} plan allows up to ${maxLimit} services. Please upgrade to add more.`);
+      return;
+    }
+
+    const cleanDetails = (form.details || []).filter(d => d && d.trim() !== '');
 
     if (editingId) {
       const updated = normalizedServices.map(s =>
@@ -63,6 +88,7 @@ export default function CompanyServicesManager({
           : s
       );
       onChange(updated);
+      toast.success('Service updated successfully!');
     } else {
       const newItem: ServiceItem = {
         id: Date.now().toString(),
@@ -73,9 +99,11 @@ export default function CompanyServicesManager({
         category: form.category || 'Professional Services',
         imageUrl: form.imageUrl || '',
         details: cleanDetails,
+        websiteUrl: form.websiteUrl || '',
         whatsappEnquiry: form.whatsappEnquiry !== false,
       };
       onChange([...normalizedServices, newItem]);
+      toast.success('New service added to your directory!');
     }
 
     resetForm();
@@ -83,13 +111,17 @@ export default function CompanyServicesManager({
 
   const handleEdit = (s: ServiceItem) => {
     setEditingId(s.id);
-    setForm(s);
+    setForm({
+      ...s,
+      details: s.details && s.details.length > 0 ? s.details : ['']
+    });
     setShowAddForm(true);
   };
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to remove this service?')) {
       onChange(normalizedServices.filter(s => s.id !== id));
+      toast.info('Service removed.');
     }
   };
 
@@ -110,198 +142,293 @@ export default function CompanyServicesManager({
     setShowAddForm(false);
   };
 
-  if (!isEnabled) {
-    return (
-      <div className="relative overflow-hidden rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-500/5 via-white to-amber-500/10 p-8 text-center shadow-md font-outfit">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 border border-amber-500/30">
-          <Lock size={32} />
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-amber-700">
-          <Sparkles size={13} /> Premium Feature
-        </span>
-        <h3 className="mt-3 text-xl font-bold text-slate-900">Services Catalogue Disabled</h3>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-          Upgrade to our <strong className="text-slate-900 font-semibold">Standard Package (₹480/yr)</strong> or higher to list professional services, starting prices, service details, and accept WhatsApp lead enquiries.
-        </p>
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <Link
-            href="/employer/subscription"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:scale-105"
-          >
-            <span>Upgrade Subscription</span>
-            <Sparkles size={16} />
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const testWhatsAppOrder = (item: ServiceItem) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com';
+    const pageUrl = companySlug ? `${origin}/company/${companySlug}` : `${origin}/services`;
+    const priceDisplay = item.startingPrice ? `Starting ₹${item.startingPrice.toLocaleString('en-IN')}` : item.priceRange || 'Price on Enquiry';
+
+    let msg = `🛠️ *NEW SERVICE BOOKING / ENQUIRY*\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `🏢 *Company:* ${companyName}\n`;
+    msg += `🔧 *Service:* ${item.name}\n`;
+    msg += `💰 *Pricing:* ${priceDisplay}\n`;
+    msg += `📍 *Location:* ${district}, Tamil Nadu\n`;
+    if (item.imageUrl) msg += `🖼️ *Photo Reference:* ${item.imageUrl}\n`;
+    if (item.websiteUrl) msg += `🌐 *Service Link:* ${item.websiteUrl}\n`;
+    msg += `🔗 *THENIJOBS Page:* ${pageUrl}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `Hello, I found your service on THENIJOBS Marketplace and would like to inquire about booking/consultation. Please share service availability.`;
+
+    window.open(`https://wa.me/${(whatsapp || phone).replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
 
   return (
     <div className="space-y-6 font-outfit">
-      {/* Header & Add Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      {/* Header & Plan Quota */}
+      <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <Wrench size={20} className="text-blue-600" /> Services Directory ({normalizedServices.length})
-          </h3>
-          <p className="text-xs text-slate-500">List commercial, industrial, or local business services with starting prices and detail points</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Wrench size={20} className="text-blue-600" /> Services Directory ({normalizedServices.length} / {maxLimit === 999 ? 'Unlimited' : maxLimit})
+            </h3>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-800 border border-blue-200 uppercase">
+              {planSlug} Plan
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {isLimitReached
+              ? `You have reached your plan limit of ${maxLimit} services. Upgrade to list more.`
+              : `You have ${maxLimit - normalizedServices.length} service listings remaining in your current plan.`}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={() => { resetForm(); setShowAddForm(true); }}
-          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-all"
-        >
-          <Plus size={15} />
-          <span>Add Service</span>
-        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isLimitReached && (
+            <Link
+              href="/employer/subscription"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs transition-all"
+            >
+              <Sparkles size={13} /> Upgrade Plan
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              if (isLimitReached) {
+                toast.warning(`Service limit reached (${maxLimit} max). Upgrade plan to add more.`);
+                return;
+              }
+              resetForm();
+              setShowAddForm(true);
+            }}
+            disabled={isLimitReached}
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <Plus size={15} />
+            <span>Add Service</span>
+          </button>
+        </div>
       </div>
 
       {/* Add / Edit Form Modal / Panel */}
       {showAddForm && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-5 space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-slate-900">
+        <div className="rounded-3xl border border-blue-200 bg-blue-50/50 p-6 space-y-4 animate-fade-in shadow-sm">
+          <div className="flex items-center justify-between border-b border-blue-200/60 pb-3">
+            <h4 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+              <Wrench size={16} className="text-blue-600" />
               {editingId ? 'Edit Service' : 'Add New Service'}
             </h4>
-            <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600 font-bold p-1">
               <X size={16} />
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Service Name *</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Service Name *</label>
               <input
                 type="text"
                 value={form.name || ''}
                 onChange={e => setForm({ ...form, name: e.target.value })}
-                placeholder="Service name"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="e.g. GST Filing & Accounting / Solar Installation"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Category</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Category</label>
               <input
                 type="text"
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
-                placeholder="Category"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="e.g. Financial / Construction / Technical"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Starting Price (₹) / Price Range</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Starting Price (₹) or Range</label>
               <input
                 type="text"
-                value={form.priceRange || (form.startingPrice ? `From ₹${form.startingPrice}` : '')}
-                onChange={e => setForm({ ...form, priceRange: e.target.value })}
-                placeholder="Price or price range"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                value={form.priceRange || (form.startingPrice ? `₹${form.startingPrice}` : '')}
+                onChange={e => {
+                  const val = e.target.value;
+                  const num = Number(val.replace(/[^0-9]/g, ''));
+                  setForm({ ...form, priceRange: val, startingPrice: isNaN(num) || num === 0 ? undefined : num });
+                }}
+                placeholder="e.g. Starts from ₹999 or Hourly Rate"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Service Banner Image URL</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1">Service Banner Image URL</label>
               <input
                 type="url"
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
-                placeholder="https://..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="https://images.unsplash.com/..."
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Service Description</label>
-            <textarea
-              rows={3}
-              value={form.description || ''}
-              onChange={e => setForm({ ...form, description: e.target.value })}
-              placeholder="Describe your service, process, and guarantees..."
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Keywords (comma-separated)</label>
-              <input
-                type="text"
-                value={(form.keywords || []).join(', ')}
-                onChange={e => setForm({ ...form, keywords: e.target.value.split(',').map(k => k.trim()).filter(Boolean) })}
-                placeholder="plumbing, repair, maintenance"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Website URL</label>
+            <div className="sm:col-span-2">
+              <label className="text-xs font-bold text-gray-700 block mb-1">Service Page / Booking Link (Optional)</label>
               <input
                 type="url"
                 value={form.websiteUrl || ''}
                 onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
-                placeholder="https://..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                placeholder="https://yourcompany.com/service-booking"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="text-xs font-bold text-gray-700 block mb-1">Service Description</label>
+              <textarea
+                rows={3}
+                value={form.description || ''}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                placeholder="Describe your service scope, turnaround time, guarantee, and client benefits..."
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
+              />
+            </div>
+            <div className="sm:col-span-2 space-y-2">
+              <label className="text-xs font-bold text-gray-700 block">Key Inclusions / Highlights</label>
+              {(form.details || ['']).map((det, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={det}
+                    onChange={e => {
+                      const copy = [...(form.details || [])];
+                      copy[i] = e.target.value;
+                      setForm({ ...form, details: copy });
+                    }}
+                    placeholder={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`}
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none font-medium"
+                  />
+                  {(form.details || []).length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, details: (form.details || []).filter((_, idx) => idx !== i) })}
+                      className="text-gray-400 hover:text-red-600 px-2"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, details: [...(form.details || []), ''] })}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer pt-1"
+              >
+                <Plus size={13} /> Add Another Inclusion Point
+              </button>
             </div>
           </div>
 
-          {/* Action Footer */}
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-blue-200/60">
             <button
               type="button"
               onClick={resetForm}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-100 transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSaveService}
-              className="px-4 py-1.5 rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700"
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
             >
-              Save Service
+              {editingId ? 'Update Service' : 'Save Service'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Services List Grid */}
+      {/* Services Grid */}
       {normalizedServices.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-400">
-          <Wrench size={32} className="mx-auto mb-2 text-slate-300" />
-          No services added yet. Click &quot;Add Service&quot; to list your offerings.
+        <div className="bg-white rounded-3xl border border-gray-200 p-12 text-center space-y-3 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <Wrench size={28} />
+          </div>
+          <h4 className="text-base font-bold text-gray-900">No Services Listed Yet</h4>
+          <p className="text-xs text-gray-500 max-w-sm mx-auto">
+            Promote your company&apos;s repair, consulting, installation, or professional services across Theni District.
+          </p>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+          >
+            Add Your First Service
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {normalizedServices.map(s => (
-            <div key={s.id} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 hover:shadow-md transition-all relative group">
-              <div className="aspect-video rounded-xl bg-slate-100 overflow-hidden relative">
-                {s.imageUrl ? (
-                  <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-300">
-                    <Wrench size={32} />
-                  </div>
-                )}
-                {s.category && (
-                  <span className="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                    {s.category}
-                  </span>
-                )}
-              </div>
-
+            <div
+              key={s.id}
+              className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+            >
               <div>
-                <h4 className="text-sm font-bold text-slate-900 line-clamp-1">{s.name}</h4>
-                <p className="text-xs font-semibold text-blue-600 mt-0.5">{s.priceRange || (s.startingPrice ? `Starting ₹${s.startingPrice}` : 'Price on Request')}</p>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{s.description || 'No description provided.'}</p>
+                {/* Service Banner Image */}
+                <div className="h-44 w-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden flex items-center justify-center border-b border-gray-100">
+                  {s.imageUrl ? (
+                    <>
+                      <div
+                        className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
+                        style={{ backgroundImage: `url(${s.imageUrl})` }}
+                      />
+                      <img src={s.imageUrl} alt={s.name} className="relative z-10 w-full h-full object-contain object-center p-2" />
+                    </>
+                  ) : (
+                    <div className="text-center text-gray-500 p-4">
+                      <Wrench size={36} className="mx-auto opacity-40 mb-1" />
+                      <span className="text-[10px] font-semibold">No Image</span>
+                    </div>
+                  )}
+                  <span className="absolute bottom-2 right-2 z-20 px-2.5 py-1 rounded-lg bg-slate-950/85 text-white font-black text-xs shadow-xs border border-white/20">
+                    {s.startingPrice ? `Starts ₹${Number(s.startingPrice).toLocaleString('en-IN')}` : s.priceRange || 'Custom Quote'}
+                  </span>
+                </div>
+
+                <div className="p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      {s.category || 'Services'}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleEdit(s)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Edit service"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Delete service"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <h4 className="text-sm font-bold text-gray-900 leading-snug">{s.name}</h4>
+                  {s.description && (
+                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{s.description}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button onClick={() => handleEdit(s)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
-                  <Edit3 size={14} />
-                </button>
-                <button onClick={() => handleDelete(s.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
-                  <Trash2 size={14} />
+              {/* Card Footer: 1-Click WhatsApp Test */}
+              <div className="p-4 pt-0 border-t border-gray-50 mt-2">
+                <button
+                  type="button"
+                  onClick={() => testWhatsAppOrder(s)}
+                  className="w-full py-2 rounded-xl text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  style={{ background: '#25D366' }}
+                  title="Test WhatsApp customer booking message"
+                >
+                  <MessageCircle size={13} /> Test WhatsApp Inquiry
                 </button>
               </div>
             </div>

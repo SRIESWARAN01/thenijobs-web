@@ -184,7 +184,7 @@ export default function SavedJobsPage() {
                   <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto sm:flex-col sm:items-end">
                     <Link
                       href={`/jobs/${item.jobId}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-gray-900 transition-colors hover:bg-emerald-500"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700 shadow-xs"
                     >
                       <Send size={12} />
                       Apply
@@ -192,7 +192,7 @@ export default function SavedJobsPage() {
                     <button
                       type="button"
                       onClick={() => handleDelete(item.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-100 px-4 py-2 text-xs font-semibold text-rose-400 transition-colors hover:bg-rose-500/20"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
                     >
                       <Trash2 size={12} />
                       Remove

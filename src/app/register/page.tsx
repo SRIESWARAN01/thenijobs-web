@@ -196,7 +196,7 @@ export default function RegisterPage() {
                     <div className="flex items-center px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 font-medium whitespace-nowrap">🇮🇳 +91</div>
                     <div className="relative flex-1">
                       <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input type="tel" maxLength={10} placeholder="98765 43210" value={form.phone}
+                      <input type="tel" maxLength={10} placeholder="93605 19460" value={form.phone}
                         onChange={e => setForm({ ...form, phone: e.target.value })}
                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                     </div>

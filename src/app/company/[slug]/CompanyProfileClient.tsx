@@ -69,19 +69,27 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-6 mt-4">
           
           {/* Cover Image / Gradient Banner */}
-          <div className={`h-44 sm:h-56 relative bg-gradient-to-r ${themeGradient}`}>
+          <div className="w-full h-48 sm:h-64 md:h-72 relative bg-slate-950 flex items-center justify-center overflow-hidden">
             {company.coverUrl || company.coverImage ? (
-              <img
-                src={company.coverUrl || company.coverImage}
-                alt={company.name}
-                className="w-full h-full object-cover"
-              />
+              <>
+                <div
+                  className="absolute inset-0 bg-cover bg-center blur-md opacity-30 scale-105"
+                  style={{ backgroundImage: `url(${company.coverUrl || company.coverImage})` }}
+                />
+                <img
+                  src={company.coverUrl || company.coverImage}
+                  alt={company.name}
+                  className="relative z-10 w-full h-full object-cover sm:object-contain object-center"
+                />
+              </>
             ) : (
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+              <div className={`w-full h-full bg-gradient-to-r ${themeGradient} relative`}>
+                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px]" />
+              </div>
             )}
             
             {company.isPremium && (
-              <div className="absolute top-4 right-4 bg-amber-400 text-amber-950 px-3 py-1 rounded-full text-xs font-extrabold shadow-md flex items-center gap-1">
+              <div className="absolute top-4 right-4 z-20 bg-amber-400 text-amber-950 px-3 py-1 rounded-full text-xs font-extrabold shadow-md flex items-center gap-1">
                 <Crown size={13} /> PREMIUM BUSINESS
               </div>
             )}

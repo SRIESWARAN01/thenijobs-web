@@ -136,7 +136,7 @@ export default function EmployerJobsPage() {
         <h2 className="text-lg font-bold text-gray-900 mb-2">No Company Profile</h2>
         <p className="text-sm text-gray-500 max-w-sm mb-5">Register your company profile first to post and manage jobs.</p>
         <Link href="/employer/company-profile"
-          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-900" style={{ background: '#2563EB' }}>
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-all" style={{ background: '#2563EB' }}>
           Setup Company Profile
         </Link>
       </div>
@@ -152,7 +152,7 @@ export default function EmployerJobsPage() {
           <p className="text-sm text-gray-500 mt-0.5">Manage and monitor all your job postings</p>
         </div>
         <Link href="/employer/post-job"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-900 transition-all hover:opacity-90"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 shadow-sm"
           style={{ background: '#2563EB' }}>
           <Plus size={16} /> Post New Job
         </Link>

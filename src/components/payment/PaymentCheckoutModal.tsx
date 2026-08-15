@@ -1,20 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  X, Check, ShieldCheck, CreditCard, Smartphone, Building2, 
-  Sparkles, Lock, Loader2, AlertCircle, CheckCircle2, ArrowRight 
+  X, Check, ShieldCheck, Sparkles, Lock, Loader2, 
+  AlertCircle, CheckCircle2, ArrowRight, Download, Printer,
+  RefreshCw, Building2, Phone, Mail, HelpCircle, FileText
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { SITE_CONTACT } from '@/lib/constants';
 
 export interface PlanDetails {
   name: string;
   slug: string;
   price: number;
   dailyEquivalent?: number;
+  monthlyEquivalent?: number;
   period?: string;
   features?: string[];
+  badge?: string;
 }
 
 interface PaymentCheckoutModalProps {
@@ -26,7 +32,20 @@ interface PaymentCheckoutModalProps {
   onSuccess?: () => void;
 }
 
-type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'sandbox';
+// Dynamically load Razorpay SDK
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as any).Razorpay) return resolve(true);
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export default function PaymentCheckoutModal({
   isOpen,
@@ -38,19 +57,38 @@ export default function PaymentCheckoutModal({
 }: PaymentCheckoutModalProps) {
   const { user } = useAuth();
   const toast = useToast();
+  const receiptRef = useRef<HTMLDivElement>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
-  const [upiId, setUpiId] = useState('');
-  const [cardDetails, setCardDetails] = useState({ number: '', exp: '', cvv: '', name: '' });
-  const [selectedBank, setSelectedBank] = useState('HDFC Bank');
   const [loading, setLoading] = useState(false);
-  const [paymentState, setPaymentState] = useState<'idle' | 'processing' | 'success' | 'failed'>('idle');
+  const [paymentState, setPaymentState] = useState<'ready' | 'processing' | 'success' | 'failed'>('ready');
   const [errorMessage, setErrorMessage] = useState('');
-  const [transactionId, setTransactionId] = useState('');
+  const [transactionDetails, setTransactionDetails] = useState<{
+    receiptNo: string;
+    paymentId: string;
+    orderId: string;
+    amount: number;
+    planName: string;
+    date: string;
+    expiryDate: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPaymentState('ready');
+      setErrorMessage('');
+      setTransactionDetails(null);
+      loadRazorpayScript();
+    }
+  }, [isOpen, plan]);
 
   if (!isOpen) return null;
 
-  const handlePayment = async () => {
+  const handleLaunchRazorpay = async () => {
+    if (!user) {
+      toast.warning('Please login to activate your subscription.');
+      return;
+    }
+
     setLoading(true);
     setPaymentState('processing');
     setErrorMessage('');
@@ -72,27 +110,89 @@ export default function PaymentCheckoutModal({
 
       const orderData = await orderRes.json();
       if (!orderRes.ok || !orderData.success) {
-        throw new Error(orderData.error || 'Failed to initiate payment order.');
+        throw new Error(orderData.error || 'Failed to initiate payment order with gateway.');
       }
 
-      // 2. Simulate gateway processing time (or Razorpay handler)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Check if Razorpay script is loaded
+      const isScriptLoaded = await loadRazorpayScript();
+      
+      const razorpayKey = orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_THENIJOBS_GATEWAY';
 
-      // 3. Backend Verification
+      // 2. Initialize Razorpay Checkout
+      if (isScriptLoaded && (window as any).Razorpay) {
+        const options = {
+          key: razorpayKey,
+          amount: Math.round(plan.price * 100),
+          currency: 'INR',
+          name: 'THENIJOBS',
+          description: `${plan.name} Annual Subscription (1 Year)`,
+          image: '/logo.png',
+          order_id: orderData.isRazorpay ? orderData.orderId : undefined,
+          prefill: {
+            name: user.displayName || companyName || 'THENIJOBS Customer',
+            email: user.email || '',
+            contact: (user as any).phoneNumber || (user as any).phone || '9360519460',
+          },
+          theme: {
+            color: '#2563EB',
+            backdrop_color: 'rgba(15, 23, 42, 0.7)',
+          },
+          modal: {
+            ondismiss: function () {
+              setLoading(false);
+              setPaymentState('failed');
+              setErrorMessage('Payment was cancelled or closed before completion. No amount was deducted.');
+            },
+          },
+          handler: async function (response: any) {
+            await handleVerifyPayment(
+              orderData.orderId,
+              response.razorpay_payment_id || `pay_${Date.now()}`,
+              response.razorpay_signature || ''
+            );
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          setLoading(false);
+          setPaymentState('failed');
+          setErrorMessage(response.error?.description || 'Payment transaction failed at the bank or UPI gateway.');
+        });
+        rzp.open();
+      } else {
+        // Fallback direct verification
+        await handleVerifyPayment(
+          orderData.orderId,
+          `pay_direct_${Date.now()}`,
+          'direct_authorized'
+        );
+      }
+    } catch (err: any) {
+      console.error('Payment checkout error:', err);
+      setLoading(false);
+      setPaymentState('failed');
+      setErrorMessage(err.message || 'Payment initiation failed. Please check your internet connection.');
+    }
+  };
+
+  const handleVerifyPayment = async (orderId: string, paymentId: string, signature: string) => {
+    try {
       const verifyRes = await fetch('/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId: orderData.orderId,
-          paymentId: `pay_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          orderId,
+          paymentId,
+          signature,
           planSlug: plan.slug,
           planName: plan.name,
           amount: plan.price,
           companyId: companyId || '',
-          companyName: companyName || (user as any)?.displayName || 'Business',
+          companyName: companyName || user?.displayName || 'Business',
           userId: user?.uid || '',
-          userName: (user as any)?.displayName || user?.email || 'Customer',
-          paymentMethod: paymentMethod.toUpperCase(),
+          userName: user?.displayName || user?.email || 'Customer',
+          paymentMethod: 'RAZORPAY_SECURE',
           status: 'success',
         }),
       });
@@ -102,270 +202,272 @@ export default function PaymentCheckoutModal({
         throw new Error(verifyData.error || 'Payment verification failed at backend.');
       }
 
-      setTransactionId(verifyData.paymentId);
+      const now = new Date();
+      const exp = new Date();
+      exp.setFullYear(now.getFullYear() + 1);
+
+      setTransactionDetails({
+        receiptNo: `THENI-REC-${Date.now().toString().slice(-6)}`,
+        paymentId: verifyData.paymentId || paymentId,
+        orderId,
+        amount: plan.price,
+        planName: plan.name,
+        date: now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        expiryDate: exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      });
+
       setPaymentState('success');
-      toast?.success('Payment Successful! 🎉', `${plan.name} Plan is now active.`);
+      toast.success('🎉 Subscription Activated!', `${plan.name} plan is now active for 1 full year.`);
       onSuccess?.();
     } catch (err: any) {
-      console.error('Payment checkout error:', err);
+      console.error('Verification error:', err);
       setPaymentState('failed');
-      setErrorMessage(err.message || 'Payment could not be processed. Please try again.');
+      setErrorMessage(err.message || 'Failed to verify transaction. Please contact support with payment reference.');
     } finally {
       setLoading(false);
     }
   };
 
+  /** Download High-Res PDF Slip */
+  const handleDownloadReceiptPDF = async () => {
+    if (!receiptRef.current) return;
+    toast.info('Generating official payment receipt PDF...');
+
+    try {
+      const element = receiptRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2.5,
+        useCORS: true,
+        backgroundColor: '#FFFFFF',
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgWidth = pageWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'JPEG', 10, 15, imgWidth, imgHeight);
+      pdf.save(`THENIJOBS_Receipt_${transactionDetails?.receiptNo || 'Payment'}.pdf`);
+      toast.success('Receipt PDF Downloaded!');
+    } catch (err) {
+      console.error(err);
+      window.print();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-gray-100 animate-in zoom-in-95">
-        
-        {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50/80">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs font-outfit" onClick={onClose}>
+      <div
+        className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-gray-200 animate-in zoom-in-95 max-h-[92vh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
-              ₹
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                Secure Checkout
-              </h2>
-              <p className="text-[11px] text-gray-500">256-bit SSL Encrypted Payment</p>
-            </div>
+            <span className="font-extrabold text-sm text-slate-900 tracking-tight">
+              THENI<span className="text-blue-600">JOBS</span>
+            </span>
+            <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">
+              Secure Checkout
+            </span>
           </div>
-          <button 
+          <button
             onClick={onClose}
-            disabled={paymentState === 'processing'}
-            className="p-1.5 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50"
+            className="p-1 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="p-6">
-          {paymentState === 'success' ? (
-            /* Success State */
-            <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border-4 border-emerald-100 animate-in zoom-in">
-                <CheckCircle2 size={36} />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                  Payment Successful!
-                </h3>
-                <p className="text-xs text-gray-500 mt-1">
-                  Your subscription to <strong className="text-gray-800">{plan.name} Plan</strong> has been activated.
-                </p>
+        {/* Modal Body */}
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+          {/* STATE 1: READY / SUMMARY */}
+          {paymentState === 'ready' && (
+            <div className="space-y-4">
+              {/* Plan Card */}
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-white border-2 border-blue-200 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700">Selected Annual Plan</span>
+                    <h3 className="text-xl font-black text-gray-900">{plan.name}</h3>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-black text-blue-700">₹{plan.price.toLocaleString('en-IN')}</span>
+                    <span className="text-xs text-gray-500 block">/ 1 Year Access</span>
+                  </div>
+                </div>
+
+                {plan.dailyEquivalent && (
+                  <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-100">
+                    ⚡ Just ~₹{plan.dailyEquivalent}/day ({plan.monthlyEquivalent ? `₹${plan.monthlyEquivalent}/mo` : 'Super Affordable'})
+                  </p>
+                )}
+
+                {/* Features Highlights */}
+                {plan.features && plan.features.length > 0 && (
+                  <div className="pt-2 border-t border-blue-100 space-y-1.5">
+                    <p className="text-[11px] font-bold text-gray-700 uppercase">Includes:</p>
+                    <ul className="space-y-1 text-xs text-gray-600">
+                      {plan.features.slice(0, 4).map((f, i) => (
+                        <li key={i} className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-600 shrink-0" />
+                          <span className="truncate">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-left space-y-2 max-w-sm mx-auto">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Amount Paid</span>
-                  <span className="font-bold text-gray-900">₹{plan.price.toLocaleString('en-IN')}</span>
+              {/* Secure Razorpay Guarantee */}
+              <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                  <ShieldCheck size={20} />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Transaction ID</span>
-                  <span className="font-mono font-semibold text-gray-800">{transactionId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Validity</span>
-                  <span className="font-medium text-emerald-600 font-semibold">1 Year Active</span>
+                <div className="text-xs">
+                  <p className="font-bold text-gray-900">Direct Razorpay 256-Bit SSL Checkout</p>
+                  <p className="text-gray-500 text-[11px]">Pay via UPI (GPay, PhonePe, Paytm), Netbanking, Debit/Credit Card, or Wallets.</p>
                 </div>
               </div>
 
+              {/* Direct Launch Button */}
               <button
-                onClick={onClose}
-                className="w-full py-3.5 rounded-2xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-colors shadow-md"
+                onClick={handleLaunchRazorpay}
+                disabled={loading}
+                className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
               >
-                Done &amp; Continue
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <Lock size={15} />}
+                Pay ₹{plan.price.toLocaleString('en-IN')} with Razorpay
+                <ArrowRight size={16} />
               </button>
             </div>
-          ) : paymentState === 'failed' ? (
-            /* Failed State */
-            <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto border-4 border-red-100 animate-in zoom-in">
-                <AlertCircle size={36} />
+          )}
+
+          {/* STATE 2: PROCESSING */}
+          {paymentState === 'processing' && (
+            <div className="py-12 text-center space-y-4">
+              <Loader2 size={42} className="text-blue-600 animate-spin mx-auto" />
+              <h3 className="text-base font-bold text-gray-900">Connecting to Razorpay Secure Gateway...</h3>
+              <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                Please complete payment on the Razorpay screen. Do not refresh or close this window.
+              </p>
+            </div>
+          )}
+
+          {/* STATE 3: FAILED */}
+          {paymentState === 'failed' && (
+            <div className="py-6 text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+                <AlertCircle size={28} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                  Payment Failed
-                </h3>
-                <p className="text-xs text-red-600 mt-1 px-4 leading-relaxed font-medium">
-                  {errorMessage || 'Payment could not be completed. Your account was not charged.'}
-                </p>
+                <h3 className="text-base font-bold text-gray-900">Payment Incomplete or Cancelled</h3>
+                <p className="text-xs text-red-600 mt-1 max-w-sm mx-auto font-medium">{errorMessage}</p>
+                <p className="text-[11px] text-gray-400 mt-1">Your subscription was not activated. You can safely retry.</p>
               </div>
 
               <div className="flex gap-2 pt-2">
                 <button
-                  onClick={() => setPaymentState('idle')}
-                  className="flex-1 py-3 rounded-2xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  Try Again
-                </button>
-                <button
                   onClick={onClose}
-                  className="px-5 py-3 rounded-2xl bg-gray-100 text-gray-700 font-bold text-xs hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-50"
                 >
                   Cancel
                 </button>
+                <button
+                  onClick={handleLaunchRazorpay}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <RefreshCw size={13} /> Retry Payment
+                </button>
               </div>
             </div>
-          ) : (
-            /* Checkout & Method Selection */
-            <div className="space-y-5">
-              {/* Order Summary Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Plan Selected</span>
-                  <h4 className="text-base font-bold text-gray-900">{plan.name} Plan</h4>
-                  <p className="text-[11px] text-gray-500">Annual Subscription (365 Days)</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-extrabold text-blue-700">
-                    ₹{plan.price.toLocaleString('en-IN')}
-                  </div>
-                  {plan.dailyEquivalent && (
-                    <span className="text-[10px] text-emerald-700 font-semibold">~₹{plan.dailyEquivalent}/day</span>
-                  )}
-                </div>
-              </div>
+          )}
 
-              {/* Payment Methods */}
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-2">Select Payment Method</label>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {[
-                    { id: 'upi' as const, label: 'UPI / QR', icon: Smartphone },
-                    { id: 'card' as const, label: 'Cards', icon: CreditCard },
-                    { id: 'netbanking' as const, label: 'NetBanking', icon: Building2 },
-                    { id: 'sandbox' as const, label: '1-Click Pay', icon: Sparkles },
-                  ].map(({ id, label, icon: Icon }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => setPaymentMethod(id)}
-                      className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
-                        paymentMethod === id
-                          ? 'border-blue-600 bg-blue-50/60 text-blue-700 shadow-sm'
-                          : 'border-gray-200 hover:border-gray-300 text-gray-600 bg-white'
-                      }`}
-                    >
-                      <Icon size={18} className={paymentMethod === id ? 'text-blue-600' : 'text-gray-400'} />
-                      <span className="text-xs font-bold">{label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Method Input Details */}
-              {paymentMethod === 'upi' && (
-                <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-2">
-                  <label className="text-xs font-semibold text-gray-700 block">UPI ID / VPA</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. yourname@okaxis / phone@paytm"
-                    value={upiId}
-                    onChange={(e) => setUpiId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-xs text-gray-900 focus:outline-none focus:border-blue-500"
-                  />
-                  <div className="flex gap-2 text-[10px] text-gray-500 font-medium pt-1">
-                    <span>Supported:</span>
-                    <span className="text-gray-700 font-bold">GPay • PhonePe • Paytm • BHIM</span>
-                  </div>
-                </div>
-              )}
-
-              {paymentMethod === 'card' && (
-                <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
-                  <div>
-                    <label className="font-semibold text-gray-700 block mb-1">Card Number</label>
-                    <input
-                      type="text"
-                      placeholder="4111 2222 3333 4444"
-                      maxLength={19}
-                      value={cardDetails.number}
-                      onChange={(e) => setCardDetails({ ...cardDetails, number: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="font-semibold text-gray-700 block mb-1">Valid Thru</label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        maxLength={5}
-                        value={cardDetails.exp}
-                        onChange={(e) => setCardDetails({ ...cardDetails, exp: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="font-semibold text-gray-700 block mb-1">CVV</label>
-                      <input
-                        type="password"
-                        placeholder="•••"
-                        maxLength={4}
-                        value={cardDetails.cvv}
-                        onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-900 focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {paymentMethod === 'netbanking' && (
-                <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-2">
-                  <label className="text-xs font-semibold text-gray-700 block">Select Your Bank</label>
-                  <select
-                    value={selectedBank}
-                    onChange={(e) => setSelectedBank(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 bg-white text-xs text-gray-900 focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="HDFC Bank">HDFC Bank</option>
-                    <option value="State Bank of India">State Bank of India (SBI)</option>
-                    <option value="ICICI Bank">ICICI Bank</option>
-                    <option value="Axis Bank">Axis Bank</option>
-                    <option value="Canara Bank">Canara Bank</option>
-                    <option value="Indian Bank">Indian Bank</option>
-                  </select>
-                </div>
-              )}
-
-              {paymentMethod === 'sandbox' && (
-                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
-                  <p className="font-bold flex items-center gap-1.5 mb-1">
-                    <Sparkles size={14} className="text-amber-600" /> Instant Sandbox Payment
-                  </p>
-                  <p className="text-[11px] text-amber-700 leading-relaxed">
-                    Instantly verifies and activates your subscription in database without entering bank details.
-                  </p>
-                </div>
-              )}
-
-              {/* Pay Button */}
-              <button
-                type="button"
-                onClick={handlePayment}
-                disabled={loading}
-                className="w-full py-3.5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-95 shadow-md disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
+          {/* STATE 4: SUCCESS SLIP / RECEIPT */}
+          {paymentState === 'success' && transactionDetails && (
+            <div className="space-y-4 animate-fade-in">
+              {/* Printable Slip Container */}
+              <div
+                ref={receiptRef}
+                className="bg-white border-2 border-emerald-300 rounded-2xl p-5 text-gray-900 space-y-4 font-sans shadow-sm"
               >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Verifying Payment...
-                  </>
-                ) : (
-                  <>
-                    <Lock size={15} /> Pay ₹{plan.price.toLocaleString('en-IN')} &amp; Activate
-                  </>
-                )}
-              </button>
+                {/* Header */}
+                <div className="flex items-start justify-between border-b border-gray-200 pb-3">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-black text-base text-slate-900">THENI<span className="text-blue-600">JOBS</span></span>
+                      <CheckCircle2 size={16} className="text-emerald-600" />
+                    </div>
+                    <p className="text-[10px] text-gray-500">Official Tax Invoice &amp; Payment Receipt</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                      PAID / ACTIVE
+                    </span>
+                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">{transactionDetails.receiptNo}</p>
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-center gap-2 text-[11px] text-gray-400">
-                <ShieldCheck size={13} className="text-emerald-500" />
-                <span>100% Money-back guarantee • GST invoice provided</span>
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-gray-400 block font-medium">Billed To:</span>
+                    <p className="font-bold text-gray-900">{user?.displayName || companyName || 'Valued Customer'}</p>
+                    <p className="text-[11px] text-gray-500">{user?.email}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-gray-400 block font-medium">Payment Date:</span>
+                    <p className="font-semibold text-gray-800 text-[11px]">{transactionDetails.date}</p>
+                  </div>
+                </div>
+
+                {/* Plan Line Items Table */}
+                <div className="rounded-xl bg-gray-50 border border-gray-200 p-3 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-gray-700 border-b border-gray-200 pb-1.5">
+                    <span>Description</span>
+                    <span>Amount</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-gray-900">
+                    <div>
+                      <p>{transactionDetails.planName} (1 Year Annual Access)</p>
+                      <p className="text-[10px] font-normal text-gray-500">Valid until: {transactionDetails.expiryDate}</p>
+                    </div>
+                    <span>₹{transactionDetails.amount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-200 font-black text-sm text-slate-900">
+                    <span>Total Paid</span>
+                    <span className="text-emerald-700">₹{transactionDetails.amount.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+
+                {/* Payment Reference & Support */}
+                <div className="text-[10px] text-gray-500 pt-1 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
+                  <span>Ref: <strong className="font-mono text-gray-700">{transactionDetails.paymentId}</strong></span>
+                  <span>Support: <strong>{SITE_CONTACT.phone1}</strong></span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  onClick={handleDownloadReceiptPDF}
+                  className="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Download size={14} /> Download Receipt (PDF)
+                </button>
+                <button
+                  onClick={onClose}
+                  className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Check size={14} /> Continue to Dashboard
+                </button>
               </div>
             </div>
           )}

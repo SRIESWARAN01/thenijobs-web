@@ -241,8 +241,8 @@ button {
   }
 
   ::selection {
-    background-color: rgba(37, 99, 235, 0.12);
-    color: var(--vk-primary-dark);
+    background-color: #2563EB;
+    color: #FFFFFF;
   }
 
   ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -974,66 +974,154 @@ button {
   .scroll-snap-start { scroll-snap-align: start; }
 }
 
-/* ===== PORTAL CONTENT DARK-TO-LIGHT NORMALIZATION =====
-   These rules fix dark-theme text/bg/border classes that appear inside
-   the light-background portal content areas (employer/admin/seeker).
-   Scoped to avoid affecting intentional white text in hero/cover sections. */
+/* ===== WCAG CONTRAST & VISIBILITY ENGINE =====
+   Ensures crystal clear readability across Landing Page, Job Seeker, Employer, and Admin portals.
+   Light surface -> Crisp dark text (#0F172A / #1E293B / #334155)
+   Dark surface / Solid color button / Hero banner -> Crisp white text (#FFFFFF / #F8FAFC) */
 
-/* Headings & body text that say text-white but are on white bg */
-main h1.text-white,
-main h2.text-white,
-main h3.text-white,
-main h4.text-white,
-main p.text-white,
-main span.text-white,
-main div.text-white,
-main label.text-white {
-  color: #0F172A !important;
+/* 1. BUTTONS & COLORED CONTAINERS: Always ensure crisp white text */
+button[class*="bg-blue-"],
+button[class*="bg-emerald-"],
+button[class*="bg-indigo-"],
+button[class*="bg-purple-"],
+button[class*="bg-violet-"],
+button[class*="bg-slate-900"],
+button[class*="bg-slate-800"],
+button[class*="bg-gray-900"],
+button[class*="bg-gray-800"],
+button[class*="bg-black"],
+button.vk-btn-primary,
+button.vk-btn-secondary,
+button.vk-btn-danger,
+button.btn-gradient,
+a[class*="bg-blue-600"],
+a[class*="bg-blue-700"],
+a[class*="bg-emerald-600"],
+a[class*="bg-emerald-700"],
+a[class*="bg-indigo-600"],
+a[class*="bg-indigo-700"],
+a[class*="bg-purple-600"],
+a[class*="bg-slate-900"],
+a[class*="bg-slate-800"],
+a[class*="bg-gray-900"],
+a[class*="bg-gray-800"],
+a.vk-btn-primary,
+a.vk-btn-secondary,
+a.btn-gradient,
+.btn-primary,
+.bg-gradient-to-r,
+.bg-gradient-to-b,
+.bg-gradient-to-br,
+[class*="from-blue-6"],
+[class*="from-blue-7"],
+[class*="from-slate-9"],
+[class*="from-slate-8"],
+[class*="from-indigo-6"],
+[class*="from-indigo-7"],
+[class*="from-purple-6"],
+[class*="from-purple-7"],
+footer[class*="bg-gray-900"],
+footer[class*="bg-slate-900"],
+.company-profile-cover {
+  color: #FFFFFF !important;
 }
 
-/* Fix pale gray text classes on white backgrounds */
-main .text-gray-300:not(.company-profile-cover *):not(footer *):not([class*="bg-gradient"] *) {
+/* Ensure child elements inside dark buttons and banners keep white/light text */
+button[class*="bg-blue-"] *,
+button[class*="bg-emerald-"] *,
+button[class*="bg-indigo-"] *,
+button[class*="bg-purple-"] *,
+button[class*="bg-slate-900"] *,
+button[class*="bg-slate-800"] *,
+button[class*="bg-gray-900"] *,
+button[class*="bg-gray-800"] *,
+button[class*="bg-black"] *,
+button.vk-btn-primary *,
+button.vk-btn-secondary *,
+button.vk-btn-danger *,
+button.btn-gradient *,
+a[class*="bg-blue-600"] *,
+a[class*="bg-blue-700"] *,
+a[class*="bg-emerald-600"] *,
+a[class*="bg-emerald-700"] *,
+a[class*="bg-indigo-600"] *,
+a[class*="bg-slate-900"] *,
+a[class*="bg-slate-800"] *,
+a[class*="bg-gray-900"] *,
+a[class*="bg-gray-800"] *,
+a.vk-btn-primary *,
+a.vk-btn-secondary *,
+a.btn-gradient *,
+[class*="from-blue-6"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
+[class*="from-blue-7"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
+[class*="from-slate-9"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
+[class*="from-slate-8"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
+[class*="from-indigo-6"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
+footer[class*="bg-gray-900"] h1,
+footer[class*="bg-gray-900"] h2,
+footer[class*="bg-gray-900"] h3,
+footer[class*="bg-gray-900"] h4,
+footer[class*="bg-gray-900"] h5,
+footer[class*="bg-gray-900"] h6,
+footer[class*="bg-slate-900"] h1,
+footer[class*="bg-slate-900"] h2,
+footer[class*="bg-slate-900"] h3,
+footer[class*="bg-slate-900"] h4,
+footer[class*="bg-slate-900"] h5,
+footer[class*="bg-slate-900"] h6 {
+  color: inherit;
+}
+
+/* 2. LIGHT SURFACES: High contrast text hierarchy */
+.bg-white,
+.bg-slate-50,
+.bg-gray-50,
+.vk-card,
+.vk-preview-panel,
+.vk-stat-card,
+.vk-job-card {
+  color: #0F172A;
+}
+
+/* Headings on light background */
+.bg-white h1:not([class*="text-white"]),
+.bg-white h2:not([class*="text-white"]),
+.bg-white h3:not([class*="text-white"]),
+.bg-white h4:not([class*="text-white"]),
+.bg-slate-50 h1:not([class*="text-white"]),
+.bg-slate-50 h2:not([class*="text-white"]),
+.bg-slate-50 h3:not([class*="text-white"]),
+.bg-slate-50 h4:not([class*="text-white"]),
+.vk-card h1, .vk-card h2, .vk-card h3, .vk-card h4 {
+  color: #0F172A;
+}
+
+/* 3. ACCENT COLORS WITH WCAG AA CONTRAST */
+.text-brand-blue { color: #2563EB; }
+.text-brand-emerald { color: #059669; }
+.text-brand-purple { color: #7C3AED; }
+.text-brand-amber { color: #B45309; }
+
+/* 4. CRISP BORDERS ON LIGHT CARDS */
+.border-subtle { border-color: #E2E8F0; }
+.border-medium { border-color: #CBD5E1; }
+.border-strong { border-color: #94A3B8; }
+
+/* 5. FORM INPUTS & LABELS ACCESSIBILITY */
+label {
+  color: #1E293B;
+  font-weight: 600;
+}
+
+/* Fix pale text classes on plain white surfaces */
+.bg-white > .text-gray-300,
+.bg-slate-50 > .text-gray-300 {
   color: #475569 !important;
 }
-main .text-gray-400:not(.company-profile-cover *):not(footer *):not([class*="bg-gradient"] *) {
+.bg-white > .text-gray-400,
+.bg-slate-50 > .text-gray-400 {
   color: #64748B !important;
 }
-
-/* Fix dark-theme accent colors to readable versions on white */
-main .text-cyan-400 { color: #2563EB !important; }
-main .text-amber-300 { color: #B45309 !important; }
-main .text-amber-400:not([class*="bg-amber"] *) { color: #D97706 !important; }
-main .text-rose-300 { color: #B91C1C !important; }
-main .text-rose-200 { color: #DC2626 !important; }
-main .text-emerald-300 { color: #059669 !important; }
-main .text-emerald-400 { color: #059669 !important; }
-
-/* Fix nearly-invisible dark-theme backgrounds */
-main .bg-white\/5 { background-color: #F1F5F9 !important; }
-main .bg-white\/\[0\.04\] { background-color: #FFFFFF !important; }
-main .bg-white\/\[0\.06\] { background-color: #FFFFFF !important; }
-
-/* Fix dark-theme border classes */
-main .border-white\/\[0\.08\] { border-color: #CBD5E1 !important; }
-main .border-white\/\[0\.06\] { border-color: #E2E8F0 !important; }
-main .border-white\/10 { border-color: #E2E8F0 !important; }
-
-/* Fix dark-theme opacity-based status backgrounds */
-main .bg-amber-500\/5 { background-color: #FFFBEB !important; }
-main .bg-amber-500\/10 { background-color: #FEF3C7 !important; }
-main .border-amber-500\/20 { border-color: #FDE68A !important; }
-main .bg-cyan-500\/5 { background-color: #EFF6FF !important; }
-main .bg-cyan-500\/10 { background-color: #DBEAFE !important; }
-main .border-cyan-500\/20 { border-color: #BFDBFE !important; }
-main .bg-rose-500\/5 { background-color: #FEF2F2 !important; }
-main .bg-rose-500\/10 { background-color: #FEE2E2 !important; }
-main .border-rose-500\/20 { border-color: #FECACA !important; }
-main .bg-emerald-500\/5 { background-color: #ECFDF5 !important; }
-main .bg-emerald-500\/10 { background-color: #D1FAE5 !important; }
-main .border-emerald-500\/20 { border-color: #A7F3D0 !important; }
-
-/* Fix the logo avatar border from dark theme */
-main .border-\[\#0d0d20\] { border-color: #FFFFFF !important; }
 
 /* ===== KEYFRAMES ===== */
 @keyframes vk-shimmer {

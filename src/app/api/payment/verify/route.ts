@@ -38,7 +38,7 @@ export async function POST(request: Request) {
           amount: { integerValue: String(amount || 0) },
           plan: { stringValue: planSlug || 'standard' },
           status: { stringValue: 'failed' },
-          paymentMethod: { stringValue: paymentMethod || 'UPI' },
+          paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
           createdAt: { timestampValue: new Date().toISOString() },
         }
       };
@@ -68,14 +68,14 @@ export async function POST(request: Request) {
         orderId: { stringValue: orderId },
         paymentId: { stringValue: verifiedPaymentId },
         userId: { stringValue: userId },
-        userName: { stringValue: userName || 'User' },
+        userName: { stringValue: userName || 'Customer' },
         companyId: { stringValue: companyId || '' },
         companyName: { stringValue: companyName || 'Business' },
         amount: { integerValue: String(amount || 0) },
         plan: { stringValue: planSlug || 'standard' },
         planName: { stringValue: planName || 'Standard Plan' },
         status: { stringValue: 'captured' },
-        paymentMethod: { stringValue: paymentMethod || 'UPI' },
+        paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
         createdAt: { timestampValue: now.toISOString() },
       }
     };
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
         startDate: { timestampValue: now.toISOString() },
         endDate: { timestampValue: expiryDate.toISOString() },
         autoRenew: { booleanValue: true },
-        paymentMethod: { stringValue: paymentMethod || 'UPI' },
+        paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
         createdAt: { timestampValue: now.toISOString() },
         updatedAt: { timestampValue: now.toISOString() },
       }
@@ -116,18 +116,37 @@ export async function POST(request: Request) {
         fields: {
           subscriptionPlan: { stringValue: planSlug || 'standard' },
           isPremium: { booleanValue: true },
+          planStartDate: { timestampValue: now.toISOString() },
+          planEndDate: { timestampValue: expiryDate.toISOString() },
           updatedAt: { timestampValue: now.toISOString() },
         }
       };
 
-      await fetch(`${FIRESTORE_BASE}/companies/${companyId}?updateMask.fieldPaths=subscriptionPlan&updateMask.fieldPaths=isPremium&updateMask.fieldPaths=updatedAt&key=${API_KEY}`, {
+      await fetch(`${FIRESTORE_BASE}/companies/${companyId}?updateMask.fieldPaths=subscriptionPlan&updateMask.fieldPaths=isPremium&updateMask.fieldPaths=planStartDate&updateMask.fieldPaths=planEndDate&updateMask.fieldPaths=updatedAt&key=${API_KEY}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(companyPatch),
       });
     }
 
-    // 4. Create user notification
+    // 4. Update user record
+    if (userId) {
+      const userPatch = {
+        fields: {
+          subscriptionPlan: { stringValue: planSlug || 'standard' },
+          isPremium: { booleanValue: true },
+          updatedAt: { timestampValue: now.toISOString() },
+        }
+      };
+
+      await fetch(`${FIRESTORE_BASE}/users/${userId}?updateMask.fieldPaths=subscriptionPlan&updateMask.fieldPaths=isPremium&updateMask.fieldPaths=updatedAt&key=${API_KEY}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userPatch),
+      });
+    }
+
+    // 5. Create user notification
     const notificationDoc = {
       fields: {
         userId: { stringValue: userId },

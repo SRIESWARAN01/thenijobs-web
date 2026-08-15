@@ -33,9 +33,9 @@ function BusinessCard({ biz }: { biz: Company }) {
     <Link href={`/company/${biz.slug || biz.id}`} className="block group">
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md hover:border-blue-100 transition-all duration-200 h-full flex flex-col">
         {/* Cover */}
-        <div className="h-20 relative bg-gradient-to-r from-blue-600 to-indigo-700 overflow-hidden">
+        <div className="h-28 sm:h-32 w-full relative bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 overflow-hidden flex items-center justify-center">
           {biz.coverUrl ? (
-            <img src={biz.coverUrl} alt={biz.name} className="w-full h-full object-cover" />
+            <img src={biz.coverUrl} alt={biz.name} className="w-full h-full object-cover sm:object-contain object-center" />
           ) : (
             <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px]" />
           )}

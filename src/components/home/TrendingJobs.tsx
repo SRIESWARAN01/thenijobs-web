@@ -246,7 +246,7 @@ export default function TrendingJobs() {
 
         {/* CTA */}
         <div className="mt-8 text-center sm:hidden">
-          <Link href="/jobs" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-900" style={{ background: '#2563EB' }}>
+          <Link href="/jobs" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white shadow-md" style={{ background: '#2563EB' }}>
             View All Jobs <ArrowRight size={16} />
           </Link>
         </div>

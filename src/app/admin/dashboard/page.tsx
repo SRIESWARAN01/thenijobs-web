@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                   ) : (
                     <>
                       <button onClick={() => handleApproveCompany(company.id)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-gray-900 transition-all hover:opacity-90"
+                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white transition-all hover:opacity-90 shadow-xs"
                         style={{ background: '#10B981' }}>
                         ✓ Approve
                       </button>
@@ -268,7 +268,7 @@ export default function AdminDashboard() {
                   ) : (
                     <>
                       <button onClick={() => handleApproveJob(job.id)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-gray-900 transition-all hover:opacity-90"
+                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white transition-all hover:opacity-90 shadow-xs"
                         style={{ background: '#10B981' }}>
                         ✓ Approve
                       </button>

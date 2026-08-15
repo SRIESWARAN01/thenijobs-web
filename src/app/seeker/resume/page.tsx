@@ -239,11 +239,11 @@ export default function ResumeManagementPage() {
                           <Star size={14} />
                         </button>
                       )}
-                      {resume.url && resume.url !== '#' && (
+                      {resume.url && resume.url !== '#' ? (
                         <>
                           <button
                             onClick={() => window.open(resume.url, '_blank')}
-                            className="p-2 rounded-lg text-gray-500 hover:text-cyan-400 hover:bg-blue-100 transition-all"
+                            className="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
                             title="Preview"
                           >
                             <Eye size={14} />
@@ -252,12 +252,20 @@ export default function ResumeManagementPage() {
                             href={resume.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/[0.08] transition-all"
+                            className="p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
                             title="Download"
                           >
                             <Download size={14} />
                           </a>
                         </>
+                      ) : (
+                        <Link
+                          href="/seeker/resume/builder"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-all flex items-center gap-1 border border-blue-200"
+                          title="Edit in Resume Builder"
+                        >
+                          <Eye size={12} /> Edit / PDF
+                        </Link>
                       )}
                       <button
                         onClick={() => handleDeleteResume(resume)}

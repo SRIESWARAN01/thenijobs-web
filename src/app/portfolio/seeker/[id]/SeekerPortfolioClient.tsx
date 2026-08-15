@@ -154,7 +154,7 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
           <p className="mt-2 text-sm text-gray-500">
             This candidate portfolio is not available or hasn&apos;t been published yet.
           </p>
-          <Link href="/" className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold text-gray-900 bg-blue-600 hover:bg-blue-700 transition-all shadow-sm">
+          <Link href="/" className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm">
             Return to THENIJOBS
           </Link>
         </div>

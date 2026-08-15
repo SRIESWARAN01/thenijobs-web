@@ -212,7 +212,7 @@ export default function BusinessesPage() {
                       {bizStatus === 'pending' && (
                         <>
                           <button onClick={() => doApprove(biz.id)}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-900 transition-all hover:opacity-90"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 shadow-xs"
                             style={{ background: '#10B981' }}>
                             <CheckCircle size={13} /> Approve
                           </button>

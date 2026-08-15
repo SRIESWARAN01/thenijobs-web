@@ -253,13 +253,16 @@ export default function ServicesPage() {
                     className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer flex flex-col group"
                   >
                     {/* Product Image */}
-                    <div className="h-44 w-full bg-gray-100 relative overflow-hidden flex items-center justify-center border-b border-gray-100">
+                    <div className="h-48 sm:h-52 w-full bg-slate-950 relative overflow-hidden flex items-center justify-center border-b border-gray-100">
                       {prod.imageUrl ? (
-                        <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <>
+                          <div className="absolute inset-0 bg-cover bg-center blur-sm opacity-25 scale-105" style={{ backgroundImage: `url(${prod.imageUrl})` }} />
+                          <img src={prod.imageUrl} alt={prod.name} className="relative z-10 w-full h-full object-cover sm:object-contain object-center group-hover:scale-105 transition-transform duration-300" />
+                        </>
                       ) : (
-                        <Package size={36} className="text-gray-300" />
+                        <Package size={36} className="text-gray-400" />
                       )}
-                      <span className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-xl bg-slate-950/80 text-white font-extrabold text-xs shadow-xs">
+                      <span className="absolute bottom-2.5 right-2.5 z-20 px-2.5 py-1 rounded-xl bg-slate-950/85 text-white font-extrabold text-xs shadow-xs border border-white/20">
                         {priceText}
                       </span>
                     </div>
@@ -298,7 +301,7 @@ export default function ServicesPage() {
                         )}
                         {cleanWa && (
                           <a
-                            href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi, I saw "${prod.name}" on THENIJOBS. I would like to enquire/order.`)}`}
+                            href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`🛍️ *ORDER / ENQUIRY via THENIJOBS*\n📌 *Item:* ${prod.name}\n💰 *Price:* ${priceText}\n🏢 *Company:* ${prod.companyName}\n📍 *District:* ${prod.district || 'Theni'}\n${prod.imageUrl ? `🖼️ *Photo:* ${prod.imageUrl}\n` : ''}Hi, I saw this on THENIJOBS and would like to order / get more information.`)}`}
                             target="_blank"
                             rel="noreferrer"
                             className="py-2 px-2 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1 shadow-xs"
@@ -309,7 +312,7 @@ export default function ServicesPage() {
                         )}
                         <button
                           onClick={() => setSelectedProduct(prod)}
-                          className="py-2 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-xs"
+                          className="py-2 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
                         >
                           <ShoppingCart size={12} /> Order
                         </button>
@@ -329,8 +332,12 @@ export default function ServicesPage() {
 
               return (
                 <div key={p.id} className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all flex flex-col group">
-                  <div className="h-20 w-full bg-gradient-to-r from-slate-900 to-indigo-950 relative overflow-hidden">
-                    {p.coverUrl && <img src={p.coverUrl} alt={p.name} className="w-full h-full object-cover" />}
+                  <div className="h-28 sm:h-32 w-full bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 relative overflow-hidden flex items-center justify-center">
+                    {p.coverUrl ? (
+                      <img src={p.coverUrl} alt={p.name} className="w-full h-full object-cover sm:object-contain object-center" />
+                    ) : (
+                      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px]" />
+                    )}
                   </div>
                   <div className="p-5 pt-0 flex flex-col flex-1 gap-3 relative">
                     <div className="-mt-7 mb-1 flex justify-between items-end">

@@ -280,7 +280,7 @@ export default function SeekerProfilePage() {
         <div className="flex flex-col sm:flex-row items-start gap-5">
           {/* Avatar */}
           <div className="relative shrink-0 self-center sm:self-start">
-            <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold text-gray-900 overflow-hidden" style={{ background: '#2563EB' }}>
+            <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold text-white overflow-hidden shadow-sm" style={{ background: '#2563EB' }}>
               {profile.photoUrl ? (
                 <img src={profile.photoUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : initials}

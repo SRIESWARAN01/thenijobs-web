@@ -59,19 +59,19 @@ export interface ProviderEntry {
 
 /** Available models per provider */
 export const PROVIDER_MODELS: Record<string, string[]> = {
-  gemini: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+  gemini: ['gemini-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'],
   groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
   openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
 };
 
 /** Default provider config */
 export const DEFAULT_AI_CONFIG: AIProviderConfig = {
-  activeProvider: 'groq',
-  fallbackProvider: 'none',
+  activeProvider: 'gemini',
+  fallbackProvider: 'groq',
   aiEnabled: true,
   providers: {
     gemini: {
-      apiKey: '', apiKeyMasked: '', model: 'gemini-2.0-flash',
+      apiKey: '', apiKeyMasked: '', model: 'gemini-flash-latest',
       availableModels: PROVIDER_MODELS.gemini, status: 'untested', lastTested: null, lastError: null,
     },
     groq: {

@@ -34,9 +34,9 @@ function BizCard({ biz }: { biz: Business }) {
   return (
     <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col hover:shadow-md hover:border-blue-100 transition-all duration-200 group">
       {/* Cover Banner Image */}
-      <div className="h-20 w-full relative bg-gradient-to-r from-blue-600 to-indigo-700 overflow-hidden">
+      <div className="h-28 sm:h-32 w-full relative bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 overflow-hidden flex items-center justify-center">
         {biz.coverUrl ? (
-          <img src={biz.coverUrl} alt={biz.name} className="w-full h-full object-cover" />
+          <img src={biz.coverUrl} alt={biz.name} className="w-full h-full object-cover sm:object-contain object-center" />
         ) : (
           <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px]" />
         )}
@@ -344,7 +344,7 @@ export default function BusinessesPage() {
             </p>
             {businesses.length === 0 ? (
               <Link href="/company/register"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold text-gray-900 transition-all hover:opacity-90"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold text-white transition-all hover:opacity-90 shadow-md"
                 style={{ background: '#2563EB' }}>
                 Register Your Business <ArrowRight size={15} />
               </Link>

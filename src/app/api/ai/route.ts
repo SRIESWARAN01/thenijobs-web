@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getActiveProvider } from '@/lib/ai/aiConfigService';
 import { callGroqAI } from '@/lib/ai/groqClient';
 import { checkUserCredits, deductUserCredits, logAIUsage } from '@/lib/ai/creditService';
 import { AIFeatureKey, AI_CREDIT_COSTS } from '@/lib/ai/config';
@@ -172,14 +173,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Unsupported AI feature' }, { status: 400 });
     }
 
-    // Execute Groq API Call
-    const aiResponse = await callGroqAI({
-      systemPrompt,
-      userPrompt,
-      responseFormatJson,
-    });
+    // Execute AI Call via Active Provider (Gemini / Groq / OpenAI)
+    const { provider } = await getActiveProvider();
+    let aiResponse: any = null;
 
-    if (!aiResponse.success) {
+    if (provider) {
+      aiResponse = await provider.complete({
+        systemPrompt,
+        userPrompt,
+        jsonMode: responseFormatJson,
+      });
+    } else {
+      // Direct Groq fallback if provider factory returned null
+      aiResponse = await callGroqAI({
+        systemPrompt,
+        userPrompt,
+        responseFormatJson,
+      });
+    }
+
+    if (!aiResponse || !aiResponse.success) {
       // Log failure (no credit deduction)
       if (userId) {
         await logAIUsage({
@@ -187,10 +200,10 @@ export async function POST(req: NextRequest) {
           role: userRole,
           feature,
           creditsUsed: 0,
-          provider: 'groq',
-          model: aiResponse.model,
+          provider: aiResponse?.provider || 'gemini',
+          model: aiResponse?.model || 'gemini-flash-latest',
           success: false,
-          errorCode: aiResponse.error,
+          errorCode: aiResponse?.error || 'AI execution failed',
         });
       }
       return NextResponse.json({ success: false, error: 'AI is temporarily unavailable. Please try again.' }, { status: 500 });

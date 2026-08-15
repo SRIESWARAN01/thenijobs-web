@@ -91,15 +91,21 @@ export function getProviderClient(
   config: AIProviderConfig
 ): AIProvider | null {
   const entry = config.providers[providerName];
-  if (!entry?.apiKey) return null;
+  const apiKey = entry?.apiKey || (
+    providerName === 'gemini' ? (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) :
+    providerName === 'groq' ? process.env.GROQ_API_KEY :
+    providerName === 'openai' ? process.env.OPENAI_API_KEY : undefined
+  );
+
+  if (!apiKey) return null;
 
   switch (providerName) {
     case 'gemini':
-      return createGeminiProvider(entry.apiKey, entry.model);
+      return createGeminiProvider(apiKey, entry?.model || process.env.GEMINI_MODEL || 'gemini-flash-latest');
     case 'groq':
-      return createGroqProvider(entry.apiKey, entry.model);
+      return createGroqProvider(apiKey, entry?.model || 'llama-3.3-70b-versatile');
     case 'openai':
-      return createOpenAIProvider(entry.apiKey, entry.model);
+      return createOpenAIProvider(apiKey, entry?.model || 'gpt-4o-mini');
     default:
       return null;
   }
@@ -119,13 +125,20 @@ export async function getActiveProvider(): Promise<{
     return { provider: null, config, isUsingFallback: false };
   }
 
-  // Try active provider
+  // 1. Try active provider
   let provider = getProviderClient(config.activeProvider, config);
   if (provider) {
     return { provider, config, isUsingFallback: false };
   }
 
-  // Try fallback
+  // 2. Try Gemini via environment key
+  const envGeminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (envGeminiKey) {
+    provider = createGeminiProvider(envGeminiKey, process.env.GEMINI_MODEL || 'gemini-flash-latest');
+    return { provider, config, isUsingFallback: true };
+  }
+
+  // 3. Try fallback provider from config
   if (config.fallbackProvider && config.fallbackProvider !== 'none') {
     provider = getProviderClient(config.fallbackProvider, config);
     if (provider) {
@@ -133,7 +146,7 @@ export async function getActiveProvider(): Promise<{
     }
   }
 
-  // Try env var fallback (Groq from .env.local)
+  // 4. Try Groq env key
   const envGroqKey = process.env.GROQ_API_KEY;
   if (envGroqKey) {
     provider = createGroqProvider(envGroqKey, 'llama-3.3-70b-versatile');

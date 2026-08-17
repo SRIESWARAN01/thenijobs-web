@@ -44,49 +44,49 @@ const COLOR_MAP: Record<
   }
 > = {
   purple: {
-    gradient: 'from-purple-500/10 to-indigo-500/5',
-    border: 'border-purple-500/15 hover:border-purple-500/30',
-    iconBg: 'bg-purple-500/15',
-    iconColor: 'text-purple-400',
-    glow: '0 0 30px rgba(124,58,237,0.15)',
-    trendPositive: 'text-emerald-400',
-    trendNegative: 'text-rose-400',
+    gradient: 'from-purple-50 to-indigo-50',
+    border: 'border-purple-200 hover:border-purple-300',
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
+    glow: '0 0 30px rgba(124,58,237,0.12)',
+    trendPositive: 'text-emerald-600',
+    trendNegative: 'text-rose-600',
   },
   cyan: {
-    gradient: 'from-cyan-500/10 to-blue-500/5',
-    border: 'border-cyan-500/15 hover:border-cyan-500/30',
-    iconBg: 'bg-cyan-500/15',
-    iconColor: 'text-cyan-400',
-    glow: '0 0 30px rgba(6,182,212,0.15)',
-    trendPositive: 'text-emerald-400',
-    trendNegative: 'text-rose-400',
+    gradient: 'from-cyan-50 to-blue-50',
+    border: 'border-cyan-200 hover:border-cyan-300',
+    iconBg: 'bg-cyan-100',
+    iconColor: 'text-cyan-600',
+    glow: '0 0 30px rgba(6,182,212,0.12)',
+    trendPositive: 'text-emerald-600',
+    trendNegative: 'text-rose-600',
   },
   emerald: {
-    gradient: 'from-emerald-500/10 to-teal-500/5',
-    border: 'border-emerald-500/15 hover:border-emerald-500/30',
-    iconBg: 'bg-emerald-500/15',
-    iconColor: 'text-emerald-400',
-    glow: '0 0 30px rgba(16,185,129,0.15)',
-    trendPositive: 'text-emerald-400',
-    trendNegative: 'text-rose-400',
+    gradient: 'from-emerald-50 to-teal-50',
+    border: 'border-emerald-200 hover:border-emerald-300',
+    iconBg: 'bg-emerald-100',
+    iconColor: 'text-emerald-600',
+    glow: '0 0 30px rgba(16,185,129,0.12)',
+    trendPositive: 'text-emerald-600',
+    trendNegative: 'text-rose-600',
   },
   amber: {
-    gradient: 'from-amber-500/10 to-orange-500/5',
-    border: 'border-amber-500/15 hover:border-amber-500/30',
-    iconBg: 'bg-amber-500/15',
-    iconColor: 'text-amber-400',
-    glow: '0 0 30px rgba(245,158,11,0.15)',
-    trendPositive: 'text-emerald-400',
-    trendNegative: 'text-rose-400',
+    gradient: 'from-amber-50 to-orange-50',
+    border: 'border-amber-200 hover:border-amber-300',
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-600',
+    glow: '0 0 30px rgba(245,158,11,0.12)',
+    trendPositive: 'text-emerald-600',
+    trendNegative: 'text-rose-600',
   },
   rose: {
-    gradient: 'from-rose-500/10 to-pink-500/5',
-    border: 'border-rose-500/15 hover:border-rose-500/30',
-    iconBg: 'bg-rose-500/15',
-    iconColor: 'text-rose-400',
-    glow: '0 0 30px rgba(244,63,94,0.15)',
-    trendPositive: 'text-emerald-400',
-    trendNegative: 'text-rose-400',
+    gradient: 'from-rose-50 to-pink-50',
+    border: 'border-rose-200 hover:border-rose-300',
+    iconBg: 'bg-rose-100',
+    iconColor: 'text-rose-600',
+    glow: '0 0 30px rgba(244,63,94,0.12)',
+    trendPositive: 'text-emerald-600',
+    trendNegative: 'text-rose-600',
   },
 };
 
@@ -134,11 +134,11 @@ function StatsCardSkeleton({ color = 'purple' }: { color?: StatsCardColor }) {
         backdrop-blur-md`}
     >
       <div className="flex items-center justify-between mb-4">
-        <div className="h-3.5 w-24 rounded bg-white shimmer" />
-        <div className="h-10 w-10 rounded-xl bg-white shimmer" />
+        <div className="h-3.5 w-24 rounded bg-gray-200 shimmer" />
+        <div className="h-10 w-10 rounded-xl bg-gray-200 shimmer" />
       </div>
-      <div className="h-8 w-28 rounded bg-white shimmer mb-3" />
-      <div className="h-3 w-20 rounded bg-white shimmer" />
+      <div className="h-8 w-28 rounded bg-gray-200 shimmer mb-3" />
+      <div className="h-3 w-20 rounded bg-gray-200 shimmer" />
     </div>
   );
 }
@@ -174,7 +174,7 @@ export function StatsCard({
     >
       {/* Top row */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-white/50 font-medium">{title}</span>
+        <span className="text-sm text-gray-500 font-medium">{title}</span>
         <div className={`${c.iconBg} rounded-xl p-2.5`}>
           <Icon className={`w-5 h-5 ${c.iconColor}`} strokeWidth={1.8} />
         </div>
@@ -184,7 +184,7 @@ export function StatsCard({
       <div className="text-3xl font-bold text-gray-900 tracking-tight font-[Outfit] mb-1">
         {prefix}
         {animatedValue.toLocaleString()}
-        {suffix && <span className="text-lg text-white/60 ml-1">{suffix}</span>}
+        {suffix && <span className="text-lg text-gray-400 ml-1">{suffix}</span>}
       </div>
 
       {/* Trend */}
@@ -202,7 +202,7 @@ export function StatsCard({
           >
             {trend.value}%
           </span>
-          <span className="text-xs text-white/30">vs last month</span>
+          <span className="text-xs text-gray-400">vs last month</span>
         </div>
       )}
     </motion.div>

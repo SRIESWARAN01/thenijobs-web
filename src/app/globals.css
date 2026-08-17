@@ -1113,14 +1113,65 @@ label {
   font-weight: 600;
 }
 
-/* Fix pale text classes on plain white surfaces */
-.bg-white > .text-gray-300,
-.bg-slate-50 > .text-gray-300 {
+/* =============================================
+   LIGHT-SURFACE CONTRAST SAFETY NET
+   Catches orphaned dark-theme utility classes on light backgrounds.
+   Uses descendant selectors so nested markup is also fixed.
+   ============================================= */
+
+/* --- text-gray-300 (#D1D5DB) is nearly invisible on white → bump to #475569 --- */
+.bg-white .text-gray-300,
+.bg-slate-50 .text-gray-300,
+.bg-gray-50 .text-gray-300,
+.glass-card .text-gray-300,
+.vk-card .text-gray-300,
+.vk-stat-card .text-gray-300,
+.vk-job-card .text-gray-300,
+.vk-preview-panel .text-gray-300 {
   color: #475569 !important;
 }
-.bg-white > .text-gray-400,
-.bg-slate-50 > .text-gray-400 {
+
+/* --- text-gray-400 on white → #64748B for clarity --- */
+.bg-white .text-gray-400,
+.bg-slate-50 .text-gray-400,
+.bg-gray-50 .text-gray-400,
+.glass-card .text-gray-400,
+.vk-card .text-gray-400 {
   color: #64748B !important;
+}
+
+/* --- select/button text-gray-300 on white backgrounds (employer forms) --- */
+select[class*="text-gray-300"][class*="bg-white"],
+button[class*="text-gray-300"][class*="bg-white"] {
+  color: #475569 !important;
+}
+
+/* --- invisible border-white/[0.0x] on light surfaces → visible gray --- */
+.bg-white [class*="border-white\\/"],
+.bg-slate-50 [class*="border-white\\/"],
+.glass-card [class*="border-white\\/"],
+.vk-card [class*="border-white\\/"] {
+  border-color: #E2E8F0 !important;
+}
+
+/* --- invisible bg-white/[0.0x] on light surfaces → subtle gray --- */
+.bg-white [class*="bg-white\\/[0.0"],
+.bg-slate-50 [class*="bg-white\\/[0.0"],
+.glass-card [class*="bg-white\\/[0.0"],
+.vk-card [class*="bg-white\\/[0.0"] {
+  background-color: #F8FAFC !important;
+}
+
+/* --- hover:bg-white on already-white containers → use gray-50 instead --- */
+.bg-white [class*="hover\\:bg-white"]:hover,
+.vk-card [class*="hover\\:bg-white"]:hover {
+  background-color: #F1F5F9 !important;
+}
+
+/* --- bg-[#0e0e22] dark holdover on light pages → transparent --- */
+.bg-white select[style*="#0e0e22"],
+.bg-white [class*="bg-\\[\\#0e0e22\\]"] {
+  background-color: #FFFFFF !important;
 }
 
 /* ===== KEYFRAMES ===== */

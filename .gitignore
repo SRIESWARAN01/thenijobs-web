@@ -38,3 +38,4 @@ Thumbs.db
 # Temp scripts
 download-git.js
 extract-git.js
+.vercel

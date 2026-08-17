@@ -18,6 +18,7 @@ import { followCompany, unfollowCompany, isFollowingCompany, applyToJob } from '
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, addDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, limit as fbLimit } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
+import JobApplySuccessModal from '@/components/ui/JobApplySuccessModal';
 
 interface JobRecord {
   id: string;
@@ -117,6 +118,8 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showSuccessTicket, setShowSuccessTicket] = useState(false);
+  const [createdApplicationId, setCreatedApplicationId] = useState<string | undefined>(undefined);
   const [coverLetter, setCoverLetter] = useState('');
   const [selectedResumeId, setSelectedResumeId] = useState('');
   const [showShareMenu, setShowShareMenu] = useState(false);
@@ -351,7 +354,7 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
     try {
       const selectedResume = resumes.find((r: any) => r.id === selectedResumeId);
 
-      await applyToJob({
+      const appId = await applyToJob({
         jobId: job.id,
         jobTitle: job.title,
         companyId: job.companyId,
@@ -365,12 +368,14 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
         coverLetter: coverLetter.trim(),
       });
 
+      setCreatedApplicationId(appId);
       setHasApplied(true);
       setShowApplyModal(false);
-      toast.success('Application submitted successfully! Application chat initialized.');
+      setShowSuccessTicket(true);
+      toast.success('Application submitted successfully!');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to submit application.');
+      toast.error('Failed to submit application. Please try again.');
     } finally {
       setApplying(false);
     }
@@ -844,6 +849,18 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
             </div>
           </div>
         </div>
+      )}
+
+      {/* Pink Ticket Success Animation Modal */}
+      {job && (
+        <JobApplySuccessModal
+          isOpen={showSuccessTicket}
+          onClose={() => setShowSuccessTicket(false)}
+          jobTitle={job.title}
+          companyName={job.companyName}
+          district={job.district || job.location}
+          applicationId={createdApplicationId}
+        />
       )}
     </main>
   );

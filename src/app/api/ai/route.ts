@@ -213,33 +213,61 @@ export async function POST(req: NextRequest) {
     if (feature === 'job_search' && aiResponse.parsedJson) {
       try {
         const intent = aiResponse.parsedJson;
-        // Fetch REAL Firestore jobs filtered by status APPROVED/LIVE
+        const keywords: string[] = Array.isArray(intent.keywords)
+          ? intent.keywords.map((k: string) => k.toLowerCase().trim()).filter(Boolean)
+          : [];
+        if (payload.query) {
+          keywords.push(...payload.query.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2));
+        }
+
+        // Fetch REAL Firestore jobs filtered by status APPROVED/LIVE/active
         const jobsRef = collection(db, 'jobs');
-        const q = query(jobsRef, where('status', 'in', ['APPROVED', 'LIVE', 'active']), firestoreLimit(20));
+        const q = query(jobsRef, where('status', 'in', ['APPROVED', 'LIVE', 'active']), firestoreLimit(40));
         const snapshot = await getDocs(q);
         const realJobs: any[] = [];
         snapshot.forEach(docSnap => {
           realJobs.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // Filter locally based on parsed AI criteria
-        const filteredJobs = realJobs.filter(j => {
-          if (intent.district && j.district && !j.district.toLowerCase().includes(intent.district.toLowerCase())) {
-            return false;
-          }
-          if (intent.category && j.category && !j.category.toLowerCase().includes(intent.category.toLowerCase())) {
-            return false;
-          }
-          if (intent.minSalary && j.salary && (typeof j.salary === 'number' ? j.salary < intent.minSalary : false)) {
-            return false;
-          }
-          return true;
+        // Score and filter based on parsed AI criteria & keywords
+        const scoredJobs = realJobs.map(j => {
+          let score = 0;
+          const title = (j.title || '').toLowerCase();
+          const category = (j.category || '').toLowerCase();
+          const district = (j.district || j.location || '').toLowerCase();
+          const description = (j.description || '').toLowerCase();
+          const skills = (j.skills || []).map((s: string) => s.toLowerCase());
+
+          // District match
+          if (intent.district && district.includes(intent.district.toLowerCase())) score += 15;
+          // Category match
+          if (intent.category && category.includes(intent.category.toLowerCase())) score += 15;
+
+          // Keywords match
+          keywords.forEach(kw => {
+            if (title.includes(kw)) score += 20;
+            if (skills.some((sk: string) => sk.includes(kw))) score += 15;
+            if (category.includes(kw)) score += 10;
+            if (district.includes(kw)) score += 5;
+            if (description.includes(kw)) score += 5;
+          });
+
+          // Salary match
+          if (intent.minSalary && j.salaryMin && j.salaryMin >= intent.minSalary) score += 5;
+
+          return { job: j, score };
         });
+
+        // Sort by score desc
+        scoredJobs.sort((a, b) => b.score - a.score);
+
+        const matchedJobs = scoredJobs.filter(item => item.score > 0).map(item => item.job);
+        const finalJobs = matchedJobs.length > 0 ? matchedJobs : realJobs.slice(0, 8);
 
         customResponse = {
           intent: aiResponse.parsedJson,
-          realJobs: filteredJobs.length > 0 ? filteredJobs : realJobs.slice(0, 5),
-          totalFound: filteredJobs.length,
+          realJobs: finalJobs,
+          totalFound: finalJobs.length,
         };
       } catch (dbErr) {
         console.error('[AI Job Search Firestore Query Error]:', dbErr);

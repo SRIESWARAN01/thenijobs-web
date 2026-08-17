@@ -28,19 +28,19 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
     <nav
       aria-label="Breadcrumb"
       className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl text-sm
-        bg-white/[0.03] backdrop-blur-md border border-white/[0.06] ${className}`}
+        bg-white backdrop-blur-md border border-gray-200 ${className}`}
     >
       {showHome && (
         <>
           <Link
             href="/"
-            className="text-white/40 hover:text-white/70 transition-colors p-0.5"
+            className="text-gray-400 hover:text-gray-700 transition-colors p-0.5"
             aria-label="Home"
           >
             <Home className="w-3.5 h-3.5" />
           </Link>
           {items.length > 0 && (
-            <ChevronRight className="w-3.5 h-3.5 text-white/20 shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
           )}
         </>
       )}
@@ -54,8 +54,8 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
               <span
                 className={`px-1 truncate max-w-[200px] ${
                   isLast
-                    ? 'text-white font-medium'
-                    : 'text-white/40'
+                    ? 'text-gray-900 font-medium'
+                    : 'text-gray-400'
                 }`}
                 aria-current={isLast ? 'page' : undefined}
               >
@@ -64,14 +64,14 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
             ) : (
               <Link
                 href={item.href}
-                className="px-1 text-white/40 hover:text-white/70 transition-colors truncate max-w-[200px]"
+                className="px-1 text-gray-400 hover:text-gray-700 transition-colors truncate max-w-[200px]"
               >
                 {item.label}
               </Link>
             )}
 
             {!isLast && (
-              <ChevronRight className="w-3.5 h-3.5 text-white/20 shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
             )}
           </React.Fragment>
         );

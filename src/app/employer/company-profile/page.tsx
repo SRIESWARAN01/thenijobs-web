@@ -31,6 +31,7 @@ const DEFAULT_COMPANY = {
   logoUrl: '',
   coverUrl: '',
   description: '',
+
   establishedYear: '',
   phone: '',
   email: '',
@@ -55,7 +56,9 @@ const DEFAULT_COMPANY = {
     mobile: false,
     email: false,
     gst: false,
-    business: false } };
+    business: false
+  }
+};
 
 function calcCompletion(data: typeof DEFAULT_COMPANY): number {
   const fields = [
@@ -69,7 +72,7 @@ function calcCompletion(data: typeof DEFAULT_COMPANY): number {
 
 export default function CompanyProfilePage() {
   const { user } = useAuth();
-  
+
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
     where('ownerId', '==', user?.uid || '')
@@ -103,7 +106,8 @@ export default function CompanyProfilePage() {
         ...resolvedCompany,
         gallery: resolvedCompany.gallery || DEFAULT_COMPANY.gallery,
         branches: resolvedCompany.branches || DEFAULT_COMPANY.branches,
-        verification: resolvedCompany.verification || DEFAULT_COMPANY.verification });
+        verification: resolvedCompany.verification || DEFAULT_COMPANY.verification
+      });
       setCharCount(resolvedCompany.description?.length || 0);
     }
   }, [resolvedCompany]);
@@ -125,7 +129,8 @@ export default function CompanyProfilePage() {
     if (newBranch.name && newBranch.address && newBranch.district) {
       setCompany((prev) => ({
         ...prev,
-        branches: [...(prev.branches || []), { id: Date.now().toString(), ...newBranch }] }));
+        branches: [...(prev.branches || []), { id: Date.now().toString(), ...newBranch }]
+      }));
       setNewBranch({ name: '', address: '', district: '' });
       setShowBranchForm(false);
     }
@@ -134,7 +139,8 @@ export default function CompanyProfilePage() {
   const removeBranch = (id: string) => {
     setCompany((prev) => ({
       ...prev,
-      branches: (prev.branches || []).filter((b) => b.id !== id) }));
+      branches: (prev.branches || []).filter((b) => b.id !== id)
+    }));
   };
 
   const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -382,11 +388,10 @@ export default function CompanyProfilePage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 sm:px-4 text-xs font-bold rounded-2xl whitespace-nowrap transition-all shrink-0 cursor-pointer active:scale-95 ${
-                isActive
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 sm:px-4 text-xs font-bold rounded-2xl whitespace-nowrap transition-all shrink-0 cursor-pointer active:scale-95 ${isActive
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 bg-white border border-slate-200'
-              }`}
+                }`}
             >
               <TabIcon size={14} />
               <span>{tab.label}</span>
@@ -878,16 +883,14 @@ export default function CompanyProfilePage() {
                   return (
                     <div
                       key={item.label}
-                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
-                        item.verified
+                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${item.verified
                           ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
                           : 'bg-gray-50 border-gray-200 text-gray-600'
-                      }`}
+                        }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                          item.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-gray-400'
-                        }`}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${item.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-gray-400'
+                          }`}
                       >
                         <Icon size={14} />
                       </div>
@@ -910,7 +913,7 @@ export default function CompanyProfilePage() {
                     {Math.round(
                       ((Object.values(company.verification).filter(Boolean).length) /
                         Object.keys(company.verification).length) *
-                        100
+                      100
                     )}%
                   </span>
                 </div>
@@ -918,11 +921,10 @@ export default function CompanyProfilePage() {
                   <div
                     className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full"
                     style={{
-                      width: `${
-                        ((Object.values(company.verification).filter(Boolean).length) /
+                      width: `${((Object.values(company.verification).filter(Boolean).length) /
                           Object.keys(company.verification).length) *
                         100
-                      }%`
+                        }%`
                     }}
                   />
                 </div>

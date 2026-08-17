@@ -114,7 +114,7 @@ export function Modal({
                 {/* Header */}
                 <div className="flex items-start justify-between px-6 pt-6 pb-4 shrink-0">
                   <div>
-                    <Dialog.Title className="text-lg font-semibold text-gray-900 font-[Outfit]">
+                    <Dialog.Title className="text-lg font-semibold text-white font-[Outfit]">
                       {title}
                     </Dialog.Title>
                     {description && (
@@ -127,7 +127,7 @@ export function Modal({
                     <Dialog.Close asChild>
                       <button
                         className="shrink-0 ml-4 p-1.5 rounded-lg text-white/30
-                          hover:text-white/60 hover:bg-white transition-all"
+                          hover:text-white/60 hover:bg-white/10 transition-all"
                         aria-label="Close"
                       >
                         <X className="w-4.5 h-4.5" />

@@ -13,6 +13,7 @@ import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { updateApplicationStatus, createDocument, createNotification } from '@/lib/firebase/firestoreService';
 import { where, orderBy } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
+import InterviewConfirmedModal from '@/components/ui/InterviewConfirmedModal';
 
 type PipelineStatus = 'all' | 'applied' | 'shortlisted' | 'interview_scheduled' | 'selected' | 'rejected';
 
@@ -43,6 +44,7 @@ function CandidateDetailModal({
   jobId,
   jobTitle,
   seekerName,
+  createdAt,
   onClose,
   onNotesUpdated,
   onStatusUpdated
@@ -56,6 +58,7 @@ function CandidateDetailModal({
   jobId: string;
   jobTitle: string;
   seekerName: string;
+  createdAt?: any;
   onClose: () => void;
   onNotesUpdated: (notes: string) => void;
   onStatusUpdated: (status: string) => void;
@@ -73,6 +76,16 @@ function CandidateDetailModal({
   const [interviewTime, setInterviewTime] = useState('');
   const [interviewMode, setInterviewMode] = useState('In-Person (Office)');
   const [scheduling, setScheduling] = useState(false);
+  const [confirmedModal, setConfirmedModal] = useState<{
+    isOpen: boolean;
+    date: string;
+    time: string;
+    mode: string;
+  }>({ isOpen: false, date: '', time: '', mode: '' });
+
+  // 7-Day Overdue Check
+  const createdMillis = createdAt?.toMillis ? createdAt.toMillis() : (createdAt ? new Date(createdAt).getTime() : Date.now());
+  const isOverdue = (currentStatus === 'applied' || currentStatus === 'under_review') && (Date.now() - createdMillis) > 7 * 86400000;
 
   const handleSaveNotes = async () => {
     setSavingNotes(true);
@@ -103,6 +116,7 @@ function CandidateDetailModal({
         seekerName,
         jobId,
         jobTitle,
+        applicationId,
         date: interviewDate,
         time: interviewTime,
         mode: interviewMode,
@@ -120,8 +134,14 @@ function CandidateDetailModal({
         actionUrl: '/seeker/interviews'
       });
 
-      toast.success('Interview scheduled successfully!');
       setShowScheduleForm(false);
+      setConfirmedModal({
+        isOpen: true,
+        date: interviewDate,
+        time: interviewTime,
+        mode: interviewMode,
+      });
+      toast.success('Interview scheduled successfully!');
     } catch (err) {
       console.error(err);
       toast.error('Failed to schedule interview');
@@ -169,6 +189,19 @@ function CandidateDetailModal({
             <X size={20} />
           </button>
         </div>
+
+        {/* 7-Day Overdue Banner */}
+        {isOverdue && (
+          <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-amber-900 text-xs">
+            <Clock size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-extrabold text-amber-950">⏰ 7-Day Response SLA Overdue</p>
+              <p className="text-[11px] text-amber-800 mt-0.5">
+                This candidate applied over 7 days ago without status progression. Please shortlist, schedule interview, or update status.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Quick Contact & Resume Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -233,16 +266,31 @@ function CandidateDetailModal({
         <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
-              <Calendar size={14} className="text-blue-600" /> Schedule Interview
+              <Calendar size={14} className="text-blue-600" /> Schedule Interview / Click to Meet
             </h3>
-            <button
-              type="button"
-              onClick={() => setShowScheduleForm(!showScheduleForm)}
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
-            >
-              {showScheduleForm ? 'Hide Form' : 'Open Scheduler +'}
-            </button>
+            {currentStatus === 'interview_scheduled' ? (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px] flex items-center gap-1">
+                <Check size={12} /> Scheduled
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowScheduleForm(!showScheduleForm)}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
+              >
+                {showScheduleForm ? 'Hide Form' : 'Click to Meet / Schedule +'}
+              </button>
+            )}
           </div>
+
+          {currentStatus === 'interview_scheduled' && !showScheduleForm && (
+            <div className="p-3 bg-white rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
+              <span className="text-emerald-800 font-bold">✓ Interview round confirmed for this candidate.</span>
+              <Link href="/employer/interviews" className="text-blue-700 font-bold hover:underline flex items-center gap-1">
+                View Calendar <ExternalLink size={12} />
+              </Link>
+            </div>
+          )}
 
           {showScheduleForm && (
             <form onSubmit={handleScheduleInterview} className="space-y-3 pt-2">
@@ -286,11 +334,22 @@ function CandidateDetailModal({
                 disabled={scheduling}
                 className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
               >
-                {scheduling ? 'Scheduling...' : 'Confirm & Notify Candidate'}
+                {scheduling ? 'Scheduling...' : 'Confirm & Schedule (One-Time)'}
               </button>
             </form>
           )}
         </div>
+
+        {/* Confirmed Animation Modal */}
+        <InterviewConfirmedModal
+          isOpen={confirmedModal.isOpen}
+          onClose={() => setConfirmedModal(prev => ({ ...prev, isOpen: false }))}
+          candidateName={seekerName}
+          jobTitle={jobTitle}
+          interviewDate={confirmedModal.date}
+          interviewTime={confirmedModal.time}
+          interviewMode={confirmedModal.mode}
+        />
 
         {/* Private Employer Notes */}
         <div className="space-y-1.5">
@@ -487,11 +546,15 @@ export default function CandidatesPage() {
               filtered.map((app) => {
                 const curStatus = app.status || 'applied';
                 const st = STATUS_STYLES[curStatus] || STATUS_STYLES.applied;
+                const createdMillis = app.createdAt?.toMillis ? app.createdAt.toMillis() : (app.createdAt ? new Date(app.createdAt).getTime() : Date.now());
+                const isAppOverdue = (curStatus === 'applied' || curStatus === 'under_review') && (Date.now() - createdMillis) > 7 * 86400000;
 
                 return (
                   <div
                     key={app.id}
-                    className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-200 shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    className={`bg-white rounded-3xl p-4 sm:p-5 border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs hover:shadow-md ${
+                      isAppOverdue ? 'border-amber-300 ring-1 ring-amber-100' : 'border-gray-200'
+                    }`}
                   >
                     {/* Left Info */}
                     <div className="flex items-start gap-3.5 flex-1 min-w-0">
@@ -507,6 +570,11 @@ export default function CandidatesPage() {
                           >
                             {st.label}
                           </span>
+                          {isAppOverdue && (
+                            <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
+                              <Clock size={11} className="text-amber-700" /> Overdue (7+ Days)
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-gray-500 font-medium">
                           Applied for <span className="font-bold text-gray-900">{app.jobTitle}</span> · {app.createdAt ? new Date(app.createdAt?.toMillis?.() || app.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Recently'}
@@ -577,6 +645,7 @@ export default function CandidatesPage() {
           jobId={activeModalCandidate.jobId}
           jobTitle={activeModalCandidate.jobTitle}
           seekerName={activeModalCandidate.seekerName}
+          createdAt={activeModalCandidate.createdAt}
           onClose={() => setActiveModalCandidate(null)}
           onNotesUpdated={(notes) => {
             activeModalCandidate.notes = notes;

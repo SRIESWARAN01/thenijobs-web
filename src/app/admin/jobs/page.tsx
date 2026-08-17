@@ -74,7 +74,7 @@ const QUICK_REJECTION_REASONS = [
   'Post contains promotional or advertising content unrelated to job duties.',
 ];
 
-const TABS = ['All', 'Pending', 'Active', 'Rejected', 'Featured'] as const;
+const TABS = ['All', 'Pending', 'Active', 'Overdue Apps', 'Rejected', 'Featured'] as const;
 const JOB_TYPES = ['All Types', 'Full Time', 'Part Time', 'Internship', 'Remote', 'Fresher', 'Contract'];
 const CATEGORIES = ['All Categories', 'IT & Software', 'Marketing', 'Sales', 'Healthcare', 'Education', 'Engineering', 'Retail', 'Agriculture', 'Construction', 'General'];
 const DISTRICTS = ['All Districts', 'Theni', 'Madurai', 'Dindigul', 'Chennai', 'Coimbatore', 'Trichy', 'Salem'];
@@ -84,6 +84,7 @@ export default function AdminJobsPage() {
   const toast = useToast();
   const { data: jobs, loading } = useCollection<JobDoc>('jobs');
   const { data: companies } = useCollection<any>('companies');
+  const { data: applications = [] } = useCollection<any>('applications');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('All');
@@ -221,6 +222,13 @@ export default function AdminJobsPage() {
   const rejectedCount = jobs.filter(j => getStatus(j) === 'rejected').length;
   const featuredCount = jobs.filter(j => j.isFeatured).length;
 
+  const overdueApplications = applications.filter((a: any) => {
+    const isPending = a.status === 'applied' || a.status === 'under_review' || !a.status;
+    if (!isPending) return false;
+    const createdMillis = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt ? new Date(a.createdAt).getTime() : Date.now());
+    return (Date.now() - createdMillis) > 7 * 86400000;
+  });
+
   return (
     <div className="p-4 sm:p-6 space-y-6 font-outfit text-gray-900 pb-20">
       {/* Header */}
@@ -228,17 +236,18 @@ export default function AdminJobsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-gray-900">Job Approvals &amp; Management</h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            Review employer postings, verify salary and requirements, call or WhatsApp employers, and activate listings
+            Review employer postings, verify salary, follow-up overdue applications (7+ days), and activate listings
           </p>
         </div>
       </div>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
         {[
           { label: 'Total Postings', value: totalCount, icon: Briefcase, bg: '#EFF6FF', color: '#2563EB' },
           { label: 'Pending Review', value: pendingCount, icon: Clock, bg: '#FFFBEB', color: '#D97706' },
           { label: 'Active & Live', value: activeCount, icon: Zap, bg: '#ECFDF5', color: '#059669' },
+          { label: 'Overdue Apps', value: overdueApplications.length, icon: AlertTriangle, bg: '#FEF3C7', color: '#B45309' },
           { label: 'Requires Revision', value: rejectedCount, icon: XCircle, bg: '#FEF2F2', color: '#DC2626' },
         ].map(s => {
           const Icon = s.icon;
@@ -272,6 +281,11 @@ export default function AdminJobsPage() {
             {tab === 'Pending' && pendingCount > 0 && (
               <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] text-white font-extrabold bg-amber-600">
                 {pendingCount}
+              </span>
+            )}
+            {tab === 'Overdue Apps' && overdueApplications.length > 0 && (
+              <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] text-white font-extrabold bg-rose-600">
+                {overdueApplications.length}
               </span>
             )}
           </button>
@@ -308,8 +322,91 @@ export default function AdminJobsPage() {
         </div>
       </div>
 
-      {/* Jobs Grid / Cards for Rich Workflow */}
-      {loading ? (
+      {/* Overdue Applications Tab View */}
+      {activeTab === 'Overdue Apps' ? (
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed flex items-start gap-3">
+            <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-950">7-Day Employer Response SLA System</p>
+              <p className="mt-0.5">
+                These candidate applications have had no response from employers for over 7 days. As an Admin, you can follow up with the employer via direct Phone call or WhatsApp message to prompt their review.
+              </p>
+            </div>
+          </div>
+
+          {overdueApplications.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
+              <CheckCircle size={36} className="mx-auto text-emerald-500 mb-2" />
+              <p className="text-sm font-bold text-gray-800">All Applications on Track!</p>
+              <p className="text-xs text-gray-500 mt-0.5">No overdue applications (&gt; 7 days) at this time.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {overdueApplications.map((app: any) => {
+                const createdMillis = app.createdAt?.toMillis ? app.createdAt.toMillis() : (app.createdAt ? new Date(app.createdAt).getTime() : Date.now());
+                const daysAgo = Math.floor((Date.now() - createdMillis) / 86400000);
+                const comp = companies?.find((c: any) => c.id === app.companyId || c.name === app.companyName);
+                const empPhone = (app.companyPhone || comp?.phone || '9360519460').replace(/[^0-9+]/g, '');
+                const empWhatsApp = (app.companyWhatsapp || comp?.whatsapp || comp?.phone || '9360519460').replace(/[^0-9]/g, '');
+
+                const waMessage = `⚠️ *THENIJOBS Admin Reminder*\n\nHello *${app.companyName || 'Employer'}*,\n\nCandidate *${app.seekerName}* applied for *"${app.jobTitle}"* *${daysAgo} days ago* on THENIJOBS.\n\nAccording to THENIJOBS guidelines, applications should receive a response within 7 days. Please login and review candidate status:\nhttps://thenijobs.com/employer/candidates`;
+
+                return (
+                  <div
+                    key={app.id}
+                    className="bg-white rounded-3xl p-5 border border-amber-300 ring-2 ring-amber-100 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-3.5"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                          <Clock size={11} className="text-amber-700" /> Overdue: {daysAgo} Days Pending
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400">
+                          {new Date(createdMillis).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900 leading-snug">{app.seekerName}</h3>
+                        <p className="text-xs text-gray-600 flex items-center gap-1 mt-0.5 font-medium">
+                          <Briefcase size={12} className="text-blue-600 shrink-0" /> {app.jobTitle}
+                        </p>
+                        <p className="text-xs text-gray-600 flex items-center gap-1 mt-0.5 font-medium">
+                          <Building2 size={12} className="text-gray-500 shrink-0" /> {app.companyName || 'Employer'}
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-gray-50 rounded-xl text-xs space-y-1 text-gray-600">
+                        <p><span className="text-gray-400">Candidate Phone:</span> <strong>{app.seekerPhone || 'Provided in app'}</strong></p>
+                        <p><span className="text-gray-400">Status:</span> <strong className="text-blue-700 uppercase">{app.status || 'applied'}</strong></p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
+                      <a
+                        href={`tel:${empPhone}`}
+                        className="flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors border border-blue-200"
+                      >
+                        <Phone size={13} /> Call Employer
+                      </a>
+                      <a
+                        href={`https://wa.me/${empWhatsApp}?text=${encodeURIComponent(waMessage)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 py-2 px-3 rounded-2xl text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all"
+                        style={{ background: '#25D366' }}
+                      >
+                        <MessageCircle size={13} /> WhatsApp Follow-up
+                      </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 size={32} className="text-blue-600 animate-spin" />
           <p className="text-xs text-gray-500 font-semibold">Loading job postings...</p>

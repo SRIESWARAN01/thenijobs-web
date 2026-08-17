@@ -167,12 +167,12 @@ function ChartCard({
 
 const GRID_PROPS = {
   strokeDasharray: '3 3',
-  stroke: 'rgba(255,255,255,0.05)',
+  stroke: 'rgba(0,0,0,0.06)',
 };
 
 const AXIS_STYLE = {
   fontSize: 11,
-  fill: 'rgba(255,255,255,0.35)',
+  fill: '#64748B',
   fontFamily: 'Inter, sans-serif',
 };
 
@@ -216,7 +216,7 @@ export function AreaChartCard({
               strokeWidth={2}
               fill={`url(#grad-${dk.key})`}
               dot={false}
-              activeDot={{ r: 4, fill: dk.color, stroke: '#0a0a1a', strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: dk.color, stroke: '#FFFFFF', strokeWidth: 2 }}
             />
           ))}
         </AreaChart>
@@ -295,7 +295,7 @@ export function LineChartCard({
               stroke={dk.color}
               strokeWidth={2}
               dot={false}
-              activeDot={{ r: 4, fill: dk.color, stroke: '#0a0a1a', strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: dk.color, stroke: '#FFFFFF', strokeWidth: 2 }}
             />
           ))}
         </LineChart>

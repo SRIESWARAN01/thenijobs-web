@@ -165,7 +165,7 @@ export function FileUpload({
               ${
                 isDragOver
                   ? 'border-purple-500/60 bg-purple-500/[0.08]'
-                  : 'border-gray-200 bg-white/[0.02] hover:border-white/20 hover:bg-white'
+                  : 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100'
               }`}
             style={{
               boxShadow: isDragOver
@@ -175,12 +175,12 @@ export function FileUpload({
           >
             <div
               className={`rounded-xl p-3 transition-colors ${
-                isDragOver ? 'bg-purple-500/20' : 'bg-white/[0.05] group-hover:bg-white/[0.08]'
+                isDragOver ? 'bg-purple-500/20' : 'bg-gray-100 group-hover:bg-gray-200'
               }`}
             >
               <Upload
                 className={`w-7 h-7 transition-colors ${
-                  isDragOver ? 'text-purple-400' : 'text-white/40 group-hover:text-white/60'
+                  isDragOver ? 'text-purple-400' : 'text-gray-400 group-hover:text-gray-600'
                 }`}
                 strokeWidth={1.5}
               />
@@ -188,13 +188,13 @@ export function FileUpload({
             <div className="text-center">
               <p
                 className={`text-sm font-medium transition-colors ${
-                  isDragOver ? 'text-purple-300' : 'text-white/60'
+                  isDragOver ? 'text-purple-600' : 'text-gray-600'
                 }`}
               >
                 {label}
               </p>
               {(accept || maxSize) && (
-                <p className="text-xs text-white/30 mt-1">
+                <p className="text-xs text-gray-400 mt-1">
                   {accept && <span>{accept}</span>}
                   {accept && maxSize && <span> · </span>}
                   {maxSize && <span>Max {formatFileSize(maxSize)}</span>}
@@ -213,7 +213,7 @@ export function FileUpload({
           >
             {/* Image preview */}
             {previewUrl && (
-              <div className="relative w-full h-44 rounded-xl overflow-hidden bg-white/[0.03]">
+              <div className="relative w-full h-44 rounded-xl overflow-hidden bg-gray-50">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
@@ -229,8 +229,8 @@ export function FileUpload({
                 <Icon className="w-5 h-5 text-purple-400" strokeWidth={1.5} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white font-medium truncate">{file.name}</p>
-                <p className="text-xs text-white/40">{formatFileSize(file.size)}</p>
+                <p className="text-sm text-gray-900 font-medium truncate">{file.name}</p>
+                <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>
               </div>
 
               {/* Status / remove */}
@@ -243,8 +243,8 @@ export function FileUpload({
                   <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                   <button
                     onClick={handleRemove}
-                    className="shrink-0 p-1.5 rounded-lg text-white/30 hover:text-white/60
-                      hover:bg-white transition-all"
+                    className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-600
+                      hover:bg-gray-100 transition-all"
                     aria-label="Remove file"
                   >
                     <X className="w-4 h-4" />

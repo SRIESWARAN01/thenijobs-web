@@ -280,15 +280,6 @@ function LoginPageContent() {
     finally { setLoading(false); }
   };
 
-  const handleDemoLogin = async (role: 'seeker' | 'employer' | 'admin') => {
-    setLoading(true); setLocalError(null);
-    const emails = { seeker: 'jobseeker@thenijobs.com', employer: 'company@thenijobs.com', admin: 'admin@thenijobs.com' };
-    const passwords = { seeker: 'Jobseeker@123', employer: 'Company@123', admin: 'Admin@123' };
-    try { await signInWithEmail(emails[role], passwords[role]); }
-    catch (err: any) { setLocalError(`Demo login failed. Please create '${emails[role]}' in Firebase Auth first.`); }
-    finally { setLoading(false); }
-  };
-
   const activeError = localError || authError;
 
   return (
@@ -548,26 +539,6 @@ function LoginPageContent() {
                 Join Free
               </Link>
             </p>
-
-            {/* Quick Demo Access */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-5 pt-5 border-t border-gray-100">
-                <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Demo Access</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { role: 'seeker' as const, label: '👤 Seeker', bg: '#EFF6FF', color: '#2563EB' },
-                    { role: 'employer' as const, label: '🏢 Employer', bg: '#ECFDF5', color: '#059669' },
-                    { role: 'admin' as const, label: '⚙️ Admin', bg: '#FFFBEB', color: '#D97706' },
-                  ].map(item => (
-                    <button key={item.role} onClick={() => handleDemoLogin(item.role)} disabled={loading}
-                      className="py-2 rounded-xl text-[11px] font-bold text-center transition-all hover:opacity-80 border"
-                      style={{ background: item.bg, color: item.color, borderColor: item.bg }}>
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>

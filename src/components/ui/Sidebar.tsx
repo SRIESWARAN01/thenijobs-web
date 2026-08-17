@@ -173,7 +173,7 @@ export function Sidebar({
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
-              className="text-base font-bold text-gray-900 font-[Outfit] overflow-hidden whitespace-nowrap"
+              className="text-base font-bold text-white font-[Outfit] overflow-hidden whitespace-nowrap"
             >
               {portalTitle}
             </motion.span>
@@ -200,7 +200,7 @@ export function Sidebar({
                   ${
                     isActive
                       ? 'bg-gradient-to-r from-purple-600/20 to-indigo-600/10 text-white'
-                      : 'text-white/50 hover:text-white/80 hover:bg-white'
+                      : 'text-white/50 hover:text-white/80 hover:bg-white/10'
                   }`}
               >
                 {/* Active glow bar */}
@@ -289,7 +289,7 @@ export function Sidebar({
                   exit={{ opacity: 0, width: 0 }}
                   className="flex-1 min-w-0 overflow-hidden"
                 >
-                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
                   {user.email && (
                     <p className="text-xs text-white/35 truncate">{user.email}</p>
                   )}
@@ -317,7 +317,7 @@ export function Sidebar({
           <button
             onClick={onToggle}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
-              text-white/30 hover:text-white/60 hover:bg-white transition-all text-xs"
+              text-white/30 hover:text-white/60 hover:bg-white/10 transition-all text-xs"
           >
             {collapsed ? (
               <PanelLeft className="w-4 h-4" />
@@ -394,7 +394,7 @@ export function Sidebar({
               <button
                 onClick={() => setMobileOpen(false)}
                 className="absolute top-3 right-3 p-1.5 rounded-lg text-white/30
-                  hover:text-white/60 hover:bg-white transition-all z-10"
+                  hover:text-white/60 hover:bg-white/10 transition-all z-10"
                 aria-label="Close menu"
               >
                 <X className="w-4.5 h-4.5" />

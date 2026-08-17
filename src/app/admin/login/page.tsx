@@ -64,49 +64,49 @@ export default function AdminLoginPage() {
           <p className="text-xs text-gray-500 font-medium">Secure Administrative Access</p>
         </div>
 
-        <div className="glass-card rounded-3xl p-7 shadow-2xl">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/15 mb-6">
-            <Shield size={14} className="text-violet-400" />
-            <p className="text-[10px] text-violet-300 font-medium">This portal is restricted to authorized administrators only.</p>
+        <div className="bg-white rounded-3xl p-7 shadow-xl border border-slate-200">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 mb-6">
+            <Shield size={14} className="text-blue-600 shrink-0" />
+            <p className="text-[11px] text-blue-900 font-semibold">This portal is restricted to authorized administrators only.</p>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/15 mb-4">
-              <AlertCircle size={14} className="text-rose-400 flex-shrink-0" />
-              <p className="text-[11px] text-rose-300">{error}</p>
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 border border-rose-200 mb-4">
+              <AlertCircle size={14} className="text-rose-600 flex-shrink-0" />
+              <p className="text-xs text-rose-800 font-medium">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs text-gray-400 font-medium">Admin Email</label>
+              <label className="text-xs text-slate-700 font-bold">Admin Email</label>
               <div className="relative">
-                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@thenijobs.com"
-                  className="search-input w-full pl-10 pr-4 py-3 text-sm animate-fade-in"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-gray-400 font-medium">Password</label>
+              <label className="text-xs text-slate-700 font-bold">Password</label>
               <div className="relative">
-                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type={showPass ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="search-input w-full pl-10 pr-10 py-3 text-sm animate-fade-in"
+                  className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
                   {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
@@ -115,7 +115,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-gradient py-3.5 rounded-2xl font-semibold text-sm relative z-10 flex items-center justify-center gap-2 mt-2"
+              className="w-full py-3.5 rounded-2xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 mt-2 transition-all cursor-pointer disabled:opacity-50"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : null}
               {loading ? 'Authenticating...' : 'Access Admin Portal'}
@@ -123,14 +123,14 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-white/[0.06] text-center">
-            <Link href="/" className="text-xs text-gray-500 hover:text-gray-400 transition-colors">
+          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+            <Link href="/" className="text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors">
               ← Back to THENIJOBS
             </Link>
           </div>
         </div>
 
-        <p className="text-center text-[10px] text-gray-600 mt-6">
+        <p className="text-center text-[10px] text-slate-500 font-medium mt-6">
           Protected by Firebase Auth · Secure Admin Dashboard
         </p>
       </div>

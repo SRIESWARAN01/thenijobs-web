@@ -72,19 +72,26 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
 
 const TRENDING_SEARCHES = ['Digital Marketing', 'Software Engineer', 'Accountant', 'Sales Executive', 'Driver', 'Teacher', 'Delivery Boy', 'Electrician', 'Data Entry', 'Staff Nurse'];
 
-// Rule-based offline SEO synonyms map (for guest users without calling Gemini API)
+// Rule-based offline SEO synonyms map (for fast resilient search without API lag)
 const RULE_BASED_SYNONYMS: Record<string, string[]> = {
   'digital marketing': ['seo', 'sem', 'social media', 'google ads', 'content marketing', 'digital marketer', 'campaign', 'meta ads', 'smm'],
-  'software engineer': ['react', 'node', 'full stack', 'developer', 'frontend', 'backend', 'programmer', 'software developer', 'python', 'javascript', 'nextjs', 'web developer'],
-  'accountant': ['tally', 'gst', 'accounts', 'billing', 'finance', 'auditing', 'bookkeeper', 'ca inter', 'commerce', 'b.com'],
-  'driver': ['heavy vehicle', 'van driver', 'car driver', 'delivery driver', 'logistics', 'transport', 'auto driver'],
-  'teacher': ['faculty', 'lecturer', 'tutor', 'trainer', 'school teacher', 'professor', 'instructor', 'pgt', 'tgt', 'bed'],
-  'sales': ['sales executive', 'marketing executive', 'business development', 'bde', 'telecaller', 'store sales', 'field sales', 'retail sales', 'counter sales'],
-  'nurse': ['staff nurse', 'healthcare', 'hospital', 'patient care', 'clinic', 'medical', 'anm', 'gnm', 'bsc nursing'],
-  'electrician': ['electrical', 'wireman', 'iti', 'maintenance', 'technician', 'wiring'],
-  'delivery': ['delivery boy', 'courier', 'swiggy', 'zomato', 'delivery partner', 'rider', 'driver'],
-  'data entry': ['back office', 'computer operator', 'excel', 'typing', 'clerk', 'office assistant'],
-  'agriculture': ['farm', 'estate', 'cardamom', 'plantation', 'horticulture', 'agriculture supervisor', 'greenhouse'],
+  'software engineer': ['react', 'node', 'full stack', 'developer', 'frontend', 'backend', 'programmer', 'software developer', 'python', 'javascript', 'nextjs', 'web developer', 'it'],
+  'accountant': ['tally', 'gst', 'accounts', 'billing', 'finance', 'auditing', 'bookkeeper', 'ca inter', 'commerce', 'b.com', 'audit'],
+  'driver': ['heavy vehicle', 'van driver', 'car driver', 'delivery driver', 'logistics', 'transport', 'auto driver', 'bus driver'],
+  'teacher': ['faculty', 'lecturer', 'tutor', 'trainer', 'school teacher', 'professor', 'instructor', 'pgt', 'tgt', 'bed', 'teaching'],
+  'sales': ['sales executive', 'marketing executive', 'business development', 'bde', 'telecaller', 'store sales', 'field sales', 'retail sales', 'counter sales', 'marketing'],
+  'nurse': ['staff nurse', 'healthcare', 'hospital', 'patient care', 'clinic', 'medical', 'anm', 'gnm', 'bsc nursing', 'doctor'],
+  'electrician': ['electrical', 'wireman', 'iti', 'maintenance', 'technician', 'wiring', 'electrician'],
+  'delivery': ['delivery boy', 'courier', 'swiggy', 'zomato', 'delivery partner', 'rider', 'driver', 'logistics'],
+  'data entry': ['back office', 'computer operator', 'excel', 'typing', 'clerk', 'office assistant', 'admin'],
+  'agriculture': ['farm', 'estate', 'cardamom', 'plantation', 'horticulture', 'agriculture supervisor', 'greenhouse', 'agro'],
+  'tailor': ['tailoring', 'cutting', 'stitching', 'garment', 'textile', 'fashion', 'sewing', 'embroidery', 'cloth'],
+  'cashier': ['counter billing', 'pos', 'store cashier', 'billing executive', 'supermarket', 'retail'],
+  'security': ['security guard', 'watchman', 'patrol', 'guard', 'security officer', 'cctv'],
+  'hotel': ['cook', 'chef', 'waiter', 'hotel manager', 'receptionist', 'housekeeping', 'catering', 'service'],
+  'graphic': ['graphic designer', 'photoshop', 'illustrator', 'banner', 'video editor', 'coreldraw', 'ui ux'],
+  'mechanic': ['automobile', 'two wheeler', 'four wheeler', 'fitter', 'technician', 'workshop', 'iti mechanic'],
+  'pharmacist': ['pharmacy', 'd.pharm', 'b.pharm', 'medical store', 'druggist', 'chemist'],
 };
 
 function formatTime(ts: any) {
@@ -317,25 +324,33 @@ export default function JobsPage() {
     datePosted: 'all'
   });
 
-  // AI Job Search Handler (Protected for Logged-In Users)
+  // AI Job Search Handler (Fast, resilient with 3.5s timeout protection & offline fallback)
   const handleAIJobSearch = async () => {
     if (!search.trim() || aiSearching) return;
 
+    // For Guest Users: Execute Instant Synonym Match without waiting
     if (!user) {
-      toast.info('Login for Gemini AI Match ✨', 'Enjoy fast keyword search as guest. Login to unlock semantic AI matching!');
+      toast.info('Instant Smart Search', 'Matched jobs using semantic keywords. Login for Gemini AI ranking!');
       return;
     }
 
     setAiSearching(true);
     try {
-      const res = await requestAIService({
+      // 3.5s timeout protection so search NEVER hangs
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('AI_SEARCH_TIMEOUT')), 3500)
+      );
+
+      const aiPromise = requestAIService({
         feature: 'job_search',
         userId: user.uid,
         userRole: 'SEEKER',
         payload: { query: search },
       });
 
-      if (res.success && res.data) {
+      const res = (await Promise.race([aiPromise, timeoutPromise])) as any;
+
+      if (res && res.success && res.data) {
         setAiIntent(res.data.intent);
         if (res.data.realJobs && Array.isArray(res.data.realJobs) && res.data.realJobs.length > 0) {
           const TYPE_MAP: Record<string, string> = {
@@ -346,7 +361,7 @@ export default function JobsPage() {
           const mapped: Job[] = res.data.realJobs.map((d: any) => ({
             id: d.id,
             title: d.title || 'Job Title',
-            company: d.companyName || 'Company',
+            company: d.companyName || d.company || 'Company',
             companyId: d.companyId || '',
             location: d.district || d.location || 'Theni',
             salary: d.salaryMin ? `₹${d.salaryMin.toLocaleString('en-IN')}/mo` : 'Negotiable',
@@ -354,9 +369,9 @@ export default function JobsPage() {
             salaryMax: d.salaryMax || 0,
             type: TYPE_MAP[d.jobType] || 'Full Time',
             posted: 'Live',
-            logo: d.logoUrl || d.companyLogo || 'C',
-            isUrgent: false,
-            isPremium: false,
+            logo: d.logoUrl || d.companyLogo || d.logo || 'C',
+            isUrgent: d.isUrgent || false,
+            isPremium: d.isPremium || false,
             isFeatured: true,
             isVerified: true,
             category: d.category || 'General',
@@ -366,12 +381,12 @@ export default function JobsPage() {
           }));
           setJobs(mapped);
           if (mapped.length > 0) setSelectedJob(mapped[0]);
-          toast.success('✨ AI Matched Jobs Found', `Matched ${mapped.length} jobs based on your query.`);
+          toast.success('✨ AI Matched Jobs Found', `Found ${mapped.length} matching jobs.`);
         }
       }
     } catch (err: any) {
-      console.error('AI Job Search error:', err);
-      toast.error('AI Search error', 'Falling back to keyword search.');
+      console.warn('[AI Job Search Notice]: Running local keyword match fallback.', err?.message);
+      toast.info('Smart Search Active', 'Filtered matching database jobs.');
     } finally {
       setAiSearching(false);
     }

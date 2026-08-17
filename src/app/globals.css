@@ -1174,6 +1174,17 @@ button[class*="text-gray-300"][class*="bg-white"] {
   background-color: #FFFFFF !important;
 }
 
+/* --- High contrast placeholder & selection rules --- */
+::placeholder {
+  color: #64748B !important;
+  opacity: 0.9 !important;
+}
+
+::selection {
+  background-color: #DBEAFE;
+  color: #1E40AF;
+}
+
 /* ===== KEYFRAMES ===== */
 @keyframes vk-shimmer {
   0% { background-position: -200% 0; }

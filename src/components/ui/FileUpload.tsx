@@ -187,14 +187,14 @@ export function FileUpload({
             </div>
             <div className="text-center">
               <p
-                className={`text-sm font-medium transition-colors ${
-                  isDragOver ? 'text-purple-600' : 'text-gray-600'
+                className={`text-sm font-semibold transition-colors ${
+                  isDragOver ? 'text-purple-600' : 'text-slate-800'
                 }`}
               >
                 {label}
               </p>
               {(accept || maxSize) && (
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1 font-medium">
                   {accept && <span>{accept}</span>}
                   {accept && maxSize && <span> · </span>}
                   {maxSize && <span>Max {formatFileSize(maxSize)}</span>}

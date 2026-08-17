@@ -103,22 +103,22 @@ export function Modal({
                 exit="exit"
                 className={`fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
                   w-[calc(100%-1.5rem)] ${SIZE_MAP[size]}
-                  rounded-2xl border border-gray-200
-                  bg-[rgba(15,15,30,0.95)] backdrop-blur-2xl
-                  shadow-[0_24px_80px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)]
+                  rounded-3xl border border-slate-200
+                  bg-white
+                  shadow-2xl
                   outline-none flex flex-col
                   max-h-[85vh]
                   ${size === 'full' ? 'md:max-h-[85vh] max-h-[calc(100vh-2rem)]' : ''}
                   ${className}`}
               >
                 {/* Header */}
-                <div className="flex items-start justify-between px-6 pt-6 pb-4 shrink-0">
+                <div className="flex items-start justify-between px-6 pt-6 pb-4 shrink-0 border-b border-slate-100">
                   <div>
-                    <Dialog.Title className="text-lg font-semibold text-white font-[Outfit]">
+                    <Dialog.Title className="text-lg font-bold text-slate-900 font-[Outfit]">
                       {title}
                     </Dialog.Title>
                     {description && (
-                      <Dialog.Description className="text-sm text-white/45 mt-1">
+                      <Dialog.Description className="text-sm text-slate-600 mt-1 font-medium">
                         {description}
                       </Dialog.Description>
                     )}
@@ -126,11 +126,11 @@ export function Modal({
                   {showClose && (
                     <Dialog.Close asChild>
                       <button
-                        className="shrink-0 ml-4 p-1.5 rounded-lg text-white/30
-                          hover:text-white/60 hover:bg-white/10 transition-all"
+                        className="shrink-0 ml-4 p-1.5 rounded-xl text-slate-400
+                          hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
                         aria-label="Close"
                       >
-                        <X className="w-4.5 h-4.5" />
+                        <X className="w-5 h-5" />
                       </button>
                     </Dialog.Close>
                   )}

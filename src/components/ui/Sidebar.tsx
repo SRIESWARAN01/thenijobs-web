@@ -267,14 +267,13 @@ export function Sidebar({
         })}
       </nav>
 
-      {/* ── Bottom section: User ── */}
+      {/* ── User section ── */}
       {user && (
-        <div className="shrink-0 border-t border-gray-100 px-3 py-3">
-          <div className={`flex items-center gap-3 ${collapsed && !isMobile ? 'justify-center' : ''}`}>
-            {/* Avatar */}
-            <div className="shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
+        <div className="shrink-0 border-t border-white/10 p-3">
+          <div className="flex items-center gap-3">
+            <div className="shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500
+              flex items-center justify-center text-xs font-bold text-white overflow-hidden">
               {user.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               ) : (
                 user.name.charAt(0).toUpperCase()
@@ -289,9 +288,9 @@ export function Sidebar({
                   exit={{ opacity: 0, width: 0 }}
                   className="flex-1 min-w-0 overflow-hidden"
                 >
-                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                  <p className="text-sm font-semibold text-white truncate">{user.name}</p>
                   {user.email && (
-                    <p className="text-xs text-white/35 truncate">{user.email}</p>
+                    <p className="text-xs text-slate-300 truncate font-medium">{user.email}</p>
                   )}
                 </motion.div>
               )}
@@ -300,8 +299,8 @@ export function Sidebar({
             {onLogout && (!collapsed || isMobile) && (
               <button
                 onClick={onLogout}
-                className="shrink-0 p-1.5 rounded-lg text-white/30 hover:text-rose-400
-                  hover:bg-red-100 transition-all"
+                className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-400
+                  hover:bg-white/10 transition-all cursor-pointer"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
@@ -313,11 +312,11 @@ export function Sidebar({
 
       {/* ── Collapse toggle (desktop) ── */}
       {!isMobile && (
-        <div className="shrink-0 border-t border-gray-100 px-3 py-2">
+        <div className="shrink-0 border-t border-white/10 px-3 py-2">
           <button
             onClick={onToggle}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-xl
-              text-white/30 hover:text-white/60 hover:bg-white/10 transition-all text-xs"
+              text-slate-300 hover:text-white hover:bg-white/10 transition-all text-xs font-semibold cursor-pointer"
           >
             {collapsed ? (
               <PanelLeft className="w-4 h-4" />

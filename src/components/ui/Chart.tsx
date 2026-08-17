@@ -127,7 +127,7 @@ function GlassLegend({ payload }: CustomLegendProps) {
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-xs text-white/50">{entry.value}</span>
+          <span className="text-xs text-slate-600 font-medium">{entry.value}</span>
         </div>
       ))}
     </div>

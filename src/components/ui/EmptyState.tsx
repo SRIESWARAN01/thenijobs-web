@@ -31,15 +31,15 @@ const VARIANT_ICONS: Record<EmptyStateVariant, LucideIcon> = {
 };
 
 const VARIANT_COLORS: Record<EmptyStateVariant, string> = {
-  default: 'text-purple-400',
-  search: 'text-cyan-400',
-  error: 'text-rose-400',
+  default: 'text-purple-600',
+  search: 'text-cyan-600',
+  error: 'text-rose-600',
 };
 
 const VARIANT_GLOW: Record<EmptyStateVariant, string> = {
-  default: 'rgba(124,58,237,0.15)',
-  search: 'rgba(6,182,212,0.15)',
-  error: 'rgba(244,63,94,0.15)',
+  default: 'rgba(124,58,237,0.12)',
+  search: 'rgba(6,182,212,0.12)',
+  error: 'rgba(244,63,94,0.12)',
 };
 
 /* ------------------------------------------------------------------ */
@@ -70,20 +70,20 @@ export function EmptyState({
       <motion.div
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        className="mb-6 rounded-2xl p-5"
+        className="mb-6 rounded-3xl p-5"
         style={{
           background: `linear-gradient(145deg, ${glowColor}, transparent)`,
           boxShadow: `0 0 40px ${glowColor}`,
         }}
       >
-        <Icon className={`w-12 h-12 ${colorClass}`} strokeWidth={1.5} />
+        <Icon className={`w-12 h-12 ${colorClass}`} strokeWidth={1.75} />
       </motion.div>
 
       {/* Text */}
-      <h3 className="text-lg font-semibold text-gray-900 mb-2 font-[Outfit]">
+      <h3 className="text-lg font-bold text-gray-900 mb-2 font-[Outfit]">
         {title}
       </h3>
-      <p className="text-sm text-gray-500 max-w-sm leading-relaxed mb-6">
+      <p className="text-sm text-gray-600 max-w-sm leading-relaxed mb-6 font-medium">
         {description}
       </p>
 

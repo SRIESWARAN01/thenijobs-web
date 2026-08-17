@@ -34,13 +34,13 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
         <>
           <Link
             href="/"
-            className="text-gray-400 hover:text-gray-700 transition-colors p-0.5"
+            className="text-slate-500 hover:text-blue-600 transition-colors p-0.5"
             aria-label="Home"
           >
             <Home className="w-3.5 h-3.5" />
           </Link>
           {items.length > 0 && (
-            <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           )}
         </>
       )}
@@ -54,8 +54,8 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
               <span
                 className={`px-1 truncate max-w-[200px] ${
                   isLast
-                    ? 'text-gray-900 font-medium'
-                    : 'text-gray-400'
+                    ? 'text-slate-900 font-bold'
+                    : 'text-slate-500 font-medium'
                 }`}
                 aria-current={isLast ? 'page' : undefined}
               >
@@ -64,14 +64,14 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
             ) : (
               <Link
                 href={item.href}
-                className="px-1 text-gray-400 hover:text-gray-700 transition-colors truncate max-w-[200px]"
+                className="px-1 text-slate-500 hover:text-blue-600 font-medium transition-colors truncate max-w-[200px]"
               >
                 {item.label}
               </Link>
             )}
 
             {!isLast && (
-              <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             )}
           </React.Fragment>
         );

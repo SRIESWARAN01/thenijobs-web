@@ -174,17 +174,17 @@ export function StatsCard({
     >
       {/* Top row */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-gray-500 font-medium">{title}</span>
-        <div className={`${c.iconBg} rounded-xl p-2.5`}>
+        <span className="text-sm text-slate-700 font-semibold">{title}</span>
+        <div className={`${c.iconBg} rounded-xl p-2.5 shadow-xs`}>
           <Icon className={`w-5 h-5 ${c.iconColor}`} strokeWidth={1.8} />
         </div>
       </div>
 
       {/* Value */}
-      <div className="text-3xl font-bold text-gray-900 tracking-tight font-[Outfit] mb-1">
+      <div className="text-3xl font-bold text-slate-900 tracking-tight font-[Outfit] mb-1">
         {prefix}
         {animatedValue.toLocaleString()}
-        {suffix && <span className="text-lg text-gray-400 ml-1">{suffix}</span>}
+        {suffix && <span className="text-lg text-slate-500 font-bold ml-1">{suffix}</span>}
       </div>
 
       {/* Trend */}
@@ -196,13 +196,13 @@ export function StatsCard({
             <TrendingDown className={`w-3.5 h-3.5 ${c.trendNegative}`} />
           )}
           <span
-            className={`text-xs font-semibold ${
+            className={`text-xs font-bold ${
               trend.isPositive ? c.trendPositive : c.trendNegative
             }`}
           >
             {trend.value}%
           </span>
-          <span className="text-xs text-gray-400">vs last month</span>
+          <span className="text-xs text-slate-500 font-medium">vs last month</span>
         </div>
       )}
     </motion.div>

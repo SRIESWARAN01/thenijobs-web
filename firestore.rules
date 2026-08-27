@@ -75,8 +75,8 @@ service cloud.firestore {
     // ===== USERS =====
     match /users/{userId} {
       allow read:   if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) &&
-        request.resource.data.role in ['job_seeker', 'employer', 'business_owner', 'supplier', 'service_provider'];
+      allow create: if (isOwner(userId) &&
+        request.resource.data.role in ['job_seeker', 'employer', 'business_owner', 'supplier', 'service_provider']) || isAdmin();
       allow update: if (isOwner(userId) && userModerationUnchanged()) || isAdmin();
       allow delete: if isAdmin();
     }
@@ -85,8 +85,8 @@ service cloud.firestore {
     match /companies/{companyId} {
       allow read: if resource.data.verificationStatus == 'verified' ||
         (isAuthenticated() && resource.data.ownerId == request.auth.uid) || isAdmin();
-      allow create: if isAuthenticated() && safeCompanyCreate() &&
-        request.resource.data.ownerId == request.auth.uid;
+      allow create: if (isAuthenticated() && safeCompanyCreate() &&
+        request.resource.data.ownerId == request.auth.uid) || isAdmin();
       allow update: if
         (isAuthenticated() && resource.data.ownerId == request.auth.uid && companyModerationUnchanged()) ||
         isAdmin();
@@ -97,8 +97,8 @@ service cloud.firestore {
     match /jobs/{jobId} {
       allow read: if resource.data.status == 'active' ||
         (isAuthenticated() && resource.data.postedBy == request.auth.uid) || isAdmin();
-      allow create: if isAuthenticated() && safeJobCreate() &&
-        request.resource.data.postedBy == request.auth.uid;
+      allow create: if (isAuthenticated() && safeJobCreate() &&
+        request.resource.data.postedBy == request.auth.uid) || isAdmin();
       allow update: if
         (isAuthenticated() && resource.data.postedBy == request.auth.uid && jobModerationUnchanged()) ||
         isAdmin();

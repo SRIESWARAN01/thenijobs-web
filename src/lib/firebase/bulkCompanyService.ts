@@ -174,7 +174,7 @@ export async function executeBulkCompanyImport(
       }
 
       // 2. Prepare comprehensive Company Document with Full Portfolio Assets
-      const companyDocData = {
+      const rawDocData = {
         id: companyId,
         ownerId,
         name: data.name,
@@ -247,20 +247,29 @@ export async function executeBulkCompanyImport(
         updatedAt: serverTimestamp(),
       };
 
+      // Strip any undefined values to satisfy Firestore
+      const companyDocData = Object.fromEntries(
+        Object.entries(rawDocData).filter(([_, v]) => v !== undefined)
+      );
+
       // 3. Write Company Document to Firestore
       await setDoc(doc(db, 'companies', companyId), companyDocData);
 
       // 4. Update linked user record if ownerId is a real user
       if (ownerId && !ownerId.startsWith('imported_')) {
-        await setDoc(
-          doc(db, 'users', ownerId),
-          {
-            companyId,
-            companyName: data.name,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        try {
+          await setDoc(
+            doc(db, 'users', ownerId),
+            {
+              companyId,
+              companyName: data.name,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch (uErr) {
+          console.warn(`[Bulk Import] Linked user update failed for ${ownerId}:`, uErr);
+        }
       }
 
       result.successful++;
@@ -279,7 +288,7 @@ export async function executeBulkCompanyImport(
       result.errors.push({
         rowNumber: row.originalIndex + 1,
         companyName: data.name,
-        error: err.message || 'Unknown database write error',
+        error: err?.message || err?.code || 'Database write error (Permission or validation error)',
       });
     }
   }

@@ -2,17 +2,26 @@ import type { Metadata } from 'next';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
+import AnnouncementBar from '@/components/home/AnnouncementBar';
 import HeroSection from '@/components/home/HeroSection';
-import CategoriesSection from '@/components/home/CategoriesSection';
+import TrustedEmployersStrip from '@/components/home/TrustedEmployersStrip';
 import TrendingJobs from '@/components/home/TrendingJobs';
+import CategoriesSection from '@/components/home/CategoriesSection';
+import LocationsSection from '@/components/home/LocationsSection';
+import WhySection from '@/components/home/WhySection';
+import HowItWorksSection from '@/components/home/HowItWorksSection';
+import JobSeekerEmployerCTA from '@/components/home/JobSeekerEmployerCTA';
 import FeaturedBusinesses from '@/components/home/FeaturedBusinesses';
+import ServicesSection from '@/components/home/ServicesSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
+import FAQSection from '@/components/home/FAQSection';
+import FinalCTA from '@/components/home/FinalCTA';
 import HomeFooter from '@/components/home/HomeFooter';
 
 export const metadata: Metadata = {
   title: 'THENIJOBS – Latest Jobs in Theni | Private Jobs, Fresher Jobs & Vacancies',
   description:
-    'THENIJOBS is the #1 verified local job portal connecting job seekers with companies and job opportunities across Theni, Cumbum, Periyakulam, Bodinayakanur, Uthamapalayam and nearby areas in Tamil Nadu. Search 1,200+ active private, fresher, and full-time jobs with instant direct apply.',
+    'THENIJOBS is a local job portal connecting job seekers with verified companies and opportunities across Theni, Cumbum, Periyakulam, Bodinayakanur, Uthamapalayam and nearby areas in Tamil Nadu. Search active private, fresher, and full-time jobs with instant direct apply.',
   keywords: [
     'Theni Jobs',
     'Jobs in Theni',
@@ -45,7 +54,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Theni Jobs | Find Verified Job Vacancies | THENIJOBS',
-    description: 'The #1 verified local job portal for Theni & Tamil Nadu.',
+    description: 'A local job portal for Theni & Tamil Nadu — find verified jobs and employers.',
     images: ['/og-image.jpg'],
   },
 };
@@ -58,7 +67,7 @@ const homeStructuredData = {
       '@id': 'https://thenijobs.com/#website',
       url: 'https://thenijobs.com',
       name: 'THENIJOBS',
-      description: 'The #1 Local Job Portal for Theni & Tamil Nadu',
+      description: 'Local Job & Business Platform for Theni & Tamil Nadu',
       potentialAction: {
         '@type': 'SearchAction',
         target: {
@@ -114,11 +123,20 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}
       />
       <Header />
+      <AnnouncementBar />
       <HeroSection />
+      <TrustedEmployersStrip />
       <TrendingJobs />
-      <FeaturedBusinesses />
       <CategoriesSection />
+      <LocationsSection />
+      <WhySection />
+      <HowItWorksSection />
+      <JobSeekerEmployerCTA />
+      <FeaturedBusinesses />
+      <ServicesSection />
       <TestimonialsSection />
+      <FAQSection />
+      <FinalCTA />
       <HomeFooter />
       <BottomNav />
       <FloatingWhatsApp />

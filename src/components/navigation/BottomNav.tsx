@@ -24,16 +24,16 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className={`flex min-w-[56px] flex-col items-center gap-0.5 rounded-xl px-1.5 py-1 text-[10px] font-bold transition-colors ${
-                isActive ? 'text-[#2563eb]' : 'text-slate-500 hover:text-slate-800'
+              className={`flex min-w-[56px] flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-bold transition-colors ${
+                isActive ? 'text-[#2563eb]' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span
-                className={`flex h-7 w-7 items-center justify-center rounded-xl transition-colors ${
+                className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${
                   isActive ? 'bg-blue-50' : 'bg-transparent'
                 }`}
               >
-                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
               </span>
               <span className="truncate max-w-[64px]">{label}</span>
             </Link>

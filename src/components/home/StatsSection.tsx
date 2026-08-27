@@ -47,10 +47,10 @@ export default function StatsSection() {
   const { count: verifiedCompanies } = useRealtimeCount('companies', [where('verificationStatus', '==', 'verified')]);
 
   const stats = [
-    { value: activeJobs || 5200, suffix: '+', label: 'Active Jobs', tamil: 'தற்போதைய வேலைகள்', color: 'text-teal-700', icon: BellRing },
-    { value: totalCompanies || 1800, suffix: '+', label: 'Companies', tamil: 'நிறுவனங்கள்', color: 'text-blue-700', icon: Building2 },
+    { value: activeJobs, suffix: '+', label: 'Active Jobs', tamil: 'தற்போதைய வேலைகள்', color: 'text-teal-700', icon: BellRing },
+    { value: totalCompanies, suffix: '+', label: 'Companies', tamil: 'நிறுவனங்கள்', color: 'text-blue-700', icon: Building2 },
     { value: totalSeekers, suffix: '/7', label: 'Apply anytime', tamil: 'mobile-friendly applications', color: 'text-emerald-700', icon: Smartphone },
-    { value: verifiedCompanies || 900, suffix: '+', label: 'Verified Pages', tamil: 'verified business pages', color: 'text-amber-700', icon: BadgeCheck },
+    { value: verifiedCompanies, suffix: '+', label: 'Verified Pages', tamil: 'verified business pages', color: 'text-amber-700', icon: BadgeCheck },
   ];
 
   return (

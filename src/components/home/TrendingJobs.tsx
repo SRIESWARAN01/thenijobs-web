@@ -102,11 +102,11 @@ function JobCard({ job, rank }: { job: Job; rank: number }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-2">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <MapPin size={12} className="text-gray-400" />
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <MapPin size={12} className="text-gray-500" />
             <span className="truncate">{job.location}</span>
             <span>·</span>
-            <Clock size={12} className="text-gray-400" />
+            <Clock size={12} className="text-gray-500" />
             <span>{job.posted}</span>
           </div>
           <span className="px-3.5 py-1.5 text-xs font-bold text-white rounded-xl bg-blue-600 group-hover:bg-blue-700 transition-all shadow-xs flex items-center gap-1">
@@ -144,6 +144,7 @@ function SkeletonCard() {
 export default function TrendingJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -214,6 +215,7 @@ export default function TrendingJobs() {
         setJobs(calculatedJobs.slice(0, 6));
       } catch (err) {
         console.error('Failed to load trending jobs:', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -228,14 +230,14 @@ export default function TrendingJobs() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-xs font-extrabold uppercase tracking-wider mb-2.5">
-              <Flame size={13} className="fill-orange-600 text-orange-600 animate-pulse" />
-              Live Activity Ranking
+              <Flame size={13} className="fill-orange-600 text-orange-600" />
+              🔥 Updated Daily
             </div>
             <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Trending &amp; High-Demand Jobs
+              Latest &amp; Trending Jobs
             </h2>
-            <p className="text-gray-500 text-xs sm:text-sm mt-1">
-              Top vacancies with highest applicant interest and employer activity in Theni
+            <p className="text-gray-600 text-xs sm:text-sm mt-1">
+              Recently posted and popular job opportunities in Theni
             </p>
           </div>
 
@@ -252,10 +254,25 @@ export default function TrendingJobs() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+          ) : error ? (
+            <div className="col-span-full py-12 text-center">
+              <Briefcase size={36} className="mx-auto mb-2 text-gray-400" />
+              <p className="text-sm font-semibold text-gray-600 mb-3">Something went wrong loading jobs</p>
+              <button
+                onClick={() => { setError(false); setLoading(true); window.location.reload(); }}
+                className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
           ) : jobs.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-gray-400">
-              <Briefcase size={36} className="mx-auto mb-2 opacity-40" />
-              <p className="text-sm font-semibold">No active jobs found</p>
+            <div className="col-span-full py-12 text-center">
+              <Briefcase size={36} className="mx-auto mb-2 text-gray-400" />
+              <p className="text-sm font-semibold text-gray-600 mb-1">No active jobs right now</p>
+              <p className="text-xs text-gray-500 mb-4">Check back soon or post a job to get started</p>
+              <a href="/employer/post-job" className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+                Post a Job
+              </a>
             </div>
           ) : (
             jobs.map((job, idx) => (

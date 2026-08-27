@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Search, MapPin, Briefcase, Building2, Star, Zap, Users
+  Search, MapPin, Briefcase, Building2, Users, ArrowRight
 } from 'lucide-react';
 import { useRealtimeCount } from '@/hooks/useRealtimeStats';
 import { where } from 'firebase/firestore';
@@ -21,7 +21,7 @@ const popularTags = [
 
 const heroStats = [
   { label: 'Active Jobs', icon: Briefcase, color: '#2563EB', bg: '#EFF6FF' },
-  { label: 'Companies', icon: Building2, color: '#10B981', bg: '#ECFDF5' },
+  { label: 'Verified Companies', icon: Building2, color: '#10B981', bg: '#ECFDF5' },
   { label: 'Job Seekers', icon: Users, color: '#F59E0B', bg: '#FFFBEB' },
 ];
 
@@ -30,8 +30,9 @@ export default function HeroSection() {
   const [query, setQuery] = useState('');
   const [district, setDistrict] = useState('All Tamil Nadu');
 
-  const { count: jobCount } = useRealtimeCount('jobs', [where('status', '==', 'active')]);
-  const { count: companyCount } = useRealtimeCount('companies', [where('verificationStatus', '==', 'verified')]);
+  const { count: jobCount, loading: jobLoading } = useRealtimeCount('jobs', [where('status', '==', 'active')]);
+  const { count: companyCount, loading: companyLoading } = useRealtimeCount('companies', [where('verificationStatus', '==', 'verified')]);
+  const { count: seekerCount, loading: seekerLoading } = useRealtimeCount('users', [where('role', '==', 'seeker')]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +42,12 @@ export default function HeroSection() {
     router.push(`/jobs?${params.toString()}`);
   };
 
-  const counts = [jobCount || 1200, companyCount || 340, 8500];
+  // Only show stats that have real data (count > 0)
+  const statsData = [
+    { count: jobCount, loading: jobLoading },
+    { count: companyCount, loading: companyLoading },
+    { count: seekerCount, loading: seekerLoading },
+  ];
 
   return (
     <section className="relative overflow-hidden pt-2 sm:pt-4" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -60,32 +66,31 @@ export default function HeroSection() {
 
           {/* Left content */}
           <div className="flex-1 text-center lg:text-left">
-            {/* Top badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold mb-5">
-              <Zap size={12} className="fill-current" />
-              #1 Job Portal for Theni &amp; Tamil Nadu
+            {/* Top badge — no unsupported "#1" claim */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold mb-5">
+              <span aria-hidden="true">🎯</span>
+              Theni&apos;s Local Job &amp; Business Platform
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-extrabold leading-tight text-[#0F172A] mb-4"
               style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Find The Latest{' '}
+              Find the Right Job.{' '}
               <span style={{
                 background: 'linear-gradient(135deg, #2563EB, #10B981)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent'
-              }}>Theni Jobs</span>
-              {' '}&amp; Vacancies
+              }}>Hire Local Talent.</span>
             </h1>
 
             <p className="text-base sm:text-lg text-[#334155] mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Connect with top local employers across Theni, Cumbum, Periyakulam, Bodinayakanur &amp; Tamil Nadu.
-              Search verified private, fresher, and full-time jobs with instant direct apply.
+              Discover verified jobs, trusted employers and local opportunities across
+              Theni, Cumbum, Periyakulam, Bodinayakanur, Madurai, Dindigul and surrounding areas.
             </p>
 
             {/* Search bar */}
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto lg:mx-0 mb-5">
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 max-w-2xl mx-auto lg:mx-0 mb-4">
               <div className="relative flex-1">
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
@@ -93,6 +98,7 @@ export default function HeroSection() {
                   onChange={e => setQuery(e.target.value)}
                   placeholder="Job title, skills, or company (e.g. Sales, Driver, IT)..."
                   className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] placeholder-gray-500 text-sm focus:border-blue-600 focus:outline-none focus:ring-0 shadow-sm transition-all"
+                  aria-label="Search jobs by title, skills, or company"
                 />
               </div>
               <div className="relative sm:w-48">
@@ -101,6 +107,7 @@ export default function HeroSection() {
                   value={district}
                   onChange={e => setDistrict(e.target.value)}
                   className="w-full pl-9 pr-3 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] font-medium text-sm focus:border-blue-600 focus:outline-none appearance-none shadow-sm cursor-pointer"
+                  aria-label="Select location"
                 >
                   {DISTRICTS.map(d => <option key={d}>{d}</option>)}
                 </select>
@@ -111,9 +118,25 @@ export default function HeroSection() {
                 style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
               >
                 <Search size={16} />
-                Search Jobs
+                Find Jobs
               </button>
             </form>
+
+            {/* Secondary CTA */}
+            <div className="flex flex-wrap gap-2 justify-center lg:justify-start mb-5">
+              <Link
+                href="/employer/post-job"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-blue-600 text-blue-600 hover:bg-blue-50 transition-all"
+              >
+                Post a Job <ArrowRight size={14} />
+              </Link>
+              <Link
+                href="/register-business"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 transition-all"
+              >
+                Register Your Business
+              </Link>
+            </div>
 
             {/* Popular tags */}
             <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
@@ -135,6 +158,11 @@ export default function HeroSection() {
             <div className="grid gap-3">
               {heroStats.map((stat, i) => {
                 const Icon = stat.icon;
+                const { count, loading } = statsData[i];
+
+                // Hide card if data finished loading and count is 0
+                if (!loading && count === 0) return null;
+
                 return (
                   <div key={i} className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -142,29 +170,18 @@ export default function HeroSection() {
                       <Icon size={22} style={{ color: stat.color }} />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                        {counts[i].toLocaleString('en-IN')}+
-                      </p>
-                      <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
+                      {loading ? (
+                        <div className="h-7 w-16 bg-gray-100 rounded animate-pulse" />
+                      ) : (
+                        <p className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                          {count.toLocaleString('en-IN')}+
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-600 font-medium">{stat.label}</p>
                     </div>
                   </div>
                 );
               })}
-
-              {/* Trust indicator */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex">
-                    {[1,2,3,4,5].map(i => (
-                      <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-500 font-medium">4.8 / 5 rating</span>
-                </div>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Trusted by <span className="font-semibold text-gray-800">10,000+</span> job seekers &amp; employers across Tamil Nadu
-                </p>
-              </div>
             </div>
           </div>
 

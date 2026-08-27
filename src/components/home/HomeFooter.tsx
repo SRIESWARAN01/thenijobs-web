@@ -18,6 +18,8 @@ const footerLinks = {
   'Company': [
     { label: 'About Us', href: '/about' },
     { label: 'Contact', href: '/contact' },
+    { label: 'FAQ', href: '/about#faq' },
+    { label: 'Report a Job', href: '/contact?type=report' },
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Terms of Service', href: '/terms' },
     { label: 'Daily Jobs', href: '/daily-jobs' },
@@ -42,7 +44,7 @@ export default function HomeFooter() {
               </span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5 max-w-xs">
-              Tamil Nadu&apos;s most trusted local job portal. Connecting talent with opportunity across Theni, Madurai, Dindigul and beyond.
+              Connecting local talent with opportunity across Theni, Madurai, Dindigul and surrounding areas in Tamil Nadu.
             </p>
 
             {/* Contact */}
@@ -142,7 +144,7 @@ export default function HomeFooter() {
         {/* Bottom */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-gray-400">
-            © {new Date().getFullYear()} THENIJOBS. All rights reserved. The #1 Job Portal for Theni &amp; Tamil Nadu.
+            © {new Date().getFullYear()} THENIJOBS. All rights reserved. Theni&apos;s Local Job &amp; Business Platform.
           </p>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="text-xs text-gray-400 hover:text-white transition-colors">Privacy Policy</Link>

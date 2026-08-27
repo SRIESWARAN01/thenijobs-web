@@ -79,13 +79,17 @@ function BusinessCard({ biz }: { biz: Company }) {
             {/* Rating */}
             <div className="flex items-center gap-1 mb-2">
               <Star size={12} className="fill-amber-400 text-amber-400" />
-              <span className="text-xs font-bold text-gray-700">{biz.rating?.toFixed(1) || '4.5'}</span>
-              <span className="text-xs text-gray-400">({biz.reviews || 0})</span>
+              {biz.rating > 0 && (
+                <>
+                  <span className="text-xs font-bold text-gray-700">{biz.rating.toFixed(1)}</span>
+                  <span className="text-xs text-gray-500">({biz.reviews || 0})</span>
+                </>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                <MapPin size={11} className="text-gray-400" />
+                <MapPin size={11} className="text-gray-500" />
                 <span className="truncate">{biz.district || 'Theni'}</span>
               </div>
               {biz.jobs > 0 && (
@@ -118,6 +122,7 @@ function SkeletonCard() {
 export default function FeaturedBusinesses() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -150,6 +155,7 @@ export default function FeaturedBusinesses() {
         setCompanies(data);
       } catch (err) {
         console.error(err);
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -162,8 +168,8 @@ export default function FeaturedBusinesses() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-8">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-emerald-600 text-xs font-semibold mb-2">
-              <BadgeCheck size={11} /> Verified Partners
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-emerald-800 text-xs font-semibold mb-2">
+              <BadgeCheck size={11} /> Verified Employers
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
               Featured Companies
@@ -179,13 +185,24 @@ export default function FeaturedBusinesses() {
           {loading
             ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
             : companies.length > 0
-              ? companies.map(c => <BusinessCard key={c.id} biz={c} />)
-              : (
+               ? companies.map(c => <BusinessCard key={c.id} biz={c} />)
+               : error ? (
                 <div className="col-span-4 py-16 text-center">
                   <Briefcase size={36} className="mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500">No verified companies yet</p>
+                  <p className="text-gray-600 text-sm font-semibold mb-3">Could not load companies</p>
+                  <button
+                    onClick={() => { setError(false); setLoading(true); window.location.reload(); }}
+                    className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
                 </div>
-              )
+               ) : (
+                <div className="col-span-4 py-16 text-center">
+                  <Briefcase size={36} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-600">No verified companies yet</p>
+                </div>
+               )
           }
         </div>
 

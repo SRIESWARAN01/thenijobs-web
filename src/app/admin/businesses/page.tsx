@@ -1,16 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Building2, Search, CheckCircle, XCircle,
   Star, Crown, MapPin, BadgeCheck, Clock, Loader2, Download,
   Phone, MessageCircle, AlertCircle, X, Send, Eye, RefreshCw,
-  Globe, Mail, ShieldCheck, User, ExternalLink, FileText, Check
+  Globe, Mail, ShieldCheck, User, ExternalLink, FileText, Check,
+  FileSpreadsheet, Upload
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
 import { approveCompany, rejectCompany, featureCompany, updateDocument } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
+import { exportCompaniesToExcel } from '@/lib/excel/companyExcelService';
 
 interface BusinessDoc {
   id: string;
@@ -187,13 +190,37 @@ export default function BusinessesPage() {
   return (
     <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-          Business &amp; Employer Management
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-          Review employer applications, verify registrations, make calls &amp; WhatsApp verification
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-900">
+            Business &amp; Employer Management
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+            Review employer applications, verify registrations, make calls &amp; WhatsApp verification
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              exportCompaniesToExcel(filtered.length ? filtered : businesses, 'THENIJOBS_Businesses_Export');
+              toast.success('Export Ready', `Exported ${filtered.length || businesses.length} companies to Excel (.xlsx)`);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors shadow-2xs cursor-pointer"
+          >
+            <Download size={14} className="text-gray-500" />
+            Export to Excel
+          </button>
+          
+          <Link
+            href="/admin/businesses/import"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+          >
+            <Upload size={14} />
+            Bulk Import (Excel)
+          </Link>
+        </div>
       </div>
 
       {/* KPI stats matching Dashboard standard */}

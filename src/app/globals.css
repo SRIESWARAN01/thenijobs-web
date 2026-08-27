@@ -182,7 +182,21 @@ button {
     --vk-text-3: #374151;
     --vk-text-muted: #6B7280;
     --vk-text-subtle: #64748B;
-    --vk-text-placeholder: #94A3B8;
+    --vk-text-placeholder: #64748B;
+
+    /* Semantic text tokens */
+    --vk-text-on-primary: #FFFFFF;
+    --vk-text-on-dark: #F1F5F9;
+    --vk-text-link: #2563EB;
+    --vk-text-link-hover: #1D4ED8;
+    --vk-text-inactive: #475569;
+    --vk-text-active: #2563EB;
+
+    /* Status text (on light backgrounds — WCAG AA compliant) */
+    --vk-success-text: #065F46;
+    --vk-warning-text: #78350F;
+    --vk-error-text: #991B1B;
+    --vk-info-text: #1E40AF;
 
     /* Borders */
     --vk-border: #E5E7EB;
@@ -288,7 +302,7 @@ button {
 
   input::placeholder,
   textarea::placeholder {
-    color: #94A3B8 !important;
+    color: var(--vk-text-placeholder) !important;
     opacity: 1 !important;
   }
 
@@ -1174,15 +1188,10 @@ button[class*="text-gray-300"][class*="bg-white"] {
   background-color: #FFFFFF !important;
 }
 
-/* --- High contrast placeholder & selection rules --- */
+/* --- High contrast placeholder (consolidated — uses design token) --- */
 ::placeholder {
-  color: #64748B !important;
-  opacity: 0.9 !important;
-}
-
-::selection {
-  background-color: #DBEAFE;
-  color: #1E40AF;
+  color: var(--vk-text-placeholder) !important;
+  opacity: 1 !important;
 }
 
 /* ===== KEYFRAMES ===== */
@@ -1323,14 +1332,7 @@ button[class*="text-gray-300"][class*="bg-white"] {
    ============================================= */
 
 /* 1. Universal selection highlight */
-::selection {
-  background-color: #2563EB !important;
-  color: #FFFFFF !important;
-}
-::-moz-selection {
-  background-color: #2563EB !important;
-  color: #FFFFFF !important;
-}
+/* Selection colors — single canonical rule (see line ~243) */
 
 /* 2. Solid colored action buttons must have crisp white text */
 .bg-blue-600, .bg-blue-700, .bg-blue-800,
@@ -1351,14 +1353,7 @@ button[class*="text-gray-300"][class*="bg-white"] {
 .bg-purple-50, .bg-purple-100 { color: #5B21B6 !important; }
 .bg-indigo-50, .bg-indigo-100 { color: #3730A3 !important; }
 
-/* 4. Form inputs and dropdowns */
-input, textarea, select {
-  color: #0F172A !important;
-}
-input::placeholder, textarea::placeholder {
-  color: #64748B !important;
-  opacity: 1 !important;
-}
+/* 4. Form inputs — already handled by base layer rules above */
 
 /* 5. Dark themed sections (Hero, Dark Modals, Dark Cards) */
 .bg-slate-950, .bg-blue-950, .bg-indigo-950, .bg-gray-900 {

@@ -92,6 +92,200 @@ export interface ExcelAnalysisResult {
 }
 
 // Field aliases mapping for auto-detection
+export const STANDARD_CATEGORIES = [
+  'Agriculture & Farming',
+  'Automobile & Transport',
+  'Banking & Finance',
+  'Construction & Real Estate',
+  'Education & Training',
+  'Healthcare & Hospital',
+  'Hotel, Food & Restaurant',
+  'IT, Software & Digital',
+  'Manufacturing & Industry',
+  'Retail, Shop & Supermarket',
+  'Textiles & Garments',
+  'Security & Facility',
+  'Professional & Business Services',
+  'General Business',
+] as const;
+
+export const CATEGORY_KEYWORDS_MAP: Record<string, string[]> = {
+  'Agriculture & Farming': ['agri', 'agriculture', 'farming', 'farm', 'spices', 'cardamom', 'tea', 'coffee', 'seeds', 'fertilizer', 'nursery', 'tractor', 'irrigation', 'dairy', 'poultry', 'organic', 'crop', 'plant', 'grain', 'coco', 'coconut', 'polyhouse'],
+  'Automobile & Transport': ['auto', 'automobile', 'car', 'bike', 'motor', 'transport', 'logistics', 'travels', 'cab', 'taxi', 'lorry', 'truck', 'bus', 'service center', 'mechanic', 'garage', 'spare parts', 'tyre', 'courier', 'cargo', 'delivery', 'packer', 'mover'],
+  'Banking & Finance': ['bank', 'banking', 'finance', 'financial', 'chit', 'chit fund', 'loan', 'microfinance', 'insurance', 'wealth', 'investment', 'money', 'credit', 'accounting', 'auditing', 'tax', 'gst consultant'],
+  'Construction & Real Estate': ['construction', 'real estate', 'builder', 'building', 'architect', 'civil', 'contractor', 'brick', 'cement', 'steel', 'sand', 'interior', 'painting', 'plumbing', 'electricals', 'property', 'plots', 'housing'],
+  'Education & Training': ['education', 'school', 'college', 'academy', 'institute', 'tuition', 'coaching', 'training', 'university', 'computer center', 'spoken english', 'polytechnic', 'kindergarten', 'creche', 'driving school'],
+  'Healthcare & Hospital': ['health', 'healthcare', 'hospital', 'clinic', 'doctor', 'medical', 'pharmacy', 'chemist', 'drug', 'lab', 'diagnostic', 'nursing', 'dental', 'dentist', 'eye care', 'optical', 'scan', 'ayurvedic', 'homeopathy', 'care center', 'medplus', 'apollo'],
+  'Hotel, Food & Restaurant': ['hotel', 'restaurant', 'food', 'bakery', 'cafe', 'bistro', 'sweet stall', 'tea stall', 'catering', 'mess', 'resort', 'lodge', 'dhaba', 'fast food', 'snack', 'ice cream', 'beverages', 'biryani', 'kitchen', 'bakes'],
+  'IT, Software & Digital': ['it', 'software', 'digital', 'tech', 'technology', 'web', 'website', 'app', 'developer', 'hardware', 'networking', 'cloud', 'seo', 'marketing', 'graphic design', 'cyber', 'cctv', 'media', 'branding', 'computer sales', 'tcs', 'infotech'],
+  'Manufacturing & Industry': ['manufacturing', 'industry', 'factory', 'industrial', 'production', 'mill', 'plant', 'processing', 'packaging', 'steel works', 'plastics', 'pipes', 'machinery', 'foundry', 'engineering works', 'lathe', 'coir'],
+  'Retail, Shop & Supermarket': ['retail', 'shop', 'supermarket', 'store', 'grocery', 'mart', 'fancy', 'stationery', 'footwear', 'jewellery', 'gold', 'silver', 'electronics', 'appliances', 'furniture', 'hardware shop', 'departmental', 'provisions', 'bazaar'],
+  'Textiles & Garments': ['textile', 'textiles', 'garment', 'garments', 'clothing', 'cloth', 'saree', 'silk', 'cotton', 'dhoti', 'apparel', 'tailor', 'tailoring', 'dress', 'boutique', 'fashion', 'readymade', 'yarn', 'weaving', 'spinning'],
+  'Security & Facility': ['security', 'facility', 'guard', 'surveillance', 'manpower', 'cleaning', 'housekeeping', 'pest control', 'waste management', 'maintenance'],
+  'Professional & Business Services': ['consulting', 'consultant', 'lawyer', 'legal', 'advocate', 'notary', 'xerox', 'printing', 'press', 'advertising', 'agency', 'studio', 'photography', 'event management', 'marriage hall', 'catering service', 'travel agency', 'service', 'mahal'],
+  'General Business': ['general', 'business', 'enterprise', 'trading', 'agency', 'associates', 'distributor', 'dealer', 'corporation', 'company', 'other'],
+};
+
+export const CATEGORY_GUIDE_ROWS = [
+  {
+    'Official Category Name': 'Agriculture & Farming',
+    'Included Businesses & Keywords': 'Cardamom, Spices, Organic Farms, Drip Irrigation, Seeds, Fertilizers, Agro Chemicals, Plant Nursery, Dairy Farming, Poultry, Solar Agri Pumps, Grain Wholesale, Polyhouse',
+    'Example Companies': 'Agrimart Theni, Cardamom Spices Cumbum, Green Valley Agro, Theni Banana Traders',
+  },
+  {
+    'Official Category Name': 'Automobile & Transport',
+    'Included Businesses & Keywords': 'Car/Bike Showrooms, Two-Wheeler Service Centers, Mechanics, Garages, Auto Spare Parts, Tyre Shops, Logistics, Truck / Lorry Transport, Taxi / Cab Travels, Packers & Movers, Couriers',
+    'Example Companies': 'Sri Murugan Auto Garage, Theni Fast Track Cabs, Royal Logistics, TVS Service Center Theni',
+  },
+  {
+    'Official Category Name': 'Banking & Finance',
+    'Included Businesses & Keywords': 'Banks, NBFCs, Gold Loans, Microfinance, Chit Funds, Chartered Accountants (CA), Tax Consultants, GST Practitioners, Insurance Agencies, Investment Advisory',
+    'Example Companies': 'Theni Gold Finance, Mahalakshmi Chit Funds, Apex Tax & GST Services',
+  },
+  {
+    'Official Category Name': 'Construction & Real Estate',
+    'Included Businesses & Keywords': 'Building Contractors, Civil Engineers, Architects, Interior Designers, Bricks, Cement, TMT Steel, Sand, Electrical & Plumbing Contractors, Real Estate Promoters, Land Developers',
+    'Example Companies': 'Sri Krishna Builders Theni, Royal Bricks & Cement, Theni City Plots & Real Estate',
+  },
+  {
+    'Official Category Name': 'Education & Training',
+    'Included Businesses & Keywords': 'Schools (CBSE/Matric), Colleges, Computer Institutes, Spoken English Centers, NEET/JEE Coaching, Typewriting Institutes, Skill Development Centers, Driving Schools, Kindergartens',
+    'Example Companies': 'Theni Arts & Science Academy, CSC Computer Center, Winner NEET Academy',
+  },
+  {
+    'Official Category Name': 'Healthcare & Hospital',
+    'Included Businesses & Keywords': 'Multi-Speciality Hospitals, Clinics, Doctors, Diagnostic Laboratories, Scan Centers, Pharmacies, Medical Stores, Dental Clinics, Eye Care & Opticals, Ayurvedic & Siddha Centers',
+    'Example Companies': 'City Care Multi-Speciality Hospital, Theni Diagnostic Lab, Royal Dental Clinic, MedPlus Pharmacy',
+  },
+  {
+    'Official Category Name': 'Hotel, Food & Restaurant',
+    'Included Businesses & Keywords': 'Hotels, Lodges, Family Restaurants, Veg/Non-Veg Dhabas, Bakeries, Tea Stalls, Sweet Stalls, Catering Services, Fast Food, Ice Cream Parlours, Resorts, Homestays',
+    'Example Companies': 'Theni Anandha Bhavan, Grand Palace Hotel, Cumbum Royal Bakes, Hill View Resort Megamalai',
+  },
+  {
+    'Official Category Name': 'IT, Software & Digital',
+    'Included Businesses & Keywords': 'Software Companies, Web Design & Development, Mobile App Dev, Cloud Services, SEO & Digital Marketing, Graphic Design & Printing, CCTV & Networking, Computer & Laptop Sales/Service',
+    'Example Companies': 'Tata Consultancy & IT Services Theni, Vaanikan Infotech, NextGen Web Studio',
+  },
+  {
+    'Official Category Name': 'Manufacturing & Industry',
+    'Included Businesses & Keywords': 'Factories, Processing Mills, Rice Mills, Oil Mills, Coir Industries, Plastic & Packaging Units, Steel Fabrication, Lathe Works, Foundry, Industrial Machinery',
+    'Example Companies': 'Theni Coir Products, Sri Ram Oil Mills, Precision Engineering & Lathe Works',
+  },
+  {
+    'Official Category Name': 'Retail, Shop & Supermarket',
+    'Included Businesses & Keywords': 'Supermarkets, Departmental Stores, Grocery Shops, Provision Stores, Fancy & Gift Articles, Stationery, Footwear, Gold & Jewellery Showrooms, Home Appliances, Furniture Stores',
+    'Example Companies': 'Royal Grand Supermarket Cumbum, Theni Gold House, Home Style Furnitures',
+  },
+  {
+    'Official Category Name': 'Textiles & Garments',
+    'Included Businesses & Keywords': 'Silk Saree Showrooms, Readymade Garments, Mens Wear, Kids Wear, Textile Wholesalers, Handloom Centers, Tailoring & Boutiques, Uniform Manufacturers, Cloth Stores',
+    'Example Companies': 'Sri Meenakshi Textiles & Garments, Theni Silks, Fashion Tailors',
+  },
+  {
+    'Official Category Name': 'Security & Facility',
+    'Included Businesses & Keywords': 'Security Guard Agencies, Manpower Solutions, Housekeeping & Cleaning Services, Pest Control, CCTV Surveillance Services, Commercial Waste Management',
+    'Example Companies': 'Falcon Security Services, Theni Facility & Housekeeping Hub',
+  },
+  {
+    'Official Category Name': 'Professional & Business Services',
+    'Included Businesses & Keywords': 'Advocates & Legal Advisors, Notaries, Documentation & Xerox Centers, Photo & Video Studios, Event Organizers, Marriage Halls (Mahals), Advertising Agencies, Media Houses',
+    'Example Companies': 'Theni Digital Color Lab & Studio, Sri Raja Rajeswari Mahal, Apex Legal Associates',
+  },
+  {
+    'Official Category Name': 'General Business',
+    'Included Businesses & Keywords': 'General Trading, Wholesale Distributors, Agencies, Multi-Service Centers, Enterprises, Miscellaneous Local Businesses',
+    'Example Companies': 'Theni General Traders, Universal Agencies, Star Commercials',
+  },
+];
+
+export const DISTRICT_TOWNS_DATA = [
+  { District: 'Theni', 'Major Taluks & Towns': 'Theni Allinagaram, Vadapudupatti, Palani Chettipatti, Veerapandi, Koduvilarpatti' },
+  { District: 'Periyakulam', 'Major Taluks & Towns': 'Periyakulam Town, Vadagarai, Thenkarai, Devadanapatti, Genguvarpatti, Thamaraikulam' },
+  { District: 'Cumbum', 'Major Taluks & Towns': 'Cumbum Town, LF Road, Bazaar Street, Surulipatti, Narayanathevanpatti, Gudalur' },
+  { District: 'Bodinayakanur', 'Major Taluks & Towns': 'Bodinayakanur Town, Paramasivan Kovil Street, Kurangani Road, Dombuchery, Silamarathupatti' },
+  { District: 'Chinnamanur', 'Major Taluks & Towns': 'Chinnamanur Town, Gandhi Nagar, Markayankottai, Kuchanur, Erasakkanaickanur' },
+  { District: 'Andipatti', 'Major Taluks & Towns': 'Andipatti Town, Kanavoipatti, Myladumparai, Kadamalaikundu, Rajadhani' },
+  { District: 'Uthamapalayam', 'Major Taluks & Towns': 'Uthamapalayam Town, Kombai, Pannaipuram, Highwavys, Megamalai, Royappanpatti' },
+  { District: 'Madurai', 'Major Taluks & Towns': 'Madurai City, Usilampatti, Thirumangalam, Sholavandan, Melur' },
+  { District: 'Dindigul', 'Major Taluks & Towns': 'Dindigul City, Batlagundu, Kodaikanal, Nilakottai, Palani, Oddanchatram' },
+];
+
+export const AI_PROMPT_TEMPLATE = `You are an expert Data Extractor for THENIJOBS (Tamil Nadu's Leading Local Employment & Business Platform).
+Extract and structure company details into an Excel-compatible table or JSON matching the THENIJOBS schema with 100% accuracy.
+
+CRITICAL RULES FOR CATEGORIES:
+"Category" MUST match one of the 14 official platform categories EXACTLY:
+1. Agriculture & Farming (Cardamom, Spices, Seeds, Farms, Nursery, Organic)
+2. Automobile & Transport (Service Centers, Garages, Spares, Cabs, Travels, Lorries, Logistics)
+3. Banking & Finance (Banks, Gold Loans, Chit Funds, CA, Tax, Microfinance)
+4. Construction & Real Estate (Contractors, Civil, Bricks, Cement, Real Estate Plots)
+5. Education & Training (Schools, Colleges, Academies, Computer Centers, Coaching)
+6. Healthcare & Hospital (Hospitals, Clinics, Diagnostic Labs, Pharmacies, Doctors)
+7. Hotel, Food & Restaurant (Restaurants, Hotels, Bakeries, Catering, Sweets, Resorts)
+8. IT, Software & Digital (Software, Web Design, Apps, Digital Marketing, CCTV, Tech Sales)
+9. Manufacturing & Industry (Mills, Factories, Production, Steel, Coir, Packaging)
+10. Retail, Shop & Supermarket (Supermarkets, Groceries, Fancy, Footwear, Jewellery, Electronics)
+11. Textiles & Garments (Silk Sarees, Dhotis, Readymade Garments, Tailoring, Cloth Stores)
+12. Security & Facility (Security Guards, Manpower, Housekeeping, Cleaning)
+13. Professional & Business Services (Lawyers, Studios, Xerox/Press, Marriage Mahals, Event Planners)
+14. General Business (Trading, Distribution, Agencies, Miscellaneous)
+
+DISTRICT OPTIONS:
+Theni, Periyakulam, Cumbum, Bodinayakanur, Chinnamanur, Andipatti, Uthamapalayam, Madurai, Dindigul.
+
+COLUMN HEADERS:
+Company Name *, Category, District, City / Town, Full Address, Pincode, Owner / MD Name, Contact Person, Designation, Phone / Mobile *, WhatsApp Number, Official Email Address, Website / Domain URL, Company Logo Image URL, Company Banner Cover URL, Tagline / Motto, About & Detailed Description, Services & Products Offered (comma-separated), Working Hours / Timings, Year Established, Google Maps Location Link, Instagram URL, Facebook URL, LinkedIn URL, Domain / Business Proof Type, GST / MSME / Proof Number, Employee Count, Login User Email (User ID), Login Password, Verification Status`;
+
+/**
+ * Normalizes any raw category string into an exact official platform category using smart fuzzy matching.
+ */
+export function normalizeCategory(rawCat?: string, name?: string, desc?: string): string {
+  if (!rawCat && !name && !desc) return 'General Business';
+  const cleanInput = (rawCat || '').trim();
+
+  // 1. Direct exact or case-insensitive match against allowed categories
+  const directMatch = STANDARD_CATEGORIES.find(
+    (c) => c.toLowerCase() === cleanInput.toLowerCase()
+  );
+  if (directMatch) return directMatch;
+
+  // 2. Substring keyword check on raw category input
+  const lowerCat = cleanInput.toLowerCase();
+  for (const [standardCategory, keywords] of Object.entries(CATEGORY_KEYWORDS_MAP)) {
+    if (keywords.some((kw) => lowerCat.includes(kw))) {
+      return standardCategory;
+    }
+  }
+
+  // 3. Substring keyword check on company name and description
+  const combinedContext = `${name || ''} ${desc || ''}`.toLowerCase();
+  for (const [standardCategory, keywords] of Object.entries(CATEGORY_KEYWORDS_MAP)) {
+    if (keywords.some((kw) => combinedContext.includes(kw))) {
+      return standardCategory;
+    }
+  }
+
+  // 4. Safe fallback to General Business
+  return 'General Business';
+}
+
+/**
+ * Normalizes district to standard Theni region locations
+ */
+export function normalizeDistrict(rawDistrict?: string, address?: string): string {
+  const combined = `${rawDistrict || ''} ${address || ''}`.toLowerCase();
+  if (combined.includes('periyakulam') || combined.includes('vadagarai') || combined.includes('devadanapatti')) return 'Periyakulam';
+  if (combined.includes('cumbum') || combined.includes('gudalur') || combined.includes('surulipatti')) return 'Cumbum';
+  if (combined.includes('bodi') || combined.includes('bodinayakanur') || combined.includes('kurangani')) return 'Bodinayakanur';
+  if (combined.includes('chinnamanur') || combined.includes('kuchanur') || combined.includes('markayankottai')) return 'Chinnamanur';
+  if (combined.includes('andipatti') || combined.includes('kadamalaikundu') || combined.includes('myladumparai')) return 'Andipatti';
+  if (combined.includes('uthamapalayam') || combined.includes('kombai') || combined.includes('pannaipuram') || combined.includes('megamalai')) return 'Uthamapalayam';
+  if (combined.includes('madurai') || combined.includes('usilampatti')) return 'Madurai';
+  if (combined.includes('dindigul') || combined.includes('batlagundu') || combined.includes('kodaikanal')) return 'Dindigul';
+  return 'Theni';
+}
+
 export const FIELD_ALIASES: Record<keyof StandardCompanyFields, string[]> = {
   name: ['company name', 'business name', 'company', 'organization', 'name', 'shop name', 'firm name', 'enterprise'],
   category: ['category', 'industry', 'business category', 'sector', 'business type', 'type'],
@@ -356,11 +550,15 @@ export function analyzeCompanyDataset(
       status = 'warning';
     }
 
+    // Auto-normalize Category and District using smart AI fuzzy matching
+    const normalizedCategory = normalizeCategory(mapped.category, name, mapped.description);
+    const normalizedDistrict = normalizeDistrict(mapped.district, mapped.address);
+
     const finalMapped: StandardCompanyFields = {
       name: name || 'Unnamed Business',
-      category: mapped.category || 'General Business',
-      district: mapped.district || 'Theni',
-      city: mapped.city || mapped.district || 'Theni',
+      category: normalizedCategory,
+      district: normalizedDistrict,
+      city: mapped.city || mapped.district || normalizedDistrict,
       address: mapped.address || '',
       pincode: mapped.pincode || '',
       ownerName: mapped.ownerName || '',
@@ -424,7 +622,11 @@ export function analyzeCompanyDataset(
 }
 
 /**
- * Generates a styled Excel template file for bulk company import with full portfolio website assets
+ * Generates a styled Multi-Sheet Excel template file for bulk company import
+ * Sheet 1: Company Import Template
+ * Sheet 2: Allowed Categories Guide
+ * Sheet 3: Districts & Towns Reference
+ * Sheet 4: AI Extraction Prompt
  */
 export function generateCompanyTemplateExcel(): void {
   const headers = [
@@ -623,11 +825,9 @@ export function generateCompanyTemplateExcel(): void {
     ],
   ];
 
-  const wsData = [headers, ...sampleRows];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-  // Set column widths for comfortable reading
-  ws['!cols'] = [
+  // 1. Sheet 1: Company Import Template
+  const ws1 = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+  ws1['!cols'] = [
     { wch: 32 }, // Company Name
     { wch: 24 }, // Category
     { wch: 14 }, // District
@@ -660,8 +860,30 @@ export function generateCompanyTemplateExcel(): void {
     { wch: 18 }, // Status
   ];
 
+  // 2. Sheet 2: Allowed Categories Guide
+  const ws2 = XLSX.utils.json_to_sheet(CATEGORY_GUIDE_ROWS);
+  ws2['!cols'] = [{ wch: 32 }, { wch: 80 }, { wch: 60 }];
+
+  // 3. Sheet 3: Districts & Towns Reference
+  const ws3 = XLSX.utils.json_to_sheet(DISTRICT_TOWNS_DATA);
+  ws3['!cols'] = [{ wch: 20 }, { wch: 75 }];
+
+  // 4. Sheet 4: AI Extraction Prompt
+  const ws4Data = [
+    ['THENIJOBS AI DATA EXTRACTION PROMPT FOR CLAUDE & CHATGPT'],
+    ['-----------------------------------------------------------'],
+    ['Copy and paste the entire prompt below into Claude / ChatGPT when converting company lists into THENIJOBS format:'],
+    [''],
+    [AI_PROMPT_TEMPLATE],
+  ];
+  const ws4 = XLSX.utils.aoa_to_sheet(ws4Data);
+  ws4['!cols'] = [{ wch: 110 }];
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Company Portfolio Template');
+  XLSX.utils.book_append_sheet(wb, ws1, 'Company Import Template');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Allowed Categories Guide');
+  XLSX.utils.book_append_sheet(wb, ws3, 'Districts Reference');
+  XLSX.utils.book_append_sheet(wb, ws4, 'AI Extraction Prompt');
 
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });

@@ -18,6 +18,10 @@ import {
   analyzeCompanyDataset,
   generateCompanyTemplateExcel,
   exportCreatedCredentialsToExcel,
+  AI_PROMPT_TEMPLATE,
+  CATEGORY_GUIDE_ROWS,
+  DISTRICT_TOWNS_DATA,
+  STANDARD_CATEGORIES,
   type RawExcelRow,
   type ColumnMapping,
   type AnalyzedCompanyRow,
@@ -31,22 +35,7 @@ import {
 } from '@/lib/firebase/bulkCompanyService';
 
 const DISTRICT_OPTIONS = ['Theni', 'Periyakulam', 'Cumbum', 'Bodinayakanur', 'Chinnamanur', 'Andipatti', 'Uthamapalayam', 'Madurai', 'Dindigul', 'Chennai', 'Coimbatore'];
-const CATEGORY_OPTIONS = [
-  'Agriculture & Farming',
-  'Automobile & Transport',
-  'Banking & Finance',
-  'Construction & Real Estate',
-  'Education & Training',
-  'Healthcare & Hospital',
-  'Hotel, Food & Restaurant',
-  'IT, Software & Digital',
-  'Manufacturing & Industry',
-  'Retail, Shop & Supermarket',
-  'Textiles & Garments',
-  'Security & Facility',
-  'Professional & Business Services',
-  'General Business'
-];
+const CATEGORY_OPTIONS = [...STANDARD_CATEGORIES];
 
 export default function BulkCompanyImportPage() {
   const { user } = useAuth();
@@ -93,6 +82,18 @@ export default function BulkCompanyImportPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState<BulkImportProgress | null>(null);
   const [importResult, setImportResult] = useState<BulkImportResult | null>(null);
+
+  // Category & AI Prompt Guide modal state
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [guideTab, setGuideTab] = useState<'prompt' | 'categories' | 'districts'>('prompt');
+  const [copyPromptSuccess, setCopyPromptSuccess] = useState(false);
+
+  const handleCopyAiPrompt = () => {
+    navigator.clipboard.writeText(AI_PROMPT_TEMPLATE);
+    setCopyPromptSuccess(true);
+    toast.success('AI Prompt Copied! 🤖', 'Paste this prompt into Claude or ChatGPT to get 100% correctly formatted company data.');
+    setTimeout(() => setCopyPromptSuccess(false), 3000);
+  };
 
   // 1. Handle File Selection
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,14 +265,33 @@ export default function BulkCompanyImportPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyAiPrompt}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors cursor-pointer"
+          >
+            {copyPromptSuccess ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+            {copyPromptSuccess ? 'AI Prompt Copied!' : 'Copy AI Prompt (Claude / GPT)'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setGuideTab('categories');
+              setShowGuideModal(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
+          >
+            <HelpCircle size={14} />
+            Categories Guide
+          </button>
           <button
             type="button"
             onClick={generateCompanyTemplateExcel}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
           >
             <Download size={14} />
-            Download Clean Excel Template
+            Download Multi-Sheet Template
           </button>
           <Link
             href="/admin/businesses"
@@ -320,6 +340,29 @@ export default function BulkCompanyImportPage() {
             <p className="text-xs sm:text-sm text-gray-500">
               Upload any <code className="px-1.5 py-0.5 bg-gray-100 rounded text-blue-700 font-mono">.xlsx</code>, <code className="px-1.5 py-0.5 bg-gray-100 rounded text-blue-700 font-mono">.xls</code>, or <code className="px-1.5 py-0.5 bg-gray-100 rounded text-blue-700 font-mono">.csv</code> file. The system will inspect every column, validate records, and highlight duplicates.
             </p>
+          </div>
+
+          {/* AI Auto-Match Tip Banner */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Sparkles size={20} className="text-indigo-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-black text-indigo-950">
+                  ✨ Smart AI Category Auto-Matching Active
+                </p>
+                <p className="text-[11px] text-indigo-800 mt-0.5 leading-relaxed">
+                  When using Claude / AI data, non-standard names (e.g. &ldquo;Hospital&rdquo;, &ldquo;Agri Store&rdquo;, &ldquo;Textile Mill&rdquo;) are automatically mapped to official categories so zero rows fail!
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyAiPrompt}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 shadow-xs cursor-pointer"
+            >
+              <Copy size={13} />
+              {copyPromptSuccess ? 'Prompt Copied!' : 'Copy AI Prompt'}
+            </button>
           </div>
 
           {/* Drag and Drop Zone */}
@@ -946,6 +989,190 @@ export default function BulkCompanyImportPage() {
             >
               Import Another File
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: CATEGORIES & AI PROMPT GUIDE ───────────────────────────── */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-slate-50/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                  🤖
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-gray-900">
+                    THENIJOBS AI Import &amp; Categories Reference
+                  </h3>
+                  <p className="text-xs text-gray-500">Official platform categories, keywords &amp; Claude/GPT prompt</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGuideModal(false)}
+                className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="flex border-b border-gray-200 px-6 bg-white gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setGuideTab('prompt')}
+                className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                  guideTab === 'prompt'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                🤖 AI Extraction Prompt
+              </button>
+              <button
+                type="button"
+                onClick={() => setGuideTab('categories')}
+                className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                  guideTab === 'categories'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                🏷️ Allowed Categories ({STANDARD_CATEGORIES.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setGuideTab('districts')}
+                className={`pb-3 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                  guideTab === 'districts'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                📍 Districts &amp; Towns
+              </button>
+            </div>
+
+            {/* Modal Content Body */}
+            <div className="p-6 overflow-y-auto space-y-4 text-xs">
+              {/* Tab 1: AI Prompt */}
+              {guideTab === 'prompt' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
+                    <div>
+                      <p className="font-black text-indigo-950 text-xs sm:text-sm">Copy Prompt for Claude / ChatGPT</p>
+                      <p className="text-[11px] text-indigo-800 mt-0.5">
+                        Paste this directly into Claude along with your raw list of companies to get a 100% error-free Excel file.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyAiPrompt}
+                      className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-md cursor-pointer transition-all"
+                    >
+                      {copyPromptSuccess ? <Check size={14} /> : <Copy size={14} />}
+                      {copyPromptSuccess ? 'Copied!' : 'Copy Entire Prompt'}
+                    </button>
+                  </div>
+
+                  <pre className="p-4 bg-slate-900 text-slate-100 rounded-2xl font-mono text-[11px] leading-relaxed overflow-x-auto whitespace-pre-wrap max-h-96 border border-slate-800">
+                    {AI_PROMPT_TEMPLATE}
+                  </pre>
+                </div>
+              )}
+
+              {/* Tab 2: Categories Guide */}
+              {guideTab === 'categories' && (
+                <div className="space-y-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-[11px] text-emerald-900">
+                    💡 <strong>Smart AI Fuzzy Matcher Active:</strong> Even if your Excel sheet has partial names like &ldquo;Hospital&rdquo;, &ldquo;Clinic&rdquo;, &ldquo;Agri&rdquo;, &ldquo;Textile&rdquo;, or &ldquo;Software Store&rdquo;, the system will automatically map them into the exact official categories below without failing!
+                  </div>
+
+                  <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 font-black text-[11px]">
+                          <th className="py-2.5 px-3">#</th>
+                          <th className="py-2.5 px-3">Official Category</th>
+                          <th className="py-2.5 px-3">Includes Keywords &amp; Sub-types</th>
+                          <th className="py-2.5 px-3">Sample Companies</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {CATEGORY_GUIDE_ROWS.map((cat, i) => (
+                          <tr key={cat['Official Category Name']} className="hover:bg-blue-50/40">
+                            <td className="py-2 px-3 font-bold text-gray-400">{i + 1}</td>
+                            <td className="py-2 px-3 font-bold text-blue-700 whitespace-nowrap">
+                              {cat['Official Category Name']}
+                            </td>
+                            <td className="py-2 px-3 text-gray-600 leading-normal max-w-xs">
+                              {cat['Included Businesses & Keywords']}
+                            </td>
+                            <td className="py-2 px-3 text-gray-500 italic">
+                              {cat['Example Companies']}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Districts Reference */}
+              {guideTab === 'districts' && (
+                <div className="space-y-3">
+                  <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3.5 text-[11px] text-purple-900">
+                    📍 <strong>Recognized Districts &amp; Taluks in Theni:</strong> The system automatically assigns businesses located in any of the taluks below to their respective district hub.
+                  </div>
+
+                  <div className="overflow-x-auto border border-gray-200 rounded-2xl">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-200 text-gray-700 font-black text-[11px]">
+                          <th className="py-2.5 px-3">District / Region</th>
+                          <th className="py-2.5 px-3">Major Taluks, Towns &amp; Localities</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {DISTRICT_TOWNS_DATA.map((dist) => (
+                          <tr key={dist.District} className="hover:bg-purple-50/30">
+                            <td className="py-2.5 px-3 font-bold text-purple-800 whitespace-nowrap">
+                              {dist.District}
+                            </td>
+                            <td className="py-2.5 px-3 text-gray-600">
+                              {dist['Major Taluks & Towns']}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={generateCompanyTemplateExcel}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-xs cursor-pointer"
+              >
+                <Download size={13} />
+                Download Multi-Sheet Template (.xlsx)
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowGuideModal(false)}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

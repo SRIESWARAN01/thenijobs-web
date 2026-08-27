@@ -708,16 +708,6 @@ export async function deleteCompany(companyId: string, adminId = 'admin'): Promi
   });
 }
 
-export async function updateDocument(collectionName: string, docId: string, data: Partial<DocumentData>): Promise<void> {
-  const docRef = doc(db, collectionName, docId);
-  await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
-}
-
-export async function deleteDocument(collectionName: string, docId: string): Promise<void> {
-  const docRef = doc(db, collectionName, docId);
-  await deleteDoc(docRef);
-}
-
 export async function approveJob(jobId: string, adminId: string) {
   await updateDoc(doc(db, 'jobs', jobId), {
     isActive: true,

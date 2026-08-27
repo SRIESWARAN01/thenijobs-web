@@ -358,6 +358,30 @@ export async function applyToJob(data: {
   const idCardUrl = `/portfolio/seeker/${data.seekerId}`; // ID Card / Portfolio URL
   const portfolioUrl = `/portfolio/seeker/${data.seekerId}`;
 
+  // Check for duplicate application (prevents multiple duplicate application docs)
+  try {
+    const qExisting = query(
+      collection(db, 'applications'),
+      where('jobId', '==', data.jobId),
+      where('seekerId', '==', data.seekerId),
+      limit(1)
+    );
+    const snapExisting = await getDocs(qExisting);
+    if (!snapExisting.empty) {
+      const existingId = snapExisting.docs[0].id;
+      await updateDoc(doc(db, 'applications', existingId), {
+        ...data,
+        seekerPhone: phone,
+        seekerEmail: email,
+        resumeUrl,
+        updatedAt: serverTimestamp(),
+      });
+      return existingId;
+    }
+  } catch (e) {
+    console.warn('Duplicate application check error:', e);
+  }
+
   // 2. Create Application Document
   const docRef = await addDoc(collection(db, 'applications'), {
     ...data,
@@ -670,6 +694,28 @@ export async function verifyCompany(companyId: string) {
   await updateDoc(doc(db, 'companies', companyId), {
     'verificationBadges.businessVerified': true,
     updatedAt: serverTimestamp() });
+}
+
+export async function deleteCompany(companyId: string, adminId = 'admin'): Promise<void> {
+  const company = await fetchDocument<{ name?: string }>('companies', companyId);
+  await deleteDoc(doc(db, 'companies', companyId));
+  await logActivity({
+    userId: adminId,
+    userName: 'Admin',
+    action: 'Business deleted',
+    target: company?.name || companyId,
+    targetId: companyId
+  });
+}
+
+export async function updateDocument(collectionName: string, docId: string, data: Partial<DocumentData>): Promise<void> {
+  const docRef = doc(db, collectionName, docId);
+  await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
+}
+
+export async function deleteDocument(collectionName: string, docId: string): Promise<void> {
+  const docRef = doc(db, collectionName, docId);
+  await deleteDoc(docRef);
 }
 
 export async function approveJob(jobId: string, adminId: string) {

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import {
   Users, Search, Download, ShieldCheck, Ban, Trash2,
   UserCheck, AlertCircle, Loader2, CheckCircle, XCircle,
-  Plus, X, Phone, Mail, MapPin, Shield, Check, Clock
+  Plus, X, Phone, Mail, MapPin, Shield, Check, Clock,
+  Edit3, Key, Lock, Eye, EyeOff
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +25,7 @@ interface UserDoc {
   isVerified?: boolean;
   createdAt?: any;
   phone?: string;
+  tempPassword?: string;
 }
 
 const ROLE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
@@ -67,6 +69,73 @@ export default function UsersPage() {
     district: 'Theni',
     status: 'active',
   });
+
+  // Edit User modal
+  const [editingUser, setEditingUser] = useState<UserDoc | null>(null);
+  const [editForm, setEditForm] = useState({
+    displayName: '',
+    email: '',
+    phone: '',
+    role: 'job_seeker',
+    district: 'Theni',
+    status: 'active',
+    newPassword: '',
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const openEditModal = (u: UserDoc) => {
+    setEditingUser(u);
+    setEditForm({
+      displayName: u.displayName || u.name || '',
+      email: u.email || '',
+      phone: u.phone || '',
+      role: u.role || 'job_seeker',
+      district: u.district || 'Theni',
+      status: u.status || 'active',
+      newPassword: u.tempPassword || '',
+    });
+    setEditError('');
+    setShowPassword(false);
+  };
+
+  const handleSaveUserEdit = async () => {
+    if (!editingUser) return;
+    if (!editForm.displayName.trim() || !editForm.email.trim()) {
+      setEditError('Name and email are required.');
+      return;
+    }
+    if (editForm.newPassword && editForm.newPassword.length < 6) {
+      setEditError('Password must be at least 6 characters.');
+      return;
+    }
+    setEditLoading(true);
+    setEditError('');
+    try {
+      const updatePayload: any = {
+        displayName: editForm.displayName.trim(),
+        name: editForm.displayName.trim(),
+        email: editForm.email.trim().toLowerCase(),
+        phone: editForm.phone.trim(),
+        role: editForm.role,
+        district: editForm.district,
+        status: editForm.status,
+        updatedAt: serverTimestamp(),
+      };
+      if (editForm.newPassword.trim()) {
+        updatePayload.tempPassword = editForm.newPassword.trim();
+      }
+      await updateDocument('users', editingUser.id, updatePayload);
+      toast.success('User profile & credentials updated successfully!');
+      setEditingUser(null);
+    } catch (e: any) {
+      console.error('Error updating user:', e);
+      setEditError(e.message || 'Failed to update user.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const resetCreateForm = () => {
     setNewUser({ displayName: '', email: '', phone: '', role: 'job_seeker', district: 'Theni', status: 'active' });
@@ -301,13 +370,20 @@ export default function UsersPage() {
                   </div>
 
                   <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(u)}
+                      className="py-1.5 px-3 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Edit3 size={13} /> Edit
+                    </button>
                     {!u.isVerified && (
                       <button
                         type="button"
                         onClick={() => doVerify(u.id)}
                         className="py-1.5 px-3 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200"
                       >
-                        Verify User
+                        Verify
                       </button>
                     )}
                     <button
@@ -391,6 +467,14 @@ export default function UsersPage() {
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(u)}
+                              className="p-2 rounded-xl text-gray-500 hover:text-blue-700 hover:bg-blue-50 transition-all cursor-pointer"
+                              title="Edit User & Credentials"
+                            >
+                              <Edit3 size={16} />
+                            </button>
                             {!u.isVerified && (
                               <button
                                 type="button"
@@ -427,6 +511,154 @@ export default function UsersPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 font-outfit" onClick={() => setEditingUser(null)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-gray-200 animate-fade-in max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Edit3 size={16} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Edit User &amp; Credentials</h3>
+                  <p className="text-[11px] text-gray-500">Update account email, password, role &amp; details</p>
+                </div>
+              </div>
+              <button onClick={() => setEditingUser(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                {editError}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Full Name / Contact Person *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Ramesh Kumar"
+                  value={editForm.displayName}
+                  onChange={e => setEditForm({ ...editForm, displayName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Login Email Address (User ID) *</label>
+                <input
+                  type="email"
+                  placeholder="user@example.com"
+                  value={editForm.email}
+                  onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  placeholder="+91 93605 19460"
+                  value={editForm.phone}
+                  onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-gray-700">Account Password / Temp Password</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-[11px] font-semibold text-blue-600 flex items-center gap-1 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                    <span>{showPassword ? 'Hide' : 'Show'}</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter new password (min 6 chars)..."
+                    value={editForm.newPassword}
+                    onChange={e => setEditForm({ ...editForm, newPassword: e.target.value })}
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500 mt-1">Set a temporary or updated password for this user.</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Role</label>
+                  <select
+                    value={editForm.role}
+                    onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                  >
+                    <option value="job_seeker">Job Seeker</option>
+                    <option value="employer">Employer</option>
+                    <option value="business_owner">Business Owner</option>
+                    <option value="supplier">Supplier</option>
+                    <option value="service_provider">Service Provider</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={e => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                  >
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">District</label>
+                  <select
+                    value={editForm.district}
+                    onChange={e => setEditForm({ ...editForm, district: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                  >
+                    {DISTRICTS.filter(d => d !== 'All Districts').map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setEditingUser(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveUserEdit}
+                disabled={editLoading}
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {editLoading ? <Loader2 size={14} className="animate-spin" /> : null}
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Create User Modal */}

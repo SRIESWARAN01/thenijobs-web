@@ -428,7 +428,7 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
   const isQuickResponder = companyResponseTime && ['< 24 hours', 'Within 24 hours', 'Same day', '< 1 day'].some(t => companyResponseTime.toLowerCase().includes(t.toLowerCase()));
 
   return (
-    <main className="public-light-page min-h-screen bg-[#F8FAFC] font-outfit text-[#111827]">
+    <main className="min-h-screen bg-[#F8FAFC] font-outfit text-[#111827]">
       <Header />
       {/* JSON-LD is now injected server-side in page.tsx for Google visibility */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-28 md:pb-12">

@@ -70,14 +70,14 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
           
           {/* Cover Image / Gradient Banner */}
           <div className="w-full h-48 sm:h-64 md:h-72 relative bg-slate-950 flex items-center justify-center overflow-hidden">
-            {company.coverUrl || company.coverImage ? (
+            {company.bannerUrl || company.coverUrl || company.coverImage ? (
               <>
                 <div
                   className="absolute inset-0 bg-cover bg-center blur-md opacity-30 scale-105"
-                  style={{ backgroundImage: `url(${company.coverUrl || company.coverImage})` }}
+                  style={{ backgroundImage: `url(${company.bannerUrl || company.coverUrl || company.coverImage})` }}
                 />
                 <img
-                  src={company.coverUrl || company.coverImage}
+                  src={company.bannerUrl || company.coverUrl || company.coverImage}
                   alt={company.name}
                   className="relative z-10 w-full h-full object-contain object-center"
                 />
@@ -586,12 +586,45 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                       <span className="truncate">{company.email || 'Not available'}</span>
                     </a>
 
+                    {company.website && (
+                      <a
+                        href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 text-sm text-blue-600 hover:underline"
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                          <Globe size={15} />
+                        </div>
+                        <span className="truncate">{company.website}</span>
+                      </a>
+                    )}
+
+                    {company.workingHours && (
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                          <Clock size={15} />
+                        </div>
+                        <span>{company.workingHours}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-start gap-3 text-sm text-gray-600">
                       <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                         <MapPin size={15} />
                       </div>
                       <span>{company.address || `${company.district}, Tamil Nadu`}</span>
                     </div>
+
+                    {company.proofNumber && (
+                      <div className="flex items-center gap-3 text-xs text-blue-900 bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+                        <ShieldCheck size={16} className="text-blue-600 shrink-0" />
+                        <div>
+                          <span className="font-bold">{company.proofType || 'Govt Verification Proof'}: </span>
+                          <span className="font-mono font-bold">{company.proofNumber}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Send Inquiry Box */}

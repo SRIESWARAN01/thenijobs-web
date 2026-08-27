@@ -76,48 +76,72 @@ img, video, svg {
 }
 
 /* Public company profile: Vaanikan's light, card-forward directory treatment. */
-.company-profile-vaanikan .glass-card {
-  background: #fff;
+.company-profile-vaanikan .glass-card,
+.public-light-page .glass-card {
+  background: #ffffff;
   border: 1px solid #e2e8f0;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 0.06);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
 }
-.company-profile-vaanikan .text-white { color: #111827; }
-.company-profile-vaanikan .text-gray-300 { color: #475569; }
+
+.company-profile-vaanikan .text-gray-300,
+.public-light-page .text-gray-300 { color: #475569; }
+
 .company-profile-vaanikan .text-gray-400,
-.company-profile-vaanikan .text-gray-500 { color: #64748b; }
+.company-profile-vaanikan .text-gray-500,
+.public-light-page .text-gray-400,
+.public-light-page .text-gray-500 { color: #64748b; }
+
 .company-profile-vaanikan .text-violet-400,
-.company-profile-vaanikan .text-violet-300 { color: #2563eb; }
-.company-profile-vaanikan .bg-violet-600 { background-color: #2563eb; }
+.company-profile-vaanikan .text-violet-300,
+.public-light-page .text-violet-300,
+.public-light-page .text-violet-400 { color: #2563eb; }
+
+.company-profile-vaanikan .bg-violet-600,
+.public-light-page .bg-violet-600 { background-color: #2563eb; }
+
 .company-profile-vaanikan .border-violet-500\/30,
 .company-profile-vaanikan .border-violet-500\/20 { border-color: #bfdbfe; }
-.company-profile-vaanikan .bg-violet-500\/10 { background-color: #eff6ff; }
+
+.company-profile-vaanikan .bg-violet-500\/10,
+.public-light-page .bg-violet-500\/20 { background-color: #eff6ff; }
+
+.public-light-page .border-violet-500\/40 { border-color: #93c5fd; }
+
 .company-profile-vaanikan .btn-outline-glass {
-  background: #fff;
+  background: #ffffff;
   color: #334155;
   border: 1px solid #cbd5e1;
 }
-.company-profile-vaanikan .btn-gradient { background: #2563eb; }
-.company-profile-vaanikan .company-profile-cover .text-white { color: #fff; }
-.company-profile-vaanikan .company-profile-cover .text-white\/60 { color: rgb(255 255 255 / .65); }
-.company-profile-vaanikan .company-profile-cover .text-white\/80 { color: rgb(255 255 255 / .85); }
 
-/* Compatibility layer while legacy public pages are migrated from the former
-   dark theme. It keeps readable dark copy, solid cards and visible borders. */
-.public-light-page [class*="bg-white/"] { background-color: #fff; }
-.public-light-page [class*="border-white/"] { border-color: #e2e8f0; }
-.public-light-page .text-white { color: #111827; }
-.public-light-page .text-gray-300 { color: #475569; }
-.public-light-page .text-gray-400,
-.public-light-page .text-gray-500 { color: #64748b; }
-.public-light-page .text-violet-300,
-.public-light-page .text-violet-400 { color: #2563eb; }
-.public-light-page .bg-violet-500\/20 { background-color: #eff6ff; }
-.public-light-page .border-violet-500\/40 { border-color: #93c5fd; }
+.company-profile-vaanikan .btn-gradient,
 .public-light-page .btn-gradient,
-.public-light-page .vk-btn-primary,
-.public-light-page .bg-violet-600,
+.public-light-page .vk-btn-primary {
+  background: #2563eb;
+  color: #ffffff !important;
+}
+
+/* Explicit high-contrast rules for dark banners & buttons across public pages */
+.company-profile-cover .text-white,
+.company-profile-cover h1,
+.company-profile-cover h2,
+.company-profile-cover p {
+  color: #ffffff !important;
+}
+.company-profile-cover .text-white\/60 { color: rgba(255, 255, 255, 0.75) !important; }
+.company-profile-cover .text-white\/80 { color: rgba(255, 255, 255, 0.9) !important; }
+
+/* Safe light container text protection: orphaned light text on plain white/slate backgrounds */
+.bg-white > .text-white:not([class*="bg-"]):not([class*="from-"]):not([class*="btn"]):not([class*="badge"]),
+.bg-slate-50 > .text-white:not([class*="bg-"]):not([class*="from-"]):not([class*="btn"]):not([class*="badge"]) {
+  color: #0f172a !important;
+}
+
 .public-light-page [class*="bg-blue-6"],
-.public-light-page [class*="bg-emerald-6"] { color: #fff; }
+.public-light-page [class*="bg-emerald-6"],
+.public-light-page [class*="bg-slate-9"],
+.public-light-page [class*="bg-indigo-9"] {
+  color: #ffffff !important;
+}
 
 @theme {
   --font-sans: "Inter", "Poppins", system-ui, sans-serif;
@@ -993,97 +1017,56 @@ button {
    Light surface -> Crisp dark text (#0F172A / #1E293B / #334155)
    Dark surface / Solid color button / Hero banner -> Crisp white text (#FFFFFF / #F8FAFC) */
 
-/* 1. BUTTONS & COLORED CONTAINERS: Always ensure crisp white text */
-button[class*="bg-blue-"],
-button[class*="bg-emerald-"],
-button[class*="bg-indigo-"],
-button[class*="bg-purple-"],
-button[class*="bg-violet-"],
-button[class*="bg-slate-900"],
-button[class*="bg-slate-800"],
-button[class*="bg-gray-900"],
-button[class*="bg-gray-800"],
-button[class*="bg-black"],
-button.vk-btn-primary,
-button.vk-btn-secondary,
-button.vk-btn-danger,
-button.btn-gradient,
-a[class*="bg-blue-600"],
-a[class*="bg-blue-700"],
-a[class*="bg-emerald-600"],
-a[class*="bg-emerald-700"],
-a[class*="bg-indigo-600"],
-a[class*="bg-indigo-700"],
-a[class*="bg-purple-600"],
-a[class*="bg-slate-900"],
-a[class*="bg-slate-800"],
-a[class*="bg-gray-900"],
-a[class*="bg-gray-800"],
-a.vk-btn-primary,
-a.vk-btn-secondary,
-a.btn-gradient,
+/* 1. SOLID BUTTONS & CONTAINERS: Always ensure crisp white text */
+.bg-blue-600,
+.bg-blue-700,
+.bg-blue-800,
+.bg-emerald-600,
+.bg-emerald-700,
+.bg-emerald-800,
+.bg-indigo-600,
+.bg-indigo-700,
+.bg-purple-600,
+.bg-purple-700,
+.bg-violet-600,
+.bg-violet-700,
+.bg-slate-900,
+.bg-slate-950,
+.bg-gray-900,
+.bg-gray-800,
+.bg-black,
+.vk-btn-primary,
+.vk-btn-secondary,
+.vk-btn-danger,
+.btn-gradient,
 .btn-primary,
-.bg-gradient-to-r,
-.bg-gradient-to-b,
-.bg-gradient-to-br,
-[class*="from-blue-6"],
-[class*="from-blue-7"],
-[class*="from-slate-9"],
-[class*="from-slate-8"],
-[class*="from-indigo-6"],
-[class*="from-indigo-7"],
-[class*="from-purple-6"],
-[class*="from-purple-7"],
-footer[class*="bg-gray-900"],
-footer[class*="bg-slate-900"],
 .company-profile-cover {
   color: #FFFFFF !important;
 }
 
-/* Ensure child elements inside dark buttons and banners keep white/light text */
-button[class*="bg-blue-"] *,
-button[class*="bg-emerald-"] *,
-button[class*="bg-indigo-"] *,
-button[class*="bg-purple-"] *,
-button[class*="bg-slate-900"] *,
-button[class*="bg-slate-800"] *,
-button[class*="bg-gray-900"] *,
-button[class*="bg-gray-800"] *,
-button[class*="bg-black"] *,
-button.vk-btn-primary *,
-button.vk-btn-secondary *,
-button.vk-btn-danger *,
-button.btn-gradient *,
-a[class*="bg-blue-600"] *,
-a[class*="bg-blue-700"] *,
-a[class*="bg-emerald-600"] *,
-a[class*="bg-emerald-700"] *,
-a[class*="bg-indigo-600"] *,
-a[class*="bg-slate-900"] *,
-a[class*="bg-slate-800"] *,
-a[class*="bg-gray-900"] *,
-a[class*="bg-gray-800"] *,
-a.vk-btn-primary *,
-a.vk-btn-secondary *,
-a.btn-gradient *,
-[class*="from-blue-6"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
-[class*="from-blue-7"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
-[class*="from-slate-9"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
-[class*="from-slate-8"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
-[class*="from-indigo-6"] *:not([class*="bg-white"] *):not([class*="bg-slate-50"] *):not([class*="bg-gray-50"] *),
-footer[class*="bg-gray-900"] h1,
-footer[class*="bg-gray-900"] h2,
-footer[class*="bg-gray-900"] h3,
-footer[class*="bg-gray-900"] h4,
-footer[class*="bg-gray-900"] h5,
-footer[class*="bg-gray-900"] h6,
-footer[class*="bg-slate-900"] h1,
-footer[class*="bg-slate-900"] h2,
-footer[class*="bg-slate-900"] h3,
-footer[class*="bg-slate-900"] h4,
-footer[class*="bg-slate-900"] h5,
-footer[class*="bg-slate-900"] h6 {
+/* Ensure child icons/text inside solid colored buttons keep white text */
+.bg-blue-600 *,
+.bg-blue-700 *,
+.bg-emerald-600 *,
+.bg-emerald-700 *,
+.bg-slate-900 *,
+.bg-slate-950 *,
+.bg-gray-900 *,
+.vk-btn-primary *,
+.vk-btn-secondary *,
+.btn-gradient * {
   color: inherit;
+}
+
+/* Dark footer headings */
+footer.bg-gray-900 h1,
+footer.bg-gray-900 h2,
+footer.bg-gray-900 h3,
+footer.bg-gray-900 h4,
+footer.bg-slate-900 h1,
+footer.bg-slate-900 h2,
+footer.bg-slate-900 h3 {
+  color: #FFFFFF !important;
 }
 
 /* 2. LIGHT SURFACES: High contrast text hierarchy */

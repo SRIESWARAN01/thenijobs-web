@@ -600,7 +600,8 @@ export default function BulkCompanyImportPage() {
                   <th className="p-3">Category</th>
                   <th className="p-3">District</th>
                   <th className="p-3">Phone</th>
-                  <th className="p-3">Owner / Contact</th>
+                  <th className="p-3">Website / Domain</th>
+                  <th className="p-3">Login User Email</th>
                   <th className="p-3">Validation Details</th>
                 </tr>
               </thead>
@@ -641,12 +642,46 @@ export default function BulkCompanyImportPage() {
                         {r.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="p-3 font-bold text-gray-900 max-w-[200px] truncate">{r.mapped.name}</td>
+                    <td className="p-3 font-bold text-gray-900 max-w-[200px]">
+                      <div className="flex items-center gap-2">
+                        {r.mapped.logoUrl ? (
+                          <img
+                            src={r.mapped.logoUrl}
+                            alt=""
+                            className="w-6 h-6 rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0"
+                            onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center shrink-0">
+                            {(r.mapped.name || 'C').slice(0, 1).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-gray-900">{r.mapped.name}</p>
+                          {r.mapped.services && (
+                            <span className="text-[10px] text-emerald-700 font-semibold">
+                              {typeof r.mapped.services === 'string' ? r.mapped.services.split(',').length : r.mapped.services.length} services listed
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
                     <td className="p-3 text-gray-600">{r.mapped.category || '—'}</td>
                     <td className="p-3 text-gray-600">{r.mapped.district || 'Theni'}</td>
                     <td className="p-3 font-mono text-gray-700">{r.mapped.phone || '—'}</td>
+                    <td className="p-3 text-gray-600 truncate max-w-[140px]">
+                      {r.mapped.website ? (
+                        <span className="text-blue-600 font-medium">{r.mapped.website}</span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="p-3 text-gray-600 truncate max-w-[150px]">
-                      {r.mapped.ownerName || r.mapped.contactPerson || '—'}
+                      {r.mapped.accountEmail || r.mapped.email ? (
+                        <span className="font-mono text-[11px] text-gray-800">{r.mapped.accountEmail || r.mapped.email}</span>
+                      ) : (
+                        <span className="text-gray-400 italic">Auto-generated</span>
+                      )}
                     </td>
                     <td className="p-3 text-gray-500">
                       {r.issues.length > 0 ? (

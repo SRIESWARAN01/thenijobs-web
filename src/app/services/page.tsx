@@ -132,7 +132,7 @@ export default function ServicesPage() {
   });
 
   return (
-    <main className="public-light-page min-h-screen bg-[#F8FAFC] font-outfit text-gray-900">
+    <main className="min-h-screen bg-[#F8FAFC] font-outfit text-gray-900">
       <Header />
 
       {/* Top Banner */}

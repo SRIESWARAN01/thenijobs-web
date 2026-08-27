@@ -50,7 +50,7 @@ export default function HeroSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden pt-2 sm:pt-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <section className="relative overflow-hidden pt-6 sm:pt-10 pb-8 sm:pb-12" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Background */}
       <div className="absolute inset-0 -z-10" style={{
         background: 'linear-gradient(135deg, #EFF6FF 0%, #F0FDF4 55%, #FFFBEB 100%)'
@@ -61,30 +61,31 @@ export default function HeroSection() {
         }}
       />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+        <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
           {/* Left content */}
           <div className="flex-1 text-center lg:text-left">
-            {/* Top badge — no unsupported "#1" claim */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold mb-5">
+            {/* Top badge */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold mb-4 shadow-xs">
               <span aria-hidden="true">🎯</span>
               Theni&apos;s Local Job &amp; Business Platform
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[52px] font-extrabold leading-tight text-[#0F172A] mb-4"
+            <h1 className="text-3xl sm:text-5xl lg:text-[52px] font-extrabold leading-tight text-slate-900 mb-4"
               style={{ fontFamily: "'Poppins', sans-serif" }}>
               Find the Right Job.{' '}
-              <span style={{
+              <span className="block sm:inline" style={{
                 background: 'linear-gradient(135deg, #2563EB, #10B981)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
+                WebkitTextFillColor: 'transparent',
+                color: '#2563EB'
               }}>Hire Local Talent.</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-[#334155] mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
+            <p className="text-base sm:text-lg text-slate-700 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
               Discover verified jobs, trusted employers and local opportunities across
               Theni, Cumbum, Periyakulam, Bodinayakanur, Madurai, Dindigul and surrounding areas.
             </p>
@@ -114,7 +115,7 @@ export default function HeroSection() {
               </div>
               <button
                 type="submit"
-                className="px-6 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-95 shadow-md flex items-center justify-center gap-2 whitespace-nowrap active:scale-[0.98]"
+                className="px-6 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-95 shadow-md flex items-center justify-center gap-2 whitespace-nowrap active:scale-[0.98] cursor-pointer"
                 style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
               >
                 <Search size={16} />
@@ -126,26 +127,28 @@ export default function HeroSection() {
             <div className="flex flex-wrap gap-2 justify-center lg:justify-start mb-5">
               <Link
                 href="/employer/post-job"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-blue-600 text-blue-600 hover:bg-blue-50 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border-2 border-blue-600 text-blue-600 hover:bg-blue-50 transition-all bg-white"
               >
                 Post a Job <ArrowRight size={14} />
               </Link>
               <Link
                 href="/register-business"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 transition-all bg-white"
               >
                 Register Your Business
               </Link>
             </div>
 
             {/* Popular tags */}
-            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-              <span className="text-xs text-gray-600 font-semibold self-center">Popular:</span>
+            <div className="flex flex-wrap gap-2 items-center justify-center lg:justify-start">
+              <span className="text-xs text-slate-700 font-bold self-center">Popular:</span>
               {popularTags.map(tag => (
                 <button
                   key={tag}
+                  type="button"
                   onClick={() => { setQuery(tag); }}
-                  className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-300 rounded-full text-gray-700 hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-all shadow-xs"
+                  className="px-3.5 py-1.5 text-xs font-bold bg-white border border-slate-300 rounded-full text-slate-800 hover:border-blue-600 hover:text-blue-700 hover:bg-blue-50 transition-all shadow-xs cursor-pointer"
+                  style={{ color: '#1E293B' }}
                 >
                   {tag}
                 </button>
@@ -200,7 +203,8 @@ export default function HeroSection() {
             <Link
               key={item.href}
               href={item.href}
-              className="px-4 py-2 bg-white border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-xs"
+              className="px-4 py-2 bg-white border border-slate-300 rounded-full text-xs sm:text-sm font-bold text-slate-800 hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-all shadow-xs"
+              style={{ color: '#1E293B' }}
             >
               {item.label}
             </Link>

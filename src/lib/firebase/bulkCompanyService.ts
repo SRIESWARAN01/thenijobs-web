@@ -165,7 +165,15 @@ export async function executeBulkCompanyImport(
         }
       }
 
-      // 2. Prepare comprehensive Company Document
+      // Parse comma/newline separated services into array
+      let parsedServices: string[] = [];
+      if (Array.isArray(data.services)) {
+        parsedServices = data.services;
+      } else if (typeof data.services === 'string' && data.services.trim()) {
+        parsedServices = data.services.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+      }
+
+      // 2. Prepare comprehensive Company Document with Full Portfolio Assets
       const companyDocData = {
         id: companyId,
         ownerId,
@@ -174,6 +182,8 @@ export async function executeBulkCompanyImport(
         tagline: data.tagline || '',
         category: finalCategory,
         district: finalDistrict,
+        city: data.city || finalDistrict,
+        pincode: data.pincode || '',
         state: 'Tamil Nadu',
         country: 'India',
         address: data.address || '',
@@ -186,17 +196,29 @@ export async function executeBulkCompanyImport(
         coverUrl: data.bannerUrl || '',
         bannerUrl: data.bannerUrl || '',
         description: data.description || `${data.name} is a leading ${finalCategory} provider in ${finalDistrict}, Tamil Nadu.`,
+        services: parsedServices,
+        workingHours: data.workingHours || '9:00 AM - 8:00 PM',
+        establishedYear: data.establishedYear || '',
+        mapUrl: data.mapUrl || '',
         ownerName: data.ownerName || '',
         contactPerson: data.contactPerson || data.ownerName || '',
-        designation: data.designation || 'Owner',
+        designation: data.designation || 'Owner / MD',
         employeeCount: data.employeeCount || '1-10',
-        proofType: data.proofType || 'GST / MSME',
+        proofType: data.proofType || 'MSME / Udyam Registration',
         proofNumber: data.proofNumber || '',
         gstNumber: data.proofNumber || '',
         facebook: data.facebook || '',
         instagram: data.instagram || '',
         linkedin: data.linkedin || '',
         youtube: data.youtube || '',
+        twitter: data.twitter || '',
+        socialLinks: {
+          instagram: data.instagram || '',
+          facebook: data.facebook || '',
+          linkedin: data.linkedin || '',
+          youtube: data.youtube || '',
+          twitter: data.twitter || '',
+        },
         keywords,
         verificationStatus: finalStatus,
         verificationBadges: {
@@ -218,7 +240,6 @@ export async function executeBulkCompanyImport(
         galleryImages: [],
         galleryVideos: [],
         products: [],
-        services: [],
         importedByAdmin: true,
         importedBy: options.adminUid,
         importedAt: serverTimestamp(),

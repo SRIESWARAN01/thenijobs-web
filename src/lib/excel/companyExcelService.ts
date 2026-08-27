@@ -23,7 +23,9 @@ export interface StandardCompanyFields {
   name: string;
   category?: string;
   district?: string;
+  city?: string;
   address?: string;
+  pincode?: string;
   ownerName?: string;
   contactPerson?: string;
   designation?: string;
@@ -35,6 +37,10 @@ export interface StandardCompanyFields {
   bannerUrl?: string;
   description?: string;
   tagline?: string;
+  services?: string | string[];
+  workingHours?: string;
+  establishedYear?: string | number;
+  mapUrl?: string;
   employeeCount?: string;
   proofType?: string;
   proofNumber?: string;
@@ -42,6 +48,7 @@ export interface StandardCompanyFields {
   instagram?: string;
   linkedin?: string;
   youtube?: string;
+  twitter?: string;
   verificationStatus?: 'pending' | 'verified' | 'rejected' | 'under_review';
   isPremium?: boolean;
   isFeatured?: boolean;
@@ -85,35 +92,42 @@ export interface ExcelAnalysisResult {
 }
 
 // Field aliases mapping for auto-detection
-const FIELD_ALIASES: Record<keyof StandardCompanyFields, string[]> = {
-  name: ['company name', 'company', 'business name', 'business', 'shop name', 'firm name', 'name', 'org name', 'organization'],
+export const FIELD_ALIASES: Record<keyof StandardCompanyFields, string[]> = {
+  name: ['company name', 'business name', 'company', 'organization', 'name', 'shop name', 'firm name', 'enterprise'],
   category: ['category', 'industry', 'business category', 'sector', 'business type', 'type'],
-  district: ['district', 'city', 'location', 'place', 'town', 'area', 'taluk'],
+  district: ['district', 'location', 'place', 'area', 'taluk'],
+  city: ['city', 'town', 'village', 'municipality', 'taluk name'],
   address: ['address', 'full address', 'street address', 'street', 'office address', 'shop address', 'location address'],
+  pincode: ['pincode', 'pin code', 'postal code', 'zip', 'zipcode', 'pin'],
   ownerName: ['owner name', 'owner', 'proprietor', 'founder', 'managing director', 'md name'],
   contactPerson: ['contact person', 'contact name', 'hr name', 'manager name', 'representative'],
   designation: ['designation', 'role', 'title', 'position'],
   phone: ['phone', 'mobile', 'phone number', 'mobile number', 'contact number', 'telephone', 'cell', 'primary phone'],
   whatsapp: ['whatsapp', 'whatsapp number', 'wa number', 'wa phone'],
   email: ['email', 'email address', 'e-mail', 'mail', 'company email', 'official email'],
-  website: ['website', 'web', 'site', 'url', 'web url', 'website url'],
-  logoUrl: ['logo', 'logo url', 'company logo', 'photo url', 'image url', 'brand logo'],
-  bannerUrl: ['banner', 'cover', 'cover url', 'banner url', 'cover image'],
-  description: ['description', 'about', 'about us', 'details', 'company description', 'overview'],
-  tagline: ['tagline', 'slogan', 'punchline', 'motto'],
+  website: ['website', 'web', 'site', 'url', 'web url', 'website url', 'domain', 'domain name', 'website name', 'company website'],
+  logoUrl: ['logo', 'logo url', 'company logo', 'photo url', 'image url', 'brand logo', 'logo link', 'logo image'],
+  bannerUrl: ['banner', 'cover', 'cover url', 'banner url', 'cover image', 'banner image', 'header image', 'cover link'],
+  description: ['description', 'about', 'about us', 'details', 'company description', 'overview', 'profile overview'],
+  tagline: ['tagline', 'slogan', 'punchline', 'motto', 'short bio'],
+  services: ['services', 'services offered', 'products', 'products and services', 'offerings', 'specialties', 'services & products', 'services list'],
+  workingHours: ['working hours', 'timings', 'business hours', 'office timings', 'open hours', 'hours'],
+  establishedYear: ['established year', 'year established', 'est year', 'established', 'founded', 'year founded', 'founded year'],
+  mapUrl: ['google maps', 'map link', 'location link', 'map url', 'google map location', 'maps link', 'google map'],
   employeeCount: ['employee count', 'employees', 'company size', 'team size', 'no of employees', 'staff count'],
-  proofType: ['proof type', 'id proof type', 'doc type', 'document type', 'registration type', 'msme/gst'],
-  proofNumber: ['proof number', 'gst number', 'gst', 'gstin', 'msme number', 'udyam number', 'license number', 'registration number'],
-  facebook: ['facebook', 'fb', 'fb page', 'facebook url'],
-  instagram: ['instagram', 'insta', 'instagram url'],
-  linkedin: ['linkedin', 'linkedin url'],
-  youtube: ['youtube', 'youtube channel'],
+  proofType: ['proof type', 'id proof type', 'doc type', 'document type', 'registration type', 'msme/gst', 'domain proof', 'domain verification', 'verification type', 'domain verification type'],
+  proofNumber: ['proof number', 'gst number', 'gst', 'gstin', 'msme number', 'udyam number', 'license number', 'registration number', 'domain verification code', 'verification code', 'domain code'],
+  facebook: ['facebook', 'fb', 'fb page', 'facebook url', 'facebook link'],
+  instagram: ['instagram', 'insta', 'instagram url', 'insta link'],
+  linkedin: ['linkedin', 'linkedin url', 'linkedin link'],
+  youtube: ['youtube', 'youtube channel', 'youtube url'],
+  twitter: ['twitter', 'x', 'twitter url', 'x url', 'twitter handle'],
   verificationStatus: ['status', 'verification status', 'verified status', 'approval status'],
   isPremium: ['premium', 'is premium', 'premium member', 'plan type'],
   isFeatured: ['featured', 'is featured', 'top listing'],
-  createUserAccount: ['create login', 'create user', 'user account', 'enable login'],
-  accountEmail: ['login email', 'user email', 'account email'],
-  accountPassword: ['password', 'initial password', 'login password'],
+  createUserAccount: ['create login', 'create user', 'user account', 'enable login', 'create employer account'],
+  accountEmail: ['login email', 'user email', 'account email', 'user id', 'username', 'login user id', 'employer email', 'login id'],
+  accountPassword: ['password', 'initial password', 'login password', 'user password', 'temp password', 'temporary password', 'default password'],
 };
 
 /**
@@ -346,10 +360,12 @@ export function analyzeCompanyDataset(
       name: name || 'Unnamed Business',
       category: mapped.category || 'General Business',
       district: mapped.district || 'Theni',
+      city: mapped.city || mapped.district || 'Theni',
       address: mapped.address || '',
+      pincode: mapped.pincode || '',
       ownerName: mapped.ownerName || '',
       contactPerson: mapped.contactPerson || '',
-      designation: mapped.designation || '',
+      designation: mapped.designation || 'Owner / MD',
       phone: cleanPhone || String(rawPhone || ''),
       whatsapp: cleanPhoneNumber(mapped.whatsapp) || cleanPhone || '',
       email: email || '',
@@ -358,18 +374,24 @@ export function analyzeCompanyDataset(
       bannerUrl: mapped.bannerUrl || '',
       description: mapped.description || '',
       tagline: mapped.tagline || '',
+      services: mapped.services || '',
+      workingHours: mapped.workingHours || '9:00 AM - 8:00 PM',
+      establishedYear: mapped.establishedYear || '',
+      mapUrl: mapped.mapUrl || '',
       employeeCount: mapped.employeeCount || '1-10',
-      proofType: mapped.proofType || '',
+      proofType: mapped.proofType || 'MSME / Udyam Registration',
       proofNumber: mapped.proofNumber || '',
       facebook: mapped.facebook || '',
       instagram: mapped.instagram || '',
       linkedin: mapped.linkedin || '',
       youtube: mapped.youtube || '',
+      twitter: mapped.twitter || '',
       verificationStatus: mapped.verificationStatus || 'verified',
       isPremium: mapped.isPremium ?? false,
       isFeatured: mapped.isFeatured ?? false,
       createUserAccount: mapped.createUserAccount ?? true,
       accountEmail: mapped.accountEmail || email || '',
+      accountPassword: mapped.accountPassword || '',
     };
 
     return {
@@ -402,81 +424,201 @@ export function analyzeCompanyDataset(
 }
 
 /**
- * Generates a styled Excel template file for bulk company import
+ * Generates a styled Excel template file for bulk company import with full portfolio website assets
  */
 export function generateCompanyTemplateExcel(): void {
   const headers = [
     'Company Name *',
     'Category',
     'District',
-    'Address',
+    'City / Town',
+    'Full Address',
+    'Pincode',
     'Owner / MD Name',
     'Contact Person',
+    'Designation',
     'Phone / Mobile *',
     'WhatsApp Number',
-    'Email Address',
-    'Website URL',
-    'Logo Image URL',
-    'Tagline',
-    'Description',
+    'Official Email Address',
+    'Website / Domain URL',
+    'Company Logo Image URL',
+    'Company Banner Cover URL',
+    'Tagline / Motto',
+    'About & Detailed Description',
+    'Services & Products Offered (comma-separated)',
+    'Working Hours / Timings',
+    'Year Established',
+    'Google Maps Location Link',
+    'Instagram URL',
+    'Facebook URL',
+    'LinkedIn URL',
+    'Domain / Business Proof Type',
+    'GST / MSME / Proof Number',
     'Employee Count',
-    'GST / MSME Number',
+    'Login User Email (User ID)',
+    'Login Password',
     'Verification Status',
   ];
 
   const sampleRows = [
     [
-      'Vaanikan Infotech Theni',
+      'Agrimart Farm Solutions Theni',
+      'Agriculture & Farming',
+      'Theni',
+      'Theni',
+      '84, Allinagaram Road, Near Uzhavar Sandhai, Theni',
+      '625531',
+      'P. Senthil Kumar',
+      'P. Senthil Kumar',
+      'Managing Director',
+      '9842155667',
+      '9842155667',
+      'contact@agrimarttheni.in',
+      'https://agrimarttheni.in',
+      'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=300&h=300&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&h=400&fit=crop&q=80',
+      'Complete Agri Tools, Organic Fertilizers & Smart Drip Irrigation',
+      'Agrimart is Theni district’s leading agricultural supply hub providing high-grade seeds, bio-fertilizers, solar pumps, and modern farm equipment with doorstep delivery for farmers across Cumbum, Periyakulam, and Bodinayakanur.',
+      'Organic Fertilizers, Drip Irrigation Pipes, Hybrid Seeds, Solar Agri Pumps, Farm Spraying Equipment, Soil Testing & Crop Consultation',
+      '8:30 AM - 7:30 PM (Mon - Sat)',
+      '2018',
+      'https://maps.google.com/?q=Theni+Tamil+Nadu',
+      'https://instagram.com/agrimarttheni',
+      'https://facebook.com/agrimarttheni',
+      'https://linkedin.com/company/agrimart-theni',
+      'MSME / Udyam Registration',
+      'UDYAM-TN-25-0043819',
+      '10-25',
+      'senthil@agrimarttheni.in',
+      'AgriMart@2026',
+      'verified',
+    ],
+    [
+      'Tata Consultancy & IT Services Theni',
       'IT, Software & Digital',
       'Theni',
-      '12, Madurai Main Road, Theni',
-      'K. Suresh',
-      'K. Suresh',
-      '9876543210',
-      '9876543210',
-      'contact@vaanikan.com',
-      'https://vaanikan.com',
-      'https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=300',
-      'Next-gen IT and Cloud Solutions in Theni',
-      'Leading software development and web design services provider.',
-      '10-50',
-      '33AAAAA0000A1Z5',
-      'verified',
-    ],
-    [
-      'Green Cardamom Spices Cumbum',
-      'Agriculture & Farming',
-      'Cumbum',
-      '45, Bazaar Street, Cumbum',
-      'M. Rajesh',
-      'M. Rajesh',
-      '9843210987',
-      '9843210987',
-      'sales@greencardamom.in',
-      'https://greencardamom.in',
-      '',
-      'Fresh Cardamom and Spices Direct from Farmers',
-      'Exporter and wholesale trader of organic spices.',
-      '5-10',
-      'UDYAM-TN-25-0012345',
-      'verified',
-    ],
-    [
-      'Theni Royal Grand Hospital',
-      'Healthcare & Hospital',
       'Periyakulam',
-      '88, Hospital Road, Periyakulam',
-      'Dr. Anitha Ravi',
-      'Admin Officer',
-      '9443217890',
-      '9443217890',
-      'info@theniroyalhospital.com',
-      'https://theniroyalhospital.com',
+      '45, Vadagarai Main Road, Periyakulam, Theni District',
+      '625601',
+      'R. Karthik',
+      'R. Karthik',
+      'Director & Principal Architect',
+      '9876543210',
+      '9876543210',
+      'hello@tataconsultancy-theni.com',
+      'https://tataconsultancy-theni.com',
+      'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=300&h=300&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=400&fit=crop&q=80',
+      'Next-Gen Cloud, Web Design, AI & Enterprise Software Development',
+      'Providing end-to-end cloud solutions, mobile app development, SEO optimization, and enterprise ERP automation for businesses across Tamil Nadu with 24/7 technical support.',
+      'Custom Web Application Development, Mobile Apps (iOS/Android), Cloud Migration, E-commerce Store Setup, SEO & Digital Marketing, ERP Implementation',
+      '9:00 AM - 6:30 PM (Mon - Fri)',
+      '2019',
+      'https://maps.google.com/?q=Periyakulam+Tamil+Nadu',
+      'https://instagram.com/tataconsultancy_theni',
+      'https://facebook.com/tataconsultancyit',
+      'https://linkedin.com/company/tata-consultancy-theni',
+      'GST Registration Certificate',
+      '33AAAAA9876K1Z9',
+      '25-50',
+      'karthik@tataconsultancy-theni.com',
+      'TataIT#Theni2026',
+      'verified',
+    ],
+    [
+      'Royal Grand Supermarket Cumbum',
+      'Retail, Shop & Supermarket',
+      'Theni',
+      'Cumbum',
+      '112, LF Road, Near Bus Stand, Cumbum',
+      '625516',
+      'A. Mohammed Ismail',
+      'M. Farook',
+      'Store Manager',
+      '9843210987',
+      '9843210987',
+      'support@royalgrandsupermarket.com',
+      'https://royalgrandsupermarket.com',
+      'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=300&h=300&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1534723452862-4c874018d66d?w=1200&h=400&fit=crop&q=80',
+      'All Daily Groceries, Organic Spices & Household Essentials Under One Roof',
+      'Cumbum valley’s premier multi-floor supermarket offering premium groceries, dry fruits, fresh dairy, household products, and free home delivery within 5 km.',
+      'Groceries & Grains, Cold-pressed Oils, Cumbum Valley Cardamom & Spices, Fresh Dairy Products, Household Utensils, Express Home Delivery',
+      '8:00 AM - 10:00 PM (All 7 Days)',
+      '2015',
+      'https://maps.google.com/?q=Cumbum+Tamil+Nadu',
+      'https://instagram.com/royalgrandcumbum',
+      'https://facebook.com/royalgrandcumbum',
       '',
-      '24x7 Multi-Speciality Care for Theni District',
-      'Complete emergency, surgical and inpatient medical care.',
+      'FSSAI Food License',
+      'FSSAI-12421008000452',
+      '10-25',
+      'admin@royalgrandsupermarket.com',
+      'RoyalSupermarket@2026',
+      'verified',
+    ],
+    [
+      'Sri Meenakshi Textiles & Garments',
+      'Textiles & Garments',
+      'Theni',
+      'Bodinayakanur',
+      '24, Paramasivan Kovil Street, Bodinayakanur',
+      '625513',
+      'V. Ramanathan',
+      'R. Vignesh',
+      'Marketing Head',
+      '9443217890',
+      '9443217890',
+      'orders@meenakshitextiles.com',
+      'https://meenakshitextiles.com',
+      'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=300&h=300&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=400&fit=crop&q=80',
+      'Traditional Silk Sarees, Cotton Dhotis & Modern Readymade Garments',
+      'Manufacturer and wholesaler of pure handloom silk sarees, wedding collections, and uniform garments with wholesale pricing and customized stitching services.',
+      'Pure Silk Sarees, Handloom Cotton Dhotis, School & College Uniforms, Mens Wedding Kurtas, Kids Wear, Custom Tailoring',
+      '9:30 AM - 9:00 PM (Mon - Sun)',
+      '2012',
+      'https://maps.google.com/?q=Bodinayakanur+Tamil+Nadu',
+      'https://instagram.com/meenakshitextiles',
+      'https://facebook.com/meenakshitextiles',
+      '',
+      'GST Registration Certificate',
+      '33ABCDE1234F1Z8',
+      '10-25',
+      'vignesh@meenakshitextiles.com',
+      'Meenakshi#Silk2026',
+      'verified',
+    ],
+    [
+      'City Care Multi-Speciality Hospital',
+      'Healthcare & Hospital',
+      'Theni',
+      'Theni',
+      '18, NRT Main Road, Theni Allinagaram',
+      '625531',
+      'Dr. Anitha Ravi',
+      'K. Saravanan',
+      'Admin Officer',
+      '9488776655',
+      '9488776655',
+      'info@citycarehospitaltheni.com',
+      'https://citycarehospitaltheni.com',
+      'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=300&h=300&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1200&h=400&fit=crop&q=80',
+      '24/7 Advanced Emergency, Cardiology, Ortho & Maternity Care',
+      'State-of-the-art 100-bed hospital equipped with modern CT scan, digital X-ray, automated diagnostic lab, 24/7 trauma ICU, and cashless insurance claims.',
+      '24/7 Emergency & Ambulance, Cardiology & ECG/Echo, Orthopedic Surgery, Maternity & Neonatal ICU, General Medicine, Diagnostic Laboratory',
+      '24 Hours Open (Emergency & Inpatient)',
+      '2016',
+      'https://maps.google.com/?q=Theni+Hospital+Tamil+Nadu',
+      'https://instagram.com/citycarehospitaltheni',
+      'https://facebook.com/citycarehospitaltheni',
+      'https://linkedin.com/company/citycarehospital',
+      'Shop & Establishment Act License',
+      'SE-TN-THN-99882',
       '50-100',
-      '33BBBBB1111B2Z6',
+      'admin@citycarehospitaltheni.com',
+      'CityCare#Hospital2026',
       'verified',
     ],
   ];
@@ -486,30 +628,44 @@ export function generateCompanyTemplateExcel(): void {
 
   // Set column widths for comfortable reading
   ws['!cols'] = [
-    { wch: 28 }, // Company Name
-    { wch: 22 }, // Category
+    { wch: 32 }, // Company Name
+    { wch: 24 }, // Category
     { wch: 14 }, // District
-    { wch: 32 }, // Address
-    { wch: 18 }, // Owner
-    { wch: 18 }, // Contact
+    { wch: 18 }, // City/Town
+    { wch: 40 }, // Full Address
+    { wch: 12 }, // Pincode
+    { wch: 20 }, // Owner / MD
+    { wch: 20 }, // Contact Person
+    { wch: 22 }, // Designation
     { wch: 16 }, // Phone
     { wch: 16 }, // WhatsApp
-    { wch: 26 }, // Email
-    { wch: 26 }, // Website
-    { wch: 28 }, // Logo URL
-    { wch: 35 }, // Tagline
-    { wch: 40 }, // Description
+    { wch: 28 }, // Official Email
+    { wch: 28 }, // Website / Domain
+    { wch: 35 }, // Logo URL
+    { wch: 35 }, // Banner URL
+    { wch: 45 }, // Tagline
+    { wch: 55 }, // Description
+    { wch: 50 }, // Services
+    { wch: 28 }, // Working Hours
+    { wch: 16 }, // Year Established
+    { wch: 30 }, // Google Maps URL
+    { wch: 26 }, // Instagram
+    { wch: 26 }, // Facebook
+    { wch: 26 }, // LinkedIn
+    { wch: 28 }, // Proof Type
+    { wch: 24 }, // Proof Number
     { wch: 16 }, // Employee Count
-    { wch: 22 }, // GST/MSME
+    { wch: 30 }, // Login Email
+    { wch: 22 }, // Login Password
     { wch: 18 }, // Status
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Company Import Template');
+  XLSX.utils.book_append_sheet(wb, ws, 'Company Portfolio Template');
 
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  downloadBlob(blob, `THENIJOBS_Company_Bulk_Import_Template_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  downloadBlob(blob, `THENIJOBS_Complete_Company_Portfolio_Template_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 /**
@@ -522,60 +678,32 @@ export function exportCompaniesToExcel(companies: any[], filename = 'THENIJOBS_C
     'Company Name': c.name || '',
     'Category': c.category || '',
     'District': c.district || 'Theni',
+    'City / Town': c.city || c.district || '',
     'Address': c.address || '',
+    'Pincode': c.pincode || '',
     'Owner / MD Name': c.ownerName || '',
     'Contact Person': c.contactPerson || '',
     'Designation': c.designation || '',
     'Phone': c.phone || '',
-    'WhatsApp': c.whatsapp || '',
+    'WhatsApp': c.whatsapp || c.phone || '',
     'Email': c.email || '',
-    'Website': c.website || '',
+    'Website / Domain': c.website || '',
     'Logo URL': c.logoUrl || '',
+    'Banner URL': c.bannerUrl || '',
+    'Services Offered': Array.isArray(c.services) ? c.services.join(', ') : (c.services || ''),
+    'Working Hours': c.workingHours || '',
+    'Year Established': c.establishedYear || '',
+    'Proof Type': c.proofType || '',
+    'Proof Number': c.proofNumber || '',
+    'Verification Status': c.verificationStatus || 'pending',
+    'Is Featured': c.isFeatured ? 'Yes' : 'No',
+    'Is Premium': c.isPremium ? 'Yes' : 'No',
     'Tagline': c.tagline || '',
     'Description': c.description || '',
-    'Employee Count': c.employeeCount || '',
-    'GST / Proof Number': c.proofNumber || c.gstNumber || '',
-    'Verification Status': c.verificationStatus || 'pending',
-    'Is Premium': c.isPremium ? 'YES' : 'NO',
-    'Is Featured': c.isFeatured ? 'YES' : 'NO',
-    'Active Jobs': c.jobsCount || 0,
-    'Total Views': c.viewCount || 0,
-    'Rating': c.rating || 0,
-    'Reviews': c.reviewCount || 0,
-    'Created At': c.createdAt?.toDate ? c.createdAt.toDate().toLocaleDateString('en-IN') : (c.createdAt ? String(c.createdAt).slice(0, 10) : ''),
+    'Created At': c.createdAt ? (c.createdAt.toDate ? c.createdAt.toDate().toISOString() : String(c.createdAt)) : '',
   }));
 
   const ws = XLSX.utils.json_to_sheet(exportData);
-
-  ws['!cols'] = [
-    { wch: 6 },
-    { wch: 22 },
-    { wch: 28 },
-    { wch: 22 },
-    { wch: 14 },
-    { wch: 30 },
-    { wch: 18 },
-    { wch: 18 },
-    { wch: 14 },
-    { wch: 15 },
-    { wch: 15 },
-    { wch: 24 },
-    { wch: 26 },
-    { wch: 28 },
-    { wch: 30 },
-    { wch: 35 },
-    { wch: 15 },
-    { wch: 20 },
-    { wch: 18 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 8 },
-    { wch: 8 },
-    { wch: 14 },
-  ];
-
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Companies');
 

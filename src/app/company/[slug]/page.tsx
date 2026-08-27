@@ -14,6 +14,11 @@ const STATIC_COMPANY_SLUGS = [
   'theni-textiles',
   'thenijobs-demo-company',
   'agrimorein',
+  'agrimart-farm-solutions-theni',
+  'tata-consultancy-it-services-theni',
+  'royal-grand-supermarket-cumbum',
+  'sri-meenakshi-textiles-garments',
+  'city-care-multi-speciality-hospital',
 ];
 
 export function generateStaticParams() {

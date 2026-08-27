@@ -7,11 +7,11 @@ import {
   Star, Crown, MapPin, BadgeCheck, Clock, Loader2, Download,
   Phone, MessageCircle, AlertCircle, X, Send, Eye, RefreshCw,
   Globe, Mail, ShieldCheck, User, ExternalLink, FileText, Check,
-  FileSpreadsheet, Upload
+  FileSpreadsheet, Upload, Edit3, Save, Trash2, Copy
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
-import { approveCompany, rejectCompany, featureCompany, updateDocument } from '@/lib/firebase/firestoreService';
+import { approveCompany, rejectCompany, featureCompany, updateDocument, deleteCompany } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
 import { exportCompaniesToExcel } from '@/lib/excel/companyExcelService';
 
@@ -51,9 +51,9 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   rejected:     { bg: '#FEF2F2', text: '#DC2626', label: 'Rejected / Needs Revision' },
 };
 
-const TABS = ['All', 'Pending', 'Verified', 'Rejected', 'Featured'] as const;
-const CATEGORIES = ['All Categories', 'Agriculture & Farming', 'Automobile & Transport', 'Banking & Finance', 'Construction & Real Estate', 'Education & Training', 'Healthcare & Hospital', 'Hotel, Food & Restaurant', 'IT, Software & Digital', 'Manufacturing & Industry', 'Retail, Shop & Supermarket', 'Textiles & Garments', 'Security & Facility', 'Professional & Business Services'];
-const DISTRICTS = ['All Districts', 'Theni', 'Periyakulam', 'Cumbum', 'Bodinayakanur', 'Chinnamanur', 'Andipatti', 'Madurai', 'Dindigul', 'Chennai', 'Coimbatore'];
+const TABS = ['All', 'Pending', 'Verified', 'Rejected', 'Featured', 'Duplicates'] as const;
+const CATEGORIES = ['All Categories', 'Agriculture & Farming', 'Automobile & Transport', 'Banking & Finance', 'Construction & Real Estate', 'Education & Training', 'Healthcare & Hospital', 'Hotel, Food & Restaurant', 'IT, Software & Digital', 'Manufacturing & Industry', 'Retail, Shop & Supermarket', 'Textiles & Garments', 'Security & Facility', 'Professional & Business Services', 'General Business'];
+const DISTRICTS = ['All Districts', 'Theni', 'Periyakulam', 'Cumbum', 'Bodinayakanur', 'Chinnamanur', 'Andipatti', 'Uthamapalayam', 'Madurai', 'Dindigul', 'Chennai', 'Coimbatore'];
 
 const BG_PALETTE = ['#EFF6FF','#ECFDF5','#FFFBEB','#F5F3FF','#FFF1F2','#F0F9FF'];
 const COLOR_PALETTE = ['#2563EB','#059669','#D97706','#7C3AED','#E11D48','#0284C7'];
@@ -83,15 +83,155 @@ export default function BusinessesPage() {
   const [rejectingBiz, setRejectingBiz] = useState<BusinessDoc | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  // Delete Modal State
+  const [deletingBiz, setDeletingBiz] = useState<BusinessDoc | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDeleteCompany = async () => {
+    if (!deletingBiz) return;
+    setDeleteLoading(true);
+    try {
+      await deleteCompany(deletingBiz.id, currentUser?.uid || 'admin');
+      toast.success('Business Deleted', `${deletingBiz.name} was successfully removed.`);
+      if (previewBiz?.id === deletingBiz.id) setPreviewBiz(null);
+      if (editingBiz?.id === deletingBiz.id) setEditingBiz(null);
+      setDeletingBiz(null);
+    } catch (e: any) {
+      console.error('Delete company error:', e);
+      toast.error('Deletion Failed', e.message || 'Could not delete business.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Edit Business Modal State
+  const [editingBiz, setEditingBiz] = useState<BusinessDoc | null>(null);
+  const [editBizForm, setEditBizForm] = useState({
+    name: '',
+    category: 'Retail, Shop & Supermarket',
+    district: 'Theni',
+    address: '',
+    ownerName: '',
+    contactPerson: '',
+    designation: 'Proprietor / MD',
+    phone: '',
+    whatsapp: '',
+    email: '',
+    website: '',
+    tagline: '',
+    description: '',
+    proofType: 'MSME / Udyam Registration',
+    proofNumber: '',
+    verificationStatus: 'verified' as 'pending' | 'under_review' | 'verified' | 'rejected',
+    isFeatured: false,
+    isPremium: false,
+    employeeCount: '1-10',
+  });
+  const [editBizLoading, setEditBizLoading] = useState(false);
+  const [editBizError, setEditBizError] = useState('');
+
+  const openEditBizModal = (biz: BusinessDoc) => {
+    setEditingBiz(biz);
+    setEditBizForm({
+      name: biz.name || '',
+      category: biz.category || 'Retail, Shop & Supermarket',
+      district: biz.district || 'Theni',
+      address: biz.address || '',
+      ownerName: biz.ownerName || '',
+      contactPerson: biz.contactPerson || '',
+      designation: biz.designation || 'Proprietor / MD',
+      phone: biz.phone || '',
+      whatsapp: biz.whatsapp || biz.phone || '',
+      email: biz.email || '',
+      website: biz.website || '',
+      tagline: biz.tagline || '',
+      description: biz.description || '',
+      proofType: biz.proofType || 'MSME / Udyam Registration',
+      proofNumber: biz.proofNumber || '',
+      verificationStatus: (biz.verificationStatus as any) || 'pending',
+      isFeatured: !!biz.isFeatured,
+      isPremium: !!biz.isPremium,
+      employeeCount: biz.employeeCount || '1-10',
+    });
+    setEditBizError('');
+  };
+
+  const handleSaveBizEdit = async () => {
+    if (!editingBiz) return;
+    if (!editBizForm.name.trim() || !editBizForm.phone.trim()) {
+      setEditBizError('Company Name and Phone Number are required.');
+      return;
+    }
+    setEditBizLoading(true);
+    setEditBizError('');
+    try {
+      await updateDocument('companies', editingBiz.id, {
+        name: editBizForm.name.trim(),
+        category: editBizForm.category,
+        district: editBizForm.district,
+        address: editBizForm.address.trim(),
+        ownerName: editBizForm.ownerName.trim(),
+        contactPerson: editBizForm.contactPerson.trim(),
+        designation: editBizForm.designation.trim(),
+        phone: editBizForm.phone.trim(),
+        whatsapp: editBizForm.whatsapp.trim(),
+        email: editBizForm.email.trim(),
+        website: editBizForm.website.trim(),
+        tagline: editBizForm.tagline.trim(),
+        description: editBizForm.description.trim(),
+        proofType: editBizForm.proofType,
+        proofNumber: editBizForm.proofNumber.trim(),
+        verificationStatus: editBizForm.verificationStatus,
+        isVerified: editBizForm.verificationStatus === 'verified',
+        isActive: editBizForm.verificationStatus === 'verified',
+        isFeatured: editBizForm.isFeatured,
+        isPremium: editBizForm.isPremium,
+        employeeCount: editBizForm.employeeCount,
+        updatedAt: new Date(),
+      });
+      toast.success('Business Profile & Verification details updated!');
+      if (previewBiz?.id === editingBiz.id) {
+        setPreviewBiz({ ...previewBiz, ...editBizForm, id: editingBiz.id });
+      }
+      setEditingBiz(null);
+    } catch (e: any) {
+      console.error('Error updating business:', e);
+      setEditBizError(e.message || 'Failed to update business.');
+    } finally {
+      setEditBizLoading(false);
+    }
+  };
+
   const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'CO';
   const getColors = (name?: string) => {
     const idx = (name?.charCodeAt(0) || 0) % BG_PALETTE.length;
     return { bg: BG_PALETTE[idx], color: COLOR_PALETTE[idx] };
   };
 
+  // Duplicate Detection Map (by normalized phone or lowercase name)
+  const duplicatePhoneMap = new Map<string, number>();
+  const duplicateNameMap = new Map<string, number>();
+  businesses.forEach(b => {
+    const p = (b.phone || '').replace(/\D/g, '');
+    if (p.length === 10) {
+      duplicatePhoneMap.set(p, (duplicatePhoneMap.get(p) || 0) + 1);
+    }
+    const n = (b.name || '').trim().toLowerCase();
+    if (n) {
+      duplicateNameMap.set(n, (duplicateNameMap.get(n) || 0) + 1);
+    }
+  });
+
+  const isDuplicateBiz = (biz: BusinessDoc) => {
+    const p = (biz.phone || '').replace(/\D/g, '');
+    const n = (biz.name || '').trim().toLowerCase();
+    return (p.length === 10 && (duplicatePhoneMap.get(p) || 0) > 1) || (n.length > 2 && (duplicateNameMap.get(n) || 0) > 1);
+  };
+
   const pendingCount = businesses.filter(b => (b.verificationStatus || 'pending') === 'pending').length;
   const verifiedCount = businesses.filter(b => b.verificationStatus === 'verified').length;
   const premiumCount = businesses.filter(b => b.isPremium || b.isFeatured).length;
+  const duplicateCount = businesses.filter(b => isDuplicateBiz(b)).length;
 
   const filtered = businesses.filter(biz => {
     const matchSearch = biz.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -102,6 +242,7 @@ export default function BusinessesPage() {
     let matchTab = activeTab === 'All';
     if (activeTab === 'Featured') matchTab = !!biz.isFeatured;
     else if (activeTab === 'Verified') matchTab = status === 'verified';
+    else if (activeTab === 'Duplicates') matchTab = isDuplicateBiz(biz);
     else if (activeTab !== 'All') matchTab = status === activeTab.toLowerCase();
     const matchCategory = categoryFilter === 'All Categories' || biz.category === categoryFilter;
     const matchDistrict = districtFilter === 'All Districts' || biz.district === districtFilter;
@@ -265,6 +406,11 @@ export default function BusinessesPage() {
                 {pendingCount}
               </span>
             )}
+            {tab === 'Duplicates' && duplicateCount > 0 && (
+              <span className="ml-1.5 px-2 py-0.5 rounded-full text-white text-[9px] font-black bg-purple-600 animate-pulse">
+                {duplicateCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -336,10 +482,15 @@ export default function BusinessesPage() {
                       {getInitials(biz.name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <h3 className="text-sm font-bold text-gray-900 truncate">{biz.name}</h3>
                         {bizStatus === 'verified' && <BadgeCheck size={15} className="text-emerald-600 shrink-0" />}
                         {biz.isPremium && <Crown size={15} className="text-amber-500 shrink-0" />}
+                        {isDuplicateBiz(biz) && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[9px] font-extrabold flex items-center gap-0.5 border border-purple-200 shrink-0">
+                            <Copy size={9} /> Duplicate
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-gray-500 font-medium mt-0.5">{biz.category || 'General'}</p>
                       <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1 font-medium">
@@ -387,22 +538,31 @@ export default function BusinessesPage() {
 
                 {/* Bottom Actions */}
                 <div className="space-y-2 pt-2 border-t border-gray-100">
-                  {/* Direct Contact Buttons */}
-                  <div className="grid grid-cols-3 gap-1.5">
+                  {/* Direct Contact & Edit Buttons */}
+                  <div className="grid grid-cols-4 gap-1.5">
                     <button
                       type="button"
                       onClick={() => setPreviewBiz(biz)}
-                      className="py-2 px-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      className="py-2 px-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
                     >
-                      <Eye size={13} /> Details
+                      <Eye size={12} /> Details
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => openEditBizModal(biz)}
+                      className="py-2 px-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-blue-200 cursor-pointer"
+                      title="Edit Business Details"
+                    >
+                      <Edit3 size={12} /> Edit
                     </button>
 
                     {cleanPhone ? (
                       <a
                         href={`tel:${cleanPhone}`}
-                        className="py-2 px-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-indigo-200 cursor-pointer"
+                        className="py-2 px-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-indigo-200 cursor-pointer"
                       >
-                        <Phone size={13} /> Call
+                        <Phone size={12} /> Call
                       </a>
                     ) : (
                       <span className="py-2 text-center text-[10px] text-gray-400">No Phone</span>
@@ -413,17 +573,17 @@ export default function BusinessesPage() {
                         href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${biz.name}, this is THENIJOBS Admin regarding your business verification request.`)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="py-2 px-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
+                        className="py-2 px-1.5 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
                         style={{ background: '#25D366' }}
                       >
-                        <MessageCircle size={13} /> WhatsApp
+                        <MessageCircle size={12} /> WA
                       </a>
                     ) : (
                       <span className="py-2 text-center text-[10px] text-gray-400">No WA</span>
                     )}
                   </div>
 
-                  {/* Approval / Rejection Row */}
+                  {/* Approval / Rejection / Delete Row */}
                   <div className="flex items-center gap-1.5">
                     {actionLoading === biz.id ? (
                       <div className="py-2 w-full text-center">
@@ -465,6 +625,14 @@ export default function BusinessesPage() {
                         >
                           <Crown size={14} />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingBiz(biz)}
+                          className="p-2 rounded-xl transition-all cursor-pointer bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                          title="Delete Company Listing"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </>
                     )}
                   </div>
@@ -490,9 +658,22 @@ export default function BusinessesPage() {
                   <p className="text-xs text-gray-500">{previewBiz.category} • {previewBiz.district}</p>
                 </div>
               </div>
-              <button onClick={() => setPreviewBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const b = previewBiz;
+                    setPreviewBiz(null);
+                    openEditBizModal(b);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Edit3 size={13} /> Edit
+                </button>
+                <button onClick={() => setPreviewBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Banner preview if available */}
@@ -518,6 +699,14 @@ export default function BusinessesPage() {
                 <span className="text-gray-400 font-bold block">Office Address</span>
                 <span className="font-semibold text-gray-900">{previewBiz.address || '—'}</span>
               </div>
+              {previewBiz.website && (
+                <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1 sm:col-span-2">
+                  <span className="text-gray-400 font-bold block">Website / Domain URL</span>
+                  <a href={previewBiz.website.startsWith('http') ? previewBiz.website : `https://${previewBiz.website}`} target="_blank" rel="noreferrer" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-1">
+                    {previewBiz.website} <ExternalLink size={12} />
+                  </a>
+                </div>
+              )}
               {previewBiz.proofNumber && (
                 <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 space-y-1 sm:col-span-2 text-blue-900">
                   <span className="text-blue-600 font-bold block">Government Verification Proof ({previewBiz.proofType})</span>
@@ -579,7 +768,264 @@ export default function BusinessesPage() {
                     <XCircle size={14} /> Reject Application
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const b = previewBiz;
+                    setPreviewBiz(null);
+                    setDeletingBiz(b);
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  title="Delete Company Listing"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT BUSINESS MODAL */}
+      {editingBiz && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs font-outfit" onClick={() => setEditingBiz(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 p-6 sm:p-8 space-y-5 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-sm border border-blue-100">
+                  <Edit3 size={18} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-gray-900">Edit Business Details</h2>
+                  <p className="text-xs text-gray-500">Update company profile, contact, website &amp; verification</p>
+                </div>
+              </div>
+              <button onClick={() => setEditingBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+
+            {editBizError && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                {editBizError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Row 1: Company Name & Category */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Company / Business Name *</label>
+                  <input
+                    type="text"
+                    value={editBizForm.name}
+                    onChange={e => setEditBizForm({ ...editBizForm, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    placeholder="e.g. Royal Grand Hospital"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
+                  <select
+                    value={editBizForm.category}
+                    onChange={e => setEditBizForm({ ...editBizForm, category: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                  >
+                    {CATEGORIES.filter(c => c !== 'All Categories').map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: District & Full Address */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">District / Town *</label>
+                  <select
+                    value={editBizForm.district}
+                    onChange={e => setEditBizForm({ ...editBizForm, district: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                  >
+                    {DISTRICTS.filter(d => d !== 'All Districts').map(d => <option key={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Office / Shop Address</label>
+                  <input
+                    type="text"
+                    value={editBizForm.address}
+                    onChange={e => setEditBizForm({ ...editBizForm, address: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    placeholder="e.g. 45, Main Bazaar, Theni"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Contacts */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Contact Person / Owner</label>
+                  <input
+                    type="text"
+                    value={editBizForm.contactPerson}
+                    onChange={e => setEditBizForm({ ...editBizForm, contactPerson: e.target.value, ownerName: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    placeholder="e.g. K. Suresh"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    value={editBizForm.phone}
+                    onChange={e => setEditBizForm({ ...editBizForm, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    placeholder="9876543210"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Number</label>
+                  <input
+                    type="tel"
+                    value={editBizForm.whatsapp}
+                    onChange={e => setEditBizForm({ ...editBizForm, whatsapp: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    placeholder="9876543210"
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Email & Website */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
+                  <input
+                    type="email"
+                    value={editBizForm.email}
+                    onChange={e => setEditBizForm({ ...editBizForm, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    placeholder="contact@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Website / Domain URL</label>
+                  <input
+                    type="url"
+                    value={editBizForm.website}
+                    onChange={e => setEditBizForm({ ...editBizForm, website: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    placeholder="https://mycompany.com"
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Proof & Verification */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Verification Proof Type</label>
+                  <select
+                    value={editBizForm.proofType}
+                    onChange={e => setEditBizForm({ ...editBizForm, proofType: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                  >
+                    <option value="MSME / Udyam Registration">MSME / Udyam</option>
+                    <option value="GST Registration Certificate">GST Certificate</option>
+                    <option value="Shop & Establishment Act License">Shop License</option>
+                    <option value="FSSAI Food License">FSSAI License</option>
+                    <option value="Trade License / Gram Panchayat Proof">Trade License</option>
+                    <option value="Domain / Website Verification">Domain Verification</option>
+                    <option value="Aadhaar / Recruiter ID Proof">Aadhaar Proof</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Proof / License / GST Number</label>
+                  <input
+                    type="text"
+                    value={editBizForm.proofNumber}
+                    onChange={e => setEditBizForm({ ...editBizForm, proofNumber: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
+                    placeholder="e.g. 33AAAAA0000A1Z5"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-700 block mb-1">Verification Status</label>
+                  <select
+                    value={editBizForm.verificationStatus}
+                    onChange={e => setEditBizForm({ ...editBizForm, verificationStatus: e.target.value as any })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                  >
+                    <option value="verified">Verified &amp; Active</option>
+                    <option value="pending">Pending Verification</option>
+                    <option value="under_review">Under Review</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 6: Tagline & Description */}
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Tagline / Short Slogan</label>
+                <input
+                  type="text"
+                  value={editBizForm.tagline}
+                  onChange={e => setEditBizForm({ ...editBizForm, tagline: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  placeholder="e.g. Leading IT & Cloud Solutions in Theni"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Company Overview / Description</label>
+                <textarea
+                  rows={3}
+                  value={editBizForm.description}
+                  onChange={e => setEditBizForm({ ...editBizForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none"
+                  placeholder="Describe company history, products, and services..."
+                />
+              </div>
+
+              {/* Row 7: Toggles */}
+              <div className="flex items-center gap-6 p-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800">
+                  <input
+                    type="checkbox"
+                    checked={editBizForm.isFeatured}
+                    onChange={e => setEditBizForm({ ...editBizForm, isFeatured: e.target.checked })}
+                    className="w-4 h-4 rounded text-amber-600"
+                  />
+                  <span>⭐ Featured Business</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800">
+                  <input
+                    type="checkbox"
+                    checked={editBizForm.isPremium}
+                    onChange={e => setEditBizForm({ ...editBizForm, isPremium: e.target.checked })}
+                    className="w-4 h-4 rounded text-purple-600"
+                  />
+                  <span>👑 Premium Tier</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex gap-2 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setEditingBiz(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBizEdit}
+                disabled={editBizLoading}
+                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {editBizLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>Save Business Changes</span>
+              </button>
             </div>
           </div>
         </div>
@@ -650,6 +1096,61 @@ export default function BusinessesPage() {
                 style={{ background: '#25D366' }}
               >
                 <MessageCircle size={13} /> Reject &amp; WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deletingBiz && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs font-outfit" onClick={() => setDeletingBiz(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-200 p-6 space-y-4 animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2 text-red-600">
+                <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center border border-red-100">
+                  <Trash2 size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-base">Delete Company</h3>
+                  <p className="text-[11px] text-gray-500">Permanently delete listing &amp; data</p>
+                </div>
+              </div>
+              <button onClick={() => setDeletingBiz(null)} className="p-1 rounded-xl text-gray-400 hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs text-gray-600 leading-relaxed">
+                Are you sure you want to permanently delete <strong className="text-gray-900">{deletingBiz.name}</strong>?
+              </p>
+              <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100 text-xs text-gray-700 space-y-1">
+                <p><strong>Category:</strong> {deletingBiz.category || 'General'}</p>
+                <p><strong>District:</strong> {deletingBiz.district || 'Theni'}</p>
+                <p><strong>Phone:</strong> {deletingBiz.phone || '—'}</p>
+              </div>
+              <p className="text-[11px] text-red-600 font-medium bg-red-50 p-2.5 rounded-xl border border-red-200">
+                ⚠️ Warning: This will remove the company from search results, SEO portfolio, and employer directory. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setDeletingBiz(null)}
+                className="py-2.5 px-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteCompany}
+                disabled={deleteLoading}
+                className="py-2.5 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+              >
+                {deleteLoading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                <span>Delete Company</span>
               </button>
             </div>
           </div>

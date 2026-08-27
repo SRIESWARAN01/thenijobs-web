@@ -106,7 +106,7 @@ export default function CompanyRegisterPage() {
   };
 
   return (
-    <main className="public-light-page min-h-screen bg-[#F8FAFC]">
+    <main className="min-h-screen bg-[#F8FAFC]">
       <Header />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 pb-28 md:pb-12">
         {/* Page Header */}
@@ -114,7 +114,7 @@ export default function CompanyRegisterPage() {
           <h1 className="text-2xl sm:text-3xl font-outfit font-bold text-gray-900">
             Register Your <span className="gradient-text">Business</span>
           </h1>
-          <p className="text-gray-400 text-sm mt-2">
+          <p className="text-slate-600 text-sm mt-2 font-medium">
             Get your own SEO-friendly page on THENIJOBS. Google-ready from day one.
           </p>
         </div>

@@ -20,6 +20,7 @@ const ADMIN_NAV = [
   { label: 'Companies', icon: Building2, href: '/admin/businesses', badge: 'pending' },
   { label: 'Bulk Import', icon: FileSpreadsheet, href: '/admin/businesses/import' },
   { label: 'Jobs', icon: Briefcase, href: '/admin/jobs', badge: 'pending' },
+  { label: 'SEO & Keywords', icon: Search, href: '/admin/seo' },
   { label: 'Leads', icon: TrendingUp, href: '/admin/leads' },
   { label: 'Services', icon: Globe, href: '/admin/services' },
   { label: 'Subscriptions', icon: CreditCard, href: '/admin/subscriptions' },
@@ -32,6 +33,7 @@ const ADMIN_NAV = [
   { label: 'Security', icon: Shield, href: '/admin/security' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useRequireAuth(['admin', 'super_admin']);

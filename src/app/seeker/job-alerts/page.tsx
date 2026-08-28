@@ -186,15 +186,59 @@ export default function JobAlertsPage() {
         <div className="glass-card rounded-2xl p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-2xl font-bold text-gray-900 font-outfit">Active</p>
-              <p className="mt-1 text-xs font-medium text-gray-400">Email Updates</p>
+              <p className="text-2xl font-bold text-gray-900 font-outfit">Instant</p>
+              <p className="mt-1 text-xs font-medium text-gray-400">WhatsApp Alert Sync</p>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15">
-              <Mail size={18} className="text-violet-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15">
+              <MessageSquare size={18} className="text-[#25D366]" />
             </div>
           </div>
         </div>
       </div>
+
+      {/* WhatsApp Alert Simulation & Quick Test Box */}
+      <div className="rounded-3xl border border-emerald-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center font-black shrink-0">
+              <MessageSquare size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Personalized WhatsApp Job Alerts</h3>
+              <p className="text-xs text-slate-500">Receive verified jobs directly in your WhatsApp chat matching your skills &amp; town.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const text = `🔔 *THENIJOBS — Daily Job Alert Preview*\n\n💼 *Role:* Accounts Assistant / Senior Billing\n🏢 *Company:* Theni Commercial Hub\n📍 *Location:* Theni Town, Tamil Nadu\n💰 *Salary:* ₹18,000 - ₹25,000 / month\n\n⚡ *1-Click Apply:* https://thenijobs.com/jobs/demo\n\n_You are subscribed to Daily Alerts on THENIJOBS._`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              toast.success('WhatsApp alert preview opened!');
+            }}
+            className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#25D366] hover:opacity-90 flex items-center gap-1.5 self-start sm:self-auto transition-all shadow-xs"
+          >
+            <MessageSquare size={14} /> Send Sample WhatsApp Alert
+          </button>
+        </div>
+
+        {/* Simulated Chat Bubble */}
+        <div className="p-4 rounded-2xl bg-[#ECE5DD] border border-[#d1c8be] max-w-lg space-y-1.5 shadow-2xs font-sans text-xs">
+          <div className="flex items-center justify-between text-[10px] text-slate-600 font-bold">
+            <span className="text-emerald-800 font-extrabold flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" /> THENIJOBS Verified Bot
+            </span>
+            <span>9:00 AM</span>
+          </div>
+          <div className="bg-white rounded-2xl p-3 shadow-xs text-slate-800 space-y-1 leading-relaxed">
+            <p className="font-extrabold text-emerald-900 text-[13px]">🔔 New Verified Job in Theni District!</p>
+            <p><strong>Role:</strong> Accounts &amp; Billing Specialist</p>
+            <p><strong>Town:</strong> Theni / Cumbum</p>
+            <p><strong>Pay:</strong> ₹18,000 - ₹25,000 / Month</p>
+            <p className="text-blue-600 font-mono text-[11px] pt-1">👉 thenijobs.com/jobs/demo</p>
+          </div>
+        </div>
+      </div>
+
 
       {/* Alerts List */}
       <div className="space-y-4">

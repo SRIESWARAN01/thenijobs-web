@@ -333,3 +333,31 @@ export async function getVerifiedCompanySlugsForSitemap(): Promise<
       updatedAt: c.updatedAt || c.createdAt || '',
     }));
 }
+
+/**
+ * Fetch all published portfolio sites that enabled Google Indexing for sitemap
+ */
+export async function getPublishedPortfolioSitesForSitemap(): Promise<
+  Array<{ customUrl: string; updatedAt?: string }>
+> {
+  try {
+    const sites = await runQueryREST<any>(
+      'portfolioSites',
+      [
+        { field: 'status', op: 'EQUAL', value: { stringValue: 'published' } },
+        { field: 'googleIndex', op: 'EQUAL', value: { booleanValue: true } },
+      ],
+    );
+
+    return sites
+      .filter((s) => s.customUrl)
+      .map((s) => ({
+        customUrl: s.customUrl,
+        updatedAt: s.updatedAt || s.createdAt || '',
+      }));
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to query portfolio sites for sitemap:', err);
+    return [];
+  }
+}
+

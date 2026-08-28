@@ -92,14 +92,30 @@ service firebase.storage {
 
     // ===== SEEKER SKILLS / CERTIFICATES =====
     match /certificates/{userId}/{fileName} {
-      allow read:  if isOwner(userId) || isAdmin();
+      allow read:  if isAuthenticated();
       allow write: if isOwner(userId) && (isImage() || isPDF()) && isUnder5MB();
       allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // ===== CATCH-ALL: Deny everything else =====
+    // ===== PORTFOLIO ASSETS (PROJECTS, COVERS, AVATARS) =====
+    match /portfolio/{userId}/{allPaths=**} {
+      allow read:  if true;  // Portfolio assets are public
+      allow write: if (isOwner(userId) || isAuthenticated()) && (isImage() || isPDF()) && isUnder10MB();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ===== GENERAL AUTHENTICATED UPLOADS =====
+    match /uploads/{userId}/{allPaths=**} {
+      allow read:  if true;
+      allow write: if (isOwner(userId) || isAuthenticated()) && isUnder10MB();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ===== CATCH-ALL =====
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read:  if true;
+      allow write: if isAuthenticated() && isUnder10MB();
     }
   }
 }
+

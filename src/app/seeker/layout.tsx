@@ -8,7 +8,7 @@ import {
   Bell, Calendar, Building2, Settings, LogOut,
   ChevronLeft, ChevronRight, Menu, X, Sparkles,
   Send, GraduationCap, Loader2, CreditCard, Briefcase,
-  ArrowRight, ShieldCheck
+  ArrowRight, ShieldCheck, Globe
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -18,9 +18,10 @@ import { auth } from '@/lib/firebase/config';
 const SEEKER_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/seeker/dashboard' },
   { label: 'My Profile', icon: User, href: '/seeker/profile' },
+  { label: 'Portfolio Website', icon: Globe, href: '/seeker/website', highlight: true },
   { label: 'Resume', icon: FileText, href: '/seeker/resume' },
   { label: 'Browse Jobs', icon: Search, href: '/jobs', external: true },
-  { label: 'Post Job / Employer', icon: Briefcase, href: '/seeker/become-employer', highlight: true },
+  { label: 'Post Job / Employer', icon: Briefcase, href: '/seeker/become-employer' },
   { label: 'Applications', icon: Send, href: '/seeker/applications' },
   { label: 'Saved Jobs', icon: Bookmark, href: '/seeker/saved-jobs' },
   { label: 'Job Alerts', icon: Bell, href: '/seeker/job-alerts' },
@@ -32,6 +33,7 @@ const SEEKER_NAV = [
   { label: 'Notifications', icon: Bell, href: '/seeker/notifications' },
   { label: 'Settings', icon: Settings, href: '/seeker/settings' },
 ];
+
 
 export default function SeekerLayout({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useRequireAuth(['job_seeker']);

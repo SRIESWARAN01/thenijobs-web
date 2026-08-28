@@ -3,7 +3,10 @@ import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
 import AnnouncementBar from '@/components/home/AnnouncementBar';
+import WalkInDriveBanner from '@/components/home/WalkInDriveBanner';
+
 import HeroSection from '@/components/home/HeroSection';
+
 import TrustedEmployersStrip from '@/components/home/TrustedEmployersStrip';
 import TrendingJobs from '@/components/home/TrendingJobs';
 import CategoriesSection from '@/components/home/CategoriesSection';
@@ -123,8 +126,10 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}
       />
       <Header />
+      <WalkInDriveBanner />
       <AnnouncementBar />
       <HeroSection />
+
       <TrustedEmployersStrip />
       <TrendingJobs />
       <CategoriesSection />

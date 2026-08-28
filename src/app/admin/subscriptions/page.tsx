@@ -74,6 +74,95 @@ export default function SubscriptionsPage() {
   const expiredCount = subscriptions.filter((s) => s.status === 'expired' || s.status === 'cancelled').length;
   const monthlyRevenue = activeSubs.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
 
+  const handleDownloadGSTInvoice = async (item: any) => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const invNum = `INV-TNJ-${String(item.id || Date.now()).slice(-6).toUpperCase()}`;
+      const amount = Number(item.amount) || 999;
+      const baseAmount = Math.round(amount / 1.18);
+      const gstAmount = amount - baseAmount;
+      const cgst = Math.round(gstAmount / 2);
+      const sgst = gstAmount - cgst;
+      const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+      // Header
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(20);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('TAX INVOICE', 105, 25, { align: 'center' });
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(5, 150, 105);
+      pdf.text('THENIJOBS DIGITAL PRIVATE LIMITED', 20, 38);
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text('Reg Office: NRT Road, Theni District, Tamil Nadu - 625531', 20, 44);
+      pdf.text('GSTIN: 33AAAAA0000A1Z5 | Support: support@thenijobs.com', 20, 49);
+
+      // Invoice Meta
+      pdf.setDrawColor(226, 232, 240);
+      pdf.line(20, 55, 190, 55);
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text(`Invoice No: ${invNum}`, 20, 64);
+      pdf.text(`Invoice Date: ${dateStr}`, 140, 64);
+
+      pdf.text('Billed To (Customer):', 20, 75);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Company: ${item.businessName || item.companyName || 'Registered Employer'}`, 20, 81);
+      pdf.text('State: Tamil Nadu (Code: 33)', 20, 86);
+
+      // Table Header
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(20, 95, 170, 8, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.text('Description / Service Plan', 24, 100);
+      pdf.text('HSN / SAC', 110, 100);
+      pdf.text('Amount (INR)', 160, 100);
+
+      // Table Item
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`THENIJOBS — ${(item.plan || 'Standard').toUpperCase()} Annual Subscription`, 24, 110);
+      pdf.text('998314', 110, 110);
+      pdf.text(`₹${baseAmount.toLocaleString('en-IN')}`, 160, 110);
+
+      pdf.line(20, 116, 190, 116);
+
+      // Totals Breakdown
+      pdf.text('Taxable Base Amount:', 110, 125);
+      pdf.text(`₹${baseAmount.toLocaleString('en-IN')}`, 165, 125);
+
+      pdf.text('CGST (9%):', 110, 131);
+      pdf.text(`₹${cgst.toLocaleString('en-IN')}`, 165, 131);
+
+      pdf.text('SGST (9%):', 110, 137);
+      pdf.text(`₹${sgst.toLocaleString('en-IN')}`, 165, 137);
+
+      pdf.line(110, 142, 190, 142);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text('Total Paid Amount:', 110, 150);
+      pdf.text(`₹${amount.toLocaleString('en-IN')}`, 165, 150);
+
+      // Footer
+      pdf.setFont('helvetica', 'italic');
+      pdf.setFontSize(8);
+      pdf.setTextColor(148, 163, 184);
+      pdf.text('This is a computer-generated tax invoice and requires no physical signature.', 105, 270, { align: 'center' });
+
+      pdf.save(`${invNum}-invoice.pdf`);
+    } catch (e) {
+      console.error('Invoice error:', e);
+    }
+  };
+
   const stats = [
     { label: 'Active Subscriptions', value: activeCount, icon: CreditCard, bg: '#EFF6FF', color: '#2563EB' },
     { label: 'Active MRR / Volume', value: `₹${monthlyRevenue.toLocaleString('en-IN')}`, icon: TrendingUp, bg: '#ECFDF5', color: '#059669' },
@@ -210,6 +299,7 @@ export default function SubscriptionsPage() {
                     <th className="text-left px-4 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
                     <th className="text-left px-4 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="text-left px-4 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Payment Method</th>
+                    <th className="text-right px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Invoice</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -250,6 +340,16 @@ export default function SubscriptionsPage() {
                         </td>
                         <td className="px-4 py-3.5 text-xs font-medium text-gray-600">
                           {sub.paymentMethod || 'Razorpay / UPI'}
+                        </td>
+                        <td className="px-5 py-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadGSTInvoice(sub)}
+                            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs inline-flex items-center gap-1 transition-all cursor-pointer"
+                            title="Download GST Tax Invoice PDF"
+                          >
+                            <Download size={12} /> Tax Invoice
+                          </button>
                         </td>
                       </tr>
                     );

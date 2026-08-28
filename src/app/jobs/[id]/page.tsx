@@ -8,7 +8,10 @@ import { isJobExpired, formatSalaryDisplay } from '@/lib/seo/expiredJobUtils';
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return [{ id: 'demo' }];
+  return [
+    { id: '_fallback' },
+    { id: 'demo' },
+  ];
 }
 
 interface PageProps {
@@ -21,13 +24,21 @@ interface PageProps {
  */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+
+  if (id === '_fallback') {
+    return {
+      title: 'Job Vacancy in Theni | THENIJOBS',
+      description: 'Explore verified job opportunities in Theni and surrounding districts on THENIJOBS.',
+    };
+  }
+
   const job = await getJobByIdServer(id);
 
   // Fallback metadata if job not found
   if (!job) {
     return {
-      title: 'Job Not Found | THENIJOBS',
-      description: 'This job posting may have expired or been removed from THENIJOBS.',
+      title: 'Job Opportunities | THENIJOBS',
+      description: 'Find top job openings across Theni and Tamil Nadu on THENIJOBS.',
       robots: { index: false, follow: true },
     };
   }
@@ -79,10 +90,11 @@ export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
   const job = await getJobByIdServer(id);
 
-  // If job doesn't exist at all, return 404
+  // If job doesn't exist at build time, render client component for runtime resolution
   if (!job) {
-    notFound();
+    return <JobDetailPageClient id={id} />;
   }
+
 
   // Fetch company data for enhanced schema
   let companyData = null;

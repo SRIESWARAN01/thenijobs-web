@@ -89,14 +89,24 @@ export default function SeekerApplicationsPage() {
 
     // Timeline steps based on status
     const getTimeline = (): any[] => {
-      const base = [
-        { label: 'Applied', detail: appliedDate, state: app.status === 'applied' ? 'current' : 'done' },
-        { label: 'Under Review', detail: app.status === 'under_review' ? 'Evaluating' : '', state: app.status === 'under_review' ? 'current' : app.status === 'applied' ? 'next' : 'done' },
-        { label: 'Shortlisted', detail: app.status === 'shortlisted' ? 'Shortlisted' : app.status === 'interview_scheduled' ? 'Interview Set' : '', state: (app.status === 'shortlisted' || app.status === 'interview_scheduled') ? 'current' : (app.status === 'applied' || app.status === 'under_review') ? 'next' : 'done' },
-        { label: app.status === 'rejected' ? 'Rejected' : app.status === 'selected' ? 'Selected' : 'Decision', detail: app.status === 'selected' ? 'Offer Made' : '', state: (app.status === 'selected' || app.status === 'rejected') ? 'done' : 'next' }
+      const isPast = (targetState: string) => {
+        const order = ['applied', 'under_review', 'shortlisted', 'interview_scheduled', 'selected'];
+        const curIdx = order.indexOf(app.status || 'applied');
+        const targetIdx = order.indexOf(targetState);
+        if (curIdx >= targetIdx) return 'done';
+        if (curIdx === targetIdx - 1) return 'current';
+        return 'next';
+      };
+
+      return [
+        { label: '1. Applied', detail: appliedDate, state: 'done' },
+        { label: '2. HR Review', detail: app.status === 'applied' ? 'Pending HR Review' : 'Viewed by HR', state: isPast('under_review') },
+        { label: '3. Shortlisted', detail: app.status === 'shortlisted' ? 'Shortlisted' : '', state: isPast('shortlisted') },
+        { label: '4. Interview', detail: app.interviewDate ? `${app.interviewDate} ${app.interviewTime || ''}` : app.status === 'interview_scheduled' ? 'Interview Round Set' : '', state: isPast('interview_scheduled') },
+        { label: app.status === 'rejected' ? '5. Closed' : '5. Selected', detail: app.status === 'selected' ? '🎉 Offer Sent / Hired' : app.status === 'rejected' ? 'Not Selected' : '', state: (app.status === 'selected' || app.status === 'rejected') ? 'done' : 'next' }
       ];
-      return base;
     };
+
 
     return {
       id: app.id,

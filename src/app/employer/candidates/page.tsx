@@ -284,13 +284,27 @@ function CandidateDetailModal({
           </div>
 
           {currentStatus === 'interview_scheduled' && !showScheduleForm && (
-            <div className="p-3 bg-white rounded-xl border border-emerald-200 flex items-center justify-between text-xs">
-              <span className="text-emerald-800 font-bold">✓ Interview round confirmed for this candidate.</span>
-              <Link href="/employer/interviews" className="text-blue-700 font-bold hover:underline flex items-center gap-1">
-                View Calendar <ExternalLink size={12} />
-              </Link>
+            <div className="p-3.5 bg-white rounded-2xl border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+              <div>
+                <span className="text-emerald-800 font-bold block">✓ Interview round confirmed for this candidate.</span>
+                <span className="text-[11px] text-gray-500">{interviewDate} @ {interviewTime} ({interviewMode})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`https://wa.me/${cleanWhatsApp}?text=${encodeURIComponent(`🎉 *INTERVIEW INVITATION — ${companyName}*\n\nDear *${seekerName}*,\n\nWe are pleased to invite you for an interview for the role of *${jobTitle}*.\n\n📅 *Date:* ${interviewDate || 'Upcoming'}\n⏰ *Time:* ${interviewTime || '10:30 AM'}\n💼 *Mode:* ${interviewMode || 'In-Person (Office)'}\n🏢 *Company:* ${companyName}\n\n📍 *Please reply to this message to confirm your attendance.*\n\nBest regards,\n${companyName} Recruitment Team`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-[#25D366] text-white font-bold flex items-center gap-1 hover:opacity-90 shadow-2xs"
+                >
+                  <MessageCircle size={13} /> WhatsApp Invite
+                </a>
+                <Link href="/employer/interviews" className="text-blue-700 font-bold hover:underline flex items-center gap-1">
+                  Calendar <ExternalLink size={12} />
+                </Link>
+              </div>
             </div>
           )}
+
 
           {showScheduleForm && (
             <form onSubmit={handleScheduleInterview} className="space-y-3 pt-2">

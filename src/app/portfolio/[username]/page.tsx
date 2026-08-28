@@ -1,8 +1,12 @@
 import PublicPortfolioPageClient from './PublicPortfolioPageClient';
 
 export function generateStaticParams() {
-  return [{ username: 'demo' }];
+  return [
+    { username: '_fallback' },
+    { username: 'demo' },
+  ];
 }
+
 
 export default async function PublicPortfolioPage({
   params,

@@ -82,7 +82,7 @@ export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
       link.click();
 
       setFlipped(wasFlipped);
-      toast.success('Digital ID Card downloaded successfully!');
+      toast.success('Digital ID Card image downloaded successfully!');
     } catch (e) {
       console.error(e);
       toast.error('Failed to download card image');
@@ -90,6 +90,57 @@ export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
       setDownloading(false);
     }
   }, [seeker.name, flipped, toast]);
+
+  const handleDownloadPDF = useCallback(async () => {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+      const wasFlipped = flipped;
+
+      // Capture front
+      setFlipped(false);
+      await new Promise(r => setTimeout(r, 450));
+      const frontCanvas = await html2canvas(cardRef.current, { scale: 3, useCORS: true, backgroundColor: null });
+
+      // Capture back
+      setFlipped(true);
+      await new Promise(r => setTimeout(r, 450));
+      const backCanvas = await html2canvas(cardRef.current, { scale: 3, useCORS: true, backgroundColor: null });
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(16);
+      pdf.text('THENIJOBS — Official Digital Candidate Pass', 105, 22, { align: 'center' });
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100);
+      pdf.text(`Candidate: ${seeker.name} • ID: ${seekerId} • Verified Candidate`, 105, 29, { align: 'center' });
+
+      // Embed front
+      const imgFront = frontCanvas.toDataURL('image/png');
+      pdf.addImage(imgFront, 'PNG', 45, 38, 120, 75);
+
+      // Embed back
+      const imgBack = backCanvas.toDataURL('image/png');
+      pdf.addImage(imgBack, 'PNG', 45, 122, 120, 75);
+
+      pdf.setFontSize(9);
+      pdf.setTextColor(130);
+      pdf.text('Scan QR code on back to view full live portfolio, projects, and verified resume on THENIJOBS.', 105, 208, { align: 'center' });
+
+      pdf.save(`${seeker.name.toLowerCase().replace(/\s+/g, '-')}-id-pass.pdf`);
+      setFlipped(wasFlipped);
+      toast.success('Printable PDF Pass downloaded successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to generate PDF pass');
+    } finally {
+      setDownloading(false);
+    }
+  }, [seeker.name, seekerId, flipped, toast]);
+
 
   const handleWhatsAppShare = () => {
     const text = `📇 *${seeker.name}* - Verified THENIJOBS Candidate Pass\n💼 *Role:* ${currentRole}\n📍 *District:* ${seeker.district || 'Theni'}, Tamil Nadu\n💬 "${growthSlogan}"\n\n🌐 View my live verified portfolio & CV:\n${portfolioUrl}`;
@@ -263,27 +314,38 @@ export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
       </p>
 
       {/* Actions */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5 w-full max-w-sm">
+      <div className="flex flex-wrap items-center justify-center gap-2.5 w-full max-w-md">
+        <button
+          type="button"
+          onClick={handleDownloadPDF}
+          disabled={downloading}
+          className="flex-1 py-2.5 px-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+        >
+          <Download size={14} />
+          <span>{downloading ? 'Generating...' : 'Print / PDF Pass'}</span>
+        </button>
+
         <button
           type="button"
           onClick={handleDownload}
           disabled={downloading}
-          className="flex-1 py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+          className="py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
         >
           <Download size={14} />
-          <span>{downloading ? 'Exporting...' : 'Download Pass (PNG)'}</span>
+          <span>Image (PNG)</span>
         </button>
 
         <button
           type="button"
           onClick={handleWhatsAppShare}
-          className="py-2.5 px-4 rounded-2xl text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+          className="py-2.5 px-3 rounded-2xl text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer"
           style={{ background: '#25D366' }}
         >
           <MessageCircle size={14} />
-          <span>Share WhatsApp</span>
+          <span>Share</span>
         </button>
       </div>
+
     </div>
   );
 }

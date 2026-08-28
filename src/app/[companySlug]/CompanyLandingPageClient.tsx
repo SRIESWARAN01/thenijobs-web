@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { Loader2, Building2, AlertCircle, ArrowLeft, ShieldAlert, BadgeCheck } from 'lucide-react';
 import CompanyLandingWebsite from '@/components/company/CompanyLandingWebsite';
 import Header from '@/components/navigation/Header';
@@ -62,41 +62,53 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
         let docData: any = null;
 
         if (snapCompany.empty) {
-          // Check aliases
-          const qAlias = query(
-            collection(db, 'companies'),
-            where('aliases', 'array-contains', slug),
-            limit(1)
-          );
-          const snapAlias = await getDocs(qAlias);
-          if (snapAlias.empty) {
-            // Check case-insensitive
-            const qName = query(
+          // Check if slug is a direct Firestore document ID
+          try {
+            const docRef = doc(db, 'companies', slug);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              docData = { id: docSnap.id, ...docSnap.data() };
+            }
+          } catch { /* not a valid doc ID */ }
+
+          if (!docData) {
+            // Check aliases
+            const qAlias = query(
               collection(db, 'companies'),
-              where('slugLower', '==', slug.toLowerCase()),
+              where('aliases', 'array-contains', slug),
               limit(1)
             );
-            const snapName = await getDocs(qName);
-            if (snapName.empty) {
-              // Graceful fallback: check built-in showcase companies (e.g. gk-clinic-chinnamanur)
-              const sampleData = getSampleCompanyData(slug);
-              if (sampleData && sampleData.company) {
-                setCompany(sampleData.company);
-                setJobs(sampleData.jobs || []);
-                setReviews(sampleData.reviews || []);
+            const snapAlias = await getDocs(qAlias);
+            if (snapAlias.empty) {
+              // Check case-insensitive
+              const qName = query(
+                collection(db, 'companies'),
+                where('slugLower', '==', slug.toLowerCase()),
+                limit(1)
+              );
+              const snapName = await getDocs(qName);
+              if (snapName.empty) {
+                // Graceful fallback: check built-in showcase companies (e.g. gk-clinic-chinnamanur)
+                const sampleData = getSampleCompanyData(slug);
+                if (sampleData && sampleData.company) {
+                  setCompany(sampleData.company);
+                  setJobs(sampleData.jobs || []);
+                  setReviews(sampleData.reviews || []);
+                  setLoading(false);
+                  return;
+                }
+
+                setNotFoundState(true);
                 setLoading(false);
                 return;
               }
-
-              setNotFoundState(true);
-              setLoading(false);
-              return;
+              docData = { id: snapName.docs[0].id, ...snapName.docs[0].data() };
+            } else {
+              docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
             }
-            docData = { id: snapName.docs[0].id, ...snapName.docs[0].data() };
-          } else {
-            docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
           }
-        } else {
+        }
+ else {
           docData = { id: snapCompany.docs[0].id, ...snapCompany.docs[0].data() };
         }
 

@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap } from '@/lib/firebase/firestoreServer';
+import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap, getPublishedPortfolioSitesForSitemap } from '@/lib/firebase/firestoreServer';
 
 export const dynamic = 'force-static';
 
@@ -152,6 +152,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[Sitemap] Error fetching companies:', error);
   }
 
+  // ── DYNAMIC: Published Job Seeker & Company Portfolios (with Google Index enabled)
+  let portfolioPages: MetadataRoute.Sitemap = [];
+  try {
+    const portfolios = await getPublishedPortfolioSitesForSitemap();
+    portfolios.forEach(p => {
+      let lastMod = now;
+      if (p.updatedAt) {
+        try {
+          const d = new Date(p.updatedAt);
+          if (!isNaN(d.getTime())) lastMod = d;
+        } catch { /* use now */ }
+      }
+
+      portfolioPages.push({
+        url: `${BASE}/portfolio/${p.customUrl}`,
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+        lastModified: lastMod,
+      });
+    });
+  } catch (error) {
+    console.error('[Sitemap] Error fetching portfolio sites:', error);
+  }
+
   return [
     ...staticPages,
     ...locationPages,
@@ -159,5 +183,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...businessCategoryPages,
     ...jobPages,
     ...companyPages,
+    ...portfolioPages,
   ];
 }
+

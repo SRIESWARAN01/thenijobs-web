@@ -107,7 +107,8 @@ export default function PostJobPage() {
     openings: '1', experience: '', education: '',
     salaryMin: '', salaryMax: '', salaryType: 'monthly',
     isNegotiable: false, deadline: '',
-    isPremium: false, isUrgent: false, isFeatured: false
+    isPremium: false, isUrgent: false, isFeatured: false,
+    isWalkIn: false, walkInDate: '', walkInTime: '10:00 AM', walkInVenue: '', walkInContactPhone: ''
   });
 
   const update = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
@@ -127,7 +128,8 @@ export default function PostJobPage() {
       openings: '1', experience: '', education: '',
       salaryMin: '', salaryMax: '', salaryType: 'monthly',
       isNegotiable: false, deadline: '',
-      isPremium: false, isUrgent: false, isFeatured: false
+      isPremium: false, isUrgent: false, isFeatured: false,
+      isWalkIn: false, walkInDate: '', walkInTime: '10:00 AM', walkInVenue: '', walkInContactPhone: ''
     });
     setSkills([]);
     setBenefits([]);
@@ -141,22 +143,25 @@ export default function PostJobPage() {
       return;
     }
 
-    if (!form.title.trim() || !form.description.trim()) {
-      toast.warning('Please enter Job Title and Description.');
+    if (!form.title.trim()) {
+      toast.warning('Please enter a Job Title.');
+      setStep(1);
       return;
     }
 
     setLoading(true);
+
     try {
-      const minSal = form.salaryMin ? parseFloat(form.salaryMin) : null;
-      const maxSal = form.salaryMax ? parseFloat(form.salaryMax) : null;
-      let salaryDisplay = '';
+      const minSal = form.salaryMin ? parseInt(form.salaryMin) : null;
+      const maxSal = form.salaryMax ? parseInt(form.salaryMax) : null;
+
+      let salaryDisplay = 'Not Disclosed';
       if (minSal && maxSal) {
-        salaryDisplay = `₹${minSal.toLocaleString('en-IN')} – ₹${maxSal.toLocaleString('en-IN')}/${form.salaryType}`;
+        salaryDisplay = `₹${minSal.toLocaleString('en-IN')} - ₹${maxSal.toLocaleString('en-IN')} / ${form.salaryType}`;
       } else if (minSal) {
-        salaryDisplay = `₹${minSal.toLocaleString('en-IN')}/${form.salaryType}`;
-      } else if (form.isNegotiable) {
-        salaryDisplay = 'Negotiable';
+        salaryDisplay = `From ₹${minSal.toLocaleString('en-IN')} / ${form.salaryType}`;
+      } else if (maxSal) {
+        salaryDisplay = `Up to ₹${maxSal.toLocaleString('en-IN')} / ${form.salaryType}`;
       }
 
       const nextJobNum = activeJobsCount + 1;
@@ -181,6 +186,11 @@ export default function PostJobPage() {
         isPremium: form.isPremium,
         isUrgent: form.isUrgent,
         isFeatured: form.isFeatured,
+        isWalkIn: form.isWalkIn,
+        walkInDate: form.walkInDate,
+        walkInTime: form.walkInTime,
+        walkInVenue: form.walkInVenue || form.location || 'Company Office',
+        walkInContactPhone: form.walkInContactPhone || company.phone || '',
         companyId,
         companyName: company.name || 'Company',
         companyLogoUrl: company.logoUrl || '',
@@ -596,9 +606,60 @@ export default function PostJobPage() {
                   </div>
                 );
               })}
+
+              {/* Urgent Walk-in Drive Toggle & Venue */}
+              <div className="p-4 rounded-2xl border border-red-200 bg-red-50/50 space-y-3 mt-3">
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => update('isWalkIn', !form.isWalkIn)}>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-black text-red-950">🚨 24-48h Urgent Walk-in Interview Drive</h4>
+                      <p className="text-[11px] text-red-700">Display top urgent countdown banner across the platform.</p>
+                    </div>
+                  </div>
+                  <div className={`w-10 h-6 rounded-full relative transition-all ${form.isWalkIn ? 'bg-red-600' : 'bg-gray-300'}`}>
+                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-xs transition-all ${form.isWalkIn ? 'left-5' : 'left-1'}`} />
+                  </div>
+                </div>
+
+                {form.isWalkIn && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-red-200/60 animate-fade-in text-xs">
+                    <div>
+                      <label className="font-bold text-red-950 block mb-1">Walk-in Interview Date</label>
+                      <input
+                        type="date"
+                        value={form.walkInDate}
+                        onChange={e => update('walkInDate', e.target.value)}
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-red-950 block mb-1">Time &amp; Slots</label>
+                      <input
+                        type="text"
+                        value={form.walkInTime}
+                        onChange={e => update('walkInTime', e.target.value)}
+                        placeholder="e.g. 10:00 AM – 4:00 PM"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="font-bold text-red-950 block mb-1">Walk-in Venue Address &amp; Landmarks</label>
+                      <input
+                        type="text"
+                        value={form.walkInVenue}
+                        onChange={e => update('walkInVenue', e.target.value)}
+                        placeholder="e.g. 45, NRT Road, Opp. Bus Stand, Theni"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
+
 
         {/* STEP 4 — Preview & Post */}
         {step === 4 && (

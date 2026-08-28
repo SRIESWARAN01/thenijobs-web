@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import {
@@ -78,14 +78,18 @@ interface InitialJobData {
   expiredMessage?: string;
 }
 
-export default function JobDetailPageClient({ id, initialJob }: { id: string; initialJob?: InitialJobData }) {
+export default function JobDetailPageClient({ id: idProp, initialJob }: { id: string; initialJob?: InitialJobData }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const urlId = pathname?.split('/').filter(Boolean).pop() || '';
+  const id = (urlId && urlId !== '_fallback' && urlId !== 'demo') ? urlId : idProp;
   const { user } = useAuth();
   const uid = user?.uid;
 
-  // Use initialJob from server for instant hydration — avoid empty page for Google
+  // Use initialJob from server for instant hydration if it matches the current id
+  const hasValidInitialJob = initialJob && initialJob.id === id && id !== '_fallback' && id !== 'demo';
   const [job, setJob] = useState<JobRecord | null>(
-    initialJob ? {
+    hasValidInitialJob ? {
       id: initialJob.id,
       title: initialJob.title,
       companyName: initialJob.companyName,
@@ -113,7 +117,7 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
       benefits: initialJob.benefits,
     } : null
   );
-  const [loading, setLoading] = useState(!initialJob);
+  const [loading, setLoading] = useState(!hasValidInitialJob);
   const [saved, setSaved] = useState(false);
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
@@ -136,13 +140,14 @@ export default function JobDetailPageClient({ id, initialJob }: { id: string; in
 
   // 1. Fetch job details from Firestore
   useEffect(() => {
-    if (!id) return;
-    // Skip Firestore fetch if we already have initialJob from server
-    if (initialJob) { setLoading(false); return; }
+    if (!id || id === '_fallback') return;
+    // Skip Firestore fetch if we already have matching initialJob from server
+    if (hasValidInitialJob) { setLoading(false); return; }
     async function loadJob() {
       try {
         setLoading(true);
         const docSnap = await getDoc(doc(db, 'jobs', id));
+
         if (docSnap.exists()) {
           const d = docSnap.data();
           // Guard: only show publicly visible (active + approved) jobs

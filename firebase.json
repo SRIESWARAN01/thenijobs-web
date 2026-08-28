@@ -25,15 +25,19 @@
       },
       {
         "source": "/jobs/**",
-        "destination": "/jobs/demo.html"
+        "destination": "/jobs/_fallback.html"
       },
       {
         "source": "/businesses/**",
-        "destination": "/businesses/all.html"
+        "destination": "/businesses/_fallback.html"
       },
       {
         "source": "/portfolio/seeker/**",
-        "destination": "/portfolio/seeker/demo.html"
+        "destination": "/portfolio/seeker/_fallback.html"
+      },
+      {
+        "source": "/portfolio/**",
+        "destination": "/portfolio/_fallback.html"
       },
       {
         "source": "/profile/**",
@@ -44,6 +48,7 @@
         "destination": "/index.html"
       }
     ],
+
     "headers": [
       {
         "source": "/**",

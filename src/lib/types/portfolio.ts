@@ -46,7 +46,12 @@ export type SectionType =
   | 'video'
   | 'social-links'
   | 'working-hours'
-  | 'location-map';
+  | 'location-map'
+  | 'skills'
+  | 'experience'
+  | 'education'
+  | 'certifications'
+  | 'resume';
 
 export interface PortfolioSection {
   id: string;
@@ -58,6 +63,83 @@ export interface PortfolioSection {
   /** Plan required to use this section */
   requiredPlan?: PlanTier;
 }
+
+// ===== SEEKER SECTION DATA TYPES =====
+
+export interface SeekerHeroData {
+  name: string;
+  title: string;
+  tagline: string;
+  avatarUrl: string;
+  coverUrl: string;
+  location: string;
+  isOpenToWork: boolean;
+  workStatus: 'open' | 'opportunities' | 'not_looking';
+  joiningAvailability: string;
+  experienceYears: string;
+  primaryCtaText: string;
+  primaryCtaLink: string;
+  resumeUrl?: string;
+  whatsapp?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface SeekerSkillItem {
+  id: string;
+  name: string;
+  category: 'technical' | 'soft' | 'tools' | 'languages';
+  level: number; // 1-100
+  levelLabel?: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert';
+  verified?: boolean;
+}
+
+export interface SeekerExperienceItem {
+  id: string;
+  company: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  isCurrent?: boolean;
+  location?: string;
+  employmentType?: string;
+  description: string;
+  achievements?: string[];
+}
+
+export interface SeekerEducationItem {
+  id: string;
+  institution: string;
+  degree: string;
+  field: string;
+  startYear?: string;
+  year: string;
+  score?: string;
+  description?: string;
+}
+
+export interface SeekerProjectItem {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  imageUrl?: string;
+  techStack: string[];
+  liveUrl?: string;
+  githubUrl?: string;
+  featured?: boolean;
+}
+
+export interface SeekerCertificationItem {
+  id: string;
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expiryDate?: string;
+  credentialId?: string;
+  credentialUrl?: string;
+}
+
 
 // ===== SECTION DATA TYPES =====
 

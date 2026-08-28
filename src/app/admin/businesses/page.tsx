@@ -104,6 +104,46 @@ export default function BusinessesPage() {
     }
   };
 
+  // Auto-Clean All Duplicates
+  const [cleaningDuplicates, setCleaningDuplicates] = useState(false);
+
+  const handleAutoCleanDuplicates = async () => {
+    if (!confirm('This will keep the verified or most complete copy for each business and permanently delete all duplicate company entries from Firestore. Proceed?')) return;
+
+    setCleaningDuplicates(true);
+    try {
+      const groups = new Map<string, BusinessDoc[]>();
+      businesses.forEach(b => {
+        const p = (b.phone || '').replace(/\D/g, '');
+        const key = p.length === 10 ? `phone_${p}` : `name_${(b.name || '').trim().toLowerCase()}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(b);
+      });
+
+      let removedCount = 0;
+      for (const [, list] of groups.entries()) {
+        if (list.length > 1) {
+          list.sort((a, b) => {
+            if (a.verificationStatus === 'verified' && b.verificationStatus !== 'verified') return -1;
+            if (b.verificationStatus === 'verified' && a.verificationStatus !== 'verified') return 1;
+            return (b.address?.length || 0) - (a.address?.length || 0);
+          });
+          const toDelete = list.slice(1);
+          for (const item of toDelete) {
+            await deleteCompany(item.id, currentUser?.uid || 'admin');
+            removedCount++;
+          }
+        }
+      }
+      toast.success('Duplicates Cleaned! 🧹', `Successfully removed ${removedCount} duplicate company profiles.`);
+    } catch (err: any) {
+      toast.error('Clean duplicates failed: ' + err.message);
+    } finally {
+      setCleaningDuplicates(false);
+    }
+  };
+
+
   // Edit Business Modal State
   const [editingBiz, setEditingBiz] = useState<BusinessDoc | null>(null);
   const [editBizForm, setEditBizForm] = useState({
@@ -445,7 +485,36 @@ export default function BusinessesPage() {
         </div>
       </div>
 
+      {/* Duplicate Companies Action Banner */}
+      {activeTab === 'Duplicates' && duplicateCount > 0 && (
+        <div className="bg-purple-50 border border-purple-200 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black shrink-0 shadow-xs">
+              {duplicateCount}
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-purple-950">
+                Duplicate Company Profiles Detected
+              </h3>
+              <p className="text-xs text-purple-700 mt-0.5">
+                We detected {duplicateCount} company records sharing matching phone numbers or names.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleAutoCleanDuplicates}
+            disabled={cleaningDuplicates}
+            className="px-4 py-2.5 rounded-2xl bg-purple-700 text-white text-xs font-bold hover:bg-purple-800 disabled:opacity-50 flex items-center gap-2 shrink-0 transition-all shadow-xs"
+          >
+            {cleaningDuplicates ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            Auto-Clean All Duplicate Records
+          </button>
+        </div>
+      )}
+
       {/* Business Cards Grid */}
+
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 size={32} className="text-blue-600 animate-spin" />

@@ -1,8 +1,13 @@
 import SeekerPortfolioClient from './SeekerPortfolioClient';
 
 export function generateStaticParams() {
-  return [{ id: 'demo-seeker' }];
+  return [
+    { id: '_fallback' },
+    { id: 'demo' },
+    { id: 'demo-seeker' },
+  ];
 }
+
 
 export default async function SeekerPortfolioPage({
   params,

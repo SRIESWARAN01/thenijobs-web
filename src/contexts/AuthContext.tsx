@@ -99,8 +99,24 @@ interface AuthProviderProps {
  */
 export function AuthProvider({ children }: AuthProviderProps) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('tj_cached_user');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('tj_cached_user');
+        if (cached) return false;
+      } catch {}
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch Firestore user profile ──────────────────────────────
@@ -108,7 +124,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const snap = await getDoc(doc(db, 'users', uid));
       if (snap.exists()) {
-        return { uid, ...snap.data() } as User;
+        const profile = { uid, ...snap.data() } as User;
+        try { localStorage.setItem('tj_cached_user', JSON.stringify(profile)); } catch {}
+        return profile;
       }
       return null;
     } catch (err) {
@@ -127,6 +145,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(profile);
       } else {
         setUser(null);
+        try { localStorage.removeItem('tj_cached_user'); } catch {}
       }
 
       setLoading(false);
@@ -134,6 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => unsubscribe();
   }, [fetchUserProfile]);
+
 
   // ── Helpers ───────────────────────────────────────────────────
   const clearError = useCallback(() => setError(null), []);
@@ -308,10 +328,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await signOut(auth);
       setUser(null);
       setFirebaseUser(null);
+      try { localStorage.removeItem('tj_cached_user'); } catch {}
     } catch (err) {
       handleError(err, 'Failed to sign out.');
     }
   }, [handleError]);
+
 
   // ── Role helpers ──────────────────────────────────────────────
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';

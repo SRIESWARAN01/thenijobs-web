@@ -85,8 +85,7 @@ export default function EmployerDashboard() {
           Register your company profile first to access the dashboard and start posting jobs.
         </p>
         <Link href="/employer/company-profile"
-          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-900 transition-all hover:opacity-90"
-          style={{ background: '#2563EB' }}>
+          className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm">
           Create Company Profile
         </Link>
       </div>
@@ -106,8 +105,7 @@ export default function EmployerDashboard() {
           </p>
         </div>
         <Link href="/employer/post-job"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-900 transition-all hover:opacity-90 shadow-sm"
-          style={{ background: '#2563EB' }}>
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm">
           <Plus size={16} /> Post New Job
         </Link>
       </div>

@@ -115,8 +115,7 @@ export default function SeekerDashboard() {
             <Link href="/seeker/profile" className="px-4 py-2.5 rounded-xl text-sm font-semibold border-2 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all">
               Update Profile
             </Link>
-            <Link href="/jobs" className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-900 transition-all hover:opacity-90 flex items-center gap-1.5"
-              style={{ background: '#10B981' }}>
+            <Link href="/jobs" className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm">
               <Search size={14} /> Find Jobs
             </Link>
           </div>
@@ -224,8 +223,7 @@ export default function SeekerDashboard() {
                       </div>
                     </div>
                     <Link href={`/jobs/${job.id}`}
-                      className="px-3 py-1.5 text-[11px] font-semibold text-gray-900 rounded-lg transition-all hover:opacity-90 flex-shrink-0"
-                      style={{ background: '#10B981' }}>
+                      className="px-3 py-1.5 text-[11px] font-bold text-white rounded-lg transition-all hover:bg-emerald-700 bg-emerald-600 flex-shrink-0 shadow-2xs">
                       Apply
                     </Link>
                   </div>

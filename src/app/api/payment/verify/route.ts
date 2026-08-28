@@ -1,8 +1,23 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'thenijobs-9f01d';
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyAAXHgdvKXi4pFPNGciMbZE8lPITN9Hsug';
+const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+if (!PROJECT_ID || !API_KEY) {
+  console.warn('[Payment Verify] Missing FIREBASE_PROJECT_ID or FIREBASE_API_KEY environment variables.');
+}
+
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+// ─── Plan Price Validation (must match pricing page) ─────────────────────────
+const PLAN_PRICES: Record<string, number> = {
+  free: 0,
+  basic: 999,
+  standard: 2999,
+  premium: 7999,
+  enterprise: 14999,
+};
 
 export async function POST(request: Request) {
   try {
@@ -55,6 +70,54 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // ─── C2 FIX: Razorpay Signature Verification ────────────────────────────
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (razorpaySecret && paymentId && signature) {
+      const expectedSignature = crypto
+        .createHmac('sha256', razorpaySecret)
+        .update(`${orderId}|${paymentId}`)
+        .digest('hex');
+
+      if (expectedSignature !== signature) {
+        console.error('[Payment Verify] INVALID SIGNATURE. Expected:', expectedSignature, 'Got:', signature);
+
+        // Log tampered payment attempt
+        const tamperDoc = {
+          fields: {
+            orderId: { stringValue: orderId },
+            paymentId: { stringValue: paymentId },
+            userId: { stringValue: userId },
+            status: { stringValue: 'signature_mismatch' },
+            paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
+            createdAt: { timestampValue: new Date().toISOString() },
+          }
+        };
+        await fetch(`${FIRESTORE_BASE}/payments?key=${API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tamperDoc),
+        }).catch(() => {});
+
+        return NextResponse.json({
+          success: false,
+          error: 'Payment signature verification failed. This incident has been logged.',
+        }, { status: 403 });
+      }
+    }
+
+    // ─── H12 FIX: Validate Amount Against Plan Price ─────────────────────────
+    if (planSlug && PLAN_PRICES[planSlug] !== undefined) {
+      const expectedPrice = PLAN_PRICES[planSlug];
+      if (expectedPrice > 0 && amount !== expectedPrice) {
+        console.error(`[Payment Verify] AMOUNT MISMATCH. Plan ${planSlug} expects ₹${expectedPrice}, got ₹${amount}`);
+        return NextResponse.json({
+          success: false,
+          error: 'Payment amount does not match the selected plan. Please contact support.',
+        }, { status: 400 });
+      }
+    }
+
     // Verified / Captured payment handling
     const now = new Date();
     const expiryDate = new Date();
@@ -75,6 +138,7 @@ export async function POST(request: Request) {
         plan: { stringValue: planSlug || 'standard' },
         planName: { stringValue: planName || 'Standard Plan' },
         status: { stringValue: 'captured' },
+        signatureVerified: { booleanValue: !!(razorpaySecret && signature) },
         paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
         createdAt: { timestampValue: now.toISOString() },
       }

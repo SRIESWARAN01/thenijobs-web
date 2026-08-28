@@ -356,7 +356,7 @@ export default function BusinessesPage() {
           
           <Link
             href="/admin/businesses/import"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-xs"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-xs"
           >
             <Upload size={14} />
             Bulk Import (Excel)
@@ -397,7 +397,7 @@ export default function BusinessesPage() {
             type="button"
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === tab ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
+              activeTab === tab ? 'bg-white text-indigo-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             {tab}

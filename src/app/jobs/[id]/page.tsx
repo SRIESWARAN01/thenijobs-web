@@ -5,12 +5,10 @@ import { getJobByIdServer, getCompanyByIdServer } from '@/lib/firebase/firestore
 import { generateJobPostingSchema, generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
 import { isJobExpired, formatSalaryDisplay } from '@/lib/seo/expiredJobUtils';
 
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 export function generateStaticParams() {
-  // Return empty array — all job pages are dynamically rendered at request time (ISR)
-  // This allows generateMetadata to fetch real job data from Firestore
-  return [];
+  return [{ id: 'demo' }];
 }
 
 interface PageProps {

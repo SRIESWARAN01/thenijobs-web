@@ -12,7 +12,7 @@ import {
   Briefcase, Navigation, ShieldCheck, Smartphone, FileCheck, Award, ExternalLink,
   BellRing, Send, Quote, Newspaper, PackagePlus, Crown, UserCheck, Calendar,
   Building2, CheckCircle2, MessageSquare, Wrench, Package, FolderGit2, User,
-  Navigation2, Compass, X, Tag, ArrowLeft
+  Navigation2, Compass, X, Tag, ArrowLeft, ArrowRight
 } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, LinkedinIcon } from '@/components/ui/BrandIcons';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
@@ -232,6 +232,26 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 <Navigation2 size={14} />
                 <span>Get Directions</span>
               </a>
+            </div>
+
+            {/* Official Landing Website Link Banner */}
+            <div className="mt-4 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border border-blue-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Globe size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900">Explore {company.name}&apos;s Official Landing Website</p>
+                  <p className="text-[11px] text-slate-500">Standalone interactive website with story, facilities, gallery &amp; FAQs</p>
+                </div>
+              </div>
+              <Link
+                href={`/${company.slug}`}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <span>Visit Official Website</span>
+                <ArrowRight size={13} />
+              </Link>
             </div>
 
           </div>

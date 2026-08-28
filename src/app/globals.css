@@ -193,6 +193,28 @@ button {
     --vk-purple: #8B5CF6;
     --vk-purple-light: #F5F3FF;
 
+    /* ─── 3-Pillar Role Themes ─── */
+    /* Job Seeker (Career Growth / Discovery) */
+    --seeker-primary: #059669;
+    --seeker-primary-hover: #047857;
+    --seeker-light: #ECFDF5;
+    --seeker-border: #A7F3D0;
+    --seeker-badge-text: #065F46;
+
+    /* Employer / Company (Business & Hiring Pipeline) */
+    --employer-primary: #2563EB;
+    --employer-primary-hover: #1D4ED8;
+    --employer-light: #EFF6FF;
+    --employer-border: #BFDBFE;
+    --employer-badge-text: #1E40AF;
+
+    /* Admin Portal (Governance & Moderation) */
+    --admin-primary: #4F46E5;
+    --admin-primary-hover: #4338CA;
+    --admin-light: #EEF2FF;
+    --admin-border: #C7D2FE;
+    --admin-badge-text: #3730A3;
+
     /* Backgrounds */
     --vk-bg: #F8FAFC;
     --vk-bg-alt: #F1F5F9;
@@ -1026,10 +1048,12 @@ button {
 .bg-emerald-800,
 .bg-indigo-600,
 .bg-indigo-700,
+.bg-indigo-800,
 .bg-purple-600,
 .bg-purple-700,
 .bg-violet-600,
 .bg-violet-700,
+.bg-slate-800,
 .bg-slate-900,
 .bg-slate-950,
 .bg-gray-900,
@@ -1040,6 +1064,9 @@ button {
 .vk-btn-danger,
 .btn-gradient,
 .btn-primary,
+.btn-seeker,
+.btn-employer,
+.btn-admin,
 .company-profile-cover {
   color: #FFFFFF !important;
 }
@@ -1049,13 +1076,55 @@ button {
 .bg-blue-700 *,
 .bg-emerald-600 *,
 .bg-emerald-700 *,
+.bg-indigo-600 *,
+.bg-indigo-700 *,
 .bg-slate-900 *,
 .bg-slate-950 *,
 .bg-gray-900 *,
 .vk-btn-primary *,
 .vk-btn-secondary *,
-.btn-gradient * {
+.btn-gradient *,
+.btn-seeker *,
+.btn-employer *,
+.btn-admin * {
   color: inherit;
+}
+
+/* Specific Role Action Buttons */
+.btn-seeker {
+  background-color: var(--seeker-primary);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.btn-seeker:hover {
+  background-color: var(--seeker-primary-hover);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+}
+
+.btn-employer {
+  background-color: var(--employer-primary);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.btn-employer:hover {
+  background-color: var(--employer-primary-hover);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.btn-admin {
+  background-color: var(--admin-primary);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.btn-admin:hover {
+  background-color: var(--admin-primary-hover);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
 }
 
 /* Dark footer headings */

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 // ─── Server-side rate limiting ─────────────────────────────────────────────
 const verifyRateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const VERIFY_RATE_LIMIT_MAX = 10;     // Max 10 verify attempts per window
+const VERIFY_RATE_LIMIT_MAX = 5;      // C7 FIX: Max 5 verify attempts per session (reduced from 10)
 const VERIFY_RATE_LIMIT_WINDOW = 5 * 60 * 1000; // 5 minutes
 
 function isVerifyRateLimited(sessionId: string): boolean {
@@ -43,9 +43,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Handle test/dev session IDs
+    // Handle test/dev session IDs — C7 FIX: only accept fixed test codes, not any 6-digit number
     if (sessionId.startsWith('test_session_') || sessionId.startsWith('voice_session_')) {
-      if (cleanOtp === '123456' || cleanOtp === '999999' || cleanOtp.length === 6) {
+      if (cleanOtp === '123456' || cleanOtp === '999999') {
         return NextResponse.json({
           success: true,
           verified: true,

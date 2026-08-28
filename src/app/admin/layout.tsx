@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</p>
-                <p className="text-[10px] font-semibold text-purple-600">Admin Portal</p>
+                <p className="text-[10px] font-bold text-indigo-600">Admin Portal</p>
               </div>
               <button onClick={() => setMobileOpen(false)} className="lg:hidden text-gray-400">
                 <X size={16} />
@@ -104,7 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="px-3 py-2.5 border-b border-gray-50">
             <div className="relative">
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input placeholder="Quick search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all" />
+              <input placeholder="Quick search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-all" />
             </div>
           </div>
         )}
@@ -118,11 +118,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link key={item.href} href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all
-                  ${active ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
+                  ${active ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100/60' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                   ${collapsed ? 'justify-center' : ''}`}
-                style={active ? { background: '#EFF6FF' } : {}}
               >
-                <Icon size={17} className="flex-shrink-0" />
+                <Icon size={17} className={`flex-shrink-0 ${active ? 'text-indigo-600' : ''}`} />
                 {!collapsed && (
                   <>
                     <span className="truncate flex-1">{item.label}</span>

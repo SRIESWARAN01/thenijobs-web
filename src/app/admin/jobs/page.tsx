@@ -274,7 +274,7 @@ export default function AdminJobsPage() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === tab ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
+              activeTab === tab ? 'bg-white text-indigo-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             {tab}

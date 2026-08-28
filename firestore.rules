@@ -83,7 +83,9 @@ service cloud.firestore {
 
     // ===== COMPANIES =====
     match /companies/{companyId} {
+      // H2 FIX: Allow public read if verified OR if isActive — aligns with frontend queries
       allow read: if resource.data.verificationStatus == 'verified' ||
+        resource.data.isActive == true ||
         (isAuthenticated() && resource.data.ownerId == request.auth.uid) || isAdmin();
       allow create: if (isAuthenticated() && safeCompanyCreate() &&
         request.resource.data.ownerId == request.auth.uid) || isAdmin();
@@ -95,7 +97,8 @@ service cloud.firestore {
 
     // ===== JOBS =====
     match /jobs/{jobId} {
-      allow read: if resource.data.status == 'active' ||
+      // H3 FIX: Allow public read for multiple valid status values — aligns with admin workflows
+      allow read: if resource.data.status in ['active', 'APPROVED', 'LIVE'] ||
         (isAuthenticated() && resource.data.postedBy == request.auth.uid) || isAdmin();
       allow create: if (isAuthenticated() && safeJobCreate() &&
         request.resource.data.postedBy == request.auth.uid) || isAdmin();

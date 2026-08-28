@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap } from '@/lib/firebase/firestoreServer';
 
+export const dynamic = 'force-static';
+
 /**
  * THENIJOBS Dynamic Sitemap
  * Includes individual active job URLs, location/category pages, and company pages.
@@ -49,6 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${BASE}/`, changeFrequency: 'daily', priority: 1.0, lastModified: now },
     { url: `${BASE}/jobs`, changeFrequency: 'hourly', priority: 0.95, lastModified: now },
+    { url: `${BASE}/marketplace`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
     { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
     { url: `${BASE}/services`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
     { url: `${BASE}/daily-jobs`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
@@ -116,11 +119,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[Sitemap] Error fetching active jobs:', error);
   }
 
-  // ── DYNAMIC: Verified company pages from Firestore ──────────────────────
+  // ── DYNAMIC: Verified company pages & landing websites from Firestore ───
   let companyPages: MetadataRoute.Sitemap = [];
   try {
     const companies = await getVerifiedCompanySlugsForSitemap();
-    companyPages = companies.map(c => {
+    companies.forEach(c => {
       let lastMod = now;
       if (c.updatedAt) {
         try {
@@ -129,12 +132,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         } catch { /* use now */ }
       }
 
-      return {
+      // 1. Standard Company Profile URL
+      companyPages.push({
         url: `${BASE}/company/${c.slug}`,
         changeFrequency: 'weekly' as const,
-        priority: 0.8,
+        priority: 0.85,
         lastModified: lastMod,
-      };
+      });
+
+      // 2. Professional Company Landing Website URL
+      companyPages.push({
+        url: `${BASE}/${c.slug}`,
+        changeFrequency: 'weekly' as const,
+        priority: 0.9,
+        lastModified: lastMod,
+      });
     });
   } catch (error) {
     console.error('[Sitemap] Error fetching companies:', error);

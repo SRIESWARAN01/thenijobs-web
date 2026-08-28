@@ -281,8 +281,7 @@ export default function AdminCreateUserPage() {
           <button
             onClick={handleSubmit}
             disabled={loading || !form.name.trim() || !form.email.trim()}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-            style={{ background: '#2563EB' }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <><Loader2 size={16} className="animate-spin" /> Creating Account...</>

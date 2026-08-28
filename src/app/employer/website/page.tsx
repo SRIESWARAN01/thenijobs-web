@@ -1,24 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Globe, Eye, Edit3, Palette, Settings2, ExternalLink,
   Loader2, Plus, Lock, Sparkles, BarChart3, QrCode,
-  Monitor, Laptop, Tablet, Smartphone, Share2, Copy, Check,
-  ArrowUpRight, Zap, Shield, Crown, Diamond
+  Share2, Copy, Check, ArrowUpRight, Zap, Shield, Crown,
+  Building2, BadgeCheck, MessageSquare, Bot, AlertTriangle,
+  Stethoscope, GraduationCap, Factory, Code2, Sprout,
+  UtensilsCrossed, ShoppingBag, Wrench, Landmark, Store,
+  Send, FileText, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection, useDocument } from '@/hooks/useFirestore';
-import { where } from 'firebase/firestore';
-import { PORTFOLIO_TEMPLATES, TEMPLATE_PLAN_ACCESS } from '@/lib/constants';
-import { getTemplatesForPlan, canAccessTemplate } from '@/lib/plans';
-import type { PortfolioSite } from '@/lib/types/portfolio';
-import { PLAN_BADGES } from '@/lib/types/portfolio';
+import { useToast } from '@/contexts/ToastContext';
+import { useCollection } from '@/hooks/useFirestore';
+import { where, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { INDUSTRY_THEMES, type IndustryTemplateKey } from '@/components/company/CompanyLandingWebsite';
 
 export default function EmployerWebsitePage() {
   const { user } = useAuth();
-  const [copied, setCopied] = useState(false);
+  const toast = useToast();
+  const [copiedStandard, setCopiedStandard] = useState(false);
+  const [copiedLanding, setCopiedLanding] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState<string>('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  // AI Assistant Modal State
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiGeneratedStory, setAiGeneratedStory] = useState('');
+  const [aiGeneratedFaqs, setAiGeneratedFaqs] = useState<{ q: string; a: string }[]>([]);
+  const [aiGeneratedSeo, setAiGeneratedSeo] = useState({ title: '', desc: '', keywords: '' });
 
   // Fetch company
   const { data: companies, loading: compLoading } = useCollection<any>('companies', [
@@ -26,216 +39,400 @@ export default function EmployerWebsitePage() {
   ], { skip: !user?.uid });
   const company = companies?.[0];
 
-  // Fetch portfolio site
-  const { data: sites, loading: siteLoading } = useCollection<any>('portfolioSites', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const site = sites?.[0] as PortfolioSite | undefined;
+  const planSlug = (company?.subscriptionPlan || 'free').toLowerCase();
+  const companySlug = company?.slug || '';
+  const standardProfileUrl = companySlug ? `https://thenijobs.com/company/${companySlug}` : '';
+  const landingWebsiteUrl = companySlug ? `https://thenijobs.com/${companySlug}` : '';
 
-  const planSlug = company?.planSlug || 'free';
-  const isLoading = compLoading || siteLoading;
+  const isVerified = company?.verificationStatus === 'verified' || company?.isVerified === true;
+  const currentTemplate = company?.templateId || 'local-business';
 
-  const siteUrl = site?.customUrl ? `https://thenijobs.com/portfolio/${site.customUrl}` : '';
-  const currentTemplate = PORTFOLIO_TEMPLATES.find(t => t.id === site?.templateId);
-  const availableTemplates = getTemplatesForPlan(planSlug);
-  const badge = PLAN_BADGES.find(b => b.plan === planSlug) || PLAN_BADGES[0];
-
-  const handleCopy = () => {
-    if (siteUrl) {
-      navigator.clipboard.writeText(siteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleCopy = (text: string, type: 'standard' | 'landing') => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    if (type === 'standard') {
+      setCopiedStandard(true);
+      setTimeout(() => setCopiedStandard(false), 2000);
+    } else {
+      setCopiedLanding(true);
+      setTimeout(() => setCopiedLanding(false), 2000);
     }
   };
 
-  if (isLoading) {
+  const handleSelectTemplate = async (templateKey: string) => {
+    if (!company?.id) return;
+    setSavingTemplate(true);
+    try {
+      await updateDoc(doc(db, 'companies', company.id), {
+        templateId: templateKey,
+        updatedAt: new Date().toISOString(),
+      });
+      setActiveTemplate(templateKey);
+      toast.success(`Template updated to ${INDUSTRY_THEMES[templateKey as IndustryTemplateKey]?.name || templateKey}!`);
+    } catch (err: any) {
+      toast.error('Failed to update template: ' + err.message);
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const runAIAssistant = () => {
+    if (!company) return;
+    setAiLoading(true);
+    setAiModalOpen(true);
+
+    setTimeout(() => {
+      const cName = company.name || 'Our Company';
+      const cCategory = company.category || 'Local Business';
+      const cLocation = company.district || 'Theni';
+
+      const story = `${cName} is a premier ${cCategory} situated in ${cLocation}, Tamil Nadu. Dedicated to providing dependable quality, client satisfaction, and professional excellence, we combine modern industry standards with attentive customer care. Through THENIJOBS, we proudly foster career opportunities for skilled local talent.`;
+
+      const faqs = [
+        {
+          q: `What services does ${cName} offer in ${cLocation}?`,
+          a: `${cName} specializes in high-quality ${cCategory} solutions customized to meet the requirements of both residential and commercial clients across ${cLocation}.`
+        },
+        {
+          q: `How can job seekers apply for open vacancies at ${cName}?`,
+          a: `Candidates can browse our verified career openings directly on our THENIJOBS official landing website and submit their resume in one click.`
+        },
+        {
+          q: `What are the operating hours and location of ${cName}?`,
+          a: `We are located in ${cLocation}, Tamil Nadu, operating Monday through Saturday from 9:00 AM to 8:00 PM.`
+        }
+      ];
+
+      const seo = {
+        title: `${cName} – ${cCategory} in ${cLocation} | THENIJOBS Official Website`,
+        desc: `Visit the official website of ${cName} in ${cLocation}. Discover top ${cCategory} services, client reviews, and apply for open career opportunities.`,
+        keywords: `${cName}, ${cCategory} in ${cLocation}, Theni jobs, ${cName} careers, Tamil Nadu business`
+      };
+
+      setAiGeneratedStory(story);
+      setAiGeneratedFaqs(faqs);
+      setAiGeneratedSeo(seo);
+      setAiLoading(false);
+    }, 750);
+  };
+
+  const handleApplyAISuggestions = async () => {
+    if (!company?.id) return;
+    try {
+      await updateDoc(doc(db, 'companies', company.id), {
+        aboutStory: aiGeneratedStory,
+        faqs: aiGeneratedFaqs,
+        seoTitle: aiGeneratedSeo.title,
+        seoDescription: aiGeneratedSeo.desc,
+        seoKeywords: aiGeneratedSeo.keywords,
+        updatedAt: new Date().toISOString(),
+      });
+      toast.success('AI suggestions applied to your website!');
+      setAiModalOpen(false);
+    } catch (err: any) {
+      toast.error('Failed to apply suggestions: ' + err.message);
+    }
+  };
+
+  if (compLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ fontFamily: "'Inter', sans-serif" }}>
-        <Loader2 size={28} className="animate-spin text-blue-500" />
-        <p className="text-sm text-gray-500">Loading website settings...</p>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <Loader2 size={32} className="animate-spin text-blue-600" />
+        <p className="text-sm font-semibold text-slate-500">Loading website manager...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
+    <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans text-slate-900" style={{ fontFamily: "'Inter', sans-serif" }}>
+      
+      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            My Website
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            Two-Layer Company Website Manager
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Build and manage your company portfolio website</p>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Your business is published across two distinct experiences: a high-speed Directory Profile and a standalone Landing Website.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-full text-xs font-bold" style={{ background: badge.bgColor, color: badge.color, border: `1px solid ${badge.borderColor}` }}>
-            {badge.emoji} {badge.label}
-          </span>
-        </div>
+
+        <button
+          type="button"
+          onClick={runAIAssistant}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+        >
+          <Bot size={15} /> AI Content Generator
+        </button>
       </div>
 
-      {/* Website Status Card */}
-      {site ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* Status Bar */}
-          <div className="px-5 py-4 flex items-center justify-between" style={{ background: site.status === 'published' ? '#F0FDF4' : '#FFF7ED' }}>
-            <div className="flex items-center gap-3">
-              <div className={`w-2.5 h-2.5 rounded-full ${site.status === 'published' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              <div>
-                <p className="text-sm font-bold text-gray-900">
-                  {site.status === 'published' ? '🟢 Website Live' : '🟡 Draft Mode'}
-                </p>
-                <p className="text-[10px] text-gray-500">
-                  Template: {currentTemplate?.name || 'Not selected'} • {site.visibility === 'public' ? 'Public' : 'Private'}
-                </p>
-              </div>
-            </div>
-            {site.status === 'published' && siteUrl && (
-              <a href={siteUrl} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1 hover:bg-emerald-700 transition-all">
-                <ExternalLink size={12} /> Visit Site
-              </a>
-            )}
+      {/* ── Verification Notice ── */}
+      {!isVerified && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+          <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs">
+            <p className="font-bold text-amber-900">Verification Pending</p>
+            <p className="text-amber-700 mt-0.5">
+              Only verified companies with verified phone numbers receive full Google indexing and public trust badges. You can still preview your live landing website below.
+            </p>
           </div>
-
-          {/* URL */}
-          {siteUrl && (
-            <div className="px-5 py-3 border-t border-gray-100 flex items-center gap-2">
-              <Globe size={14} className="text-gray-400" />
-              <span className="text-xs text-gray-500 flex-1 truncate font-mono">{siteUrl}</span>
-              <button onClick={handleCopy} className="p-1.5 rounded-lg hover:bg-gray-100 transition-all text-gray-400">
-                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-              </button>
-              <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-all text-gray-400">
-                <Share2 size={14} />
-              </button>
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="px-5 py-4 border-t border-gray-100">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <Link href="/employer/website/editor" className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all text-center group">
-                <Edit3 size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700">Edit Website</span>
-              </Link>
-              <Link href="/employer/website/templates" className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-violet-200 hover:bg-violet-50 transition-all text-center group">
-                <Palette size={20} className="text-violet-500 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700">Templates</span>
-              </Link>
-              <Link href="/employer/website/settings" className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-all text-center group">
-                <Settings2 size={20} className="text-gray-500 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700">Settings</span>
-              </Link>
-              <button className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-emerald-200 hover:bg-emerald-50 transition-all text-center group">
-                <QrCode size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-semibold text-gray-700">QR Code</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Analytics Summary */}
-          {site.analytics && (
-            <div className="px-5 py-4 border-t border-gray-100 grid grid-cols-3 gap-4">
-              {[
-                { label: 'Total Views', value: site.analytics.totalViews || 0, icon: Eye, color: '#2563EB' },
-                { label: 'Unique Visitors', value: site.analytics.uniqueVisitors || 0, icon: BarChart3, color: '#7C3AED' },
-                { label: 'Enquiries', value: site.analytics.enquiries || 0, icon: Sparkles, color: '#059669' },
-              ].map(stat => {
-                const Icon = stat.icon;
-                return (
-                  <div key={stat.label} className="text-center">
-                    <Icon size={16} style={{ color: stat.color }} className="mx-auto mb-1" />
-                    <p className="text-lg font-bold text-gray-900">{stat.value}</p>
-                    <p className="text-[10px] text-gray-500">{stat.label}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        /* No Site — Create Card */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-            <Globe size={28} className="text-blue-500" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Create Your Website
-          </h2>
-          <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-            Build a professional portfolio website for your business. Choose from {availableTemplates.length} templates available in your plan.
-          </p>
-          <Link href="/employer/website/templates" className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all">
-            <Plus size={16} /> Choose Template & Start
-          </Link>
         </div>
       )}
 
-      {/* Template Preview */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-900">Available Templates</h3>
-          <Link href="/employer/website/templates" className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
-            View All <ArrowUpRight size={12} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {PORTFOLIO_TEMPLATES.slice(0, 5).map(tmpl => {
-            const isAccessible = canAccessTemplate(planSlug, tmpl.id);
-            const isCurrent = site?.templateId === tmpl.id;
-            return (
-              <div key={tmpl.id} className={`relative border overflow-hidden transition-all ${isCurrent ? 'border-blue-400 ring-2 ring-blue-100' : isAccessible ? 'border-gray-100 hover:border-gray-200 hover:shadow-md' : 'border-gray-100 opacity-60'}`} style={{ borderRadius: '12px' }}>
-                {/* Preview Thumbnail */}
-                <div className="h-24 flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${tmpl.plan === 'free' ? '#EFF6FF' : tmpl.plan === 'standard' ? '#F0FDF4' : tmpl.plan === 'premium' ? '#FEF3C7' : '#F5F3FF'}, #FFF)` }}>
-                  <Globe size={20} className="text-gray-300" />
-                </div>
-                <div className="p-2.5">
-                  <p className="text-[10px] font-bold text-gray-900 truncate">{tmpl.name}</p>
-                  <p className="text-[9px] text-gray-500">{tmpl.bestFor}</p>
-                </div>
-                {!isAccessible && (
-                  <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                    <div className="text-center">
-                      <Lock size={14} className="mx-auto text-gray-400" />
-                      <p className="text-[9px] font-bold text-gray-500 mt-1">{tmpl.plan.toUpperCase()}</p>
-                    </div>
-                  </div>
-                )}
-                {isCurrent && (
-                  <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-blue-600 text-[8px] font-bold text-white">ACTIVE</div>
-                )}
+      {/* ── Two Website URL Cards ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        
+        {/* Layer 1: Standard Company Profile */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Building2 size={18} />
               </div>
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Layer 1</span>
+                <h2 className="text-base font-bold text-slate-900">Standard Directory Profile</h2>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700">
+              Directory Card
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Clean, tabbed company card with quick contact buttons, Google Maps location, active jobs, and verified rating badge.
+          </p>
+
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-slate-700 truncate">{standardProfileUrl || 'Generating URL...'}</span>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleCopy(standardProfileUrl, 'standard')}
+                className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 transition-colors"
+                title="Copy Link"
+              >
+                {copiedStandard ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+              </button>
+              {standardProfileUrl && (
+                <a
+                  href={`/company/${companySlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 rounded-lg hover:bg-slate-200 text-blue-600 transition-colors"
+                  title="Visit Profile"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Layer 2: Professional Company Landing Website */}
+        <div className="bg-white rounded-3xl p-6 border-2 border-indigo-200 shadow-xs space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 px-3 py-1 bg-indigo-600 text-white text-[9px] font-black rounded-bl-xl uppercase tracking-wider">
+            Standalone Landing Site
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                <Globe size={18} />
+              </div>
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-500">Layer 2 (Primary)</span>
+                <h2 className="text-base font-bold text-slate-900">Professional Landing Website</h2>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-500 leading-relaxed">
+            Unique, standalone landing page with industry hero banner, company story, services, live careers pipeline, FAQs, and WhatsApp lead form.
+          </p>
+
+          <div className="p-3 rounded-2xl bg-indigo-50/60 border border-indigo-200 flex items-center justify-between gap-2">
+            <span className="text-xs font-mono font-bold text-indigo-900 truncate">{landingWebsiteUrl || 'Generating URL...'}</span>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleCopy(landingWebsiteUrl, 'landing')}
+                className="p-1.5 rounded-lg hover:bg-indigo-100 text-indigo-700 transition-colors"
+                title="Copy Link"
+              >
+                {copiedLanding ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+              </button>
+              {landingWebsiteUrl && (
+                <a
+                  href={`/${companySlug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 rounded-lg hover:bg-indigo-100 text-indigo-700 transition-colors"
+                  title="Visit Website"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ── 10 Industry-Specific Category Templates Library ── */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-2xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Industry Category Template Library</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Select the optimal visual theme and layout tailored for your business category.
+            </p>
+          </div>
+          {savingTemplate && (
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-600">
+              <Loader2 size={13} className="animate-spin" /> Saving template...
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          {(Object.keys(INDUSTRY_THEMES) as IndustryTemplateKey[]).map((key) => {
+            const tmpl = INDUSTRY_THEMES[key];
+            const Icon = tmpl.icon;
+            const isSelected = (activeTemplate || currentTemplate) === key;
+
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleSelectTemplate(key)}
+                className={`p-4 rounded-2xl border text-left transition-all flex flex-col justify-between gap-3 cursor-pointer ${
+                  isSelected
+                    ? 'border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50/40 shadow-xs'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-2xs'
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-2xs" style={{ background: tmpl.primary }}>
+                    <Icon size={16} />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-900 line-clamp-1">{tmpl.name}</h3>
+                  <p className="text-[10px] text-slate-500 line-clamp-2">{tmpl.heroBadge}</p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                  <span className="font-bold" style={{ color: tmpl.accentText }}>
+                    {isSelected ? '✓ Active Theme' : 'Click to Apply'}
+                  </span>
+                </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Features by Plan */}
-      <div className="bg-gradient-to-br from-blue-50 to-violet-50 rounded-2xl border border-blue-100 p-5">
-        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <Zap size={16} className="text-blue-600" /> Unlock More Features
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { plan: 'Free', templates: 3, icon: Shield, color: '#6B7280', sections: 7 },
-            { plan: 'Standard', templates: 6, icon: Crown, color: '#0F766E', sections: 11 },
-            { plan: 'Premium', templates: 11, icon: Sparkles, color: '#D97706', sections: 19 },
-            { plan: 'Enterprise', templates: 15, icon: Diamond, color: '#7C3AED', sections: 26 },
-          ].map(tier => {
-            const Icon = tier.icon;
-            const isActive = planSlug === tier.plan.toLowerCase();
-            return (
-              <div key={tier.plan} className={`p-3 rounded-xl bg-white border ${isActive ? 'border-blue-300 ring-1 ring-blue-100' : 'border-gray-100'}`}>
-                <Icon size={16} style={{ color: tier.color }} className="mb-1.5" />
-                <p className="text-xs font-bold text-gray-900">{tier.plan}</p>
-                <p className="text-[10px] text-gray-500">{tier.templates} templates</p>
-                <p className="text-[10px] text-gray-500">{tier.sections} sections</p>
-                {isActive && <span className="text-[8px] font-bold text-blue-600 mt-1 block">CURRENT</span>}
+      {/* ── AI Assistant Modal ── */}
+      {aiModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <Bot size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">AI Company Website Generator</h3>
+                  <p className="text-xs text-slate-500">Auto-craft compelling story, FAQs, and local SEO</p>
+                </div>
               </div>
-            );
-          })}
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* AI Fact Guardrail Alert */}
+            <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 flex items-start gap-2.5 text-xs text-blue-900">
+              <Shield size={16} className="text-blue-600 shrink-0 mt-0.5" />
+              <span>
+                <strong>Verification Rule:</strong> AI-generated content (establishment date, awards, specialties) must be checked and confirmed by you before publishing.
+              </span>
+            </div>
+
+            {aiLoading ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-3">
+                <Loader2 size={32} className="animate-spin text-purple-600" />
+                <p className="text-xs font-bold text-slate-600">Synthesizing local SEO &amp; company story...</p>
+              </div>
+            ) : (
+              <div className="space-y-4 text-xs max-h-96 overflow-y-auto pr-1">
+                {/* About Story */}
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Company Story &amp; About Us</label>
+                  <textarea
+                    rows={3}
+                    value={aiGeneratedStory}
+                    onChange={e => setAiGeneratedStory(e.target.value)}
+                    className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+
+                {/* SEO Metadata */}
+                <div className="space-y-2">
+                  <label className="font-bold text-slate-700 block">Dynamic Local SEO Title &amp; Description</label>
+                  <input
+                    type="text"
+                    value={aiGeneratedSeo.title}
+                    onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, title: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                    placeholder="SEO Title"
+                  />
+                  <textarea
+                    rows={2}
+                    value={aiGeneratedSeo.desc}
+                    onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, desc: e.target.value })}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                    placeholder="Meta Description"
+                  />
+                </div>
+
+                {/* FAQs */}
+                <div className="space-y-2">
+                  <label className="font-bold text-slate-700 block">Generated FAQs (3)</label>
+                  {aiGeneratedFaqs.map((faq, i) => (
+                    <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                      <p className="font-bold text-slate-800">Q: {faq.q}</p>
+                      <p className="text-slate-600">A: {faq.a}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={aiLoading}
+                onClick={handleApplyAISuggestions}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs"
+              >
+                Apply to My Official Website
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 }

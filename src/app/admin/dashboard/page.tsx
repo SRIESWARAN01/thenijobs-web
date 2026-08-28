@@ -133,7 +133,7 @@ export default function AdminDashboard() {
             className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300 transition-all">
             <Bell size={16} />
           </Link>
-          <Link href="/" className="text-xs text-blue-600 font-semibold border border-blue-200 px-3 py-1.5 rounded-xl hover:bg-blue-50 transition-all">
+          <Link href="/" className="text-xs text-indigo-600 font-semibold border border-indigo-200 px-3 py-1.5 rounded-xl hover:bg-indigo-50 transition-all">
             View Site
           </Link>
         </div>
@@ -184,16 +184,16 @@ export default function AdminDashboard() {
                 <p className="text-[10px] text-gray-400">Awaiting verification</p>
               </div>
             </div>
-            <Link href="/admin/businesses" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
+            <Link href="/admin/businesses" className="text-xs text-indigo-600 font-semibold hover:text-indigo-700">
               View all →
             </Link>
           </div>
           <div className="divide-y divide-gray-50">
             {bizLoading ? (
-              <div className="p-8 flex justify-center"><Loader2 size={20} className="animate-spin text-blue-500" /></div>
+              <div className="p-8 flex justify-center"><Loader2 size={20} className="animate-spin text-indigo-500" /></div>
             ) : pendingCompanies.length === 0 ? (
               <div className="p-10 text-center">
-                <CheckCircle size={28} className="mx-auto text-emerald-400 mb-2" />
+                <CheckCircle size={28} className="mx-auto text-emerald-500 mb-2" />
                 <p className="text-xs text-slate-600 font-medium">All companies reviewed!</p>
               </div>
             ) : pendingCompanies.map(company => (
@@ -208,16 +208,15 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {actionLoading[company.id] ? (
-                    <Loader2 size={14} className="animate-spin text-blue-500" />
+                    <Loader2 size={14} className="animate-spin text-indigo-500" />
                   ) : (
                     <>
                       <button onClick={() => handleApproveCompany(company.id)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white transition-all hover:opacity-90 shadow-xs"
-                        style={{ background: '#10B981' }}>
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs cursor-pointer">
                         ✓ Approve
                       </button>
                       <button onClick={() => handleRejectCompany(company.id)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-all">
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-all cursor-pointer">
                         ✗ Reject
                       </button>
                     </>
@@ -240,16 +239,16 @@ export default function AdminDashboard() {
                 <p className="text-[10px] text-gray-400">Awaiting approval</p>
               </div>
             </div>
-            <Link href="/admin/jobs" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
+            <Link href="/admin/jobs" className="text-xs text-indigo-600 font-semibold hover:text-indigo-700">
               View all →
             </Link>
           </div>
           <div className="divide-y divide-gray-50">
             {jobsLoading ? (
-              <div className="p-8 flex justify-center"><Loader2 size={20} className="animate-spin text-blue-500" /></div>
+              <div className="p-8 flex justify-center"><Loader2 size={20} className="animate-spin text-indigo-500" /></div>
             ) : pendingJobs.length === 0 ? (
               <div className="p-10 text-center">
-                <CheckCircle size={28} className="mx-auto text-emerald-400 mb-2" />
+                <CheckCircle size={28} className="mx-auto text-emerald-500 mb-2" />
                 <p className="text-xs text-slate-600 font-medium">All jobs reviewed!</p>
               </div>
             ) : pendingJobs.map(job => (
@@ -264,16 +263,15 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {actionLoading[job.id] ? (
-                    <Loader2 size={14} className="animate-spin text-blue-500" />
+                    <Loader2 size={14} className="animate-spin text-indigo-500" />
                   ) : (
                     <>
                       <button onClick={() => handleApproveJob(job.id)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white transition-all hover:opacity-90 shadow-xs"
-                        style={{ background: '#10B981' }}>
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs cursor-pointer">
                         ✓ Approve
                       </button>
                       <button onClick={() => handleRejectJob(job.id)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-all">
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-all cursor-pointer">
                         ✗ Reject
                       </button>
                     </>

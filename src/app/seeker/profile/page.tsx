@@ -280,14 +280,14 @@ export default function SeekerProfilePage() {
         <div className="flex flex-col sm:flex-row items-start gap-5">
           {/* Avatar */}
           <div className="relative shrink-0 self-center sm:self-start">
-            <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold text-white overflow-hidden shadow-sm" style={{ background: '#2563EB' }}>
+            <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl font-bold text-white overflow-hidden shadow-sm bg-emerald-600">
               {profile.photoUrl ? (
                 <img src={profile.photoUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : initials}
             </div>
             <button onClick={() => avatarInputRef.current?.click()}
-              className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-xl border-2 border-white flex items-center justify-center text-white hover:opacity-90 transition-all"
-              style={{ background: '#10B981' }}>
+              className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-xl border-2 border-white flex items-center justify-center text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-sm"
+            >
               <Camera size={14} />
             </button>
             <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleUploadAvatar} />
@@ -571,8 +571,7 @@ export default function SeekerProfilePage() {
         </button>
 
         <button onClick={handleSaveProfile} disabled={saving}
-          className="flex-1 w-full py-4 rounded-2xl text-white font-semibold text-base hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
-          style={{ background: '#10B981' }}>
+          className="flex-1 w-full py-4 rounded-2xl text-white font-bold text-base bg-emerald-600 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm cursor-pointer">
           {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
           {saving ? 'Saving...' : 'Save Profile'}
         </button>

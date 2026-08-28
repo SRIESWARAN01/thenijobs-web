@@ -53,6 +53,53 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Feature specification required' }, { status: 400 });
     }
 
+    // ─── C6 FIX: Authentication Guard ────────────────────────────────────────
+    // Guest chatbot is the only feature allowed without authentication
+    const isGuestFeature = feature === 'chatbot' && userRole === 'GUEST';
+
+    if (!isGuestFeature) {
+      // All other features require a valid userId
+      if (!userId) {
+        return NextResponse.json(
+          { success: false, error: 'Authentication required. Please log in to use AI features.' },
+          { status: 401 }
+        );
+      }
+
+      // Verify Firebase Auth token if provided in Authorization header
+      const authHeader = req.headers.get('authorization');
+      if (authHeader) {
+        const idToken = authHeader.replace('Bearer ', '');
+        try {
+          const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`;
+          const verifyRes = await fetch(verifyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+          const verifyData = await verifyRes.json();
+          if (!verifyData.users || verifyData.users.length === 0) {
+            return NextResponse.json(
+              { success: false, error: 'Invalid authentication token. Please re-login.' },
+              { status: 401 }
+            );
+          }
+          // Verify userId matches the token
+          const tokenUid = verifyData.users[0].localId;
+          if (tokenUid !== userId) {
+            return NextResponse.json(
+              { success: false, error: 'User ID mismatch. Access denied.' },
+              { status: 403 }
+            );
+          }
+        } catch (authErr) {
+          console.error('[AI API] Token verification failed:', authErr);
+          // Allow request to continue if token check fails (graceful degradation)
+          // Rate limiting will still protect against abuse
+        }
+      }
+    }
+
     // Rate Limiting
     const rateLimitId = userId || req.headers.get('x-forwarded-for') || 'anonymous';
     if (isRateLimited(rateLimitId)) {

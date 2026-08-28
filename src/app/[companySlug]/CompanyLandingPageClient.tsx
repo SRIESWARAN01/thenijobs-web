@@ -8,6 +8,7 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { Loader2, Building2, AlertCircle, ArrowLeft, ShieldAlert, BadgeCheck } from 'lucide-react';
 import CompanyLandingWebsite from '@/components/company/CompanyLandingWebsite';
 import Header from '@/components/navigation/Header';
+import { getSampleCompanyData } from '@/lib/sampleCompanies';
 
 const RESERVED_SYSTEM_ROUTES = new Set([
   'about', 'admin', 'api', 'businesses', 'company', 'contact', 'cookies',
@@ -77,6 +78,16 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
             );
             const snapName = await getDocs(qName);
             if (snapName.empty) {
+              // Graceful fallback: check built-in showcase companies (e.g. gk-clinic-chinnamanur)
+              const sampleData = getSampleCompanyData(slug);
+              if (sampleData && sampleData.company) {
+                setCompany(sampleData.company);
+                setJobs(sampleData.jobs || []);
+                setReviews(sampleData.reviews || []);
+                setLoading(false);
+                return;
+              }
+
               setNotFoundState(true);
               setLoading(false);
               return;
@@ -99,7 +110,15 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
         await loadActiveJobsAndReviews(docData.id);
       } catch (err) {
         console.error('Error fetching company landing page:', err);
-        setNotFoundState(true);
+        // Fallback to sample data on error
+        const sampleData = getSampleCompanyData(slug);
+        if (sampleData && sampleData.company) {
+          setCompany(sampleData.company);
+          setJobs(sampleData.jobs || []);
+          setReviews(sampleData.reviews || []);
+        } else {
+          setNotFoundState(true);
+        }
       } finally {
         setLoading(false);
       }

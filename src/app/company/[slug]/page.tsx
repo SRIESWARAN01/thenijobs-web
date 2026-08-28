@@ -19,6 +19,7 @@ const STATIC_COMPANY_SLUGS = [
   'royal-grand-supermarket-cumbum',
   'sri-meenakshi-textiles-garments',
   'city-care-multi-speciality-hospital',
+  'gk-clinic-chinnamanur',
 ];
 
 export function generateStaticParams() {

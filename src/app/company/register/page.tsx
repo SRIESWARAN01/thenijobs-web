@@ -63,6 +63,16 @@ export default function CompanyRegisterPage() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '') || `company-${Date.now()}`;
 
+      // Prevent duplicate company registration with the same slug
+      const { query, where, getDocs } = await import('firebase/firestore');
+      const qExisting = query(collection(db, 'companies'), where('slug', '==', slug));
+      const snapExisting = await getDocs(qExisting);
+      if (!snapExisting.empty) {
+        alert(`A registered company with the name "${form.name.trim()}" already exists. Please choose a unique name (e.g. ${form.name.trim()} ${form.district}).`);
+        setLoading(false);
+        return;
+      }
+
       const ownerId = user ? user.uid : `guest_${form.phone.replace(/[^0-9]/g, '') || Date.now()}`;
 
       await addDoc(collection(db, 'companies'), {

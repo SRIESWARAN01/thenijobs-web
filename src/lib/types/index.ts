@@ -232,6 +232,7 @@ export interface Company {
   verificationStatus: VerificationStatus;
   verificationBadges: VerificationBadges;
   verification?: { mobile?: boolean; email?: boolean; gst?: boolean; business?: boolean };
+  isVerified?: boolean;
   isActive: boolean;
   isFeatured: boolean;
   isPremium: boolean;

@@ -82,7 +82,29 @@ export default function RegisterBusinessPage() {
 
     setSubmitting(true);
     try {
-      const companySlug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `biz-${Date.now()}`;
+      const baseSlug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `biz-${Date.now()}`;
+      
+      // Prevent duplicate company registration with the same slug
+      const qExisting = query(collection(db, 'companies'), where('slug', '==', baseSlug));
+      const snapExisting = await getDocs(qExisting);
+      if (!snapExisting.empty) {
+        toast.warning(`A registered business named "${form.name.trim()}" already exists. Please choose a unique name or add your location (e.g. ${form.name.trim()} ${form.district}).`);
+        setSubmitting(false);
+        return;
+      }
+
+      // Check if email already registered as a company owner
+      if (form.email.trim()) {
+        const qEmail = query(collection(db, 'companies'), where('email', '==', form.email.trim().toLowerCase()));
+        const snapEmail = await getDocs(qEmail);
+        if (!snapEmail.empty) {
+          toast.warning(`A company with the email "${form.email.trim()}" is already registered. Please login or use a distinct business email.`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const companySlug = baseSlug;
       const companyPayload = {
         name: form.name.trim(),
         slug: companySlug,
@@ -91,7 +113,7 @@ export default function RegisterBusinessPage() {
         address: form.address.trim(),
         phone: form.phone.trim(),
         whatsapp: form.whatsapp.trim() || form.phone.trim(),
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
         contactPerson: form.contactPerson.trim(),
         designation: form.designation,
         tagline: form.tagline.trim(),
@@ -101,7 +123,7 @@ export default function RegisterBusinessPage() {
         website: form.website.trim(),
         employeeCount: form.employeeCount,
         ownerId: user?.uid || '',
-        ownerEmail: user?.email || form.email.trim(),
+        ownerEmail: user?.email || form.email.trim().toLowerCase(),
         verificationStatus: 'pending',
         isActive: true,
         isVerified: false,

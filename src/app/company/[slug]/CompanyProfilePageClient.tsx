@@ -9,6 +9,7 @@ import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { Loader2, Building2, ArrowLeft } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
+import { getSampleCompanyData } from '@/lib/sampleCompanies';
 
 export default function CompanyProfilePageClient({ slug: slugProp }: { slug: string }) {
   // CRITICAL: Read slug from the actual URL, not from the server prop.
@@ -59,6 +60,16 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
             );
             const snapName = await getDocs(qName);
             if (snapName.empty) {
+              // Graceful fallback: check built-in showcase companies
+              const sampleData = getSampleCompanyData(slug);
+              if (sampleData && sampleData.company) {
+                setCompany(sampleData.company);
+                setJobs(sampleData.jobs || []);
+                setReviews(sampleData.reviews || []);
+                setLoading(false);
+                return;
+              }
+
               setNotFoundState(true);
               setLoading(false);
               return;
@@ -87,7 +98,15 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
         await loadJobsAndReviews(docData.id);
       } catch (err) {
         console.error('Error loading company:', err);
-        setNotFoundState(true);
+        // Fallback to sample data on error
+        const sampleData = getSampleCompanyData(slug);
+        if (sampleData && sampleData.company) {
+          setCompany(sampleData.company);
+          setJobs(sampleData.jobs || []);
+          setReviews(sampleData.reviews || []);
+        } else {
+          setNotFoundState(true);
+        }
       } finally {
         setLoading(false);
       }

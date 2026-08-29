@@ -29,11 +29,13 @@ const navLinks: NavLinkItem[] = [
 export default function Header() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const onScroll = () => {
       setScrolled(window.scrollY > 8);
     };
@@ -121,7 +123,7 @@ export default function Header() {
 
           {/* ── Right Actions (Desktop) ── */}
           <div className="hidden lg:flex items-center gap-2.5 shrink-0">
-            {user ? (
+            {mounted && user ? (
               <>
                 {/* Notification Bell */}
                 <Link
@@ -214,7 +216,7 @@ export default function Header() {
 
           {/* ── Mobile / Tablet Action & Hamburger Bar (< 1024px) ── */}
           <div className="flex lg:hidden items-center gap-2">
-            {!user && (
+            {(!mounted || !user) && (
               <Link
                 href="/login"
                 className="whitespace-nowrap h-8 sm:h-9 px-3 rounded-lg text-xs font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 flex items-center"

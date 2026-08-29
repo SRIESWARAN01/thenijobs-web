@@ -125,6 +125,13 @@ export default function FeaturedBusinesses() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+      setError(true);
+    }, 8000);
+
     async function load() {
       try {
         const q = query(
@@ -134,6 +141,7 @@ export default function FeaturedBusinesses() {
           limit(8)
         );
         const snap = await getDocs(q);
+        if (cancelled) return;
         const data = snap.docs.map(doc => {
           const d = doc.data();
           return {
@@ -155,12 +163,15 @@ export default function FeaturedBusinesses() {
         setCompanies(data);
       } catch (err) {
         console.error(err);
-        setError(true);
+        if (!cancelled) setError(true);
       } finally {
-        setLoading(false);
+        clearTimeout(timeout);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   return (

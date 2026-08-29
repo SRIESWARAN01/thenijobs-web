@@ -404,6 +404,12 @@ export default function JobsPage() {
 
   // Fetch jobs from Firestore
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+    }, 10000); // 10s timeout protection
+
     async function load() {
       setLoading(true);
       try {
@@ -413,6 +419,7 @@ export default function JobsPage() {
           where('status', '==', 'active')
         );
         const snap = await getDocs(q);
+        if (cancelled) return;
         const TYPE_MAP: Record<string, string> = {
           full_time: 'Full Time', part_time: 'Part Time', remote: 'Remote',
           wfh: 'WFH', contract: 'Contract', internship: 'Internship',
@@ -463,10 +470,13 @@ export default function JobsPage() {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        clearTimeout(timeout);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   // Saved Jobs tracking

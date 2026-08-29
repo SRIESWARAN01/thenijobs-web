@@ -1,4 +1,4 @@
-'use client';
+/* Server component — no hooks, purely static content */
 
 import { Star, Quote } from 'lucide-react';
 

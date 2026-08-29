@@ -4,8 +4,12 @@
  * This file has NO 'use client' directive and is safe for Next.js SSR/ISR.
  */
 
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'thenijobs-9f01d';
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyAAXHgdvKXi4pFPNGciMbZE8lPITN9Hsug';
+const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+if (!PROJECT_ID || !API_KEY) {
+  console.error('[firestoreServer] CRITICAL: Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_API_KEY. Server-side Firestore queries will fail.');
+}
 
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 

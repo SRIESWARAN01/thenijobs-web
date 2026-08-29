@@ -14,7 +14,11 @@ const RESERVED_SYSTEM_ROUTES = new Set([
   'about', 'admin', 'api', 'businesses', 'company', 'contact', 'cookies',
   'daily-jobs', 'employer', 'forgot-password', 'jobs', 'login', 'marketplace',
   'portfolio', 'pricing', 'privacy', 'profile', 'register', 'register-business',
-  'seeker', 'services', 'terms', '_fallback', 'favicon.ico', 'sitemap.xml', 'robots.txt'
+  'seeker', 'services', 'terms', '_fallback',
+  // Static assets that may appear as path segments
+  'favicon.ico', 'sitemap.xml', 'robots.txt', 'icon.png', 'apple-icon.png',
+  // Next.js internal routes
+  '_next', '__nextjs_original-stack-frame',
 ]);
 
 /** Sanitize strings for safe JSON-LD injection (prevent </script> breakout) */

@@ -25,6 +25,13 @@ export default function TrustedEmployersStrip() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+      setError(true);
+    }, 8000);
+
     async function load() {
       try {
         const q = query(
@@ -34,6 +41,7 @@ export default function TrustedEmployersStrip() {
           limit(8)
         );
         const snap = await getDocs(q);
+        if (cancelled) return;
         const logos: EmployerLogo[] = [];
         snap.docs.forEach((doc) => {
           const d = doc.data();
@@ -51,12 +59,15 @@ export default function TrustedEmployersStrip() {
         setEmployers(logos);
       } catch (err) {
         console.error('Failed to load employer logos:', err);
-        setError(true);
+        if (!cancelled) setError(true);
       } finally {
-        setLoading(false);
+        clearTimeout(timeout);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   // Hide entire section if no logos available or error

@@ -53,7 +53,7 @@ export async function generateMetadata({
       title: `${displayName} — Company Profile | THENIJOBS`,
       description: `Explore verified company profile, jobs, and reviews for ${displayName} on THENIJOBS.`,
       type: 'website',
-      url: `https://www.thenijobs.com/company/${slug}`,
+      url: `https://thenijobs.com/company/${slug}`,
       siteName: 'THENIJOBS',
     },
     twitter: {
@@ -62,7 +62,7 @@ export async function generateMetadata({
       description: `View ${displayName}'s company profile, open jobs, and reviews.`,
     },
     alternates: {
-      canonical: `https://www.thenijobs.com/company/${slug}`,
+      canonical: `https://thenijobs.com/company/${slug}`,
     },
     robots: {
       index: true,

@@ -147,15 +147,23 @@ export default function TrendingJobs() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+      setError(true);
+    }, 8000); // 8s timeout to prevent infinite loading
+
     async function load() {
       try {
         const q = query(
           collection(db, 'jobs'),
           where('isActive', '==', true),
           where('status', '==', 'active'),
-          limit(20)
+          limit(8)
         );
         const snap = await getDocs(q);
+        if (cancelled) return;
 
         const typeMap: Record<string, string> = {
           full_time: 'Full Time', part_time: 'Part Time', remote: 'Remote',
@@ -215,12 +223,15 @@ export default function TrendingJobs() {
         setJobs(calculatedJobs.slice(0, 6));
       } catch (err) {
         console.error('Failed to load trending jobs:', err);
-        setError(true);
+        if (!cancelled) setError(true);
       } finally {
-        setLoading(false);
+        clearTimeout(timeout);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   return (

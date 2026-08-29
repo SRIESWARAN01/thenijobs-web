@@ -40,6 +40,12 @@ export default function MarketplacePage() {
   const [selectedItemModal, setSelectedItemModal] = useState<any | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+    }, 10000);
+
     async function loadMarketplaceData() {
       try {
         setLoading(true);
@@ -49,15 +55,19 @@ export default function MarketplacePage() {
           limit(100)
         );
         const snap = await getDocs(qComp);
+        if (cancelled) return;
         const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCompanies(data);
       } catch (err) {
         console.error('Error fetching marketplace companies:', err);
       } finally {
-        setLoading(false);
+        clearTimeout(timeout);
+        if (!cancelled) setLoading(false);
       }
     }
     loadMarketplaceData();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   // Aggregate all products with company metadata

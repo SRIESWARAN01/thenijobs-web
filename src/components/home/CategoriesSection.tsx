@@ -1,4 +1,4 @@
-'use client';
+/* Server component — no hooks, purely static content */
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';

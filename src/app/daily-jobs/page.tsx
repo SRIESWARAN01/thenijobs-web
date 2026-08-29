@@ -59,6 +59,12 @@ export default function DailyJobsPage() {
 
   // Load jobs and calculate time diffs
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+    }, 10000);
+
     async function fetchDailyJobs() {
       setLoading(true);
       try {
@@ -68,6 +74,7 @@ export default function DailyJobsPage() {
           where('status', '==', 'active')
         );
         const snap = await getDocs(q);
+        if (cancelled) return;
 
         const typeMap: Record<string, string> = {
           full_time: 'Full Time', part_time: 'Part Time', remote: 'Remote',
@@ -113,8 +120,8 @@ export default function DailyJobsPage() {
             postedText,
             isUrgent: !!d.isUrgent,
             isVerified: d.isVerified ?? true,
-            whatsapp: d.whatsapp || d.phone || '9360519460',
-            phone: d.phone || '9360519460',
+            whatsapp: d.whatsapp || d.phone || '',
+            phone: d.phone || '',
             description: d.description || '',
           };
         });
@@ -126,10 +133,13 @@ export default function DailyJobsPage() {
       } catch (err) {
         console.error('Failed to load daily jobs:', err);
       } finally {
-        setLoading(false);
+        clearTimeout(timeout);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchDailyJobs();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   // Filter based on selected timeRange (Today vs Past 7 Days) and search/category/location filters

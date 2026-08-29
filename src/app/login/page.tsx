@@ -244,28 +244,49 @@ function LoginPageContent() {
         throw new Error(data.error || 'Invalid OTP. Please check the code and try again.');
       }
 
-      // Verified successfully — create/retrieve user record in Firestore
+      // Verified successfully — create a real Firebase Auth session
       const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-      const phoneUid = `phone_${cleanPhone}`;
-      const userRef = doc(db, 'users', phoneUid);
+
+      // Sign in anonymously to create a persistent Firebase Auth session
+      // This ensures onAuthStateChanged fires and useRequireAuth works
+      const { signInAnonymously, updateProfile: updateFbProfile } = await import('firebase/auth');
+      const { auth: firebaseAuth } = await import('@/lib/firebase/config');
+      const credential = await signInAnonymously(firebaseAuth);
+      const fbUser = credential.user;
+
+      // Update the Firebase Auth profile with phone info
+      await updateFbProfile(fbUser, {
+        displayName: `User ${cleanPhone.slice(-4)}`,
+      });
+
+      // Create/update the Firestore user document using the real Firebase Auth UID
+      const userRef = doc(db, 'users', fbUser.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
         await setDoc(userRef, {
+          uid: fbUser.uid,
           phone: `+91${cleanPhone}`,
           displayName: `User ${cleanPhone.slice(-4)}`,
           email: '',
           role: 'job_seeker',
           isVerified: true,
+          authMethod: 'phone_otp',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+      } else {
+        // Update existing user with phone verification
+        await setDoc(userRef, {
+          phone: `+91${cleanPhone}`,
+          isVerified: true,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
       }
 
       setSuccessMessage('Verified successfully! Redirecting...');
-      setTimeout(() => {
-        router.push(redirectUrl || '/seeker/dashboard');
-      }, 600);
+      // onAuthStateChanged in AuthContext will now fire with the real Firebase user
+      // and redirect automatically via the useEffect on line 86-94
     } catch (err: any) {
       setLocalError(err.message || 'Invalid or expired OTP. Please try again.');
     } finally {

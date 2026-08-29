@@ -163,6 +163,12 @@ export default function BusinessesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+    }, 10000);
+
     async function loadBusinesses() {
       try {
         const q = query(
@@ -171,6 +177,7 @@ export default function BusinessesPage() {
           where('isActive', '==', true)
         );
         const snapshot = await getDocs(q);
+        if (cancelled) return;
         const data = snapshot.docs.map(doc => {
           const d = doc.data();
           return {
@@ -194,9 +201,11 @@ export default function BusinessesPage() {
         });
         setBusinesses(data);
       } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      finally { clearTimeout(timeout); if (!cancelled) setLoading(false); }
     }
     loadBusinesses();
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   const filtered = businesses

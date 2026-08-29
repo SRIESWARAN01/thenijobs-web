@@ -5,16 +5,20 @@ import Link from 'next/link';
 import { X, ArrowRight } from 'lucide-react';
 
 export default function AnnouncementBar() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const dismissed = sessionStorage.getItem('tnj-announce-dismissed');
-    if (!dismissed) setVisible(true);
+    try {
+      const dismissed = sessionStorage.getItem('tnj-announce-dismissed');
+      if (dismissed) setVisible(false);
+    } catch {}
   }, []);
 
   const dismiss = () => {
     setVisible(false);
-    sessionStorage.setItem('tnj-announce-dismissed', '1');
+    try {
+      sessionStorage.setItem('tnj-announce-dismissed', '1');
+    } catch {}
   };
 
   if (!visible) return null;

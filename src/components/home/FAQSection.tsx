@@ -1,6 +1,3 @@
-'use client';
-
-import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 const faqs = [
@@ -38,32 +35,7 @@ const faqs = [
   },
 ];
 
-function FAQItem({ faq, isOpen, onToggle }: { faq: typeof faqs[0]; isOpen: boolean; onToggle: () => void }) {
-  return (
-    <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
-        aria-expanded={isOpen}
-      >
-        <span>{faq.q}</span>
-        <ChevronDown
-          size={16}
-          className={`flex-shrink-0 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-        />
-      </button>
-      {isOpen && (
-        <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
-          <p className="pt-3">{faq.a}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-
   const faqStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -75,7 +47,7 @@ export default function FAQSection() {
   };
 
   return (
-    <section className="py-14" style={{ background: '#F8FAFC', fontFamily: "'Inter', sans-serif" }}>
+    <section className="py-14" style={{ background: '#F8FAFC' }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
@@ -98,12 +70,22 @@ export default function FAQSection() {
 
         <div className="space-y-3">
           {faqs.map((faq, i) => (
-            <FAQItem
+            <details
               key={i}
-              faq={faq}
-              isOpen={openIndex === i}
-              onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-            />
+              open={i === 0}
+              className="group border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-xs transition-colors open:border-blue-200"
+            >
+              <summary className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left text-sm font-semibold text-gray-900 hover:bg-gray-50 transition-colors cursor-pointer list-none select-none">
+                <span>{faq.q}</span>
+                <ChevronDown
+                  size={16}
+                  className="flex-shrink-0 text-gray-500 transition-transform duration-200 group-open:rotate-180"
+                />
+              </summary>
+              <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                <p className="pt-3">{faq.a}</p>
+              </div>
+            </details>
           ))}
         </div>
       </div>

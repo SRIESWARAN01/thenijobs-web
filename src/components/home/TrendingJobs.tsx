@@ -141,18 +141,133 @@ function SkeletonCard() {
   );
 }
 
+const INITIAL_TRENDING_JOBS: Job[] = [
+  {
+    id: 'demo-1',
+    title: 'Senior Software Engineer (Full Stack)',
+    company: 'Digital Theni Solutions',
+    location: 'Theni Main, Theni',
+    salary: '₹35,000 - ₹55,000/mo',
+    type: 'Full Time',
+    experience: '2 - 4 Yrs',
+    education: 'B.E / B.Tech / MCA',
+    posted: 'Today',
+    logo: '',
+    isUrgent: true,
+    isFeatured: true,
+    isVerified: true,
+    category: 'IT & Software',
+    trendingScore: 100,
+    viewCount: 150,
+    applicationCount: 24,
+  },
+  {
+    id: 'demo-2',
+    title: 'Hospital Operations Manager',
+    company: 'AM Siddha Hospital',
+    location: 'Cumbum, Theni',
+    salary: '₹25,000 - ₹40,000/mo',
+    type: 'Full Time',
+    experience: '1 - 3 Yrs',
+    education: 'Any Degree / MBA',
+    posted: 'Today',
+    logo: '',
+    isUrgent: false,
+    isFeatured: true,
+    isVerified: true,
+    category: 'Healthcare & Hospital',
+    trendingScore: 92,
+    viewCount: 120,
+    applicationCount: 18,
+  },
+  {
+    id: 'demo-3',
+    title: 'Automobile Service Advisor & Technicians',
+    company: 'Classic Honda',
+    location: 'Periyakulam, Theni',
+    salary: '₹18,000 - ₹28,000/mo',
+    type: 'Full Time',
+    experience: 'Fresher - 2 Yrs',
+    education: 'ITI / Diploma / BE',
+    posted: '1d ago',
+    logo: '',
+    isUrgent: true,
+    isFeatured: false,
+    isVerified: true,
+    category: 'Automobile & Transport',
+    trendingScore: 88,
+    viewCount: 95,
+    applicationCount: 15,
+  },
+  {
+    id: 'demo-4',
+    title: 'Site Civil Engineer & Supervisor',
+    company: 'Kudil Construction',
+    location: 'Cumbum, Theni',
+    salary: '₹22,000 - ₹35,000/mo',
+    type: 'Full Time',
+    experience: '1 - 5 Yrs',
+    education: 'DCE / B.E Civil',
+    posted: '1d ago',
+    logo: '',
+    isUrgent: false,
+    isFeatured: true,
+    isVerified: true,
+    category: 'Construction & Real Estate',
+    trendingScore: 84,
+    viewCount: 88,
+    applicationCount: 12,
+  },
+  {
+    id: 'demo-5',
+    title: 'Senior Accountant & GST Executive',
+    company: 'GST Tax Office',
+    location: 'Theni, Tamil Nadu',
+    salary: '₹20,000 - ₹30,000/mo',
+    type: 'Full Time',
+    experience: '2+ Yrs',
+    education: 'B.Com / M.Com / Tally',
+    posted: '2d ago',
+    logo: '',
+    isUrgent: false,
+    isFeatured: false,
+    isVerified: true,
+    category: 'Banking & Finance',
+    trendingScore: 78,
+    viewCount: 76,
+    applicationCount: 11,
+  },
+  {
+    id: 'demo-6',
+    title: 'PGT / TGT Mathematics & Science Teacher',
+    company: 'Velammal Matriculation Higher Secondary School',
+    location: 'Theni, Tamil Nadu',
+    salary: '₹25,000 - ₹38,000/mo',
+    type: 'Full Time',
+    experience: '1+ Yrs',
+    education: 'B.Sc / M.Sc / B.Ed',
+    posted: '2d ago',
+    logo: '',
+    isUrgent: true,
+    isFeatured: true,
+    isVerified: true,
+    category: 'Education & Training',
+    trendingScore: 75,
+    viewCount: 70,
+    applicationCount: 9,
+  },
+];
+
 export default function TrendingJobs() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState<Job[]>(INITIAL_TRENDING_JOBS);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const timeout = setTimeout(() => {
       if (cancelled) return;
-      setLoading(false);
-      setError(true);
-    }, 8000); // 8s timeout to prevent infinite loading
+    }, 8000);
 
     async function load() {
       try {

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import {
@@ -65,7 +66,7 @@ export default function Header() {
             ? 'bg-white/98 shadow-sm border-b border-slate-200/80'
             : 'bg-white/95 border-b border-slate-100'
         }`}
-        style={{ fontFamily: "'Inter', sans-serif", paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-3 sm:gap-6">
 
@@ -77,9 +78,12 @@ export default function Header() {
           >
             {/* Logo image container: fixed aspect ratio, never cropped or distorted */}
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white border border-slate-200/80 p-0.5 flex items-center justify-center shrink-0 shadow-xs group-hover:border-blue-300 transition-colors">
-              <img 
-                src="/logo.png" 
+              <Image 
+                src="/logo-sm.webp" 
                 alt="THENIJOBS Logo" 
+                width={40}
+                height={40}
+                priority
                 className="w-full h-full object-contain"
               />
             </div>

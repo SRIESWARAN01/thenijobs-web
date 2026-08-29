@@ -1,10 +1,25 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { GlobalErrorTracker } from "@/lib/firebase/errorTracker";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-poppins",
+  weight: ["600", "700", "800"],
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
@@ -37,12 +52,12 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
   icons: {
     icon: [
-      { url: "/logo.png", type: "image/png", sizes: "512x512" },
+      { url: "/logo-sm.webp", type: "image/webp", sizes: "96x96" },
       { url: "/favicon.ico", sizes: "any" },
     ],
-    shortcut: "/logo.png",
+    shortcut: "/logo-sm.webp",
     apple: [
-      { url: "/logo.png", sizes: "180x180", type: "image/png" },
+      { url: "/logo-sm.webp", sizes: "180x180", type: "image/webp" },
     ],
   },
   manifest: "/manifest.json",
@@ -57,17 +72,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" suppressHydrationWarning>
+    <html lang="en-IN" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
       <head>
-        {/* Google Fonts preconnect for performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
-        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="icon" href="/logo-sm.webp" type="image/webp" sizes="any" />
+        <link rel="apple-touch-icon" href="/logo-sm.webp" />
       </head>
       <body className="font-sans antialiased bg-[#F8FAFC] text-[#111827]">
         <GlobalErrorTracker />

@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
 import Header from '@/components/navigation/Header';
-import BottomNav from '@/components/navigation/BottomNav';
-import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
 import AnnouncementBar from '@/components/home/AnnouncementBar';
-import WalkInDriveBanner from '@/components/home/WalkInDriveBanner';
-
 import HeroSection from '@/components/home/HeroSection';
 
 import TrustedEmployersStrip from '@/components/home/TrustedEmployersStrip';
@@ -20,6 +16,7 @@ import TestimonialsSection from '@/components/home/TestimonialsSection';
 import FAQSection from '@/components/home/FAQSection';
 import FinalCTA from '@/components/home/FinalCTA';
 import HomeFooter from '@/components/home/HomeFooter';
+import ClientFloatingWidgets from '@/components/home/ClientFloatingWidgets';
 
 export const metadata: Metadata = {
   title: 'THENIJOBS – Latest Jobs in Theni | Private Jobs, Fresher Jobs & Vacancies',
@@ -126,7 +123,6 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}
       />
       <Header />
-      <WalkInDriveBanner />
       <AnnouncementBar />
       <HeroSection />
 
@@ -143,8 +139,7 @@ export default function HomePage() {
       <FAQSection />
       <FinalCTA />
       <HomeFooter />
-      <BottomNav />
-      <FloatingWhatsApp />
+      <ClientFloatingWidgets />
     </main>
   );
 }

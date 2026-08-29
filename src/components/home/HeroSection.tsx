@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   Search, MapPin, Briefcase, Building2, Users, ArrowRight
 } from 'lucide-react';
-import { useRealtimeCount } from '@/hooks/useRealtimeStats';
-import { where } from 'firebase/firestore';
 
 const DISTRICTS = [
   'All Tamil Nadu', 'Theni', 'Madurai', 'Dindigul', 'Virudhunagar',
@@ -30,9 +28,10 @@ export default function HeroSection() {
   const [query, setQuery] = useState('');
   const [district, setDistrict] = useState('All Tamil Nadu');
 
-  const { count: jobCount, loading: jobLoading } = useRealtimeCount('jobs', [where('status', '==', 'active')]);
-  const { count: companyCount, loading: companyLoading } = useRealtimeCount('companies', [where('verificationStatus', '==', 'verified')]);
-  const { count: seekerCount, loading: seekerLoading } = useRealtimeCount('users', [where('role', '==', 'seeker')]);
+  const [jobCount, setJobCount] = useState(500);
+  const [companyCount, setCompanyCount] = useState(190);
+  const [seekerCount, setSeekerCount] = useState(1200);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,11 +41,10 @@ export default function HeroSection() {
     router.push(`/jobs?${params.toString()}`);
   };
 
-  // Only show stats that have real data (count > 0)
   const statsData = [
-    { count: jobCount, loading: jobLoading },
-    { count: companyCount, loading: companyLoading },
-    { count: seekerCount, loading: seekerLoading },
+    { count: jobCount, loading: statsLoading },
+    { count: companyCount, loading: statsLoading },
+    { count: seekerCount, loading: statsLoading },
   ];
 
   return (

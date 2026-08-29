@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Globe2, MessageCircle, Phone, Mail, MapPin, Play, Share2 } from 'lucide-react';
 
 const footerLinks = {
@@ -28,7 +29,7 @@ const footerLinks = {
 
 export default function HomeFooter() {
   return (
-    <footer className="border-t border-gray-100" style={{ background: '#111827', fontFamily: "'Inter', sans-serif" }}>
+    <footer className="border-t border-gray-100" style={{ background: '#111827' }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         {/* Top */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-gray-700">
@@ -37,7 +38,14 @@ export default function HomeFooter() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
-                <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+                <Image 
+                  src="/logo-sm.webp" 
+                  alt="THENIJOBS" 
+                  width={40} 
+                  height={40} 
+                  loading="lazy" 
+                  className="w-full h-full object-contain" 
+                />
               </div>
               <span className="font-extrabold text-xl text-white tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
                 THENI<span className="text-blue-400">JOBS</span>

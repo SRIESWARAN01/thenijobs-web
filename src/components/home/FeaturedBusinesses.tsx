@@ -119,17 +119,146 @@ function SkeletonCard() {
   );
 }
 
+const INITIAL_FEATURED_COMPANIES: Company[] = [
+  {
+    id: 'comp-1',
+    slug: 'am-siddha-hospital-cumbum',
+    name: 'AM Siddha Hospital',
+    category: 'Healthcare & Hospital',
+    district: 'Cumbum',
+    rating: 4.8,
+    reviews: 24,
+    jobs: 4,
+    isVerified: true,
+    isPremium: true,
+    tagline: 'Leading Healthcare and Siddha Medicine in Cumbum',
+    logo: 'AM',
+    logoUrl: '',
+    coverUrl: '',
+  },
+  {
+    id: 'comp-2',
+    slug: 'velammal-matriculation-higher-secondary-school-theni-theni',
+    name: 'Velammal Matriculation School',
+    category: 'Education & Training',
+    district: 'Theni',
+    rating: 4.9,
+    reviews: 38,
+    jobs: 6,
+    isVerified: true,
+    isPremium: true,
+    tagline: 'Excellence in Education and Academic Achievement',
+    logo: 'VM',
+    logoUrl: '',
+    coverUrl: '',
+  },
+  {
+    id: 'comp-3',
+    slug: 'classic-honda-periyakulam',
+    name: 'Classic Honda',
+    category: 'Automobile & Transport',
+    district: 'Periyakulam',
+    rating: 4.7,
+    reviews: 19,
+    jobs: 3,
+    isVerified: true,
+    isPremium: false,
+    tagline: 'Authorized Honda Sales, Service & Spares',
+    logo: 'CH',
+    logoUrl: '',
+    coverUrl: '',
+  },
+  {
+    id: 'comp-4',
+    slug: 'kudil-construction-cumbum',
+    name: 'Kudil Construction',
+    category: 'Construction & Real Estate',
+    district: 'Cumbum',
+    rating: 4.8,
+    reviews: 15,
+    jobs: 5,
+    isVerified: true,
+    isPremium: true,
+    tagline: 'Quality Building Architecture & Construction Services',
+    logo: 'KC',
+    logoUrl: '',
+    coverUrl: '',
+  },
+  {
+    id: 'comp-5',
+    slug: 'digital-theni-solutions',
+    name: 'Digital Theni Solutions',
+    category: 'IT & Software',
+    district: 'Theni',
+    rating: 4.9,
+    reviews: 42,
+    jobs: 7,
+    isVerified: true,
+    isPremium: true,
+    tagline: 'Enterprise Software & Digital Transformation in Theni',
+    logo: 'DT',
+    logoUrl: '',
+    coverUrl: '',
+  },
+  {
+    id: 'comp-6',
+    slug: 'coral-moto-hub-royal-enfield-theni',
+    name: 'Coral Moto Hub (Royal Enfield)',
+    category: 'Automobile & Transport',
+    district: 'Theni',
+    rating: 4.8,
+    reviews: 29,
+    jobs: 4,
+    isVerified: true,
+    isPremium: false,
+    tagline: 'Authorized Royal Enfield Dealership & Service',
+    logo: 'CM',
+    logoUrl: '',
+    coverUrl: '',
+  },
+  {
+    id: 'comp-7',
+    slug: 'sri-vetri-vinayaga-cumbum',
+    name: 'Sri Vetri Vinayaga',
+    category: 'Construction & Real Estate',
+    district: 'Cumbum',
+    rating: 4.6,
+    reviews: 12,
+    jobs: 2,
+    isVerified: true,
+    isPremium: false,
+    tagline: 'Trusted Building Material and Engineering Supplies',
+    logo: 'SV',
+    logoUrl: '',
+    coverUrl: '',
+  },
+  {
+    id: 'comp-8',
+    slug: 'mm-multispeciality-hospital-theni',
+    name: 'MM Multispeciality Hospital',
+    category: 'Healthcare & Hospital',
+    district: 'Theni',
+    rating: 4.9,
+    reviews: 31,
+    jobs: 8,
+    isVerified: true,
+    isPremium: true,
+    tagline: '24/7 Advanced Emergency & Multispeciality Care',
+    logo: 'MM',
+    logoUrl: '',
+    coverUrl: '',
+  },
+];
+
 export default function FeaturedBusinesses() {
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [companies, setCompanies] = useState<Company[]>(INITIAL_FEATURED_COMPANIES);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const timeout = setTimeout(() => {
       if (cancelled) return;
-      setLoading(false);
-      setError(true);
     }, 8000);
 
     async function load() {

@@ -191,21 +191,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Seed Firestore doc if first-time Google sign-in
       const existing = await getDoc(doc(db, 'users', fbUser.uid));
       if (!existing.exists()) {
-        const newUser: Omit<User, 'uid'> = {
+        const newUserDoc: Record<string, any> = {
           email: fbUser.email ?? '',
           displayName: fbUser.displayName ?? '',
-          photoURL: fbUser.photoURL ?? undefined,
-          phone: fbUser.phoneNumber ?? undefined,
           role: 'job_seeker',
-          isVerified: fbUser.emailVerified,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        await setDoc(doc(db, 'users', fbUser.uid), {
-          ...newUser,
+          isVerified: Boolean(fbUser.emailVerified),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        });
+        };
+        if (fbUser.photoURL) newUserDoc.photoURL = fbUser.photoURL;
+        if (fbUser.phoneNumber) newUserDoc.phone = fbUser.phoneNumber;
+
+        await setDoc(doc(db, 'users', fbUser.uid), newUserDoc);
       }
     } catch (err) {
       setLoading(false);
@@ -247,20 +244,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Seed Firestore doc if first-time phone sign-in
         const existing = await getDoc(doc(db, 'users', fbUser.uid));
         if (!existing.exists()) {
-          const newUser: Omit<User, 'uid'> = {
+          const newUserDoc: Record<string, any> = {
             email: '',
             displayName: fbUser.phoneNumber ?? '',
-            phone: fbUser.phoneNumber ?? undefined,
             role: 'job_seeker',
             isVerified: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
-          await setDoc(doc(db, 'users', fbUser.uid), {
-            ...newUser,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-          });
+          };
+          if (fbUser.phoneNumber) newUserDoc.phone = fbUser.phoneNumber;
+
+          await setDoc(doc(db, 'users', fbUser.uid), newUserDoc);
         }
       } catch (err) {
         setLoading(false);
@@ -288,21 +282,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Update Firebase Auth display name
         await updateProfile(fbUser, { displayName });
 
-        // Create Firestore user doc — includes phone if provided
-        const newUser: Omit<User, 'uid'> = {
+        // Create Firestore user doc — only include phone if provided
+        const newUserDoc: Record<string, any> = {
           email,
           displayName,
-          phone: phone || undefined,
           role,
           isVerified: false,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        await setDoc(doc(db, 'users', fbUser.uid), {
-          ...newUser,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        });
+        };
+        if (phone) newUserDoc.phone = phone;
+
+        await setDoc(doc(db, 'users', fbUser.uid), newUserDoc);
         return fbUser.uid;
       } catch (err) {
         setLoading(false);

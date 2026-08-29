@@ -64,9 +64,22 @@ export default function RegisterPage() {
 
   const handleGoogleRegister = async () => {
     setLoading(true); setLocalError(null);
-    try { await signInWithGoogle(); }
-    catch (err: any) { setLocalError(err.message || 'Google registration failed.'); }
-    finally { setLoading(false); }
+    try { 
+      await signInWithGoogle(); 
+    } catch (err: any) { 
+      console.error('Google register error:', err);
+      if (err?.code === 'auth/popup-closed-by-user') {
+        setLocalError('Registration cancelled. The popup was closed.');
+      } else if (err?.code === 'auth/unauthorized-domain') {
+        setLocalError('Domain not authorized in Firebase. Please use http://localhost:3001 or add your domain in Firebase Console.');
+      } else if (err?.code === 'auth/operation-not-allowed') {
+        setLocalError('Google Sign-In is not enabled in Firebase Authentication console.');
+      } else {
+        setLocalError(err?.message || 'Google registration failed.');
+      }
+    } finally { 
+      setLoading(false); 
+    }
   };
 
 

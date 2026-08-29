@@ -7,7 +7,13 @@ export async function POST(req: NextRequest) {
   try {
     const { provider, apiKey, model } = await req.json();
 
-    if (!provider || !apiKey) {
+    const resolvedApiKey = apiKey || (
+      provider === 'groq' ? process.env.GROQ_API_KEY :
+      provider === 'gemini' ? (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) :
+      provider === 'openai' ? process.env.OPENAI_API_KEY : undefined
+    );
+
+    if (!provider || !resolvedApiKey) {
       return NextResponse.json(
         { success: false, error: 'Provider and API Key are required' },
         { status: 400 }
@@ -18,13 +24,13 @@ export async function POST(req: NextRequest) {
 
     switch (provider) {
       case 'gemini':
-        providerInstance = createGeminiProvider(apiKey, model || 'gemini-flash-latest');
+        providerInstance = createGeminiProvider(resolvedApiKey, model || 'gemini-flash-latest');
         break;
       case 'groq':
-        providerInstance = createGroqProvider(apiKey, model || 'llama-3.3-70b-versatile');
+        providerInstance = createGroqProvider(resolvedApiKey, model || 'llama-3.3-70b-versatile');
         break;
       case 'openai':
-        providerInstance = createOpenAIProvider(apiKey, model || 'gpt-4o-mini');
+        providerInstance = createOpenAIProvider(resolvedApiKey, model || 'gpt-4o-mini');
         break;
       default:
         return NextResponse.json(

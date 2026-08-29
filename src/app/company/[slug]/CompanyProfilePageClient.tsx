@@ -94,16 +94,9 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
         }
 
 
-        // Block pending/rejected companies from public view
+        // Verification status tracking
         if (docData.verificationStatus !== 'verified' && docData.isVerified !== true) {
-          // Allow unverified for now so the page loads, but mark it
-          console.warn('Company not yet verified:', slug);
-        }
-
-        if (docData.isActive === false) {
-          setNotFoundState(true);
-          setLoading(false);
-          return;
+          console.info('Rendering unverified or pending company profile in preview mode:', slug);
         }
 
         setCompany(docData);

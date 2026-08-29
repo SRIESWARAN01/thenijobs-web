@@ -41,7 +41,7 @@ export function createGroqProvider(apiKey: string, model: string): AIProvider {
         const response = await client.chat.completions.create({
           model,
           messages: [{ role: 'user', content: 'Say "hello" in one word.' }],
-          max_tokens: 10,
+          max_tokens: 100,
         });
         const text = response.choices?.[0]?.message?.content || '';
         return { success: !!text, latencyMs: Date.now() - start, model, provider: 'groq' };

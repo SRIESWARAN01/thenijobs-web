@@ -1,4 +1,4 @@
-import CompanyProfilePageClient from './CompanyProfilePageClient';
+import CompanyProfilePageClient from '@/app/company/[slug]/CompanyProfilePageClient';
 import { getAllCompanySlugsServer } from '@/lib/firebase/firestoreServer';
 
 const STATIC_COMPANY_SLUGS = [
@@ -24,15 +24,12 @@ export async function generateStaticParams() {
   return allSlugs.map((slug) => ({ slug }));
 }
 
-// SEO: generateMetadata for server-side title/meta on pre-built pages
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-
-  // For the fallback shell, use generic metadata
   if (slug === '_fallback') {
     return {
       title: 'Company Profile | THENIJOBS',
@@ -46,30 +43,14 @@ export async function generateMetadata({
 
   return {
     title: `${displayName} — Company Profile, Jobs & Reviews | THENIJOBS`,
-    description: `View ${displayName}'s verified company profile on THENIJOBS. See open job vacancies, reviews, products, services, and contact information. Apply for jobs at ${displayName} in Tamil Nadu.`,
-    openGraph: {
-      title: `${displayName} — Company Profile | THENIJOBS`,
-      description: `Explore verified company profile, jobs, and reviews for ${displayName} on THENIJOBS.`,
-      type: 'website',
-      url: `https://thenijobs.com/company/${slug}`,
-      siteName: 'THENIJOBS',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${displayName} — THENIJOBS`,
-      description: `View ${displayName}'s company profile, open jobs, and reviews.`,
-    },
+    description: `View ${displayName}'s verified company profile on THENIJOBS.`,
     alternates: {
       canonical: `https://thenijobs.com/company/${slug}`,
-    },
-    robots: {
-      index: true,
-      follow: true,
     },
   };
 }
 
-export default async function CompanyProfilePage({
+export default async function CompaniesSlugPage({
   params,
 }: {
   params: Promise<{ slug: string }>;

@@ -99,24 +99,8 @@ interface AuthProviderProps {
  */
 export function AuthProvider({ children }: AuthProviderProps) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('tj_cached_user');
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return null;
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('tj_cached_user');
-        if (cached) return false;
-      } catch {}
-    }
-    return true;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch Firestore user profile ──────────────────────────────
@@ -137,6 +121,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // ── Auth state listener ───────────────────────────────────────
   useEffect(() => {
+    // Check cached user on client mount
+    try {
+      const cached = localStorage.getItem('tj_cached_user');
+      if (cached) {
+        setUser(JSON.parse(cached));
+      }
+    } catch {}
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
 

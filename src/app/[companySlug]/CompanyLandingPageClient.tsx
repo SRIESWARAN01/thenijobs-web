@@ -11,7 +11,7 @@ import Header from '@/components/navigation/Header';
 import { getSampleCompanyData } from '@/lib/sampleCompanies';
 
 const RESERVED_SYSTEM_ROUTES = new Set([
-  'about', 'admin', 'api', 'businesses', 'company', 'contact', 'cookies',
+  'about', 'admin', 'api', 'businesses', 'companies', 'company', 'contact', 'cookies',
   'daily-jobs', 'employer', 'forgot-password', 'jobs', 'login', 'marketplace',
   'portfolio', 'pricing', 'privacy', 'profile', 'register', 'register-business',
   'seeker', 'services', 'terms', '_fallback',
@@ -92,7 +92,7 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
               );
               const snapName = await getDocs(qName);
               if (snapName.empty) {
-                // Graceful fallback: check built-in showcase companies (e.g. gk-clinic-chinnamanur)
+                // Graceful fallback: check built-in showcase companies (e.g. gk-clinic-chinnamanur, digital-theni-solutions)
                 const sampleData = getSampleCompanyData(slug);
                 if (sampleData && sampleData.company) {
                   setCompany(sampleData.company);
@@ -111,15 +111,8 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
               docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
             }
           }
-        }
- else {
+        } else {
           docData = { id: snapCompany.docs[0].id, ...snapCompany.docs[0].data() };
-        }
-
-        if (docData.isActive === false) {
-          setNotFoundState(true);
-          setLoading(false);
-          return;
         }
 
         setCompany(docData);

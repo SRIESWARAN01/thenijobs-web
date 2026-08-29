@@ -365,3 +365,18 @@ export async function getPublishedPortfolioSitesForSitemap(): Promise<
   }
 }
 
+/**
+ * Fetch all registered company slugs for generateStaticParams
+ */
+export async function getAllCompanySlugsServer(): Promise<string[]> {
+  try {
+    const companies = await runQueryREST<any>('companies', []);
+    const slugs = companies.map((c) => c.slug).filter(Boolean);
+    return Array.from(new Set(slugs));
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to query all company slugs:', err);
+    return [];
+  }
+}
+
+

@@ -103,7 +103,7 @@ export function getProviderClient(
     case 'gemini':
       return createGeminiProvider(apiKey, entry?.model || process.env.GEMINI_MODEL || 'gemini-flash-latest');
     case 'groq':
-      return createGroqProvider(apiKey, entry?.model || 'llama-3.3-70b-versatile');
+      return createGroqProvider(apiKey, entry?.model || process.env.GROQ_MODEL || 'openai/gpt-oss-120b');
     case 'openai':
       return createOpenAIProvider(apiKey, entry?.model || 'gpt-4o-mini');
     default:
@@ -131,10 +131,10 @@ export async function getActiveProvider(): Promise<{
     return { provider, config, isUsingFallback: false };
   }
 
-  // 2. Try Gemini via environment key
-  const envGeminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (envGeminiKey) {
-    provider = createGeminiProvider(envGeminiKey, process.env.GEMINI_MODEL || 'gemini-flash-latest');
+  // 2. Try Groq via environment key
+  const envGroqKey = process.env.GROQ_API_KEY;
+  if (envGroqKey) {
+    provider = createGroqProvider(envGroqKey, process.env.GROQ_MODEL || 'openai/gpt-oss-120b');
     return { provider, config, isUsingFallback: true };
   }
 
@@ -146,10 +146,10 @@ export async function getActiveProvider(): Promise<{
     }
   }
 
-  // 4. Try Groq env key
-  const envGroqKey = process.env.GROQ_API_KEY;
-  if (envGroqKey) {
-    provider = createGroqProvider(envGroqKey, 'llama-3.3-70b-versatile');
+  // 4. Try Gemini via environment key
+  const envGeminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (envGeminiKey) {
+    provider = createGeminiProvider(envGeminiKey, process.env.GEMINI_MODEL || 'gemini-flash-latest');
     return { provider, config, isUsingFallback: true };
   }
 

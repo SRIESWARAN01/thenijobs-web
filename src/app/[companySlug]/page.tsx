@@ -1,7 +1,7 @@
 import CompanyLandingPageClient from './CompanyLandingPageClient';
+import { getAllCompanySlugsServer } from '@/lib/firebase/firestoreServer';
 
 // Static fallback slugs for Next.js build-time export.
-// The '_fallback' entry enables runtime resolution of any registered company slug.
 const STATIC_LANDING_SLUGS = [
   '_fallback',
   'digital-theni-solutions',
@@ -19,8 +19,10 @@ const STATIC_LANDING_SLUGS = [
   'gk-clinic-chinnamanur',
 ];
 
-export function generateStaticParams() {
-  return STATIC_LANDING_SLUGS.map((companySlug) => ({ companySlug }));
+export async function generateStaticParams() {
+  const dynamicSlugs = await getAllCompanySlugsServer().catch(() => []);
+  const allSlugs = Array.from(new Set([...STATIC_LANDING_SLUGS, ...dynamicSlugs]));
+  return allSlugs.map((companySlug) => ({ companySlug }));
 }
 
 // Dynamic SEO metadata generator for company landing websites

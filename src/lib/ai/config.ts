@@ -62,4 +62,4 @@ export const AI_CREDIT_PACKS: AICreditPack[] = [
 
 export const RESUME_BUILDER_PRICE_INR = 15;
 
-export const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+export const DEFAULT_GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';

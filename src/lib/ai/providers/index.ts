@@ -60,23 +60,23 @@ export interface ProviderEntry {
 /** Available models per provider */
 export const PROVIDER_MODELS: Record<string, string[]> = {
   gemini: ['gemini-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'],
-  groq: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+  groq: ['openai/gpt-oss-120b', 'groq/compound-mini', 'groq/compound', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b'],
   openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
 };
 
 /** Default provider config */
 export const DEFAULT_AI_CONFIG: AIProviderConfig = {
-  activeProvider: 'gemini',
-  fallbackProvider: 'groq',
+  activeProvider: 'groq',
+  fallbackProvider: 'gemini',
   aiEnabled: true,
   providers: {
+    groq: {
+      apiKey: '', apiKeyMasked: '', model: 'openai/gpt-oss-120b',
+      availableModels: PROVIDER_MODELS.groq, status: 'untested', lastTested: null, lastError: null,
+    },
     gemini: {
       apiKey: '', apiKeyMasked: '', model: 'gemini-flash-latest',
       availableModels: PROVIDER_MODELS.gemini, status: 'untested', lastTested: null, lastError: null,
-    },
-    groq: {
-      apiKey: '', apiKeyMasked: '', model: 'llama-3.3-70b-versatile',
-      availableModels: PROVIDER_MODELS.groq, status: 'untested', lastTested: null, lastError: null,
     },
     openai: {
       apiKey: '', apiKeyMasked: '', model: 'gpt-4o-mini',

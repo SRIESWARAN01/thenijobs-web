@@ -21,6 +21,18 @@
     ],
     "rewrites": [
       {
+        "source": "/companies",
+        "destination": "/businesses.html"
+      },
+      {
+        "source": "/companies/**",
+        "destination": "/companies/_fallback.html"
+      },
+      {
+        "source": "/company",
+        "destination": "/businesses.html"
+      },
+      {
         "source": "/company/**",
         "destination": "/company/_fallback.html"
       },

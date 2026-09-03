@@ -6,8 +6,8 @@ import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import {
   Search, MapPin, X, BadgeCheck, Star,
-  Briefcase, SlidersHorizontal, ArrowRight, Building2,
-  MessageCircle, Phone
+  SlidersHorizontal, ArrowRight, Building2,
+  MessageCircle, Phone, Rocket,
 } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -25,108 +25,121 @@ interface Business {
 
 const BG_COLORS = ['#EFF6FF','#ECFDF5','#FFFBEB','#F5F3FF','#FFF1F2','#F0F9FF'];
 const TEXT_COLORS = ['#2563EB','#059669','#D97706','#7C3AED','#E11D48','#0284C7'];
+// Per-business gradient used as the cover-banner fallback when a company hasn't uploaded a cover photo —
+// keeps the same index as TEXT_COLORS so a business's empty-state banner and avatar initials share a hue.
+// The avatar's own fill stays solid white regardless (see BizCard) so it never blends into this banner.
+const BANNER_GRADIENTS = [
+  'linear-gradient(135deg, #2563EB, #1E3A8A)',
+  'linear-gradient(135deg, #059669, #065F46)',
+  'linear-gradient(135deg, #D97706, #92400E)',
+  'linear-gradient(135deg, #7C3AED, #4C1D95)',
+  'linear-gradient(135deg, #E11D48, #881337)',
+  'linear-gradient(135deg, #0284C7, #075985)',
+];
 
 function BizCard({ biz }: { biz: Business }) {
   const idx = biz.name.charCodeAt(0) % BG_COLORS.length;
   const cleanPhone = (biz.phone || '').replace(/[^0-9+]/g, '');
   const cleanWa = (biz.whatsapp || biz.phone || '').replace(/[^0-9]/g, '');
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${biz.name} ${biz.district} Tamil Nadu`)}`;
+  const [coverBroken, setCoverBroken] = useState(false);
+  const [logoBroken, setLogoBroken] = useState(false);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col hover:shadow-md hover:border-blue-100 transition-all duration-200 group">
-      {/* Cover Banner Image */}
-      <div className="h-32 sm:h-36 w-full relative bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 overflow-hidden flex items-center justify-center">
-        {biz.coverUrl ? (
-          <>
-            <div
-              className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
-              style={{ backgroundImage: `url(${biz.coverUrl})` }}
-            />
-            <img src={biz.coverUrl} alt={biz.name} className="relative z-10 w-full h-full object-contain object-center p-1" />
-          </>
+    <div className={`bg-white rounded-2xl overflow-hidden flex flex-col hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group border ${
+      biz.isPremium ? 'border-amber-200' : 'border-gray-100 hover:border-blue-100'
+    }`}>
+      {/* Cover Banner Image — fills the full banner (object-cover); falls back to a branded
+          gradient both when there's no cover photo AND when the stored URL fails to load.
+          The dominant element of the card — text/CTA footer below is kept to a slim strip. */}
+      <div className="h-40 sm:h-48 w-full relative overflow-hidden">
+        {biz.coverUrl && !coverBroken ? (
+          <img
+            src={biz.coverUrl}
+            alt={biz.name}
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={() => setCoverBroken(true)}
+          />
         ) : (
-          <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px]" />
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: BANNER_GRADIENTS[idx] }}>
+            <Building2 size={48} className="text-white/25" strokeWidth={1.5} />
+          </div>
         )}
         {biz.isPremium && (
-          <span className="absolute top-2 right-2 z-20 text-[9px] px-2 py-0.5 rounded-full font-extrabold bg-amber-400 text-amber-950 shadow-xs">
-            ⭐ FEATURED
+          <span className="absolute top-2 right-2 z-20 inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-extrabold bg-amber-400 text-amber-950 shadow-xs">
+            <Star size={9} fill="currentColor" strokeWidth={0} /> FEATURED
+          </span>
+        )}
+        {biz.isNew && !biz.isPremium && (
+          <span className="absolute top-2 right-2 z-20 text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-500 text-white shadow-xs">
+            NEW
           </span>
         )}
       </div>
 
-      <div className="p-5 pt-0 flex flex-col flex-1 gap-3 relative">
-        {/* Logo Avatar */}
-        <div className="-mt-7 mb-1 flex justify-between items-end">
-          <div className="w-14 h-14 rounded-2xl border-2 border-white shadow-md flex items-center justify-center font-bold text-sm flex-shrink-0 overflow-hidden bg-white"
-            style={{ background: biz.logoUrl ? '#FFFFFF' : BG_COLORS[idx], color: TEXT_COLORS[idx] }}>
-            {biz.logoUrl ? (
-              <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
+      {/* Slim text + CTA footer — name/tagline compressed to single lines, all CTAs in one row.
+          Logo avatar sits fully inside this footer (not overlapping the banner above) — an
+          overlapping avatar can't guarantee contrast against an arbitrary uploaded cover photo,
+          only against the fallback gradient, so it's kept on the guaranteed-white footer instead. */}
+      <div className="px-3 pt-2 pb-2.5 flex flex-col flex-1 gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="w-9 h-9 rounded-xl border border-gray-100 shadow-sm flex items-center justify-center font-bold text-xs flex-shrink-0 overflow-hidden bg-white"
+            style={{ color: TEXT_COLORS[idx] }}>
+            {biz.logoUrl && !logoBroken ? (
+              <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" onError={() => setLogoBroken(true)} />
             ) : (
               biz.logo
             )}
           </div>
-          {biz.isNew && !biz.isPremium && (
-            <span className="text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 mb-1">
-              NEW
-            </span>
-          )}
         </div>
 
-        {/* Company Title */}
-        <div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h2 className="font-bold text-gray-900 text-base leading-tight group-hover:text-blue-600 transition-colors break-words">{biz.name}</h2>
-            {biz.isVerified && <BadgeCheck size={16} className="text-emerald-500 flex-shrink-0" />}
-          </div>
-          {biz.tagline && <p className="text-xs text-gray-600 mt-1 line-clamp-2 break-words leading-relaxed">{biz.tagline}</p>}
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-bold text-gray-900 text-sm leading-tight truncate group-hover:text-blue-600 transition-colors">{biz.name}</h2>
+          {biz.isVerified && <BadgeCheck size={13} className="text-emerald-500 flex-shrink-0" />}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-          <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{biz.category}</span>
-          <span className="flex items-center gap-1 font-medium"><MapPin size={11} className="text-gray-400" />{biz.district}</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-gray-500">
+          <span className="font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{biz.category}</span>
+          <span className="flex items-center gap-1 font-medium"><MapPin size={9} className="text-gray-400" />{biz.district}</span>
           {biz.rating > 0 && (
             <span className="flex items-center gap-1 font-medium">
-              <Star size={11} className="fill-amber-400 text-amber-400" />
-              {biz.rating.toFixed(1)} ({biz.reviews})
-            </span>
-          )}
-          {biz.jobs > 0 && (
-            <span className="flex items-center gap-1 text-emerald-600 font-bold">
-              <Briefcase size={11} />{biz.jobs} jobs
+              <Star size={9} className="fill-amber-400 text-amber-400" />
+              {biz.rating.toFixed(1)}
             </span>
           )}
         </div>
 
-        {/* Contact CTAs (Call, WhatsApp, Google Maps) + View Profile */}
-        <div className="flex flex-col gap-2 mt-auto pt-3 border-t border-gray-100">
-          <div className="flex gap-1.5">
-            {cleanPhone && (
-              <a href={`tel:${cleanPhone}`}
-                className="flex-1 py-2 px-2.5 rounded-xl text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all flex items-center justify-center gap-1 border border-blue-100"
-                title="Call Company">
-                <Phone size={13} /> Call
-              </a>
-            )}
-            {cleanWa && (
-              <a href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi, I found ${biz.name} on THENIJOBS. I would like to make an enquiry.`)}`}
-                target="_blank" rel="noopener noreferrer"
-                className="flex-1 py-2 px-2.5 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-1 shadow-xs"
-                style={{ background: '#25D366' }}
-                title="WhatsApp Enquiry">
-                <MessageCircle size={13} /> WhatsApp
-              </a>
-            )}
-            <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer"
-              className="py-2 px-2.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all flex items-center justify-center gap-1 border border-amber-200"
-              title="Google Maps Location">
-              <MapPin size={13} /> Maps
+        {/* Contact CTAs (Call, WhatsApp, Google Maps) — compact icon-only, plus View Profile,
+            all in a single row so the footer stays a slim strip under the dominant banner.
+            tap-target-auto opts these out of the site-wide 44px min-tap-target rule
+            (globals.css `@media (pointer: coarse)`) — sized deliberately smaller here. */}
+        <div className="flex items-center gap-1.5 mt-auto pt-1.5">
+          {cleanPhone && (
+            <a href={`tel:${cleanPhone}`}
+              className="tap-target-auto w-8 h-8 shrink-0 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all flex items-center justify-center border border-blue-100"
+              title="Call Company" aria-label="Call">
+              <Phone size={14} />
             </a>
-          </div>
+          )}
+          {cleanWa && (
+            <a href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi, I found ${biz.name} on THENIJOBS. I would like to make an enquiry.`)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="tap-target-auto w-8 h-8 shrink-0 rounded-lg text-white transition-all flex items-center justify-center shadow-xs"
+              style={{ background: '#25D366' }}
+              title="WhatsApp Enquiry" aria-label="WhatsApp">
+              <MessageCircle size={14} />
+            </a>
+          )}
+          <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer"
+            className="tap-target-auto w-8 h-8 shrink-0 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all flex items-center justify-center border border-amber-200"
+            title="Google Maps Location" aria-label="Maps">
+            <MapPin size={14} />
+          </a>
 
           <Link href={`/company/${biz.slug}`}
-            className="w-full text-xs font-bold text-white rounded-xl py-2.5 flex items-center justify-center gap-1.5 transition-all hover:opacity-90 shadow-sm"
+            className="flex-1 text-[11px] font-bold text-white rounded-lg py-2 flex items-center justify-center gap-1 transition-all hover:opacity-90 shadow-sm"
             style={{ background: '#2563EB' }}>
-            View Full Profile <ArrowRight size={12} />
+            View Profile <ArrowRight size={11} />
           </Link>
         </div>
       </div>
@@ -230,22 +243,36 @@ export default function BusinessesPage() {
     <main style={{ background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
       <Header />
 
-      {/* Sticky search bar */}
+      {/* Sticky search bar — search + location share one bordered control, no nested boxes.
+          No redundant top offset needed: Header already reserves its own 64px spacer. */}
       <div className="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm px-4 sm:px-6 py-3">
         <div className="max-w-6xl mx-auto flex flex-wrap gap-2">
-          <div className="flex-[1_1_220px] flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5">
-            <Search size={15} className="text-gray-400 flex-shrink-0" />
-            <input value={search} onChange={e => setSearch(e.target.value)} type="text"
-              placeholder="Search businesses, services, categories..."
-              className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none" />
-            {search && <button onClick={() => setSearch('')}><X size={13} className="text-gray-400" /></button>}
-          </div>
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5">
-            <MapPin size={14} className="text-blue-500 flex-shrink-0" />
-            <select value={selectedDistrict} onChange={e => setSelectedDistrict(e.target.value)}
-              className="bg-transparent text-sm text-gray-700 outline-none pr-1 w-24 cursor-pointer">
-              {DISTRICTS.map(d => <option key={d}>{d}</option>)}
-            </select>
+          <div className="flex-[1_1_260px] flex items-stretch bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-300 transition-colors">
+            <div className="flex-1 flex items-center gap-2 px-4 py-2.5 min-w-0">
+              <Search size={15} className="text-gray-400 flex-shrink-0" />
+              <input id="biz-directory-search" value={search} onChange={e => setSearch(e.target.value)} type="text"
+                placeholder="Search businesses, services, categories..."
+                autoComplete="off" autoCorrect="off" spellCheck={false}
+                className="flex-1 min-w-0 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none" />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Clear search"
+                  className="tap-target-auto shrink-0 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+            <div className="w-px my-2 bg-gray-200 shrink-0" />
+            <div className="flex items-center gap-1.5 px-3 py-2.5 shrink-0">
+              <MapPin size={14} className="text-blue-500 flex-shrink-0" />
+              <select id="biz-directory-location" value={selectedDistrict} onChange={e => setSelectedDistrict(e.target.value)}
+                className="bg-transparent text-sm text-gray-700 outline-none pr-1 w-16 cursor-pointer">
+                {DISTRICTS.map(d => <option key={d}>{d}</option>)}
+              </select>
+            </div>
           </div>
           <button onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
@@ -380,7 +407,9 @@ export default function BusinessesPage() {
         {/* Register CTA */}
         <div className="mt-10 rounded-3xl p-8 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}>
           <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 bg-white" style={{ transform: 'translate(30%, -30%)' }} />
-          <div className="text-3xl mb-3">🚀</div>
+          <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center mx-auto mb-3">
+            <Rocket size={22} className="text-white" strokeWidth={2.25} />
+          </div>
           <h3 className="font-bold text-white text-xl mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
             List Your Business Free
           </h3>

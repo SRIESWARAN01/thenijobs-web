@@ -6,11 +6,18 @@ import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
 import {
-  Sparkles, ShieldCheck, Briefcase, Building2, Wrench, Users,
-  CheckCircle2, ArrowRight, ChevronDown, ChevronRight, Award, Target,
-  Heart, Lightbulb, TrendingUp, HelpCircle, MapPin, Phone, Mail, QrCode, FileText, Download, Check
+  Info, BrainCircuit, ShieldCheck, Briefcase, Building2, Wrench, Users,
+  CheckCircle2, ArrowRight, ChevronDown, ChevronUp, Award, Target,
+  Heart, Lightbulb, TrendingUp, QrCode, FileText, Download, Quote, Link2, MapPin,
 } from 'lucide-react';
-import { FacebookIcon, InstagramIcon, LinkedinIcon, YoutubeIcon } from '@/components/ui/BrandIcons';
+
+const PILLAR_STYLES: Record<string, { bg: string; text: string; solid: string; accent: string }> = {
+  blue: { bg: 'bg-blue-50', text: 'text-blue-600', solid: 'bg-blue-600 border-blue-600', accent: 'border-l-blue-600' },
+  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', solid: 'bg-emerald-600 border-emerald-600', accent: 'border-l-emerald-600' },
+  amber: { bg: 'bg-amber-50', text: 'text-amber-600', solid: 'bg-amber-600 border-amber-600', accent: 'border-l-amber-600' },
+  purple: { bg: 'bg-purple-50', text: 'text-purple-600', solid: 'bg-purple-600 border-purple-600', accent: 'border-l-purple-600' },
+  teal: { bg: 'bg-teal-50', text: 'text-teal-600', solid: 'bg-teal-600 border-teal-600', accent: 'border-l-teal-600' },
+};
 
 export default function AboutPage() {
   const [activePillar, setActivePillar] = useState(0);
@@ -28,7 +35,7 @@ export default function AboutPage() {
         '0-100% Real-time Trust Score scoring',
         'AI Career Coach & resume optimizer',
       ],
-      icon: Sparkles,
+      icon: BrainCircuit,
       color: 'blue',
     },
     {
@@ -89,6 +96,13 @@ export default function AboutPage() {
     },
   ];
 
+  const metrics = [
+    { icon: Users, value: '10,000+', label: 'Active Users', sub: 'Job Seekers & Professionals', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { icon: Building2, value: '1,500+', label: 'Verified Companies', sub: 'Employers & Partners', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { icon: Link2, value: '5,000+', label: 'Connections Made', sub: 'Successful Matchmaking', color: 'text-amber-600', bg: 'bg-amber-50' },
+    { icon: MapPin, value: '15+', label: 'Cities Served', sub: 'Across Tamil Nadu & India', color: 'text-purple-600', bg: 'bg-purple-50' },
+  ];
+
   const milestones = [
     {
       year: '2024',
@@ -125,6 +139,7 @@ export default function AboutPage() {
         'Stock Market', 'Leadership',
       ],
       gradient: 'from-blue-600 to-indigo-700',
+      ring: 'ring-blue-100',
     },
     {
       name: 'Anbarasan S',
@@ -138,6 +153,7 @@ export default function AboutPage() {
         'API Integration', 'Web Tech', 'UI/UX Design',
       ],
       gradient: 'from-purple-600 to-indigo-700',
+      ring: 'ring-purple-100',
     },
   ];
 
@@ -160,37 +176,32 @@ export default function AboutPage() {
       a: 'Yes! Basic registration is completely free for both job seekers and local businesses. We also offer affordable annual plans starting at ₹40/month for advanced features.',
     },
     {
-      q: 'How does the Digital ID card work?',
-      a: 'Your profile automatically generates a standard high-fidelity printable Digital ID card equipped with a unique auto-scannable QR link pointing to your digital portfolio.',
-    },
-    {
-      q: 'How does the VCF "Save Contact" feature benefit businesses?',
-      a: 'Visitors can save your corporate contact details directly into their phone address book with a single tap, making customer communication seamless.',
-    },
-    {
       q: 'Can freelancers use this platform?',
       a: 'Absolutely! Freelancers can showcase portfolios, list specialized services, receive direct lead inquiries, and export printable PDF service sheets.',
     },
   ];
 
   const currentPillar = pillars[activePillar];
+  const currentStyle = PILLAR_STYLES[currentPillar.color];
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] text-gray-900 font-sans pb-24">
+    <main className="min-h-screen bg-[#F8FAFC] text-gray-900 font-sans pb-24 lg:pb-16" style={{ fontFamily: "'Inter', sans-serif" }}>
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-16 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 text-white rounded-b-[3rem] overflow-hidden shadow-xl">
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]" />
-        
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-blue-100 backdrop-blur-md">
-            <Sparkles size={14} className="text-amber-400" /> About THENIJOBS
+      {/* Hero — compact, no redundant top offset (Header already reserves its own 64px spacer) */}
+      <section className="relative isolate overflow-hidden pt-[clamp(1.25rem,4dvh,2.5rem)] pb-[clamp(2.75rem,7dvh,4.5rem)] rounded-b-[2rem] shadow-lg">
+        <div className="absolute inset-0 -z-10" style={{ background: 'linear-gradient(160deg, #1D4ED8 0%, #1E3A8A 55%, #312E81 100%)' }} aria-hidden />
+        <div className="absolute inset-0 -z-10 opacity-40" style={{
+          backgroundImage: 'radial-gradient(circle at 15% 20%, rgba(255,255,255,0.12) 0%, transparent 45%), radial-gradient(circle at 85% 80%, rgba(16,185,129,0.18) 0%, transparent 50%)'
+        }} aria-hidden />
+
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center space-y-4">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-blue-100 backdrop-blur-sm">
+            <Info size={13} className="text-amber-300" fill="currentColor" fillOpacity={0.3} strokeWidth={2.25} /> About THENIJOBS
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-sans leading-tight">
-            Building Opportunities.<br />
-            Empowering People.<br />
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            Building Opportunities. Empowering People.{' '}
             <span className="text-emerald-400">Growing Businesses.</span>
           </h1>
 
@@ -198,385 +209,323 @@ export default function AboutPage() {
             THENIJOBS is India&apos;s pioneering AI-powered digital ecosystem uniting job seekers, employers, freelancers, and startups into one unified, collaborative networking platform.
           </p>
 
-          <div className="pt-4 flex items-center justify-center gap-3 flex-wrap">
+          <div className="pt-2 flex items-center justify-center gap-2.5 flex-wrap">
             <Link
               href="/register"
-              className="px-6 py-3 rounded-2xl bg-white text-blue-800 font-bold text-xs sm:text-sm hover:bg-blue-50 transition-all shadow-md flex items-center gap-2"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-white text-blue-800 font-bold text-xs sm:text-sm hover:bg-blue-50 transition-all shadow-md"
             >
-              Create Free Account <ArrowRight size={16} />
+              Create Free Account <ArrowRight size={14} />
             </Link>
             <Link
               href="/jobs"
-              className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all"
+              className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all"
             >
-              Browse Jobs & Services
+              Browse Jobs &amp; Services
             </Link>
           </div>
         </div>
       </section>
 
       {/* Key Metrics Counter Bar */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 relative z-20">
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-md grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-blue-600">10,000+</div>
-            <p className="text-xs font-bold text-gray-900 mt-1">Active Users</p>
-            <p className="text-[10px] text-gray-400">Job Seekers & Professionals</p>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600">1,500+</div>
-            <p className="text-xs font-bold text-gray-900 mt-1">Verified Companies</p>
-            <p className="text-[10px] text-gray-400">Employers & Partners</p>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-amber-600">5,000+</div>
-            <p className="text-xs font-bold text-gray-900 mt-1">Connections Made</p>
-            <p className="text-[10px] text-gray-400">Successful Matchmaking</p>
-          </div>
-          <div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-purple-600">15+</div>
-            <p className="text-xs font-bold text-gray-900 mt-1">Cities Served</p>
-            <p className="text-[10px] text-gray-400">Across Tamil Nadu & India</p>
-          </div>
-        </div>
-      </section>
-
-      {/* 5 Core Pillars Interactive Showcase */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 space-y-6">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Interactive Showcase</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Explore Our Core Modules
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500 max-w-lg mx-auto">
-            We integrate five pillars of professional advancement into a single digital environment.
-          </p>
-        </div>
-
-        {/* Pillar Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none justify-start sm:justify-center">
-          {pillars.map((p, idx) => (
-            <button
-              key={p.id}
-              onClick={() => setActivePillar(idx)}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
-                activePillar === idx
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              {p.titleEn}
-            </button>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-md grid grid-cols-2 md:grid-cols-4 gap-4">
+          {metrics.map(({ icon: Icon, value, label, sub, color, bg }) => (
+            <div key={label} className="text-center">
+              <div className={`w-9 h-9 rounded-xl ${bg} ${color} flex items-center justify-center mx-auto mb-1.5`}>
+                <Icon size={17} strokeWidth={2.25} />
+              </div>
+              <div className={`text-xl sm:text-2xl font-extrabold ${color}`}>{value}</div>
+              <p className="text-xs font-bold text-gray-900 mt-0.5">{label}</p>
+              <p className="text-[10px] text-gray-400">{sub}</p>
+            </div>
           ))}
         </div>
 
-        {/* Selected Pillar Content Box */}
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-sm space-y-4 transition-all">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <currentPillar.icon size={24} />
-            </div>
-            <div>
-              <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">{currentPillar.titleTa}</span>
-              <h3 className="text-lg font-bold text-gray-900">{currentPillar.titleEn}</h3>
-              <p className="text-xs font-semibold text-gray-500">{currentPillar.tagline}</p>
-            </div>
+        {/* 5 Core Pillars Interactive Showcase */}
+        <section className="pt-[clamp(2rem,5dvh,3rem)] space-y-4">
+          <div className="text-center space-y-1">
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Interactive Showcase</span>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Explore Our Core Modules
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 max-w-lg mx-auto">
+              We integrate five pillars of professional advancement into a single digital environment.
+            </p>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-700 leading-relaxed pt-2 border-t border-gray-100">
-            {currentPillar.desc}
-          </p>
+          {/* Pillar Tabs — horizontal scroll on mobile only; wraps cleanly on sm+ so nothing gets cut off */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 justify-start sm:mx-0 sm:px-0 sm:flex-wrap sm:justify-center sm:overflow-visible">
+            {pillars.map((p, idx) => {
+              const TabIcon = p.icon;
+              const style = PILLAR_STYLES[p.color];
+              const isActive = activePillar === idx;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setActivePillar(idx)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all border shrink-0 ${
+                    isActive ? `${style.solid} text-white shadow-sm` : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <TabIcon size={13} fill={isActive ? 'currentColor' : 'none'} fillOpacity={isActive ? 0.25 : 0} strokeWidth={2} />
+                  {p.titleEn}
+                </button>
+              );
+            })}
+          </div>
 
-          <div className="space-y-2 pt-2">
-            <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Key Features</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {currentPillar.features.map((feat, i) => (
-                <div key={i} className="p-3 rounded-2xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-800 flex items-start gap-2">
-                  <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
-                  <span>{feat}</span>
+          {/* Selected Pillar Content Box */}
+          <div className={`bg-white rounded-2xl border border-gray-100 border-l-4 ${currentStyle.accent} p-4 sm:p-5 shadow-sm space-y-3 transition-all`}>
+            <div className="flex items-center gap-2.5">
+              <div className={`w-10 h-10 rounded-xl ${currentStyle.bg} ${currentStyle.text} flex items-center justify-center shrink-0`}>
+                <currentPillar.icon size={19} strokeWidth={2.25} />
+              </div>
+              <div>
+                <span className={`text-[10px] font-bold ${currentStyle.text} uppercase tracking-wider`}>{currentPillar.titleTa}</span>
+                <h3 className="text-base font-bold text-gray-900 leading-tight">{currentPillar.titleEn}</h3>
+                <p className="text-[11px] font-semibold text-gray-500">{currentPillar.tagline}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-700 leading-relaxed pt-2 border-t border-gray-100">
+              {currentPillar.desc}
+            </p>
+
+            <div className="space-y-1.5 pt-1">
+              <h4 className="text-[11px] font-bold text-gray-900 uppercase tracking-wider">Key Features</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                {currentPillar.features.map((feat, i) => (
+                  <div key={i} className="p-2.5 rounded-lg bg-gray-50 border border-gray-100 text-xs font-medium text-gray-800 flex items-start gap-1.5">
+                    <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" strokeWidth={2.25} />
+                    <span>{feat}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Our Genesis */}
+        <section className="pt-[clamp(2.5rem,7dvh,4rem)]">
+          <div className="bg-gradient-to-br from-gray-900 to-blue-950 text-white rounded-2xl sm:rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
+            <div>
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Our Genesis</span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mt-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Empowering Career Seekers &amp; Small Businesses
+              </h2>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              THENIJOBS started with a foundational mission: bridging local opportunity gaps. Our team identified a significant bottleneck&mdash;job seekers struggled to locate direct career pathways, and small enterprise owners found it difficult to target customers or recruit local talent securely.
+            </p>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              We designed THENIJOBS as an all-in-one ecosystem where job seeking, freelancer catalogs, direct professional networking, and business listings co-exist seamlessly, backed by trust verification mechanisms.
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-white/10 text-xs">
+              {[
+                { icon: ShieldCheck, label: 'Trust Score', desc: 'Automated verification parameters', color: 'text-blue-300' },
+                { icon: QrCode, label: 'QR Portfolios', desc: 'Printable cards with QR links', color: 'text-emerald-300' },
+                { icon: Download, label: 'VCF Saves', desc: 'One-tap contact book export', color: 'text-amber-300' },
+                { icon: FileText, label: 'PDF Profiles', desc: 'Convert portfolios to PDF', color: 'text-purple-300' },
+              ].map(({ icon: Icon, label, desc, color }) => (
+                <div key={label} className="p-3 bg-white/5 rounded-xl border border-white/10">
+                  <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2.25} />
+                  <span className={`font-bold block mb-0.5 ${color}`}>{label}</span>
+                  <p className="text-[11px] text-slate-400">{desc}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Our Genesis */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16">
-        <div className="bg-gradient-to-br from-gray-900 to-blue-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg space-y-6">
-          <div>
-            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Our Genesis</span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Empowering Career Seekers & Small Businesses
+        {/* Vision & Mission */}
+        <section className="pt-[clamp(2.5rem,7dvh,4rem)] grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-sm space-y-3">
+            <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Target size={22} strokeWidth={2.25} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Our Vision</h3>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              To build India&apos;s most secure, high-integrity digital ecosystem connecting job seekers, professionals, freelancers, and businesses. We envision a landscape where recruitment is transparent, company directories are dynamic, and small entrepreneurs command premium digital status.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-sm space-y-3">
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <TrendingUp size={22} strokeWidth={2.25} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Our Mission</h3>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              Our mission is to create a digital home that empowers professionals to seek opportunities, showcase skills, promote products, grow direct leads, and organize networking groups. We combine AI indexing with robust web standards to make professional growth simple and accessible.
+            </p>
+          </div>
+        </section>
+
+        {/* Milestones / Evolution Timeline */}
+        <section className="pt-[clamp(2.5rem,7dvh,4rem)] space-y-5">
+          <div className="text-center space-y-1">
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Milestones</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              The Evolution of THENIJOBS
             </h2>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-            THENIJOBS started with a foundational mission: bridging local opportunity gaps. Our team identified a significant bottleneck—job seekers struggled to locate direct career pathways, and small enterprise owners found it difficult to target customers or recruit local talent securely.
-          </p>
-          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-            We designed THENIJOBS as an all-in-one ecosystem where job seeking, freelancer catalogs, direct professional networking, and business listings co-exist seamlessly, backed by trust verification mechanisms.
-          </p>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-gray-200 text-xs">
-            <div className="p-3 bg-gray-100 rounded-2xl border border-gray-200">
-              <span className="font-bold text-blue-300 block mb-1">Trust Score</span>
-              <p className="text-[11px] text-gray-400">Automated verification parameters</p>
-            </div>
-            <div className="p-3 bg-gray-100 rounded-2xl border border-gray-200">
-              <span className="font-bold text-emerald-300 block mb-1">QR Portfolios</span>
-              <p className="text-[11px] text-gray-400">Printable cards with QR links</p>
-            </div>
-            <div className="p-3 bg-gray-100 rounded-2xl border border-gray-200">
-              <span className="font-bold text-amber-300 block mb-1">VCF Saves</span>
-              <p className="text-[11px] text-gray-400">One-tap contact book export</p>
-            </div>
-            <div className="p-3 bg-gray-100 rounded-2xl border border-gray-200">
-              <span className="font-bold text-purple-300 block mb-1">PDF Profiles</span>
-              <p className="text-[11px] text-gray-400">Convert portfolios to PDF</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Vision & Mission */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-sm space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Target size={24} />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">Our Vision</h3>
-          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-            To build India&apos;s most secure, high-integrity digital ecosystem connecting job seekers, professionals, freelancers, and businesses. We envision a landscape where recruitment is transparent, company directories are dynamic, and small entrepreneurs command premium digital status.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-sm space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-            <TrendingUp size={24} />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">Our Mission</h3>
-          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-            Our mission is to create a digital home that empowers professionals to seek opportunities, showcase skills, promote products, grow direct leads, and organize networking groups. We combine AI indexing with robust web standards to make professional growth simple and accessible.
-          </p>
-        </div>
-      </section>
-
-      {/* Milestones / Evolution Timeline */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 space-y-6">
-        <div className="text-center space-y-1">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Milestones</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            The Evolution of THENIJOBS
-          </h2>
-        </div>
-
-        <div className="space-y-4">
-          {milestones.map((m, idx) => (
-            <div key={idx} className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row gap-4 items-start">
-              <span className="px-3.5 py-1.5 rounded-2xl bg-blue-600 text-white font-extrabold text-xs shrink-0">
-                {m.year}
-              </span>
-              <div>
-                <h3 className="text-sm sm:text-base font-bold text-gray-900">{m.title}</h3>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">{m.desc}</p>
+          <div className="relative space-y-4 sm:pl-2">
+            <div className="hidden sm:block absolute left-[38px] top-3 bottom-3 w-0.5 bg-blue-100" aria-hidden />
+            {milestones.map((m, idx) => (
+              <div key={idx} className="relative bg-white rounded-2xl sm:rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row gap-4 items-start">
+                <span className="relative z-10 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white font-extrabold text-xs shrink-0 shadow-sm">
+                  {m.year}
+                </span>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900">{m.title}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 leading-relaxed">{m.desc}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      {/* Leadership / Architects Section */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 space-y-6">
-        <div className="text-center space-y-1">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Architects</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Meet Our Leadership
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500">The visionaries driving innovation and digital growth at THENIJOBS.</p>
-        </div>
+        {/* Leadership / Architects Section */}
+        <section className="pt-[clamp(2.5rem,7dvh,4rem)] space-y-5">
+          <div className="text-center space-y-1">
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Architects</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Meet Our Leadership
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500">The visionaries driving innovation and digital growth at THENIJOBS.</p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {leadership.map((leader, i) => (
-            <div key={i} className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center gap-4">
-                  {leader.image ? (
-                    <img
-                      src={leader.image}
-                      alt={leader.name}
-                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover object-top border-2 border-gray-100 shadow-md bg-gray-100 shrink-0"
-                    />
-                  ) : (
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-tr ${leader.gradient} text-white font-bold text-xl flex items-center justify-center shadow-md shrink-0`}>
-                      {leader.name.split(' ').map(n => n[0]).join('')}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {leadership.map((leader, i) => (
+              <div key={i} className="bg-white rounded-2xl sm:rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    {leader.image ? (
+                      <img
+                        src={leader.image}
+                        alt={leader.name}
+                        className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover object-top ring-4 ${leader.ring} shadow-md bg-gray-100 shrink-0`}
+                      />
+                    ) : (
+                      <div className={`w-16 h-16 rounded-2xl bg-gradient-to-tr ${leader.gradient} text-white font-bold text-xl flex items-center justify-center shadow-md shrink-0`}>
+                        {leader.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">{leader.name}</h3>
+                      <p className="text-xs font-bold text-blue-600">{leader.role}</p>
                     </div>
-                  )}
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900">{leader.name}</h3>
-                    <p className="text-xs font-bold text-blue-600">{leader.role}</p>
+                  </div>
+
+                  <blockquote className="relative p-3 pl-4 bg-blue-50/60 rounded-xl border border-blue-100 text-xs italic text-blue-900">
+                    <Quote size={13} className="absolute -top-1.5 -left-1.5 text-blue-300 bg-blue-50 rounded-full p-0.5" fill="currentColor" fillOpacity={0.15} />
+                    &ldquo;{leader.quote}&rdquo;
+                  </blockquote>
+
+                  <p className="text-xs text-gray-600 leading-relaxed">{leader.desc}</p>
+                </div>
+
+                <div className="pt-3 border-t border-gray-100 space-y-2">
+                  <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Areas of Expertise</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {leader.expertise.map((exp, j) => (
+                      <span key={j} className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-800 text-[10px] font-semibold">
+                        {exp}
+                      </span>
+                    ))}
                   </div>
                 </div>
-
-                <blockquote className="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-xs italic text-blue-900">
-                  &ldquo;{leader.quote}&rdquo;
-                </blockquote>
-
-                <p className="text-xs text-gray-600 leading-relaxed">{leader.desc}</p>
               </div>
+            ))}
+          </div>
+        </section>
 
-              <div className="pt-3 border-t border-gray-100 space-y-2">
-                <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">Areas of Expertise</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {leader.expertise.map((exp, j) => (
-                    <span key={j} className="px-2.5 py-1 rounded-xl bg-gray-100 text-gray-800 text-[10px] font-semibold">
-                      {exp}
-                    </span>
-                  ))}
+        {/* Our Core Values */}
+        <section className="pt-[clamp(2.5rem,7dvh,4rem)] space-y-5">
+          <div className="text-center space-y-1">
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Standards</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Our Core Values
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {values.map((v, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <v.icon size={18} strokeWidth={2.25} />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900">
+                    {v.titleEn} <span className="text-blue-600 font-normal">({v.titleTa})</span>
+                  </h3>
+                  <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{v.desc}</p>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      {/* Our Core Values */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 space-y-6">
-        <div className="text-center space-y-1">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Standards</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Our Core Values
-          </h2>
-        </div>
+        {/* Frequently Asked Questions */}
+        <section className="pt-[clamp(2.5rem,7dvh,4rem)] max-w-2xl mx-auto w-full">
+          <div className="text-center space-y-1 mb-5">
+            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Help Center</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Frequently Asked Questions
+            </h2>
+          </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {values.map((v, i) => (
-            <div key={i} className="bg-white rounded-3xl border border-gray-100 p-4 shadow-sm space-y-2">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                <v.icon size={18} />
+          <div className="space-y-3">
+            {faqs.map((faq, idx) => (
+              <div key={idx} className={`bg-white rounded-2xl border overflow-hidden transition-all ${openFaq === idx ? 'border-blue-200 shadow-sm' : 'border-gray-100 shadow-xs'}`}>
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                  className="w-full p-4 sm:p-5 text-left font-bold text-xs sm:text-sm text-gray-900 flex items-center justify-between gap-3"
+                >
+                  <span>{faq.q}</span>
+                  {openFaq === idx ? <ChevronUp size={16} className="text-blue-600 shrink-0" /> : <ChevronDown size={16} className="text-gray-400 shrink-0" />}
+                </button>
+                {openFaq === idx && (
+                  <div className="px-5 pb-5 text-xs sm:text-sm text-gray-600 leading-relaxed border-t border-gray-50 pt-3">
+                    {faq.a}
+                  </div>
+                )}
               </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold text-gray-900">
-                  {v.titleEn} <span className="text-blue-600 font-normal">({v.titleTa})</span>
-                </h3>
-                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{v.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      {/* Frequently Asked Questions */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 space-y-6">
-        <div className="text-center space-y-1">
-          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Help Center</span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Frequently Asked Questions
-          </h2>
-        </div>
-
-        <div className="space-y-3">
-          {faqs.map((faq, idx) => (
-            <div key={idx} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-xs">
-              <button
-                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                className="w-full p-4 sm:p-5 text-left font-bold text-xs sm:text-sm text-gray-900 flex items-center justify-between gap-3 hover:bg-gray-50 transition-colors"
+        {/* Bottom CTA Banner */}
+        <section className="pt-[clamp(2.5rem,7dvh,4rem)]">
+          <div className="rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center text-white shadow-xl"
+            style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Join THENIJOBS Today
+            </h2>
+            <p className="text-xs sm:text-sm text-blue-100 max-w-lg mx-auto mt-2">
+              Create your corporate identity card, verify your trust status, post listings, download VCF/PDF assets, and connect with Indian professionals.
+            </p>
+            <div className="pt-5 flex items-center justify-center gap-2.5 flex-wrap">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-white text-blue-700 font-bold text-xs sm:text-sm hover:bg-blue-50 transition-all shadow-sm"
               >
-                <span>{faq.q}</span>
-                <ChevronDown size={16} className={`text-gray-400 transition-transform ${openFaq === idx ? 'rotate-180' : ''}`} />
-              </button>
-              {openFaq === idx && (
-                <div className="px-5 pb-5 text-xs sm:text-sm text-gray-600 leading-relaxed border-t border-gray-50 pt-3">
-                  {faq.a}
-                </div>
-              )}
+                Create Free Account <ArrowRight size={14} />
+              </Link>
+              <Link
+                href="/jobs"
+                className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white font-bold text-xs sm:text-sm transition-all"
+              >
+                Browse Jobs &amp; Services
+              </Link>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Bottom CTA Banner */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 pt-16">
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white rounded-3xl p-8 text-center space-y-4 shadow-xl">
-          <h2 className="text-2xl sm:text-3xl font-extrabold" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Join THENIJOBS Today
-          </h2>
-          <p className="text-xs sm:text-sm text-blue-100 max-w-lg mx-auto">
-            Create your corporate identity card, verify your trust status, post listings, download VCF/PDF assets, and connect with Indian professionals.
-          </p>
-          <div className="pt-2 flex items-center justify-center gap-3 flex-wrap">
-            <Link
-              href="/register"
-              className="px-6 py-3 rounded-2xl bg-white text-blue-800 font-bold text-xs sm:text-sm hover:bg-blue-50 transition-all shadow-md"
-            >
-              Create Free Account
-            </Link>
-            <Link
-              href="/jobs"
-              className="px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm transition-all"
-            >
-              Browse Jobs & Services
-            </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Footer Details */}
-      <footer className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 border-t border-gray-200 mt-16 space-y-8 text-xs text-gray-600">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 p-0.5 flex items-center justify-center shrink-0 shadow-xs">
-                <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
-              </div>
-              <span className="font-extrabold text-sm text-gray-900">THENI<span className="text-blue-600">JOBS</span></span>
-            </div>
-            <p className="text-[11px] text-gray-500 leading-relaxed">Search, connect, hire and grow. Theni jobs and business discovery platform.</p>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-gray-900 mb-2">For Job Seekers</h4>
-            <ul className="space-y-1.5 text-[11px]">
-              <li><Link href="/jobs" className="hover:underline">Browse Jobs</Link></li>
-              <li><Link href="/seeker/profile" className="hover:underline">Create Profile</Link></li>
-              <li><Link href="/seeker/resume" className="hover:underline">Upload Resume</Link></li>
-              <li><Link href="/seeker/job-alerts" className="hover:underline">Job Alerts</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-gray-900 mb-2">For Employers</h4>
-            <ul className="space-y-1.5 text-[11px]">
-              <li><Link href="/employer/post-job" className="hover:underline">Post a Job</Link></li>
-              <li><Link href="/employer/company-profile" className="hover:underline">Register Company</Link></li>
-              <li><Link href="/employer/talent-search" className="hover:underline">Browse Candidates</Link></li>
-              <li><Link href="/pricing" className="hover:underline">Pricing Plans</Link></li>
-            </ul>
-          </div>
-
-          <div className="space-y-1 text-[11px]">
-            <h4 className="font-bold text-gray-900 mb-2">Office Address</h4>
-            <p>North Street, A.M. Patty,</p>
-            <p>Uthamapalayam, Theni District,</p>
-            <p>Tamil Nadu, India.</p>
-            <p className="pt-2 font-bold text-blue-600">
-              <a href="tel:+919360519460" className="hover:underline">+91 93605 19460</a>
-            </p>
-            <p className="font-bold text-blue-600">
-              <a href="tel:+917094826886" className="hover:underline">+91 70948 26886</a>
-            </p>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-400 gap-2">
-          <span>Copyright 2026 THENIJOBS. All rights reserved.</span>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-            <Link href="/terms" className="hover:underline">Terms of Service</Link>
-            <Link href="/cookies" className="hover:underline">Cookies</Link>
-          </div>
-        </div>
-      </footer>
+        </section>
+      </div>
 
       <BottomNav />
       <FloatingWhatsApp />

@@ -68,11 +68,16 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: "#2563EB",
+  // Resize the content viewport (not just the visual one) when the on-screen keyboard
+  // opens, so `dvh`-based layouts reflow correctly instead of leaving a focused input
+  // hidden behind the keyboard. Matters most inside the app's Android WebView wrapper,
+  // where the default keyboard behavior is less consistent than a real mobile browser.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
+    <html lang="en-IN" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         <link rel="icon" href="/logo-sm.webp" type="image/webp" sizes="any" />
         <link rel="apple-touch-icon" href="/logo-sm.webp" />

@@ -5,6 +5,7 @@ import { ChevronRight, BadgeCheck, Star, MapPin, Briefcase, ArrowRight } from 'l
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { slugifyCompany } from '@/lib/companySlug';
 
 interface Company {
   id: string;
@@ -30,7 +31,7 @@ function BusinessCard({ biz }: { biz: Company }) {
   const colorIdx = biz.name.charCodeAt(0) % BG_COLORS.length;
 
   return (
-    <Link href={`/company/${biz.slug || biz.id}`} className="block group">
+    <Link href={`/company/${biz.slug}`} className="block group">
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-md hover:border-blue-100 transition-all duration-200 h-full flex flex-col">
         {/* Cover */}
         <div className="h-32 sm:h-36 w-full relative bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 overflow-hidden flex items-center justify-center">
@@ -275,7 +276,7 @@ export default function FeaturedBusinesses() {
           const d = doc.data();
           return {
             id: doc.id,
-            slug: d.slug || doc.id,
+            slug: d.slug || slugifyCompany(d.name || doc.id),
             name: d.name || 'Company',
             category: d.category || 'Business',
             district: d.district || 'Theni',

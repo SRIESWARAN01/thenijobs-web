@@ -160,15 +160,21 @@ img, video, svg {
    ============================================= */
 
 /* Global Text Visibility & Overflow Protection */
-h1, h2, h3, h4, h5, h6, p, span, a, label, button, input, select, textarea {
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-input, select, textarea {
-  min-width: 0;
-}
-button {
-  min-width: max-content;
+@layer base {
+  h1, h2, h3, h4, h5, h6, p, span, a, label, button, input, select, textarea {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  input, select, textarea {
+    min-width: 0;
+  }
+  /* Prevents short-label buttons from collapsing/truncating. Lives in @layer base
+     (not unlayered) so a component's own min-w-0/min-w-* utility can still win —
+     Tailwind utilities are meant to override base styles, and an unlayered version
+     of this rule silently beats utility classes regardless of specificity. */
+  button {
+    min-width: max-content;
+  }
 }
 .no-word-cut {
   word-break: normal;

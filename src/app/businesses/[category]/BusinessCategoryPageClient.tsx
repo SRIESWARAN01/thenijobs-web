@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import { MapPin, Briefcase, Building2, ArrowRight, BadgeCheck, Loader2 } from 'lucide-react';
+import { slugifyCompany } from '@/lib/companySlug';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
@@ -52,7 +53,7 @@ export default function BusinessCategoryPageClient({ category }: { category: str
           const d = doc.data();
           return {
             id: doc.id,
-            slug: d.slug || doc.id,
+            slug: d.slug || slugifyCompany(d.name || doc.id),
             name: d.name || '',
             tagline: d.tagline || d.description || '',
             location: d.district || 'Theni',

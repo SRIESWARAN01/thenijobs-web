@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { slugifyCompany } from '@/lib/companySlug';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT & Software', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance', 'Food & Beverage'];
 const DISTRICTS = ['All', 'Theni', 'Madurai', 'Dindigul', 'Coimbatore', 'Salem', 'Chennai', 'Trichy'];
@@ -182,7 +183,7 @@ export default function BusinessesPage() {
           const d = doc.data();
           return {
             id: doc.id,
-            slug: d.slug || doc.id,
+            slug: d.slug || slugifyCompany(d.name || doc.id),
             name: d.name || '',
             category: d.category || '',
             district: d.district || '',

@@ -3,20 +3,25 @@
 import { Suspense, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  Eye, EyeOff, Mail, Lock, Phone, ArrowRight, Loader2, 
-  AlertCircle, CheckCircle2, MessageSquare, PhoneCall, RefreshCw, Sparkles 
+import {
+  Eye, EyeOff, Mail, Lock, Phone, ArrowRight, Loader2,
+  AlertCircle, CheckCircle2, MessageSquare, PhoneCall, RefreshCw, Info
 } from 'lucide-react';
 import { GoogleIcon } from '@/components/ui/BrandIcons';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import AuthShell from '@/components/auth/AuthShell';
 
 type AuthMode = 'phone' | 'email';
 
+// Mobile OTP is temporarily unavailable — flip this back on to restore the toggle once
+// the phone-auth provider is stable again. All OTP logic below is left intact.
+const PHONE_LOGIN_ENABLED = false;
+
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8FAFC]" />}>
+    <Suspense fallback={<div className="min-h-dvh bg-[#F8FAFC]" />}>
       <LoginPageContent />
     </Suspense>
   );
@@ -39,7 +44,7 @@ function LoginPageContent() {
     signInWithEmail, signInWithGoogle, clearError
   } = useAuth() as any;
 
-  const [mode, setMode] = useState<AuthMode>('phone');
+  const [mode, setMode] = useState<AuthMode>('email');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'input' | 'otp'>('input');
@@ -317,95 +322,59 @@ function LoginPageContent() {
   const activeError = localError || authError;
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#F8FAFC', fontFamily: "'Inter', sans-serif" }}>
-      {/* Left panel — branding (desktop) */}
-      <div className="hidden lg:flex flex-col justify-between w-2/5 p-10 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 60%, #3B82F6 100%)' }}>
-        <div className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, white 0%, transparent 50%), radial-gradient(circle at 80% 20%, white 0%, transparent 50%)' }} />
+    <AuthShell>
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-slate-200/60 p-[clamp(0.875rem,3.5dvh,1.5rem)] sm:p-8">
+        <p className="text-[11px] font-bold tracking-[0.14em] text-blue-600 uppercase mb-[clamp(0.25rem,0.8dvh,0.375rem)]">Member Sign In</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          Welcome back 👋
+        </h1>
+        <p className="text-gray-500 text-sm mt-1 mb-[clamp(0.5rem,1.6dvh,1rem)]">Sign in to continue</p>
 
-        <Link href="/" className="flex items-center gap-3 relative z-10 select-none">
-          <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 shadow-sm">
-            <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+        {/* Primary/secondary auth-method toggle — plain text link, not a tab control */}
+        {PHONE_LOGIN_ENABLED && step === 'input' && (
+          <div className="mb-5">
+            <button
+              type="button"
+              onClick={() => { setMode(mode === 'email' ? 'phone' : 'email'); setLocalError(null); setSuccessMessage(null); }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+            >
+              {mode === 'email' ? (
+                <>Sign in with mobile number instead <Phone size={12} /></>
+              ) : (
+                <>← Use email &amp; password instead</>
+              )}
+            </button>
           </div>
-          <span className="font-extrabold text-2xl text-white tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</span>
-        </Link>
+        )}
 
-        <div className="relative z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold mb-4 backdrop-blur-sm">
-            <Sparkles size={13} className="text-yellow-300" /> Tamil Nadu&apos;s #1 Local Job Portal
+        {/* Phone/OTP sign-in temporarily unavailable notice */}
+        {!PHONE_LOGIN_ENABLED && step === 'input' && (
+          <div className="flex items-start gap-2 px-3 py-[clamp(0.3rem,1dvh,0.5rem)] rounded-xl bg-amber-50 border border-amber-200 mb-[clamp(0.5rem,1.6dvh,1rem)]">
+            <Info size={13} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-amber-800 leading-snug font-medium">
+              Mobile OTP is temporarily unavailable. Use email or Google below.
+            </p>
           </div>
-          <h2 className="text-4xl font-extrabold text-white leading-tight mb-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Find Your Dream Job in Theni
-          </h2>
-          <p className="text-blue-100 text-base leading-relaxed mb-8">
-            Connect with verified local employers across Theni, Cumbum, Periyakulam, Bodinayakanur &amp; Tamil Nadu. Fast OTP login &amp; instant apply.
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            {[['1,200+', 'Active Jobs'], ['500+', 'Companies'], ['98%', 'Placement Rate']].map(([v, l]) => (
-              <div key={l} className="text-center p-4 rounded-2xl bg-white/15 backdrop-blur border border-white/20">
-                <p className="text-2xl font-bold text-white">{v}</p>
-                <p className="text-xs text-blue-100 font-medium mt-1">{l}</p>
-              </div>
-            ))}
+        )}
+
+        {/* Error banner */}
+        {activeError && (
+          <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-red-50 border border-red-200 mb-4 animate-in fade-in">
+            <AlertCircle size={15} className="text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-red-700 leading-relaxed font-medium">{activeError}</p>
           </div>
-        </div>
+        )}
 
-        <p className="text-blue-200 text-xs relative z-10">© {new Date().getFullYear()} THENIJOBS. All rights reserved.</p>
-      </div>
-
-      {/* Right panel — login form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-sm">
-
-          {/* Mobile logo */}
-          <div className="lg:hidden flex justify-center mb-6">
-            <Link href="/" className="flex items-center gap-2.5 select-none">
-              <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-xs">
-                <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
-              </div>
-              <span className="font-extrabold text-xl text-slate-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                THENI<span className="text-blue-600">JOBS</span>
-              </span>
-            </Link>
+        {/* Success banner */}
+        {successMessage && (
+          <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-emerald-50 border border-emerald-200 mb-4 animate-in fade-in">
+            <CheckCircle2 size={15} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-emerald-700 leading-relaxed font-medium">{successMessage}</p>
           </div>
+        )}
 
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-7">
-            <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Welcome back 👋
-            </h1>
-            <p className="text-gray-500 text-sm mb-5">Sign in to your THENIJOBS account</p>
-
-            {/* Error banner */}
-            {activeError && (
-              <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-red-50 border border-red-200 mb-4 animate-in fade-in">
-                <AlertCircle size={15} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-700 leading-relaxed font-medium">{activeError}</p>
-              </div>
-            )}
-
-            {/* Success banner */}
-            {successMessage && (
-              <div className="flex items-start gap-2 px-3.5 py-3 rounded-xl bg-emerald-50 border border-emerald-200 mb-4 animate-in fade-in">
-                <CheckCircle2 size={15} className="text-emerald-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-emerald-700 leading-relaxed font-medium">{successMessage}</p>
-              </div>
-            )}
-
-            {/* Mode Toggle */}
-            <div className="flex bg-gray-100 rounded-2xl p-1 gap-1 mb-5">
-              {(['phone', 'email'] as AuthMode[]).map(m => (
-                <button key={m} onClick={() => { setMode(m); setStep('input'); setLocalError(null); setSuccessMessage(null); }}
-                  className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold capitalize transition-all ${
-                    mode === m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}>
-                  {m === 'phone' ? '📱 Mobile OTP' : '✉️ Email & Password'}
-                </button>
-              ))}
-            </div>
-
-            {step === 'input' ? (
-              <form onSubmit={mode === 'email' ? handleEmailLogin : handlePhoneSubmit} className="space-y-4">
+        {step === 'input' ? (
+              <form onSubmit={mode === 'email' ? handleEmailLogin : handlePhoneSubmit} className="space-y-[clamp(0.5rem,1.8dvh,0.875rem)]">
                 {mode === 'phone' ? (
                   <div>
                     <label className="text-xs font-semibold text-gray-700 block mb-1.5">Mobile Number</label>
@@ -455,7 +424,7 @@ function LoginPageContent() {
                 )}
 
                 <button type="submit" disabled={loading}
-                  className="w-full py-3.5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-md disabled:opacity-50"
+                  className="w-full py-3 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90 shadow-md disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}>
                   {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                   {mode === 'phone' ? 'Get OTP' : 'Sign In'}
@@ -469,7 +438,7 @@ function LoginPageContent() {
                 </div>
 
                 <button type="button" onClick={handleGoogleLogin} disabled={loading}
-                  className="w-full py-3 rounded-2xl text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-all">
+                  className="w-full py-2.5 rounded-2xl text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-all">
                   <GoogleIcon size={18} />
                   Continue with Google
                 </button>
@@ -567,15 +536,13 @@ function LoginPageContent() {
               </div>
             )}
 
-            <p className="text-center text-sm text-gray-500 mt-5">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-blue-600 font-semibold hover:text-blue-700">
-                Join Free
-              </Link>
-            </p>
-          </div>
-        </div>
+        <p className="text-center text-sm text-gray-500 mt-[clamp(0.5rem,1.6dvh,1rem)]">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="text-blue-600 font-semibold hover:text-blue-700">
+            Join Free
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

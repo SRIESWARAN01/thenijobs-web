@@ -4,6 +4,8 @@
  * This file has NO 'use client' directive and is safe for Next.js SSR/ISR.
  */
 
+import { slugifyCompany } from '@/lib/companySlug';
+
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
@@ -331,9 +333,9 @@ export async function getVerifiedCompanySlugsForSitemap(): Promise<
   );
 
   return companies
-    .filter((c) => c.slug)
+    .filter((c) => c.slug || c.name)
     .map((c) => ({
-      slug: c.slug,
+      slug: c.slug || slugifyCompany(c.name || c.id),
       updatedAt: c.updatedAt || c.createdAt || '',
     }));
 }
@@ -371,7 +373,9 @@ export async function getPublishedPortfolioSitesForSitemap(): Promise<
 export async function getAllCompanySlugsServer(): Promise<string[]> {
   try {
     const companies = await runQueryREST<any>('companies', []);
-    const slugs = companies.map((c) => c.slug).filter(Boolean);
+    const slugs = companies
+      .map((c) => c.slug || (c.name ? slugifyCompany(c.name) : c.id))
+      .filter(Boolean);
     return Array.from(new Set(slugs));
   } catch (err) {
     console.warn('[firestoreServer] Failed to query all company slugs:', err);

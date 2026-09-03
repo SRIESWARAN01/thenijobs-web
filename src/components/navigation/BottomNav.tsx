@@ -16,25 +16,24 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
-      <div className="mx-auto flex max-w-md items-center justify-around py-1.5">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-blue-100 bg-white px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.06)] lg:hidden">
+      <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
           return (
             <Link
               key={href}
               href={href}
-              className={`flex min-w-[56px] flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 text-[10px] font-bold transition-colors ${
-                isActive ? 'text-[#2563eb]' : 'text-slate-600 hover:text-slate-900'
+              className={`flex min-w-[56px] flex-col items-center gap-1 px-2 py-1 text-[10px] transition-colors ${
+                isActive ? 'text-blue-600 font-bold' : 'text-slate-500 font-medium hover:text-slate-700'
               }`}
             >
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${
-                  isActive ? 'bg-blue-50' : 'bg-transparent'
-                }`}
-              >
-                <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
-              </span>
+              <Icon
+                size={22}
+                strokeWidth={isActive ? 2.25 : 1.75}
+                fill={isActive ? 'currentColor' : 'none'}
+                fillOpacity={isActive ? 0.22 : 0}
+              />
               <span className="truncate max-w-[64px]">{label}</span>
             </Link>
           );

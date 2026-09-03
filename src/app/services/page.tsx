@@ -12,6 +12,7 @@ import {
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import ProductDetailModal from '@/components/company/ProductDetailModal';
+import { slugifyCompany } from '@/lib/companySlug';
 
 const CATEGORIES = ['All', 'Agriculture', 'Construction', 'Education', 'Healthcare', 'IT & Software', 'Textiles', 'Manufacturing', 'Retail', 'Transport', 'Finance'];
 const DISTRICTS = ['All', 'Theni', 'Madurai', 'Dindigul', 'Coimbatore', 'Salem'];
@@ -65,7 +66,7 @@ export default function ServicesPage() {
           const d = docSnap.data();
           return {
             id: docSnap.id,
-            slug: d.slug || docSnap.id,
+            slug: d.slug || slugifyCompany(d.name || docSnap.id),
             name: d.name || 'Verified Company',
             category: d.category || 'Business Services',
             district: d.district || 'Theni',

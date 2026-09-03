@@ -10,6 +10,7 @@ import { Loader2, Building2, ArrowLeft } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import { getSampleCompanyData } from '@/lib/sampleCompanies';
+import { slugifyCompany } from '@/lib/companySlug';
 
 export default function CompanyProfilePageClient({ slug: slugProp }: { slug: string }) {
   // CRITICAL: Read slug from the actual URL, not from the server prop.
@@ -97,6 +98,13 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
         // Verification status tracking
         if (docData.verificationStatus !== 'verified' && docData.isVerified !== true) {
           console.info('Rendering unverified or pending company profile in preview mode:', slug);
+        }
+
+        // A company doc without its own `slug` field must never leak its raw
+        // Firestore document ID into share links, ID cards, or canonical URLs —
+        // derive a readable one from the name instead.
+        if (!docData.slug) {
+          docData.slug = slugifyCompany(docData.name || docData.id);
         }
 
         setCompany(docData);
@@ -348,7 +356,7 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
     return (
       <main className="min-h-screen bg-[#F8FAFC] text-[#111827]" style={{ fontFamily: "'Inter', sans-serif" }}>
         <Header />
-        <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center pt-16">
+        <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
           <div className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center mb-5">
             <Building2 size={36} className="text-gray-300" />
           </div>

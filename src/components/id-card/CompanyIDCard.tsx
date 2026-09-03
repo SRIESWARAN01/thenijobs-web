@@ -8,6 +8,7 @@ import {
 import QRCodeGenerator from './QRCodeGenerator';
 import { getCompanyGrowthSlogan } from '@/lib/branding/slogans';
 import { useToast } from '@/contexts/ToastContext';
+import { slugifyCompany } from '@/lib/companySlug';
 
 interface CompanyIDCardProps {
   company: {
@@ -42,7 +43,7 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
   const toast = useToast();
   
   const companyId = `TNJ-C-${company.id.slice(0, 8).toUpperCase()}`;
-  const portfolioUrl = `${BASE_URL}/company/${company.slug || company.id}`;
+  const portfolioUrl = `${BASE_URL}/company/${company.slug || slugifyCompany(company.name || company.id)}`;
   const initial = company.name?.[0]?.toUpperCase() || 'C';
   const growthSlogan = getCompanyGrowthSlogan(company);
   const contactName = company.contactPerson || company.ownerName || 'Representative';

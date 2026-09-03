@@ -11,6 +11,7 @@ import { useCollection } from '@/hooks/useFirestore';
 import { useToast } from '@/contexts/ToastContext';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc, collection, getDocs, query, limit } from 'firebase/firestore';
+import { slugifyCompany } from '@/lib/companySlug';
 
 // High-volume keywords tailored to Theni District and Tamil Nadu industry hubs
 const HIGH_IMPACT_KEYWORDS = {
@@ -136,7 +137,7 @@ export default function AdminSeoManagementPage() {
         'seo.title': seoTitle,
         'seo.description': seoDesc,
         'seo.keywords': updatedKeywords,
-        'seo.canonicalUrl': `https://thenijobs.com/${collectionName === 'portfolioSites' ? 'portfolio/' + (item.customUrl || item.id) : 'company/' + (item.slug || item.id)}`,
+        'seo.canonicalUrl': `https://thenijobs.com/${collectionName === 'portfolioSites' ? 'portfolio/' + (item.customUrl || item.id) : 'company/' + (item.slug || slugifyCompany(item.name || item.id))}`,
         seoScore: 98,
         updatedAt: new Date(),
       });

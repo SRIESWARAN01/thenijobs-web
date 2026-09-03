@@ -63,7 +63,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
       <Header />
 
       {/* Main Container */}
-      <div className="pt-16 max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
 
         {/* Card Wrapper for Header + Profile Info */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-6 mt-4">
@@ -720,7 +720,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                                 `📍 *Location:* ${company.district || 'Theni'}, Tamil Nadu\n` +
                                 (p.imageUrl ? `🖼️ *Photo:* ${p.imageUrl}\n` : '') +
                                 (p.websiteUrl ? `🌐 *Product Link:* ${p.websiteUrl}\n` : '') +
-                                `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug || company.id}\n` +
+                                `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug}\n` +
                                 `━━━━━━━━━━━━━━━━━━━━\n` +
                                 `Hello, I found your product on THENIJOBS Marketplace and would like to order / inquire about this. Please share availability and delivery options.`
                               )}`}
@@ -1019,7 +1019,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                         `📍 *Location:* ${company.district || 'Theni'}, Tamil Nadu\n` +
                         (item.imageUrl ? `🖼️ *Photo Reference:* ${item.imageUrl}\n` : '') +
                         (item.websiteUrl ? `🌐 *Direct Link:* ${item.websiteUrl}\n` : '') +
-                        `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug || company.id}\n` +
+                        `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug}\n` +
                         `━━━━━━━━━━━━━━━━━━━━\n` +
                         `Hello, I found your ${isProduct ? 'product' : 'service'} on THENIJOBS Marketplace and would like to order / book this. Please share availability and payment/delivery details.`
                       )}`}

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, BadgeCheck } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { slugifyCompany } from '@/lib/companySlug';
 
 interface EmployerLogo {
   id: string;
@@ -44,7 +45,7 @@ export default function TrustedEmployersStrip() {
           const logoUrl = d.logoUrl || d.logo || '';
           logos.push({
             id: doc.id,
-            slug: d.slug || doc.id,
+            slug: d.slug || slugifyCompany(d.name || doc.id),
             name: d.name || 'Company',
             logoUrl: (logoUrl && typeof logoUrl === 'string' && logoUrl.startsWith('http')) ? logoUrl : undefined,
             initials: d.name ? d.name.substring(0, 2).toUpperCase() : 'CO',

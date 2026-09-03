@@ -117,7 +117,7 @@ const homeStructuredData = {
 
 export default function HomePage() {
   return (
-    <main className="pt-16 min-h-screen" style={{ background: '#F8FAFC' }}>
+    <main className="min-h-screen" style={{ background: '#F8FAFC' }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}

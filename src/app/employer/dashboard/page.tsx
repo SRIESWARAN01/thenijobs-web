@@ -1,29 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  Briefcase, Calendar, Eye, Clock, CheckCircle, XCircle, ChevronRight, Star,
-  Plus, Send, Loader2, UserCheck, Building2,
-  Users, BarChart2
+  BarChart2, Briefcase, Building2, Calendar, CheckCircle, ChevronRight, Clock,
+  Eye, Loader2, Plus, Send, Star, UserCheck, Users, XCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { useEmployerStats } from '@/hooks/useRealtimeStats';
 import { updateApplicationStatus } from '@/lib/firebase/firestoreService';
 import { where, limit, orderBy } from 'firebase/firestore';
+import { formatDate, type FirestoreTime } from '@/lib/firestoreTime';
+import {
+  Button, Card, CardBody, CardHeader, DataTable, EmptyState, PageHeader, PageShell,
+  Pill, Stat, StatGrid, type Column, type PillTone,
+} from '@/components/dashboard';
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  applied:             { bg: '#EFF6FF', text: '#2563EB', label: 'Applied' },
-  shortlisted:         { bg: '#F5F3FF', text: '#7C3AED', label: 'Shortlisted' },
-  interview_scheduled: { bg: '#FFFBEB', text: '#D97706', label: 'Interview' },
-  selected:            { bg: '#ECFDF5', text: '#059669', label: 'Selected' },
-  rejected:            { bg: '#FEF2F2', text: '#DC2626', label: 'Rejected' } };
+const STATUS_LABEL: Record<string, { tone: PillTone; label: string }> = {
+  applied:             { tone: 'info', label: 'Applied' },
+  shortlisted:         { tone: 'violet', label: 'Shortlisted' },
+  interview_scheduled: { tone: 'warning', label: 'Interview' },
+  selected:            { tone: 'success', label: 'Selected' },
+  rejected:            { tone: 'danger', label: 'Rejected' },
+};
+
+interface CompanyDoc { id: string; name?: string; viewCount?: number; verificationStatus?: string; rejectionReason?: string }
+interface ApplicationDoc { id: string; seekerName?: string; status?: string; createdAt?: FirestoreTime }
+interface JobDoc { id: string; title?: string; jobType?: string; isUrgent?: boolean; applicationsCount?: number; viewCount?: number; createdAt?: FirestoreTime }
+interface InterviewDoc { id: string; seekerName?: string; mode?: string; date?: string; time?: string }
 
 export default function EmployerDashboard() {
   const { user } = useAuth();
 
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
+  const { data: companies, loading: companyLoading } = useCollection<CompanyDoc>('companies', [
     where('ownerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
   const company = companies?.[0];
@@ -31,19 +41,19 @@ export default function EmployerDashboard() {
 
   const { stats, loading: statsLoading } = useEmployerStats(companyId);
 
-  const { data: applications, loading: appsLoading } = useCollection<any>('applications', [
+  const { data: applications, loading: appsLoading } = useCollection<ApplicationDoc>('applications', [
     where('companyId', '==', companyId || ''),
     orderBy('createdAt', 'desc'),
     limit(5)
   ], { skip: !companyId });
 
-  const { data: activeJobs, loading: jobsLoading } = useCollection<any>('jobs', [
+  const { data: activeJobs, loading: jobsLoading } = useCollection<JobDoc>('jobs', [
     where('companyId', '==', companyId || ''),
     where('isActive', '==', true),
     limit(6)
   ], { skip: !companyId });
 
-  const { data: interviews, loading: interviewsLoading } = useCollection<any>('interviews', [
+  const { data: interviews } = useCollection<InterviewDoc>('interviews', [
     where('companyId', '==', companyId || ''),
     limit(5)
   ], { skip: !companyId });
@@ -62,292 +72,257 @@ export default function EmployerDashboard() {
 
   const loading = companyLoading || statsLoading || appsLoading || jobsLoading;
 
-  const statItems = [
-    { label: 'Active Jobs', value: stats?.activeJobs || 0, icon: Briefcase, bg: '#EFF6FF', color: '#2563EB' },
-    { label: 'Applications', value: stats?.totalApplications || 0, icon: Users, bg: '#F5F3FF', color: '#7C3AED' },
-    { label: 'Shortlisted', value: stats?.shortlisted || 0, icon: UserCheck, bg: '#ECFDF5', color: '#059669' },
-    { label: 'Interviews', value: stats?.interviews || 0, icon: Calendar, bg: '#FFFBEB', color: '#D97706' },
-    { label: 'Hired', value: stats?.hired || 0, icon: Star, bg: '#FFF1F2', color: '#E11D48' },
-    { label: 'Profile Views', value: company?.viewCount || 0, icon: Eye, bg: '#F0F9FF', color: '#0284C7' },
-  ];
+  const jobColumns = useMemo<Column<JobDoc>[]>(() => [
+    {
+      key: 'title',
+      header: 'Job title',
+      card: 'title',
+      sortValue: j => j.title ?? '',
+      render: j => (
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="truncate font-semibold text-slate-900">{j.title || 'Untitled job'}</p>
+            {j.isUrgent && <Pill tone="danger">Urgent</Pill>}
+          </div>
+          <p className="mt-0.5 text-xs text-slate-500">Posted {formatDate(j.createdAt)}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'jobType',
+      header: 'Type',
+      hideBelow: 'lg',
+      sortValue: j => j.jobType ?? '',
+      render: j => <Pill tone="info">{j.jobType || 'Full time'}</Pill>,
+    },
+    {
+      key: 'applicationsCount',
+      header: 'Applications',
+      align: 'center',
+      sortValue: j => j.applicationsCount ?? 0,
+      render: j => <span className="font-semibold tabular-nums text-slate-900">{j.applicationsCount || 0}</span>,
+    },
+    {
+      key: 'viewCount',
+      header: 'Views',
+      align: 'center',
+      hideBelow: 'xl',
+      sortValue: j => j.viewCount ?? 0,
+      render: j => <span className="tabular-nums">{j.viewCount || 0}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      render: () => <Pill tone="success" dot>Active</Pill>,
+    },
+  ], []);
 
   if (!companyId && !companyLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-96 py-20 text-center px-4"
-        style={{ fontFamily: "'Inter', sans-serif" }}>
-        <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-          <Building2 size={28} className="text-blue-500" />
-        </div>
-        <h2 className="text-lg font-bold text-gray-900 mb-2" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          No Company Registered
-        </h2>
-        <p className="text-sm text-gray-500 max-w-sm mb-5 leading-relaxed">
-          Register your company profile first to access the dashboard and start posting jobs.
-        </p>
-        <Link href="/employer/company-profile"
-          className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm">
-          Create Company Profile
-        </Link>
-      </div>
+      <PageShell>
+        <EmptyState
+          icon={Building2}
+          title="No company registered"
+          description="Register your company profile to access the dashboard and start posting jobs."
+          action={
+            <Link href="/employer/company-profile">
+              <Button variant="primary">Create company profile</Button>
+            </Link>
+          }
+        />
+      </PageShell>
     );
   }
 
-  return (
-    <div className="p-4 sm:p-6 space-y-5" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Employer Dashboard
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {company?.name || 'Your Company'} — manage your hiring pipeline
-          </p>
-        </div>
-        <Link href="/employer/post-job"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm">
-          <Plus size={16} /> Post New Job
-        </Link>
-      </div>
+  const funnel = [
+    { label: 'Applied', count: stats?.totalApplications || 0, bg: '#EFF6FF', color: '#2563EB' },
+    { label: 'Shortlisted', count: stats?.shortlisted || 0, bg: '#F5F3FF', color: '#7C3AED' },
+    { label: 'Interviewed', count: stats?.interviews || 0, bg: '#FFFBEB', color: '#D97706' },
+    { label: 'Hired', count: stats?.hired || 0, bg: '#ECFDF5', color: '#059669' },
+  ];
 
-      {/* Company Status Banner */}
+  return (
+    <PageShell>
+      <PageHeader
+        title="Employer dashboard"
+        description={`${company?.name || 'Your company'} — manage your hiring pipeline.`}
+        actions={
+          <Link href="/employer/post-job">
+            <Button variant="primary">
+              <Plus size={16} /> Post new job
+            </Button>
+          </Link>
+        }
+      />
+
       {company && company.verificationStatus !== 'verified' && (
-        <div className={`flex items-center gap-3 p-3.5 rounded-2xl border text-sm font-medium ${
-          company.verificationStatus === 'pending'
-            ? 'bg-amber-50 border-amber-200 text-amber-800'
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
-          {company.verificationStatus === 'pending' ? '⏳' : '❌'}
+        <div
+          role="status"
+          className={`rounded-2xl border p-3.5 text-sm font-medium ${
+            company.verificationStatus === 'pending'
+              ? 'border-amber-200 bg-[#FFFBEB] text-[#92400E]'
+              : 'border-rose-200 bg-[#FEF2F2] text-[#991B1B]'
+          }`}
+        >
           {company.verificationStatus === 'pending'
-            ? 'Your company profile is under review. You can still post jobs, but they will be visible after approval.'
-            : `Company rejected: ${company.rejectionReason || 'See company profile for details.'}`}
+            ? 'Your company profile is under review. You can still post jobs, but they become visible after approval.'
+            : `Company rejected: ${company.rejectionReason || 'See your company profile for details.'}`}
         </div>
       )}
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Loading dashboard...</p>
-        </div>
-      ) : (
-        <>
-          {/* KPI Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-            {statItems.map(stat => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 flex-shrink-0"
-                    style={{ background: stat.bg }}>
-                    <Icon size={18} style={{ color: stat.color }} />
-                  </div>
-                  <p className="text-xl font-bold text-gray-900">{stat.value.toLocaleString('en-IN')}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5 font-medium">{stat.label}</p>
-                </div>
-              );
-            })}
-          </div>
+      <StatGrid columns={6}>
+        <Stat label="Active jobs" value={stats?.activeJobs || 0} icon={Briefcase} tone="blue" loading={loading} />
+        <Stat label="Applications" value={stats?.totalApplications || 0} icon={Users} tone="violet" loading={loading} />
+        <Stat label="Shortlisted" value={stats?.shortlisted || 0} icon={UserCheck} tone="emerald" loading={loading} />
+        <Stat label="Interviews" value={stats?.interviews || 0} icon={Calendar} tone="amber" loading={loading} />
+        <Stat label="Hired" value={stats?.hired || 0} icon={Star} tone="rose" loading={loading} />
+        <Stat label="Profile views" value={company?.viewCount || 0} icon={Eye} tone="slate" loading={loading} />
+      </StatGrid>
 
-          {/* Main grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-            {/* Recent Applications */}
-            <div className="xl:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#F5F3FF' }}>
-                    <Send size={15} style={{ color: '#7C3AED' }} />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-900">Recent Applications</h2>
-                    <p className="text-[10px] text-slate-500">Latest candidate submissions</p>
-                  </div>
-                </div>
-                <Link href="/employer/candidates" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
-                  View all →
-                </Link>
-              </div>
-
-              <div className="divide-y divide-gray-50">
-                {applications.length === 0 ? (
-                  <div className="p-10 text-center">
-                    <Users size={28} className="mx-auto text-gray-200 mb-2" />
-                    <p className="text-xs text-slate-600 font-medium">No applications received yet</p>
-                  </div>
-                ) : applications.map(app => {
-                  const st = STATUS_STYLES[app.status] || STATUS_STYLES['applied'];
-                  return (
-                    <div key={app.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-blue-600 flex-shrink-0"
-                        style={{ background: '#EFF6FF' }}>
+      <div className="grid gap-4 sm:gap-6 xl:grid-cols-3">
+        {/* Recent applications */}
+        <Card className="overflow-hidden xl:col-span-2">
+          <CardHeader
+            title="Recent applications"
+            description="Latest candidate submissions"
+            action={<Link href="/employer/candidates" className="text-xs font-semibold text-blue-600 hover:text-blue-700">View all →</Link>}
+          />
+          {appsLoading ? (
+            <div className="flex justify-center p-8"><Loader2 size={20} className="animate-spin text-blue-600" /></div>
+          ) : applications.length === 0 ? (
+            <EmptyState variant="inline" icon={Users} title="No applications received yet" />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {applications.map(app => {
+                const st = STATUS_LABEL[app.status ?? 'applied'] ?? STATUS_LABEL.applied;
+                return (
+                  <li key={app.id} className="flex flex-col gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50/70 sm:flex-row sm:items-center sm:px-5">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <span
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-[#2563EB]"
+                        style={{ background: '#EFF6FF' }}
+                      >
                         {initials(app.seekerName)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900 truncate">{app.seekerName || 'Candidate'}</p>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0"
-                            style={{ background: st.bg, color: st.text }}>
-                            {st.label}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          {app.createdAt ? new Date(app.createdAt?.toMillis?.() || app.createdAt).toLocaleDateString() : 'Recent'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {actionLoading === app.id ? (
-                          <Loader2 size={14} className="animate-spin text-blue-600" />
-                        ) : app.status === 'applied' ? (
-                          <>
-                            <button onClick={() => handleAppStatus(app.id, 'shortlisted')}
-                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all">
-                              <CheckCircle size={13} />
-                            </button>
-                            <button onClick={() => handleAppStatus(app.id, 'rejected')}
-                              className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-all">
-                              <XCircle size={13} />
-                            </button>
-                          </>
-                        ) : null}
-                        <Link href={`/employer/candidates`}
-                          className="p-1.5 rounded-lg bg-gray-50 text-slate-500 hover:bg-gray-100 transition-all">
-                          <Eye size={13} />
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Interviews */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#FFFBEB' }}>
-                    <Calendar size={15} style={{ color: '#D97706' }} />
-                  </div>
-                  <h2 className="text-sm font-semibold text-gray-900">Upcoming Interviews</h2>
-                </div>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {interviews.length === 0 ? (
-                  <div className="p-10 text-center">
-                    <Calendar size={28} className="mx-auto text-gray-200 mb-2" />
-                    <p className="text-xs text-slate-600 font-medium">No scheduled interviews</p>
-                  </div>
-                ) : interviews.map(iv => (
-                  <div key={iv.id} className="px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-gray-900">{iv.seekerName || 'Candidate'}</p>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: '#FFFBEB', color: '#D97706' }}>
-                        {iv.mode || 'Phone'}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-sm font-semibold text-slate-900">{app.seekerName || 'Candidate'}</span>
+                          <Pill tone={st.tone}>{st.label}</Pill>
+                        </span>
+                        <span className="mt-0.5 block text-xs text-slate-500">{formatDate(app.createdAt)}</span>
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                      <Clock size={11} />
-                      <span>{iv.date} at {iv.time}</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {actionLoading === app.id ? (
+                        <Loader2 size={15} className="animate-spin text-blue-600" aria-label="Saving" />
+                      ) : app.status === 'applied' ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="flex-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50 sm:flex-none"
+                            onClick={() => handleAppStatus(app.id, 'shortlisted')}
+                          >
+                            <CheckCircle size={14} /> Shortlist
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="flex-1 border-rose-200 text-rose-700 hover:bg-rose-50 sm:flex-none"
+                            onClick={() => handleAppStatus(app.id, 'rejected')}
+                          >
+                            <XCircle size={14} /> Reject
+                          </Button>
+                        </>
+                      ) : null}
+                      <Link href="/employer/candidates" aria-label={`View ${app.seekerName ?? 'candidate'}`}>
+                        <Button size="sm" variant="ghost"><Eye size={14} /></Button>
+                      </Link>
                     </div>
-                  </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+
+        {/* Interviews */}
+        <Card className="flex flex-col overflow-hidden">
+          <CardHeader title="Upcoming interviews" action={<Calendar size={16} className="text-slate-400" aria-hidden />} />
+          <div className="flex-1">
+            {interviews.length === 0 ? (
+              <EmptyState variant="inline" icon={Calendar} title="No scheduled interviews" />
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {interviews.map(iv => (
+                  <li key={iv.id} className="px-4 py-3.5 transition-colors hover:bg-slate-50/70 sm:px-5">
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-semibold text-slate-900">{iv.seekerName || 'Candidate'}</p>
+                      <Pill tone="warning">{iv.mode || 'Phone'}</Pill>
+                    </div>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <Clock size={11} aria-hidden />
+                      {iv.date || 'Date TBC'}{iv.time ? ` at ${iv.time}` : ''}
+                    </p>
+                  </li>
                 ))}
-              </div>
-              <div className="px-5 py-3 border-t border-gray-50">
-                <Link href="/employer/interviews" className="text-xs text-blue-600 font-semibold flex items-center gap-1 hover:text-blue-700">
-                  View all interviews <ChevronRight size={13} />
-                </Link>
-              </div>
-            </div>
+              </ul>
+            )}
           </div>
+          <div className="border-t border-slate-100 px-4 py-3 sm:px-5">
+            <Link href="/employer/interviews" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700">
+              View all interviews <ChevronRight size={13} />
+            </Link>
+          </div>
+        </Card>
+      </div>
 
-          {/* Active Jobs table */}
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#EFF6FF' }}>
-                  <Briefcase size={15} style={{ color: '#2563EB' }} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-900">Active Jobs</h2>
-                  <p className="text-[10px] text-slate-500">Your current job postings</p>
-                </div>
-              </div>
-              <Link href="/employer/jobs" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
-                Manage Jobs →
+      {/* Active jobs */}
+      <Card className="overflow-hidden">
+        <CardHeader
+          title="Active jobs"
+          description="Your current job postings"
+          action={<Link href="/employer/jobs" className="text-xs font-semibold text-blue-600 hover:text-blue-700">Manage jobs →</Link>}
+        />
+        <CardBody className="p-0">
+          <DataTable
+            label="Active job postings"
+            className="rounded-none border-0"
+            columns={jobColumns}
+            rows={activeJobs}
+            getRowId={j => j.id}
+            loading={jobsLoading}
+            emptyIcon={Briefcase}
+            emptyTitle="No active job listings"
+            emptyDescription="Post a job and it will appear here with its views and applications."
+            emptyAction={
+              <Link href="/employer/post-job">
+                <Button variant="primary"><Plus size={16} /> Post a job</Button>
               </Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ background: '#F8FAFC' }}>
-                    <th className="text-left px-5 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Job Title</th>
-                    <th className="text-left px-3 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Type</th>
-                    <th className="text-center px-3 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Applications</th>
-                    <th className="text-center px-3 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Views</th>
-                    <th className="text-center px-3 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeJobs.length === 0 ? (
-                    <tr><td colSpan={5} className="px-5 py-10 text-center text-xs text-slate-500">
-                      No active job listings. <Link href="/employer/post-job" className="text-blue-600 font-semibold">Post a job →</Link>
-                    </td></tr>
-                  ) : activeJobs.map(job => (
-                    <tr key={job.id} className="border-t border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">{job.title}</p>
-                          {job.isUrgent && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded" style={{ background: '#FEF2F2', color: '#DC2626' }}>URGENT</span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          Posted {job.createdAt ? new Date(job.createdAt?.toMillis?.() || job.createdAt).toLocaleDateString() : 'Recently'}
-                        </p>
-                      </td>
-                      <td className="px-3 py-3.5 hidden sm:table-cell">
-                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-semibold" style={{ background: '#EFF6FF', color: '#2563EB' }}>
-                          {job.jobType || 'Full Time'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3.5 text-center font-bold text-gray-900">{job.applicationsCount || 0}</td>
-                      <td className="px-3 py-3.5 text-center text-gray-500 hidden md:table-cell">{job.viewCount || 0}</td>
-                      <td className="px-3 py-3.5 text-center">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold" style={{ background: '#ECFDF5', color: '#059669' }}>Active</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+            }
+          />
+        </CardBody>
+      </Card>
 
-          {/* Recruitment Funnel */}
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#F5F3FF' }}>
-                <BarChart2 size={15} style={{ color: '#7C3AED' }} />
+      {/* Recruitment funnel */}
+      <Card>
+        <CardHeader title="Recruitment funnel" action={<BarChart2 size={16} className="text-slate-400" aria-hidden />} />
+        <CardBody>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {funnel.map(stage => (
+              <div
+                key={stage.label}
+                className="rounded-2xl border p-4 text-center"
+                style={{ background: stage.bg, borderColor: stage.bg }}
+              >
+                <p className="text-2xl font-bold tabular-nums" style={{ color: stage.color }}>{stage.count}</p>
+                <p className="mt-1 text-xs font-medium text-slate-600">{stage.label}</p>
               </div>
-              <h2 className="text-sm font-semibold text-gray-900">Recruitment Funnel</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: 'Applied', count: stats?.totalApplications || 0, bg: '#EFF6FF', color: '#2563EB' },
-                { label: 'Shortlisted', count: stats?.shortlisted || 0, bg: '#F5F3FF', color: '#7C3AED' },
-                { label: 'Interviewed', count: stats?.interviews || 0, bg: '#FFFBEB', color: '#D97706' },
-                { label: 'Hired', count: stats?.hired || 0, bg: '#ECFDF5', color: '#059669' },
-              ].map(stage => (
-                <div key={stage.label} className="text-center p-4 rounded-2xl border"
-                  style={{ background: stage.bg, borderColor: stage.bg }}>
-                  <p className="text-2xl font-bold mb-1" style={{ color: stage.color, fontFamily: "'Poppins', sans-serif" }}>
-                    {stage.count}
-                  </p>
-                  <p className="text-xs text-gray-600 font-medium">{stage.label}</p>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
-        </>
-      )}
-    </div>
+        </CardBody>
+      </Card>
+    </PageShell>
   );
 }

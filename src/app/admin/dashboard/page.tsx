@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
 import {
-  Users, Building2, Briefcase, FileText, TrendingUp,
-  CheckCircle, AlertTriangle,
-  ChevronRight, Loader2, Activity, Bell
+  Activity, AlertTriangle, Bell, Briefcase, Building2, CheckCircle,
+  ChevronRight, FileText, Loader2, TrendingUp, Users,
 } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/useRealtimeStats';
 import { useCollection } from '@/hooks/useFirestore';
 import { approveCompany, rejectCompany, approveJob, rejectJob, getActivityLogs } from '@/lib/firebase/firestoreService';
 import { useAuth } from '@/hooks/useAuth';
 import { where, orderBy, limit } from 'firebase/firestore';
+import {
+  Button, Card, CardHeader, EmptyState, PageHeader, PageShell, Pill, Skeleton, StatGrid,
+} from '@/components/dashboard';
 
 function useAnimatedCount(target: number) {
   const [count, setCount] = useState(0);
@@ -29,32 +32,97 @@ function useAnimatedCount(target: number) {
   return count;
 }
 
-const STAT_CONFIG = [
-  { key: 'totalUsers', label: 'Total Users', icon: Users, bg: '#EFF6FF', color: '#2563EB', href: '/admin/users' },
-  { key: 'totalCompanies', label: 'Companies', icon: Building2, bg: '#ECFDF5', color: '#059669', href: '/admin/businesses' },
-  { key: 'totalJobs', label: 'Total Jobs', icon: Briefcase, bg: '#F5F3FF', color: '#7C3AED', href: '/admin/jobs' },
-  { key: 'activeJobs', label: 'Active Jobs', icon: TrendingUp, bg: '#F0F9FF', color: '#0284C7', href: '/admin/jobs' },
-  { key: 'totalApplications', label: 'Applications', icon: FileText, bg: '#FFFBEB', color: '#D97706', href: '/admin/jobs' },
-  { key: 'pendingCompanies', label: 'Pending Approvals', icon: AlertTriangle, bg: '#FEF2F2', color: '#DC2626', href: '/admin/businesses' },
+interface StatConfig {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  bg: string;
+  color: string;
+  href: string;
+}
+
+const STAT_CONFIG: StatConfig[] = [
+  { id: 'totalUsers', label: 'Total users', icon: Users, bg: '#EFF6FF', color: '#2563EB', href: '/admin/users' },
+  { id: 'totalCompanies', label: 'Companies', icon: Building2, bg: '#ECFDF5', color: '#059669', href: '/admin/businesses' },
+  { id: 'totalJobs', label: 'Total jobs', icon: Briefcase, bg: '#F5F3FF', color: '#7C3AED', href: '/admin/jobs' },
+  { id: 'activeJobs', label: 'Active jobs', icon: TrendingUp, bg: '#F0F9FF', color: '#0284C7', href: '/admin/jobs' },
+  { id: 'totalApplications', label: 'Applications', icon: FileText, bg: '#FFFBEB', color: '#D97706', href: '/admin/jobs' },
+  { id: 'pendingCompanies', label: 'Pending approvals', icon: AlertTriangle, bg: '#FEF2F2', color: '#DC2626', href: '/admin/businesses' },
 ];
 
-function StatCard({ label, value, icon: Icon, bg, color, href }: any) {
+function StatTile({ label, value, icon: Icon, bg, color, href }: StatConfig & { value: number }) {
   const count = useAnimatedCount(value || 0);
   return (
-    <Link href={href} className="block group">
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-        <div className="flex items-start justify-between mb-4">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
-            <Icon size={20} style={{ color }} />
-          </div>
-          <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors mt-1" />
-        </div>
-        <p className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          {count.toLocaleString('en-IN')}
-        </p>
-        <p className="text-sm text-gray-500 mt-0.5 font-medium">{label}</p>
+    <Link
+      href={href}
+      className="group block rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:p-4"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: bg }}>
+          <Icon size={17} style={{ color }} aria-hidden />
+        </span>
+        <ChevronRight size={14} className="mt-1 text-slate-300 transition-colors group-hover:text-slate-500" aria-hidden />
       </div>
+      <p className="mt-2.5 text-xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-2xl">
+        {count.toLocaleString('en-IN')}
+      </p>
+      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:text-xs">{label}</p>
     </Link>
+  );
+}
+
+interface CompanyDoc { id: string; name?: string; district?: string; category?: string }
+interface JobDoc { id: string; title?: string; companyName?: string; district?: string }
+interface UserDoc { id: string; displayName?: string; email?: string; role?: string }
+interface ActivityLog { id?: string; description?: string; action?: string; createdAt?: { toMillis?: () => number } | number | string }
+
+/** One row in a moderation queue: avatar letter, two lines, approve/reject. */
+function QueueRow({
+  letter, letterBg, letterColor, title, subtitle, busy, onApprove, onReject, approveLabel, rejectLabel,
+}: {
+  letter: string; letterBg: string; letterColor: string; title: string; subtitle: string;
+  busy: boolean; onApprove: () => void; onReject: () => void; approveLabel: string; rejectLabel: string;
+}) {
+  return (
+    <li className="flex flex-col gap-3 px-4 py-3.5 transition-colors hover:bg-slate-50/70 sm:flex-row sm:items-center sm:gap-3 sm:px-5">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold"
+          style={{ background: letterBg, color: letterColor }}
+        >
+          {letter}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-slate-900">{title}</span>
+          <span className="block truncate text-xs text-slate-500">{subtitle}</span>
+        </span>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {busy ? (
+          <Loader2 size={15} className="animate-spin text-blue-600" aria-label="Saving" />
+        ) : (
+          <>
+            <Button
+              size="sm"
+              onClick={onApprove}
+              className="flex-1 border-0 bg-emerald-600 text-white hover:bg-emerald-700 sm:flex-none"
+              aria-label={approveLabel}
+            >
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onReject}
+              className="flex-1 border-rose-200 text-rose-700 hover:bg-rose-50 sm:flex-none"
+              aria-label={rejectLabel}
+            >
+              Reject
+            </Button>
+          </>
+        )}
+      </div>
+    </li>
   );
 }
 
@@ -62,19 +130,19 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { stats, loading: statsLoading } = usePlatformStats();
 
-  const { data: pendingCompanies, loading: bizLoading } = useCollection<any>('companies', [
+  const { data: pendingCompanies, loading: bizLoading } = useCollection<CompanyDoc>('companies', [
     where('verificationStatus', '==', 'pending'),
     orderBy('createdAt', 'desc'), limit(5)
   ]);
-  const { data: pendingJobs, loading: jobsLoading } = useCollection<any>('jobs', [
+  const { data: pendingJobs, loading: jobsLoading } = useCollection<JobDoc>('jobs', [
     where('status', '==', 'pending'),
     orderBy('createdAt', 'desc'), limit(5)
   ]);
-  const { data: recentUsers } = useCollection<any>('users', [
+  const { data: recentUsers } = useCollection<UserDoc>('users', [
     orderBy('createdAt', 'desc'), limit(5)
   ]);
 
-  const [activityLogs, setActivityLogs] = useState<any[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -113,238 +181,189 @@ export default function AdminDashboard() {
     finally { setActionLoading(p => ({ ...p, [id]: false })); }
   };
 
-  const STATS_WITH_VALUES = STAT_CONFIG.map(s => ({
-    ...s,
-    value: (stats as any)?.[s.key] ?? 0
-  }));
+  const statsRecord = (stats ?? {}) as unknown as Record<string, number>;
+  const pendingTotal = pendingCompanies.length + pendingJobs.length;
 
   return (
-    <div className="p-4 sm:p-6 space-y-5" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Admin Dashboard
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Platform overview &amp; moderation queue</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/admin/notifications"
-            className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300 transition-all">
-            <Bell size={16} />
-          </Link>
-          <Link href="/" className="text-xs text-indigo-600 font-semibold border border-indigo-200 px-3 py-1.5 rounded-xl hover:bg-indigo-50 transition-all">
-            View Site
-          </Link>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Admin dashboard"
+        description="Platform overview and moderation queue."
+        actions={
+          <>
+            <Link
+              href="/admin/notifications"
+              aria-label="Notifications"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-300 text-slate-500 transition-colors hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              <Bell size={16} />
+            </Link>
+            <Link href="/">
+              <Button variant="secondary" size="md">View site</Button>
+            </Link>
+          </>
+        }
+      />
 
-      {/* Pending Alerts */}
-      {(pendingCompanies.length > 0 || pendingJobs.length > 0) && (
-        <div className="flex items-center gap-3 p-3.5 rounded-2xl border"
-          style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}>
-          <AlertTriangle size={16} style={{ color: '#D97706' }} className="flex-shrink-0" />
+      {pendingTotal > 0 && (
+        <div
+          role="status"
+          className="flex items-center gap-3 rounded-2xl border p-3.5"
+          style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}
+        >
+          <AlertTriangle size={16} style={{ color: '#D97706' }} className="shrink-0" aria-hidden />
           <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
-            {pendingCompanies.length + pendingJobs.length} item{pendingCompanies.length + pendingJobs.length !== 1 ? 's' : ''} awaiting approval —{' '}
-            <span className="font-normal">Review the sections below</span>
+            {pendingTotal} item{pendingTotal !== 1 ? 's' : ''} awaiting approval{' '}
+            <span className="font-normal">— review the queues below</span>
           </p>
         </div>
       )}
 
-      {/* KPI Stats */}
-      {statsLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white border border-gray-100 rounded-2xl p-5 animate-pulse">
-              <div className="w-11 h-11 bg-gray-100 rounded-xl mb-4" />
-              <div className="h-6 bg-gray-100 rounded w-2/3 mb-2" />
-              <div className="h-3.5 bg-gray-100 rounded w-1/2" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {STATS_WITH_VALUES.map(({ key, label, value, icon, bg, color, href }) => (
-            <StatCard key={key} label={label} value={value} icon={icon} bg={bg} color={color} href={href} />
-          ))}
-        </div>
-      )}
-
-      {/* Main grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        {/* Pending Companies */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#FEF2F2' }}>
-                <Building2 size={15} style={{ color: '#DC2626' }} />
+      <StatGrid columns={6}>
+        {statsLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-slate-200 bg-white p-3.5 sm:p-4">
+                <Skeleton className="h-9 w-9 rounded-xl" />
+                <Skeleton className="mt-2.5 h-7 w-2/3" />
+                <Skeleton className="mt-1.5 h-3 w-1/2" />
               </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">Pending Companies</h2>
-                <p className="text-[10px] text-gray-400">Awaiting verification</p>
-              </div>
-            </div>
-            <Link href="/admin/businesses" className="text-xs text-indigo-600 font-semibold hover:text-indigo-700">
-              View all →
-            </Link>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {bizLoading ? (
-              <div className="p-8 flex justify-center"><Loader2 size={20} className="animate-spin text-indigo-500" /></div>
-            ) : pendingCompanies.length === 0 ? (
-              <div className="p-10 text-center">
-                <CheckCircle size={28} className="mx-auto text-emerald-500 mb-2" />
-                <p className="text-xs text-slate-600 font-medium">All companies reviewed!</p>
-              </div>
-            ) : pendingCompanies.map(company => (
-              <div key={company.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0"
-                  style={{ background: '#EFF6FF' }}>
-                  {company.name?.[0]?.toUpperCase() || 'C'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{company.name}</p>
-                  <p className="text-[11px] text-gray-400 truncate">{company.district || 'Theni'} · {company.category}</p>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {actionLoading[company.id] ? (
-                    <Loader2 size={14} className="animate-spin text-indigo-500" />
-                  ) : (
-                    <>
-                      <button onClick={() => handleApproveCompany(company.id)}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs cursor-pointer">
-                        ✓ Approve
-                      </button>
-                      <button onClick={() => handleRejectCompany(company.id)}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-all cursor-pointer">
-                        ✗ Reject
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
+            ))
+          : STAT_CONFIG.map(s => (
+              <StatTile key={s.id} {...s} value={statsRecord[s.id] ?? 0} />
             ))}
-          </div>
-        </div>
+      </StatGrid>
 
-        {/* Pending Jobs */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#FFFBEB' }}>
-                <Briefcase size={15} style={{ color: '#D97706' }} />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900">Pending Jobs</h2>
-                <p className="text-[10px] text-gray-400">Awaiting approval</p>
-              </div>
-            </div>
-            <Link href="/admin/jobs" className="text-xs text-indigo-600 font-semibold hover:text-indigo-700">
-              View all →
-            </Link>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {jobsLoading ? (
-              <div className="p-8 flex justify-center"><Loader2 size={20} className="animate-spin text-indigo-500" /></div>
-            ) : pendingJobs.length === 0 ? (
-              <div className="p-10 text-center">
-                <CheckCircle size={28} className="mx-auto text-emerald-500 mb-2" />
-                <p className="text-xs text-slate-600 font-medium">All jobs reviewed!</p>
-              </div>
-            ) : pendingJobs.map(job => (
-              <div key={job.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-amber-600 font-bold text-sm flex-shrink-0"
-                  style={{ background: '#FFFBEB' }}>
-                  {job.title?.[0]?.toUpperCase() || 'J'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{job.title}</p>
-                  <p className="text-[11px] text-gray-400 truncate">{job.companyName} · {job.district || 'Theni'}</p>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {actionLoading[job.id] ? (
-                    <Loader2 size={14} className="animate-spin text-indigo-500" />
-                  ) : (
-                    <>
-                      <button onClick={() => handleApproveJob(job.id)}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs cursor-pointer">
-                        ✓ Approve
-                      </button>
-                      <button onClick={() => handleRejectJob(job.id)}
-                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-all cursor-pointer">
-                        ✗ Reject
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="grid gap-4 sm:gap-6 xl:grid-cols-2">
+        {/* Pending companies */}
+        <Card className="overflow-hidden">
+          <CardHeader
+            title="Pending companies"
+            description="Awaiting verification"
+            action={<Link href="/admin/businesses" className="text-xs font-semibold text-blue-600 hover:text-blue-700">View all →</Link>}
+          />
+          {bizLoading ? (
+            <div className="flex justify-center p-8"><Loader2 size={20} className="animate-spin text-blue-600" /></div>
+          ) : pendingCompanies.length === 0 ? (
+            <EmptyState variant="inline" icon={CheckCircle} title="All companies reviewed" />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {pendingCompanies.map(company => (
+                <QueueRow
+                  key={company.id}
+                  letter={company.name?.[0]?.toUpperCase() || 'C'}
+                  letterBg="#EFF6FF"
+                  letterColor="#2563EB"
+                  title={company.name || 'Unnamed company'}
+                  subtitle={`${company.district || 'Theni'}${company.category ? ` · ${company.category}` : ''}`}
+                  busy={Boolean(actionLoading[company.id])}
+                  onApprove={() => handleApproveCompany(company.id)}
+                  onReject={() => handleRejectCompany(company.id)}
+                  approveLabel={`Approve ${company.name ?? 'company'}`}
+                  rejectLabel={`Reject ${company.name ?? 'company'}`}
+                />
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        {/* Pending jobs */}
+        <Card className="overflow-hidden">
+          <CardHeader
+            title="Pending jobs"
+            description="Awaiting approval"
+            action={<Link href="/admin/jobs" className="text-xs font-semibold text-blue-600 hover:text-blue-700">View all →</Link>}
+          />
+          {jobsLoading ? (
+            <div className="flex justify-center p-8"><Loader2 size={20} className="animate-spin text-blue-600" /></div>
+          ) : pendingJobs.length === 0 ? (
+            <EmptyState variant="inline" icon={CheckCircle} title="All jobs reviewed" />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {pendingJobs.map(job => (
+                <QueueRow
+                  key={job.id}
+                  letter={job.title?.[0]?.toUpperCase() || 'J'}
+                  letterBg="#FFFBEB"
+                  letterColor="#D97706"
+                  title={job.title || 'Untitled job'}
+                  subtitle={`${job.companyName || 'Unknown company'} · ${job.district || 'Theni'}`}
+                  busy={Boolean(actionLoading[job.id])}
+                  onApprove={() => handleApproveJob(job.id)}
+                  onReject={() => handleRejectJob(job.id)}
+                  approveLabel={`Approve ${job.title ?? 'job'}`}
+                  rejectLabel={`Reject ${job.title ?? 'job'}`}
+                />
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
 
-      {/* Recent Users + Activity */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        {/* Recent Users */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-50">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#EFF6FF' }}>
-                <Users size={15} style={{ color: '#2563EB' }} />
-              </div>
-              <h2 className="text-sm font-semibold text-gray-900">Recent Users</h2>
-            </div>
-            <Link href="/admin/users" className="text-xs text-blue-600 font-semibold hover:text-blue-700">View all →</Link>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {recentUsers.slice(0, 5).map(u => (
-              <div key={u.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/50 transition-colors">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs flex-shrink-0"
-                  style={{ background: '#EFF6FF' }}>
-                  {(u.displayName || u.email || 'U')[0].toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{u.displayName || u.email?.split('@')[0]}</p>
-                  <p className="text-[11px] text-gray-400 truncate">{u.email}</p>
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                  u.role === 'admin' ? 'bg-purple-50 text-purple-600' :
-                  u.role === 'employer' ? 'bg-blue-50 text-blue-600' :
-                  'bg-gray-50 text-gray-600'
-                }`}>{u.role || 'seeker'}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="grid gap-4 sm:gap-6 xl:grid-cols-2">
+        {/* Recent users */}
+        <Card className="overflow-hidden">
+          <CardHeader
+            title="Recent users"
+            action={<Link href="/admin/users" className="text-xs font-semibold text-blue-600 hover:text-blue-700">View all →</Link>}
+          />
+          {recentUsers.length === 0 ? (
+            <EmptyState variant="inline" icon={Users} title="No users yet" />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {recentUsers.slice(0, 5).map(u => (
+                <li key={u.id} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50/70 sm:px-5">
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-[#2563EB]"
+                    style={{ background: '#EFF6FF' }}
+                  >
+                    {(u.displayName || u.email || 'U')[0].toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-slate-900">
+                      {u.displayName || u.email?.split('@')[0] || 'Unknown'}
+                    </span>
+                    <span className="block truncate text-xs text-slate-500">{u.email}</span>
+                  </span>
+                  <Pill tone={u.role === 'admin' ? 'violet' : u.role === 'employer' ? 'info' : 'neutral'}>
+                    {u.role || 'seeker'}
+                  </Pill>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
-        {/* Activity Log */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-50">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#ECFDF5' }}>
-              <Activity size={15} style={{ color: '#059669' }} />
-            </div>
-            <h2 className="text-sm font-semibold text-gray-900">Activity Log</h2>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {activityLogs.length === 0 ? (
-              <div className="p-10 text-center">
-                <Activity size={24} className="mx-auto text-gray-200 mb-2" />
-                <p className="text-xs text-gray-400">No recent activity</p>
-              </div>
-            ) : activityLogs.slice(0, 6).map((log, i) => (
-              <div key={i} className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50/50 transition-colors">
-                <div className="w-2 h-2 rounded-full mt-2 flex-shrink-0" style={{ background: '#10B981' }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-800 leading-relaxed">{log.description || log.action}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    {log.createdAt ? new Date(log.createdAt?.toMillis?.() || log.createdAt).toLocaleString() : 'Recently'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Activity log */}
+        <Card className="overflow-hidden">
+          <CardHeader title="Activity log" action={<Activity size={16} className="text-slate-400" aria-hidden />} />
+          {activityLogs.length === 0 ? (
+            <EmptyState variant="inline" icon={Activity} title="No recent activity" />
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {activityLogs.slice(0, 6).map((log, i) => {
+                const raw = log.createdAt;
+                const ms =
+                  typeof raw === 'object' && raw !== null
+                    ? raw.toMillis?.() ?? null
+                    : raw ?? null;
+                return (
+                  <li key={log.id ?? i} className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50/70 sm:px-5">
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs leading-relaxed font-medium text-slate-700">
+                        {log.description || log.action}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-slate-500">
+                        {ms ? new Date(ms).toLocaleString() : 'Recently'}
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }

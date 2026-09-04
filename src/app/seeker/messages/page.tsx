@@ -200,7 +200,7 @@ export default function SeekerMessagesPage() {
         <div className={`lg:col-span-4 border-r border-gray-100 flex flex-col ${activeConv ? 'hidden lg:flex' : 'flex'}`}>
           <div className="p-4 border-b border-gray-100 bg-gray-50/50 space-y-3">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 value={search}
@@ -213,13 +213,13 @@ export default function SeekerMessagesPage() {
 
           <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
             {convsLoading ? (
-              <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+              <div className="p-8 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                 <Loader2 size={18} className="animate-spin text-emerald-600" /> Loading chats...
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-8 text-center text-xs text-gray-500 space-y-1">
                 <p className="font-bold">No active employer chats</p>
-                <p className="text-[11px] text-gray-400">Chats are automatically created when you apply for a job.</p>
+                <p className="text-[11px] text-slate-500">Chats are automatically created when you apply for a job.</p>
               </div>
             ) : (
               filtered.map((conv) => {
@@ -282,11 +282,11 @@ export default function SeekerMessagesPage() {
               {/* Chat Thread Area */}
               <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
                 {loadingMsgs ? (
-                  <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                  <div className="p-8 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                     <Loader2 size={16} className="animate-spin text-emerald-600" /> Loading messages...
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-gray-400">
+                  <div className="p-8 text-center text-xs text-slate-500">
                     No messages yet. Send a message to start conversing with the hiring manager!
                   </div>
                 ) : (
@@ -339,8 +339,8 @@ export default function SeekerMessagesPage() {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-2">
-              <MessageSquare size={36} className="text-gray-300" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
+              <MessageSquare size={36} className="text-slate-500" />
               <h3 className="text-sm font-bold text-gray-700">Select a Conversation</h3>
               <p className="text-xs text-gray-500 max-w-xs">
                 Select an employer conversation from the list to start messaging in real time.

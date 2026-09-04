@@ -151,7 +151,7 @@ export default function WebsiteEditorPage() {
   if (!site) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Globe size={32} className="text-gray-300" />
+        <Globe size={32} className="text-slate-500" />
         <p className="text-sm text-gray-500">No website found. Please select a template first.</p>
         <Link href="/employer/website/templates" className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold">
           Choose Template
@@ -188,7 +188,7 @@ export default function WebsiteEditorPage() {
             return (
               <button key={d.key} onClick={() => setEditor(prev => ({ ...prev, previewDevice: d.key }))}
                 title={d.label}
-                className={`p-1.5 rounded-md transition-all ${editor.previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>
+                className={`p-1.5 rounded-md transition-all ${editor.previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-gray-600'}`}>
                 <Icon size={14} />
               </button>
             );
@@ -240,15 +240,15 @@ export default function WebsiteEditorPage() {
                 {sortedSections.map((section, index) => (
                   <div key={section.id} className={`border rounded-xl p-3 transition-all ${section.visible ? 'border-gray-100 bg-white' : 'border-gray-50 bg-gray-50 opacity-60'}`}>
                     <div className="flex items-center gap-2">
-                      <GripVertical size={13} className="text-gray-300 cursor-grab flex-shrink-0" />
+                      <GripVertical size={13} className="text-slate-500 cursor-grab flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 truncate">{section.title}</p>
-                        <p className="text-[9px] text-gray-400">{section.type}</p>
+                        <p className="text-[9px] text-slate-500">{section.type}</p>
                       </div>
                       <div className="flex items-center gap-0.5">
-                        <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronUp size={12} className="text-gray-400" /></button>
-                        <button onClick={() => moveSection(index, 'down')} disabled={index === sortedSections.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronDown size={12} className="text-gray-400" /></button>
-                        <button onClick={() => toggleSection(section.id)} className={`p-1 rounded hover:bg-gray-100 ${section.visible ? 'text-blue-500' : 'text-gray-300'}`}><Eye size={12} /></button>
+                        <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronUp size={12} className="text-slate-500" /></button>
+                        <button onClick={() => moveSection(index, 'down')} disabled={index === sortedSections.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronDown size={12} className="text-slate-500" /></button>
+                        <button onClick={() => toggleSection(section.id)} className={`p-1 rounded hover:bg-gray-100 ${section.visible ? 'text-blue-500' : 'text-slate-500'}`}><Eye size={12} /></button>
                         <button onClick={() => setEditor(prev => ({ ...prev, selectedSectionId: section.id }))} className="p-1 rounded hover:bg-blue-50 text-blue-500"><Edit3 size={12} /></button>
                         <button onClick={() => removeSection(section.id)} className="p-1 rounded hover:bg-red-50 text-red-400"><Trash2 size={12} /></button>
                       </div>
@@ -264,7 +264,7 @@ export default function WebsiteEditorPage() {
                       <button key={sectionDef.type} onClick={() => addSection(sectionDef.type)}
                         className="text-left p-2 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all">
                         <p className="text-[10px] font-semibold text-gray-700">{sectionDef.label}</p>
-                        <p className="text-[8px] text-gray-400">{sectionDef.tamilLabel}</p>
+                        <p className="text-[8px] text-slate-500">{sectionDef.tamilLabel}</p>
                       </button>
                     ))}
                   </div>

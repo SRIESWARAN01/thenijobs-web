@@ -152,7 +152,7 @@ export default function SecurityPage() {
                         <td className="px-5 py-3 text-xs font-bold text-gray-900">{log.action}</td>
                         <td className="px-3 py-3 text-xs text-gray-600 font-medium">{log.userName || 'Admin'}</td>
                         <td className="px-3 py-3 text-xs text-gray-500 hidden md:table-cell truncate max-w-[200px]">{log.target || '—'}</td>
-                        <td className="px-5 py-3 text-xs text-gray-400 text-right whitespace-nowrap font-medium">{formatTime(log.timestamp)}</td>
+                        <td className="px-5 py-3 text-xs text-slate-500 text-right whitespace-nowrap font-medium">{formatTime(log.timestamp)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -251,7 +251,7 @@ export default function SecurityPage() {
                   <td className="px-5 py-3 text-xs font-bold text-gray-900">{p.module}</td>
                   {[p.super_admin, p.admin, p.moderator, p.support].map((has, i) => (
                     <td key={i} className="text-center px-3 py-3">
-                      {has ? <CheckCircle size={15} className="text-emerald-600 mx-auto" /> : <XCircle size={15} className="text-gray-300 mx-auto" />}
+                      {has ? <CheckCircle size={15} className="text-emerald-600 mx-auto" /> : <XCircle size={15} className="text-slate-500 mx-auto" />}
                     </td>
                   ))}
                 </tr>

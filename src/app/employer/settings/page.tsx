@@ -54,7 +54,7 @@ export default function EmployerSettingsPage() {
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit text-gray-900">
         <Settings size={48} className="text-gray-600 mb-4" />
         <h2 className="text-lg font-semibold text-gray-900">No Company Profile</h2>
-        <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to adjust settings.</p>
+        <p className="text-sm text-slate-500 mt-2 max-w-sm">Please register your company profile first to adjust settings.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
           Setup Company Profile
         </Link>
@@ -73,17 +73,17 @@ export default function EmployerSettingsPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-          <p className="text-sm text-gray-400">Loading settings...</p>
+          <p className="text-sm text-slate-500">Loading settings...</p>
         </div>
       ) : (
         <div className="max-w-xl space-y-6">
           {/* Notification settings */}
           <div className="glass-card rounded-2xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <Bell size={16} className="text-cyan-400" />
+              <Bell size={16} className="text-cyan-600" />
               Notification Preferences
             </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">Choose when and how you want to be notified about recruitment updates.</p>
+            <p className="text-xs text-slate-500 leading-relaxed">Choose when and how you want to be notified about recruitment updates.</p>
             <div className="space-y-3 pt-2">
               {[
                 { key: 'applications', label: 'New Job Applications', desc: 'When a candidate submits their resume to your job' },
@@ -97,7 +97,7 @@ export default function EmployerSettingsPage() {
                   <div
                     key={item.key}
                     onClick={() => toggleNotif(item.key as keyof typeof notifs)}
-                    className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-gray-100 hover:border-gray-200 cursor-pointer transition-all"
+                    className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-gray-100 hover:border-gray-200 cursor-pointer transition-all"
                   >
                     <div>
                       <div className="text-xs font-semibold text-gray-900">{item.label}</div>
@@ -115,7 +115,7 @@ export default function EmployerSettingsPage() {
           {/* Security */}
           <div className="glass-card rounded-2xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <Shield size={16} className="text-cyan-400" />
+              <Shield size={16} className="text-cyan-600" />
               Portal Security
             </h3>
             <div className="flex items-center justify-between text-xs">
@@ -123,7 +123,7 @@ export default function EmployerSettingsPage() {
                 <p className="font-semibold text-gray-900">Registered Account Email</p>
                 <p className="text-gray-500 mt-0.5">{user?.email}</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-400 font-bold border border-emerald-200 flex items-center gap-1 text-[10px]">
+              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-600 font-bold border border-emerald-200 flex items-center gap-1 text-[10px]">
                 <CheckCircle size={12} /> Verified
               </span>
             </div>

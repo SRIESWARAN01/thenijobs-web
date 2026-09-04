@@ -187,9 +187,9 @@ export default function InterviewsPage() {
           <div className="space-y-3.5">
             {filtered.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs space-y-3">
-                <Calendar size={36} className="mx-auto text-gray-300" />
+                <Calendar size={36} className="mx-auto text-slate-500" />
                 <p className="text-sm font-bold text-gray-700">No interviews found</p>
-                <p className="text-xs text-gray-400">Interviews scheduled via the Candidates tab will show here.</p>
+                <p className="text-xs text-slate-500">Interviews scheduled via the Candidates tab will show here.</p>
               </div>
             ) : (
               filtered.map(interview => {
@@ -225,7 +225,7 @@ export default function InterviewsPage() {
                         </p>
                         <div className="flex items-center gap-3 pt-1 text-xs text-gray-600 flex-wrap font-medium">
                           <span className="flex items-center gap-1">
-                            <Clock size={13} className="text-gray-400" /> {interview.date} at {interview.time}
+                            <Clock size={13} className="text-slate-500" /> {interview.date} at {interview.time}
                           </span>
                           <span className="flex items-center gap-1 text-blue-700 font-bold">
                             <ModeIcon size={13} /> {interview.mode}

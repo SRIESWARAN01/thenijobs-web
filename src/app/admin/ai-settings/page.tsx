@@ -217,8 +217,8 @@ export default function AdminAISettingsPage() {
         {/* Last Updated */}
         {config.updatedAt && (
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-            <Clock size={12} className="text-gray-400" />
-            <span className="text-[10px] text-gray-400">
+            <Clock size={12} className="text-slate-500" />
+            <span className="text-[10px] text-slate-500">
               Last updated: {config.updatedAt?.toDate?.()
                 ? config.updatedAt.toDate().toLocaleString('en-IN')
                 : new Date(config.updatedAt).toLocaleString('en-IN')}
@@ -262,7 +262,7 @@ export default function AdminAISettingsPage() {
                 <div className="flex items-center gap-1">
                   {provider.status === 'connected' && <CheckCircle2 size={16} className="text-emerald-500" />}
                   {provider.status === 'error' && <XCircle size={16} className="text-red-500" />}
-                  {provider.status === 'untested' && <AlertCircle size={16} className="text-gray-400" />}
+                  {provider.status === 'untested' && <AlertCircle size={16} className="text-slate-500" />}
                   <span className={`text-[10px] font-semibold ${
                     provider.status === 'connected' ? 'text-emerald-600' :
                     provider.status === 'error' ? 'text-red-600' :
@@ -291,13 +291,13 @@ export default function AdminAISettingsPage() {
                     />
                     <button
                       onClick={() => setShowKeys(prev => ({ ...prev, [name]: !prev[name] }))}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 tap-target-auto"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-gray-600 tap-target-auto"
                     >
                       {isShowKey ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
                   {provider.apiKeyMasked && !isShowKey && (
-                    <p className="text-[10px] text-gray-400 mt-1 font-mono">Saved: {provider.apiKeyMasked}</p>
+                    <p className="text-[10px] text-slate-500 mt-1 font-mono">Saved: {provider.apiKeyMasked}</p>
                   )}
                 </div>
 
@@ -358,7 +358,7 @@ export default function AdminAISettingsPage() {
 
                 {/* Last Tested */}
                 {provider.lastTested && (
-                  <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                  <p className="text-[10px] text-slate-500 flex items-center gap-1">
                     <Clock size={10} />
                     Tested: {provider.lastTested?.toDate?.()
                       ? provider.lastTested.toDate().toLocaleString('en-IN')

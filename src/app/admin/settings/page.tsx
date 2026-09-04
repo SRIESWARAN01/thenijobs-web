@@ -188,7 +188,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => removeDistrict(d)}
-                      className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                      className="text-slate-500 hover:text-red-600 transition-colors p-1"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -226,13 +226,13 @@ export default function SettingsPage() {
                 {categories.map((cat, i) => (
                   <div key={cat} className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[10px] text-gray-400 font-bold">{i + 1}.</span>
+                      <span className="text-[10px] text-slate-500 font-bold">{i + 1}.</span>
                       <span className="text-xs font-bold text-gray-800 truncate">{cat}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeCategory(cat)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      className="p-1 text-slate-500 hover:text-red-600 transition-colors"
                     >
                       <Trash2 size={13} />
                     </button>

@@ -201,7 +201,7 @@ export default function SubscriptionsPage() {
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             placeholder="Search by company or business name..."
@@ -243,7 +243,7 @@ export default function SubscriptionsPage() {
         </div>
       ) : filteredSubs.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
-          <CreditCard size={36} className="mx-auto text-gray-300 mb-2" />
+          <CreditCard size={36} className="mx-auto text-slate-500 mb-2" />
           <p className="text-sm font-bold text-gray-700">No active subscriptions match this filter</p>
         </div>
       ) : (

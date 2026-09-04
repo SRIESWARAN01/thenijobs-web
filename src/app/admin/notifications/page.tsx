@@ -153,7 +153,7 @@ export default function NotificationsPage() {
                         : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon size={16} className={isSelected ? 'text-blue-600' : 'text-gray-400'} />
+                    <Icon size={16} className={isSelected ? 'text-blue-600' : 'text-slate-500'} />
                     <span>{opt.label}</span>
                   </button>
                 );
@@ -209,7 +209,7 @@ export default function NotificationsPage() {
             <Loader2 size={24} className="text-blue-600 animate-spin" />
           </div>
         ) : filteredBroadcasts.length === 0 ? (
-          <p className="text-xs text-gray-400 py-6 text-center">No broadcasts sent under this channel yet.</p>
+          <p className="text-xs text-slate-500 py-6 text-center">No broadcasts sent under this channel yet.</p>
         ) : (
           <div className="space-y-3">
             {filteredBroadcasts.map((b) => (

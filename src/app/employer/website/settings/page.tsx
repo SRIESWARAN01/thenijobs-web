@@ -63,7 +63,7 @@ export default function WebsiteSettingsPage() {
   if (!site) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Globe size={32} className="text-gray-300" />
+        <Globe size={32} className="text-slate-500" />
         <p className="text-sm text-gray-500">No website found. Please select a template first.</p>
         <Link href="/employer/website/templates" className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold">
           Choose Template
@@ -116,7 +116,7 @@ export default function WebsiteSettingsPage() {
             <div>
               <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Username / Slug</label>
               <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden text-xs">
-                <span className="bg-gray-50 px-3 py-2 text-gray-400 border-r border-gray-200">thenijobs.com/portfolio/</span>
+                <span className="bg-gray-50 px-3 py-2 text-slate-500 border-r border-gray-200">thenijobs.com/portfolio/</span>
                 <input
                   type="text"
                   value={site.customUrl}
@@ -125,7 +125,7 @@ export default function WebsiteSettingsPage() {
                 />
               </div>
             </div>
-            <p className="text-[10px] text-gray-400">Unique URL for sharing your website. Only letters, numbers, and hyphens.</p>
+            <p className="text-[10px] text-slate-500">Unique URL for sharing your website. Only letters, numbers, and hyphens.</p>
           </div>
 
           {/* Search Indexing */}

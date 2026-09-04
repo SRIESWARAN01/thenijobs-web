@@ -266,7 +266,7 @@ export default function EmployerJobsPage() {
             </div>
 
             <div className="relative sm:w-72">
-              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 placeholder="Search job titles..."
@@ -281,7 +281,7 @@ export default function EmployerJobsPage() {
           <div className="space-y-3.5">
             {filtered.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs space-y-3">
-                <Briefcase size={36} className="mx-auto text-gray-300" />
+                <Briefcase size={36} className="mx-auto text-slate-500" />
                 <p className="text-sm font-bold text-gray-700">No jobs found in this section</p>
                 <p className="text-xs text-gray-500">
                   Switch tabs or{' '}
@@ -385,14 +385,14 @@ export default function EmployerJobsPage() {
                             <div className="flex items-center justify-center gap-1 text-sm font-black text-gray-900">
                               <Users2 size={14} className="text-blue-600" /> {job.applicationsCount || 0}
                             </div>
-                            <p className="text-[10px] font-bold text-gray-400 mt-0.5">Applicants</p>
+                            <p className="text-[10px] font-bold text-slate-500 mt-0.5">Applicants</p>
                           </Link>
 
                           <div className="text-center p-2 rounded-2xl">
                             <div className="flex items-center justify-center gap-1 text-sm font-black text-gray-900">
                               <Eye size={14} className="text-purple-600" /> {job.viewCount || 0}
                             </div>
-                            <p className="text-[10px] font-bold text-gray-400 mt-0.5">Views</p>
+                            <p className="text-[10px] font-bold text-slate-500 mt-0.5">Views</p>
                           </div>
                         </div>
 

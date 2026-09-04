@@ -159,7 +159,7 @@ export default function EmployerDashboard() {
                   </div>
                   <div>
                     <h2 className="text-sm font-semibold text-gray-900">Recent Applications</h2>
-                    <p className="text-[10px] text-gray-400">Latest candidate submissions</p>
+                    <p className="text-[10px] text-slate-500">Latest candidate submissions</p>
                   </div>
                 </div>
                 <Link href="/employer/candidates" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
@@ -209,7 +209,7 @@ export default function EmployerDashboard() {
                           </>
                         ) : null}
                         <Link href={`/employer/candidates`}
-                          className="p-1.5 rounded-lg bg-gray-50 text-gray-400 hover:bg-gray-100 transition-all">
+                          className="p-1.5 rounded-lg bg-gray-50 text-slate-500 hover:bg-gray-100 transition-all">
                           <Eye size={13} />
                         </Link>
                       </div>
@@ -244,7 +244,7 @@ export default function EmployerDashboard() {
                         {iv.mode || 'Phone'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
                       <Clock size={11} />
                       <span>{iv.date} at {iv.time}</span>
                     </div>
@@ -268,7 +268,7 @@ export default function EmployerDashboard() {
                 </div>
                 <div>
                   <h2 className="text-sm font-semibold text-gray-900">Active Jobs</h2>
-                  <p className="text-[10px] text-gray-400">Your current job postings</p>
+                  <p className="text-[10px] text-slate-500">Your current job postings</p>
                 </div>
               </div>
               <Link href="/employer/jobs" className="text-xs text-blue-600 font-semibold hover:text-blue-700">
@@ -288,7 +288,7 @@ export default function EmployerDashboard() {
                 </thead>
                 <tbody>
                   {activeJobs.length === 0 ? (
-                    <tr><td colSpan={5} className="px-5 py-10 text-center text-xs text-gray-400">
+                    <tr><td colSpan={5} className="px-5 py-10 text-center text-xs text-slate-500">
                       No active job listings. <Link href="/employer/post-job" className="text-blue-600 font-semibold">Post a job →</Link>
                     </td></tr>
                   ) : activeJobs.map(job => (

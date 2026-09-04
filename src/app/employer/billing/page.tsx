@@ -103,11 +103,11 @@ export default function EmployerBillingPage() {
 
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Active Jobs</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Active Jobs</p>
                   <p className="text-base font-extrabold text-gray-900">{jobs.length}</p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Status</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Status</p>
                   <p className="text-base font-extrabold text-emerald-600">Active</p>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export default function EmployerBillingPage() {
                     <div className="text-center py-2 bg-gray-50 rounded-2xl border border-gray-100">
                       <div className="text-2xl font-extrabold text-gray-900">
                         ₹{plan.price.toLocaleString('en-IN')}
-                        <span className="text-xs text-gray-400 font-normal"> /yr</span>
+                        <span className="text-xs text-slate-500 font-normal"> /yr</span>
                       </div>
                       {plan.price > 0 && (
                         <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
@@ -163,7 +163,7 @@ export default function EmployerBillingPage() {
 
                   <div className="pt-4 mt-4 border-t border-gray-100">
                     {isCurrent ? (
-                      <button disabled className="w-full py-2.5 rounded-xl bg-gray-100 text-gray-400 text-xs font-bold cursor-default">
+                      <button disabled className="w-full py-2.5 rounded-xl bg-gray-100 text-slate-500 text-xs font-bold cursor-default">
                         Plan Active
                       </button>
                     ) : (

@@ -545,7 +545,7 @@ export default function BecomeEmployerPage() {
                     onChange={e => setForm({ ...form, logoUrl: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
-                  <p className="text-[10px] text-gray-400 mt-1">If empty, a stylish avatar with company initials will be auto-generated.</p>
+                  <p className="text-[10px] text-slate-500 mt-1">If empty, a stylish avatar with company initials will be auto-generated.</p>
                 </div>
 
                 <div>

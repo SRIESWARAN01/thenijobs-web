@@ -114,7 +114,7 @@ export default function AdsPage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
         <input
           type="text"
           placeholder="Search campaigns or placements..."
@@ -132,7 +132,7 @@ export default function AdsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
-          <Megaphone size={36} className="mx-auto text-gray-300 mb-2" />
+          <Megaphone size={36} className="mx-auto text-slate-500 mb-2" />
           <p className="text-sm font-bold text-gray-700">No campaigns found</p>
         </div>
       ) : (
@@ -160,15 +160,15 @@ export default function AdsPage() {
 
                   <div className="grid grid-cols-3 gap-2 bg-gray-50 p-2.5 rounded-2xl text-center border border-gray-100">
                     <div>
-                      <span className="text-[10px] text-gray-400 block">Type</span>
+                      <span className="text-[10px] text-slate-500 block">Type</span>
                       <span className="text-xs font-bold" style={{ color: tp.text }}>{ad.type}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-gray-400 block">Views</span>
+                      <span className="text-[10px] text-slate-500 block">Views</span>
                       <span className="text-xs font-bold text-gray-900">{ad.impressions || 0}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-gray-400 block">Clicks</span>
+                      <span className="text-[10px] text-slate-500 block">Clicks</span>
                       <span className="text-xs font-bold text-emerald-700">{ad.clicks || 0}</span>
                     </div>
                   </div>

@@ -327,12 +327,12 @@ export default function PostJobPage() {
           <div key={s.id} className="flex items-center flex-1 gap-2 shrink-0">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
               step > s.id ? 'bg-emerald-500 text-white shadow-xs' :
-              step === s.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-400'
+              step === s.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-slate-500'
             }`}>
               {step > s.id ? <Check size={12} /> : s.id}
             </div>
             <span className={`text-xs font-bold transition-colors whitespace-nowrap ${
-              step === s.id ? 'text-blue-600' : step > s.id ? 'text-emerald-700' : 'text-gray-400'
+              step === s.id ? 'text-blue-600' : step > s.id ? 'text-emerald-700' : 'text-slate-500'
             }`}>{s.label}</span>
             {i < STEPS.length - 1 && (
               <div className={`flex-1 h-0.5 rounded-full ml-1 transition-all ${step > s.id ? 'bg-emerald-400' : 'bg-gray-200'}`} />

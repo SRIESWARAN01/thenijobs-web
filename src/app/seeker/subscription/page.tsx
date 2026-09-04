@@ -63,7 +63,7 @@ export default function SeekerSubscriptionPage() {
         <div className="bg-white rounded-3xl p-6 flex flex-col justify-between border border-gray-200 shadow-sm">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Basic Tier</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Basic Tier</span>
               {!isPremium && (
                 <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold uppercase">
                   Active
@@ -94,7 +94,7 @@ export default function SeekerSubscriptionPage() {
           </div>
           <button
             disabled
-            className="w-full mt-8 py-3 rounded-xl bg-gray-100 border border-gray-200 text-xs font-bold text-gray-400 cursor-default"
+            className="w-full mt-8 py-3 rounded-xl bg-gray-100 border border-gray-200 text-xs font-bold text-slate-500 cursor-default"
           >
             {isPremium ? 'Standard Free Plan' : 'Current Active Plan'}
           </button>

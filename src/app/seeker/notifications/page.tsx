@@ -162,7 +162,7 @@ export default function SeekerNotificationsPage() {
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className="text-sm font-bold text-gray-900 truncate">{item.title}</h4>
-                    <span className="text-[10px] text-gray-400 font-semibold whitespace-nowrap shrink-0">{dateStr}</span>
+                    <span className="text-[10px] text-slate-500 font-semibold whitespace-nowrap shrink-0">{dateStr}</span>
                   </div>
                   <p className="text-xs text-gray-600 leading-relaxed">{item.message}</p>
 

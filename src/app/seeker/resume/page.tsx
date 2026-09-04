@@ -137,8 +137,8 @@ export default function ResumeManagementPage() {
 
       {uploading && (
         <div className="glass-card rounded-2xl p-4 border border-emerald-200 bg-emerald-50 flex items-center gap-3">
-          <Loader2 size={18} className="text-emerald-400 animate-spin" />
-          <span className="text-xs text-gray-300">Uploading resume... {uploadProgress}%</span>
+          <Loader2 size={18} className="text-emerald-600 animate-spin" />
+          <span className="text-xs text-slate-500">Uploading resume... {uploadProgress}%</span>
         </div>
       )}
 
@@ -148,7 +148,7 @@ export default function ResumeManagementPage() {
           {/* Upload Resume Zone */}
           <div className="glass-card rounded-2xl p-5">
             <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2 mb-4">
-              <Upload size={15} className="text-emerald-400" /> Upload Resume
+              <Upload size={15} className="text-emerald-600" /> Upload Resume
             </h2>
             <div
               onDragOver={handleDragOver}
@@ -164,14 +164,14 @@ export default function ResumeManagementPage() {
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${
                 isDragging ? 'bg-emerald-500/20' : 'bg-white'
               }`}>
-                <Upload size={24} className={isDragging ? 'text-emerald-400' : 'text-gray-400'} />
+                <Upload size={24} className={isDragging ? 'text-emerald-600' : 'text-slate-500'} />
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium text-gray-900">
                   {isDragging ? 'Drop your resume here' : 'Drag & drop your resume here'}
                 </p>
                 <p className="text-xs text-gray-505 mt-1">
-                  or <span className="text-emerald-400 font-medium">browse files</span> — PDF, DOC (max 5MB)
+                  or <span className="text-emerald-600 font-medium">browse files</span> — PDF, DOC (max 5MB)
                 </p>
               </div>
               <input
@@ -188,27 +188,27 @@ export default function ResumeManagementPage() {
           <div className="glass-card rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
-                <FileText size={15} className="text-emerald-400" /> My Resumes
+                <FileText size={15} className="text-emerald-600" /> My Resumes
               </h2>
               <span className="text-xs text-gray-505">{resumes.length} resume{resumes.length !== 1 ? 's' : ''}</span>
             </div>
             
             {profileLoading ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 size={24} className="text-emerald-400 animate-spin mb-2" />
+                <Loader2 size={24} className="text-emerald-600 animate-spin mb-2" />
                 <p className="text-xs text-gray-505">Loading resumes...</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/[0.04]">
+              <div className="divide-y divide-slate-100">
                 {resumes.map(resume => (
-                  <div key={resume.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors group">
+                  <div key={resume.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-100 transition-colors group">
                     {/* File Icon */}
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                       resume.isDefault
                         ? 'bg-emerald-500/15 border border-emerald-200'
                         : 'bg-white border border-gray-100'
                     }`}>
-                      <File size={20} className={resume.isDefault ? 'text-emerald-400' : 'text-gray-400'} />
+                      <File size={20} className={resume.isDefault ? 'text-emerald-600' : 'text-slate-500'} />
                     </div>
 
                     {/* Info */}
@@ -216,7 +216,7 @@ export default function ResumeManagementPage() {
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-gray-900 truncate">{resume.name}</p>
                         {resume.isDefault && (
-                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-200 font-bold uppercase">
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 border border-emerald-200 font-bold uppercase">
                             Default
                           </span>
                         )}
@@ -233,7 +233,7 @@ export default function ResumeManagementPage() {
                       {!resume.isDefault && (
                         <button
                           onClick={() => setAsDefault(resume.id)}
-                          className="p-2 rounded-lg text-gray-500 hover:text-emerald-400 hover:bg-emerald-100 transition-all"
+                          className="p-2 rounded-lg text-gray-500 hover:text-emerald-600 hover:bg-emerald-100 transition-all"
                           title="Set as Default"
                         >
                           <Star size={14} />
@@ -269,7 +269,7 @@ export default function ResumeManagementPage() {
                       )}
                       <button
                         onClick={() => handleDeleteResume(resume)}
-                        className="p-2 rounded-lg text-gray-500 hover:text-rose-400 hover:bg-red-100 transition-all"
+                        className="p-2 rounded-lg text-gray-500 hover:text-rose-600 hover:bg-red-100 transition-all"
                         title="Delete"
                       >
                         <Trash2 size={14} />
@@ -294,10 +294,10 @@ export default function ResumeManagementPage() {
             className="glass-card rounded-2xl p-5 flex items-center gap-4 hover:border-emerald-200 transition-all group block"
           >
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <Zap size={24} className="text-emerald-400" />
+              <Zap size={24} className="text-emerald-600" />
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-gray-900 group-hover:text-emerald-400 transition-colors">
+              <h3 className="text-sm font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
                 Build Resume Online
               </h3>
               <p className="text-xs text-gray-450 mt-0.5">
@@ -305,13 +305,13 @@ export default function ResumeManagementPage() {
               </p>
               <div className="flex items-center gap-3 mt-2">
                 {['Professional', 'Modern', 'Simple'].map(t => (
-                  <span key={t} className="text-[10px] px-2 py-0.5 rounded-lg bg-white text-gray-400 border border-gray-100">
+                  <span key={t} className="text-[10px] px-2 py-0.5 rounded-lg bg-white text-slate-500 border border-gray-100">
                     {t}
                   </span>
                 ))}
               </div>
             </div>
-            <ChevronRight size={18} className="text-gray-600 group-hover:text-emerald-400 transition-colors shrink-0" />
+            <ChevronRight size={18} className="text-gray-600 group-hover:text-emerald-600 transition-colors shrink-0" />
           </Link>
         </div>
 
@@ -320,7 +320,7 @@ export default function ResumeManagementPage() {
           {/* Resume Tips */}
           <div className="glass-card rounded-2xl p-5">
             <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-2 mb-4">
-              <Lightbulb size={15} className="text-amber-400" /> Resume Tips
+              <Lightbulb size={15} className="text-amber-600" /> Resume Tips
             </h3>
             <div className="space-y-3">
               {[
@@ -334,9 +334,9 @@ export default function ResumeManagementPage() {
                 return (
                   <div key={idx} className="flex items-start gap-2.5">
                     <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                      <Icon size={11} className="text-amber-400" />
+                      <Icon size={11} className="text-amber-600" />
                     </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">{item.tip}</p>
+                    <p className="text-xs text-slate-500 leading-relaxed">{item.tip}</p>
                   </div>
                 );
               })}
@@ -348,12 +348,12 @@ export default function ResumeManagementPage() {
             <h3 className="font-semibold text-gray-900 text-sm mb-4">Resume Stats</h3>
             <div className="space-y-3">
               {[
-                { label: 'Total Resumes', value: resumes.length.toString(), color: 'text-emerald-400' },
-                { label: 'Default Resume Format', value: resumes.find(r => r.isDefault)?.format || 'None', color: 'text-cyan-400' },
-                { label: 'Last Updated', value: resumes.length > 0 ? resumes[resumes.length - 1].uploadDate : 'Never', color: 'text-amber-400' },
+                { label: 'Total Resumes', value: resumes.length.toString(), color: 'text-emerald-600' },
+                { label: 'Default Resume Format', value: resumes.find(r => r.isDefault)?.format || 'None', color: 'text-cyan-600' },
+                { label: 'Last Updated', value: resumes.length > 0 ? resumes[resumes.length - 1].uploadDate : 'Never', color: 'text-amber-600' },
               ].map(stat => (
-                <div key={stat.label} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03]">
-                  <span className="text-xs text-gray-400">{stat.label}</span>
+                <div key={stat.label} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                  <span className="text-xs text-slate-500">{stat.label}</span>
                   <span className={`text-sm font-bold ${stat.color}`}>{stat.value}</span>
                 </div>
               ))}

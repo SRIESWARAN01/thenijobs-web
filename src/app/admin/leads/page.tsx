@@ -132,7 +132,7 @@ export default function LeadsPage() {
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             placeholder="Search leads by contact name, phone, or company..."
@@ -175,7 +175,7 @@ export default function LeadsPage() {
         </div>
       ) : filteredLeads.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
-          <TrendingUp size={36} className="mx-auto text-gray-300 mb-2" />
+          <TrendingUp size={36} className="mx-auto text-slate-500 mb-2" />
           <p className="text-sm font-bold text-gray-700">No leads found</p>
         </div>
       ) : (
@@ -216,7 +216,7 @@ export default function LeadsPage() {
                       </p>
                     )}
                     {lead.district && (
-                      <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                      <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
                         <MapPin size={11} /> {lead.district}
                       </p>
                     )}
@@ -255,7 +255,7 @@ export default function LeadsPage() {
 
                   {/* Move stage dropdown */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-gray-400">Move:</span>
+                    <span className="text-[10px] font-bold text-slate-500">Move:</span>
                     <select
                       value={lead.status || 'new'}
                       onChange={e => handleStatusChange(lead.id, e.target.value as LeadStatus)}

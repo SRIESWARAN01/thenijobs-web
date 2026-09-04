@@ -41,7 +41,7 @@ export default function EmployerReportsPage() {
       <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
         <BarChart3 size={48} className="text-gray-600 mb-4" />
         <h2 className="text-lg font-semibold text-gray-900">No Company Profile</h2>
-        <p className="text-sm text-gray-400 mt-2 max-w-sm">Please register your company profile first to view reports and metrics.</p>
+        <p className="text-sm text-slate-500 mt-2 max-w-sm">Please register your company profile first to view reports and metrics.</p>
         <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
           Setup Company Profile
         </Link>
@@ -69,7 +69,7 @@ export default function EmployerReportsPage() {
           <p className="text-sm text-slate-500 mt-1">Analytics and metrics overview for {company?.name}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all">
+          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-slate-500 hover:bg-slate-100 hover:border-white/[0.15] transition-all">
             <Download size={16} />
             <span>Export CSV</span>
           </button>
@@ -79,7 +79,7 @@ export default function EmployerReportsPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-          <p className="text-sm text-gray-400">Loading metrics and statistics...</p>
+          <p className="text-sm text-slate-500">Loading metrics and statistics...</p>
         </div>
       ) : (
         <>
@@ -88,7 +88,7 @@ export default function EmployerReportsPage() {
             <div className="glass-card rounded-2xl p-5 hover:border-white/15 transition-all">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Briefcase size={18} className="text-cyan-400" />
+                  <Briefcase size={18} className="text-cyan-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">Job Listings</h3>
@@ -96,13 +96,13 @@ export default function EmployerReportsPage() {
                 </div>
               </div>
               <p className="text-2xl font-bold text-gray-900 font-outfit">{jobs.length}</p>
-              <p className="text-xs text-emerald-400 mt-1">{stats.activeJobs} currently active</p>
+              <p className="text-xs text-emerald-600 mt-1">{stats.activeJobs} currently active</p>
             </div>
 
             <div className="glass-card rounded-2xl p-5 hover:border-white/15 transition-all">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                  <Users2 size={18} className="text-violet-400" />
+                  <Users2 size={18} className="text-violet-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">Applications Received</h3>
@@ -110,13 +110,13 @@ export default function EmployerReportsPage() {
                 </div>
               </div>
               <p className="text-2xl font-bold text-gray-900 font-outfit">{applications.length}</p>
-              <p className="text-xs text-violet-400 mt-1">{stats.shortlisted} candidates shortlisted</p>
+              <p className="text-xs text-violet-600 mt-1">{stats.shortlisted} candidates shortlisted</p>
             </div>
 
             <div className="glass-card rounded-2xl p-5 hover:border-white/15 transition-all">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <Eye size={18} className="text-amber-400" />
+                  <Eye size={18} className="text-amber-600" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">Company Profile Views</h3>
@@ -124,7 +124,7 @@ export default function EmployerReportsPage() {
                 </div>
               </div>
               <p className="text-2xl font-bold text-gray-900 font-outfit">{company?.viewCount || 0}</p>
-              <p className="text-xs text-amber-400 mt-1">Verified employer profile</p>
+              <p className="text-xs text-amber-600 mt-1">Verified employer profile</p>
             </div>
           </div>
 
@@ -145,7 +145,7 @@ export default function EmployerReportsPage() {
                       <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Conversion</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
+                  <tbody className="divide-y divide-slate-100">
                     {jobMetrics.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="px-5 py-8 text-center text-xs text-gray-500">No job stats available.</td>
@@ -154,14 +154,14 @@ export default function EmployerReportsPage() {
                       jobMetrics.map((job, idx) => {
                         const conversion = job.views > 0 ? Math.round((job.apps / job.views) * 100) : 0;
                         return (
-                          <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                          <tr key={idx} className="hover:bg-slate-100 transition-colors">
                             <td className="px-5 py-3.5">
                               <p className="text-sm font-medium text-gray-900">{job.title}</p>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white text-gray-400 border border-gray-200 capitalize">{job.type.replace('_', ' ')}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white text-slate-500 border border-gray-200 capitalize">{job.type.replace('_', ' ')}</span>
                             </td>
-                            <td className="px-3 py-3.5 text-center text-sm text-gray-300">{job.views}</td>
+                            <td className="px-3 py-3.5 text-center text-sm text-slate-500">{job.views}</td>
                             <td className="px-3 py-3.5 text-center text-sm text-gray-900 font-bold">{job.apps}</td>
-                            <td className="px-3 py-3.5 text-center text-sm text-cyan-400 font-semibold">{conversion}%</td>
+                            <td className="px-3 py-3.5 text-center text-sm text-cyan-600 font-semibold">{conversion}%</td>
                           </tr>
                         );
                       })
@@ -192,7 +192,7 @@ export default function EmployerReportsPage() {
                   return (
                     <div key={stage.label} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-400">{stage.label}</span>
+                        <span className="text-slate-500">{stage.label}</span>
                         <span className="font-bold text-gray-900">{stage.count} ({pct}%)</span>
                       </div>
                       <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">

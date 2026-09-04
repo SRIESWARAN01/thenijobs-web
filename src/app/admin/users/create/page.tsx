@@ -146,12 +146,12 @@ export default function AdminCreateUserPage() {
             ].map(item => (
               <div key={item.key} className="flex items-center justify-between px-4 py-3">
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase">{item.label}</p>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase">{item.label}</p>
                   <p className="text-sm font-medium text-gray-900 mt-0.5 font-mono">{item.value}</p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(item.value, item.key)}
-                  className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-all"
+                  className="p-2 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition-all"
                 >
                   {copied === item.key ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                 </button>
@@ -264,17 +264,17 @@ export default function AdminCreateUserPage() {
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                 <button onClick={() => setShowPassword(!showPassword)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all tap-target-auto">
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-slate-500 transition-all tap-target-auto">
                   {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
                 <button onClick={regeneratePassword}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all tap-target-auto"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-slate-500 transition-all tap-target-auto"
                   title="Generate new password">
                   <RefreshCw size={14} />
                 </button>
               </div>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1">Auto-generated secure password. Click 🔄 to regenerate.</p>
+            <p className="text-[10px] text-slate-500 mt-1">Auto-generated secure password. Click 🔄 to regenerate.</p>
           </div>
 
           {/* Submit */}

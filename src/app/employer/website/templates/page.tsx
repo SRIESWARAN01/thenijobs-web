@@ -213,7 +213,7 @@ export default function TemplateGalleryPage() {
                 {!isAccessible && (
                   <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
                     <div className="text-center">
-                      <Lock size={20} className="mx-auto text-gray-400 mb-1" />
+                      <Lock size={20} className="mx-auto text-slate-500 mb-1" />
                       <p className="text-[10px] font-bold text-gray-500">Upgrade to {template.plan.toUpperCase()}</p>
                     </div>
                   </div>
@@ -286,7 +286,7 @@ export default function TemplateGalleryPage() {
                     const Icon = d.icon;
                     return (
                       <button key={d.key} onClick={() => setPreviewDevice(d.key)}
-                        className={`p-1.5 rounded-md transition-all ${previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>
+                        className={`p-1.5 rounded-md transition-all ${previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-gray-600'}`}>
                         <Icon size={14} />
                       </button>
                     );
@@ -301,7 +301,7 @@ export default function TemplateGalleryPage() {
                     {selecting ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />} Use This Template
                   </button>
                 )}
-                <button onClick={() => setPreviewTemplate(null)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400">
+                <button onClick={() => setPreviewTemplate(null)} className="p-2 rounded-lg hover:bg-gray-100 text-slate-500">
                   <X size={16} />
                 </button>
               </div>

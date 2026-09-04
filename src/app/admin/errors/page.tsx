@@ -249,7 +249,7 @@ export default function AdminErrorsPage() {
           <option value="network">Network</option>
         </select>
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
@@ -265,7 +265,7 @@ export default function AdminErrorsPage() {
           <Loader2 size={24} className="animate-spin text-blue-500" />
         </div>
       ) : filteredErrors.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-slate-500">
           <CheckCircle size={40} className="mx-auto mb-3 text-emerald-300" />
           <p className="text-sm font-semibold">No errors found</p>
           <p className="text-xs mt-1">System is running smoothly</p>
@@ -295,10 +295,10 @@ export default function AdminErrorsPage() {
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: statusConfig.bg, color: statusConfig.color }}>
                         {statusConfig.label}
                       </span>
-                      <span className="text-[10px] text-gray-400 font-mono">{TYPE_LABELS[error.errorType] || error.errorType}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">{TYPE_LABELS[error.errorType] || error.errorType}</span>
                     </div>
                     <p className="text-sm font-semibold text-gray-900 truncate">{error.errorMessage}</p>
-                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400">
+                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-slate-500">
                       <span className="flex items-center gap-1"><Globe size={10} /> {error.page}</span>
                       {error.component && <span className="flex items-center gap-1"><Server size={10} /> {error.component}</span>}
                       <span className="flex items-center gap-1"><Clock size={10} /> {formatDate(error.lastOccurred)}</span>
@@ -346,7 +346,7 @@ export default function AdminErrorsPage() {
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
               <h3 className="text-lg font-bold text-gray-900">Error Details</h3>
-              <button onClick={() => setSelectedError(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+              <button onClick={() => setSelectedError(null)} className="p-1.5 rounded-lg text-slate-500 hover:bg-gray-100 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>

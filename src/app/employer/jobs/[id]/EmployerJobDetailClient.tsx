@@ -164,7 +164,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   if (!job) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <Briefcase size={32} className="text-gray-300 mb-3" />
+        <Briefcase size={32} className="text-slate-500 mb-3" />
         <h2 className="text-lg font-bold text-gray-900">Job Not Found</h2>
         <p className="text-sm text-gray-500 mt-1 mb-4">This job posting may have been deleted.</p>
         <Link href="/employer/jobs" className="text-sm font-semibold text-blue-600 hover:text-blue-800">← Back to Jobs</Link>
@@ -206,7 +206,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
                 ● {statusStyle.label}
               </span>
               <span className="text-xs text-gray-500">{job.district || 'Theni'} · {salary}</span>
-              <span className="text-xs text-gray-400">{job.jobType || 'Full Time'}</span>
+              <span className="text-xs text-slate-500">{job.jobType || 'Full Time'}</span>
             </div>
           </div>
         </div>
@@ -352,7 +352,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
                 return (
                   <div key={item.label} className="bg-gray-50 rounded-xl p-3">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <Icon size={12} className="text-gray-400" />
+                      <Icon size={12} className="text-slate-500" />
                       <span className="text-[10px] font-semibold text-gray-500 uppercase">{item.label}</span>
                     </div>
                     <p className="text-sm font-medium text-gray-800">{item.value}</p>
@@ -410,9 +410,9 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
             </div>
           ) : applications.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-              <Users2 size={28} className="mx-auto text-gray-300 mb-2" />
+              <Users2 size={28} className="mx-auto text-slate-500 mb-2" />
               <p className="text-sm font-medium text-gray-500">No applications yet</p>
-              <p className="text-xs text-gray-400 mt-1">Applications will appear here once candidates apply</p>
+              <p className="text-xs text-slate-500 mt-1">Applications will appear here once candidates apply</p>
             </div>
           ) : (
             <>
@@ -447,7 +447,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
                     }`}>
                       {(app.status || 'applied').replace('_', ' ')}
                     </span>
-                    <ChevronRight size={14} className="text-gray-300" />
+                    <ChevronRight size={14} className="text-slate-500" />
                   </div>
                 </div>
               ))}
@@ -468,10 +468,10 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
       {/* History Tab */}
       {activeTab === 'history' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-          <History size={28} className="mx-auto text-gray-300 mb-2" />
+          <History size={28} className="mx-auto text-slate-500 mb-2" />
           <p className="text-sm font-medium text-gray-500">Change History</p>
-          <p className="text-xs text-gray-400 mt-1">All job updates and changes will be logged here</p>
-          <p className="text-xs text-gray-400 mt-0.5">Created: {job.createdAt ? new Date(job.createdAt?.toMillis?.() || job.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown'}</p>
+          <p className="text-xs text-slate-500 mt-1">All job updates and changes will be logged here</p>
+          <p className="text-xs text-slate-500 mt-0.5">Created: {job.createdAt ? new Date(job.createdAt?.toMillis?.() || job.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown'}</p>
         </div>
       )}
 

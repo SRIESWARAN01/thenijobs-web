@@ -64,7 +64,7 @@ export default function AdminReviewsPage() {
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-            <Filter size={13} className="text-slate-400" />
+            <Filter size={13} className="text-slate-500" />
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
@@ -80,11 +80,11 @@ export default function AdminReviewsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-xs text-slate-400">
+        <div className="flex items-center justify-center py-20 text-xs text-slate-500">
           <Loader2 size={24} className="animate-spin text-blue-600 mr-2" /> Loading review queue...
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-16 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 py-16 text-center text-xs text-slate-500">
           <MessageSquare size={36} className="mx-auto mb-2 text-slate-300" />
           No reviews found in this moderation view.
         </div>
@@ -106,13 +106,13 @@ export default function AdminReviewsPage() {
                       {r.status || 'PENDING'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5">
                     Company ID: {r.companyId} | {r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleDateString('en-IN') : 'Recently'}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1 text-amber-500 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/60">
-                  <Star size={13} className="fill-amber-400 text-amber-400" />
+                  <Star size={13} className="fill-amber-500 text-amber-600" />
                   <span className="text-xs font-bold text-amber-700">{r.rating}.0</span>
                 </div>
               </div>

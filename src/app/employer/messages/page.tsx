@@ -205,7 +205,7 @@ export default function EmployerMessagesPage() {
           {/* Search box */}
           <div className="p-3.5 border-b border-gray-200 bg-white">
             <div className="relative">
-              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 placeholder="Search chats & applicants..."
@@ -221,11 +221,11 @@ export default function EmployerMessagesPage() {
             {convsLoading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <Loader2 size={24} className="text-blue-600 animate-spin" />
-                <span className="text-xs text-gray-400">Loading inbox...</span>
+                <span className="text-xs text-slate-500">Loading inbox...</span>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 space-y-2">
-                <MessageSquare size={32} className="mx-auto text-gray-300" />
+              <div className="p-8 text-center text-slate-500 space-y-2">
+                <MessageSquare size={32} className="mx-auto text-slate-500" />
                 <p className="text-xs font-bold text-gray-600">No active conversations</p>
                 <p className="text-[11px]">When candidates apply or message, chats will appear here.</p>
               </div>
@@ -248,7 +248,7 @@ export default function EmployerMessagesPage() {
                         <h4 className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                           {conv.otherUserName}
                         </h4>
-                        <span className="text-[10px] text-gray-400 shrink-0">
+                        <span className="text-[10px] text-slate-500 shrink-0">
                           {conv.lastMessageAt ? new Date(conv.lastMessageAt?.toMillis?.() || conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                       </div>
@@ -330,8 +330,8 @@ export default function EmployerMessagesPage() {
                     <Loader2 size={24} className="text-blue-600 animate-spin" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400 space-y-2">
-                    <Sparkles size={28} className="mx-auto text-blue-400" />
+                  <div className="text-center py-12 text-slate-500 space-y-2">
+                    <Sparkles size={28} className="mx-auto text-blue-600" />
                     <p className="text-xs font-bold text-gray-700">Start the conversation with {activeConv.otherUserName}</p>
                     <p className="text-[11px]">Use quick response templates below or type a custom message.</p>
                   </div>
@@ -351,7 +351,7 @@ export default function EmployerMessagesPage() {
                           }`}
                         >
                           <p className="whitespace-pre-wrap">{m.text}</p>
-                          <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
+                          <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMe ? 'text-blue-200' : 'text-slate-500'}`}>
                             <span>{messageMillis(m) ? new Date(messageMillis(m)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...'}</span>
                             {isMe && <CheckCheck size={11} />}
                           </div>
@@ -396,7 +396,7 @@ export default function EmployerMessagesPage() {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-3">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-3">
               <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200 shadow-xs">
                 <MessageSquare size={28} />
               </div>

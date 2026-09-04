@@ -145,7 +145,7 @@ export default function ServicesPage() {
             {s.rating.toFixed(1)}
           </span>
         ) : (
-          <span className="text-slate-400">N/A</span>
+          <span className="text-slate-500">N/A</span>
         ),
     },
     {

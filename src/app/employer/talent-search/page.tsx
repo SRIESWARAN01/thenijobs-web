@@ -124,7 +124,7 @@ export default function TalentSearchPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search skill, role, candidate name..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
           <div className="flex gap-2">
@@ -279,7 +279,7 @@ export default function TalentSearchPage() {
                 </div>
 
                 {/* Contact Card */}
-                <div className="p-4 rounded-xl bg-[#0e0e22] border border-white/[0.04] space-y-3">
+                <div className="p-4 rounded-xl border border-white/[0.04] space-y-3">
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Information</h4>
                   {isPremiumCompany ? (
                     <div className="space-y-2 text-xs">

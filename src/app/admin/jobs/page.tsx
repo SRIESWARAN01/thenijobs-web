@@ -450,7 +450,7 @@ export default function AdminJobsPage() {
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                           <Clock size={11} className="text-amber-700" /> Overdue: {daysAgo} Days Pending
                         </span>
-                        <span className="text-[10px] font-bold text-gray-400">
+                        <span className="text-[10px] font-bold text-slate-500">
                           {new Date(createdMillis).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </span>
                       </div>
@@ -466,8 +466,8 @@ export default function AdminJobsPage() {
                       </div>
 
                       <div className="p-3 bg-gray-50 rounded-xl text-xs space-y-1 text-gray-600">
-                        <p><span className="text-gray-400">Candidate Phone:</span> <strong>{app.seekerPhone || 'Provided in app'}</strong></p>
-                        <p><span className="text-gray-400">Status:</span> <strong className="text-blue-700 uppercase">{app.status || 'applied'}</strong></p>
+                        <p><span className="text-slate-500">Candidate Phone:</span> <strong>{app.seekerPhone || 'Provided in app'}</strong></p>
+                        <p><span className="text-slate-500">Status:</span> <strong className="text-blue-700 uppercase">{app.status || 'applied'}</strong></p>
                       </div>
                     </div>
 
@@ -503,7 +503,7 @@ export default function AdminJobsPage() {
         <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
           <Briefcase size={36} className="mx-auto text-gray-300 mb-2" />
           <p className="text-sm font-bold text-gray-700">No jobs match this filter</p>
-          <p className="text-xs text-gray-400 mt-0.5">Try selecting a different tab or clearing search filters.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Try selecting a different tab or clearing search filters.</p>
         </div>
       ) : (
         <DataTable
@@ -560,7 +560,7 @@ export default function AdminJobsPage() {
                 <XCircle size={18} className="text-red-600" />
                 Reject Job Listing — {rejectingJob.title}
               </h3>
-              <button onClick={() => setRejectingJob(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <button onClick={() => setRejectingJob(null)} className="p-1 rounded-lg text-slate-500 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
@@ -636,7 +636,7 @@ export default function AdminJobsPage() {
                 <h3 className="text-lg font-black text-gray-900 mt-1">{inspectingJob.title}</h3>
                 <p className="text-xs text-gray-500">{inspectingJob.companyName || 'Company'}</p>
               </div>
-              <button onClick={() => setInspectingJob(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <button onClick={() => setInspectingJob(null)} className="p-1 rounded-lg text-slate-500 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>

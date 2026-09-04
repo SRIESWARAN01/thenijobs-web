@@ -190,7 +190,7 @@ export default function EmployerWebsitePage() {
                 <Building2 size={18} />
               </div>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Layer 1</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Layer 1</span>
                 <h2 className="text-base font-bold text-slate-900">Standard Directory Profile</h2>
               </div>
             </div>
@@ -348,7 +348,7 @@ export default function EmployerWebsitePage() {
               <button
                 type="button"
                 onClick={() => setAiModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100"
               >
                 ✕
               </button>

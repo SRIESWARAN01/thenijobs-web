@@ -491,7 +491,7 @@ export default function BusinessesPage() {
       render: biz => biz.proofNumber
         ? (
           <span className="block">
-            <span className="block text-[10px] uppercase tracking-wide text-slate-400">{biz.proofType || 'Proof'}</span>
+            <span className="block text-[10px] uppercase tracking-wide text-slate-500">{biz.proofType || 'Proof'}</span>
             <span className="font-mono text-xs text-blue-700">{biz.proofNumber}</span>
           </span>
         )
@@ -751,7 +751,7 @@ export default function BusinessesPage() {
                 >
                   <Edit3 size={13} /> Edit
                 </button>
-                <button onClick={() => setPreviewBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
+                <button onClick={() => setPreviewBiz(null)} className="p-2 rounded-xl text-slate-500 hover:bg-gray-100">
                   <X size={18} />
                 </button>
               </div>
@@ -767,22 +767,22 @@ export default function BusinessesPage() {
             {/* Details Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
-                <span className="text-gray-400 font-bold block">Contact Person</span>
+                <span className="text-slate-500 font-bold block">Contact Person</span>
                 <span className="font-bold text-gray-900 text-sm">{previewBiz.contactPerson || previewBiz.ownerName || '—'}</span>
                 <span className="text-[11px] text-gray-500 block">{previewBiz.designation || 'Owner / Representative'}</span>
               </div>
               <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
-                <span className="text-gray-400 font-bold block">Calling &amp; WhatsApp</span>
+                <span className="text-slate-500 font-bold block">Calling &amp; WhatsApp</span>
                 <span className="font-mono font-bold text-gray-900 text-sm">{previewBiz.phone || '—'}</span>
                 <span className="text-[11px] text-gray-500 block">WA: {previewBiz.whatsapp || previewBiz.phone || '—'}</span>
               </div>
               <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1 sm:col-span-2">
-                <span className="text-gray-400 font-bold block">Office Address</span>
+                <span className="text-slate-500 font-bold block">Office Address</span>
                 <span className="font-semibold text-gray-900">{previewBiz.address || '—'}</span>
               </div>
               {previewBiz.website && (
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1 sm:col-span-2">
-                  <span className="text-gray-400 font-bold block">Website / Domain URL</span>
+                  <span className="text-slate-500 font-bold block">Website / Domain URL</span>
                   <a href={previewBiz.website.startsWith('http') ? previewBiz.website : `https://${previewBiz.website}`} target="_blank" rel="noreferrer" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-1">
                     {previewBiz.website} <ExternalLink size={12} />
                   </a>
@@ -882,7 +882,7 @@ export default function BusinessesPage() {
                   <p className="text-xs text-gray-500">Update company profile, contact, website &amp; verification</p>
                 </div>
               </div>
-              <button onClick={() => setEditingBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
+              <button onClick={() => setEditingBiz(null)} className="p-2 rounded-xl text-slate-500 hover:bg-gray-100">
                 <X size={18} />
               </button>
             </div>
@@ -1202,7 +1202,7 @@ export default function BusinessesPage() {
                 <AlertCircle size={20} className="text-red-600" />
                 <h3 className="font-bold text-gray-900 text-base">Reject Business Application</h3>
               </div>
-              <button onClick={() => setRejectingBiz(null)} className="p-1 rounded-xl text-gray-400 hover:bg-gray-100">
+              <button onClick={() => setRejectingBiz(null)} className="p-1 rounded-xl text-slate-500 hover:bg-gray-100">
                 <X size={18} />
               </button>
             </div>
@@ -1278,7 +1278,7 @@ export default function BusinessesPage() {
                   <p className="text-[11px] text-gray-500">Permanently delete listing &amp; data</p>
                 </div>
               </div>
-              <button onClick={() => setDeletingBiz(null)} className="p-1 rounded-xl text-gray-400 hover:bg-gray-100">
+              <button onClick={() => setDeletingBiz(null)} className="p-1 rounded-xl text-slate-500 hover:bg-gray-100">
                 <X size={18} />
               </button>
             </div>

@@ -201,7 +201,7 @@ function CandidateDetailModal({
               <p className="text-xs text-gray-500 font-medium">Applied for: <span className="text-blue-700 font-bold">{jobTitle}</span></p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-slate-500 hover:text-gray-600 transition-colors cursor-pointer">
             <X size={20} />
           </button>
         </div>
@@ -250,7 +250,7 @@ function CandidateDetailModal({
               <FileText size={14} /> View Resume PDF
             </a>
           ) : (
-            <span className="py-2.5 px-3 rounded-2xl bg-gray-50 text-gray-400 text-xs font-medium text-center border border-gray-200">
+            <span className="py-2.5 px-3 rounded-2xl bg-gray-50 text-slate-500 text-xs font-medium text-center border border-gray-200">
               No Resume Uploaded
             </span>
           )}
@@ -612,7 +612,7 @@ export default function CandidatesPage() {
                 placeholder="Search candidates by name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <select

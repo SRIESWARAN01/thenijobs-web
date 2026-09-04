@@ -443,7 +443,7 @@ export default function UsersPage() {
                   <p className="text-[11px] text-gray-500">Update account email, password, role &amp; details</p>
                 </div>
               </div>
-              <button onClick={() => setEditingUser(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <button onClick={() => setEditingUser(null)} className="p-1 rounded-lg text-slate-500 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
@@ -583,7 +583,7 @@ export default function UsersPage() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-200 animate-fade-in" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="text-base font-bold text-gray-900">Create New Platform User</h3>
-              <button onClick={() => setShowCreateModal(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowCreateModal(false)} className="p-1 rounded-lg text-slate-500 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>

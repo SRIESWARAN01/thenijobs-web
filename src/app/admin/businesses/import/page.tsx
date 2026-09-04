@@ -318,7 +318,7 @@ export default function BulkCompanyImportPage() {
                 ? 'bg-blue-600 text-white shadow-xs'
                 : currentStep > s.step
                 ? 'bg-emerald-50 text-emerald-800'
-                : 'text-gray-400 bg-gray-50'
+                : 'text-slate-500 bg-gray-50'
             }`}
           >
             {currentStep > s.step ? <Check size={14} className="text-emerald-600" /> : <span>{s.step}.</span>}
@@ -393,7 +393,7 @@ export default function BulkCompanyImportPage() {
                   <p className="text-sm font-bold text-gray-800">
                     Click to browse or drag &amp; drop file here
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Supports Excel Workbook (.xlsx, .xls) and CSV</p>
+                  <p className="text-xs text-slate-500 mt-1">Supports Excel Workbook (.xlsx, .xls) and CSV</p>
                 </div>
               </>
             )}
@@ -665,7 +665,7 @@ export default function BulkCompanyImportPage() {
                         className="w-4 h-4 rounded text-blue-600"
                       />
                     </td>
-                    <td className="p-3 text-gray-400 font-mono">{r.originalIndex + 1}</td>
+                    <td className="p-3 text-slate-500 font-mono">{r.originalIndex + 1}</td>
                     <td className="p-3">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
@@ -716,14 +716,14 @@ export default function BulkCompanyImportPage() {
                       {r.mapped.website ? (
                         <span className="text-blue-600 font-medium">{r.mapped.website}</span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-slate-500">—</span>
                       )}
                     </td>
                     <td className="p-3 text-gray-600 truncate max-w-[150px]">
                       {r.mapped.accountEmail || r.mapped.email ? (
                         <span className="font-mono text-[11px] text-gray-800">{r.mapped.accountEmail || r.mapped.email}</span>
                       ) : (
-                        <span className="text-gray-400 italic">Auto-generated</span>
+                        <span className="text-slate-500 italic">Auto-generated</span>
                       )}
                     </td>
                     <td className="p-3 text-gray-500">
@@ -1104,7 +1104,7 @@ export default function BulkCompanyImportPage() {
                       <tbody className="divide-y divide-gray-100">
                         {CATEGORY_GUIDE_ROWS.map((cat, i) => (
                           <tr key={cat['Official Category Name']} className="hover:bg-blue-50/40">
-                            <td className="py-2 px-3 font-bold text-gray-400">{i + 1}</td>
+                            <td className="py-2 px-3 font-bold text-slate-500">{i + 1}</td>
                             <td className="py-2 px-3 font-bold text-blue-700 whitespace-nowrap">
                               {cat['Official Category Name']}
                             </td>

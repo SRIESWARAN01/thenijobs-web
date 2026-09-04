@@ -408,7 +408,7 @@ export default function AICoachPage() {
                     <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
                       {q.category || 'Interview Question'}
                     </span>
-                    <span className="text-[10px] font-semibold text-gray-400">Question #{idx + 1}</span>
+                    <span className="text-[10px] font-semibold text-slate-500">Question #{idx + 1}</span>
                   </div>
 
                   <h5 className="font-bold text-sm text-gray-900 leading-snug">{q.question}</h5>

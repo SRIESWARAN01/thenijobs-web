@@ -496,10 +496,10 @@ export default function CompanyProfilePage() {
                     />
                   </>
                 ) : (
-                  <div className="text-center text-gray-400 p-4">
+                  <div className="text-center text-slate-500 p-4">
                     <Upload size={24} className="mx-auto mb-1.5 opacity-60 text-white" />
                     <span className="text-xs font-semibold text-gray-200 block">Click to Upload Business Banner</span>
-                    <span className="text-[10px] text-gray-400">Recommended: 1200 × 400px</span>
+                    <span className="text-[10px] text-slate-500">Recommended: 1200 × 400px</span>
                   </div>
                 )}
                 <input
@@ -573,10 +573,10 @@ export default function CompanyProfilePage() {
                   value={company.description}
                   onChange={(e) => handleDescChange(e.target.value)}
                   placeholder="Describe your company, products, work culture, services, and career opportunities..."
-                  className="w-full p-3.5 rounded-2xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none transition-all resize-none leading-relaxed font-medium"
+                  className="w-full p-3.5 rounded-2xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none transition-all resize-none leading-relaxed font-medium"
                 />
                 <div className="flex justify-end mt-1">
-                  <span className={`text-[10px] font-bold ${charCount > 900 ? 'text-amber-600' : 'text-gray-400'}`}>
+                  <span className={`text-[10px] font-bold ${charCount > 900 ? 'text-amber-600' : 'text-slate-500'}`}>
                     {charCount}/1000 characters
                   </span>
                 </div>
@@ -598,7 +598,7 @@ export default function CompanyProfilePage() {
                       placeholder="+91 93605 19460"
                       value={company.phone}
                       onChange={(e) => update('phone', e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium font-mono"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium font-mono"
                     />
                   </div>
                 </div>
@@ -611,7 +611,7 @@ export default function CompanyProfilePage() {
                       placeholder="contact@company.com"
                       value={company.email}
                       onChange={(e) => update('email', e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                     />
                   </div>
                 </div>
@@ -624,7 +624,7 @@ export default function CompanyProfilePage() {
                       placeholder="+91 70948 26886"
                       value={company.whatsapp}
                       onChange={(e) => update('whatsapp', e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium font-mono"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium font-mono"
                     />
                   </div>
                 </div>
@@ -637,7 +637,7 @@ export default function CompanyProfilePage() {
                       placeholder="https://www.example.com"
                       value={company.website}
                       onChange={(e) => update('website', e.target.value)}
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                     />
                   </div>
                 </div>
@@ -657,7 +657,7 @@ export default function CompanyProfilePage() {
                     placeholder="Door No, Street Name, Area, Landmark, Pincode"
                     value={company.address}
                     onChange={(e) => update('address', e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                   />
                 </div>
                 <div>
@@ -680,7 +680,7 @@ export default function CompanyProfilePage() {
                     placeholder="e.g. 2018"
                     value={company.establishedYear}
                     onChange={(e) => update('establishedYear', e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                   />
                 </div>
               </div>
@@ -701,7 +701,7 @@ export default function CompanyProfilePage() {
                     value={company.facebook}
                     onChange={(e) => update('facebook', e.target.value)}
                     placeholder="https://facebook.com/..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                   />
                 </div>
                 <div>
@@ -713,7 +713,7 @@ export default function CompanyProfilePage() {
                     value={company.instagram}
                     onChange={(e) => update('instagram', e.target.value)}
                     placeholder="https://instagram.com/..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                   />
                 </div>
                 <div>
@@ -725,7 +725,7 @@ export default function CompanyProfilePage() {
                     value={company.linkedin}
                     onChange={(e) => update('linkedin', e.target.value)}
                     placeholder="https://linkedin.com/company/..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                   />
                 </div>
                 <div>
@@ -737,7 +737,7 @@ export default function CompanyProfilePage() {
                     value={company.youtube}
                     onChange={(e) => update('youtube', e.target.value)}
                     placeholder="https://youtube.com/..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-600 outline-none font-medium"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
                   />
                 </div>
               </div>
@@ -811,7 +811,7 @@ export default function CompanyProfilePage() {
                     <button
                       type="button"
                       onClick={() => removeBranch(branch.id)}
-                      className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -889,7 +889,7 @@ export default function CompanyProfilePage() {
                         }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${item.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-gray-400'
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${item.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-500'
                           }`}
                       >
                         <Icon size={14} />
@@ -928,7 +928,7 @@ export default function CompanyProfilePage() {
                     }}
                   />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">
+                <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
                   Verification status is managed by administrators to ensure platform safety and genuine employer trust.
                 </p>
               </div>

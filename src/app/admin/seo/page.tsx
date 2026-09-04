@@ -241,7 +241,7 @@ export default function AdminSeoManagementPage() {
             type="button"
             onClick={() => handleCopyUrl(item.customUrl || item.id)}
             aria-label={`Copy slug for ${item.branding?.companyName ?? 'portfolio'}`}
-            className="tap-target-auto -m-1 rounded p-1 text-slate-400 transition-colors hover:text-slate-700"
+            className="tap-target-auto -m-1 rounded p-1 text-slate-500 transition-colors hover:text-slate-700"
           >
             {copiedSlug === (item.customUrl || item.id)
               ? <Check size={12} className="text-emerald-600" />
@@ -273,7 +273,7 @@ export default function AdminSeoManagementPage() {
       hideBelow: 'xl',
       render: item => {
         const keywords = item.seo?.keywords || [];
-        if (keywords.length === 0) return <span className="text-slate-400">None</span>;
+        if (keywords.length === 0) return <span className="text-slate-500">None</span>;
         return (
           <span className="flex max-w-[200px] flex-wrap gap-1">
             {keywords.slice(0, 3).map((kw, i) => (

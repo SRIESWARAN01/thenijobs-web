@@ -631,7 +631,7 @@ Return strictly valid JSON with format:
                   {isDone ? <Check size={14} /> : <Icon size={14} />}
                 </div>
                 <span className={`text-[10px] sm:text-xs font-bold transition-all text-center ${
-                  isActive ? 'text-blue-600' : isDone ? 'text-blue-900' : 'text-gray-400'
+                  isActive ? 'text-blue-600' : isDone ? 'text-blue-900' : 'text-slate-500'
                 }`}>
                   {step.label}
                 </span>
@@ -763,7 +763,7 @@ Return strictly valid JSON with format:
                       {education.length > 1 && (
                         <button
                           onClick={() => setEducation(e => e.filter(x => x.id !== edu.id))}
-                          className="absolute top-3 right-3 text-gray-400 hover:text-red-600 font-bold p-1 cursor-pointer"
+                          className="absolute top-3 right-3 text-slate-500 hover:text-red-600 font-bold p-1 cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 size={14} />
@@ -849,7 +849,7 @@ Return strictly valid JSON with format:
                       {experience.length > 1 && (
                         <button
                           onClick={() => setExperience(e => e.filter(x => x.id !== exp.id))}
-                          className="absolute top-3 right-3 text-gray-400 hover:text-red-600 font-bold p-1 cursor-pointer"
+                          className="absolute top-3 right-3 text-slate-500 hover:text-red-600 font-bold p-1 cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 size={14} />
@@ -954,7 +954,7 @@ Return strictly valid JSON with format:
                       {certifications.length > 1 && (
                         <button
                           onClick={() => setCertifications(c => c.filter(x => x.id !== cert.id))}
-                          className="absolute top-3 right-3 text-gray-400 hover:text-red-600 font-bold p-1 cursor-pointer"
+                          className="absolute top-3 right-3 text-slate-500 hover:text-red-600 font-bold p-1 cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 size={14} />
@@ -1032,7 +1032,7 @@ Return strictly valid JSON with format:
               onClick={goPrev}
               disabled={stepIndex === 0}
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                stepIndex === 0 ? 'text-gray-400 cursor-not-allowed opacity-50' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 cursor-pointer shadow-xs'
+                stepIndex === 0 ? 'text-slate-500 cursor-not-allowed opacity-50' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 cursor-pointer shadow-xs'
               }`}
             >
               <ChevronLeft size={16} /> Previous

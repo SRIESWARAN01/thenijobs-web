@@ -98,7 +98,7 @@ export default function SeekerNotificationsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
+      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit max-w-full">
         <button
           type="button"
           onClick={() => setFilter('all')}

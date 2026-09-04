@@ -364,6 +364,12 @@ export default function BecomeEmployerPage() {
         <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
           {/* Wizard Step Progress Bar */}
           <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-5">
+            {/* Below sm the five labels get ~62px each and truncate to noise,
+                so the current step is named once above the dots instead. */}
+            <p className="mb-2.5 text-center text-xs font-bold text-blue-700 sm:hidden">
+              Step {currentStep} of {STEPS.length}
+              {STEPS[currentStep - 1] ? ` — ${STEPS[currentStep - 1].label}` : ''}
+            </p>
             <div className="grid grid-cols-5 gap-2 text-center">
               {STEPS.map((s) => {
                 const isCurrent = currentStep === s.step;
@@ -381,7 +387,7 @@ export default function BecomeEmployerPage() {
                     >
                       {isDone ? <Check size={14} /> : s.step}
                     </div>
-                    <p className={`text-[10px] sm:text-xs font-bold truncate ${isCurrent ? 'text-blue-700' : 'text-gray-500'}`}>
+                    <p className={`hidden truncate text-[10px] font-bold sm:block sm:text-xs ${isCurrent ? 'text-blue-700' : 'text-slate-500'}`}>
                       {s.label}
                     </p>
                   </div>

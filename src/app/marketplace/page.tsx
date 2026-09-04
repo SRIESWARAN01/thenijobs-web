@@ -240,7 +240,7 @@ export default function MarketplacePage() {
         
         {/* Navigation Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div className="flex gap-1.5 p-1 rounded-2xl bg-slate-200/80 overflow-x-auto no-scrollbar w-fit">
+          <div className="flex gap-1.5 p-1 rounded-2xl bg-slate-200/80 overflow-x-auto no-scrollbar w-fit max-w-full">
             <button
               onClick={() => setActiveTab('all')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${

@@ -2,16 +2,39 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Search, Globe, TrendingUp, Sparkles, CheckCircle2,
-  AlertTriangle, ShieldCheck, Star, ExternalLink, RefreshCw,
-  Plus, Trash2, Edit3, ArrowUpRight, Copy, Check, Filter,
-  Building2, Briefcase, UserCheck, Zap, Layers, BarChart2
+  Briefcase, Building2, Check, Copy, ExternalLink, Globe, RefreshCw, Search, Sparkles, TrendingUp,
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useToast } from '@/contexts/ToastContext';
 import { db } from '@/lib/firebase/config';
-import { doc, updateDoc, collection, getDocs, query, limit } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { slugifyCompany } from '@/lib/companySlug';
+import { Button, DataTable, Pill, type Column } from '@/components/dashboard';
+
+interface PortfolioRow {
+  id: string;
+  customUrl?: string;
+  ownerType?: string;
+  googleIndex?: boolean;
+  branding?: { companyName?: string; logo?: string };
+  seo?: { keywords?: string[] };
+}
+interface CompanyRow { id: string; name?: string; district?: string; category?: string; verificationStatus?: string }
+interface JobRow { id: string; title?: string; companyName?: string; district?: string; isActive?: boolean; status?: string }
+
+function ScoreBar({ score }: { score: number }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span className="block h-2 w-12 overflow-hidden rounded-full bg-slate-100">
+        <span
+          className={`block h-full rounded-full ${score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500'}`}
+          style={{ width: `${score}%` }}
+        />
+      </span>
+      <span className="text-xs font-semibold tabular-nums text-slate-800">{score}%</span>
+    </span>
+  );
+}
 
 // High-volume keywords tailored to Theni District and Tamil Nadu industry hubs
 const HIGH_IMPACT_KEYWORDS = {
@@ -160,6 +183,160 @@ export default function AdminSeoManagementPage() {
     toast.success('Public URL copied!');
   };
 
+  const filteredPortfolios = useMemo(() => (portfolios as PortfolioRow[]).filter(p => {
+    const matchQuery = (p.customUrl || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.branding?.companyName || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchIndex = filterIndexed === 'all'
+      ? true
+      : filterIndexed === 'indexed'
+      ? p.googleIndex !== false
+      : p.googleIndex === false;
+    return matchQuery && matchIndex;
+  }), [portfolios, searchQuery, filterIndexed]);
+
+  const filteredCompanies = useMemo(
+    () => (companies as CompanyRow[]).filter(c => (c.name || '').toLowerCase().includes(searchQuery.toLowerCase())),
+    [companies, searchQuery],
+  );
+
+  const filteredJobs = useMemo(
+    () => (jobs as JobRow[]).filter(j => (j.title || '').toLowerCase().includes(searchQuery.toLowerCase())),
+    [jobs, searchQuery],
+  );
+
+  const portfolioColumns: Column<PortfolioRow>[] = [
+    {
+      key: 'owner',
+      header: 'Portfolio / owner',
+      card: 'title',
+      sortValue: item => item.branding?.companyName ?? '',
+      render: item => (
+        <div className="flex items-center gap-2.5">
+          {item.branding?.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={item.branding.logo} alt="" className="h-8 w-8 shrink-0 rounded-lg border object-cover" />
+          ) : (
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">
+              {(item.branding?.companyName || 'P')[0]}
+            </span>
+          )}
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-slate-900">
+              {item.branding?.companyName || 'Portfolio website'}
+            </span>
+            <span className="block text-xs capitalize text-slate-500">{item.ownerType || 'Seeker'}</span>
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'customUrl',
+      header: 'Slug & live URL',
+      hideBelow: 'lg',
+      sortValue: item => item.customUrl ?? item.id,
+      render: item => (
+        <span className="flex items-center gap-1 font-mono text-slate-700">
+          <span className="max-w-[150px] truncate">/{item.customUrl || item.id}</span>
+          <button
+            type="button"
+            onClick={() => handleCopyUrl(item.customUrl || item.id)}
+            aria-label={`Copy slug for ${item.branding?.companyName ?? 'portfolio'}`}
+            className="tap-target-auto -m-1 rounded p-1 text-slate-400 transition-colors hover:text-slate-700"
+          >
+            {copiedSlug === (item.customUrl || item.id)
+              ? <Check size={12} className="text-emerald-600" />
+              : <Copy size={12} />}
+          </button>
+        </span>
+      ),
+    },
+    {
+      key: 'googleIndex',
+      header: 'Index status',
+      align: 'center',
+      sortValue: item => (item.googleIndex !== false ? 1 : 0),
+      render: item => (
+        <Pill tone={item.googleIndex !== false ? 'success' : 'neutral'} dot>
+          {item.googleIndex !== false ? 'Indexed' : 'Noindex'}
+        </Pill>
+      ),
+    },
+    {
+      key: 'score',
+      header: 'SEO strength',
+      sortValue: item => getSeoScore(item, 'portfolio'),
+      render: item => <ScoreBar score={getSeoScore(item, 'portfolio')} />,
+    },
+    {
+      key: 'keywords',
+      header: 'Keywords',
+      hideBelow: 'xl',
+      render: item => {
+        const keywords = item.seo?.keywords || [];
+        if (keywords.length === 0) return <span className="text-slate-400">None</span>;
+        return (
+          <span className="flex max-w-[200px] flex-wrap gap-1">
+            {keywords.slice(0, 3).map((kw, i) => (
+              <span key={i} className="max-w-[90px] truncate rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+                {kw}
+              </span>
+            ))}
+            {keywords.length > 3 && (
+              <span className="text-xs font-semibold text-slate-500">+{keywords.length - 3}</span>
+            )}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const companyColumns: Column<CompanyRow>[] = [
+    { key: 'name', header: 'Company', card: 'title', sortValue: c => c.name ?? '', render: c => <span className="font-semibold text-slate-900">{c.name || 'Unnamed'}</span> },
+    { key: 'district', header: 'Location', sortValue: c => c.district ?? '', render: c => c.district || 'Theni' },
+    { key: 'category', header: 'Category', hideBelow: 'lg', sortValue: c => c.category ?? '', render: c => c.category || 'General' },
+    {
+      key: 'verificationStatus',
+      header: 'Verification',
+      align: 'center',
+      sortValue: c => c.verificationStatus ?? '',
+      render: c => (
+        <Pill tone={c.verificationStatus === 'verified' ? 'success' : 'warning'} dot>
+          {c.verificationStatus || 'Pending'}
+        </Pill>
+      ),
+    },
+    {
+      key: 'score',
+      header: 'SEO score',
+      sortValue: c => getSeoScore(c, 'company'),
+      render: c => <ScoreBar score={getSeoScore(c, 'company')} />,
+    },
+  ];
+
+  const jobColumns: Column<JobRow>[] = [
+    { key: 'title', header: 'Job title', card: 'title', sortValue: j => j.title ?? '', render: j => <span className="font-semibold text-slate-900">{j.title || 'Untitled'}</span> },
+    { key: 'companyName', header: 'Company', sortValue: j => j.companyName ?? '', render: j => j.companyName || 'Direct employer' },
+    { key: 'district', header: 'Location', hideBelow: 'lg', sortValue: j => j.district ?? '', render: j => j.district || 'Theni' },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      sortValue: j => (j.isActive || j.status === 'active' ? 1 : 0),
+      render: j => (
+        <Pill tone={j.isActive || j.status === 'active' ? 'success' : 'neutral'} dot>
+          {j.isActive || j.status === 'active' ? 'Active' : 'Closed'}
+        </Pill>
+      ),
+    },
+    {
+      key: 'score',
+      header: 'SEO score',
+      sortValue: j => getSeoScore(j, 'job'),
+      render: j => <ScoreBar score={getSeoScore(j, 'job')} />,
+    },
+  ];
+
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-20" style={{ fontFamily: "'Inter', sans-serif" }}>
 
@@ -301,235 +478,80 @@ export default function AdminSeoManagementPage() {
 
       {/* ── TAB 1: PORTFOLIO WEBSITES SEO AUDITOR ── */}
       {activeTab === 'portfolios' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
-                  <tr>
-                    <th className="py-3 px-4">Portfolio Entity / Owner</th>
-                    <th className="py-3 px-4">SEO Slug &amp; Live URL</th>
-                    <th className="py-3 px-4">Google Index Status</th>
-                    <th className="py-3 px-4">SEO Strength</th>
-                    <th className="py-3 px-4">Current Keywords</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium">
-                  {portfolios
-                    .filter(p => {
-                      const matchQuery = (p.customUrl || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        (p.branding?.companyName || '').toLowerCase().includes(searchQuery.toLowerCase());
-                      const matchIndex = filterIndexed === 'all'
-                        ? true
-                        : filterIndexed === 'indexed'
-                        ? p.googleIndex !== false
-                        : p.googleIndex === false;
-                      return matchQuery && matchIndex;
-                    })
-                    .map(item => {
-                      const score = getSeoScore(item, 'portfolio');
-                      const keywords = item.seo?.keywords || [];
-                      const suggested = getSuggestedKeywords(item);
-                      const isIndexed = item.googleIndex !== false;
-
-                      return (
-                        <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2.5">
-                              {item.branding?.logo ? (
-                                <img src={item.branding.logo} alt="" className="w-8 h-8 rounded-lg object-cover border" />
-                              ) : (
-                                <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                                  {(item.branding?.companyName || 'P')[0]}
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-bold text-slate-900">{item.branding?.companyName || 'Portfolio Website'}</p>
-                                <span className="text-[10px] text-slate-400 capitalize">{item.ownerType || 'Seeker'}</span>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1 font-mono text-slate-700">
-                              <span className="truncate max-w-[150px]">/{item.customUrl || item.id}</span>
-                              <button onClick={() => handleCopyUrl(item.customUrl || item.id)} className="text-slate-400 hover:text-slate-700 p-0.5">
-                                {copiedSlug === (item.customUrl || item.id) ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
-                              </button>
-                            </div>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1 ${
-                              isIndexed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${isIndexed ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                              {isIndexed ? 'INDEXED' : 'NOINDEX'}
-                            </span>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-12 bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
-                                  style={{ width: `${score}%` }}
-                                />
-                              </div>
-                              <span className="font-bold text-[11px] text-slate-800">{score}%</span>
-                            </div>
-                          </td>
-
-                          <td className="py-3 px-4">
-                            <div className="flex flex-wrap gap-1 max-w-[200px]">
-                              {keywords.slice(0, 3).map((kw: string, idx: number) => (
-                                <span key={idx} className="px-1.5 py-0.2 bg-slate-100 rounded text-[10px] text-slate-600 truncate max-w-[90px]">
-                                  {kw}
-                                </span>
-                              ))}
-                              {keywords.length > 3 && (
-                                <span className="text-[10px] text-slate-400 font-bold">+{keywords.length - 3}</span>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => handleAutoBoostSeo(item, 'portfolioSites')}
-                                disabled={optimizing}
-                                className="px-2.5 py-1 bg-blue-600 text-white rounded-lg font-bold text-[11px] hover:bg-blue-700 flex items-center gap-1 shadow-2xs"
-                                title="Auto-inject high ranking keywords & optimize Google SERP snippet"
-                              >
-                                <Sparkles size={11} /> Boost SEO
-                              </button>
-
-                              <a
-                                href={`/portfolio/${item.customUrl || item.id}`}
-                                target="_blank"
-                                rel="noopener"
-                                className="p-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
-                                title="View live website"
-                              >
-                                <ExternalLink size={12} />
-                              </a>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <DataTable
+          label="Portfolio website SEO audit"
+          loading={portLoading}
+          columns={portfolioColumns}
+          rows={filteredPortfolios}
+          getRowId={item => item.id}
+          emptyIcon={Globe}
+          emptyTitle="No portfolio websites match"
+          emptyDescription="Clear the search or index filter to see every published portfolio."
+          rowActions={item => (
+            <>
+              <Button
+                size="sm"
+                variant="primary"
+                disabled={optimizing}
+                onClick={() => handleAutoBoostSeo(item, 'portfolioSites')}
+                title="Auto-inject high ranking keywords and optimise the Google snippet"
+              >
+                <Sparkles size={12} /> Boost SEO
+              </Button>
+              <a
+                href={`/portfolio/${item.customUrl || item.id}`}
+                target="_blank"
+                rel="noopener"
+                title="View live website"
+                aria-label={`View ${item.branding?.companyName ?? 'portfolio'} live`}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 text-slate-600 transition-colors hover:bg-slate-100"
+              >
+                <ExternalLink size={13} />
+              </a>
+            </>
+          )}
+        />
       )}
 
       {/* ── TAB 2: COMPANY DIRECTORIES SEO AUDITOR ── */}
       {activeTab === 'companies' && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="py-3 px-4">Company Name</th>
-                  <th className="py-3 px-4">Location</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Verification</th>
-                  <th className="py-3 px-4">SEO Score</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {companies
-                  .filter(c => (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map(item => {
-                    const score = getSeoScore(item, 'company');
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 font-bold text-slate-900">{item.name}</td>
-                        <td className="py-3 px-4 text-slate-600">{item.district || 'Theni'}</td>
-                        <td className="py-3 px-4 text-slate-600">{item.category || 'General'}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            item.verificationStatus === 'verified' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
-                          }`}>
-                            {item.verificationStatus || 'Pending'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-bold text-slate-800">{score}%</span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            onClick={() => handleAutoBoostSeo(item, 'companies')}
-                            className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg font-bold text-[11px] hover:bg-indigo-700 flex items-center gap-1 ml-auto shadow-2xs"
-                          >
-                            <Sparkles size={11} /> Boost SEO
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          label="Company directory SEO audit"
+          loading={compLoading}
+          columns={companyColumns}
+          rows={filteredCompanies}
+          getRowId={item => item.id}
+          emptyIcon={Building2}
+          emptyTitle="No companies match that search"
+          rowActions={item => (
+            <Button size="sm" variant="primary" onClick={() => handleAutoBoostSeo(item, 'companies')}>
+              <Sparkles size={12} /> Boost SEO
+            </Button>
+          )}
+        />
       )}
 
       {/* ── TAB 3: JOB OPENINGS SEO AUDITOR ── */}
       {activeTab === 'jobs' && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="py-3 px-4">Job Title</th>
-                  <th className="py-3 px-4">Company</th>
-                  <th className="py-3 px-4">Location</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">SEO Score</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {jobs
-                  .filter(j => (j.title || '').toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map(item => {
-                    const score = getSeoScore(item, 'job');
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3 px-4 font-bold text-slate-900">{item.title}</td>
-                        <td className="py-3 px-4 text-slate-600">{item.companyName || 'Direct Employer'}</td>
-                        <td className="py-3 px-4 text-slate-600">{item.district || 'Theni'}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            item.isActive || item.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {item.isActive || item.status === 'active' ? 'Active' : 'Closed'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-bold text-slate-800">{score}%</span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <a
-                            href={`/jobs/${item.id}`}
-                            target="_blank"
-                            rel="noopener"
-                            className="p-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 inline-flex items-center gap-1 text-[11px] font-bold"
-                          >
-                            <ExternalLink size={12} /> View
-                          </a>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          label="Job opening SEO audit"
+          loading={jobsLoading}
+          columns={jobColumns}
+          rows={filteredJobs}
+          getRowId={item => item.id}
+          emptyIcon={Briefcase}
+          emptyTitle="No job openings match that search"
+          rowActions={item => (
+            <a
+              href={`/jobs/${item.id}`}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-300 px-3 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100"
+            >
+              <ExternalLink size={12} /> View
+            </a>
+          )}
+        />
       )}
 
       {/* ── TAB 4: HIGH-RANKING KEYWORD BANK ── */}

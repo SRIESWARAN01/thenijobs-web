@@ -6,7 +6,7 @@
  * signing out the currently logged-in admin.
  */
 
-import { initializeApp, getApps, deleteApp } from 'firebase/app';
+import { initializeApp, getApp, deleteApp } from 'firebase/app';
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -17,15 +17,10 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import type { UserRole } from '@/lib/types';
 
-// Firebase config (same project, secondary app instance)
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAAXHgdvKXi4pFPNGciMbZE8lPITN9Hsug",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "thenijobs-9f01d.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "thenijobs-9f01d",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "thenijobs-9f01d.firebasestorage.app",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "1057136000588",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:1057136000588:web:12506f87f1f502596a7ee9",
-};
+// SEC-1: this used to restate the whole Firebase config with literal fallbacks, one of
+// which was the live web API key. The default app is already initialised — importing `db`
+// from './config' guarantees it — so the secondary instance reuses its options. One source
+// of configuration, and no credential in the source tree.
 
 export interface AdminCreateUserParams {
   displayName: string;
@@ -72,7 +67,7 @@ export async function adminCreateUser(
   let secondaryApp;
 
   try {
-    secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+    secondaryApp = initializeApp(getApp().options, secondaryAppName);
     const secondaryAuth = getAuth(secondaryApp);
 
     // 1. Create the user in Firebase Auth

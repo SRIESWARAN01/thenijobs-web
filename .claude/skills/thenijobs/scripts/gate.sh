@@ -74,8 +74,9 @@ if [ $SECRETS = 1 ]; then
   if [ -d out/_next/static ]; then
     run "secrets:bundle" bash -c '! grep -rlE "gsk_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|rzp_live_[A-Za-z0-9]+|BEGIN (RSA |EC )?PRIVATE KEY|\"private_key\"" out/_next/static'
   else skip "secrets:bundle" "no out/_next/static (build skipped or failed)"; fi
-  # H. source: key-shaped literals; paths only. Known ambient red at 5b61111: src/app/api/otp/call/route.ts (security.md S-6) — attribute, never delete the check
-  run "secrets:src-literals" bash -c 'f=$(git grep -lE "AIza[0-9A-Za-z_-]{35}|gsk_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|rzp_live_[A-Za-z0-9]+" -- src scripts | grep -v "src/lib/firebase/adminUserService.ts" || true); if [ -n "$f" ]; then echo "key-shaped literal in:"; echo "$f"; exit 1; fi; echo clean'
+  # H. source: key-shaped literals; paths only. Red from 5b61111 until SEC-1 (2026-09-05) removed the
+  # two literals; the adminUserService exclusion went with them, so this check now covers all of src/.
+  run "secrets:src-literals" bash -c 'f=$(git grep -lE "AIza[0-9A-Za-z_-]{35}|gsk_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9]{20,}|rzp_live_[A-Za-z0-9]+" -- src scripts || true); if [ -n "$f" ]; then echo "key-shaped literal in:"; echo "$f"; exit 1; fi; echo clean'
   # I. tracked build/env artefacts must never be in the tree
   run "tracked-artefacts" bash -c 'n=$(git ls-files | grep -cE "^(out/|\.next/|\.env(\..*)?$|tsconfig\.tsbuildinfo$)" || true); [ "$n" = "0" ] && echo clean || { git ls-files | grep -E "^(out/|\.next/|\.env(\..*)?$|tsconfig\.tsbuildinfo$)"; exit 1; }'
 fi

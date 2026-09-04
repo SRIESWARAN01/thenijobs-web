@@ -5,11 +5,11 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import CompanyProfileClient from './CompanyProfileClient';
 import { db, auth } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Loader2, Building2, ArrowLeft } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
-import { slugifyCompany } from '@/lib/companySlug';
+import { slugifyCompany, resolveCompanyBySlug } from '@/lib/companySlug';
 
 export default function CompanyProfilePageClient({ slug: slugProp }: { slug: string }) {
   // CRITICAL: Read slug from the actual URL, not from the server prop.
@@ -33,95 +33,20 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
         setLoading(true);
         setNotFoundState(false);
 
-        // 1. Fetch company by slug
-        // RULES-1: public reads must carry the read rule's constraint (verified companies only);
-        // a signed-in owner previewing a pending/rejected company is handled by the owner lookup below.
-        const isVerified = where('verificationStatus', '==', 'verified');
-        const qCompany = query(
-          collection(db, 'companies'),
-          where('slug', '==', slug),
-          isVerified,
-          limit(1)
-        );
-        const snapCompany = await getDocs(qCompany);
+        // 1. Resolve the slug to a company.
+        // PERF-2: this was six lookups in sequence, each waiting for the previous to come back
+        // empty. They share no data, so resolveCompanyBySlug runs them together and returns the
+        // first hit in the same priority order.
+        const docData: any = await resolveCompanyBySlug(slug, {
+          includeNameMatch: true,
+          ownerUid: auth.currentUser?.uid ?? null,
+        });
 
-        let docData: any = null;
-
-        if (snapCompany.empty) {
-          // Check if slug is a direct Firestore document ID
-          try {
-            const docRef = doc(db, 'companies', slug);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-              docData = { id: docSnap.id, ...docSnap.data() };
-            }
-          } catch { /* not a valid doc id format */ }
-
-          if (!docData) {
-            // Try checking aliases array (if company has redirects)
-            const qAlias = query(
-              collection(db, 'companies'),
-              where('aliases', 'array-contains', slug),
-              isVerified,
-              limit(1)
-            );
-            const snapAlias = await getDocs(qAlias);
-            if (snapAlias.empty) {
-              // Last resort: try case-insensitive name match
-              const qName = query(
-                collection(db, 'companies'),
-                where('slugLower', '==', slug.toLowerCase()),
-                isVerified,
-                limit(1)
-              );
-              let snapName = await getDocs(qName);
-
-              if (snapName.empty) {
-                // A company saved without a `slug`/`slugLower` field is still reachable:
-                // the directory links to slugifyCompany(name), so match on the name that
-                // produces this slug. Without this, a real verified business (e.g. one
-                // registered before slugs were written) renders as "not found" even though
-                // its card in /businesses links straight here.
-                const qByName = query(
-                  collection(db, 'companies'),
-                  where('name', '==', slug.replace(/-/g, ' ')),
-                  limit(1),
-                );
-                snapName = await getDocs(qByName);
-              }
-
-              if (snapName.empty) {
-                // RULES-1: a signed-in owner may preview their own pending/rejected company
-                const uid = auth.currentUser?.uid;
-                if (uid) {
-                  const qOwn = query(
-                    collection(db, 'companies'),
-                    where('slug', '==', slug),
-                    where('ownerId', '==', uid),
-                    limit(1)
-                  );
-                  const snapOwn = await getDocs(qOwn);
-                  if (!snapOwn.empty) {
-                    docData = { id: snapOwn.docs[0].id, ...snapOwn.docs[0].data() };
-                  }
-                }
-                if (!docData) {
-                  // TRUST-1: this used to substitute an invented company from
-                  // sampleCompanies.ts. A directory that sells verification must never render a
-                  // business that does not exist, least of all badged "Authorized".
-                  setNotFoundState(true);
-                  setLoading(false);
-                  return;
-                }
-              } else {
-                docData = { id: snapName.docs[0].id, ...snapName.docs[0].data() };
-              }
-            } else {
-              docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
-            }
-          }
-        } else {
-          docData = { id: snapCompany.docs[0].id, ...snapCompany.docs[0].data() } as any;
+        if (!docData) {
+          // TRUST-1: never substitute an invented company here.
+          setNotFoundState(true);
+          setLoading(false);
+          return;
         }
 
 

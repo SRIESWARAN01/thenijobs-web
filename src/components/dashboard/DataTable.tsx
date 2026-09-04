@@ -371,13 +371,28 @@ export function DataTable<T>({
 
       {/* ---------- Tablet and up: table (table view only) ---------- */}
       <div className={cn(isGrid ? 'hidden' : 'hidden md:block')}>
-        <div className="w-full overflow-x-auto">
+        {/*
+          `overflow-x-auto` makes this box a scroll container (per the Overflow
+          spec an auto overflow-x coerces overflow-y away from `visible`), so a
+          `sticky` thead inside it pins to the top of THIS box, not the page.
+          With no height limit that top never leaves the viewport's way, which
+          is why the header did not stick. Bounding the height gives the sticky
+          header a real scrollport to pin against and keeps horizontal scroll
+          for wide tables.
+        */}
+        <div
+          className={cn('w-full overflow-auto', stickyHeader && 'max-h-[calc(100vh-15rem)]')}
+        >
           <table className="w-full min-w-full border-collapse text-left">
             {label && <caption className="sr-only">{label}</caption>}
             <thead
               className={cn(
-                'bg-slate-50/80 text-[11px] uppercase tracking-wide text-slate-500',
-                stickyHeader && 'sticky top-0 z-10',
+                'text-[11px] uppercase tracking-wide text-slate-500',
+                // Opaque, not /80: a translucent sticky header shows the rows
+                // scrolling underneath it.
+                stickyHeader
+                  ? 'sticky top-0 z-20 bg-slate-50 shadow-[inset_0_-1px_0_rgb(226_232_240)]'
+                  : 'bg-slate-50/80',
               )}
             >
               <tr>
@@ -464,7 +479,11 @@ export function DataTable<T>({
                       <td
                         key={c.key}
                         className={cn(
-                          'text-sm text-slate-700 align-middle',
+                          // nowrap by default: without it a narrow column breaks
+                          // "Sri Vinayaga Studio" across three lines and every row
+                          // in the table grows to match. Columns that want wrapping
+                          // pass `className: 'whitespace-normal'`.
+                          'align-middle text-sm text-slate-700 whitespace-nowrap',
                           pad,
                           ALIGN[c.align ?? 'left'],
                           c.hideBelow && HIDE_BELOW[c.hideBelow],

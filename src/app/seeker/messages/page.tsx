@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, orderBy, limit, addDoc, serverTimestamp, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, limit, addDoc, serverTimestamp, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { MessageSquare, Send, Search, Loader2, ArrowLeft, Building2, Briefcase, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
@@ -13,9 +13,27 @@ interface Message {
   id: string;
   senderId: string;
   text: string;
-  timestamp: any;
   createdAt?: any;
+  timestamp?: any;
 }
+
+/**
+ * Chat messages exist with two different time fields: `createdAt` (written by the seeker
+ * page and by the system message applyToJob creates) and `timestamp` (written by the
+ * employer page). A Firestore `orderBy` silently drops every document that lacks the
+ * field it sorts on, so ordering server-side hid each side of the conversation from the
+ * other. Read unordered and sort here over whichever field the document actually carries,
+ * so existing threads of either shape stay readable without a data migration.
+ */
+function messageMillis(m: any): number {
+  const v = m?.createdAt ?? m?.timestamp;
+  if (!v) return 0;
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (typeof v.seconds === 'number') return v.seconds * 1000;
+  const parsed = new Date(v).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 
 interface Conversation {
   id: string;
@@ -103,13 +121,13 @@ export default function SeekerMessagesPage() {
 
     setLoadingMsgs(true);
     const msgsRef = collection(db, 'conversations', activeConv.id, 'messages');
-    const q = query(msgsRef, orderBy('createdAt', 'asc'), limit(100));
+    const q = query(msgsRef, limit(200));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map((d) => ({
+      const msgs = (snapshot.docs.map((d) => ({
         id: d.id,
         ...d.data()
-      })) as Message[];
+      })) as Message[]).sort((a, b) => messageMillis(a) - messageMillis(b));
       setMessages(msgs);
       setLoadingMsgs(false);
 

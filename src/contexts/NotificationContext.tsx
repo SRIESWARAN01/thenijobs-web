@@ -47,9 +47,12 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     }
 
     setLoading(true);
+    // RULES-1: admins also receive the shared 'admin' inbox (registration and new-job alerts are
+    // addressed to the pseudo-recipient 'admin' because clients can no longer enumerate admin users).
+    const isAdminUser = user.role === 'admin' || user.role === 'super_admin';
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', user.uid),
+      isAdminUser ? where('userId', 'in', [user.uid, 'admin']) : where('userId', '==', user.uid),
       orderBy('createdAt', 'desc'),
       limit(50)
     );
@@ -72,7 +75,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     );
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [user?.uid, user?.role]);
 
   const handleMarkAsRead = async (id: string) => {
     try {

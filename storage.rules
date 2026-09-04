@@ -100,22 +100,21 @@ service firebase.storage {
     // ===== PORTFOLIO ASSETS (PROJECTS, COVERS, AVATARS) =====
     match /portfolio/{userId}/{allPaths=**} {
       allow read:  if true;  // Portfolio assets are public
-      allow write: if (isOwner(userId) || isAuthenticated()) && (isImage() || isPDF()) && isUnder10MB();
+      allow write: if isOwner(userId) && (isImage() || isPDF()) && isUnder10MB();   // RULES-1: was any authenticated user (S-11)
       allow delete: if isOwner(userId) || isAdmin();
     }
 
     // ===== GENERAL AUTHENTICATED UPLOADS =====
     match /uploads/{userId}/{allPaths=**} {
       allow read:  if true;
-      allow write: if (isOwner(userId) || isAuthenticated()) && isUnder10MB();
+      allow write: if isOwner(userId) && isUnder10MB();   // RULES-1: was any authenticated user (S-11)
       allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // ===== CATCH-ALL =====
-    match /{allPaths=**} {
-      allow read:  if true;
-      allow write: if isAuthenticated() && isUnder10MB();
-    }
+    // ===== DEFAULT DENY (RULES-1, security.md S-1) =====
+    // Storage denies any request no block above matches. The previous recursive catch-all made
+    // every object world-readable (resumes, GST/identity documents) and writable by any signed-in
+    // user. Add a specific path block for a new upload area; never add a recursive wildcard.
   }
 }
 

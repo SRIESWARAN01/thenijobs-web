@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import CompanyProfileClient from './CompanyProfileClient';
-import { db } from '@/lib/firebase/config';
+import { db, auth } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/firestore';
 import { Loader2, Building2, ArrowLeft } from 'lucide-react';
 import Header from '@/components/navigation/Header';
@@ -35,9 +35,13 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
         setNotFoundState(false);
 
         // 1. Fetch company by slug
+        // RULES-1: public reads must carry the read rule's constraint (verified companies only);
+        // a signed-in owner previewing a pending/rejected company is handled by the owner lookup below.
+        const isVerified = where('verificationStatus', '==', 'verified');
         const qCompany = query(
           collection(db, 'companies'),
           where('slug', '==', slug),
+          isVerified,
           limit(1)
         );
         const snapCompany = await getDocs(qCompany);
@@ -59,6 +63,7 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
             const qAlias = query(
               collection(db, 'companies'),
               where('aliases', 'array-contains', slug),
+              isVerified,
               limit(1)
             );
             const snapAlias = await getDocs(qAlias);
@@ -67,6 +72,7 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
               const qName = query(
                 collection(db, 'companies'),
                 where('slugLower', '==', slug.toLowerCase()),
+                isVerified,
                 limit(1)
               );
               let snapName = await getDocs(qName);
@@ -86,21 +92,38 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
               }
 
               if (snapName.empty) {
-                // Graceful fallback: check built-in showcase companies
-                const sampleData = getSampleCompanyData(slug);
-                if (sampleData && sampleData.company) {
-                  setCompany(sampleData.company);
-                  setJobs(sampleData.jobs || []);
-                  setReviews(sampleData.reviews || []);
+                // RULES-1: a signed-in owner may preview their own pending/rejected company
+                const uid = auth.currentUser?.uid;
+                if (uid) {
+                  const qOwn = query(
+                    collection(db, 'companies'),
+                    where('slug', '==', slug),
+                    where('ownerId', '==', uid),
+                    limit(1)
+                  );
+                  const snapOwn = await getDocs(qOwn);
+                  if (!snapOwn.empty) {
+                    docData = { id: snapOwn.docs[0].id, ...snapOwn.docs[0].data() };
+                  }
+                }
+                if (!docData) {
+                  // Graceful fallback: check built-in showcase companies
+                  const sampleData = getSampleCompanyData(slug);
+                  if (sampleData && sampleData.company) {
+                    setCompany(sampleData.company);
+                    setJobs(sampleData.jobs || []);
+                    setReviews(sampleData.reviews || []);
+                    setLoading(false);
+                    return;
+                  }
+
+                  setNotFoundState(true);
                   setLoading(false);
                   return;
                 }
-
-                setNotFoundState(true);
-                setLoading(false);
-                return;
+              } else {
+                docData = { id: snapName.docs[0].id, ...snapName.docs[0].data() };
               }
-              docData = { id: snapName.docs[0].id, ...snapName.docs[0].data() };
             } else {
               docData = { id: snapAlias.docs[0].id, ...snapAlias.docs[0].data() };
             }

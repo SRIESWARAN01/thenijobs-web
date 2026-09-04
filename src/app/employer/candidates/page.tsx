@@ -10,6 +10,21 @@ import {
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection, useDocument } from '@/hooks/useFirestore';
+import { formatDate, toDate, type FirestoreTime } from '@/lib/firestoreTime';
+import {
+  ActionMenu, DataTable, ViewToggle, useViewMode,
+  type ActionItem, type Column,
+} from '@/components/dashboard';
+
+interface CandidateRow {
+  id: string;
+  seekerName?: string;
+  seekerId?: string;
+  jobTitle?: string;
+  status?: string;
+  createdAt?: FirestoreTime;
+  [key: string]: unknown;
+}
 import { updateApplicationStatus, createDocument, createNotification } from '@/lib/firebase/firestoreService';
 import { where, orderBy } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
@@ -413,6 +428,7 @@ export default function CandidatesPage() {
   const [jobFilter, setJobFilter] = useState('All Jobs');
   const [activeModalCandidate, setActiveModalCandidate] = useState<any | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [view, setView] = useViewMode('employer-candidates', 'table');
 
   const handleUpdateStatus = async (appId: string, status: string, seekerId: string, jobTitle: string) => {
     setActionLoading(appId);
@@ -484,6 +500,67 @@ export default function CandidatesPage() {
     );
   }
 
+  const isOverdue = (app: CandidateRow) => {
+    const cur = app.status || 'applied';
+    if (cur !== 'applied' && cur !== 'under_review') return false;
+    const d = toDate(app.createdAt);
+    return d ? Date.now() - d.getTime() > 7 * 86400000 : false;
+  };
+
+  const candidateColumns: Column<CandidateRow>[] = [
+    {
+      key: 'seekerName',
+      header: 'Candidate',
+      card: 'title',
+      sortValue: app => app.seekerName ?? '',
+      render: app => (
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-[#EFF6FF] text-sm font-bold text-[#1E40AF]">
+            {app.seekerName?.[0]?.toUpperCase() || 'C'}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-slate-900">{app.seekerName || 'Candidate'}</span>
+            {isOverdue(app) && (
+              <span className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
+                <Clock size={10} aria-hidden /> Overdue 7+ days
+              </span>
+            )}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'jobTitle',
+      header: 'Applied for',
+      sortValue: app => app.jobTitle ?? '',
+      render: app => <span className="truncate">{app.jobTitle || '—'}</span>,
+    },
+    {
+      key: 'createdAt',
+      header: 'Applied',
+      hideBelow: 'lg',
+      sortValue: app => toDate(app.createdAt)?.getTime() ?? 0,
+      render: app => formatDate(app.createdAt),
+    },
+    {
+      key: 'status',
+      header: 'Stage',
+      align: 'center',
+      sortValue: app => app.status ?? 'applied',
+      render: app => {
+        const st = STATUS_STYLES[app.status || 'applied'] || STATUS_STYLES.applied;
+        return (
+          <span
+            className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+            style={{ background: st.bg, color: st.color }}
+          >
+            {st.label}
+          </span>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
       {/* Page Header */}
@@ -547,104 +624,39 @@ export default function CandidatesPage() {
                 <option key={j} value={j}>{j}</option>
               ))}
             </select>
+            <ViewToggle value={view} onChange={setView} />
           </div>
 
-          {/* Candidate Cards Grid */}
-          <div className="space-y-3.5">
-            {filtered.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs space-y-3">
-                <Users2 size={36} className="mx-auto text-gray-300" />
-                <p className="text-sm font-bold text-gray-700">No candidate applications in this stage</p>
-                <p className="text-xs text-gray-400">Try switching pipeline stages or clearing the search filter.</p>
-              </div>
-            ) : (
-              filtered.map((app) => {
-                const curStatus = app.status || 'applied';
-                const st = STATUS_STYLES[curStatus] || STATUS_STYLES.applied;
-                const createdMillis = app.createdAt?.toMillis ? app.createdAt.toMillis() : (app.createdAt ? new Date(app.createdAt).getTime() : Date.now());
-                const isAppOverdue = (curStatus === 'applied' || curStatus === 'under_review') && (Date.now() - createdMillis) > 7 * 86400000;
-
-                return (
-                  <div
-                    key={app.id}
-                    className={`bg-white rounded-3xl p-4 sm:p-5 border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs hover:shadow-md ${
-                      isAppOverdue ? 'border-amber-300 ring-1 ring-amber-100' : 'border-gray-200'
-                    }`}
-                  >
-                    {/* Left Info */}
-                    <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 font-black text-base flex items-center justify-center shrink-0 border border-blue-100">
-                        {app.seekerName?.[0]?.toUpperCase() || 'C'}
-                      </div>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base font-bold text-gray-900">{app.seekerName}</h3>
-                          <span
-                            className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold"
-                            style={{ background: st.bg, color: st.color }}
-                          >
-                            {st.label}
-                          </span>
-                          {isAppOverdue && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold flex items-center gap-1">
-                              <Clock size={11} className="text-amber-700" /> Overdue (7+ Days)
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 font-medium">
-                          Applied for <span className="font-bold text-gray-900">{app.jobTitle}</span> · {app.createdAt ? new Date(app.createdAt?.toMillis?.() || app.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Recently'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Right Actions */}
-                    <div className="flex items-center gap-2 flex-wrap md:flex-nowrap justify-between md:justify-end border-t md:border-0 border-gray-100 pt-3 md:pt-0">
-                      <button
-                        type="button"
-                        onClick={() => setActiveModalCandidate(app)}
-                        className="py-2 px-3.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
-                      >
-                        <Eye size={14} /> Full Profile &amp; Notes
-                      </button>
-
-                      {curStatus !== 'shortlisted' && curStatus !== 'selected' && (
-                        <button
-                          type="button"
-                          disabled={actionLoading === app.id}
-                          onClick={() => handleUpdateStatus(app.id, 'shortlisted', app.seekerId, app.jobTitle)}
-                          className="py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs flex items-center gap-1 border border-purple-200 transition-colors cursor-pointer"
-                        >
-                          <Star size={13} /> Shortlist
-                        </button>
-                      )}
-
-                      {curStatus !== 'selected' && (
-                        <button
-                          type="button"
-                          disabled={actionLoading === app.id}
-                          onClick={() => handleUpdateStatus(app.id, 'selected', app.seekerId, app.jobTitle)}
-                          className="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center gap-1 border border-emerald-200 transition-colors cursor-pointer"
-                        >
-                          <CheckCircle size={13} /> Hire
-                        </button>
-                      )}
-
-                      {curStatus !== 'rejected' && (
-                        <button
-                          type="button"
-                          disabled={actionLoading === app.id}
-                          onClick={() => handleUpdateStatus(app.id, 'rejected', app.seekerId, app.jobTitle)}
-                          className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center gap-1 border border-red-200 transition-colors cursor-pointer"
-                        >
-                          <XCircle size={13} /> Reject
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+          <DataTable
+            label="Candidate applications"
+            view={view}
+            gridColumns={2}
+            columns={candidateColumns}
+            rows={filtered}
+            getRowId={app => app.id}
+            emptyIcon={Users2}
+            emptyTitle="No candidate applications in this stage"
+            emptyDescription="Switch pipeline stages or clear the search filter."
+            rowActions={app => {
+              if (actionLoading === app.id) {
+                return <Loader2 size={16} className="animate-spin text-blue-600" aria-label="Saving" />;
+              }
+              const curStatus = app.status || 'applied';
+              const items: ActionItem[] = [
+                { label: 'Full profile & notes', icon: Eye, onClick: () => setActiveModalCandidate(app) },
+              ];
+              if (curStatus !== 'shortlisted' && curStatus !== 'selected') {
+                items.push({ label: 'Shortlist', icon: Star, separatorBefore: true, onClick: () => handleUpdateStatus(app.id, 'shortlisted', app.seekerId ?? '', app.jobTitle ?? 'this role') });
+              }
+              if (curStatus !== 'selected') {
+                items.push({ label: 'Hire candidate', icon: CheckCircle, tone: 'success', onClick: () => handleUpdateStatus(app.id, 'selected', app.seekerId ?? '', app.jobTitle ?? 'this role') });
+              }
+              if (curStatus !== 'rejected') {
+                items.push({ label: 'Reject application', icon: XCircle, tone: 'danger', separatorBefore: true, onClick: () => handleUpdateStatus(app.id, 'rejected', app.seekerId ?? '', app.jobTitle ?? 'this role') });
+              }
+              return <ActionMenu label={`Actions for ${app.seekerName ?? 'candidate'}`} items={items} />;
+            }}
+          />
         </>
       )}
 

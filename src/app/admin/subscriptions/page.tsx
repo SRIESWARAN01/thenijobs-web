@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import { Clock, CreditCard, Download, TrendingUp, Users2 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
-import { orderBy, limit } from 'firebase/firestore';
 import type { FirestoreTime } from '@/lib/firestoreTime';
 import {
   Button, DataTable, FilterSelect, PageHeader, PageShell, Pill, Stat, StatGrid, Toolbar,
@@ -21,17 +20,6 @@ interface SubscriptionDoc {
   endDate?: FirestoreTime;
   autoRenew?: boolean;
   paymentMethod?: string;
-}
-
-interface PaymentDoc {
-  id: string;
-  businessName?: string;
-  companyName?: string;
-  amount: number;
-  plan?: string;
-  paymentMethod?: string;
-  status: string;
-  createdAt?: FirestoreTime;
 }
 
 type PlanType = 'free' | 'basic' | 'standard' | 'premium' | 'enterprise';
@@ -52,10 +40,6 @@ const STATUS_CONFIG: Record<string, { label: string; tone: PillTone }> = {
 
 export default function SubscriptionsPage() {
   const { data: subscriptions, loading: subsLoading } = useCollection<SubscriptionDoc>('subscriptions');
-  const { data: payments, loading: paymentsLoading } = useCollection<PaymentDoc>('payments', [
-    orderBy('createdAt', 'desc'),
-    limit(15)
-  ]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [planFilter, setPlanFilter] = useState('all');

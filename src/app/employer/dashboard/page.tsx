@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   BarChart2, Briefcase, Building2, Calendar, CheckCircle, ChevronRight, Clock,
-  Eye, Loader2, Plus, Send, Star, UserCheck, Users, XCircle,
+  Eye, Loader2, Plus, Star, UserCheck, Users, XCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';

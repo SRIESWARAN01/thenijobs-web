@@ -73,7 +73,6 @@ export default function SeekerDashboard() {
   ]);
 
   const displayName = user?.displayName || firebaseUser?.displayName || 'Seeker';
-  const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   const loading = statsLoading || appsLoading || jobsLoading;
 
   // ─── Profile completion ───

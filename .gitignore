@@ -39,3 +39,7 @@ Thumbs.db
 download-git.js
 extract-git.js
 .vercel
+
+# Claude Code local settings & worktrees (the skill itself is tracked under .claude/skills/)
+.claude/settings.local.json
+.claude/worktrees/

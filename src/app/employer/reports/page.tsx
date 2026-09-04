@@ -1,20 +1,45 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { useEmployerStats } from '@/hooks/useRealtimeStats';
 import { where } from 'firebase/firestore';
-import {
-  BarChart3, Download, Loader2, Briefcase,
-  Users2, Eye
-} from 'lucide-react';
+import { BarChart3, Briefcase, Download, Eye, Users2 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  DataTable,
+  EmptyState,
+  PageHeader,
+  PageShell,
+  Pill,
+  Stat,
+  StatGrid,
+  type Column,
+} from '@/components/dashboard';
+
+interface CompanyDoc { id: string; name?: string; viewCount?: number }
+interface JobDoc { id: string; title?: string; jobType?: string; viewCount?: number; status?: string; isActive?: boolean }
+interface ApplicationDoc { id: string; jobId?: string }
+
+interface JobMetric {
+  id: string;
+  title: string;
+  type: string;
+  apps: number;
+  views: number;
+  status: string;
+}
 
 export default function EmployerReportsPage() {
   const { user } = useAuth();
 
   // 1. Fetch employer's company
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
+  const { data: companies, loading: companyLoading } = useCollection<CompanyDoc>('companies', [
     where('ownerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
 
@@ -25,187 +50,178 @@ export default function EmployerReportsPage() {
   const { stats, loading: statsLoading } = useEmployerStats(companyId);
 
   // 3. Fetch jobs
-  const { data: jobs, loading: jobsLoading } = useCollection<any>('jobs', [
+  const { data: jobs, loading: jobsLoading } = useCollection<JobDoc>('jobs', [
     where('companyId', '==', companyId || '')
   ], { skip: !companyId });
 
   // 4. Fetch applications
-  const { data: applications, loading: appsLoading } = useCollection<any>('applications', [
+  const { data: applications, loading: appsLoading } = useCollection<ApplicationDoc>('applications', [
     where('companyId', '==', companyId || '')
   ], { skip: !companyId });
 
   const loading = companyLoading || statsLoading || jobsLoading || appsLoading;
 
-  if (!companyId && !companyLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center font-outfit">
-        <BarChart3 size={48} className="text-gray-600 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-900">No Company Profile</h2>
-        <p className="text-sm text-slate-500 mt-2 max-w-sm">Please register your company profile first to view reports and metrics.</p>
-        <Link href="/employer/company-profile" className="mt-4 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold hover:opacity-90">
-          Setup Company Profile
-        </Link>
-      </div>
-    );
-  }
-
-  const jobMetrics = jobs.map((job) => {
+  const jobMetrics = useMemo<JobMetric[]>(() => jobs.map((job) => {
     const appCount = applications.filter((app) => app.jobId === job.id).length;
     return {
-      title: job.title,
-      type: job.jobType,
+      id: job.id,
+      title: job.title || 'Untitled job',
+      type: job.jobType || '',
       apps: appCount,
       views: job.viewCount || 0,
       status: job.status || (job.isActive !== false ? 'active' : 'draft')
     };
-  }).sort((a, b) => b.apps - a.apps).slice(0, 5);
+  }).sort((a, b) => b.apps - a.apps).slice(0, 5), [jobs, applications]);
+
+  const columns = useMemo<Column<JobMetric>[]>(() => [
+    {
+      key: 'title',
+      header: 'Job title',
+      card: 'title',
+      sortValue: j => j.title,
+      render: j => (
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-slate-900">{j.title}</p>
+          {j.type && (
+            <span className="mt-0.5 inline-block text-xs capitalize text-slate-500">
+              {j.type.replace(/_/g, ' ')}
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'views',
+      header: 'Views',
+      align: 'center',
+      sortValue: j => j.views,
+      render: j => <span className="tabular-nums">{j.views}</span>,
+    },
+    {
+      key: 'apps',
+      header: 'Applications',
+      align: 'center',
+      sortValue: j => j.apps,
+      render: j => <span className="font-semibold tabular-nums text-slate-900">{j.apps}</span>,
+    },
+    {
+      key: 'conversion',
+      header: 'Conversion',
+      align: 'center',
+      sortValue: j => (j.views > 0 ? j.apps / j.views : 0),
+      render: j => {
+        const conversion = j.views > 0 ? Math.round((j.apps / j.views) * 100) : 0;
+        return <Pill tone={conversion >= 10 ? 'success' : 'neutral'}>{conversion}%</Pill>;
+      },
+    },
+  ], []);
+
+  if (!companyId && !companyLoading) {
+    return (
+      <PageShell>
+        <EmptyState
+          icon={BarChart3}
+          title="No company profile yet"
+          description="Register your company profile to unlock recruitment reports and metrics."
+          action={
+            <Link href="/employer/company-profile">
+              <Button variant="primary">Set up company profile</Button>
+            </Link>
+          }
+        />
+      </PageShell>
+    );
+  }
+
+  const pipeline = [
+    { label: 'Applications', count: stats.totalApplications, bar: 'bg-blue-500' },
+    { label: 'Shortlisted', count: stats.shortlisted, bar: 'bg-violet-500' },
+    { label: 'Interviews', count: stats.interviews, bar: 'bg-amber-500' },
+    { label: 'Hired', count: stats.hired, bar: 'bg-emerald-500' },
+  ];
 
   return (
-    <div className="space-y-6 animate-fade-in-up font-outfit text-gray-900">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-outfit">Recruitment Reports</h1>
-          <p className="text-sm text-slate-500 mt-1">Analytics and metrics overview for {company?.name}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-slate-500 hover:bg-slate-100 hover:border-white/[0.15] transition-all">
-            <Download size={16} />
-            <span>Export CSV</span>
-          </button>
-        </div>
+    <PageShell>
+      <PageHeader
+        title="Recruitment reports"
+        description={company?.name ? `Analytics and metrics for ${company.name}.` : 'Analytics and metrics overview.'}
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Reports' }]}
+        actions={
+          <Button variant="secondary" size="sm">
+            <Download size={14} /> Export CSV
+          </Button>
+        }
+      />
+
+      <StatGrid columns={3}>
+        <Stat
+          label="Job listings"
+          value={jobs.length}
+          icon={Briefcase}
+          tone="blue"
+          loading={loading}
+          hint={`${stats.activeJobs} currently active`}
+        />
+        <Stat
+          label="Applications received"
+          value={applications.length}
+          icon={Users2}
+          tone="violet"
+          loading={loading}
+          hint={`${stats.shortlisted} shortlisted`}
+        />
+        <Stat
+          label="Profile views"
+          value={company?.viewCount || 0}
+          icon={Eye}
+          tone="amber"
+          loading={loading}
+          hint="Company brand engagement"
+        />
+      </StatGrid>
+
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader title="Top performing jobs" description="Ranked by applications received" />
+          <CardBody className="p-0">
+            <DataTable
+              label="Top performing jobs"
+              className="rounded-none border-0"
+              columns={columns}
+              rows={jobMetrics}
+              getRowId={j => j.id}
+              loading={loading}
+              skeletonRows={4}
+              emptyIcon={Briefcase}
+              emptyTitle="No job stats available"
+              emptyDescription="Publish a job and its views and applications will be tracked here."
+            />
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-1">
+          <CardHeader title="Pipeline summary" description="Candidate flow by stage" />
+          <CardBody className="space-y-4">
+            {pipeline.map((stage) => {
+              const maxVal = pipeline[0].count || 1;
+              const pct = Math.round((stage.count / maxVal) * 100);
+              return (
+                <div key={stage.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3 text-xs">
+                    <span className="text-slate-500">{stage.label}</span>
+                    <span className="font-semibold tabular-nums text-slate-900">
+                      {stage.count} · {pct}%
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className={`h-full rounded-full ${stage.bar}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </CardBody>
+        </Card>
       </div>
-
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-          <p className="text-sm text-slate-500">Loading metrics and statistics...</p>
-        </div>
-      ) : (
-        <>
-          {/* Stats Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="glass-card rounded-2xl p-5 hover:border-white/15 transition-all">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Briefcase size={18} className="text-cyan-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Job Listings</h3>
-                  <p className="text-[10px] text-gray-500">Recruitment campaigns</p>
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-gray-900 font-outfit">{jobs.length}</p>
-              <p className="text-xs text-emerald-600 mt-1">{stats.activeJobs} currently active</p>
-            </div>
-
-            <div className="glass-card rounded-2xl p-5 hover:border-white/15 transition-all">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                  <Users2 size={18} className="text-violet-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Applications Received</h3>
-                  <p className="text-[10px] text-gray-500">Candidate flow</p>
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-gray-900 font-outfit">{applications.length}</p>
-              <p className="text-xs text-violet-600 mt-1">{stats.shortlisted} candidates shortlisted</p>
-            </div>
-
-            <div className="glass-card rounded-2xl p-5 hover:border-white/15 transition-all">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <Eye size={18} className="text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Company Profile Views</h3>
-                  <p className="text-[10px] text-gray-500">Brand engagement</p>
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-gray-900 font-outfit">{company?.viewCount || 0}</p>
-              <p className="text-xs text-amber-600 mt-1">Verified employer profile</p>
-            </div>
-          </div>
-
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Top Job Listings */}
-            <div className="lg:col-span-2 glass-card rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="text-sm font-semibold text-gray-900">Top Performing Jobs</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Job Title</th>
-                      <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Views</th>
-                      <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Applications</th>
-                      <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Conversion</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {jobMetrics.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-5 py-8 text-center text-xs text-gray-500">No job stats available.</td>
-                      </tr>
-                    ) : (
-                      jobMetrics.map((job, idx) => {
-                        const conversion = job.views > 0 ? Math.round((job.apps / job.views) * 100) : 0;
-                        return (
-                          <tr key={idx} className="hover:bg-slate-100 transition-colors">
-                            <td className="px-5 py-3.5">
-                              <p className="text-sm font-medium text-gray-900">{job.title}</p>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white text-slate-500 border border-gray-200 capitalize">{job.type.replace('_', ' ')}</span>
-                            </td>
-                            <td className="px-3 py-3.5 text-center text-sm text-slate-500">{job.views}</td>
-                            <td className="px-3 py-3.5 text-center text-sm text-gray-900 font-bold">{job.apps}</td>
-                            <td className="px-3 py-3.5 text-center text-sm text-cyan-600 font-semibold">{conversion}%</td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Funnel chart card */}
-            <div className="lg:col-span-1 glass-card rounded-2xl p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-gray-900">Pipeline Summary</h2>
-              <div className="space-y-4">
-                {[
-                  { label: 'Applications', count: stats.totalApplications, color: 'cyan' },
-                  { label: 'Shortlisted', count: stats.shortlisted, color: 'violet' },
-                  { label: 'Interviews', count: stats.interviews, color: 'amber' },
-                  { label: 'Hired', count: stats.hired, color: 'emerald' }
-                ].map((stage, idx, arr) => {
-                  const maxVal = arr[0].count || 1;
-                  const pct = Math.round((stage.count / maxVal) * 100);
-                  const colorMap: Record<string, string> = {
-                    cyan: 'bg-cyan-500',
-                    violet: 'bg-violet-500',
-                    amber: 'bg-amber-500',
-                    emerald: 'bg-emerald-500'
-                  };
-                  return (
-                    <div key={stage.label} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">{stage.label}</span>
-                        <span className="font-bold text-gray-900">{stage.count} ({pct}%)</span>
-                      </div>
-                      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${colorMap[stage.color]}`} style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+    </PageShell>
   );
 }

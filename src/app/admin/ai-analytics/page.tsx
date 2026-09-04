@@ -1,12 +1,32 @@
 'use client';
 
-import { useState } from 'react';
-import { Cpu, Zap, Activity, AlertCircle, DollarSign, BarChart3, TrendingUp, RefreshCw, ShieldCheck, Loader2 } from 'lucide-react';
-import { useCollection } from '@/hooks/useFirestore';
+import { useMemo } from 'react';
+import { Activity, AlertCircle, BarChart3, Cpu, DollarSign, Zap } from 'lucide-react';
 import { orderBy, limit } from 'firebase/firestore';
+import { useCollection } from '@/hooks/useFirestore';
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  DataTable,
+  PageHeader,
+  PageShell,
+  Pill,
+  Stat,
+  StatGrid,
+  type Column,
+} from '@/components/dashboard';
+
+interface AIUsageLog {
+  id: string;
+  feature?: string;
+  role?: string;
+  creditsUsed?: number;
+  success?: boolean;
+}
 
 export default function AdminAIAnalyticsPage() {
-  const { data: rawLogs, loading } = useCollection<any>('aiUsageLogs', [
+  const { data: rawLogs, loading } = useCollection<AIUsageLog>('aiUsageLogs', [
     orderBy('createdAt', 'desc'),
     limit(200)
   ]);
@@ -18,6 +38,7 @@ export default function AdminAIAnalyticsPage() {
 
   // Estimate cost ($0.0005 per request on average with Groq Llama 3.3 70B)
   const estimatedCostUSD = (totalRequests * 0.0005).toFixed(4);
+  const successRate = totalRequests > 0 ? Math.round((successfulRequests / totalRequests) * 100) : 100;
 
   // Group by feature
   const featureCounts: Record<string, number> = {};
@@ -26,152 +47,142 @@ export default function AdminAIAnalyticsPage() {
     featureCounts[feat] = (featureCounts[feat] || 0) + 1;
   });
 
+  const columns = useMemo<Column<AIUsageLog>[]>(() => [
+    {
+      key: 'feature',
+      header: 'Feature',
+      card: 'title',
+      sortValue: l => l.feature ?? '',
+      render: l => <span className="font-semibold capitalize">{(l.feature || '').replace(/_/g, ' ') || '—'}</span>,
+    },
+    { key: 'role', header: 'Role', sortValue: l => l.role ?? '', render: l => l.role || 'SEEKER' },
+    {
+      key: 'creditsUsed',
+      header: 'Credits',
+      align: 'right',
+      sortValue: l => l.creditsUsed ?? 1,
+      render: l => <span className="font-semibold tabular-nums text-emerald-700">-{l.creditsUsed || 1}</span>,
+    },
+    {
+      key: 'success',
+      header: 'Status',
+      align: 'center',
+      sortValue: l => (l.success ? 1 : 0),
+      render: l => (
+        <Pill tone={l.success ? 'success' : 'danger'} dot>
+          {l.success ? 'Success' : 'Failed'}
+        </Pill>
+      ),
+    },
+  ], []);
+
   return (
-    <div className="animate-fade-in-up space-y-6 max-w-7xl mx-auto font-outfit text-gray-900 py-4">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-indigo-800/40">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold uppercase tracking-wider">
-              Groq Architecture Monitoring
-            </span>
-            <span className="text-xs text-indigo-200">Production AI Metrics</span>
-          </div>
-          <h1 className="text-2xl font-black text-white flex items-center gap-2">
-            Admin AI System Analytics <Cpu size={22} className="text-emerald-400" />
-          </h1>
-          <p className="text-xs text-indigo-100/80">
-            Real-time server-side tracking of Groq API requests, credit deductions, error rates, &amp; estimated cost.
-          </p>
-        </div>
+    <PageShell>
+      <PageHeader
+        title="AI system analytics"
+        description="Server-side tracking of Groq API requests, credit deductions, error rates and estimated cost."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'AI analytics' }]}
+        actions={
+          <Pill tone="info">
+            <Cpu size={12} /> llama-3.3-70b-versatile
+          </Pill>
+        }
+      />
 
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 text-right">
-            <p className="text-[10px] uppercase font-bold text-indigo-200">Active Model</p>
-            <p className="text-xs font-black text-emerald-400">llama-3.3-70b-versatile</p>
-          </div>
-        </div>
-      </div>
+      <StatGrid columns={4}>
+        <Stat
+          label="Total AI requests"
+          value={totalRequests.toLocaleString()}
+          icon={Activity}
+          tone="blue"
+          loading={loading}
+          hint={`${successfulRequests} successful (${successRate}%)`}
+        />
+        <Stat
+          label="Credits consumed"
+          value={totalCreditsConsumed.toLocaleString()}
+          icon={Zap}
+          tone="emerald"
+          loading={loading}
+          hint="Deducted on success only"
+        />
+        <Stat
+          label="Failed requests"
+          value={failedRequests}
+          icon={AlertCircle}
+          tone="rose"
+          loading={loading}
+          hint="No credits charged on failure"
+        />
+        <Stat
+          label="Est. usage cost"
+          value={`$${estimatedCostUSD}`}
+          icon={DollarSign}
+          tone="violet"
+          loading={loading}
+          hint="At $0.0005 per request"
+        />
+      </StatGrid>
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-indigo-600">
-            <span className="text-xs font-bold text-gray-500">Total AI Requests</span>
-            <Activity size={18} />
-          </div>
-          <p className="text-2xl font-black text-gray-900">{loading ? '...' : totalRequests.toLocaleString()}</p>
-          <p className="text-[11px] text-emerald-600 font-semibold">{successfulRequests} Successful ({totalRequests > 0 ? Math.round((successfulRequests / totalRequests) * 100) : 100}%)</p>
-        </div>
-
-        <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-emerald-600">
-            <span className="text-xs font-bold text-gray-500">AI Credits Consumed</span>
-            <Zap size={18} />
-          </div>
-          <p className="text-2xl font-black text-gray-900">{loading ? '...' : totalCreditsConsumed.toLocaleString()}</p>
-          <p className="text-[11px] text-gray-500 font-medium">Credits deducted on success</p>
-        </div>
-
-        <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-rose-500">
-            <span className="text-xs font-bold text-gray-500">Failed AI Requests</span>
-            <AlertCircle size={18} />
-          </div>
-          <p className="text-2xl font-black text-gray-900">{loading ? '...' : failedRequests}</p>
-          <p className="text-[11px] text-gray-500 font-medium">No credits charged on failure</p>
-        </div>
-
-        <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-2">
-          <div className="flex items-center justify-between text-cyan-600">
-            <span className="text-xs font-bold text-gray-500">Est. Groq Usage Cost</span>
-            <DollarSign size={18} />
-          </div>
-          <p className="text-2xl font-black text-gray-900">${loading ? '...' : estimatedCostUSD}</p>
-          <p className="text-[11px] text-cyan-700 font-semibold">High Efficiency Llama-3.3 Model</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Feature Breakdown Chart / List */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
-          <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-            <BarChart3 size={16} className="text-indigo-600" /> Usage by AI Feature
-          </h3>
-
-          <div className="space-y-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-12">
+        {/* Feature breakdown */}
+        <Card className="lg:col-span-5">
+          <CardHeader title="Usage by AI feature" description="Share of the last 200 logged requests" />
+          <CardBody>
             {Object.keys(featureCounts).length === 0 ? (
-              <p className="text-xs text-gray-500 italic py-4 text-center">No logged requests yet.</p>
+              <p className="py-6 text-center text-xs text-slate-500">No logged requests yet.</p>
             ) : (
-              Object.entries(featureCounts).map(([feat, count]) => {
-                const percent = Math.round((count / Math.max(1, totalRequests)) * 100);
-                return (
-                  <div key={feat} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs font-bold text-gray-800">
-                      <span className="capitalize">{feat.replace(/_/g, ' ')}</span>
-                      <span>{count} req ({percent}%)</span>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full"
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
+              <div className="space-y-3">
+                {Object.entries(featureCounts)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([feat, count]) => {
+                    const percent = Math.round((count / Math.max(1, totalRequests)) * 100);
+                    return (
+                      <div key={feat} className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-3 text-xs font-semibold text-slate-700">
+                          <span className="truncate capitalize">{feat.replace(/_/g, ' ')}</span>
+                          <span className="shrink-0 tabular-nums text-slate-500">
+                            {count} · {percent}%
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-[#2563EB]"
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
             )}
-          </div>
-        </div>
+          </CardBody>
+        </Card>
 
-        {/* Live Logs Table */}
-        <div className="lg:col-span-7 bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
-          <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-            <Activity size={16} className="text-emerald-600" /> Recent Server-Side Execution Logs
-          </h3>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-gray-100 text-gray-400 font-bold uppercase text-[10px]">
-                  <th className="pb-2">Feature</th>
-                  <th className="pb-2">Role</th>
-                  <th className="pb-2">Credits</th>
-                  <th className="pb-2">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-gray-400">Loading logs...</td>
-                  </tr>
-                ) : rawLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-gray-400">No logs found</td>
-                  </tr>
-                ) : (
-                  rawLogs.slice(0, 8).map((log, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50">
-                      <td className="py-2.5 font-bold text-gray-800 capitalize">
-                        {(log.feature || '').replace(/_/g, ' ')}
-                      </td>
-                      <td className="py-2.5 text-gray-600 font-semibold">{log.role || 'SEEKER'}</td>
-                      <td className="py-2.5 text-emerald-700 font-bold">-{log.creditsUsed || 1}</td>
-                      <td className="py-2.5">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          log.success ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                        }`}>
-                          {log.success ? 'SUCCESS' : 'FAILED'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* Live logs */}
+        <Card className="lg:col-span-7">
+          <CardHeader
+            title="Recent execution logs"
+            description="Most recent server-side AI calls"
+            action={<BarChart3 size={16} className="text-slate-400" aria-hidden />}
+          />
+          <CardBody className="p-0">
+            <DataTable
+              label="Recent AI execution logs"
+              className="rounded-none border-0"
+              columns={columns}
+              rows={rawLogs.slice(0, 8)}
+              getRowId={l => l.id}
+              loading={loading}
+              skeletonRows={5}
+              dense
+              emptyIcon={Activity}
+              emptyTitle="No logs found"
+              emptyDescription="AI requests will appear here as soon as the gateway serves one."
+            />
+          </CardBody>
+        </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }

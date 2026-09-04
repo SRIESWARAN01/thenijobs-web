@@ -5,5 +5,6 @@ export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { PageHeader, type Crumb, type PageHeaderProps } from './PageHeader';
 export { Pill, type PillTone } from './Pill';
 export { Skeleton, SkeletonText } from './Skeleton';
+export { SettingRow, Switch } from './Switch';
 export { Stat, StatGrid, type StatProps, type StatTone } from './StatGrid';
 export { FilterSelect, Toolbar } from './Toolbar';

@@ -43,31 +43,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Handle test/dev session IDs — C7 FIX: only accept fixed test codes, not any 6-digit number
+    const apiKey = process.env.TWOFACTOR_API_KEY;
+
+    // SEC-1: the session id comes from the caller, so a 'test_session_' or 'voice_session_'
+    // prefix is only meaningful when no provider is configured at all. Previously these
+    // prefixes were honoured unconditionally, which meant anyone could present an id they
+    // made up themselves and verify it with 123456 — no message and no call required.
     if (sessionId.startsWith('test_session_') || sessionId.startsWith('voice_session_')) {
+      if (apiKey) {
+        return NextResponse.json({
+          error: 'Invalid or expired session. Please request a new OTP.',
+          verified: false,
+        }, { status: 400 });
+      }
       if (cleanOtp === '123456' || cleanOtp === '999999') {
         return NextResponse.json({
           success: true,
           verified: true,
           message: 'OTP verified successfully',
         });
-      } else {
-        return NextResponse.json({
-          error: 'Invalid OTP. Please check the code and try again.',
-          verified: false,
-        }, { status: 400 });
       }
+      return NextResponse.json({
+        error: 'Invalid OTP. Please check the code and try again.',
+        verified: false,
+      }, { status: 400 });
     }
 
-    const apiKey = process.env.TWOFACTOR_API_KEY;
-
     if (!apiKey) {
-      // If no API key configured, accept valid 6-digit test OTP
+      // SEC-1: this used to answer verified:true for ANY code once the key was unset, which
+      // turned a missing environment variable into an open door. With no provider there is
+      // nothing to verify against, so say so instead of asserting success.
+      console.error('[OTP Verify] TWOFACTOR_API_KEY is not set; cannot verify a real session.');
       return NextResponse.json({
-        success: true,
-        verified: true,
-        message: 'OTP verified in test mode',
-      });
+        error: 'Verification is temporarily unavailable. Please try again later.',
+        verified: false,
+      }, { status: 503 });
     }
 
     // 2Factor.in VERIFY OTP endpoint

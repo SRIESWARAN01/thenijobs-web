@@ -663,10 +663,12 @@ export default function CandidatesPage() {
           createdAt={activeModalCandidate.createdAt}
           onClose={() => setActiveModalCandidate(null)}
           onNotesUpdated={(notes) => {
-            activeModalCandidate.notes = notes;
+            // Assigning to the object returned by useState does not re-render, so a saved
+            // note stayed invisible until the list reloaded. Replace the value instead.
+            setActiveModalCandidate((prev: any) => (prev ? { ...prev, notes } : prev));
           }}
           onStatusUpdated={(status) => {
-            activeModalCandidate.status = status;
+            setActiveModalCandidate((prev: any) => (prev ? { ...prev, status } : prev));
           }}
         />
       )}

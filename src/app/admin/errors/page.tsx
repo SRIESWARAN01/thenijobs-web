@@ -17,6 +17,10 @@ import {
   type ErrorRecord, type ErrorSeverity, type ErrorStatus, type ErrorType
 } from '@/lib/firebase/errorService';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  ActionMenu, DataTable, ViewToggle, useViewMode,
+  type ActionItem, type Column,
+} from '@/components/dashboard';
 
 const SEVERITY_CONFIG: Record<ErrorSeverity, { label: string; color: string; bg: string; icon: any }> = {
   critical: { label: 'Critical', color: '#DC2626', bg: '#FEE2E2', icon: ShieldAlert },
@@ -55,6 +59,7 @@ export default function AdminErrorsPage() {
   const [filterType, setFilterType] = useState<ErrorType | ''>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState('');
+  const [view, setView] = useViewMode('admin-errors', 'table');
   const [dbLatency, setDbLatency] = useState<number | null>(38);
   const [storageStatus, setStorageStatus] = useState<'healthy' | 'warning'>('healthy');
   const [aiApiStatus, setAiApiStatus] = useState<'connected' | 'degraded'>('connected');
@@ -125,6 +130,91 @@ export default function AdminErrorsPage() {
       return new Date(timestamp).toLocaleString('en-IN');
     } catch { return 'N/A'; }
   };
+
+  const errorColumns: Column<ErrorRecord>[] = [
+    {
+      key: 'errorMessage',
+      header: 'Error',
+      card: 'title',
+      sortValue: e => e.errorMessage ?? '',
+      render: e => {
+        const sev = SEVERITY_CONFIG[e.severity] || SEVERITY_CONFIG.medium;
+        const SevIcon = sev.icon;
+        return (
+          <div className="flex min-w-0 items-start gap-2.5">
+            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: sev.bg }}>
+              <SevIcon size={13} style={{ color: sev.color }} aria-hidden />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-semibold text-slate-900">{e.errorMessage}</span>
+              <span className="block truncate text-xs text-slate-500">
+                {TYPE_LABELS[e.errorType] || e.errorType}
+              </span>
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'severity',
+      header: 'Severity',
+      align: 'center',
+      sortValue: e => e.severity ?? '',
+      render: e => {
+        const sev = SEVERITY_CONFIG[e.severity] || SEVERITY_CONFIG.medium;
+        return (
+          <span className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style={{ background: sev.bg, color: sev.color }}>
+            {sev.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'page',
+      header: 'Page',
+      hideBelow: 'lg',
+      sortValue: e => e.page ?? '',
+      render: e => (
+        <span className="inline-flex items-center gap-1 font-mono text-xs">
+          <Globe size={11} className="text-slate-400" aria-hidden /> {e.page || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'component',
+      header: 'Component',
+      hideBelow: 'xl',
+      sortValue: e => e.component ?? '',
+      render: e => e.component
+        ? <span className="inline-flex items-center gap-1 font-mono text-xs"><Server size={11} className="text-slate-400" aria-hidden /> {e.component}</span>
+        : <span className="text-slate-300">&mdash;</span>,
+    },
+    {
+      key: 'lastOccurred',
+      header: 'Last seen',
+      hideBelow: 'lg',
+      sortValue: e => {
+        const t = e.lastOccurred as { seconds?: number } | string | number | undefined;
+        if (t && typeof t === 'object' && t.seconds) return t.seconds * 1000;
+        return t ? new Date(t as string | number).getTime() : 0;
+      },
+      render: e => <span className="whitespace-nowrap text-xs text-slate-500">{formatDate(e.lastOccurred)}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      sortValue: e => e.status ?? '',
+      render: e => {
+        const st = STATUS_CONFIG[e.status] || STATUS_CONFIG.open;
+        return (
+          <span className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold" style={{ background: st.bg, color: st.color }}>
+            {st.label}
+          </span>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -257,88 +347,39 @@ export default function AdminErrorsPage() {
             className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
           />
         </div>
+        <ViewToggle value={view} onChange={setView} />
       </div>
 
-      {/* Error List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 size={24} className="animate-spin text-blue-500" />
-        </div>
-      ) : filteredErrors.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
-          <CheckCircle size={40} className="mx-auto mb-3 text-emerald-300" />
-          <p className="text-sm font-semibold">No errors found</p>
-          <p className="text-xs mt-1">System is running smoothly</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filteredErrors.map(error => {
-            const sevConfig = SEVERITY_CONFIG[error.severity] || SEVERITY_CONFIG.medium;
-            const statusConfig = STATUS_CONFIG[error.status] || STATUS_CONFIG.open;
-            const SevIcon = sevConfig.icon;
-
-            return (
-              <div
-                key={error.id}
-                className="rounded-xl border border-gray-100 bg-white p-4 hover:border-gray-200 hover:shadow-sm transition-all cursor-pointer"
-                onClick={() => setSelectedError(error)}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: sevConfig.bg }}>
-                    <SevIcon size={14} style={{ color: sevConfig.color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: sevConfig.bg, color: sevConfig.color }}>
-                        {sevConfig.label}
-                      </span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: statusConfig.bg, color: statusConfig.color }}>
-                        {statusConfig.label}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-mono">{TYPE_LABELS[error.errorType] || error.errorType}</span>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900 truncate">{error.errorMessage}</p>
-                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-slate-500">
-                      <span className="flex items-center gap-1"><Globe size={10} /> {error.page}</span>
-                      {error.component && <span className="flex items-center gap-1"><Server size={10} /> {error.component}</span>}
-                      <span className="flex items-center gap-1"><Clock size={10} /> {formatDate(error.lastOccurred)}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    {error.status === 'open' && (
-                      <>
-                        <button
-                          onClick={e => { e.stopPropagation(); handleStatusUpdate(error.id, 'investigating'); }}
-                          disabled={updatingId === error.id}
-                          className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                        >
-                          {updatingId === error.id ? <Loader2 size={10} className="animate-spin" /> : 'Investigate'}
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); handleStatusUpdate(error.id, 'ignored'); }}
-                          disabled={updatingId === error.id}
-                          className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100"
-                        >
-                          Ignore
-                        </button>
-                      </>
-                    )}
-                    {error.status === 'investigating' && (
-                      <button
-                        onClick={e => { e.stopPropagation(); handleStatusUpdate(error.id, 'fixed'); }}
-                        disabled={updatingId === error.id}
-                        className="px-2.5 py-1.5 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                      >
-                        {updatingId === error.id ? <Loader2 size={10} className="animate-spin" /> : 'Mark Fixed'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Error list */}
+      <DataTable
+        label="Error log"
+        loading={loading}
+        view={view}
+        gridColumns={2}
+        columns={errorColumns}
+        rows={filteredErrors}
+        getRowId={e => e.id}
+        onRowClick={e => setSelectedError(e)}
+        emptyIcon={CheckCircle}
+        emptyTitle="No errors found"
+        emptyDescription="Nothing matches these filters — the system is running smoothly."
+        rowActions={error => {
+          if (updatingId === error.id) {
+            return <Loader2 size={16} className="animate-spin text-blue-600" aria-label="Saving" />;
+          }
+          const items: ActionItem[] = [
+            { label: 'View full details', icon: Eye, onClick: () => setSelectedError(error) },
+          ];
+          if (error.status === 'open') {
+            items.push({ label: 'Mark investigating', icon: Search, separatorBefore: true, onClick: () => handleStatusUpdate(error.id, 'investigating') });
+            items.push({ label: 'Ignore this error', icon: XCircle, onClick: () => handleStatusUpdate(error.id, 'ignored') });
+          }
+          if (error.status === 'investigating') {
+            items.push({ label: 'Mark as fixed', icon: CheckCircle, tone: 'success', separatorBefore: true, onClick: () => handleStatusUpdate(error.id, 'fixed') });
+          }
+          return <ActionMenu label={`Actions for this error`} items={items} />;
+        }}
+      />
 
       {/* Error Detail Modal */}
       {selectedError && (

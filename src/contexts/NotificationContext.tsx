@@ -75,7 +75,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     );
 
     return () => unsubscribe();
-  }, [user?.uid]);
+  }, [user?.uid, user?.role]);
 
   const handleMarkAsRead = async (id: string) => {
     try {

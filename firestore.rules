@@ -92,6 +92,20 @@ service cloud.firestore {
       ]);
     }
 
+    // FIX-2: a job seeker may notify a company owner, but only about an application they
+    // themselves made. Nothing here is taken on trust from the request: the application
+    // document proves who applied and to which company, and the company document proves who
+    // owns it. Field presence is checked first so && short-circuits before any get(), which
+    // keeps this branch free for every other kind of notification.
+    function seekerAlertingOwnApplicationsCompany() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['userId', 'type', 'title', 'message', 'companyId', 'applicationId']) &&
+        d.type == 'application_update' &&
+        get(/databases/$(database)/documents/applications/$(d.applicationId)).data.seekerId == request.auth.uid &&
+        get(/databases/$(database)/documents/applications/$(d.applicationId)).data.companyId == d.companyId &&
+        get(/databases/$(database)/documents/companies/$(d.companyId)).data.ownerId == d.userId;
+    }
+
     // RULES-1 (D-JOBSTATE): a poster may deactivate their own job (pause, close) or send it back
     // for moderation (pending). Activation stays admin-only. Such a write may touch only these keys.
     function jobPosterDeactivation() {
@@ -215,10 +229,20 @@ service cloud.firestore {
         // RULES-1: admin-addressed alerts (business registration, new job) from any signed-in user;
         // the admin inbox reads userId == 'admin'
         (isAuthenticated() && request.resource.data.userId == 'admin' &&
-          request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message']));
-      // Only the recipient marks their own notifications as read
+          request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message'])) ||
+        // FIX-2: the "you have a new applicant" alert. applyToJob runs as the SEEKER and
+        // addresses the employer's uid, which none of the branches above permit, so this
+        // alert was denied outright. Kept last: the branches above are pure field checks,
+        // and || short-circuits, so an ordinary notification never triggers the reads below.
+        (isAuthenticated() && seekerAlertingOwnApplicationsCompany());
+      // Only the recipient marks their own notifications as read.
+      // FIX-2: the allowed key was 'isRead', but nothing in the tree writes that field —
+      // createNotification writes `read: false`, markNotificationRead writes `{ read: true }`,
+      // markAllNotificationsRead queries `where('read','==',false)`, NotificationContext counts
+      // `!n.read`, and payment/verify writes `read`. Every mark-as-read was therefore denied and
+      // the unread badge could never clear. 'isRead' is kept for any document already using it.
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'isRead', 'readAt']);
       allow delete: if isAdmin();
     }
 

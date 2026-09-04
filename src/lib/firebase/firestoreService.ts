@@ -471,6 +471,7 @@ export async function applyToJob(data: {
       message: `${data.seekerName} applied for "${data.jobTitle || 'your job posting'}". Tap to view applicant details & chat.`,
       actionUrl: `/employer/candidates`,
       companyId: data.companyId,
+      applicationId,
     });
   } else {
     // Better a missing alert than one addressed to an id no inbox ever queries.
@@ -595,6 +596,12 @@ export async function createNotification(data: {
    * on the document. Carrying it now keeps that rule expressible.
    */
   companyId?: string;
+  /**
+   * Set alongside companyId when a seeker notifies a company owner. The rule verifies the
+   * claim against this application document rather than trusting the request, so the alert
+   * cannot be forged for a company the sender never applied to.
+   */
+  applicationId?: string;
 }) {
   return addDoc(collection(db, 'notifications'), {
     ...data,

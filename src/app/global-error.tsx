@@ -68,6 +68,12 @@ export default function GlobalError({
             >
               🔄 Try Again
             </button>
+            {/* A global error boundary replaces the root layout after the layout itself has
+                thrown, so the router is not in a state worth trusting. A full document load is
+                the correct recovery here, and next/link would ask the failed router to do the
+                navigating. The rule is silenced on this line only; eslint.config.mjs is not
+                touched. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a
               href="/"
               style={{

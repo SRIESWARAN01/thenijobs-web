@@ -918,7 +918,7 @@ export default function SeekerSiteEditor() {
                       onChange={e => updateSectionData('hero', prev => ({ ...prev, isOpenToWork: e.target.checked }))}
                       className="rounded text-emerald-600 focus:ring-0"
                     />
-                    <span>Display "🟢 Open to Work" badge on portfolio</span>
+                    <span>Display &quot;🟢 Open to Work&quot; badge on portfolio</span>
                   </label>
                 </div>
               )}

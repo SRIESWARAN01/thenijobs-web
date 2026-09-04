@@ -120,7 +120,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // ── DYNAMIC: Verified company pages & landing websites from Firestore ───
-  let companyPages: MetadataRoute.Sitemap = [];
+  const companyPages: MetadataRoute.Sitemap = [];
   try {
     const companies = await getVerifiedCompanySlugsForSitemap();
     companies.forEach(c => {
@@ -153,7 +153,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // ── DYNAMIC: Published Job Seeker & Company Portfolios (with Google Index enabled)
-  let portfolioPages: MetadataRoute.Sitemap = [];
+  const portfolioPages: MetadataRoute.Sitemap = [];
   try {
     const portfolios = await getPublishedPortfolioSitesForSitemap();
     portfolios.forEach(p => {

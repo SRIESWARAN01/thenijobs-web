@@ -712,6 +712,13 @@ export async function approveJob(jobId: string, adminId: string) {
   await updateDoc(doc(db, 'jobs', jobId), {
     isActive: true,
     status: 'active',
+    // The admin list reads `approvalStatus` first (admin/jobs/page.tsx getStatus/isActive),
+    // so leaving it at 'pending' kept every approved job showing as "Pending Review" with
+    // "Active & Live: 0" forever — even though the job was already live on the public site.
+    approvalStatus: 'approved',
+    approvedBy: adminId,
+    approvedAt: serverTimestamp(),
+    rejectionReason: '',
     updatedAt: serverTimestamp() });
 
   const job = await fetchDocument<{ postedBy?: string; title?: string }>(
@@ -740,6 +747,10 @@ export async function rejectJob(jobId: string, adminId: string, reason?: string)
   await updateDoc(doc(db, 'jobs', jobId), {
     isActive: false,
     status: 'rejected',
+    // Same contract as approveJob — the admin list keys off approvalStatus.
+    approvalStatus: 'rejected',
+    rejectedBy: adminId,
+    rejectedAt: serverTimestamp(),
     rejectionReason: reason || '',
     updatedAt: serverTimestamp() });
 

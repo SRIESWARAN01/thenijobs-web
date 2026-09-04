@@ -1,17 +1,21 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import JobDetailPageClient from './JobDetailPageClient';
-import { getJobByIdServer, getCompanyByIdServer } from '@/lib/firebase/firestoreServer';
+import { getJobByIdServer, getCompanyByIdServer, getActiveJobsForSitemap } from '@/lib/firebase/firestoreServer';
 import { generateJobPostingSchema, generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
 import { isJobExpired, formatSalaryDisplay } from '@/lib/seo/expiredJobUtils';
 
 export const dynamicParams = false;
 
-export function generateStaticParams() {
-  return [
-    { id: '_fallback' },
-    { id: 'demo' },
-  ];
+// Every real job ID must be listed here at build time — dynamicParams is false, so a
+// static export can only ever serve the IDs returned below, nothing else. This used to
+// return only the two demo IDs, which 404'd every real job's detail/apply page in
+// production. Falls back to the demo IDs alone if the build-time Firestore query fails,
+// so a bad env var degrades to "demo jobs only" rather than breaking the build.
+export async function generateStaticParams() {
+  const jobs = await getActiveJobsForSitemap().catch(() => []);
+  const ids = Array.from(new Set(['_fallback', 'demo', ...jobs.map((j) => j.id)]));
+  return ids.map((id) => ({ id }));
 }
 
 interface PageProps {

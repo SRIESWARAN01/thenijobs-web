@@ -69,7 +69,22 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
                 where('slugLower', '==', slug.toLowerCase()),
                 limit(1)
               );
-              const snapName = await getDocs(qName);
+              let snapName = await getDocs(qName);
+
+              if (snapName.empty) {
+                // A company saved without a `slug`/`slugLower` field is still reachable:
+                // the directory links to slugifyCompany(name), so match on the name that
+                // produces this slug. Without this, a real verified business (e.g. one
+                // registered before slugs were written) renders as "not found" even though
+                // its card in /businesses links straight here.
+                const qByName = query(
+                  collection(db, 'companies'),
+                  where('name', '==', slug.replace(/-/g, ' ')),
+                  limit(1),
+                );
+                snapName = await getDocs(qByName);
+              }
+
               if (snapName.empty) {
                 // Graceful fallback: check built-in showcase companies
                 const sampleData = getSampleCompanyData(slug);

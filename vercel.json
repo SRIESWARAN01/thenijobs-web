@@ -1,4 +1,14 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build"
+  "buildCommand": "next build",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/jobs/:path+", "destination": "/jobs/_fallback" },
+    { "source": "/company/:path+", "destination": "/company/_fallback" },
+    { "source": "/companies/:path+", "destination": "/company/_fallback" },
+    { "source": "/businesses/:path+", "destination": "/businesses/_fallback" },
+    { "source": "/portfolio/seeker/:path+", "destination": "/portfolio/seeker/_fallback" },
+    { "source": "/portfolio/:path+", "destination": "/portfolio/_fallback" }
+  ]
 }

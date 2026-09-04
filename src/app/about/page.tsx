@@ -130,7 +130,7 @@ export default function AboutPage() {
     {
       name: 'Eswaran P',
       role: 'Founder & Chief Executive Officer (CEO)',
-      image: '/images/eswaran-p.png',
+      image: '/images/eswaran-p.webp',
       quote: 'Create opportunities for everyone and help businesses grow through meaningful professional connections.',
       desc: 'Eswaran P directs product ideation, strategic alignments, commercial partnerships, and marketing strategies. He is committed to simplifying career search and professional networking via digital innovations.',
       expertise: [
@@ -144,7 +144,7 @@ export default function AboutPage() {
     {
       name: 'Anbarasan S',
       role: 'Co-Founder | Director | Software Developer',
-      image: '/images/anbarasan-s.png',
+      image: '/images/anbarasan-s.webp',
       quote: 'Building secure, reliable, fast, and scalable digital architectures for the future of job ecosystem.',
       desc: 'Anbarasan S leads system design, API engineering, artificial intelligence utilities, and mobile integrations. He ensures the platform is optimized for low-latency indexing and real-time synchronization.',
       expertise: [
@@ -407,6 +407,10 @@ export default function AboutPage() {
                       <img
                         src={leader.image}
                         alt={leader.name}
+                        width={96}
+                        height={96}
+                        loading="lazy"
+                        decoding="async"
                         className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover object-top ring-4 ${leader.ring} shadow-md bg-gray-100 shrink-0`}
                       />
                     ) : (

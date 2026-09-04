@@ -11,6 +11,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
+import {
+  ActionMenu, Button, DataTable, Pill, ViewToggle, useViewMode,
+  type ActionItem, type Column,
+} from '@/components/dashboard';
 import { updateDocument, deleteDocument, createDocument } from '@/lib/firebase/firestoreService';
 import { where, orderBy } from 'firebase/firestore';
 import JobShareModal from '@/components/employer/JobShareModal';
@@ -90,7 +94,7 @@ export default function EmployerJobsPage() {
 
   const [tab, setTab] = useState<TabFilter>('all');
   const [search, setSearch] = useState('');
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [view, setView] = useViewMode('employer-jobs', 'table');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [shareJob, setShareJob] = useState<JobDoc | null>(null);
 
@@ -118,7 +122,6 @@ export default function EmployerJobsPage() {
 
   const handleCloseJob = async (id: string) => {
     setActionLoading(id);
-    setOpenMenuId(null);
     try {
       await updateDocument('jobs', id, { status: 'closed', isActive: false });
       toast.info('Job closed.');
@@ -133,7 +136,6 @@ export default function EmployerJobsPage() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this job posting permanently?')) return;
     setActionLoading(id);
-    setOpenMenuId(null);
     try {
       await deleteDocument('jobs', id);
       toast.info('Job deleted.');
@@ -147,7 +149,6 @@ export default function EmployerJobsPage() {
 
   const handleDuplicate = async (job: JobDoc) => {
     setActionLoading(job.id);
-    setOpenMenuId(null);
     try {
       const { id: _id, createdAt: _ca, viewCount: _vc, applicationsCount: _ac, status: _s, isActive: _ia, ...rest } = job as any;
       await createDocument('jobs', {
@@ -196,6 +197,86 @@ export default function EmployerJobsPage() {
       </div>
     );
   }
+
+  const jobColumns: Column<JobDoc>[] = [
+    {
+      key: 'title',
+      header: 'Job',
+      card: 'title',
+      sortValue: job => job.title ?? '',
+      render: job => (
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <Link
+              href={`/employer/jobs/${job.id}`}
+              className="truncate font-semibold text-slate-900 transition-colors hover:text-blue-600"
+            >
+              {job.title}
+            </Link>
+            {job.isUrgent && <Pill tone="danger">Urgent</Pill>}
+            {job.jobOrdinal && (
+              <span className="shrink-0 rounded-full border border-blue-100 bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-bold text-[#1E40AF]">
+                {job.jobOrdinal}
+              </span>
+            )}
+          </div>
+          <span className="block truncate text-xs text-slate-500">
+            {(job.jobType || 'full_time').replace(/_/g, ' ')} · {job.district || job.location || 'Theni'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'salary',
+      header: 'Salary',
+      hideBelow: 'xl',
+      sortValue: job => Number(job.salaryMin) || 0,
+      render: job => job.salaryMin && job.salaryMax
+        ? `₹${Number(job.salaryMin).toLocaleString('en-IN')} – ₹${Number(job.salaryMax).toLocaleString('en-IN')}/${job.salaryType || 'mo'}`
+        : job.salary || 'Negotiable',
+    },
+    {
+      key: 'applicationsCount',
+      header: 'Applicants',
+      align: 'center',
+      sortValue: job => job.applicationsCount ?? 0,
+      render: job => (
+        <Link href="/employer/candidates" className="inline-flex items-center gap-1 font-semibold tabular-nums text-slate-900 hover:text-blue-600">
+          <Users2 size={13} className="text-blue-600" aria-hidden /> {job.applicationsCount || 0}
+        </Link>
+      ),
+    },
+    {
+      key: 'viewCount',
+      header: 'Views',
+      align: 'center',
+      hideBelow: 'lg',
+      sortValue: job => job.viewCount ?? 0,
+      render: job => (
+        <span className="inline-flex items-center gap-1 tabular-nums">
+          <Eye size={13} className="text-violet-600" aria-hidden /> {job.viewCount || 0}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      sortValue: job => resolveStatus(job),
+      render: job => {
+        const st = STATUS_STYLES[resolveStatus(job)];
+        return (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+            style={{ background: st.bg, color: st.text }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot }} />
+            {st.label}
+          </span>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
@@ -275,212 +356,51 @@ export default function EmployerJobsPage() {
                 className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
               />
             </div>
+
+            <ViewToggle value={view} onChange={setView} />
           </div>
 
-          {/* Responsive Job Cards List (Zero Horizontal Overflow) */}
-          <div className="space-y-3.5">
-            {filtered.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs space-y-3">
-                <Briefcase size={36} className="mx-auto text-slate-500" />
-                <p className="text-sm font-bold text-gray-700">No jobs found in this section</p>
-                <p className="text-xs text-gray-500">
-                  Switch tabs or{' '}
-                  <Link href="/employer/post-job" className="text-blue-600 font-bold hover:underline">
-                    post a new job vacancy
-                  </Link>
-                </p>
-              </div>
-            ) : (
-              filtered.map(job => {
-                const jobStatus = resolveStatus(job);
-                const st = STATUS_STYLES[jobStatus];
-                const salary = job.salaryMin && job.salaryMax
-                  ? `₹${Number(job.salaryMin).toLocaleString('en-IN')} – ₹${Number(job.salaryMax).toLocaleString('en-IN')}/${job.salaryType || 'mo'}`
-                  : job.salary || 'Salary Negotiable';
-
-                return (
-                  <div
-                    key={job.id}
-                    className={`bg-white rounded-3xl p-4 sm:p-5 border shadow-xs hover:shadow-md transition-all ${
-                      jobStatus === 'pending' ? 'border-amber-300 bg-amber-50/20' :
-                      jobStatus === 'rejected' ? 'border-red-300 bg-red-50/20' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                      {/* Left: Info & Badges */}
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Link
-                            href={`/employer/jobs/${job.id}`}
-                            className="text-base font-bold text-gray-900 hover:text-blue-600 transition-colors leading-snug"
-                          >
-                            {job.title}
-                          </Link>
-
-                          {job.jobOrdinal && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                              {job.jobOrdinal}
-                            </span>
-                          )}
-
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-gray-100 text-gray-700">
-                            {job.jobType?.replace('_', ' ') || 'Full Time'}
-                          </span>
-
-                          {job.isUrgent && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-red-100 text-red-700">
-                              ⚡ URGENT
-                            </span>
-                          )}
-
-                          {job.isFeatured && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-100 text-amber-800">
-                              ⭐ FEATURED
-                            </span>
-                          )}
-
-                          <span
-                            className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shrink-0"
-                            style={{ background: st.bg, color: st.text }}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: st.dot }} />
-                            {st.label}
-                          </span>
-                        </div>
-
-                        <p className="text-xs text-gray-500 font-medium">
-                          {job.district || 'Theni'} {job.location ? `· ${job.location}` : ''} · <span className="text-emerald-700 font-bold">{salary}</span> ·{' '}
-                          Posted {job.createdAt ? new Date(job.createdAt?.toMillis?.() || job.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently'}
-                        </p>
-
-                        {jobStatus === 'rejected' && job.rejectionReason && (
-                          <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-1">
-                            <span className="font-bold block">Revision Required:</span>
-                            <p className="text-red-800 leading-relaxed">{job.rejectionReason}</p>
-                            <Link
-                              href="/employer/post-job"
-                              className="inline-block mt-1 font-bold text-red-700 hover:underline"
-                            >
-                              Edit details and resubmit →
-                            </Link>
-                          </div>
-                        )}
-
-                        {jobStatus === 'pending' && (
-                          <div className="p-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
-                            <Clock size={14} className="text-amber-600 shrink-0" />
-                            <span>Submitted for Admin review — will automatically go live once approved.</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right: Metrics & Actions */}
-                      <div className="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t md:border-0 border-gray-100">
-                        {/* Applications & Views counter */}
-                        <div className="flex items-center gap-3">
-                          <Link
-                            href="/employer/candidates"
-                            className="text-center p-2 rounded-2xl hover:bg-blue-50 transition-colors"
-                          >
-                            <div className="flex items-center justify-center gap-1 text-sm font-black text-gray-900">
-                              <Users2 size={14} className="text-blue-600" /> {job.applicationsCount || 0}
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 mt-0.5">Applicants</p>
-                          </Link>
-
-                          <div className="text-center p-2 rounded-2xl">
-                            <div className="flex items-center justify-center gap-1 text-sm font-black text-gray-900">
-                              <Eye size={14} className="text-purple-600" /> {job.viewCount || 0}
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 mt-0.5">Views</p>
-                          </div>
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-1.5">
-                          {actionLoading === job.id ? (
-                            <Loader2 size={16} className="animate-spin text-blue-600 mx-2" />
-                          ) : (
-                            <>
-                              {(jobStatus === 'active' || jobStatus === 'paused') && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleStatus(job.id, jobStatus)}
-                                  className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-                                    jobStatus === 'active'
-                                      ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                                  }`}
-                                  title={jobStatus === 'active' ? 'Pause Posting' : 'Resume Posting'}
-                                >
-                                  {jobStatus === 'active' ? <Pause size={14} /> : <Play size={14} />}
-                                </button>
-                              )}
-
-                              {jobStatus === 'active' && (
-                                <button
-                                  type="button"
-                                  onClick={() => setShareJob(job)}
-                                  className="p-2.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all cursor-pointer"
-                                  title="Share Job"
-                                >
-                                  <Share2 size={14} />
-                                </button>
-                              )}
-
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={() => setOpenMenuId(openMenuId === job.id ? null : job.id)}
-                                  className="p-2.5 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all cursor-pointer"
-                                >
-                                  <MoreVertical size={14} />
-                                </button>
-
-                                {openMenuId === job.id && (
-                                  <div className="absolute right-0 top-11 w-48 bg-white border border-gray-200 rounded-2xl shadow-xl z-20 overflow-hidden py-1 animate-fade-in font-medium">
-                                    <Link
-                                      href={`/employer/jobs/${job.id}`}
-                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                      <Eye size={13} /> View Analytics
-                                    </Link>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDuplicate(job)}
-                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-                                    >
-                                      <Copy size={13} /> Duplicate Job
-                                    </button>
-                                    {jobStatus !== 'closed' && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCloseJob(job.id)}
-                                        className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-amber-700 hover:bg-amber-50 transition-colors cursor-pointer"
-                                      >
-                                        <Archive size={13} /> Close Posting
-                                      </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDelete(job.id)}
-                                      className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                                    >
-                                      <Trash2 size={13} /> Delete Posting
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+          <DataTable
+            label="Your job postings"
+            view={view}
+            gridColumns={2}
+            columns={jobColumns}
+            rows={filtered}
+            getRowId={job => job.id}
+            emptyIcon={Briefcase}
+            emptyTitle="No jobs found in this section"
+            emptyDescription="Switch tabs, or post a new vacancy to get started."
+            emptyAction={
+              <Link href="/employer/post-job">
+                <Button variant="primary">Post a new job</Button>
+              </Link>
+            }
+            rowActions={job => {
+              if (actionLoading === job.id) {
+                return <Loader2 size={16} className="animate-spin text-blue-600" aria-label="Saving" />;
+              }
+              const jobStatus = resolveStatus(job);
+              const items: ActionItem[] = [
+                { label: 'View analytics', icon: Eye, href: `/employer/jobs/${job.id}` },
+              ];
+              if (jobStatus === 'active' || jobStatus === 'paused') {
+                items.push({
+                  label: jobStatus === 'active' ? 'Pause posting' : 'Resume posting',
+                  icon: jobStatus === 'active' ? Pause : Play,
+                  onClick: () => handleToggleStatus(job.id, jobStatus),
+                });
+              }
+              if (jobStatus === 'active') {
+                items.push({ label: 'Share job', icon: Share2, onClick: () => setShareJob(job) });
+              }
+              items.push({ label: 'Duplicate job', icon: Copy, separatorBefore: true, onClick: () => handleDuplicate(job) });
+              if (jobStatus !== 'closed') {
+                items.push({ label: 'Close posting', icon: Archive, onClick: () => handleCloseJob(job.id) });
+              }
+              items.push({ label: 'Delete posting', icon: Trash2, tone: 'danger', separatorBefore: true, onClick: () => handleDelete(job.id) });
+              return <ActionMenu label={`Actions for ${job.title}`} items={items} />;
+            }}
+          />
         </>
       )}
 

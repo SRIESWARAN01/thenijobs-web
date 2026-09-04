@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase/config';
-import { collection, addDoc, doc, setDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, getDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { SITE_CONTACT } from '@/lib/constants';
 
@@ -84,18 +84,19 @@ export default function RegisterBusinessPage() {
     try {
       const baseSlug = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `biz-${Date.now()}`;
       
-      // Prevent duplicate company registration with the same slug
-      const qExisting = query(collection(db, 'companies'), where('slug', '==', baseSlug));
-      const snapExisting = await getDocs(qExisting);
-      if (!snapExisting.empty) {
+      // Prevent duplicate company registration with the same slug.
+      // RULES-1 (D-SLUG): uniqueness is checked against the public `companySlugs` reservation
+      // collection — other owners' pending companies are no longer readable.
+      const existingSlug = await getDoc(doc(db, 'companySlugs', baseSlug));
+      if (existingSlug.exists()) {
         toast.warning(`A registered business named "${form.name.trim()}" already exists. Please choose a unique name or add your location (e.g. ${form.name.trim()} ${form.district}).`);
         setSubmitting(false);
         return;
       }
 
-      // Check if email already registered as a company owner
+      // Check if email already registered as a company owner (same reservation collection)
       if (form.email.trim()) {
-        const qEmail = query(collection(db, 'companies'), where('email', '==', form.email.trim().toLowerCase()));
+        const qEmail = query(collection(db, 'companySlugs'), where('email', '==', form.email.trim().toLowerCase()));
         const snapEmail = await getDocs(qEmail);
         if (!snapEmail.empty) {
           toast.warning(`A company with the email "${form.email.trim()}" is already registered. Please login or use a distinct business email.`);
@@ -125,7 +126,7 @@ export default function RegisterBusinessPage() {
         ownerId: user?.uid || '',
         ownerEmail: user?.email || form.email.trim().toLowerCase(),
         verificationStatus: 'pending',
-        isActive: true,
+        isActive: false,   // RULES-1: activation is an admin decision (safeCompanyCreate); was `true`
         isVerified: false,
         jobCount: 0,
         rating: 5.0,
@@ -137,6 +138,19 @@ export default function RegisterBusinessPage() {
       const newDoc = await addDoc(collection(db, 'companies'), companyPayload);
       const companyDocId = newDoc.id;
       setRegisteredCompanyId(companyDocId);
+
+      // RULES-1 (D-SLUG): reserve the slug publicly so later registrations can detect duplicates
+      try {
+        await setDoc(doc(db, 'companySlugs', companySlug), {
+          slug: companySlug,
+          email: form.email.trim().toLowerCase(),
+          ownerId: user?.uid || '',
+          companyId: companyDocId,
+          createdAt: serverTimestamp(),
+        });
+      } catch (reserveErr) {
+        console.warn('[register-business] slug reservation failed (registration itself succeeded):', reserveErr);
+      }
 
       // If user is logged in, link employer application
       if (user?.uid) {

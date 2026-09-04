@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { BUSINESS_CATEGORIES, TN_DISTRICTS } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { notifyAllAdmins } from '@/lib/firebase/adminNotify';
 
@@ -63,11 +63,10 @@ export default function CompanyRegisterPage() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '') || `company-${Date.now()}`;
 
-      // Prevent duplicate company registration with the same slug
-      const { query, where, getDocs } = await import('firebase/firestore');
-      const qExisting = query(collection(db, 'companies'), where('slug', '==', slug));
-      const snapExisting = await getDocs(qExisting);
-      if (!snapExisting.empty) {
+      // Prevent duplicate company registration with the same slug.
+      // RULES-1 (D-SLUG): checked against the public `companySlugs` reservation collection.
+      const existingSlug = await getDoc(doc(db, 'companySlugs', slug));
+      if (existingSlug.exists()) {
         alert(`A registered company with the name "${form.name.trim()}" already exists. Please choose a unique name (e.g. ${form.name.trim()} ${form.district}).`);
         setLoading(false);
         return;
@@ -75,7 +74,7 @@ export default function CompanyRegisterPage() {
 
       const ownerId = user ? user.uid : `guest_${form.phone.replace(/[^0-9]/g, '') || Date.now()}`;
 
-      await addDoc(collection(db, 'companies'), {
+      const created = await addDoc(collection(db, 'companies'), {
         ...form,
         foundedYear: form.foundedYear ? parseInt(form.foundedYear) : '',
         services,
@@ -98,6 +97,21 @@ export default function CompanyRegisterPage() {
           businessVerified: false },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp() });
+
+      // RULES-1 (D-SLUG): reserve the slug publicly (signed-in owners only; the rule binds ownerId)
+      if (user) {
+        try {
+          await setDoc(doc(db, 'companySlugs', slug), {
+            slug,
+            email: (user.email || form.email || '').toLowerCase(),
+            ownerId: user.uid,
+            companyId: created.id,
+            createdAt: serverTimestamp(),
+          });
+        } catch (reserveErr) {
+          console.warn('[company/register] slug reservation failed (registration itself succeeded):', reserveErr);
+        }
+      }
 
       // Notify all admins about the new registration
       await notifyAllAdmins(

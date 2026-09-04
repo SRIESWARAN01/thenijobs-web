@@ -96,7 +96,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   ] = await Promise.all([
     getCount('users'),
     getCount('companies', [where('verificationStatus', '==', 'verified')]),
-    getCount('jobs', [where('isActive', '==', true)]),
+    getCount('jobs', [where('status', '==', 'active')]),   // RULES-1: matches the jobs read rule (status), not isActive
     getCount('applications'),
     getCount('leads'),
   ]);

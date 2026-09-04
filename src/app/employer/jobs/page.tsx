@@ -103,10 +103,11 @@ export default function EmployerJobsPage() {
 
   const handleToggleStatus = async (id: string, currentStatus: JobStatus) => {
     setActionLoading(id);
-    const next: JobStatus = currentStatus === 'active' ? 'paused' : 'active';
+    // RULES-1 (D-JOBSTATE): a poster may pause; resuming sends the job back for admin review.
+    const next: JobStatus = currentStatus === 'active' ? 'paused' : 'pending';
     try {
-      await updateDocument('jobs', id, { status: next, isActive: next === 'active' });
-      toast.success(next === 'active' ? 'Job resumed!' : 'Job paused.');
+      await updateDocument('jobs', id, { status: next, isActive: false });
+      toast.success(next === 'pending' ? 'Sent for re-approval — it goes live after admin review.' : 'Job paused.');
     } catch (e: any) {
       console.error(e);
       toast.error('Status update failed');

@@ -1,10 +1,15 @@
 'use client';
 
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 
 /**
- * Notify all admin and super_admin users about a platform event.
+ * Notify the admin team about a platform event.
+ *
+ * RULES-1 (2026-09-04): the previous implementation queried `users` for every admin and wrote one
+ * notification per admin. Under default-deny rules a non-admin cannot read `users`, so this now
+ * writes a single notification addressed to the pseudo-recipient `admin`. Admin sessions subscribe
+ * to that inbox in NotificationContext; the rule allows any signed-in user to create it.
  *
  * @param title   – Notification title
  * @param message – Notification body
@@ -16,29 +21,15 @@ export async function notifyAllAdmins(
   actionUrl?: string,
 ): Promise<void> {
   try {
-    // 1. Find all admin users
-    const adminQuery = query(
-      collection(db, 'users'),
-      where('role', 'in', ['admin', 'super_admin']),
-    );
-    const snapshot = await getDocs(adminQuery);
-
-    if (snapshot.empty) return;
-
-    // 2. Create a notification for each admin
-    const promises = snapshot.docs.map((adminDoc) =>
-      addDoc(collection(db, 'notifications'), {
-        userId: adminDoc.id,
-        type: 'system',
-        title,
-        message,
-        ...(actionUrl ? { actionUrl } : {}),
-        read: false,
-        createdAt: serverTimestamp(),
-      }),
-    );
-
-    await Promise.all(promises);
+    await addDoc(collection(db, 'notifications'), {
+      userId: 'admin',
+      type: 'system',
+      title,
+      message,
+      ...(actionUrl ? { actionUrl } : {}),
+      read: false,
+      createdAt: serverTimestamp(),
+    });
   } catch (err) {
     console.error('[notifyAllAdmins] Failed to notify admins:', err);
     // Non-critical — don't throw so it doesn't block the caller

@@ -63,8 +63,9 @@ function CandidateDetailModal({
   onNotesUpdated: (notes: string) => void;
   onStatusUpdated: (status: string) => void;
 }) {
+  // RULES-1: users/{uid} is readable only by its owner and admins; employers read the seeker profile
+  // (the rule grants employers/business owners read on seekerProfiles).
   const { data: profile, loading: profileLoading } = useDocument<any>('seekerProfiles', seekerId);
-  const { data: userDoc, loading: userLoading } = useDocument<any>('users', seekerId);
   const toast = useToast();
 
   const [savingNotes, setSavingNotes] = useState(false);
@@ -150,7 +151,7 @@ function CandidateDetailModal({
     }
   };
 
-  if (profileLoading || userLoading) {
+  if (profileLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs font-outfit">
         <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
@@ -161,15 +162,15 @@ function CandidateDetailModal({
     );
   }
 
-  const email = profile?.email || userDoc?.email || 'N/A';
-  const phone = profile?.phone || userDoc?.phone || 'N/A';
+  const email = profile?.email || 'N/A';
+  const phone = profile?.phone || 'N/A';
   const cleanPhone = phone.replace(/[^0-9+]/g, '');
-  const cleanWhatsApp = (profile?.whatsapp || profile?.phone || userDoc?.phone || '').replace(/[^0-9]/g, '');
+  const cleanWhatsApp = (profile?.whatsapp || profile?.phone || '').replace(/[^0-9]/g, '');
   const experienceList = profile?.experience || [];
   const educationList = profile?.education || [];
   const skillsList = profile?.skills || [];
-  const district = profile?.district || userDoc?.district || 'Theni';
-  const resumeUrl = profile?.resumeUrl || userDoc?.resumeUrl;
+  const district = profile?.district || 'Theni';
+  const resumeUrl = profile?.resumeUrl;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs font-outfit" onClick={onClose}>

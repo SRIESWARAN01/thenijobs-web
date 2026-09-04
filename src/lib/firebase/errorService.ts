@@ -7,7 +7,7 @@
  */
 
 import { collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs, updateDoc, doc, getCountFromServer } from 'firebase/firestore';
-import { db } from './config';
+import { db, auth } from './config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -127,6 +127,10 @@ export async function logError(data: Partial<ErrorLogData> & { errorMessage: str
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
+
+    // RULES-1 (D-ERRORS): the `errors` create rule requires a signed-in user; signed-out visitors'
+    // errors stay in the console instead of producing a denied write.
+    if (!auth.currentUser) return null;
 
     const docRef = await addDoc(collection(db, 'errors'), errorDoc);
     return docRef.id;

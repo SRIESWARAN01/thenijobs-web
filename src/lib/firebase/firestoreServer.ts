@@ -368,11 +368,16 @@ export async function getPublishedPortfolioSitesForSitemap(): Promise<
 }
 
 /**
- * Fetch all registered company slugs for generateStaticParams
+ * Fetch all VERIFIED company slugs for generateStaticParams.
+ * RULES-1: this runs unauthenticated over REST at build time; under default-deny rules an
+ * unfiltered list is denied, so the query carries the same constraint as the public read rule.
+ * Pending companies never had a public page — their owners preview them signed in.
  */
 export async function getAllCompanySlugsServer(): Promise<string[]> {
   try {
-    const companies = await runQueryREST<any>('companies', []);
+    const companies = await runQueryREST<any>('companies', [
+      { field: 'verificationStatus', op: 'EQUAL', value: { stringValue: 'verified' } },
+    ]);
     const slugs = companies
       .map((c) => c.slug || (c.name ? slugifyCompany(c.name) : c.id))
       .filter(Boolean);

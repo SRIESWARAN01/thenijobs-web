@@ -73,11 +73,11 @@ export default function CategoryJobPageClient({
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-6" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-blue-600 font-medium">Home</Link>
-            <ChevronRight size={12} className="text-gray-400" />
+            <ChevronRight size={12} className="text-slate-500" />
             <Link href="/jobs" className="hover:text-blue-600 font-medium">Jobs</Link>
-            <ChevronRight size={12} className="text-gray-400" />
+            <ChevronRight size={12} className="text-slate-500" />
             <Link href={`/jobs-in-${locationSlug}`} className="hover:text-blue-600 font-medium">Jobs in {loc.name}</Link>
-            <ChevronRight size={12} className="text-gray-400" />
+            <ChevronRight size={12} className="text-slate-500" />
             <span className="text-gray-900 font-semibold">{catName}</span>
           </nav>
 
@@ -142,9 +142,9 @@ export default function CategoryJobPageClient({
                             {job.isVerified && <BadgeCheck size={14} className="text-emerald-500" />}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-                            <span className="flex items-center gap-1"><MapPin size={13} className="text-gray-400" /> {job.location || loc.name}</span>
-                            <span className="flex items-center gap-1"><Banknote size={13} className="text-gray-400" /> {job.salaryMin ? `₹${job.salaryMin.toLocaleString('en-IN')} - ₹${(job.salaryMax || job.salaryMin).toLocaleString('en-IN')}/mo` : 'Competitive'}</span>
-                            <span className="flex items-center gap-1"><Briefcase size={13} className="text-gray-400" /> {job.jobType || 'Full-time'}</span>
+                            <span className="flex items-center gap-1"><MapPin size={13} className="text-slate-500" /> {job.location || loc.name}</span>
+                            <span className="flex items-center gap-1"><Banknote size={13} className="text-slate-500" /> {job.salaryMin ? `₹${job.salaryMin.toLocaleString('en-IN')} - ₹${(job.salaryMax || job.salaryMin).toLocaleString('en-IN')}/mo` : 'Competitive'}</span>
+                            <span className="flex items-center gap-1"><Briefcase size={13} className="text-slate-500" /> {job.jobType || 'Full-time'}</span>
                           </div>
                         </div>
                       </div>
@@ -180,7 +180,7 @@ export default function CategoryJobPageClient({
                     className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                   >
                     <span>{c.name}</span>
-                    <ChevronRight size={13} className="text-gray-400" />
+                    <ChevronRight size={13} className="text-slate-500" />
                   </Link>
                 ))}
               </div>

@@ -104,7 +104,7 @@ export default function AITalentMatcherModal({ isOpen, onClose }: { isOpen: bool
               <p className="text-[11px] text-gray-500">Natural Language Candidate Search</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold">×</button>
+          <button onClick={onClose} className="text-slate-500 hover:text-gray-600 font-bold">×</button>
         </div>
 
         {/* Query Input */}

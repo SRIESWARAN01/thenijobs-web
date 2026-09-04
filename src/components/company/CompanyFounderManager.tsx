@@ -70,7 +70,7 @@ export default function CompanyFounderManager({
               {founder.photoUrl ? (
                 <img src={founder.photoUrl} alt="Founder" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400">
+                <div className="w-full h-full flex items-center justify-center text-slate-500">
                   <User size={36} />
                 </div>
               )}

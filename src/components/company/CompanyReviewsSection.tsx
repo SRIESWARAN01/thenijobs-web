@@ -116,7 +116,7 @@ export default function CompanyReviewsSection({
                   <Star
                     key={star}
                     size={16}
-                    className={star <= Math.round(averageRating) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}
+                    className={star <= Math.round(averageRating) ? 'fill-amber-400 text-amber-600' : 'text-slate-300'}
                   />
                 ))}
                 <span className="ml-2 text-xs font-semibold text-slate-600">
@@ -129,7 +129,7 @@ export default function CompanyReviewsSection({
           {/* Action & Filter Buttons */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700">
-              <Filter size={13} className="text-slate-400" />
+              <Filter size={13} className="text-slate-500" />
               <select
                 value={filterSort}
                 onChange={e => setFilterSort(e.target.value as any)}
@@ -164,7 +164,7 @@ export default function CompanyReviewsSection({
 
       {/* Review List */}
       {sortedReviews.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center text-xs text-slate-500">
           <MessageSquare size={32} className="mx-auto mb-2 text-slate-300" />
           No verified reviews yet. Be the first candidate to share your experience with {companyName}!
         </div>
@@ -191,7 +191,7 @@ export default function CompanyReviewsSection({
                         </span>
                       )}
                     </h4>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-slate-500">
                       {r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleDateString('en-IN') : 'Recently'}
                     </p>
                   </div>
@@ -203,7 +203,7 @@ export default function CompanyReviewsSection({
                     <Star
                       key={star}
                       size={12}
-                      className={star <= r.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}
+                      className={star <= r.rating ? 'fill-amber-400 text-amber-600' : 'text-slate-300'}
                     />
                   ))}
                   <span className="ml-1 text-xs font-bold text-amber-700">{r.rating}.0</span>
@@ -241,7 +241,7 @@ export default function CompanyReviewsSection({
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Star size={18} className="text-amber-500 fill-amber-500" /> Write a Review for {companyName}
               </h3>
-              <button onClick={() => setShowWriteModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowWriteModal(false)} className="text-slate-500 hover:text-slate-600">
                 <X size={18} />
               </button>
             </div>
@@ -271,7 +271,7 @@ export default function CompanyReviewsSection({
                       >
                         <Star
                           size={26}
-                          className={(hoverRating || rating) >= star ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}
+                          className={(hoverRating || rating) >= star ? 'fill-amber-400 text-amber-600' : 'text-slate-300'}
                         />
                       </button>
                     ))}

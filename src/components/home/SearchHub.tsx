@@ -98,12 +98,12 @@ export default function SearchHub() {
 
           <div className="mt-4 grid gap-2 md:grid-cols-[1fr_180px_auto]">
             <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 focus-within:border-teal-600 focus-within:bg-white">
-              <Search size={18} className="shrink-0 text-slate-400" />
+              <Search size={18} className="shrink-0 text-slate-500" />
               <input
                 key={active.id}
                 type="search"
                 placeholder={active.placeholder}
-                className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400"
+                className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-500"
               />
             </label>
             <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4">
@@ -135,7 +135,7 @@ export default function SearchHub() {
                 {tag}
               </button>
             ))}
-            <span className="ml-auto hidden items-center gap-1 text-xs font-bold text-slate-400 sm:flex">
+            <span className="ml-auto hidden items-center gap-1 text-xs font-bold text-slate-500 sm:flex">
               <Store size={14} />
               Business + Jobs combined search
             </span>

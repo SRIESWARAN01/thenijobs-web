@@ -48,7 +48,7 @@ export default function StickySearchBar({
       <div className={`${maxWidthClassName} mx-auto flex flex-wrap gap-2`}>
         <div className="flex-[1_1_260px] flex items-stretch bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-300 transition-colors">
           <div className="flex-1 flex items-center gap-2 px-4 py-2.5 min-w-0">
-            <Search size={15} className="text-gray-400 flex-shrink-0" />
+            <Search size={15} className="text-slate-500 flex-shrink-0" />
             <input
               id={searchId}
               value={searchValue}
@@ -65,7 +65,7 @@ export default function StickySearchBar({
                 type="button"
                 onClick={() => onSearchChange('')}
                 aria-label="Clear search"
-                className="tap-target-auto shrink-0 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600"
+                className="tap-target-auto shrink-0 w-5 h-5 flex items-center justify-center text-slate-500 hover:text-gray-600"
               >
                 <X size={13} />
               </button>

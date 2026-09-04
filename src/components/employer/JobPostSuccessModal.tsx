@@ -108,7 +108,7 @@ export default function JobPostSuccessModal({
 
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/80 text-xs text-gray-700">
               <div className="flex items-center gap-1.5">
-                <MapPin size={13} className="text-gray-400 shrink-0" />
+                <MapPin size={13} className="text-slate-500 shrink-0" />
                 <span className="truncate">{job.location ? `${job.location}, ` : ''}{job.district}</span>
               </div>
               {job.salary && (

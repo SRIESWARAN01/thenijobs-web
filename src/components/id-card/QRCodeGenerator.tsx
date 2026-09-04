@@ -52,7 +52,7 @@ export default function QRCodeGenerator({
         className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`}
         style={{ width: size, height: size }}
       >
-        <span className="text-xs text-gray-400">QR Error</span>
+        <span className="text-xs text-slate-500">QR Error</span>
       </div>
     );
   }

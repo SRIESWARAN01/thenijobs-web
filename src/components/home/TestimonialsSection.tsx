@@ -54,7 +54,7 @@ export default function TestimonialsSection() {
             <div key={t.name} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center gap-1 mb-4">
                 {Array.from({ length: t.rating }).map((_, i) => (
-                  <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
+                  <Star key={i} size={14} className="fill-amber-400 text-amber-600" />
                 ))}
               </div>
 

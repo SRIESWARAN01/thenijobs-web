@@ -166,20 +166,20 @@ export default function Header() {
                     <span className="text-xs xl:text-sm font-semibold text-slate-800 max-w-[110px] truncate whitespace-nowrap">
                       {user.displayName || user.email?.split('@')[0] || 'User'}
                     </span>
-                    <ChevronDown size={14} className="text-slate-400 shrink-0" />
+                    <ChevronDown size={14} className="text-slate-500 shrink-0" />
                   </button>
 
                   {profileOpen && (
                     <div className="absolute right-0 top-11 w-56 bg-white rounded-2xl border border-slate-100 shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
                       <div className="px-4 py-2.5 border-b border-slate-100">
-                        <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Signed in as</p>
+                        <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Signed in as</p>
                         <p className="text-xs text-slate-900 font-bold truncate mt-0.5">{user.email || user.displayName}</p>
                       </div>
                       <Link href="/profile" className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 font-medium">
-                        <User size={15} className="text-slate-400" /> My Profile
+                        <User size={15} className="text-slate-500" /> My Profile
                       </Link>
                       <Link href={dashboardHref} className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 font-medium">
-                        <Briefcase size={15} className="text-slate-400" /> Dashboard
+                        <Briefcase size={15} className="text-slate-500" /> Dashboard
                       </Link>
                       {(role === 'admin' || role === 'super_admin') && (
                         <Link href="/admin/dashboard" className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-blue-700 hover:bg-blue-50 font-bold">
@@ -190,7 +190,7 @@ export default function Header() {
                         href={(role === 'employer' || role === 'business_owner') ? '/employer/settings' : '/seeker/settings'}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 font-medium"
                       >
-                        <Settings size={15} className="text-slate-400" /> Settings
+                        <Settings size={15} className="text-slate-500" /> Settings
                       </Link>
                       <div className="border-t border-slate-100 mt-1">
                         <button
@@ -291,7 +291,7 @@ export default function Header() {
 
           {/* Scrollable nav list — the only part that scrolls; header and CTA stay put */}
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 py-1.5">Navigation Menu</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 py-1.5">Navigation Menu</p>
             <div className="space-y-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;

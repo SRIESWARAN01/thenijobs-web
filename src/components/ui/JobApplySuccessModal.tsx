@@ -89,7 +89,7 @@ export default function JobApplySuccessModal({
             {/* Job Details */}
             <div className="space-y-2.5">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Position</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Position</span>
                 <h3 className="text-base font-extrabold text-slate-900 leading-tight flex items-center gap-1.5">
                   <Briefcase size={16} className="text-pink-600 shrink-0" />
                   <span>{jobTitle}</span>
@@ -98,14 +98,14 @@ export default function JobApplySuccessModal({
 
               <div className="grid grid-cols-2 gap-2 pt-1 border-t border-dashed border-pink-100">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Company</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Company</span>
                   <p className="text-xs font-bold text-slate-800 flex items-center gap-1 mt-0.5">
                     <Building2 size={13} className="text-pink-500 shrink-0" />
                     <span className="truncate">{companyName}</span>
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Location</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Location</span>
                   <p className="text-xs font-bold text-slate-800 flex items-center gap-1 mt-0.5">
                     <MapPin size={13} className="text-pink-500 shrink-0" />
                     <span className="truncate">{district}</span>

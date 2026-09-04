@@ -147,7 +147,7 @@ export default function CompanyPortfolioManager({
             <h4 className="text-sm font-bold text-slate-900">
               {editingId ? 'Edit Project' : 'Add New Portfolio Project'}
             </h4>
-            <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+            <button onClick={resetForm} className="text-slate-500 hover:text-slate-600">
               <X size={16} />
             </button>
           </div>
@@ -228,7 +228,7 @@ export default function CompanyPortfolioManager({
 
       {/* Projects List Grid */}
       {portfolioProjects.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-500">
           <FolderGit2 size={32} className="mx-auto mb-2 text-slate-300" />
           No portfolio projects added yet. Click &quot;Add Project&quot; to highlight past achievements.
         </div>
@@ -254,7 +254,7 @@ export default function CompanyPortfolioManager({
               <div>
                 <h4 className="text-sm font-bold text-slate-900 line-clamp-1">{p.title}</h4>
                 {p.location && (
-                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                     <MapPin size={11} /> {p.location}
                   </p>
                 )}
@@ -262,10 +262,10 @@ export default function CompanyPortfolioManager({
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button onClick={() => handleEdit(p)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
+                <button onClick={() => handleEdit(p)} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50">
                   <Edit3 size={14} />
                 </button>
-                <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
+                <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50">
                   <Trash2 size={14} />
                 </button>
               </div>

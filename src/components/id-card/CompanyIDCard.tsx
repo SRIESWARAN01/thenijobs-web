@@ -229,7 +229,7 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
                 <div className="space-y-1.5 my-auto">
                   {topServices.length > 0 ? (
                     <div>
-                      <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider block mb-1">
+                      <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider block mb-1">
                         Key Services &amp; Products:
                       </span>
                       <div className="flex flex-wrap gap-1">

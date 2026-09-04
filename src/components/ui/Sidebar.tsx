@@ -299,7 +299,7 @@ export function Sidebar({
             {onLogout && (!collapsed || isMobile) && (
               <button
                 onClick={onLogout}
-                className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-400
+                className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-600
                   hover:bg-white/10 transition-all cursor-pointer"
                 title="Logout"
               >

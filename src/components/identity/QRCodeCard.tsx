@@ -59,7 +59,7 @@ export default function QRCodeCard({ url, title = 'Digital Portfolio QR Code', s
         {qrDataUrl ? (
           <img src={qrDataUrl} alt="QR Code" className="w-48 h-48 mx-auto rounded-lg" />
         ) : (
-          <div className="w-48 h-48 mx-auto flex items-center justify-center text-gray-300 text-xs">
+          <div className="w-48 h-48 mx-auto flex items-center justify-center text-slate-500 text-xs">
             Generating QR Code...
           </div>
         )}

@@ -126,7 +126,7 @@ export function Modal({
                   {showClose && (
                     <Dialog.Close asChild>
                       <button
-                        className="shrink-0 ml-4 p-1.5 rounded-xl text-slate-400
+                        className="shrink-0 ml-4 p-1.5 rounded-xl text-slate-500
                           hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
                         aria-label="Close"
                       >

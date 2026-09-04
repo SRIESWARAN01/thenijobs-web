@@ -68,7 +68,7 @@ export default function AICareerCoachModal({ isOpen, onClose }: { isOpen: boolea
             </div>
             <div>
               <h3 className="font-bold text-sm flex items-center gap-1.5 font-sans">
-                THENIJOBS AI Assistant <Sparkles size={14} className="text-amber-400 fill-amber-400" />
+                THENIJOBS AI Assistant <Sparkles size={14} className="text-amber-600 fill-amber-400" />
               </h3>
               <p className="text-[11px] text-blue-100">Powered by Groq AI Engine</p>
             </div>

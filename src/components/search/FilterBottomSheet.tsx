@@ -48,7 +48,7 @@ export default function FilterBottomSheet({ open, onClose, title, children, foot
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="tap-target-auto p-1 rounded-xl text-gray-400 hover:bg-gray-100"
+            className="tap-target-auto p-1 rounded-xl text-slate-500 hover:bg-gray-100"
           >
             <X size={18} />
           </button>

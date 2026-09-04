@@ -3,15 +3,37 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Clock, MapPin, Building2, Calendar, Phone, ArrowRight, Sparkles } from 'lucide-react';
-import { useCollection } from '@/hooks/useFirestore';
-import { where, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { collection, getDocs, query, where, limit } from 'firebase/firestore';
 
 export default function WalkInDriveBanner() {
-  const { data: walkInJobs, loading } = useCollection<any>('jobs', [
-    where('isWalkIn', '==', true),
-    where('status', '==', 'active'),   // RULES-1: public reads must carry the read rule's constraint
-    limit(3)
-  ]);
+  // PERF-1: this used useCollection, which is onSnapshot, so a marketing strip of at most
+  // three jobs held a live Firestore connection open for as long as the home page stayed
+  // open — for every signed-out visitor. Walk-in drives do not change while someone reads
+  // the page, so one read at mount is enough.
+  const [walkInJobs, setWalkInJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'jobs'),
+          where('isWalkIn', '==', true),
+          where('status', '==', 'active'),   // RULES-1: public reads must carry the read rule's constraint
+          limit(3)
+        ));
+        if (!cancelled) setWalkInJobs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error('[WalkInDriveBanner] Failed to load walk-in drives:', err);
+        if (!cancelled) setWalkInJobs([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
     hours: 23,

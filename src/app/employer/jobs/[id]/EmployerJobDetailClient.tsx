@@ -95,7 +95,9 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
     setActionLoading(newStatus);
     setShowMenu(false);
     try {
-      await updateDocument('jobs', jobId, { status: newStatus, isActive: newStatus === 'active', updatedAt: new Date() });
+      // RULES-1 (D-JOBSTATE): a poster cannot self-activate; "resume" re-submits for admin review.
+      const status: JobStatus = newStatus === 'active' ? 'pending' : newStatus;
+      await updateDocument('jobs', jobId, { status, isActive: false, updatedAt: new Date() });
     } catch (e) { console.error(e); }
     finally { setActionLoading(null); }
   };

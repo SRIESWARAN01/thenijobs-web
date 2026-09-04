@@ -47,7 +47,8 @@ service cloud.firestore {
     function safeJobCreate() {
       let d = request.resource.data;
       return
-        (!d.keys().hasAny(['status'])          || d.status == 'pending') &&
+        // RULES-1: 'draft' is the employer's duplicate-as-draft; both are inactive until admin approval
+        (!d.keys().hasAny(['status'])          || d.status in ['pending', 'draft']) &&
         (!d.keys().hasAny(['isActive'])         || d.isActive == false) &&
         (!d.keys().hasAny(['isFeatured'])       || d.isFeatured == false) &&
         (!d.keys().hasAny(['rejectionReason'])  || d.rejectionReason == '');
@@ -60,6 +61,20 @@ service cloud.firestore {
         // RULES-1: plan and ownership fields are admin/server-owned (security.md S-3)
         'subscriptionPlan', 'planStartDate', 'planEndDate', 'ownerId'
       ]);
+    }
+
+    // RULES-1: an owner may re-submit a REJECTED company for review (become-employer flow):
+    // rejected → pending, still inactive and unverified, and no other moderated/plan field moves.
+    function companyOwnerResubmission() {
+      let d = request.resource.data;
+      return resource.data.verificationStatus == 'rejected' &&
+        d.verificationStatus == 'pending' &&
+        (!d.keys().hasAny(['isActive'])   || d.isActive == false) &&
+        (!d.keys().hasAny(['isVerified']) || d.isVerified == false) &&
+        !d.diff(resource.data).affectedKeys().hasAny([
+          'isFeatured', 'isPremium', 'rejectionReason',
+          'subscriptionPlan', 'planStartDate', 'planEndDate', 'ownerId'
+        ]);
     }
 
     function jobModerationUnchanged() {
@@ -104,7 +119,8 @@ service cloud.firestore {
       allow create: if (isAuthenticated() && safeCompanyCreate() &&
         request.resource.data.ownerId == request.auth.uid) || isAdmin();
       allow update: if
-        (isAuthenticated() && resource.data.ownerId == request.auth.uid && companyModerationUnchanged()) ||
+        (isAuthenticated() && resource.data.ownerId == request.auth.uid &&
+          (companyModerationUnchanged() || companyOwnerResubmission())) ||
         isAdmin();
       allow delete: if isAdmin();
     }

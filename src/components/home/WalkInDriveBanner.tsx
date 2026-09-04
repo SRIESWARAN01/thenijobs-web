@@ -9,6 +9,7 @@ import { where, limit } from 'firebase/firestore';
 export default function WalkInDriveBanner() {
   const { data: walkInJobs, loading } = useCollection<any>('jobs', [
     where('isWalkIn', '==', true),
+    where('status', '==', 'active'),   // RULES-1: public reads must carry the read rule's constraint
     limit(3)
   ]);
 

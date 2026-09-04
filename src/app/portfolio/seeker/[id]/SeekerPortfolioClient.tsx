@@ -93,13 +93,9 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
 
         const profileData = profileSnap.data() as SeekerData;
         setSeeker(profileData);
-
-        const userRef = doc(db, 'users', seekerId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          setUserName(userData.displayName || userData.name || '');
-        }
+        // RULES-1: users/{uid} is readable only by its owner and admins; the public name comes
+        // from the seeker profile (written by the seeker on their profile page).
+        setUserName((profileData as any).name || (profileData as any).displayName || '');
       } catch (err) {
         console.error('Error loading seeker portfolio:', err);
         setNotFound(true);

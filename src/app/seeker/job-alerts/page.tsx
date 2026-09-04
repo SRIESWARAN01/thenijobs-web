@@ -15,6 +15,9 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  ActionMenu, Button, DataTable, PageHeader, Pill, ViewToggle, useViewMode, type Column,
+} from '@/components/dashboard';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
 import { collection, addDoc, doc, updateDoc, deleteDoc, where, serverTimestamp } from 'firebase/firestore';
@@ -43,6 +46,7 @@ export default function JobAlertsPage() {
   ], { skip: !uid });
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [view, setView] = useViewMode('seeker-job-alerts', 'table');
   const [saving, setSaving] = useState(false);
   const toast = useToast();
 
@@ -128,25 +132,73 @@ export default function JobAlertsPage() {
     );
   }
 
+  const alertColumns: Column<JobAlert>[] = [
+    {
+      key: 'title',
+      header: 'Alert',
+      card: 'title',
+      sortValue: a => a.title ?? '',
+      render: a => (
+        <div className="min-w-0">
+          <span className="block truncate font-semibold text-slate-900">{a.title}</span>
+          <span className="block truncate text-xs text-slate-500">
+            {[a.category, a.district, a.jobType].filter(Boolean).join(' · ') || 'Any job'}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'channels',
+      header: 'Channels',
+      sortValue: a => [a.emailEnabled, a.whatsappEnabled, a.pushEnabled].filter(Boolean).length,
+      render: a => {
+        const on = [
+          a.emailEnabled && { label: 'Email', Icon: Mail },
+          a.whatsappEnabled && { label: 'WhatsApp', Icon: MessageSquare },
+          a.pushEnabled && { label: 'Push', Icon: Smartphone },
+        ].filter(Boolean) as { label: string; Icon: typeof Mail }[];
+        if (on.length === 0) return <Pill tone="danger">None</Pill>;
+        return (
+          <span className="flex flex-wrap items-center gap-1.5">
+            {on.map(({ label, Icon }) => (
+              <Pill key={label} tone="success"><Icon size={10} /> {label}</Pill>
+            ))}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'district',
+      header: 'District',
+      hideBelow: 'xl',
+      sortValue: a => a.district ?? '',
+      render: a => a.district || 'Any',
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      sortValue: a => a.status ?? 'active',
+      render: a => (
+        <Pill tone={a.status === 'active' ? 'success' : 'warning'} dot>{a.status}</Pill>
+      ),
+    },
+  ];
+
   return (
     <div className="animate-fade-in-up space-y-6 font-outfit text-gray-900 relative">
-      {/* Header */}
-      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-500/10 to-cyan-500/5 p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-600 font-semibold">Notification Rules</p>
-            <h1 className="mt-1 text-2xl font-bold text-gray-900 font-outfit">Job Alerts</h1>
-            <p className="mt-1 text-sm text-slate-500">Manage alert preferences that turn skills, locations, categories, and channels into automatic job notifications.</p>
-          </div>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-2.5 text-sm font-semibold text-gray-900 transition-opacity hover:opacity-90 self-start sm:self-auto"
-          >
-            <Plus size={16} />
-            New Alert
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Job alerts"
+        description="Turn skills, locations, categories and channels into automatic job notifications."
+        actions={
+          <>
+            <ViewToggle value={view} onChange={setView} />
+            <Button variant="primary" onClick={() => setModalOpen(true)}>
+              <Plus size={15} /> New alert
+            </Button>
+          </>
+        }
+      />
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -240,71 +292,40 @@ export default function JobAlertsPage() {
       </div>
 
 
-      {/* Alerts List */}
-      <div className="space-y-4">
-        {alerts.length === 0 ? (
-          <div className="glass-card rounded-2xl p-12 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100">
-              <Bell size={24} className="text-emerald-400" />
-            </div>
-            <h2 className="text-base font-semibold text-gray-900">No alerts set up</h2>
-            <p className="mx-auto mt-1 max-w-md text-sm text-gray-505">Set up custom job alerts to get notified by email or push as soon as matching jobs are posted.</p>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2 mt-4 text-xs font-semibold text-slate-500 hover:bg-white/[0.08]"
-            >
-              Set New Alert
-            </button>
-          </div>
-        ) : (
-          alerts.map((item) => (
-            <div key={item.id} className={`glass-card rounded-2xl p-5 transition-all border ${item.status === 'active' ? 'hover:border-emerald-500/10' : 'opacity-60'}`}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base font-semibold text-gray-900">{item.title}</h2>
-                    <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                      item.status === 'active' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-amber-100 text-amber-600 border-amber-200'
-                    }`}>
-                      {item.status}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1.5">
-                    {item.category && <span>📂 {item.category}</span>}
-                    {item.district && <span>📍 {item.district}</span>}
-                    {item.jobType && <span>💼 {item.jobType}</span>}
-                  </div>
-                  <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">📡 Channels:</span>
-                    {item.emailEnabled && <span className="flex items-center gap-1 text-emerald-400"><Mail size={12} /> Email</span>}
-                    {item.whatsappEnabled && <span className="flex items-center gap-1 text-emerald-400"><MessageSquare size={12} /> WhatsApp</span>}
-                    {item.pushEnabled && <span className="flex items-center gap-1 text-emerald-400"><Smartphone size={12} /> Push</span>}
-                    {!item.emailEnabled && !item.whatsappEnabled && !item.pushEnabled && <span className="text-rose-600">None</span>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-                  <button
-                    onClick={() => handleToggleStatus(item)}
-                    className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-                      item.status === 'active' ? 'text-emerald-600 bg-emerald-100 hover:bg-emerald-500/20' : 'text-slate-500 bg-white hover:bg-white/[0.08]'
-                    }`}
-                    title={item.status === 'active' ? 'Pause Alert' : 'Resume Alert'}
-                  >
-                    {item.status === 'active' ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteAlert(item.id)}
-                    className="p-2 rounded-lg text-gray-505 hover:text-rose-450 hover:bg-red-100 transition-colors"
-                    title="Delete Alert"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
+      {/* Alerts list */}
+      <DataTable
+        label="Job alerts"
+        view={view}
+        gridColumns={2}
+        columns={alertColumns}
+        rows={alerts}
+        getRowId={a => a.id}
+        emptyIcon={Bell}
+        emptyTitle="No alerts set up"
+        emptyDescription="Create a job alert to be notified as soon as a matching job is posted."
+        emptyAction={
+          <Button variant="primary" onClick={() => setModalOpen(true)}>Set new alert</Button>
+        }
+        rowActions={item => (
+          <ActionMenu
+            label={`Actions for ${item.title}`}
+            items={[
+              {
+                label: item.status === 'active' ? 'Pause alert' : 'Resume alert',
+                icon: item.status === 'active' ? ToggleLeft : ToggleRight,
+                onClick: () => handleToggleStatus(item),
+              },
+              {
+                label: 'Delete alert',
+                icon: Trash2,
+                tone: 'danger',
+                separatorBefore: true,
+                onClick: () => handleDeleteAlert(item.id),
+              },
+            ]}
+          />
         )}
-      </div>
+      />
 
       {/* Create Alert Modal */}
       {modalOpen && (

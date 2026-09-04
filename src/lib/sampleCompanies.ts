@@ -306,60 +306,18 @@ export const SAMPLE_COMPANIES: Record<string, { company: Partial<Company>; jobs:
 };
 
 /**
- * Helper to get sample company or dynamically construct fallback from slug
+ * Look up one of the curated showcase companies above. Returns null for anything else.
+ *
+ * This used to synthesise a company from the slug itself for ANY unrecognised URL —
+ * complete with a "verified"/"Authorized" badge, a 4.8 rating, trust badges, and
+ * THENIJOBS's own phone number as the business's contact. That meant /company/<anything>
+ * rendered a convincing, SEO-indexable business profile for a business that does not
+ * exist: a trust and moderation failure, a misrepresentation risk (real phone number on a
+ * fabricated listing), and an open door to search-spam penalties for the whole domain.
+ * Never reintroduce a generative branch here — an unknown slug must reach the caller's
+ * "not found" state.
  */
 export function getSampleCompanyData(slug: string) {
   const cleanSlug = slug.toLowerCase().trim();
-  if (SAMPLE_COMPANIES[cleanSlug]) {
-    return SAMPLE_COMPANIES[cleanSlug];
-  }
-
-  // Generate a plausible fallback object from any recognized slug name
-  const formattedName = cleanSlug
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-
-  const isHealth = cleanSlug.includes('clinic') || cleanSlug.includes('hospital') || cleanSlug.includes('care') || cleanSlug.includes('medical');
-  const isAgri = cleanSlug.includes('agro') || cleanSlug.includes('farm') || cleanSlug.includes('agri');
-  const isTextile = cleanSlug.includes('textile') || cleanSlug.includes('garment');
-
-  const category = isHealth ? 'Healthcare & Hospital' : isAgri ? 'Agriculture & Farming' : isTextile ? 'Textiles & Garments' : 'Retail, Shop & Supermarket';
-
-  return {
-    company: {
-      id: `fallback_${cleanSlug}`,
-      name: formattedName,
-      slug: cleanSlug,
-      tagline: `Verified Business & Services in Theni District`,
-      category,
-      district: 'Theni',
-      address: `Theni District, Tamil Nadu`,
-      phone: '+91 93605 19460',
-      whatsapp: '919360519460',
-      email: `contact@${cleanSlug}.thenijobs.com`,
-      foundedYear: 2020,
-      establishedYear: '2020',
-      companySize: '1–10',
-      description: `${formattedName} is a verified local enterprise in Tamil Nadu on THENIJOBS providing top-quality products, reliable services, and career opportunities.`,
-      verificationStatus: 'verified' as const,
-      isActive: true,
-      isVerified: true,
-      isFeatured: false,
-      isPremium: false,
-      rating: 4.8,
-      reviewCount: 12,
-      viewCount: 450,
-      enquiryCount: 45,
-      trustScore: 92,
-      responseTime: '< 30 mins',
-      verificationBadges: {
-        mobileVerified: true,
-        emailVerified: true,
-        gstVerified: false,
-        businessVerified: true,
-      },
-    },
-    jobs: [],
-    reviews: [],
-  };
+  return SAMPLE_COMPANIES[cleanSlug] ?? null;
 }

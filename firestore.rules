@@ -179,8 +179,14 @@ service cloud.firestore {
 
     // ===== SEEKER PROFILES =====
     match /seekerProfiles/{userId} {
-      // Employers/admins can read profiles (for talent search / candidate review)
-      allow read: if isOwner(userId) || isAdmin() || isEmployerOrOwner();
+      // Employers/admins can read profiles (for talent search / candidate review).
+      // A seeker who explicitly opted in (isPortfolioPublic == true) is also publicly
+      // readable, which is what makes /portfolio/seeker/{id} work for a signed-out
+      // visitor and for the unauthenticated build-time generateStaticParams query.
+      // Rules are document-level: opting in exposes the WHOLE profile document, so the
+      // client-side `privacySettings` toggles are presentation only, not access control.
+      allow read: if isOwner(userId) || isAdmin() || isEmployerOrOwner()
+                  || resource.data.isPortfolioPublic == true;
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();

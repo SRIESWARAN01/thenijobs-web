@@ -63,6 +63,7 @@ const DEFAULT_PROFILE = {
   district: '',
   currentRole: '',
   isOpenToWork: true,
+  isPortfolioPublic: false,
   photoUrl: ''
 };
 
@@ -103,6 +104,7 @@ export default function SeekerProfilePage() {
         district: remoteProfile.district || '',
         currentRole: remoteProfile.currentRole || '',
         isOpenToWork: remoteProfile.isOpenToWork !== false,
+        isPortfolioPublic: remoteProfile.isPortfolioPublic === true,
         photoUrl: remoteProfile.photoUrl || ''
       });
       setEducation(remoteProfile.education || []);
@@ -323,8 +325,21 @@ export default function SeekerProfilePage() {
                 {profile.isOpenToWork && (
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold border" style={{ background: '#ECFDF5', color: '#059669', borderColor: '#A7F3D0' }}>● Open to Work</span>
                 )}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-gray-500 font-medium">Public Portfolio Page</span>
+                  <div onClick={() => setProfile(p => ({ ...p, isPortfolioPublic: !p.isPortfolioPublic }))}
+                    className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${profile.isPortfolioPublic ? '' : 'bg-gray-200'}`}
+                    style={profile.isPortfolioPublic ? { background: '#2563EB' } : {}}>
+                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${profile.isPortfolioPublic ? 'left-5' : 'left-1'}`} />
+                  </div>
+                </label>
               </div>
             </div>
+            <p className="text-[11px] text-gray-400 mt-1.5 max-w-md">
+              {profile.isPortfolioPublic
+                ? 'Your portfolio is public — anyone with the link can view it at thenijobs.com/portfolio/seeker/…'
+                : 'Your portfolio is private by default. Turn this on to make it viewable by anyone with the link.'}
+            </p>
             <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-400">
               <span className="flex items-center gap-1"><Phone size={11} /> {profile.phone || 'No phone'}</span>
               <span className="flex items-center gap-1"><Mail size={11} /> {profile.email}</span>
@@ -594,6 +609,7 @@ export default function SeekerProfilePage() {
             state: 'Tamil Nadu',
             currentRole: profile.currentRole,
             isOpenToWork: profile.isOpenToWork,
+            isPortfolioPublic: profile.isPortfolioPublic,
             photoUrl: profile.photoUrl,
             profilePhotoUrl: profile.photoUrl,
             gender: profile.gender,

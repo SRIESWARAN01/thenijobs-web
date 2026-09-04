@@ -347,10 +347,13 @@ img, video, svg {
   /* ===== GLOBAL FORM CONTROL VISIBILITY FIX =====
      Root cause: many portal pages use dark-theme Tailwind classes
      (text-white, bg-white/[0.04], border-white/[0.08]) on light backgrounds.
-     This global override ensures ALL form controls are always readable. */
-  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
-  textarea,
-  select {
+     This global override ensures ALL form controls are always readable.
+     Excludes .canonical-search-field (src/components/search/StickySearchBar) — that
+     input/select already sits inside its own single bordered pill container, so this
+     rule's own border/radius would otherwise double up as a second inner outline. */
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not(.canonical-search-field),
+  textarea:not(.canonical-search-field),
+  select:not(.canonical-search-field) {
     color: #0F172A !important;
     background-color: #FFFFFF !important;
     border: 1.5px solid #CBD5E1 !important;
@@ -360,9 +363,9 @@ img, video, svg {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
 
-  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):focus,
-  textarea:focus,
-  select:focus {
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not(.canonical-search-field):focus,
+  textarea:not(.canonical-search-field):focus,
+  select:not(.canonical-search-field):focus {
     border-color: #2563EB !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
   }
@@ -1300,6 +1303,11 @@ button[class*="text-gray-300"][class*="bg-white"] {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes vkSheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1331,6 +1339,21 @@ button[class*="text-gray-300"][class*="bg-white"] {
 .animate-float { animation: float 6s ease-in-out infinite; }
 .animate-spin-slow { animation: spin-slow 8s linear infinite; }
 .animate-pulse-ring { animation: pulse-ring 2s ease-in-out infinite; }
+.animate-vk-fade-in { animation: vkFadeIn 0.2s ease-out; }
+.animate-vk-sheet-up { animation: vkSheetUp 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Canonical search bar (src/components/search/StickySearchBar) — its search input and
+   location select live inside their own single bordered pill; see the
+   ".canonical-search-field" exclusion added to the GLOBAL FORM CONTROL VISIBILITY FIX
+   above, which is what actually stops that rule's border/radius from doubling up here. */
+.canonical-search-field {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.canonical-search-field:focus {
+  box-shadow: none !important;
+}
 
 /* ===== STAGGER DELAYS ===== */
 .delay-75  { animation-delay: 0.075s; }

@@ -1,10 +1,13 @@
 import PublicPortfolioPageClient from './PublicPortfolioPageClient';
+import { getAllPublishedPortfolioUsernamesServer } from '@/lib/firebase/firestoreServer';
 
-export function generateStaticParams() {
-  return [
-    { username: '_fallback' },
-    { username: 'demo' },
-  ];
+// Every published business portfolio site's URL must be listed here at build time — a
+// static export can only serve pages that existed at the last build. This used to return
+// only two demo usernames, which 404'd every real published portfolio site in production.
+export async function generateStaticParams() {
+  const usernames = await getAllPublishedPortfolioUsernamesServer().catch(() => []);
+  const all = Array.from(new Set(['_fallback', 'demo', ...usernames]));
+  return all.map((username) => ({ username }));
 }
 
 

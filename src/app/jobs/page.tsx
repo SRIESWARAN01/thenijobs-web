@@ -4,15 +4,17 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
+import StickySearchBar from '@/components/search/StickySearchBar';
+import ChipScroller from '@/components/search/ChipScroller';
+import FilterBottomSheet from '@/components/search/FilterBottomSheet';
 import {
-  Search, MapPin, X, Briefcase, Clock, BadgeCheck, BookmarkPlus, Bookmark,
-  Share2, SlidersHorizontal, ChevronRight, Star, CheckCircle, Copy,
-  MessageCircle, Sparkles, Loader2, Calendar, Flame, ArrowRight
+  MapPin, Briefcase, Clock, BadgeCheck, BookmarkPlus, Bookmark,
+  Share2, ChevronRight, Star, CheckCircle, Copy,
+  MessageCircle, Loader2, Calendar, Flame, ArrowRight
 } from 'lucide-react';
 import { collection, getDocs, query, where, addDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
-import { requestAIService } from '@/lib/ai/aiClient';
 import { useToast } from '@/contexts/ToastContext';
 
 /* ─── Types ─── */
@@ -49,6 +51,7 @@ interface Job {
 const JOB_TYPES = ['Full Time', 'Part Time', 'Remote', 'WFH', 'Internship', 'Walk-in', 'Contract', 'Fresher'];
 const CATEGORIES = ['IT & Software', 'Agriculture', 'Education', 'Healthcare', 'Construction', 'Textiles', 'Transport', 'Finance', 'Sales & Marketing', 'Manufacturing', 'Retail & Shop'];
 const DISTRICTS = ['Theni', 'Periyakulam', 'Cumbum', 'Bodinayakanur', 'Chinnamanur', 'Andipatti', 'Madurai', 'Dindigul', 'Coimbatore', 'Chennai'];
+const DISTRICT_FILTER_OPTIONS = ['All', ...DISTRICTS];
 const EXPERIENCES = ['Fresher', '1-3 yrs', '3-5 yrs', '5+ yrs'];
 const QUALIFICATIONS = ['10th', '12th', 'Any Degree', 'Diploma', 'PG', 'ITI'];
 const WORK_TYPES = ['On-site', 'Remote', 'Hybrid'];
@@ -311,8 +314,6 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [aiSearching, setAiSearching] = useState(false);
-  const [aiIntent, setAiIntent] = useState<any>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -323,74 +324,6 @@ export default function JobsPage() {
     district: [], workType: [], jobType: [], salaryMax: 200000,
     datePosted: 'all'
   });
-
-  // AI Job Search Handler (Fast, resilient with 3.5s timeout protection & offline fallback)
-  const handleAIJobSearch = async () => {
-    if (!search.trim() || aiSearching) return;
-
-    // For Guest Users: Execute Instant Synonym Match without waiting
-    if (!user) {
-      toast.info('Instant Smart Search', 'Matched jobs using semantic keywords. Login for Gemini AI ranking!');
-      return;
-    }
-
-    setAiSearching(true);
-    try {
-      // 3.5s timeout protection so search NEVER hangs
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('AI_SEARCH_TIMEOUT')), 3500)
-      );
-
-      const aiPromise = requestAIService({
-        feature: 'job_search',
-        userId: user.uid,
-        userRole: 'SEEKER',
-        payload: { query: search },
-      });
-
-      const res = (await Promise.race([aiPromise, timeoutPromise])) as any;
-
-      if (res && res.success && res.data) {
-        setAiIntent(res.data.intent);
-        if (res.data.realJobs && Array.isArray(res.data.realJobs) && res.data.realJobs.length > 0) {
-          const TYPE_MAP: Record<string, string> = {
-            full_time: 'Full Time', part_time: 'Part Time', remote: 'Remote',
-            wfh: 'WFH', contract: 'Contract', internship: 'Internship',
-            walk_in: 'Walk-in', fresher: 'Fresher'
-          };
-          const mapped: Job[] = res.data.realJobs.map((d: any) => ({
-            id: d.id,
-            title: d.title || 'Job Title',
-            company: d.companyName || d.company || 'Company',
-            companyId: d.companyId || '',
-            location: d.district || d.location || 'Theni',
-            salary: d.salaryMin ? `₹${d.salaryMin.toLocaleString('en-IN')}/mo` : 'Negotiable',
-            salaryMin: d.salaryMin || 0,
-            salaryMax: d.salaryMax || 0,
-            type: TYPE_MAP[d.jobType] || 'Full Time',
-            posted: 'Live',
-            logo: d.logoUrl || d.companyLogo || d.logo || 'C',
-            isUrgent: d.isUrgent || false,
-            isPremium: d.isPremium || false,
-            isFeatured: true,
-            isVerified: true,
-            category: d.category || 'General',
-            skills: d.skills || [],
-            openings: d.openings || 1,
-            description: d.description || '',
-          }));
-          setJobs(mapped);
-          if (mapped.length > 0) setSelectedJob(mapped[0]);
-          toast.success('✨ AI Matched Jobs Found', `Found ${mapped.length} matching jobs.`);
-        }
-      }
-    } catch (err: any) {
-      console.warn('[AI Job Search Notice]: Running local keyword match fallback.', err?.message);
-      toast.info('Smart Search Active', 'Filtered matching database jobs.');
-    } finally {
-      setAiSearching(false);
-    }
-  };
 
   // URL params init
   useEffect(() => {
@@ -536,6 +469,14 @@ export default function JobsPage() {
     setSearch('');
   };
 
+  // Quick district selector in the sticky bar mirrors the fuller multi-select
+  // "Location / District" group inside the filter sheet — picking one narrows
+  // that group to a single selection; the sheet still allows adding more.
+  const quickLocation = filters.district?.length === 1 ? filters.district[0] : 'All';
+  const handleQuickLocationChange = (value: string) => {
+    setFilters(prev => ({ ...prev, district: value === 'All' ? [] : [value] }));
+  };
+
   // Rule-based search and multi-criteria filters
   const filtered = useMemo(() => {
     return jobs.filter(job => {
@@ -613,123 +554,71 @@ export default function JobsPage() {
   }, [filtered, sortBy]);
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }} className="font-outfit">
+    <main style={{ background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }} className="font-outfit">
       <Header />
 
-      {/* Page title & Main Search Bar */}
-      <div className="pt-20 pb-6 border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                Browse Jobs in Theni &amp; Tamil Nadu
-              </h1>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {loading ? 'Searching...' : `${visibleJobs.length.toLocaleString()} verified career opportunities found`}
-              </p>
-            </div>
-
-            {/* Daily Jobs & Trending Quick Links */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/daily-jobs"
-                className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center gap-1.5 transition-all"
-              >
-                <Calendar size={13} /> Today&apos;s Daily Jobs
-              </Link>
-            </div>
-          </div>
-
-          {/* Search Box with AI Match Button */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAIJobSearch()}
-                placeholder="Search by job title, skill, company (e.g. Digital Marketing, React, Accountant, Delivery)..."
-                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white outline-none transition-all shadow-xs font-medium"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  <X size={14} />
-                </button>
-              )}
-            </div>
-
-            {/* AI Search CTA */}
-            <button
-              onClick={handleAIJobSearch}
-              disabled={aiSearching}
-              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer disabled:opacity-50"
-              title="Natural language Gemini AI Job Match"
-            >
-              {aiSearching ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-              <span className="hidden sm:inline">AI Match</span>
-            </button>
-
-            {/* Mobile Filter Toggle */}
-            <button
-              onClick={() => setShowMobileFilters(true)}
-              className="lg:hidden p-3 rounded-2xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 relative"
-            >
-              <SlidersHorizontal size={17} />
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Quick Trending Searches Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
-            <span className="text-gray-400 shrink-0 font-semibold text-[11px]">Popular:</span>
-            {TRENDING_SEARCHES.map(term => (
-              <button
-                key={term}
-                onClick={() => setSearch(term)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  search.toLowerCase() === term.toLowerCase()
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {term}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Sticky search bar — canonical system shared with the Business directory
+          (src/components/search): search + location share one bordered control,
+          plus a Filters button that opens the bottom sheet below. */}
+      <StickySearchBar
+        searchId="jobs-search"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by job title, skill, company (e.g. Digital Marketing, React, Accountant)..."
+        location={{ value: quickLocation, onChange: handleQuickLocationChange, options: DISTRICT_FILTER_OPTIONS }}
+        filterActiveCount={activeFilterCount}
+        filterOpen={showMobileFilters}
+        onFilterClick={() => setShowMobileFilters(true)}
+      />
 
       {/* Main Jobs Layout */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+        {/* Stats + sort — same left title/right controls pattern as the Business page */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Browse Jobs in Theni &amp; Tamil Nadu
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {loading ? 'Searching...' : `${visibleJobs.length.toLocaleString()} verified career opportunities found`}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/daily-jobs"
+              className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center gap-1.5 transition-all"
+            >
+              <Calendar size={13} /> Today&apos;s Daily Jobs
+            </Link>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            >
+              <option value="latest">Latest First</option>
+              <option value="salary">Highest Salary</option>
+              <option value="newest">Posted Today</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Popular search chips */}
+        <ChipScroller
+          label="Popular:"
+          items={TRENDING_SEARCHES}
+          isActive={term => search.toLowerCase() === term.toLowerCase()}
+          onSelect={term => setSearch(term)}
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
           {/* Desktop Filter Sidebar (1 col) */}
-          <div className="hidden lg:block lg:col-span-1 sticky top-24">
+          <div className="hidden lg:block lg:col-span-1 sticky top-36">
             <FilterPanel filters={filters} setFilters={setFilters} onReset={resetFilters} />
           </div>
 
           {/* Jobs List (2 cols) */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Top Sort Header */}
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span>Showing <strong>{visibleJobs.length}</strong> jobs</span>
-              <div className="flex items-center gap-2">
-                <span>Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value)}
-                  className="bg-white border border-gray-200 rounded-xl px-2.5 py-1 text-xs font-bold text-gray-700 outline-none cursor-pointer"
-                >
-                  <option value="latest">Latest First</option>
-                  <option value="salary">Highest Salary</option>
-                  <option value="newest">Posted Today</option>
-                </select>
-              </div>
-            </div>
-
             {loading ? (
               <div className="py-20 text-center space-y-3">
                 <Loader2 size={36} className="text-blue-600 animate-spin mx-auto" />
@@ -764,7 +653,7 @@ export default function JobsPage() {
           </div>
 
           {/* Selected Job Quick Preview Desktop Panel (1 col) */}
-          <div className="hidden lg:block lg:col-span-1 sticky top-24">
+          <div className="hidden lg:block lg:col-span-1 sticky top-36">
             {selectedJob ? (
               <div className="bg-white rounded-3xl border border-gray-200 p-6 space-y-4 shadow-sm">
                 <div className="border-b border-gray-100 pb-3">
@@ -808,28 +697,25 @@ export default function JobsPage() {
         </div>
       </div>
 
-      {/* Mobile Filter Modal */}
-      {showMobileFilters && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-              <h3 className="text-base font-bold text-gray-900">Filter Jobs</h3>
-              <button onClick={() => setShowMobileFilters(false)} className="p-1 rounded-xl text-gray-400 hover:bg-gray-100">
-                <X size={18} />
-              </button>
-            </div>
-            <FilterPanel filters={filters} setFilters={setFilters} onReset={resetFilters} />
-            <button
-              onClick={() => setShowMobileFilters(false)}
-              className="w-full py-3 rounded-2xl bg-blue-600 text-white font-bold text-xs shadow-md"
-            >
-              Apply Filters ({filtered.length} Jobs)
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Filter bottom sheet — canonical system (src/components/search): 90vh, header
+          and the Apply button pinned, only the filter body scrolls between them. */}
+      <FilterBottomSheet
+        open={showMobileFilters}
+        onClose={() => setShowMobileFilters(false)}
+        title="Filter Jobs"
+        footer={
+          <button
+            onClick={() => setShowMobileFilters(false)}
+            className="w-full py-3 rounded-2xl bg-blue-600 text-white font-bold text-xs shadow-md"
+          >
+            Apply Filters ({filtered.length} Jobs)
+          </button>
+        }
+      >
+        <FilterPanel filters={filters} setFilters={setFilters} onReset={resetFilters} />
+      </FilterBottomSheet>
 
       <BottomNav />
-    </div>
+    </main>
   );
 }

@@ -368,6 +368,47 @@ export async function getPublishedPortfolioSitesForSitemap(): Promise<
 }
 
 /**
+ * Fetch every published portfolio site's URL identifier (customUrl, falling back to the
+ * doc id — mirroring the `item.customUrl || item.id` fallback already used elsewhere in
+ * the app, e.g. admin/seo) for generateStaticParams. Draft/unpublished sites are excluded
+ * on purpose: "published" is the deliberate gate for whether a site should be publicly
+ * viewable at all, distinct from `googleIndex` (search-engine crawling opt-in) used by
+ * getPublishedPortfolioSitesForSitemap above.
+ */
+export async function getAllPublishedPortfolioUsernamesServer(): Promise<string[]> {
+  try {
+    const sites = await runQueryREST<any>(
+      'portfolioSites',
+      [{ field: 'status', op: 'EQUAL', value: { stringValue: 'published' } }],
+    );
+    const usernames = sites.map((s) => s.customUrl || s.id).filter(Boolean);
+    return Array.from(new Set(usernames));
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to query portfolio site usernames:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch the doc IDs of every seeker who opted in to a public portfolio
+ * (isPortfolioPublic === true) for generateStaticParams. Opt-in only — a seeker's
+ * personal data (name, phone, DOB, address) must never be statically pre-rendered
+ * without them explicitly turning this on in their profile settings.
+ */
+export async function getAllPublicSeekerPortfolioIdsServer(): Promise<string[]> {
+  try {
+    const profiles = await runQueryREST<any>(
+      'seekerProfiles',
+      [{ field: 'isPortfolioPublic', op: 'EQUAL', value: { booleanValue: true } }],
+    );
+    return Array.from(new Set(profiles.map((p) => p.id).filter(Boolean)));
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to query public seeker portfolio ids:', err);
+    return [];
+  }
+}
+
+/**
  * Fetch all VERIFIED company slugs for generateStaticParams.
  * RULES-1: this runs unauthenticated over REST at build time; under default-deny rules an
  * unfiltered list is denied, so the query carries the same constraint as the public read rule.

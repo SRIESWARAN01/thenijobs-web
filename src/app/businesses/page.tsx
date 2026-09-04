@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
+import StickySearchBar from '@/components/search/StickySearchBar';
+import ChipScroller from '@/components/search/ChipScroller';
 import {
-  Search, MapPin, X, BadgeCheck, Star,
-  SlidersHorizontal, ArrowRight, Building2,
+  MapPin, X, BadgeCheck, Star,
+  ArrowRight, Building2,
   MessageCircle, Phone, Rocket,
 } from 'lucide-react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -243,55 +245,21 @@ export default function BusinessesPage() {
     <main style={{ background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
       <Header />
 
-      {/* Sticky search bar — search + location share one bordered control, no nested boxes.
+      {/* Sticky search bar — canonical system shared with the Jobs page (src/components/search).
           No redundant top offset needed: Header already reserves its own 64px spacer. */}
-      <div className="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm px-4 sm:px-6 py-3">
-        <div className="max-w-6xl mx-auto flex flex-wrap gap-2">
-          <div className="flex-[1_1_260px] flex items-stretch bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-300 transition-colors">
-            <div className="flex-1 flex items-center gap-2 px-4 py-2.5 min-w-0">
-              <Search size={15} className="text-gray-400 flex-shrink-0" />
-              <input id="biz-directory-search" value={search} onChange={e => setSearch(e.target.value)} type="text"
-                placeholder="Search businesses, services, categories..."
-                autoComplete="off" autoCorrect="off" spellCheck={false}
-                className="flex-1 min-w-0 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none" />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch('')}
-                  aria-label="Clear search"
-                  className="tap-target-auto shrink-0 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600"
-                >
-                  <X size={13} />
-                </button>
-              )}
-            </div>
-            <div className="w-px my-2 bg-gray-200 shrink-0" />
-            <div className="flex items-center gap-1.5 px-3 py-2.5 shrink-0">
-              <MapPin size={14} className="text-blue-500 flex-shrink-0" />
-              <select id="biz-directory-location" value={selectedDistrict} onChange={e => setSelectedDistrict(e.target.value)}
-                className="bg-transparent text-sm text-gray-700 outline-none pr-1 w-16 cursor-pointer">
-                {DISTRICTS.map(d => <option key={d}>{d}</option>)}
-              </select>
-            </div>
-          </div>
-          <button onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
-              showFilters || activeFilters > 0
-                ? 'bg-blue-50 border-blue-200 text-blue-600'
-                : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-            }`}>
-            <SlidersHorizontal size={15} />
-            <span className="hidden sm:inline">Filters</span>
-            {activeFilters > 0 && (
-              <span className="w-5 h-5 rounded-full text-[10px] font-bold text-white flex items-center justify-center" style={{ background: '#2563EB' }}>
-                {activeFilters}
-              </span>
-            )}
-          </button>
-        </div>
-
+      <StickySearchBar
+        searchId="biz-directory-search"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search businesses, services, categories..."
+        location={{ value: selectedDistrict, onChange: setSelectedDistrict, options: DISTRICTS }}
+        filterActiveCount={activeFilters}
+        filterOpen={showFilters}
+        onFilterClick={() => setShowFilters(!showFilters)}
+        maxWidthClassName="max-w-6xl"
+      >
         {showFilters && (
-          <div className="max-w-6xl mx-auto mt-3 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
             <div className="space-y-4">
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Category</p>
@@ -327,7 +295,7 @@ export default function BusinessesPage() {
             </div>
           </div>
         )}
-      </div>
+      </StickySearchBar>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-28 md:pb-8">
         {/* Stats + Sort */}
@@ -349,22 +317,13 @@ export default function BusinessesPage() {
           </select>
         </div>
 
-        {/* Category pills */}
-        <div className="-mx-4 sm:mx-0 overflow-x-auto no-scrollbar mb-5 px-4 sm:px-0">
-          <div className="flex w-max gap-2">
-            {CATEGORIES.slice(1).map(cat => (
-              <button key={cat} onClick={() => setSelectedCategory(selectedCategory === cat ? 'All' : cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap border transition-all ${
-                  selectedCategory === cat
-                    ? 'text-white border-transparent'
-                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                }`}
-                style={selectedCategory === cat ? { background: '#2563EB' } : {}}>
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Category chips */}
+        <ChipScroller
+          className="mb-5"
+          items={CATEGORIES.slice(1)}
+          isActive={cat => selectedCategory === cat}
+          onSelect={cat => setSelectedCategory(selectedCategory === cat ? 'All' : cat)}
+        />
 
         {/* Grid */}
         {loading ? (

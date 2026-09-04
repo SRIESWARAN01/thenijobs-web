@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { approveCompany, rejectCompany, featureCompany, updateDocument, deleteCompany } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
 import { exportCompaniesToExcel } from '@/lib/excel/companyExcelService';
+import { slugifyCompany } from '@/lib/companySlug';
 
 interface BusinessDoc {
   id: string;
@@ -29,7 +30,17 @@ interface BusinessDoc {
   email?: string;
   website?: string;
   logoUrl?: string;
+  /** Canonical banner field in Firestore. `bannerUrl` is the legacy alias still read by
+      CompanyProfileClient; new writes go to coverUrl. */
+  coverUrl?: string;
   bannerUrl?: string;
+  slug?: string;
+  establishedYear?: string;
+  googleMapsUrl?: string;
+  instagram?: string;
+  facebook?: string;
+  youtube?: string;
+  linkedin?: string;
   services?: string[];
   employeeCount?: string;
   verificationStatus?: 'pending' | 'under_review' | 'verified' | 'rejected';
@@ -166,6 +177,14 @@ export default function BusinessesPage() {
     isFeatured: false,
     isPremium: false,
     employeeCount: '1-10',
+    logoUrl: '',
+    coverUrl: '',
+    establishedYear: '',
+    googleMapsUrl: '',
+    instagram: '',
+    facebook: '',
+    youtube: '',
+    linkedin: '',
   });
   const [editBizLoading, setEditBizLoading] = useState(false);
   const [editBizError, setEditBizError] = useState('');
@@ -192,6 +211,14 @@ export default function BusinessesPage() {
       isFeatured: !!biz.isFeatured,
       isPremium: !!biz.isPremium,
       employeeCount: biz.employeeCount || '1-10',
+      logoUrl: biz.logoUrl || '',
+      coverUrl: biz.coverUrl || biz.bannerUrl || '',
+      establishedYear: biz.establishedYear || '',
+      googleMapsUrl: biz.googleMapsUrl || '',
+      instagram: biz.instagram || '',
+      facebook: biz.facebook || '',
+      youtube: biz.youtube || '',
+      linkedin: biz.linkedin || '',
     });
     setEditBizError('');
   };
@@ -205,8 +232,16 @@ export default function BusinessesPage() {
     setEditBizLoading(true);
     setEditBizError('');
     try {
+      const trimmedName = editBizForm.name.trim();
+      // Always (re)write the slug. A company saved without one is unreachable at
+      // /company/<slug> even though the directory card links there — that is how
+      // "sarvesh super market" ended up rendering as a different business entirely.
+      const derivedSlug = editingBiz.slug || slugifyCompany(trimmedName);
+
       await updateDocument('companies', editingBiz.id, {
-        name: editBizForm.name.trim(),
+        name: trimmedName,
+        slug: derivedSlug,
+        slugLower: derivedSlug.toLowerCase(),
         category: editBizForm.category,
         district: editBizForm.district,
         address: editBizForm.address.trim(),
@@ -227,6 +262,15 @@ export default function BusinessesPage() {
         isFeatured: editBizForm.isFeatured,
         isPremium: editBizForm.isPremium,
         employeeCount: editBizForm.employeeCount,
+        logoUrl: editBizForm.logoUrl.trim(),
+        // coverUrl is the field the directory cards and profile page actually read.
+        coverUrl: editBizForm.coverUrl.trim(),
+        establishedYear: editBizForm.establishedYear.trim(),
+        googleMapsUrl: editBizForm.googleMapsUrl.trim(),
+        instagram: editBizForm.instagram.trim(),
+        facebook: editBizForm.facebook.trim(),
+        youtube: editBizForm.youtube.trim(),
+        linkedin: editBizForm.linkedin.trim(),
         updatedAt: new Date(),
       });
       toast.success('Business Profile & Verification details updated!');
@@ -1028,6 +1072,87 @@ export default function BusinessesPage() {
                     <option value="under_review">Under Review</option>
                     <option value="rejected">Rejected</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Row 5b: Branding & media — the fields that decide what the directory card,
+                  the profile header and the browser tab icon actually show. */}
+              <div className="rounded-xl border border-gray-200 p-3.5 space-y-3">
+                <p className="text-xs font-bold text-gray-900">Branding &amp; Media</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
+                    <input
+                      type="url"
+                      value={editBizForm.logoUrl}
+                      onChange={e => setEditBizForm({ ...editBizForm, logoUrl: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      placeholder="https://…/logo.png"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">Banner / Cover Image URL</label>
+                    <input
+                      type="url"
+                      value={editBizForm.coverUrl}
+                      onChange={e => setEditBizForm({ ...editBizForm, coverUrl: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      placeholder="https://…/banner.jpg"
+                    />
+                  </div>
+                </div>
+                {(editBizForm.logoUrl || editBizForm.coverUrl) && (
+                  <div className="flex items-center gap-3">
+                    {editBizForm.coverUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={editBizForm.coverUrl} alt="Banner preview" className="h-14 flex-1 min-w-0 rounded-lg object-cover border border-gray-200 bg-gray-50" />
+                    )}
+                    {editBizForm.logoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={editBizForm.logoUrl} alt="Logo preview" className="w-14 h-14 shrink-0 rounded-full object-cover border border-gray-200 bg-white" />
+                    )}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">Established Year</label>
+                    <input
+                      type="text"
+                      value={editBizForm.establishedYear}
+                      onChange={e => setEditBizForm({ ...editBizForm, establishedYear: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      placeholder="e.g. 2015"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 block mb-1">Google Maps URL</label>
+                    <input
+                      type="url"
+                      value={editBizForm.googleMapsUrl}
+                      onChange={e => setEditBizForm({ ...editBizForm, googleMapsUrl: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      placeholder="https://maps.google.com/…"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {([
+                    ['instagram', 'Instagram'],
+                    ['facebook', 'Facebook'],
+                    ['youtube', 'YouTube'],
+                    ['linkedin', 'LinkedIn'],
+                  ] as const).map(([key, label]) => (
+                    <div key={key}>
+                      <label className="text-xs font-bold text-gray-700 block mb-1">{label}</label>
+                      <input
+                        type="url"
+                        value={editBizForm[key]}
+                        onChange={e => setEditBizForm({ ...editBizForm, [key]: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                        placeholder="https://…"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 

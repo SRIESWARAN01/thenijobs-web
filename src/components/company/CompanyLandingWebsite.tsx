@@ -978,7 +978,7 @@ export default function CompanyLandingWebsite({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {[...(company.galleryImages || []), ...(company.gallery || [])].slice(0, 12).map((imgUrl: string, idx: number) => (
+              {[...(company.galleryImages || []), ...(company.gallery || [])].filter(Boolean).slice(0, 12).map((imgUrl: string, idx: number) => (
                 <div key={idx} className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs">
                   <img
                     src={imgUrl}

@@ -26,6 +26,9 @@ interface SeekerData {
   state: string;
   currentRole: string;
   isOpenToWork: boolean;
+  /** Opt-in — defaults to false/absent. Only true means this seeker chose to make their
+      portfolio publicly viewable at /portfolio/seeker/[id]; never set by a live-preview caller. */
+  isPortfolioPublic?: boolean;
   workStatus?: 'open' | 'opportunities' | 'not_looking';
   joiningAvailability?: string;
   photoUrl: string;
@@ -92,6 +95,17 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
         }
 
         const profileData = profileSnap.data() as SeekerData;
+
+        // Privacy gate — only the seeker's own opt-in makes this page public. A visitor
+        // (no initialData, i.e. not the owner's own live-preview) sees the same "not
+        // found" state for a private profile as for a nonexistent one, so a private
+        // portfolio's existence isn't distinguishable from the outside.
+        if (!profileData.isPortfolioPublic) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+
         setSeeker(profileData);
         // RULES-1: users/{uid} is readable only by its owner and admins; the public name comes
         // from the seeker profile (written by the seeker on their profile page).

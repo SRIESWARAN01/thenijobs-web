@@ -102,6 +102,11 @@ Measured facts carry the commit. **Not a substitute for measuring again.**
   `test`/`test:rules`/`secrets:bundle` SKIP. Attribute each by name; none is a phase's regression
   unless the phase touched the file.
 - `tsconfig.json` excludes `scripts/`; `tsc` proves nothing about `scripts/*.ts`.
+- **`next build` rewrites the tracked `next-env.d.ts`** (Next 16 regenerates it even when the build
+  fails; the owner occasionally commits it as `chore: sync next-env types`). After any gate the
+  tree shows `M next-env.d.ts`: attribute it to the build, never stage it with a phase, and undo it
+  explicitly with `git diff next-env.d.ts | git apply -R` before the worktree-removal check —
+  `gate.sh` prints a `dirty-after` count for exactly this.
 - Build time is minutes, not seconds; give `gate.sh` a 20-minute time box.
 - `firebase emulators:exec` needs a JDK the current `firebase-tools` accepts; JDK 17 is installed
   and the memory note says 21 is required (CLAIMED_NOT_VERIFIED). Never run the emulator with

@@ -79,8 +79,13 @@ if [ $SECRETS = 1 ]; then
   # I. tracked build/env artefacts must never be in the tree
   run "tracked-artefacts" bash -c 'n=$(git ls-files | grep -cE "^(out/|\.next/|\.env(\..*)?$|tsconfig\.tsbuildinfo$)" || true); [ "$n" = "0" ] && echo clean || { git ls-files | grep -E "^(out/|\.next/|\.env(\..*)?$|tsconfig\.tsbuildinfo$)"; exit 1; }'
 fi
+DIRTY_AFTER="$(git status --porcelain | wc -l | tr -d ' ')"
+if [ "$DIRTY_AFTER" != "0" ]; then
+  echo "note: the tree is dirty after the gate ($DIRTY_AFTER path(s)) — next build rewrites next-env.d.ts; attribute, never stage it with a phase:"
+  git status --porcelain | sed 's/^/  /'
+fi
 {
-  echo "GATE TABLE  mode=$MODE  branch=$BRANCH  sha=$SHA  at=$TS  real-firebase-config=$REALCFG  failed=$FAILS"
+  echo "GATE TABLE  mode=$MODE  branch=$BRANCH  sha=$SHA  at=$TS  real-firebase-config=$REALCFG  failed=$FAILS  dirty-after=$DIRTY_AFTER"
   printf '%-28s | %4s | %6s | %s\n' name exit secs "first failure line"; printf '%s\n' "${ROWS[@]}"
 } | tee "$OUT/summary.txt"
 echo "summary → $OUT/summary.txt"

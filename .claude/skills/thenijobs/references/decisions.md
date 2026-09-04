@@ -97,12 +97,15 @@ finding depends on. Flipping any gate is a phase with Playground/emulator eviden
 | D-ID | trailers on commits | applied default in §2; local commits can be rewritten before the first push |
 | D-DEPLOY | is the Vercel Git integration linked to `main`? should `staging` map to a preview domain? | treat every `main` push as a production deploy; `staging` push = preview |
 | D-HOSTING | how do server features run in production (§3)? | no phase relies on `src/app/api/**` in production |
-| D-RULES | approve the rules phase: remove both catch-alls, collapse duplicates, guard `subscriptionPlan`/`aiCredits`, fix `register-business` L128 in the same change, deploy with `firebase deploy --only firestore:rules,storage` (owner-run) | plan it as the first phase; nothing deployed by the agent |
+| D-RULES | **ANSWERED 2026-09-04 ("go with the defaults", then "GO")** — phase RULES-1 approved and built on `thenijobs/rules1-default-deny-and-client-parity` (`6a4c0a0`); the rules take effect only when the owner runs `firebase deploy --only firestore:rules,storage --project thenijobs-9f01d` and the Playground after-check | nothing deployed by the agent |
+| D-JOBSTATE | **ANSWERED 2026-09-04 (default)** — an employer may pause or close their own job; "resume" returns it to `pending` for admin review; self-activation stays denied (`jobPosterDeactivation()`) | — |
+| D-SLUG | **ANSWERED 2026-09-04 (default)** — the duplicate-slug and duplicate-email checks read the public `companySlugs/{slug}` reservation (created by the owner after registration) instead of other owners' pending companies | — |
+| D-ERRORS | **ANSWERED 2026-09-04 (default)** — `errors` documents are created only by signed-in users; signed-out visitors' errors stay in the console | — |
 | D-SECRETS | rotate the key at `otp/call/route.ts:42` and any non-Firebase key ever committed; restrict the Firebase web key in GCP | assume compromised; never print |
 | D-PLANS | canonical tier list, `basic` records, price table | no plan logic changes |
 | D-CREDITS | how AI credits are granted and metered without a server | no AI metering claims |
 | D-OTP | keep 2Factor + anonymous session, or move to Firebase phone auth (`AuthContext.sendPhoneOTP` exists) | no phone-verification claims |
-| D-TESTS | may the gate add a minimal harness (rules tests on the emulator with a pinned JDK; a smoke test for `/api/ai` credit deduction under `next dev`) as its own bounded phase? | propose only; none built in GOV-3 |
+| D-TESTS | **ANSWERED 2026-09-04 (default): no harness in the tree.** Evidence for rules phases = the owner's Rules Playground checklist. Measured the same day: firebase-tools 15.28.1 refuses JDK < 21, JDK 17 is linked, and an **unlinked JDK 21 exists at `/opt/homebrew/opt/openjdk@21`** — with `JAVA_HOME` set to it the emulator runs, so VERIFY may run probe scripts from run-state (never from the tree). Re-open if the owner wants `test:rules` in `package.json` | Playground checklist; emulator probes as extra evidence only |
 | D-DNS | fix the `thenijobs.in` apex (two A records, TLS failure) | none |
 | D-DOCS | retire or rewrite `full.mf`, `admin-portal.md`, `walkthrough.md`, `README.md` | never edit them inside a feature phase |
 | D-CI | add a read-only CI workflow (`ci.md` §2) once the owner's token can push workflows | none |

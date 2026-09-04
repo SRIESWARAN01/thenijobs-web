@@ -240,7 +240,7 @@ export default function EmployerReviewsPage() {
                               placeholder="Write a response…"
                               value={replyInput}
                               onChange={(e) => setReplyInput(e.target.value)}
-                              className="w-full resize-none rounded-xl border border-slate-300 p-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
+                              className="w-full resize-none rounded-xl border border-slate-300 p-2.5 text-base text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
                             />
                             <div className="flex flex-wrap gap-2">
                               <Button

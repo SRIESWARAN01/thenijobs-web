@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</p>
                 <p className="text-[10px] font-bold text-indigo-600">Admin Portal</p>
               </div>
-              <button onClick={() => setMobileOpen(false)} className="lg:hidden text-gray-400">
+              <button onClick={() => setMobileOpen(false)} className="lg:hidden text-slate-500">
                 <X size={16} />
               </button>
             </>
@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {!collapsed && 'Sign Out'}
             </button>
             <button onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 transition-all">
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl border border-gray-200 text-slate-500 hover:text-gray-600 transition-all">
               {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
             </button>
           </div>

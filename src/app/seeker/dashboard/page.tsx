@@ -359,7 +359,7 @@ export default function SeekerDashboard() {
         )}
       </Card>
 
-      <div className="flex items-center gap-2 text-xs text-slate-400">
+      <div className="flex items-center gap-2 text-xs text-slate-500">
         <TrendingUp size={12} aria-hidden />
         <span>Stats refresh automatically as employers act on your applications.</span>
       </div>

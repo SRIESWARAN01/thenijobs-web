@@ -73,14 +73,14 @@ function TokenChip({ label, index, onRemove }: { label: string; index?: number; 
   return (
     <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition-colors hover:border-slate-300">
       <span className="flex min-w-0 items-center gap-2">
-        {index !== undefined && <span className="text-xs font-semibold text-slate-400">{index + 1}.</span>}
+        {index !== undefined && <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>}
         <span className="truncate text-xs font-semibold text-slate-800">{label}</span>
       </span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label}`}
-        className="tap-target-auto -m-1 shrink-0 rounded-lg p-1 text-slate-400 transition-colors hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="tap-target-auto -m-1 shrink-0 rounded-lg p-1 text-slate-500 transition-colors hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         <Trash2 size={14} />
       </button>
@@ -230,7 +230,7 @@ export default function SettingsPage() {
                       onKeyDown={e => e.key === 'Enter' && addDistrict()}
                       placeholder="New district name…"
                       aria-label="New district name"
-                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-base font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:w-48 sm:flex-none sm:text-sm"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-base font-medium text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:w-48 sm:flex-none sm:text-sm"
                     />
                     <Button variant="primary" onClick={addDistrict}><Plus size={14} /> Add</Button>
                   </div>
@@ -257,7 +257,7 @@ export default function SettingsPage() {
                       onKeyDown={e => e.key === 'Enter' && addCategory()}
                       placeholder="New category…"
                       aria-label="New category name"
-                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-base font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:w-48 sm:flex-none sm:text-sm"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-base font-medium text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:w-48 sm:flex-none sm:text-sm"
                     />
                     <Button variant="primary" onClick={addCategory}><Plus size={14} /> Add</Button>
                   </div>

@@ -301,7 +301,7 @@ export default function SeekerProfilePage() {
               <div>
                 <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>{profile.name || 'Set Your Name'}</h1>
                 <p className="text-sm font-medium mt-0.5" style={{ color: '#10B981' }}>{profile.currentRole || 'Specify Current Role'}</p>
-                <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
+                <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500">
                   <MapPin size={11} /> {profile.district || 'Select district'}, Tamil Nadu
                 </div>
               </div>
@@ -335,12 +335,12 @@ export default function SeekerProfilePage() {
                 </label>
               </div>
             </div>
-            <p className="text-[11px] text-gray-400 mt-1.5 max-w-md">
+            <p className="text-[11px] text-slate-500 mt-1.5 max-w-md">
               {profile.isPortfolioPublic
                 ? 'Your portfolio is public — anyone with the link can view it at thenijobs.com/portfolio/seeker/…'
                 : 'Your portfolio is private by default. Turn this on to make it viewable by anyone with the link.'}
             </p>
-            <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-400">
+            <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
               <span className="flex items-center gap-1"><Phone size={11} /> {profile.phone || 'No phone'}</span>
               <span className="flex items-center gap-1"><Mail size={11} /> {profile.email}</span>
             </div>
@@ -367,7 +367,7 @@ export default function SeekerProfilePage() {
               {item.done
                 ? <CheckCircle size={13} style={{ color: '#059669' }} className="shrink-0" />
                 : <Circle size={13} className="text-gray-300 shrink-0" />}
-              <span className={item.done ? 'text-gray-700 font-medium' : 'text-gray-400'}>{item.label}</span>
+              <span className={item.done ? 'text-gray-700 font-medium' : 'text-slate-500'}>{item.label}</span>
             </div>
           ))}
         </div>

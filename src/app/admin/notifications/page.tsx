@@ -171,7 +171,7 @@ export default function NotificationsPage() {
               placeholder="e.g. New job openings available in Theni"
               value={composeTitle}
               onChange={e => setComposeTitle(e.target.value)}
-              className="h-11 w-full rounded-xl border border-slate-300 px-3.5 text-base font-medium text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3.5 text-base font-medium text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
             />
           </div>
 
@@ -185,7 +185,7 @@ export default function NotificationsPage() {
               placeholder="Write your broadcast announcement…"
               value={composeMessage}
               onChange={e => setComposeMessage(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 p-3.5 text-base font-medium leading-relaxed text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
+              className="w-full rounded-xl border border-slate-300 p-3.5 text-base font-medium leading-relaxed text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
             />
           </div>
 

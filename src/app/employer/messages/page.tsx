@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
 import {
-  collection, query, where, orderBy, limit, addDoc, serverTimestamp,
+  collection, query, where, limit, addDoc, serverTimestamp,
   onSnapshot, doc, updateDoc
 } from 'firebase/firestore';
 import {
@@ -20,8 +20,27 @@ interface Message {
   id: string;
   senderId: string;
   text: string;
-  timestamp: any;
+  createdAt?: any;
+  timestamp?: any;
 }
+
+/**
+ * Chat messages exist with two different time fields: `createdAt` (written by the seeker
+ * page and by the system message applyToJob creates) and `timestamp` (written by the
+ * employer page). A Firestore `orderBy` silently drops every document that lacks the
+ * field it sorts on, so ordering server-side hid each side of the conversation from the
+ * other. Read unordered and sort here over whichever field the document actually carries,
+ * so existing threads of either shape stay readable without a data migration.
+ */
+function messageMillis(m: any): number {
+  const v = m?.createdAt ?? m?.timestamp;
+  if (!v) return 0;
+  if (typeof v.toMillis === 'function') return v.toMillis();
+  if (typeof v.seconds === 'number') return v.seconds * 1000;
+  const parsed = new Date(v).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 
 interface Conversation {
   id: string;
@@ -58,10 +77,19 @@ export default function EmployerMessagesPage() {
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 1. Fetch conversations
-  const { data: rawConversations, loading: convsLoading } = useCollection<any>('conversations', [
-    where('participants', 'array-contains', user?.uid || '')
+  // 1. Resolve the employer's company, then read that company's conversations.
+  // Threads are looked up by companyId, not by `participants`: every conversation carries
+  // companyId, including threads written before participants held the owner's uid, so this
+  // finds existing conversations without a data migration. The rules allow the read via
+  // isCompanyOwner(resource.data.companyId).
+  const { data: companies } = useCollection<any>('companies', [
+    where('ownerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
+  const companyId = companies?.[0]?.id;
+
+  const { data: rawConversations, loading: convsLoading } = useCollection<any>('conversations', [
+    where('companyId', '==', companyId || '')
+  ], { skip: !companyId });
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
@@ -72,18 +100,21 @@ export default function EmployerMessagesPage() {
     }
 
     const resolved = rawConversations.map((conv: any) => {
-      const otherId = conv.participants.find((p: string) => p !== user?.uid) || '';
+      // The other party is always the applicant, and the conversation names them
+      // explicitly — don't infer it from `participants`, which holds a company document
+      // id on older threads.
+      const otherId = conv.seekerId || (conv.participants || []).find((p: string) => p !== user?.uid) || '';
       return {
         id: conv.id,
-        participants: conv.participants,
+        participants: conv.participants || [],
         lastMessage: conv.lastMessage || 'No messages yet',
         lastMessageAt: conv.lastMessageAt,
         otherUserId: otherId,
-        otherUserName: conv.otherUserName || `Candidate (${otherId.slice(0, 4)})`,
+        otherUserName: conv.seekerName || conv.otherUserName || `Candidate (${otherId.slice(0, 4)})`,
         otherUserRole: conv.otherUserRole || 'Job Applicant',
         jobTitle: conv.jobTitle || 'Job Opening',
-        phone: conv.phone || '',
-        whatsapp: conv.whatsapp || conv.phone || '',
+        phone: conv.seekerPhone || conv.phone || '',
+        whatsapp: conv.seekerPhone || conv.whatsapp || conv.phone || '',
         district: conv.district || 'Theni',
       };
     });
@@ -100,13 +131,13 @@ export default function EmployerMessagesPage() {
 
     setLoadingMsgs(true);
     const msgsRef = collection(db, 'conversations', activeConv.id, 'messages');
-    const q = query(msgsRef, orderBy('timestamp', 'asc'), limit(100));
+    const q = query(msgsRef, limit(200));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map((d) => ({
+      const msgs = (snapshot.docs.map((d) => ({
         id: d.id,
         ...d.data()
-      })) as Message[];
+      })) as Message[]).sort((a, b) => messageMillis(a) - messageMillis(b));
       setMessages(msgs);
       setLoadingMsgs(false);
 
@@ -133,7 +164,8 @@ export default function EmployerMessagesPage() {
       await addDoc(msgsRef, {
         senderId: user.uid,
         text,
-        timestamp: serverTimestamp()
+        // `createdAt` is the field the rest of the app writes and reads.
+        createdAt: serverTimestamp()
       });
 
       await updateDoc(doc(db, 'conversations', activeConv.id), {
@@ -320,7 +352,7 @@ export default function EmployerMessagesPage() {
                         >
                           <p className="whitespace-pre-wrap">{m.text}</p>
                           <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
-                            <span>{m.timestamp ? new Date(m.timestamp?.toMillis?.() || m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...'}</span>
+                            <span>{messageMillis(m) ? new Date(messageMillis(m)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...'}</span>
                             {isMe && <CheckCheck size={11} />}
                           </div>
                         </div>

@@ -347,6 +347,20 @@ export async function applyToJob(data: {
     console.error('Error fetching seeker profile for application:', e);
   }
 
+  // The employer's Firebase Auth uid — NOT the company document id. Both
+  // `conversations.participants` and `notifications.userId` are keyed on the auth uid
+  // (see employer/messages and NotificationContext), so addressing either with
+  // `companyId` makes the chat thread and the alert invisible to the employer who owns
+  // the company. A verified company document is publicly readable, so this resolves for
+  // any company a seeker can actually apply to.
+  let employerUid = '';
+  try {
+    const companySnap = await getDoc(doc(db, 'companies', data.companyId));
+    if (companySnap.exists()) employerUid = (companySnap.data() as any).ownerId || '';
+  } catch (e) {
+    console.error('Error resolving the company owner for application:', e);
+  }
+
   const phone = data.seekerPhone || seekerProfile.phone || '';
   const email = data.seekerEmail || seekerProfile.email || '';
   const district = seekerProfile.district || 'Theni';
@@ -419,7 +433,7 @@ export async function applyToJob(data: {
       seekerId: data.seekerId,
       seekerName: data.seekerName,
       seekerPhone: phone,
-      participants: [data.seekerId, data.companyId],
+      participants: [data.seekerId, employerUid].filter(Boolean),
       lastMessage: `Application submitted for ${data.jobTitle || 'Job'}`,
       lastMessageAt: serverTimestamp(),
       createdAt: serverTimestamp(),
@@ -448,14 +462,20 @@ export async function applyToJob(data: {
     targetId: data.jobId,
   });
 
-  // 5. Create notification for employer
-  await createNotification({
-    userId: data.companyId,
-    type: 'application_update',
-    title: 'New Job Application Received! 📄',
-    message: `${data.seekerName} applied for "${data.jobTitle || 'your job posting'}". Tap to view applicant details & chat.`,
-    actionUrl: `/employer/candidates`,
-  });
+  // 5. Create notification for the employer, addressed to their auth uid.
+  if (employerUid) {
+    await createNotification({
+      userId: employerUid,
+      type: 'application_update',
+      title: 'New Job Application Received! 📄',
+      message: `${data.seekerName} applied for "${data.jobTitle || 'your job posting'}". Tap to view applicant details & chat.`,
+      actionUrl: `/employer/candidates`,
+      companyId: data.companyId,
+    });
+  } else {
+    // Better a missing alert than one addressed to an id no inbox ever queries.
+    console.error('[applyToJob] Company owner uid unresolved; employer notification not created for company', data.companyId);
+  }
 
   return applicationId;
 }
@@ -567,6 +587,14 @@ export async function createNotification(data: {
   title: string;
   message: string;
   actionUrl?: string;
+  /**
+   * Set when the notification is addressed to a company owner. Under the default-deny
+   * rules a signed-in user may only create a notification for themselves or for the
+   * pseudo-recipient 'admin', so a seeker notifying an employer needs a rule that can
+   * check `userId == companies/{companyId}.ownerId` — which requires this field to be
+   * on the document. Carrying it now keeps that rule expressible.
+   */
+  companyId?: string;
 }) {
   return addDoc(collection(db, 'notifications'), {
     ...data,

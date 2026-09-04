@@ -54,14 +54,16 @@ export function CardBody({ className, children }: { className?: string; children
 }
 
 /**
- * Standard page container. `max-w-screen-2xl` stops dashboards from becoming
- * unreadable 3000px-wide line lengths on a desktop monitor, and the padding
- * ramp keeps a phone at a comfortable 16px gutter.
+ * Standard page container: a readable max width and one vertical rhythm.
+ *
+ * It deliberately carries no horizontal padding. The gutter lives on the
+ * `<main>` element of each portal layout so that every page gets it, converted
+ * or not; duplicating it here would double the inset on converted pages.
  */
 export function PageShell({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn('mx-auto w-full max-w-screen-2xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8', className)}>
-      <div className="space-y-4 sm:space-y-6">{children}</div>
+    <div className={cn('mx-auto w-full max-w-screen-2xl space-y-4 sm:space-y-6', className)}>
+      {children}
     </div>
   );
 }

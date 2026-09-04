@@ -1,9 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { Star, CheckCircle, XCircle, Eye, Search, Loader2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Star, CheckCircle, XCircle, Eye, Loader2, Layers, BadgeCheck, Clock, Users } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateDocument } from '@/lib/firebase/firestoreService';
+import {
+  Button,
+  DataTable,
+  PageHeader,
+  PageShell,
+  Pill,
+  Stat,
+  StatGrid,
+  Toolbar,
+  type Column,
+  type PillTone,
+} from '@/components/dashboard';
 
 // ===== TYPES =====
 interface ServiceDoc {
@@ -22,11 +34,25 @@ interface ServiceDoc {
   reviewsCount?: number;
 }
 
-const statusColors: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-400',
-  pending: 'bg-amber-100 text-amber-400',
-  paused: 'bg-gray-500/10 text-gray-400',
-  rejected: 'bg-red-100 text-rose-400' };
+const STATUS_TONE: Record<string, PillTone> = {
+  active: 'success',
+  pending: 'warning',
+  paused: 'neutral',
+  rejected: 'danger',
+};
+
+const TABS = [
+  { label: 'All services', value: 'all' },
+  { label: 'Active', value: 'active' },
+  { label: 'Pending', value: 'pending' },
+];
+
+function priceOf(s: ServiceDoc): string {
+  if (s.priceMin && s.priceMax) {
+    return `₹${s.priceMin.toLocaleString('en-IN')} – ₹${s.priceMax.toLocaleString('en-IN')}`;
+  }
+  return s.price || 'Price N/A';
+}
 
 export default function ServicesPage() {
   const { data: services, loading } = useCollection<ServiceDoc>('services');
@@ -74,135 +100,144 @@ export default function ServicesPage() {
   const pendingCount = services.filter(s => (s.status || 'pending') === 'pending').length;
   const providersCount = new Set(services.map(s => s.providerId).filter(Boolean)).size;
 
-  const stats = [
-    { label: 'Total Services', value: totalCount, color: 'violet' },
-    { label: 'Active', value: activeCount, color: 'emerald' },
-    { label: 'Pending', value: pendingCount, color: 'amber' },
-    { label: 'Providers', value: providersCount, color: 'cyan' },
-  ];
+  const columns = useMemo<Column<ServiceDoc>[]>(() => [
+    {
+      key: 'name',
+      header: 'Service',
+      card: 'title',
+      sortValue: s => s.name ?? '',
+      render: s => (
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-slate-900">{s.name}</p>
+          <p className="truncate text-xs text-slate-500">{s.category || 'General'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'provider',
+      header: 'Provider',
+      hideBelow: 'lg',
+      sortValue: s => s.providerName || s.provider || '',
+      render: s => s.providerName || s.provider || 'Unknown',
+    },
+    {
+      key: 'district',
+      header: 'District',
+      hideBelow: 'xl',
+      sortValue: s => s.district ?? '',
+      render: s => s.district || 'Theni',
+    },
+    {
+      key: 'price',
+      header: 'Price',
+      sortValue: s => s.priceMin ?? Number.MAX_SAFE_INTEGER,
+      render: s => <span className="whitespace-nowrap tabular-nums">{priceOf(s)}</span>,
+    },
+    {
+      key: 'rating',
+      header: 'Rating',
+      align: 'center',
+      sortValue: s => s.rating ?? -1,
+      render: s =>
+        s.rating && s.rating > 0 ? (
+          <span className="inline-flex items-center gap-1 font-semibold text-amber-600">
+            <Star size={12} className="fill-amber-500 text-amber-500" />
+            {s.rating.toFixed(1)}
+          </span>
+        ) : (
+          <span className="text-slate-400">N/A</span>
+        ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      sortValue: s => s.status ?? 'pending',
+      render: s => {
+        const st = s.status || 'pending';
+        return <Pill tone={STATUS_TONE[st] ?? 'neutral'} dot>{st}</Pill>;
+      },
+    },
+  ], []);
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 font-outfit">Service Marketplace</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage service listings and providers</p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Service marketplace"
+        description="Approve, reject and monitor every service listing across the district."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Services' }]}
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(s => (
-          <div key={s.label} className="glass-card rounded-2xl p-4">
-            <p className="text-2xl font-bold text-gray-900 font-outfit">{s.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{s.label}</p>
-          </div>
+      <StatGrid columns={4}>
+        <Stat label="Total services" value={totalCount} icon={Layers} tone="violet" loading={loading} />
+        <Stat label="Active" value={activeCount} icon={BadgeCheck} tone="emerald" loading={loading} />
+        <Stat label="Pending" value={pendingCount} icon={Clock} tone="amber" loading={loading} />
+        <Stat label="Providers" value={providersCount} icon={Users} tone="blue" loading={loading} />
+      </StatGrid>
+
+      <Toolbar
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search by service or provider…"
+        filters={TABS.map(t => (
+          <Button
+            key={t.value}
+            size="sm"
+            variant={tab === t.value ? 'primary' : 'secondary'}
+            onClick={() => setTab(t.value)}
+          >
+            {t.label}
+          </Button>
         ))}
-      </div>
+      />
 
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {['all', 'active', 'pending'].map(t => (
-            <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-xl text-sm font-medium capitalize whitespace-nowrap transition-all ${tab === t ? 'bg-violet-500/20 text-violet-400 border border-violet-200' : 'text-gray-400 hover:bg-white'}`}>
-              {t === 'all' ? 'All Services' : t}
-            </button>
-          ))}
-        </div>
-        <div className="relative flex-1 max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search services..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input w-full pl-9 pr-4 py-2 text-sm"
-          />
-        </div>
-      </div>
-
-      <div className="glass-card rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 size={36} className="text-violet-400 animate-spin mb-4" />
-              <p className="text-sm text-gray-400">Loading services from Firestore...</p>
-            </div>
-          ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500">Service</th>
-                  <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden md:table-cell">Provider</th>
-                  <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500 hidden lg:table-cell">District</th>
-                  <th className="text-left px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Price</th>
-                  <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Rating</th>
-                  <th className="text-center px-3 py-3 text-[10px] uppercase tracking-wider text-gray-500">Status</th>
-                  <th className="text-right px-5 py-3 text-[10px] uppercase tracking-wider text-gray-500">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.04]">
-                {filtered.map(s => {
-                  const sStatus = s.status || 'pending';
-                  const priceText = s.priceMin && s.priceMax ? `₹${s.priceMin.toLocaleString('en-IN')} - ₹${s.priceMax.toLocaleString('en-IN')}` : s.price || 'Price N/A';
-
-                  return (
-                    <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-5 py-3.5">
-                        <p className="text-sm font-medium text-gray-900">{s.name}</p>
-                        <p className="text-[10px] text-gray-500">{s.category || 'General'}</p>
-                      </td>
-                      <td className="px-3 py-3.5 text-sm text-gray-400 hidden md:table-cell">{s.providerName || s.provider || 'Unknown'}</td>
-                      <td className="px-3 py-3.5 text-sm text-gray-500 hidden lg:table-cell">{s.district || 'Theni'}</td>
-                      <td className="px-3 py-3.5 text-sm text-gray-300">{priceText}</td>
-                      <td className="px-3 py-3.5 text-center">
-                        {s.rating && s.rating > 0 ? (
-                          <span className="flex items-center justify-center gap-1 text-sm text-amber-400">
-                            <Star size={12} className="fill-amber-400" />{s.rating.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-600">N/A</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-3.5 text-center">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${statusColors[sStatus]}`}>{sStatus}</span>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {actionLoading === s.id ? (
-                            <Loader2 size={14} className="text-violet-400 animate-spin" />
-                          ) : (
-                            <>
-                              {sStatus === 'pending' && (
-                                <>
-                                  <button
-                                    onClick={() => handleApprove(s.id)}
-                                    className="p-1.5 rounded-lg bg-emerald-100 text-emerald-400 hover:bg-emerald-500/20"
-                                    title="Approve Service"
-                                  >
-                                    <CheckCircle size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => handleReject(s.id)}
-                                    className="p-1.5 rounded-lg bg-red-100 text-rose-400 hover:bg-rose-500/20"
-                                    title="Reject Service"
-                                  >
-                                    <XCircle size={14} />
-                                  </button>
-                                </>
-                              )}
-                              <button className="p-1.5 rounded-lg bg-white text-gray-400 hover:bg-white/[0.08]" title="View Details">
-                                <Eye size={14} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </div>
+      <DataTable
+        label="Service listings"
+        columns={columns}
+        rows={filtered}
+        getRowId={s => s.id}
+        loading={loading}
+        emptyIcon={Layers}
+        emptyTitle={searchQuery ? 'No services match that search' : 'No services yet'}
+        emptyDescription={
+          searchQuery
+            ? 'Try a different service or provider name, or clear the filter.'
+            : 'Service listings submitted by providers will appear here for approval.'
+        }
+        rowActions={s => {
+          const st = s.status || 'pending';
+          if (actionLoading === s.id) {
+            return <Loader2 size={15} className="animate-spin text-blue-600" aria-label="Saving" />;
+          }
+          return (
+            <>
+              {st === 'pending' && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleApprove(s.id)}
+                    className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    <CheckCircle size={14} /> Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleReject(s.id)}
+                    className="border-rose-200 text-rose-700 hover:bg-rose-50"
+                  >
+                    <XCircle size={14} /> Reject
+                  </Button>
+                </>
+              )}
+              <Button size="sm" variant="ghost" aria-label={`View ${s.name}`}>
+                <Eye size={14} /> View
+              </Button>
+            </>
+          );
+        }}
+      />
+    </PageShell>
   );
 }

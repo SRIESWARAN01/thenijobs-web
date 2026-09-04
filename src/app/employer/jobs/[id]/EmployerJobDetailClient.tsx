@@ -10,6 +10,7 @@ import {
   Zap, Phone, Video, History, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
 import { useDocument, useCollection } from '@/hooks/useFirestore';
 import { updateDocument, deleteDocument, createDocument } from '@/lib/firebase/firestoreService';
 import { where, orderBy } from 'firebase/firestore';
@@ -46,6 +47,7 @@ function resolveStatus(job: any): JobStatus {
 export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   const router = useRouter();
   const { user } = useAuth();
+  const toast = useToast();
 
   // Fetch job document
   const { data: job, loading: jobLoading } = useDocument<any>('jobs', jobId);
@@ -98,7 +100,10 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
       // RULES-1 (D-JOBSTATE): a poster cannot self-activate; "resume" re-submits for admin review.
       const status: JobStatus = newStatus === 'active' ? 'pending' : newStatus;
       await updateDocument('jobs', jobId, { status, isActive: false, updatedAt: new Date() });
-    } catch (e) { console.error(e); }
+      if (status === 'pending') toast.success('Sent for re-approval — it goes live after admin review.');
+      else if (status === 'paused') toast.success('Job paused.');
+      else if (status === 'closed') toast.info('Job closed.');
+    } catch (e) { console.error(e); toast.error('Status update failed'); }
     finally { setActionLoading(null); }
   };
 
@@ -227,7 +232,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
                   ? 'border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100'
                   : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
               }`}
-              title={jobStatus === 'active' ? 'Pause' : 'Resume'}
+              title={jobStatus === 'active' ? 'Pause' : 'Resume (re-submits for admin approval)'}
             >
               {actionLoading === 'paused' || actionLoading === 'active'
                 ? <Loader2 size={16} className="animate-spin" />

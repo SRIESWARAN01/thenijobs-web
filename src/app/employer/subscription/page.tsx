@@ -47,7 +47,7 @@ export default function EmployerSubscriptionPage() {
 
   if (!companyId && !companyLoading) {
     return (
-      <div className="p-6 max-w-2xl mx-auto text-center font-sans">
+      <div className="mx-auto max-w-2xl text-center">
         <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
           <Crown size={48} className="text-blue-600 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-gray-900 font-sans">No Company Profile</h2>

@@ -227,7 +227,7 @@ export default function AICoachPage() {
   };
 
   return (
-    <div className="animate-fade-in-up space-y-6 max-w-5xl mx-auto font-outfit text-gray-900 py-4">
+    <div className="mx-auto max-w-5xl space-y-6 text-slate-900">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-indigo-800/40 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -109,7 +109,7 @@ export default function AdminCreateUserPage() {
   const labelCls = "text-xs font-semibold text-gray-600 block mb-1.5";
 
   return (
-    <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-6" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="mx-auto max-w-2xl space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/admin/users" className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">

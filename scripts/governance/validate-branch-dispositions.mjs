@@ -7,8 +7,9 @@
  *   1. Every live local branch has a row in the "## Branches" table (a branch without a row has no disposition).
  *   2. Every local-branch row still names a live branch; a row whose branch starts with `origin/` is remote-only and is
  *      checked against refs/remotes instead (informational).
- *   3. Recorded SHAs: for ACTIVE rows the SHA is the base at claim time and must be an ancestor of the live tip; for every
- *      other row it must match the live tip.
+ *   3. Recorded SHAs: for ACTIVE rows the SHA is the base at claim time, and for ENVIRONMENT rows it is the creation SHA
+ *      (develop/staging/main tips move by design) — both must be ancestors of the live tip; for every other row the
+ *      recorded SHA must match the live tip.
  *   4. MERGED_DEVELOP rows are ancestors of `develop`.
  *   5. PRESERVED_REFERENCE rows are ancestors of neither `develop` nor `main` (the "merged anyway" incident pattern).
  *   6. Fast-forward model: `staging` and `main` are each an ancestor of `develop`; `main` is an ancestor of `staging`.
@@ -133,9 +134,10 @@ if (source === null) {
 
     if (row.sha) {
       const matches = liveSha.startsWith(row.sha) || row.sha.startsWith(liveSha);
-      if (row.status === "ACTIVE") {
+      if (row.status === "ACTIVE" || row.status === "ENVIRONMENT") {
         if (!matches && isAncestorOf(row.sha, liveSha) !== true) {
-          warnings.push(`${DISPOSITIONS_PATH}:${row.lineNumber} ACTIVE row "${row.branch}" records base ${row.sha}, which is not an ancestor of its live tip ${liveSha.slice(0, 9)} — the claim does not describe this branch.`);
+          const what = row.status === "ACTIVE" ? "base" : "creation SHA";
+          warnings.push(`${DISPOSITIONS_PATH}:${row.lineNumber} ${row.status} row "${row.branch}" records ${what} ${row.sha}, which is not an ancestor of its live tip ${liveSha.slice(0, 9)} — the row does not describe this branch.`);
         }
       } else if (!matches) {
         warnings.push(`${DISPOSITIONS_PATH}:${row.lineNumber} records "${row.branch}" at SHA ${row.sha}, but its live tip is ${liveSha.slice(0, 9)}. The row is stale — update it if you own it; otherwise flag it.`);

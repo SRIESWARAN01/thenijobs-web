@@ -56,7 +56,9 @@ service cloud.firestore {
     function companyModerationUnchanged() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
         'verificationStatus', 'isActive', 'isVerified', 'isFeatured',
-        'isPremium', 'rejectionReason'
+        'isPremium', 'rejectionReason',
+        // RULES-1: plan and ownership fields are admin/server-owned (security.md S-3)
+        'subscriptionPlan', 'planStartDate', 'planEndDate', 'ownerId'
       ]);
     }
 
@@ -68,8 +70,20 @@ service cloud.firestore {
 
     function userModerationUnchanged() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-        'role', 'isVerified', 'adminRole', 'employerRole'
+        'role', 'isVerified', 'adminRole', 'employerRole',
+        // RULES-1: credits, plan and employer-grant fields are admin/server-owned (security.md S-3)
+        'aiCredits', 'aiCreditsUsed', 'companyId', 'isEmployer', 'canPostJobs',
+        'subscriptionPlan', 'isPremium'
       ]);
+    }
+
+    // RULES-1 (D-JOBSTATE): a poster may deactivate their own job (pause, close) or send it back
+    // for moderation (pending). Activation stays admin-only. Such a write may touch only these keys.
+    function jobPosterDeactivation() {
+      let d = request.resource.data;
+      return d.diff(resource.data).affectedKeys().hasOnly(['status', 'isActive', 'archived', 'updatedAt']) &&
+        d.status in ['paused', 'closed', 'pending'] &&
+        d.isActive == false;
     }
 
     // ===== USERS =====
@@ -103,7 +117,8 @@ service cloud.firestore {
       allow create: if (isAuthenticated() && safeJobCreate() &&
         request.resource.data.postedBy == request.auth.uid) || isAdmin();
       allow update: if
-        (isAuthenticated() && resource.data.postedBy == request.auth.uid && jobModerationUnchanged()) ||
+        (isAuthenticated() && resource.data.postedBy == request.auth.uid &&
+          (jobModerationUnchanged() || jobPosterDeactivation())) ||
         isAdmin();
       allow delete: if
         (isAuthenticated() && resource.data.postedBy == request.auth.uid) ||
@@ -174,7 +189,11 @@ service cloud.firestore {
         (isAuthenticated() && isEmployerOrOwner() &&
           request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message'])) ||
         // System self-notifications (e.g. welcome) — user can only create for themselves
-        (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+        (isAuthenticated() && request.resource.data.userId == request.auth.uid) ||
+        // RULES-1: admin-addressed alerts (business registration, new job) from any signed-in user;
+        // the admin inbox reads userId == 'admin'
+        (isAuthenticated() && request.resource.data.userId == 'admin' &&
+          request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message']));
       // Only the recipient marks their own notifications as read
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
@@ -371,31 +390,56 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ===== PORTFOLIO SITES (GOOGLE SITES / SEEKER / COMPANY SITES) =====
-    match /portfolioSites/{siteId} {
-      allow read:   if true;  // Public websites are publicly readable
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
-    }
-
-    // ===== PLATFORM SETTINGS & AI CONFIG =====
-    match /platformSettings/{docId} {
-      allow read:   if true;
-      allow write:  if isAdmin();
-    }
-
     // ===== SEO & KEYWORD ANALYTICS =====
     match /seoAnalytics/{docId} {
       allow read:   if true;
-      allow write:  if isAuthenticated();
+      allow write:  if isAdmin();   // RULES-1: was any authenticated user (security.md S-12)
     }
 
-    // ===== CATCH-ALL: deny everything not matched =====
-    match /{document=**} {
-      allow read: if true;
-      allow write: if isAuthenticated() || isAdmin();
+    // ===== COMPANY SLUG RESERVATIONS (RULES-1, D-SLUG) =====
+    // Public, write-once reservation so registration can check uniqueness without reading other
+    // owners' pending companies. Fields: slug, email, ownerId, companyId, createdAt.
+    match /companySlugs/{slug} {
+      allow read:   if true;
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['slug', 'email', 'ownerId', 'companyId', 'createdAt']);
+      allow update, delete: if isAdmin();
     }
+
+    // ===== ERROR REPORTS (RULES-1, D-ERRORS) =====
+    match /errors/{errorId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isAuthenticated() &&
+        request.resource.data.keys().hasAll(['errorType', 'page', 'errorMessage', 'severity', 'status']) &&
+        request.resource.data.status == 'open' &&
+        request.resource.data.errorMessage is string &&
+        request.resource.data.errorMessage.size() <= 2000;
+    }
+
+    // ===== PAYMENTS (RULES-1) — written only by a server identity; none exists today (D-HOSTING) =====
+    match /payments/{paymentId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false;
+    }
+
+    // ===== AI USAGE LOGS (RULES-1) — written only by a server identity; none exists today (D-HOSTING) =====
+    match /aiUsageLogs/{logId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ===== ADMIN BROADCASTS (RULES-1) =====
+    match /broadcasts/{broadcastId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ===== DEFAULT DENY (RULES-1, security.md S-1) =====
+    // Firestore denies any request no block above matches. Rules are additive (OR): a permissive
+    // recursive wildcard block here would override every block above it, which is exactly what
+    // the previous catch-all did. Add a specific block for a new collection; never add a
+    // recursive wildcard.
   }
 }
 

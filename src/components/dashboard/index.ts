@@ -1,3 +1,4 @@
+export { ActionMenu, type ActionItem } from './ActionMenu';
 export { Button, type ButtonProps, type ButtonSize, type ButtonVariant } from './Button';
 export { Card, CardBody, CardHeader, PageShell } from './Surface';
 export { DataTable, type Breakpoint, type CardRole, type Column, type DataTableProps } from './DataTable';
@@ -9,3 +10,4 @@ export { SettingRow, Switch } from './Switch';
 export { Tabs, type TabItem } from './Tabs';
 export { Stat, StatGrid, type StatProps, type StatTone } from './StatGrid';
 export { FilterSelect, Toolbar } from './Toolbar';
+export { useViewMode, ViewToggle, type ViewMode } from './ViewToggle';

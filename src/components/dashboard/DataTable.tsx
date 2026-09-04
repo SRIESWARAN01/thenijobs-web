@@ -58,6 +58,15 @@ export interface DataTableProps<T> {
   className?: string;
   /** Caption for assistive technology. */
   label?: string;
+  /**
+   * `table` (default) shows cards below md and a table from md up.
+   * `grid` keeps the card layout at every width, tiled into columns.
+   * Below md both look the same — a table is unreadable on a phone — so the
+   * operator's choice only takes effect from md up.
+   */
+  view?: 'table' | 'grid';
+  /** Column count for `view="grid"` at xl and above. */
+  gridColumns?: 2 | 3 | 4;
 }
 
 const HIDE_BELOW: Record<Breakpoint, string> = {
@@ -134,6 +143,8 @@ export function DataTable<T>({
   dense = false,
   className,
   label,
+  view = 'table',
+  gridColumns = 3,
 }: DataTableProps<T>) {
   const [sortKey, setSortKey] = React.useState<string | null>(null);
   const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc');
@@ -195,8 +206,27 @@ export function DataTable<T>({
     return { titleCol, subtitleCol, fieldCols };
   }, [columns]);
 
+  const GRID_COLS: Record<number, string> = {
+    2: 'md:grid-cols-2',
+    3: 'md:grid-cols-2 xl:grid-cols-3',
+    4: 'md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4',
+  };
+
   /* ---------------- loading ---------------- */
   if (loading) {
+    if (view === 'grid') {
+      return (
+        <div className={cn('grid gap-3 sm:gap-4', GRID_COLS[gridColumns], className)}>
+          {Array.from({ length: skeletonRows }).map((_, i) => (
+            <div key={i} className="space-y-2.5 rounded-2xl border border-slate-200 bg-white p-4">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+          ))}
+        </div>
+      );
+    }
     return (
       <div className={cn('overflow-hidden rounded-2xl border border-slate-200 bg-white', className)}>
         {/* phone */}
@@ -243,16 +273,35 @@ export function DataTable<T>({
 
   const pad = dense ? 'px-3 py-2.5' : 'px-4 py-3.5 sm:px-5';
 
+  const isGrid = view === 'grid';
+
   return (
-    <div className={cn('overflow-hidden rounded-2xl border border-slate-200 bg-white', className)}>
-      {/* ---------- Phone: cards ---------- */}
-      <ul className="divide-y divide-slate-100 md:hidden">
+    <div
+      className={cn(
+        isGrid ? '' : 'overflow-hidden rounded-2xl border border-slate-200 bg-white',
+        className,
+      )}
+    >
+      {/* ---------- Cards: always on a phone, and at every width in grid view ---------- */}
+      <ul
+        className={cn(
+          isGrid
+            ? cn('grid gap-3 sm:gap-4', GRID_COLS[gridColumns])
+            : 'divide-y divide-slate-100 md:hidden',
+        )}
+      >
         {sorted.map((row) => {
           const id = getRowId(row);
           const { titleCol, subtitleCol, fieldCols } = cardCols;
           const clickable = Boolean(onRowClick);
           return (
-            <li key={id} className={cn(selected.has(id) && 'bg-blue-50/40')}>
+            <li
+              key={id}
+              className={cn(
+                isGrid && 'overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-md',
+                selected.has(id) && (isGrid ? 'border-blue-300 bg-blue-50/40' : 'bg-blue-50/40'),
+              )}
+            >
               <div
                 role={clickable ? 'button' : undefined}
                 tabIndex={clickable ? 0 : undefined}
@@ -320,8 +369,8 @@ export function DataTable<T>({
         })}
       </ul>
 
-      {/* ---------- Tablet and up: table ---------- */}
-      <div className="hidden md:block">
+      {/* ---------- Tablet and up: table (table view only) ---------- */}
+      <div className={cn(isGrid ? 'hidden' : 'hidden md:block')}>
         <div className="w-full overflow-x-auto">
           <table className="w-full min-w-full border-collapse text-left">
             {label && <caption className="sr-only">{label}</caption>}

@@ -15,6 +15,17 @@ import { approveCompany, rejectCompany, featureCompany, updateDocument, deleteCo
 import { useToast } from '@/contexts/ToastContext';
 import { exportCompaniesToExcel } from '@/lib/excel/companyExcelService';
 import { slugifyCompany } from '@/lib/companySlug';
+import {
+  ActionMenu, DataTable, Pill, ViewToggle, useViewMode,
+  type ActionItem, type Column, type PillTone,
+} from '@/components/dashboard';
+
+const STATUS_TONE: Record<string, PillTone> = {
+  pending: 'warning',
+  under_review: 'info',
+  verified: 'success',
+  rejected: 'danger',
+};
 
 interface BusinessDoc {
   id: string;
@@ -83,6 +94,7 @@ export default function BusinessesPage() {
   const { data: businesses, loading } = useCollection<BusinessDoc>('companies');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('All');
+  const [view, setView] = useViewMode('admin-businesses', 'table');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [districtFilter, setDistrictFilter] = useState('All Districts');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -412,6 +424,92 @@ export default function BusinessesPage() {
     } catch (e) { console.error(e); } finally { setActionLoading(null); }
   };
 
+  const businessColumns: Column<BusinessDoc>[] = [
+    {
+      key: 'name',
+      header: 'Business',
+      card: 'title',
+      sortValue: biz => biz.name ?? '',
+      render: biz => {
+        const { bg, color } = getColors(biz.name);
+        const bizStatus = biz.verificationStatus || 'pending';
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+              style={{ background: bg, color }}
+            >
+              {getInitials(biz.name)}
+            </span>
+            <span className="min-w-0">
+              <span className="flex items-center gap-1.5">
+                <span className="truncate font-semibold text-slate-900">{biz.name}</span>
+                {bizStatus === 'verified' && <BadgeCheck size={14} className="shrink-0 text-emerald-600" aria-label="Verified" />}
+                {biz.isPremium && <Crown size={14} className="shrink-0 text-amber-500" aria-label="Premium" />}
+                {isDuplicateBiz(biz) && (
+                  <span className="shrink-0 rounded-md border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-800">
+                    Duplicate
+                  </span>
+                )}
+              </span>
+              <span className="block truncate text-xs text-slate-500">{biz.category || 'General'}</span>
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'district',
+      header: 'District',
+      hideBelow: 'lg',
+      sortValue: biz => biz.district ?? '',
+      render: biz => (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <MapPin size={11} className="text-slate-400" aria-hidden /> {biz.district || 'Theni'}
+        </span>
+      ),
+    },
+    {
+      key: 'contact',
+      header: 'Contact',
+      sortValue: biz => biz.contactPerson || biz.ownerName || '',
+      render: biz => biz.contactPerson || biz.ownerName || <span className="text-slate-300">&mdash;</span>,
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      sortValue: biz => biz.phone ?? '',
+      render: biz => biz.phone
+        ? <span className="whitespace-nowrap font-mono text-xs tabular-nums">{biz.phone}</span>
+        : <span className="text-slate-300">&mdash;</span>,
+    },
+    {
+      key: 'proof',
+      header: 'Govt proof',
+      hideBelow: 'xl',
+      sortValue: biz => biz.proofNumber ?? '',
+      render: biz => biz.proofNumber
+        ? (
+          <span className="block">
+            <span className="block text-[10px] uppercase tracking-wide text-slate-400">{biz.proofType || 'Proof'}</span>
+            <span className="font-mono text-xs text-blue-700">{biz.proofNumber}</span>
+          </span>
+        )
+        : <span className="text-slate-300">&mdash;</span>,
+    },
+    {
+      key: 'verificationStatus',
+      header: 'Status',
+      align: 'center',
+      sortValue: biz => biz.verificationStatus ?? 'pending',
+      render: biz => {
+        const bizStatus = biz.verificationStatus || 'pending';
+        const st = STATUS_STYLES[bizStatus] || STATUS_STYLES.pending;
+        return <Pill tone={STATUS_TONE[bizStatus] ?? 'warning'} dot>{st.label}</Pill>;
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
       {/* Header */}
@@ -526,6 +624,7 @@ export default function BusinessesPage() {
           >
             {DISTRICTS.map(d => <option key={d}>{d}</option>)}
           </select>
+          <ViewToggle value={view} onChange={setView} />
         </div>
       </div>
 
@@ -557,204 +656,73 @@ export default function BusinessesPage() {
         </div>
       )}
 
-      {/* Business Cards Grid */}
-
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 size={32} className="text-blue-600 animate-spin" />
-          <p className="text-xs text-gray-500 font-semibold">Loading business applications...</p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
-          <Building2 size={36} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-sm font-bold text-gray-700">No businesses match your filter</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(biz => {
-            const bizStatus = biz.verificationStatus || 'pending';
-            const st = STATUS_STYLES[bizStatus] || STATUS_STYLES.pending;
-            const { bg, color } = getColors(biz.name);
-            const cleanPhone = (biz.phone || '').replace(/[^0-9+]/g, '');
-            const cleanWa = (biz.whatsapp || biz.phone || '').replace(/[^0-9]/g, '');
-
-            return (
-              <div
-                key={biz.id}
-                className={`bg-white rounded-3xl p-5 shadow-xs transition-all hover:shadow-md border flex flex-col justify-between gap-3.5 ${
-                  bizStatus === 'pending' ? 'border-amber-300 ring-2 ring-amber-100/50' : 'border-gray-200'
-                }`}
-              >
-                <div>
-                  {/* Top Row: Avatar & Status */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs"
-                      style={{ background: bg, color }}
-                    >
-                      {getInitials(biz.name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <h3 className="text-sm font-bold text-gray-900 truncate">{biz.name}</h3>
-                        {bizStatus === 'verified' && <BadgeCheck size={15} className="text-emerald-600 shrink-0" />}
-                        {biz.isPremium && <Crown size={15} className="text-amber-500 shrink-0" />}
-                        {isDuplicateBiz(biz) && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[9px] font-extrabold flex items-center gap-0.5 border border-purple-200 shrink-0">
-                            <Copy size={9} /> Duplicate
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 font-medium mt-0.5">{biz.category || 'General'}</p>
-                      <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1 font-medium">
-                        <MapPin size={11} className="text-gray-400" /> {biz.district || 'Theni'}
-                      </p>
-                    </div>
-                    <span
-                      className="px-2.5 py-1 rounded-full text-[10px] font-extrabold flex-shrink-0"
-                      style={{ background: st.bg, color: st.text }}
-                    >
-                      {st.label}
-                    </span>
-                  </div>
-
-                  {/* Owner & Proof Info */}
-                  <div className="bg-gray-50 rounded-2xl p-3 text-xs text-gray-700 space-y-1.5 mb-3 border border-gray-100 font-medium">
-                    <p className="flex justify-between">
-                      <span className="text-gray-500">Contact:</span>
-                      <span className="font-bold text-gray-900">{biz.contactPerson || biz.ownerName || '—'}</span>
-                    </p>
-                    <p className="flex justify-between">
-                      <span className="text-gray-500">Phone:</span>
-                      <span className="font-mono font-bold text-gray-900">{biz.phone || '—'}</span>
-                    </p>
-                    {biz.proofNumber && (
-                      <p className="flex justify-between">
-                        <span className="text-gray-500">{biz.proofType || 'Govt Proof'}:</span>
-                        <span className="font-mono text-[11px] font-bold text-blue-700">{biz.proofNumber}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Rejection Note */}
-                  {bizStatus === 'rejected' && biz.rejectionReason && (
-                    <p className="text-[11px] text-red-700 bg-red-50 p-2.5 rounded-2xl border border-red-200 mb-3 leading-relaxed">
-                      <strong>Rejection Note:</strong> {biz.rejectionReason}
-                    </p>
-                  )}
-
-                  {/* Description */}
-                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                    {biz.description || biz.address || 'Local business registered on THENIJOBS.'}
-                  </p>
-                </div>
-
-                {/* Bottom Actions */}
-                <div className="space-y-2 pt-2 border-t border-gray-100">
-                  {/* Direct Contact & Edit Buttons */}
-                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewBiz(biz)}
-                      className="py-2 px-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Eye size={12} /> Details
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => openEditBizModal(biz)}
-                      className="py-2 px-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-blue-200 cursor-pointer"
-                      title="Edit Business Details"
-                    >
-                      <Edit3 size={12} /> Edit
-                    </button>
-
-                    {cleanPhone ? (
-                      <a
-                        href={`tel:${cleanPhone}`}
-                        className="py-2 px-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-indigo-200 cursor-pointer"
-                      >
-                        <Phone size={12} /> Call
-                      </a>
-                    ) : (
-                      <span className="py-2 text-center text-[10px] text-gray-400">No Phone</span>
-                    )}
-
-                    {cleanWa ? (
-                      <a
-                        href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${biz.name}, this is THENIJOBS Admin regarding your business verification request.`)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="py-2 px-1.5 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
-                        style={{ background: '#25D366' }}
-                      >
-                        <MessageCircle size={12} /> WA
-                      </a>
-                    ) : (
-                      <span className="py-2 text-center text-[10px] text-gray-400">No WA</span>
-                    )}
-                  </div>
-
-                  {/* Approval / Rejection / Delete Row */}
-                  <div className="flex items-center gap-1.5">
-                    {actionLoading === biz.id ? (
-                      <div className="py-2 w-full text-center">
-                        <Loader2 size={16} className="animate-spin text-blue-500 mx-auto" />
-                      </div>
-                    ) : (
-                      <>
-                        {bizStatus !== 'verified' && (
-                          <button
-                            type="button"
-                            onClick={() => doApprove(biz)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold text-white transition-all shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            <CheckCircle size={14} /> Approve
-                          </button>
-                        )}
-                        {bizStatus !== 'rejected' && (
-                          <button
-                            type="button"
-                            onClick={() => openRejectModal(biz)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border border-red-200 text-red-600 hover:bg-red-50 transition-all cursor-pointer"
-                          >
-                            <XCircle size={14} /> Reject
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => doToggleFeatured(biz.id, biz.isFeatured)}
-                          className={`p-2 rounded-xl transition-all cursor-pointer ${biz.isFeatured ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400 hover:text-amber-500'}`}
-                          title={biz.isFeatured ? 'Remove Featured' : 'Feature Business'}
-                        >
-                          <Star size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => doTogglePremium(biz.id, biz.isPremium)}
-                          className={`p-2 rounded-xl transition-all cursor-pointer ${biz.isPremium ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400 hover:text-purple-500'}`}
-                          title={biz.isPremium ? 'Remove Premium' : 'Make Premium'}
-                        >
-                          <Crown size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingBiz(biz)}
-                          className="p-2 rounded-xl transition-all cursor-pointer bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-                          title="Delete Company Listing"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Business directory — table by default, tiles on request */}
+      <DataTable
+        label="Business and employer directory"
+        loading={loading}
+        view={view}
+        gridColumns={3}
+        columns={businessColumns}
+        rows={filtered}
+        getRowId={biz => biz.id}
+        emptyIcon={Building2}
+        emptyTitle="No businesses match your filter"
+        emptyDescription="Clear the tab, category or district filter to see the full directory."
+        rowActions={biz => {
+          const bizStatus = biz.verificationStatus || 'pending';
+          const cleanPhone = (biz.phone || '').replace(/[^0-9+]/g, '');
+          const cleanWa = (biz.whatsapp || biz.phone || '').replace(/[^0-9]/g, '');
+          if (actionLoading === biz.id) {
+            return <Loader2 size={16} className="animate-spin text-blue-600" aria-label="Saving" />;
+          }
+          const items: ActionItem[] = [
+            { label: 'View details', icon: Eye, onClick: () => setPreviewBiz(biz) },
+            { label: 'Edit business', icon: Edit3, onClick: () => openEditBizModal(biz) },
+          ];
+          if (cleanPhone) {
+            items.push({ label: `Call ${biz.phone}`, icon: Phone, href: `tel:${cleanPhone}` });
+          }
+          if (cleanWa) {
+            items.push({
+              label: 'WhatsApp',
+              icon: MessageCircle,
+              external: true,
+              href: `https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${biz.name}, this is THENIJOBS Admin regarding your business verification request.`)}`,
+            });
+          }
+          if (bizStatus !== 'verified') {
+            items.push({ label: 'Approve', icon: CheckCircle, tone: 'success', separatorBefore: true, onClick: () => doApprove(biz) });
+          }
+          if (bizStatus !== 'rejected') {
+            items.push({
+              label: 'Reject',
+              icon: XCircle,
+              tone: 'danger',
+              separatorBefore: bizStatus === 'verified',
+              onClick: () => openRejectModal(biz),
+            });
+          }
+          items.push({
+            label: biz.isFeatured ? 'Remove featured' : 'Feature business',
+            icon: Star,
+            separatorBefore: true,
+            onClick: () => doToggleFeatured(biz.id, biz.isFeatured),
+          });
+          items.push({
+            label: biz.isPremium ? 'Remove premium' : 'Make premium',
+            icon: Crown,
+            onClick: () => doTogglePremium(biz.id, biz.isPremium),
+          });
+          items.push({
+            label: 'Delete listing',
+            icon: Trash2,
+            tone: 'danger',
+            separatorBefore: true,
+            onClick: () => setDeletingBiz(biz),
+          });
+          return <ActionMenu label={`Actions for ${biz.name}`} items={items} />;
+        }}
+      />
 
       {/* FULL BUSINESS PREVIEW MODAL */}
       {previewBiz && (

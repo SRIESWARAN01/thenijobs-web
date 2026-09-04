@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
-  Calendar, Video, Phone, MapPin, Clock, Plus, CheckCircle, XCircle,
-  Send, Loader2, Users2, Check, ExternalLink
+  Calendar, CheckCircle, Clock, Loader2, MapPin, Phone, Plus, Send, Video, XCircle,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -11,21 +11,37 @@ import { updateDocument, createNotification } from '@/lib/firebase/firestoreServ
 import { where } from 'firebase/firestore';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import {
+  Button, Card, EmptyState, PageHeader, PageShell, Pill, Stat, StatGrid, Tabs,
+  type PillTone,
+} from '@/components/dashboard';
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  scheduled: { bg: '#FFFBEB', text: '#D97706', label: 'Upcoming Scheduled' },
-  completed: { bg: '#ECFDF5', text: '#059669', label: 'Completed' },
-  cancelled: { bg: '#FEF2F2', text: '#DC2626', label: 'Cancelled' },
-  no_show:   { bg: '#FEF2F2', text: '#DC2626', label: 'No-Show' },
+const STATUS_STYLES: Record<string, { tone: PillTone; label: string }> = {
+  scheduled: { tone: 'warning', label: 'Upcoming' },
+  completed: { tone: 'success', label: 'Completed' },
+  cancelled: { tone: 'danger', label: 'Cancelled' },
+  no_show:   { tone: 'danger', label: 'No-show' },
 };
 
-const modeIcons: Record<string, typeof Video> = {
+const modeIcons: Record<string, LucideIcon> = {
   video: Video,
   phone: Phone,
   'in-person': MapPin,
   'in_person': MapPin,
   office: MapPin,
 };
+
+interface CompanyDoc { id: string; name?: string }
+interface InterviewDoc {
+  id: string;
+  seekerName?: string;
+  seekerId?: string;
+  jobTitle?: string;
+  date?: string;
+  time?: string;
+  mode?: string;
+  status?: string;
+}
 
 export default function InterviewsPage() {
   const { user } = useAuth();
@@ -34,7 +50,7 @@ export default function InterviewsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // 1. Fetch employer's company
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
+  const { data: companies, loading: companyLoading } = useCollection<CompanyDoc>('companies', [
     where('ownerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
 
@@ -42,7 +58,7 @@ export default function InterviewsPage() {
   const companyId = company?.id;
 
   // 2. Fetch interviews
-  const { data: interviews, loading: interviewsLoading } = useCollection<any>('interviews', [
+  const { data: interviews, loading: interviewsLoading } = useCollection<InterviewDoc>('interviews', [
     where('companyId', '==', companyId || '')
   ], { skip: !companyId });
 
@@ -50,17 +66,17 @@ export default function InterviewsPage() {
     setActionLoading(interviewId);
     try {
       await updateDocument('interviews', interviewId, { status });
-      
+
       await createNotification({
         userId: seekerId,
         type: 'interview',
-        title: `Interview Update: ${status.toUpperCase()} 📅`,
+        title: `Interview update: ${status}`,
         message: `Your interview for "${jobTitle}" has been marked as ${status}.`,
         actionUrl: '/seeker/interviews'
       });
 
       toast.success(`Interview marked as ${status}`);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error('Failed to update status');
     } finally {
@@ -68,17 +84,17 @@ export default function InterviewsPage() {
     }
   };
 
-  const handleSendReminder = async (interviewId: string, candidateName: string, date: string, time: string, seekerId: string, jobTitle: string) => {
+  const handleSendReminder = async (interviewId: string, date: string, time: string, seekerId: string, jobTitle: string) => {
     setActionLoading(interviewId + '_remind');
     try {
       await createNotification({
         userId: seekerId,
         type: 'interview',
-        title: 'Interview Reminder! ⏰',
+        title: 'Interview reminder',
         message: `Friendly reminder of your interview for "${jobTitle}" scheduled on ${date} at ${time}.`,
         actionUrl: '/seeker/interviews'
       });
-      toast.success('Reminder notification sent to candidate.');
+      toast.success('Reminder sent to the candidate.');
     } catch (err) {
       console.error(err);
       toast.error('Failed to send reminder');
@@ -89,7 +105,7 @@ export default function InterviewsPage() {
 
   const upcoming = interviews.filter(i => i.status === 'scheduled');
   const past = interviews.filter(i => i.status !== 'scheduled');
-  
+
   const filtered = tab === 'upcoming'
     ? upcoming
     : tab === 'past'
@@ -100,99 +116,73 @@ export default function InterviewsPage() {
 
   if (!companyId && !companyLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-96 py-20 text-center px-4 font-outfit">
-        <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 border border-blue-200 shadow-xs">
-          <Calendar size={28} />
-        </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">No Company Profile</h2>
-        <p className="text-xs sm:text-sm text-gray-500 max-w-sm mb-6 leading-relaxed">
-          Please register your company profile first to view and schedule candidate interviews.
-        </p>
-        <Link href="/employer/company-profile" className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-all">
-          Setup Company Profile
-        </Link>
-      </div>
+      <PageShell>
+        <EmptyState
+          icon={Calendar}
+          title="No company profile yet"
+          description="Register your company profile to view and schedule candidate interviews."
+          action={
+            <Link href="/employer/company-profile">
+              <Button variant="primary">Set up company profile</Button>
+            </Link>
+          }
+        />
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Interview Management</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Schedule, track, and update candidate interview sessions</p>
-        </div>
-        <Link
-          href="/employer/candidates"
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
-        >
-          <Plus size={16} /> Schedule from Candidates
-        </Link>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Interview management"
+        description="Schedule, track and update candidate interview sessions."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Interviews' }]}
+        actions={
+          <Link href="/employer/candidates">
+            <Button variant="primary"><Plus size={16} /> Schedule from candidates</Button>
+          </Link>
+        }
+      />
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 size={32} className="text-blue-600 animate-spin" />
-          <p className="text-xs text-gray-500 font-semibold">Loading interviews...</p>
+        <div className="flex flex-col items-center justify-center gap-3 py-20">
+          <Loader2 size={30} className="animate-spin text-blue-600" />
+          <p className="text-xs font-semibold text-slate-500">Loading interviews…</p>
         </div>
       ) : (
         <>
-          {/* KPI Stats matching Dashboard standard */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {[
-              { label: 'Total Scheduled', count: interviews.length, icon: Calendar, bg: '#EFF6FF', color: '#2563EB' },
-              { label: 'Upcoming', count: upcoming.length, icon: Clock, bg: '#FFFBEB', color: '#D97706' },
-              { label: 'Completed', count: past.filter(i => i.status === 'completed').length, icon: CheckCircle, bg: '#ECFDF5', color: '#059669' },
-              { label: 'No-Shows / Cancelled', count: past.filter(i => i.status === 'no_show' || i.status === 'cancelled').length, icon: XCircle, bg: '#FEF2F2', color: '#DC2626' },
-            ].map(s => {
-              const Icon = s.icon;
-              return (
-                <div key={s.label} className="bg-white border border-gray-200 rounded-3xl p-4 sm:p-5 shadow-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs" style={{ background: s.bg }}>
-                      <Icon size={20} style={{ color: s.color }} />
-                    </div>
-                    <div>
-                      <p className="text-xl font-black text-gray-900">{s.count}</p>
-                      <p className="text-xs text-gray-500 font-bold">{s.label}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <StatGrid columns={4}>
+            <Stat label="Total scheduled" value={interviews.length} icon={Calendar} tone="blue" />
+            <Stat label="Upcoming" value={upcoming.length} icon={Clock} tone="amber" />
+            <Stat label="Completed" value={past.filter(i => i.status === 'completed').length} icon={CheckCircle} tone="emerald" />
+            <Stat
+              label="No-shows / cancelled"
+              value={past.filter(i => i.status === 'no_show' || i.status === 'cancelled').length}
+              icon={XCircle}
+              tone="rose"
+            />
+          </StatGrid>
 
-          {/* Tabs */}
-          <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit max-w-full">
-            {[
-              { label: 'All Interviews', value: 'all' },
-              { label: 'Upcoming', value: 'upcoming' },
-              { label: 'Past & Completed', value: 'past' },
-            ].map(t => (
-              <button
-                key={t.value}
-                type="button"
-                onClick={() => setTab(t.value as any)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  tab === t.value ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <Tabs
+            label="Interview filter"
+            value={tab}
+            onChange={(id) => setTab(id as 'all' | 'upcoming' | 'past')}
+            tabs={[
+              { id: 'all', label: 'All interviews', count: interviews.length },
+              { id: 'upcoming', label: 'Upcoming', count: upcoming.length },
+              { id: 'past', label: 'Past & completed', count: past.length },
+            ]}
+          />
 
-          {/* Interview Cards List */}
-          <div className="space-y-3.5">
-            {filtered.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs space-y-3">
-                <Calendar size={36} className="mx-auto text-slate-500" />
-                <p className="text-sm font-bold text-gray-700">No interviews found</p>
-                <p className="text-xs text-slate-500">Interviews scheduled via the Candidates tab will show here.</p>
-              </div>
-            ) : (
-              filtered.map(interview => {
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon={Calendar}
+              title="No interviews found"
+              description="Interviews scheduled from the Candidates tab will appear here."
+            />
+          ) : (
+            <div className="space-y-3.5">
+              {filtered.map(interview => {
                 const modeLower = (interview.mode || 'phone').toLowerCase();
                 const ModeIcon = modeIcons[modeLower] || Calendar;
                 const isReminding = actionLoading === interview.id + '_remind';
@@ -200,80 +190,82 @@ export default function InterviewsPage() {
                 const st = STATUS_STYLES[interview.status || 'scheduled'] || STATUS_STYLES.scheduled;
 
                 return (
-                  <div
+                  <Card
                     key={interview.id}
-                    className={`bg-white rounded-3xl p-4 sm:p-5 border shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                      interview.status === 'scheduled' ? 'border-amber-300 bg-amber-50/20' : 'border-gray-200'
+                    className={`flex flex-col justify-between gap-4 p-4 transition-shadow hover:shadow-md sm:p-5 md:flex-row md:items-center ${
+                      interview.status === 'scheduled' ? 'border-amber-300 bg-amber-50/30' : ''
                     }`}
                   >
-                    <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 font-black text-base flex items-center justify-center shrink-0 border border-blue-100">
+                    <div className="flex min-w-0 flex-1 items-start gap-3.5">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-[#EFF6FF] text-base font-bold text-[#1E40AF]">
                         {interview.seekerName?.[0]?.toUpperCase() || 'C'}
-                      </div>
+                      </span>
                       <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-base font-bold text-gray-900">{interview.seekerName || 'Candidate'}</h3>
-                          <span
-                            className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold"
-                            style={{ background: st.bg, color: st.text }}
-                          >
-                            {st.label}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-base font-bold text-slate-900">{interview.seekerName || 'Candidate'}</h3>
+                          <Pill tone={st.tone} dot>{st.label}</Pill>
                         </div>
-                        <p className="text-xs text-gray-500 font-medium">
-                          Role: <span className="font-bold text-gray-900">{interview.jobTitle}</span>
+                        <p className="text-xs text-slate-500">
+                          Role: <span className="font-semibold text-slate-900">{interview.jobTitle || 'Not specified'}</span>
                         </p>
-                        <div className="flex items-center gap-3 pt-1 text-xs text-gray-600 flex-wrap font-medium">
+                        <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-medium text-slate-600">
                           <span className="flex items-center gap-1">
-                            <Clock size={13} className="text-slate-500" /> {interview.date} at {interview.time}
+                            <Clock size={13} className="text-slate-400" aria-hidden />
+                            {interview.date || 'Date TBC'}{interview.time ? ` at ${interview.time}` : ''}
                           </span>
-                          <span className="flex items-center gap-1 text-blue-700 font-bold">
-                            <ModeIcon size={13} /> {interview.mode}
-                          </span>
+                          {interview.mode && (
+                            <span className="flex items-center gap-1 font-semibold text-blue-700">
+                              <ModeIcon size={13} aria-hidden /> {interview.mode}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 flex-wrap md:flex-nowrap justify-between md:justify-end border-t md:border-0 border-gray-100 pt-3 md:pt-0">
-                      {interview.status === 'scheduled' && (
-                        <>
-                          <button
-                            type="button"
-                            disabled={isReminding}
-                            onClick={() => handleSendReminder(interview.id, interview.seekerName, interview.date, interview.time, interview.seekerId, interview.jobTitle)}
-                            className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1 border border-blue-200 transition-colors cursor-pointer"
-                          >
-                            <Send size={13} /> {isReminding ? 'Sending...' : 'Remind'}
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={isUpdating}
-                            onClick={() => handleUpdateStatus(interview.id, 'completed', interview.seekerId, interview.jobTitle)}
-                            className="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center gap-1 border border-emerald-200 transition-colors cursor-pointer"
-                          >
-                            <CheckCircle size={13} /> Mark Done
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={isUpdating}
-                            onClick={() => handleUpdateStatus(interview.id, 'no_show', interview.seekerId, interview.jobTitle)}
-                            className="py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold flex items-center gap-1 border border-red-200 transition-colors cursor-pointer"
-                          >
-                            <XCircle size={13} /> No-Show
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                    {interview.status === 'scheduled' && (
+                      <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 md:flex md:shrink-0 md:border-0 md:pt-0">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          loading={isReminding}
+                          onClick={() => handleSendReminder(
+                            interview.id,
+                            interview.date ?? '',
+                            interview.time ?? '',
+                            interview.seekerId ?? '',
+                            interview.jobTitle ?? '',
+                          )}
+                          className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                        >
+                          {!isReminding && <Send size={13} />} Remind
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={isUpdating}
+                          onClick={() => handleUpdateStatus(interview.id, 'completed', interview.seekerId ?? '', interview.jobTitle ?? '')}
+                          className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                        >
+                          <CheckCircle size={13} /> Done
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          disabled={isUpdating}
+                          onClick={() => handleUpdateStatus(interview.id, 'no_show', interview.seekerId ?? '', interview.jobTitle ?? '')}
+                          className="border-rose-200 text-rose-700 hover:bg-rose-50"
+                        >
+                          <XCircle size={13} /> No-show
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

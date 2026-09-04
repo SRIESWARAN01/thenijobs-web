@@ -18,7 +18,8 @@
 #   --secrets    add the key-shape greps (paths only; values are never printed)
 # Environment:
 #   THENIJOBS_ENV_FILE=<path>   exported into the BUILD's environment only (real NEXT_PUBLIC_FIREBASE_* values); values never printed.
-#                               Without it the build runs against projects/undefined and the table says "real Firebase config: no".
+#                               Without it the build FAILS at "Collecting page data for /api/ai" with auth/invalid-api-key (measured
+#                               2026-09-04) — an environment red, attributed as such; the table says "real-firebase-config=no".
 #   THENIJOBS_GATE_OUT=<dir>    log directory
 #   THENIJOBS_ALLOW_PRIMARY=1   override the primary-checkout refusal (never for a real gate)
 # Rules encoded here (references/hazards.md): refuses the primary checkout · never deploys · never copies .env.local ·

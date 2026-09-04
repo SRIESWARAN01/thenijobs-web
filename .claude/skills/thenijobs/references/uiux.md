@@ -94,7 +94,8 @@ that fights that override is a finding, not a reason to weaken it.
    `prefers-reduced-motion`), the bottom nav band on phones, the sticky header on every page.
 5. **Browser evidence**: `npm run dev` in the worktree after gates, open at 320 / 390 / 768 / 1024 /
    1440, record what was seen, state whether real Firebase credentials were used (without them the
-   page throws `auth/invalid-api-key` ~2 s after paint — a screenshot before that is not evidence).
+   page throws `auth/invalid-api-key` ~2 s after paint and `npm run build` fails outright — a
+   screenshot before that is not evidence).
 6. **Report** exact paths, commands, exit codes, and what you did not do.
 
 ## 6. Validation commands

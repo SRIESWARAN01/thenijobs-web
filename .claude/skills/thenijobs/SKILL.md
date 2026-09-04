@@ -216,7 +216,9 @@ Design      src/app/globals.css (1458 lines, 87 custom properties): light theme,
 Toolchain   Node v26.5.1 · npm 11.17.0 · next 16.2.7 (engines ≥20.9) · tsc 5.9.3 · firebase SDK 12.14.0 · firebase-tools 15.28.1 · no vercel CLI
             real checks: `npx tsc --noEmit` · `npm run lint` (eslint 9 flat) · `npm run build` (static export → out/); no hooks · no CI · no prettier
 Env         .env.local (primary only, gitignored): 8 NEXT_PUBLIC_FIREBASE_* keys; NO provider/Razorpay/2Factor keys locally → every API route
-            runs in fallback/test mode under next dev. A fresh worktree has neither node_modules nor .env.local
+            runs in fallback/test mode under next dev. A fresh worktree has neither node_modules nor .env.local, and WITHOUT the env file
+            `npm run build` FAILS (auth/invalid-api-key at page-data collection for /api/ai) — gate.sh takes THENIJOBS_ENV_FILE=<path>
+Gate @9b8ba5d typecheck 0 · lint 1 (12 ambient errors, hazards.md) · build 1 (no env file) · secrets:src-literals 1 (S-6) · tracked-artefacts 0
 Stale docs  full.mf (dark theme, monthly prices, "Firebase Hosting"), admin-portal.md (localStorage admin), walkthrough.md, README (boilerplate)
 Ledger      docs/active/BRANCH_DISPOSITIONS.md — the ONLY branch-disposition authority (row = claim; write it first)
 Validator   node scripts/governance/validate-branch-dispositions.mjs (warnings; exit 0)

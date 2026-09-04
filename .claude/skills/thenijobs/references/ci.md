@@ -26,9 +26,10 @@ owner may map `staging` to a preview domain (`D-DEPLOY`).
 ## 2. What a future workflow MAY do (a bounded CI phase, owner-approved)
 
 - Run `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm run build` on push and pull request for
-  `develop`, `staging`, `main`, and phase branches — read-only, no secrets except none (the build
-  must succeed without `NEXT_PUBLIC_FIREBASE_*`, or the workflow declares which public config it
-  injects by key name).
+  `develop`, `staging`, `main`, and phase branches — read-only. **The build cannot succeed without
+  the eight `NEXT_PUBLIC_FIREBASE_*` values** (measured 2026-09-04: `auth/invalid-api-key` at page
+  data collection); the workflow injects them as repository variables by key name (they are public
+  web config, present in every served bundle) and declares that it did so. No other secret.
 - Run `node scripts/governance/validate-branch-dispositions.mjs` and print its warnings.
 - Run the secret grep (`security.md` §7 H) and fail on a non-Firebase key literal.
 - Run any test suite the D-TESTS phase adds (rules emulator tests with a pinned JDK).

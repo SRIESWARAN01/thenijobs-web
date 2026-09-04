@@ -18,10 +18,14 @@ Measured facts carry the commit. **Not a substitute for measuring again.**
   warning for `unrs-resolver`'s postinstall — it is blocked by default and the build still passes
   (measure again if lint or build behave differently).
 - Without `.env.local`: `next dev` throws `auth/invalid-api-key` ~2 s after first paint (deferred
-  `requestIdleCallback` listener in `AuthContext.tsx`); `next build` runs `generateStaticParams`
-  against `projects/undefined` over Firestore REST and exports pages with no dynamic params.
-  **Every report states whether real Firebase config was used.** Never commit `.env.local`
-  (`git check-ignore .env.local` must print it).
+  `requestIdleCallback` listener in `AuthContext.tsx`); **`next build` fails** at "Collecting page
+  data for /api/ai" with `FirebaseError: auth/invalid-api-key` thrown at module evaluation
+  (`src/lib/firebase/config.ts` calls `initializeApp` with empty strings; `/api/ai/route.ts`
+  imports it; measured 2026-09-04 at `9b8ba5d`, 53 s in). **A fresh checkout cannot build**, and any
+  CI must inject the eight `NEXT_PUBLIC_FIREBASE_*` keys by name (`ci.md` §2). The green build
+  needs `THENIJOBS_ENV_FILE=<path>` (sourced into the build process only). **Every report states
+  whether real Firebase config was used.** Never commit `.env.local` (`git check-ignore .env.local`
+  must print it).
 - `out/`, `.next/`, `tsconfig.tsbuildinfo`, `.firebase/` are gitignored; never force-add them.
 - Worktree lifecycle has four steps; step 4 (`git worktree remove` + `prune`) is part of the merge.
   Never `rm -rf` a worktree; never delete merged branch refs; archive untracked content before
@@ -76,10 +80,27 @@ Measured facts carry the commit. **Not a substitute for measuring again.**
   `npm run build` (`next build` sets `NODE_ENV=production` → `output: 'export'` → `out/`).
 - **There is no test suite.** `npm test` does not exist; `gate.sh` runs it only when
   `package.json` defines it. A report that says "tests passed" without a `test` script is false.
-- `next build` under the static export fails on a dynamic route without `generateStaticParams`
-  and on a route handler that reads `Request` — but the seven existing `POST` handlers are silently
-  dropped, not failed (measured: the export builds; production 404s them). Do not read a green
-  build as "the API works".
+- **`npm run lint` is red on the production tip** (`5b61111`, measured 2026-09-04 by GOV-3's
+  gate: 12 errors, 758 warnings). The 12 errors are ambient, in files no governance phase touches:
+  `src/app/employer/candidates/page.tsx` (665, 668 `react-hooks/immutability`),
+  `src/app/global-error.tsx` (71 `no-html-link-for-pages`),
+  `src/app/seeker/resume/builder/page.tsx` (118 use-before-declare),
+  `src/app/sitemap.ts` (123, 156 `prefer-const`), `src/components/home/TrendingJobs.tsx` (399),
+  `src/components/portfolio/SeekerSiteEditor.tsx` (921 ×2) and
+  `templates/SeekerPortfolioRenderer.tsx` (683 ×2, `react/no-unescaped-entities`). Attribute them
+  by name in every gate table; a phase that touches one of these files fixes that file's errors;
+  never weaken `eslint.config.mjs` to go green. The 758 warnings are mostly unused imports and
+  unused `eslint-disable` directives — a lint-hygiene phase of its own, never bundled.
+- `next build` under the static export fails on a dynamic route without `generateStaticParams`;
+  the seven existing `POST` handlers are collected during the build (the owner's builds succeed
+  with real config) and are absent from the served output (production 404s them). Do not read a
+  green build as "the API works". The build's own Firebase init failure (above) is the first thing
+  a fresh checkout hits — before any route logic.
+- Ambient gate state at `5b61111`/`9b8ba5d` (2026-09-04, no env file): `typecheck` 0 ·
+  `lint` 1 (12 ambient errors, listed below) · `build` 1 (environment: no `.env.local`) ·
+  `secrets:src-literals` 1 (S-6, `src/app/api/otp/call/route.ts`) · `tracked-artefacts` 0 ·
+  `test`/`test:rules`/`secrets:bundle` SKIP. Attribute each by name; none is a phase's regression
+  unless the phase touched the file.
 - `tsconfig.json` excludes `scripts/`; `tsc` proves nothing about `scripts/*.ts`.
 - Build time is minutes, not seconds; give `gate.sh` a 20-minute time box.
 - `firebase emulators:exec` needs a JDK the current `firebase-tools` accepts; JDK 17 is installed

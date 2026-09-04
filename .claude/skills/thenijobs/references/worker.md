@@ -22,10 +22,14 @@ and show it; a described problem without a request to change is `status`, not `w
    report whether the phase used real `NEXT_PUBLIC_FIREBASE_*` values: copy the file from the
    primary checkout **only if the owner said so for this phase**, never commit it (it is
    gitignored — verify with `git check-ignore .env.local`). Without it: `next dev` renders the
-   first paint and throws `auth/invalid-api-key` ~2 s later; `next build` runs `generateStaticParams`
-   against `projects/undefined` and exports pages with no dynamic params. No provider, Razorpay or
-   2Factor key exists locally in any case — every API route runs in fallback/test mode under
-   `next dev`, and **does not exist at all in the production static export**.
+   first paint and throws `auth/invalid-api-key` ~2 s later; **`next build` FAILS** at "Collecting
+   page data for /api/ai" with `auth/invalid-api-key` (the Firebase client SDK initialises at
+   module evaluation of `src/lib/firebase/config.ts`, which the route imports) — measured by GOV-3
+   on 2026-09-04: a fresh checkout cannot build at all. The only green build is
+   `THENIJOBS_ENV_FILE=<path the owner names> bash .claude/skills/thenijobs/scripts/gate.sh`
+   (values sourced into the build process only, never copied, never printed). No provider,
+   Razorpay or 2Factor key exists locally in any case — every API route runs in fallback/test mode
+   under `next dev`, and **does not exist at all in the production static export**.
 7. **Baseline the gates on the untouched branch**: `bash .claude/skills/thenijobs/scripts/gate.sh
    --baseline` (records the ambient state so the phase's delta is measurable; `hazards.md`).
 8. Read every file in the contract's `files to read` list **in full** — whole functions, whole

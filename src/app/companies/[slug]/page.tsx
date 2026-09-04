@@ -2,20 +2,12 @@ import CompanyProfilePageClient from '@/app/company/[slug]/CompanyProfilePageCli
 import { getAllCompanySlugsServer } from '@/lib/firebase/firestoreServer';
 
 const STATIC_COMPANY_SLUGS = [
+  // TRUST-1: the showcase slugs were removed. A read-only query on 2026-09-05 confirmed none
+  // of the 13 existed in Firestore, so they generated pages for companies that do not exist:
+  // three rendered invented businesses from sampleCompanies.ts and ten rendered an empty
+  // not-found shell, each at three URLs. Real companies come from getAllCompanySlugsServer()
+  // below. '_fallback' stays because vercel.json rewrites unknown slugs to it.
   '_fallback',
-  'digital-theni-solutions',
-  'arasu-pandi-farm-services',
-  'greenfield-agro-exports',
-  'quickdeliver-logistics',
-  'theni-textiles',
-  'thenijobs-demo-company',
-  'agrimorein',
-  'agrimart-farm-solutions-theni',
-  'tata-consultancy-it-services-theni',
-  'royal-grand-supermarket-cumbum',
-  'sri-meenakshi-textiles-garments',
-  'city-care-multi-speciality-hospital',
-  'gk-clinic-chinnamanur',
 ];
 
 export async function generateStaticParams() {

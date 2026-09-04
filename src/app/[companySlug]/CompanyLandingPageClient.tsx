@@ -8,7 +8,6 @@ import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/
 import { Loader2, Building2, AlertCircle, ArrowLeft, ShieldAlert, BadgeCheck } from 'lucide-react';
 import CompanyLandingWebsite from '@/components/company/CompanyLandingWebsite';
 import Header from '@/components/navigation/Header';
-import { getSampleCompanyData } from '@/lib/sampleCompanies';
 
 const RESERVED_SYSTEM_ROUTES = new Set([
   'about', 'admin', 'api', 'businesses', 'companies', 'company', 'contact', 'cookies',
@@ -113,16 +112,9 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
                   }
                 }
                 if (!docData) {
-                  // Graceful fallback: check built-in showcase companies (e.g. gk-clinic-chinnamanur, digital-theni-solutions)
-                  const sampleData = getSampleCompanyData(slug);
-                  if (sampleData && sampleData.company) {
-                    setCompany(sampleData.company);
-                    setJobs(sampleData.jobs || []);
-                    setReviews(sampleData.reviews || []);
-                    setLoading(false);
-                    return;
-                  }
-
+                  // TRUST-1: this used to substitute an invented company from
+                  // sampleCompanies.ts. A directory that sells verification must never render a
+                  // business that does not exist, least of all badged "Authorized".
                   setNotFoundState(true);
                   setLoading(false);
                   return;
@@ -141,16 +133,9 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
         setCompany(docData);
         await loadActiveJobsAndReviews(docData.id);
       } catch (err) {
+        // TRUST-1: see the note above — a failed query no longer substitutes invented data.
         console.error('Error fetching company landing page:', err);
-        // Fallback to sample data on error
-        const sampleData = getSampleCompanyData(slug);
-        if (sampleData && sampleData.company) {
-          setCompany(sampleData.company);
-          setJobs(sampleData.jobs || []);
-          setReviews(sampleData.reviews || []);
-        } else {
-          setNotFoundState(true);
-        }
+        setNotFoundState(true);
       } finally {
         setLoading(false);
       }

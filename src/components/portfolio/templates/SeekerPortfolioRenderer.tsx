@@ -680,7 +680,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
                   style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
                 >
                   <p className="text-xs sm:text-sm italic leading-relaxed" style={{ color: text }}>
-                    "{test.content}"
+                    &ldquo;{test.content}&rdquo;
                   </p>
                   <div className="flex items-center gap-3 pt-2 border-t" style={{ borderColor: `${muted}15` }}>
                     {test.photo ? (

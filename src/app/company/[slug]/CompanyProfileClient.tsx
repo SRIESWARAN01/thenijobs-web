@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
-import FloatingWhatsApp from '@/components/ui/FloatingWhatsApp';
 import CompanyReviewsSection from '@/components/company/CompanyReviewsSection';
 import {
   MapPin, Phone, Mail, Globe, MessageCircle, Share2, Heart,
@@ -55,6 +54,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
   const openJobsCount = jobs.length;
   const established = company.foundedYear || company.establishedYear || company.since || '2018';
   const logoChar = company.name?.[0]?.toUpperCase() || 'C';
+  const reviewCount = reviews.length || company.reviewCount || 0;
 
   const googleMapsSearchUrl = company.googleMapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${company.name} ${company.district || 'Theni'} Tamil Nadu`)}`;
 
@@ -62,8 +62,12 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
     <main className="min-h-screen bg-[#F8FAFC] text-gray-900 font-sans pb-24 font-outfit">
       <Header />
 
-      {/* Main Container */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+      {/* Main Container — wider on desktop so the bento grid has room to breathe.
+          The bottom clearance lives HERE, not on <main>: globals.css sets
+          `main { padding-bottom: 72px }` under 768px as an unlayered rule, which beats a
+          Tailwind pb-* utility on the same element. 72px only clears BottomNav, and this
+          page also has the sticky action bar above it — hence the extra room on mobile. */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-36 lg:pb-10">
 
         {/* Card Wrapper for Header + Profile Info */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-6 mt-4">
@@ -88,150 +92,144 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
               </div>
             )}
             
+            {/* Premium badge sits top-LEFT so it never collides with the save/share
+                controls opposite it. */}
             {company.isPremium && (
-              <div className="absolute top-4 right-4 z-20 bg-amber-400 text-amber-950 px-3 py-1 rounded-full text-xs font-extrabold shadow-md flex items-center gap-1">
-                <Crown size={13} /> PREMIUM BUSINESS
+              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 bg-amber-400 text-amber-950 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-extrabold shadow-md flex items-center gap-1">
+                <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> PREMIUM
               </div>
             )}
+
+            {/* Save / Share — overlaid on the banner instead of sharing the avatar's row,
+                where they floated over the cover photo at an arbitrary height. The frosted
+                backdrop keeps them legible against any uploaded image. */}
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex gap-2">
+              <button
+                onClick={() => setSaved(!saved)}
+                aria-label={saved ? 'Remove from saved' : 'Save company'}
+                aria-pressed={saved}
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-sm border shadow-sm transition-all ${
+                  saved ? 'bg-rose-50/95 border-rose-200' : 'bg-white/90 border-white/60 hover:bg-white'
+                }`}
+                // Inline colour, not a text-* class: globals.css has an unlayered
+                // `.bg-slate-950 * { color: inherit }` that forces every descendant of the
+                // dark banner to white, which beats Tailwind's utility layer and made these
+                // icons white-on-white.
+                style={{ color: saved ? '#E11D48' : '#374151' }}
+              >
+                <Heart className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill={saved ? 'currentColor' : 'none'} />
+              </button>
+              <button
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: company.name, url: window.location.href });
+                  }
+                }}
+                aria-label="Share profile"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center bg-white/90 backdrop-blur-sm border border-white/60 hover:bg-white shadow-sm transition-all"
+                style={{ color: '#374151' }}
+              >
+                <Share2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+              </button>
+            </div>
           </div>
 
-          {/* Profile Header Content (Overlapping Avatar) */}
-          <div className="px-6 pb-6 pt-0 relative">
+          {/* Profile Header Content (Overlapping Avatar) — z-20 so the avatar sits ABOVE the
+              banner image, which carries z-10 to clear its own blurred backdrop. Without it
+              the cover photo paints over the logo. */}
+          <div className="px-6 pb-6 pt-0 relative z-20">
             
-            {/* Logo Avatar */}
-            <div className="-mt-14 sm:-mt-16 mb-4 flex justify-between items-end">
-              <div className="relative">
-                {company.logoUrl ? (
-                  <img
-                    src={company.logoUrl}
-                    alt={company.name}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-                  />
-                ) : (
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center">
-                    {logoChar}
-                  </div>
-                )}
-              </div>
-
-              {/* Share / Save Quick Actions */}
-              <div className="flex gap-2 mb-2">
-                <button
-                  onClick={() => setSaved(!saved)}
-                  className={`p-2.5 rounded-full border transition-all ${
-                    saved ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
-                  title="Save Company"
-                >
-                  <Heart size={18} className={saved ? 'fill-rose-500' : ''} />
-                </button>
-                <button
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({ title: company.name, url: window.location.href });
-                    }
-                  }}
-                  className="p-2.5 rounded-full border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-all"
-                  title="Share Profile"
-                >
-                  <Share2 size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Company Name & Verification */}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-                  {company.name}
-                </h1>
-                <VerifiedBadge
-                  tier={company.subscriptionPlan || 'standard'}
-                  isVerified={company.verificationStatus === 'verified' || company.isVerified === true}
-                  companyName={company.name}
-                  size="md"
+            {/* Logo Avatar — now owns its row (save/share moved onto the banner), so it can
+                overlap the cover cleanly at any width. */}
+            <div className="-mt-10 sm:-mt-16 mb-3 sm:mb-4">
+              {company.logoUrl ? (
+                <img
+                  src={company.logoUrl}
+                  alt={company.name}
+                  className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-lg object-cover bg-white"
                 />
-              </div>
-
-              {/* Rating & Location */}
-              <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-600">
-                <div className="flex items-center gap-1">
-                  <Star size={16} className="fill-amber-400 text-amber-400" />
-                  <span className="font-bold text-gray-900">{company.rating || '—'}</span>
-                  <span className="text-gray-500">({reviews.length || company.reviewCount || 0} reviews)</span>
+              ) : (
+                <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-2xl sm:text-4xl flex items-center justify-center">
+                  {logoChar}
                 </div>
+              )}
+            </div>
 
-                <div className="flex items-center gap-1 text-gray-600">
-                  <MapPin size={15} className="text-gray-400" />
-                  <span>{company.district ? `${company.district}, Tamil Nadu` : 'Theni, Tamil Nadu'}</span>
-                </div>
+            {/* Company Name, then a single meta row.
+                The verification badge lives in the meta row rather than beside the heading:
+                a long business name fills the line at phone widths, so an inline badge just
+                wrapped onto a line of its own and read as a stray button. */}
+            <div className="space-y-2">
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-900 tracking-tight break-words">
+                {company.name}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm text-gray-600">
+                {/* Two instances so the badge scales with the breakpoint. */}
+                <span className="sm:hidden">
+                  <VerifiedBadge
+                    tier={company.subscriptionPlan || 'standard'}
+                    isVerified={company.verificationStatus === 'verified' || company.isVerified === true}
+                    companyName={company.name}
+                    size="sm"
+                  />
+                </span>
+                <span className="hidden sm:inline-flex">
+                  <VerifiedBadge
+                    tier={company.subscriptionPlan || 'standard'}
+                    isVerified={company.verificationStatus === 'verified' || company.isVerified === true}
+                    companyName={company.name}
+                    size="md"
+                  />
+                </span>
+
+                {/* The rating only appears once there is one — "★ — (0 reviews)" on every
+                    new business read as broken. */}
+                {reviewCount > 0 ? (
+                  <span className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />
+                    <span className="font-bold text-gray-900">{Number(company.rating || 0).toFixed(1)}</span>
+                    <span className="text-gray-500">({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})</span>
+                  </span>
+                ) : (
+                  <span className="text-gray-400">No reviews yet</span>
+                )}
+
+                <span className="flex items-center gap-1 text-gray-600 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span className="truncate">{company.district ? `${company.district}, Tamil Nadu` : 'Theni, Tamil Nadu'}</span>
+                </span>
               </div>
             </div>
 
-            {/* Key Statistics Grid */}
-            <div className="grid grid-cols-3 gap-3 my-5">
-              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-1 text-gray-600 font-bold text-base sm:text-xl">
-                  <Users size={18} className="text-blue-600 shrink-0" />
-                  <span>{employeesCount}</span>
+            {/* Key Statistics Grid — sized down hard on phones: at 375px each cell is only
+                ~105px wide, where an 18px icon beside text-base was enough to wrap a
+                four-digit year onto two lines ("202" / "5"). */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 my-4 sm:my-5">
+              <div className="bg-gray-50 border border-gray-100 rounded-xl sm:rounded-2xl p-2 sm:p-4 text-center min-w-0">
+                <div className="flex items-center justify-center gap-1 text-gray-600 font-bold text-xs sm:text-xl whitespace-nowrap">
+                  <Users className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] text-blue-600 shrink-0" />
+                  <span className="truncate">{employeesCount}</span>
                 </div>
-                <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5">Employees</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">Employees</div>
               </div>
 
-              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-1 text-gray-600 font-bold text-base sm:text-xl">
-                  <Briefcase size={18} className="text-emerald-600 shrink-0" />
-                  <span>{openJobsCount}</span>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl sm:rounded-2xl p-2 sm:p-4 text-center min-w-0">
+                <div className="flex items-center justify-center gap-1 text-gray-600 font-bold text-xs sm:text-xl whitespace-nowrap">
+                  <Briefcase className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] text-emerald-600 shrink-0" />
+                  <span className="truncate">{openJobsCount}</span>
                 </div>
-                <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5">Open Jobs</div>
+                <div className="text-[10px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">Open Jobs</div>
               </div>
 
-              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-1 text-gray-600 font-bold text-base sm:text-xl">
-                  <Calendar size={18} className="text-purple-600 shrink-0" />
-                  <span>{established}</span>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl sm:rounded-2xl p-2 sm:p-4 text-center min-w-0">
+                <div className="flex items-center justify-center gap-1 text-gray-600 font-bold text-xs sm:text-xl whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 sm:w-[18px] sm:h-[18px] text-purple-600 shrink-0" />
+                  <span className="truncate">{established}</span>
                 </div>
-                <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5">Established {established}</div>
+                {/* The year is already the value above — repeating it here just overflowed. */}
+                <div className="text-[10px] sm:text-xs text-gray-500 font-medium mt-0.5 truncate">Established</div>
               </div>
-            </div>
-
-            {/* DIRECT CONTACT ACTION BUTTONS MATRIX (Call, WhatsApp, Email, Get Directions) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-              <a
-                href={`tel:${company.phone || ''}`}
-                className="py-2.5 px-3 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-blue-700 transition-all"
-              >
-                <Phone size={14} />
-                <span>Call Now</span>
-              </a>
-
-              <a
-                href={`https://wa.me/${company.whatsapp || company.phone}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2.5 px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-emerald-700 transition-all"
-              >
-                <MessageCircle size={14} />
-                <span>WhatsApp</span>
-              </a>
-
-              <a
-                href={`mailto:${company.email}`}
-                className="py-2.5 px-3 rounded-xl bg-purple-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-purple-700 transition-all"
-              >
-                <Mail size={14} />
-                <span>Email</span>
-              </a>
-
-              <a
-                href={googleMapsSearchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-2.5 px-3 rounded-xl bg-amber-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-amber-600 transition-all"
-              >
-                <Navigation2 size={14} />
-                <span>Get Directions</span>
-              </a>
             </div>
 
             {/* Official Landing Website Link Banner */}
@@ -475,8 +473,13 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 );
               })()}
 
+              {/* ═══ BENTO GRID — on desktop the About/Jobs cards stack in a wide left
+                  column beside a tall contact+inquiry cell; everything collapses to a
+                  single column below lg. ═══ */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5 items-start">
+
               {/* Description & Skill/Category Pills */}
-              <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
+              <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-gray-900 mb-2">About Company</h3>
                   {(() => {
@@ -552,7 +555,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
 
               {/* Open Jobs Section inside About Tab */}
               {jobs.length > 0 && (
-                <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+                <div className="lg:col-span-2 lg:order-3 bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-bold text-gray-900">Open Jobs</h2>
                     <button onClick={() => setActiveTab('jobs')} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
@@ -586,11 +589,14 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 </div>
               )}
 
-              {/* Contact & Location Details */}
-              <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
+              {/* Contact & Location Details — the tall right-hand bento cell on desktop,
+                  sticky so the enquiry form follows the reader down the page. */}
+              <div className="lg:col-span-1 lg:order-2 lg:sticky lg:top-24 bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-4">
                 <h2 className="text-lg font-bold text-gray-900">Location & Contact</h2>
-                
-                <div className="grid sm:grid-cols-2 gap-4">
+
+                {/* Single column inside the narrow bento cell; two columns only on the
+                    tablet range where this card is still full width. */}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-1 gap-4">
                   <div className="space-y-3">
                     <a href={`tel:${company.phone}`} className="flex items-center gap-3 text-sm text-gray-700 hover:text-blue-600">
                       <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -664,6 +670,8 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                   </div>
                 </div>
               </div>
+
+              </div>{/* ═══ end bento grid ═══ */}
             </>
           )}
 
@@ -879,8 +887,58 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
 
       </div>
 
+      {/* ═══ STICKY MOBILE ACTION BAR ═══
+          The primary contact actions follow the reader down the page on phones, where the
+          buttons in the header scroll away almost immediately. Sits directly above
+          BottomNav (fixed, ~64px + safe area) and is hidden on lg, where the sticky
+          contact cell in the bento grid serves the same purpose. */}
+      <div
+        className="fixed left-0 right-0 z-40 lg:hidden px-3 pb-2"
+        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+      >
+        <div className="mx-auto max-w-md flex items-center gap-2 rounded-2xl bg-white/95 backdrop-blur border border-gray-200 shadow-[0_8px_24px_rgba(15,23,42,0.12)] p-2">
+          {company.phone && (
+            <a
+              href={`tel:${company.phone}`}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-bold shadow-xs"
+              style={{ background: '#2563EB' }}
+            >
+              <Phone size={14} /> Call
+            </a>
+          )}
+          {(company.whatsapp || company.phone) && (
+            <a
+              href={`https://wa.me/${company.whatsapp || company.phone}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-bold shadow-xs"
+              style={{ background: '#25D366' }}
+            >
+              <MessageCircle size={14} /> WhatsApp
+            </a>
+          )}
+          {company.email && (
+            <a
+              href={`mailto:${company.email}`}
+              aria-label="Email this business"
+              className="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl bg-purple-50 text-purple-700 border border-purple-200"
+            >
+              <Mail size={16} />
+            </a>
+          )}
+          <a
+            href={googleMapsSearchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Get directions"
+            className="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl bg-amber-50 text-amber-700 border border-amber-200"
+          >
+            <Navigation size={16} />
+          </a>
+        </div>
+      </div>
+
       <BottomNav />
-      <FloatingWhatsApp number={company.whatsapp} />
 
       {/* ═══ FULL-SCREEN PRODUCT/SERVICE DETAIL MODAL ═══ */}
       {selectedItem && (() => {

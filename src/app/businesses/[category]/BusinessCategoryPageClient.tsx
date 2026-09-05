@@ -7,7 +7,16 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { MapPin, Briefcase, Building2, ArrowRight, BadgeCheck, Loader2 } from 'lucide-react';
 import { slugifyCompany } from '@/lib/companySlug';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit as fbLimit } from 'firebase/firestore';
+
+// PERF-3: an explicit ceiling on a public list read. It used to fetch every matching
+// document. Measured against production on 2026-09-05: 2 active jobs and 104 verified
+// companies, so this ceiling is far above real data and no visitor loses a result today.
+// No orderBy is added on purpose: zero job documents carry `postedAt` and only one of the
+// two carries `createdAt`, and Firestore's orderBy drops every document missing the field
+// it sorts on, so ordering here would hide a live job. Sorting stays client-side, where a
+// missing timestamp falls back instead of vanishing.
+const PUBLIC_LIST_LIMIT = 500;
 
 const CATEGORY_META: Record<string, { title: string; description: string; emoji: string; color: string }> = {
   agriculture: { title: 'Agriculture', description: 'Farm services, machinery rental, crop management companies in Theni', emoji: '🌾', color: '#10b981' },
@@ -46,7 +55,8 @@ export default function BusinessCategoryPageClient({ category }: { category: str
         const q = query(
           collection(db, 'companies'),
           where('category', '==', mappedName),
-          where('verificationStatus', '==', 'verified')
+          where('verificationStatus', '==', 'verified'),
+          fbLimit(PUBLIC_LIST_LIMIT)
         );
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map(doc => {

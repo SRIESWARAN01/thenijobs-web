@@ -11,7 +11,16 @@ import {
   Bookmark, BookmarkPlus, CheckCircle2, ArrowRight, Loader2,
   RefreshCw, Building2, Phone, MessageCircle
 } from 'lucide-react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit as fbLimit } from 'firebase/firestore';
+
+// PERF-3: an explicit ceiling on a public list read. It used to fetch every matching
+// document. Measured against production on 2026-09-05: 2 active jobs and 104 verified
+// companies, so this ceiling is far above real data and no visitor loses a result today.
+// No orderBy is added on purpose: zero job documents carry `postedAt` and only one of the
+// two carries `createdAt`, and Firestore's orderBy drops every document missing the field
+// it sorts on, so ordering here would hide a live job. Sorting stays client-side, where a
+// missing timestamp falls back instead of vanishing.
+const PUBLIC_LIST_LIMIT = 500;
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
@@ -71,7 +80,8 @@ export default function DailyJobsPage() {
         const q = query(
           collection(db, 'jobs'),
           where('isActive', '==', true),
-          where('status', '==', 'active')
+          where('status', '==', 'active'),
+          fbLimit(PUBLIC_LIST_LIMIT)
         );
         const snap = await getDocs(q);
         if (cancelled) return;

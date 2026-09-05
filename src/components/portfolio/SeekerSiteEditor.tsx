@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Globe, Eye, EyeOff, Save, Sparkles, Monitor, Laptop, Tablet,
@@ -15,7 +15,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import { db } from '@/lib/firebase/config';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import type {
   PortfolioSite, PortfolioSection, PortfolioTheme,
   SeekerHeroData, SeekerSkillItem, SeekerExperienceItem,
@@ -103,6 +103,38 @@ const THEME_PRESETS = [
 
 type EditorTab = 'blocks' | 'design' | 'seo' | 'publish';
 
+// SEEKER-2 — portfolioSlugs reservation (mirrors RULES-1's companySlugs, adapted for a slug
+// that changes over time instead of being fixed at registration). `seeker` collides with the
+// existing static route /portfolio/seeker/[id]; the rest guard against confusion with app routes
+// that happen to share the /portfolio/ prefix's neighbourhood.
+const RESERVED_PORTFOLIO_SLUGS = new Set(['seeker', 'admin', 'api', 'create', 'new', 'edit', '_fallback']);
+
+async function isPortfolioSlugAvailable(slug: string, ownerId: string): Promise<boolean> {
+  const snap = await getDoc(doc(db, 'portfolioSlugs', slug));
+  return !snap.exists() || snap.data()?.ownerId === ownerId;
+}
+
+async function reservePortfolioSlug(slug: string, ownerId: string, siteId: string): Promise<void> {
+  await setDoc(doc(db, 'portfolioSlugs', slug), { slug, ownerId, siteId, createdAt: new Date() });
+}
+
+async function releasePortfolioSlug(slug: string): Promise<void> {
+  try { await deleteDoc(doc(db, 'portfolioSlugs', slug)); } catch { /* best-effort release */ }
+}
+
+// Used only for the very first auto-generated default, so two similarly-named seekers never
+// collide before either has touched the editor. A capped loop, not unbounded recursion — 50
+// candidates is far more than any real collision run will ever need.
+async function resolveUniquePortfolioSlug(baseSlug: string, ownerId: string): Promise<string> {
+  let candidate = baseSlug;
+  for (let n = 2; n <= 50; n++) {
+    const available = await isPortfolioSlugAvailable(candidate, ownerId);
+    if (available && !RESERVED_PORTFOLIO_SLUGS.has(candidate)) return candidate;
+    candidate = `${baseSlug}-${n}`;
+  }
+  return candidate;
+}
+
 export default function SeekerSiteEditor() {
   const { user } = useAuth();
   const toast = useToast();
@@ -119,6 +151,10 @@ export default function SeekerSiteEditor() {
   const [showLivePreview, setShowLivePreview] = useState(true);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  // SEEKER-2: the last customUrl actually saved to Firestore, so handleSave can tell whether
+  // the slug changed since the last save (and release the old reservation) without an extra
+  // read on every save.
+  const lastSavedCustomUrlRef = useRef<string>('');
 
   // Load or initialize Seeker Portfolio
   useEffect(() => {
@@ -137,6 +173,7 @@ export default function SeekerSiteEditor() {
         if (!snap.empty) {
           const docData = snap.docs[0].data() as PortfolioSite;
           setSite({ ...docData, id: snap.docs[0].id });
+          lastSavedCustomUrlRef.current = docData.customUrl || '';
         } else {
 
           // Initialize new Seeker site with profile data
@@ -144,9 +181,13 @@ export default function SeekerSiteEditor() {
           const profSnap = await getDoc(profRef);
           const prof = profSnap.exists() ? profSnap.data() : {};
 
-          const defaultSlug = (user?.displayName || user?.email?.split('@')[0] || 'seeker')
+          // SEEKER-2: resolved to a unique value below — two similarly-named seekers (or two
+          // whose email prefixes normalize the same way) must not collide on their very first
+          // portfolio, before either has typed anything.
+          let defaultSlug = (user?.displayName || user?.email?.split('@')[0] || 'seeker')
             .toLowerCase()
             .replace(/[^a-z0-9]/g, '-');
+          defaultSlug = await resolveUniquePortfolioSlug(defaultSlug, user?.uid || '');
 
           const newSite: PortfolioSite = {
             id: `site-${user?.uid}`,
@@ -354,6 +395,8 @@ export default function SeekerSiteEditor() {
           setSite(newSite);
           // Persist initial draft
           await setDoc(doc(db, 'portfolioSites', newSite.id), newSite);
+          await reservePortfolioSlug(defaultSlug, user?.uid || '', newSite.id);
+          lastSavedCustomUrlRef.current = defaultSlug;
         }
       } catch (err: any) {
         console.error('Error loading seeker portfolio:', err);
@@ -403,9 +446,33 @@ export default function SeekerSiteEditor() {
 
   // Save changes to Firestore
   const handleSave = async () => {
-    if (!site?.id) return;
+    if (!site?.id || !user?.uid) return;
     setSaving(true);
     try {
+      // SEEKER-2: customUrl had no uniqueness check at all before this — only guard it when the
+      // slug actually changed since the last save, so every other edit stays a single write.
+      const newSlug = (site.customUrl || '').trim();
+      const oldSlug = lastSavedCustomUrlRef.current;
+
+      if (newSlug && newSlug !== oldSlug) {
+        if (RESERVED_PORTFOLIO_SLUGS.has(newSlug)) {
+          toast.warning(`"${newSlug}" is a reserved URL and can't be used. Please choose another.`);
+          setSaving(false);
+          return;
+        }
+        const available = await isPortfolioSlugAvailable(newSlug, user.uid);
+        if (!available) {
+          toast.warning(`The URL thenijobs.com/portfolio/${newSlug} is already taken. Please choose another.`);
+          setSaving(false);
+          return;
+        }
+        await reservePortfolioSlug(newSlug, user.uid, site.id);
+        if (oldSlug && oldSlug !== newSlug) {
+          await releasePortfolioSlug(oldSlug);
+        }
+        lastSavedCustomUrlRef.current = newSlug;
+      }
+
       await updateDoc(doc(db, 'portfolioSites', site.id), {
         sections: site.sections,
         theme: site.theme,

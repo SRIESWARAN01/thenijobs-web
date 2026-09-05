@@ -63,7 +63,7 @@ export default function SeekerIDCardPage() {
     <PageShell className="max-w-4xl">
       <PageHeader
         title="Digital candidate pass & ID card"
-        description="Your official THENIJOBS verified candidate identity card with a live portfolio QR code."
+        description="Your THENIJOBS digital candidate identity card with a live portfolio QR code."
         breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'ID card' }]}
       />
 
@@ -90,12 +90,12 @@ export default function SeekerIDCardPage() {
         <CardBody className="space-y-3">
           <h2 className="flex items-center gap-2 text-sm font-bold text-[#065F46]">
             <Sparkles size={16} className="text-emerald-600" aria-hidden />
-            How to use your verified candidate pass
+            How to use your candidate pass
           </h2>
           <ul className="grid grid-cols-1 gap-2.5 text-xs font-medium text-[#065F46] sm:grid-cols-2">
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-600">•</span>
-              <span>Share via WhatsApp to hiring managers for instant 1-click CV verification</span>
+              <span>Share via WhatsApp to hiring managers for an instant 1-click CV link</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-600">•</span>
@@ -103,7 +103,7 @@ export default function SeekerIDCardPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-600">•</span>
-              <span>QR code opens your live, mobile-responsive portfolio and verified qualifications</span>
+              <span>QR code opens your live, mobile-responsive portfolio and qualifications</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-600">•</span>

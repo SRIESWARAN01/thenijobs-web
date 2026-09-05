@@ -112,11 +112,11 @@ export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
       const pdf = new jsPDF('p', 'mm', 'a4');
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(16);
-      pdf.text('THENIJOBS — Official Digital Candidate Pass', 105, 22, { align: 'center' });
+      pdf.text('THENIJOBS — Digital Candidate Pass', 105, 22, { align: 'center' });
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(100);
-      pdf.text(`Candidate: ${seeker.name} • ID: ${seekerId} • Verified Candidate`, 105, 29, { align: 'center' });
+      pdf.text(`Candidate: ${seeker.name} • ID: ${seekerId}`, 105, 29, { align: 'center' });
 
       // Embed front
       const imgFront = frontCanvas.toDataURL('image/png');
@@ -128,7 +128,7 @@ export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
 
       pdf.setFontSize(9);
       pdf.setTextColor(130);
-      pdf.text('Scan QR code on back to view full live portfolio, projects, and verified resume on THENIJOBS.', 105, 208, { align: 'center' });
+      pdf.text('Scan QR code on back to view full live portfolio, projects, and resume on THENIJOBS.', 105, 208, { align: 'center' });
 
       pdf.save(`${seeker.name.toLowerCase().replace(/\s+/g, '-')}-id-pass.pdf`);
       setFlipped(wasFlipped);
@@ -143,7 +143,7 @@ export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
 
 
   const handleWhatsAppShare = () => {
-    const text = `📇 *${seeker.name}* - Verified THENIJOBS Candidate Pass\n💼 *Role:* ${currentRole}\n📍 *District:* ${seeker.district || 'Theni'}, Tamil Nadu\n💬 "${growthSlogan}"\n\n🌐 View my live verified portfolio & CV:\n${portfolioUrl}`;
+    const text = `📇 *${seeker.name}* - THENIJOBS Candidate Pass\n💼 *Role:* ${currentRole}\n📍 *District:* ${seeker.district || 'Theni'}, Tamil Nadu\n💬 "${growthSlogan}"\n\n🌐 View my live portfolio & CV:\n${portfolioUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -172,13 +172,13 @@ export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
             }}
           >
             <div className="relative h-full p-4 sm:p-5 flex flex-col justify-between text-white">
-              {/* Top Header: Subtle THENIJOBS Verified Candidate Badge */}
+              {/* Top Header: Subtle THENIJOBS Candidate Badge */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
                   <div className="w-4 h-4 rounded-md bg-white p-0.5 shadow-xs flex items-center justify-center">
                     <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
                   </div>
-                  <span className="text-[9px] font-bold text-emerald-100 tracking-wide">Verified Candidate · THENIJOBS</span>
+                  <span className="text-[9px] font-bold text-emerald-100 tracking-wide">Candidate Pass · THENIJOBS</span>
                 </div>
 
                 <span className="text-[9px] font-mono bg-black/25 px-2.5 py-0.5 rounded-full font-bold border border-white/20 text-emerald-200">

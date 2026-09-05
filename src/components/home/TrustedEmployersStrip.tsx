@@ -15,17 +15,8 @@ interface EmployerLogo {
   initials: string;
 }
 
-const INITIAL_EMPLOYERS: EmployerLogo[] = [
-  { id: '1', slug: 'digital-theni-solutions', name: 'Digital Theni Solutions', initials: 'DT' },
-  { id: '2', slug: 'am-siddha-hospital-cumbum', name: 'AM Siddha Hospital', initials: 'AM' },
-  { id: '3', slug: 'velammal-matriculation-higher-secondary-school-theni-theni', name: 'Velammal School', initials: 'VM' },
-  { id: '4', slug: 'classic-honda-periyakulam', name: 'Classic Honda', initials: 'CH' },
-  { id: '5', slug: 'kudil-construction-cumbum', name: 'Kudil Construction', initials: 'KC' },
-  { id: '6', slug: 'coral-moto-hub-royal-enfield-theni', name: 'Coral Moto Hub', initials: 'CM' },
-];
-
 export default function TrustedEmployersStrip() {
-  const [employers, setEmployers] = useState<EmployerLogo[]>(INITIAL_EMPLOYERS);
+  const [employers, setEmployers] = useState<EmployerLogo[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,17 +42,17 @@ export default function TrustedEmployersStrip() {
             initials: d.name ? d.name.substring(0, 2).toUpperCase() : 'CO',
           });
         });
-        if (logos.length >= 3) {
-          setEmployers(logos);
-        }
-      } catch (err) {
-        // Silently retain pre-seeded verified employers
+        setEmployers(logos);
+      } catch {
+        if (!cancelled) setEmployers([]);
       }
     }
     load();
 
     return () => { cancelled = true; };
   }, []);
+
+  if (employers.length === 0) return null;
 
   return (
     <section className="py-10" style={{ background: '#FFFFFF' }}>

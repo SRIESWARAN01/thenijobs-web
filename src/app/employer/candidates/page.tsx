@@ -609,7 +609,7 @@ export default function CandidatesPage() {
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search candidates by name..."
+                aria-label="Search candidates by name" placeholder="Search candidates by name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"

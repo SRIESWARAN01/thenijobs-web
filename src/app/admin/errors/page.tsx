@@ -343,7 +343,7 @@ export default function AdminErrorsPage() {
           <input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search errors..."
+            aria-label="Search errors" placeholder="Search errors..."
             className="w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
           />
         </div>

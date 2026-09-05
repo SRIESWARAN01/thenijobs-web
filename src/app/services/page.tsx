@@ -187,7 +187,7 @@ export default function ServicesPage() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search products, services, or company names..."
+              aria-label="Search products, services, or company names" placeholder="Search products, services, or company names..."
               className="w-full bg-transparent text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none"
             />
             {search && <button onClick={() => setSearch('')}><X size={14} className="text-gray-400" /></button>}

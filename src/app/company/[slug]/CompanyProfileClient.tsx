@@ -656,8 +656,8 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                   {/* Send Inquiry Box */}
                   <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-2">
                     <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Send Direct Inquiry</h3>
-                    <input type="text" placeholder="Your Name" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500" />
-                    <input type="tel" placeholder="Mobile Number" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500" />
+                    <input type="text" aria-label="Your Name" placeholder="Your Name" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500" />
+                    <input type="tel" aria-label="Mobile Number" placeholder="Mobile Number" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500" />
                     <button
                       onClick={() => setEnquirySent(true)}
                       className="w-full py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1"

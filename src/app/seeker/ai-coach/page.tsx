@@ -327,7 +327,7 @@ export default function AICoachPage() {
               value={question}
               onChange={e => setQuestion(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAskQuestion()}
-              placeholder="Ask about suitable jobs, salary ranges, skills to learn, or interview tips..."
+              aria-label="Ask about suitable jobs, salary ranges, skills to learn, or interview tips" placeholder="Ask about suitable jobs, salary ranges, skills to learn, or interview tips..."
               className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-base sm:text-xs text-gray-900 focus:bg-white focus:border-indigo-500 outline-none"
             />
             <button

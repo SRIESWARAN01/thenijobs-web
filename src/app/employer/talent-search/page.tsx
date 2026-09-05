@@ -123,7 +123,7 @@ export default function TalentSearchPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search skill, role, candidate name..."
+              aria-label="Search skill, role, candidate name" placeholder="Search skill, role, candidate name..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-base sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>

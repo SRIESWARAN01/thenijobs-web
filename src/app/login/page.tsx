@@ -384,7 +384,7 @@ function LoginPageContent() {
                       </div>
                       <div className="relative flex-1">
                         <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type="tel" required maxLength={10} placeholder="Enter 10-digit mobile"
+                        <input type="tel" required maxLength={10} aria-label="Enter 10-digit mobile" placeholder="Enter 10-digit mobile"
                           value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none transition-all font-medium" />
                       </div>
@@ -397,7 +397,7 @@ function LoginPageContent() {
                       <label className="text-xs font-semibold text-gray-700 block mb-1.5">Email Address</label>
                       <div className="relative">
                         <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type="email" required placeholder="your@email.com"
+                        <input type="email" required aria-label="your@email.com" placeholder="your@email.com"
                           value={email} onChange={e => setEmail(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                       </div>
@@ -406,7 +406,7 @@ function LoginPageContent() {
                       <label className="text-xs font-semibold text-gray-700 block mb-1.5">Password</label>
                       <div className="relative">
                         <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type={showPass ? 'text' : 'password'} required placeholder="••••••••"
+                        <input type={showPass ? 'text' : 'password'} required aria-label="••••••••" placeholder="••••••••"
                           value={password} onChange={e => setPassword(e.target.value)}
                           className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                         <button type="button" onClick={() => setShowPass(!showPass)}

@@ -208,7 +208,7 @@ export default function EmployerMessagesPage() {
               <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                placeholder="Search chats & applicants..."
+                aria-label="Search chats & applicants" placeholder="Search chats & applicants..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-gray-100/80 border border-gray-200 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
@@ -381,7 +381,7 @@ export default function EmployerMessagesPage() {
               <form onSubmit={e => { e.preventDefault(); handleSendMessage(); }} className="p-3 sm:p-4 bg-white border-t border-gray-200 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Type your message to candidate..."
+                  aria-label="Type your message to candidate" placeholder="Type your message to candidate..."
                   value={inputText}
                   onChange={e => setInputText(e.target.value)}
                   className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"

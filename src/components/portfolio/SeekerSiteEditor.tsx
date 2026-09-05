@@ -983,7 +983,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('skills', () => ({ skills: updated }));
                             }}
                             className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
-                            placeholder="Skill Name (e.g. SEO Optimization)"
+                            aria-label="Skill Name (e.g. SEO Optimization)" placeholder="Skill Name (e.g. SEO Optimization)"
                           />
                           <button
                             type="button"
@@ -1061,7 +1061,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('experience', () => ({ experience: updated }));
                             }}
                             className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
-                            placeholder="Job Title / Role"
+                            aria-label="Job Title / Role" placeholder="Job Title / Role"
                           />
                           <button
                             type="button"
@@ -1085,7 +1085,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('experience', () => ({ experience: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="Company Name"
+                            aria-label="Company Name" placeholder="Company Name"
                           />
                           <input
                             type="text"
@@ -1098,7 +1098,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('experience', () => ({ experience: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="e.g. 2022 - Present"
+                            aria-label="e.g. 2022 - Present" placeholder="e.g. 2022 - Present"
                           />
                         </div>
 
@@ -1111,7 +1111,7 @@ export default function SeekerSiteEditor() {
                             updateSectionData('experience', () => ({ experience: updated }));
                           }}
                           className="w-full text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                          placeholder="Responsibilities and achievements..."
+                          aria-label="Responsibilities and achievements" placeholder="Responsibilities and achievements..."
                         />
                       </div>
                     ))}
@@ -1161,7 +1161,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('projects', () => ({ projects: updated }));
                             }}
                             className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
-                            placeholder="Project Title"
+                            aria-label="Project Title" placeholder="Project Title"
                           />
                           <button
                             type="button"
@@ -1184,7 +1184,7 @@ export default function SeekerSiteEditor() {
                             updateSectionData('projects', () => ({ projects: updated }));
                           }}
                           className="w-full text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                          placeholder="Project details & outcomes..."
+                          aria-label="Project details & outcomes" placeholder="Project details & outcomes..."
                         />
 
                         <div className="grid grid-cols-2 gap-2">
@@ -1197,7 +1197,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('projects', () => ({ projects: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="Live Preview URL (https://...)"
+                            aria-label="Live Preview URL (https://)" placeholder="Live Preview URL (https://...)"
                           />
                           <input
                             type="text"
@@ -1208,7 +1208,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('projects', () => ({ projects: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="Screenshot Image URL"
+                            aria-label="Screenshot Image URL" placeholder="Screenshot Image URL"
                           />
                         </div>
                       </div>
@@ -1257,7 +1257,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('education', () => ({ education: updated }));
                             }}
                             className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
-                            placeholder="Degree (e.g. B.Tech / MBA / B.Sc)"
+                            aria-label="Degree (e.g. B.Tech / MBA / B.Sc)" placeholder="Degree (e.g. B.Tech / MBA / B.Sc)"
                           />
                           <button
                             type="button"
@@ -1280,7 +1280,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('education', () => ({ education: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="Institution Name"
+                            aria-label="Institution Name" placeholder="Institution Name"
                           />
                           <input
                             type="text"
@@ -1291,7 +1291,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('education', () => ({ education: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="Graduation Year"
+                            aria-label="Graduation Year" placeholder="Graduation Year"
                           />
                         </div>
                       </div>
@@ -1340,7 +1340,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('certifications', () => ({ certifications: updated }));
                             }}
                             className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
-                            placeholder="Certificate Title"
+                            aria-label="Certificate Title" placeholder="Certificate Title"
                           />
                           <button
                             type="button"
@@ -1363,7 +1363,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('certifications', () => ({ certifications: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="Issuer (e.g. Google, IBM)"
+                            aria-label="Issuer (e.g. Google, IBM)" placeholder="Issuer (e.g. Google, IBM)"
                           />
                           <input
                             type="text"
@@ -1374,7 +1374,7 @@ export default function SeekerSiteEditor() {
                               updateSectionData('certifications', () => ({ certifications: updated }));
                             }}
                             className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
-                            placeholder="Verification Link (https://...)"
+                            aria-label="Verification Link (https://)" placeholder="Verification Link (https://...)"
                           />
                         </div>
                       </div>
@@ -1609,7 +1609,7 @@ export default function SeekerSiteEditor() {
                       updateField('seo.canonicalUrl', `https://thenijobs.com/portfolio/${clean}`);
                     }}
                     className="flex-1 px-3 py-2 text-base sm:text-xs font-mono font-bold rounded-r-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
-                    placeholder="your-name"
+                    aria-label="your-name" placeholder="your-name"
                   />
                 </div>
               </div>
@@ -1625,7 +1625,7 @@ export default function SeekerSiteEditor() {
                   value={site.seo?.title || ''}
                   onChange={e => updateField('seo.title', e.target.value)}
                   className="w-full px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
-                  placeholder="e.g. Anand Kumar - Senior Digital Marketer in Theni | Portfolio & Resume"
+                  aria-label="e.g. Anand Kumar - Senior Digital Marketer in Theni | Portfolio & Resume" placeholder="e.g. Anand Kumar - Senior Digital Marketer in Theni | Portfolio & Resume"
                 />
               </div>
 
@@ -1640,7 +1640,7 @@ export default function SeekerSiteEditor() {
                   value={site.seo?.description || ''}
                   onChange={e => updateField('seo.description', e.target.value)}
                   className="w-full px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden leading-relaxed"
-                  placeholder="e.g. Verified digital marketing professional with 3+ years experience in SEO, PPC & Social Media in Theni, Tamil Nadu. View projects & hire directly."
+                  aria-label="e.g. Verified digital marketing professional with 3+ years experience in SEO, PPC & Social Media in Theni, Tamil Nadu. View projects & hire directly." placeholder="e.g. Verified digital marketing professional with 3+ years experience in SEO, PPC & Social Media in Theni, Tamil Nadu. View projects & hire directly."
                 />
               </div>
 

@@ -395,7 +395,7 @@ export default function EmployerWebsitePage() {
                     value={aiGeneratedSeo.desc}
                     onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, desc: e.target.value })}
                     className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs text-slate-900"
-                    placeholder="Meta Description"
+                    aria-label="Meta Description" placeholder="Meta Description"
                   />
                 </div>
 

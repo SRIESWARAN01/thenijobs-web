@@ -149,7 +149,7 @@ export default function CompanyReviewsManager({ companyId }: CompanyReviewsManag
                     rows={2}
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
-                    placeholder="Write official company response..."
+                    aria-label="Write official company response" placeholder="Write official company response..."
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
                   />
                   <div className="flex justify-end gap-2">

@@ -190,7 +190,7 @@ export default function JobQuickUpdateModals({
                 <div className="flex gap-2">
                   <input type="text" value={newSkill} onChange={e => setNewSkill(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-                    className={inputCls} placeholder="Add a skill..." />
+                    className={inputCls} aria-label="Add a skill" placeholder="Add a skill..." />
                   <button onClick={addSkill} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 text-sm font-semibold hover:bg-blue-100 transition-all whitespace-nowrap">
                     Add
                   </button>

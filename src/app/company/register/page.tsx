@@ -286,7 +286,7 @@ export default function CompanyRegisterPage() {
                   <label htmlFor="company-register-mobile-number-91-update-phone-e-target-v" className="text-xs text-slate-600 font-medium block mb-1.5">Mobile Number *</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
-                    <input type="tel" maxLength={10} placeholder="Mobile number"
+                    <input type="tel" maxLength={10} aria-label="Mobile number" placeholder="Mobile number"
                       value={form.phone} onChange={e => update('phone', e.target.value)}
                       className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                   </div>
@@ -295,7 +295,7 @@ export default function CompanyRegisterPage() {
                   <label className="text-xs text-slate-600 font-medium block mb-1.5">Alternate Number</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
-                    <input type="tel" maxLength={10} placeholder="Optional"
+                    <input type="tel" maxLength={10} aria-label="Optional" placeholder="Optional"
                       value={form.alternatePhone} onChange={e => update('alternatePhone', e.target.value)}
                       className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                   </div>
@@ -310,7 +310,7 @@ export default function CompanyRegisterPage() {
                   <label htmlFor="company-register-whatsapp-number-91-update-whatsapp-e-tar" className="text-xs text-slate-600 font-medium block mb-1.5">WhatsApp Number</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
-                    <input type="tel" maxLength={10} placeholder="WhatsApp number"
+                    <input type="tel" maxLength={10} aria-label="WhatsApp number" placeholder="WhatsApp number"
                       value={form.whatsapp} onChange={e => update('whatsapp', e.target.value)}
                       className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                   </div>
@@ -425,7 +425,7 @@ export default function CompanyRegisterPage() {
               <div className="flex gap-2">
                 <input type="text" value={newService} onChange={e => setNewService(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addService()}
-                  placeholder="Add a service your business offers"
+                  aria-label="Add a service your business offers" placeholder="Add a service your business offers"
                   className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                 <button onClick={addService}
                   className="btn-gradient px-4 py-3 rounded-xl relative z-10 flex items-center gap-1 text-sm font-semibold">

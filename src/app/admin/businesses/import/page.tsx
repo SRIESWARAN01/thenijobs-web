@@ -606,7 +606,7 @@ export default function BulkCompanyImportPage() {
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Filter rows..."
+                  aria-label="Filter rows" placeholder="Filter rows..."
                   value={tableSearch}
                   onChange={(e) => setTableSearch(e.target.value)}
                   className="w-full pl-8 pr-3 py-1.5 text-base sm:text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-500"

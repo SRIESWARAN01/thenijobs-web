@@ -603,7 +603,7 @@ export default function BusinessesPage() {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by business name, phone, or contact person..."
+            aria-label="Search by business name, phone, or contact person" placeholder="Search by business name, phone, or contact person..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"

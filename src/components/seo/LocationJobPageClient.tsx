@@ -91,7 +91,7 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     name="search"
-                    placeholder="Search job title, skills..."
+                    aria-label="Search job title, skills" placeholder="Search job title, skills..."
                     className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm focus:bg-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>

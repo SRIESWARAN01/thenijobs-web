@@ -493,7 +493,7 @@ export default function SeekerProfilePage() {
               ))}
             </div>
             <div className="flex gap-2 mb-4">
-              <input type="text" value={newSkill} onChange={e => setNewSkill(e.target.value)} onKeyDown={e => e.key === 'Enter' && addSkill()} placeholder="Type a skill and press Enter..." className={inputCls + " flex-1"} />
+              <input type="text" value={newSkill} onChange={e => setNewSkill(e.target.value)} onKeyDown={e => e.key === 'Enter' && addSkill()} aria-label="Type a skill and press Enter" placeholder="Type a skill and press Enter..." className={inputCls + " flex-1"} />
               <button onClick={addSkill} className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-all" style={{ background: '#10B981' }}><Plus size={15} /></button>
             </div>
             <p className="text-xs text-slate-600 font-medium mb-2">Suggested:</p>
@@ -567,7 +567,7 @@ export default function SeekerProfilePage() {
               ))}
             </div>
             <div className="flex gap-2">
-              <input type="url" value={newPortfolioLink} onChange={e => setNewPortfolioLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPortfolioLink()} placeholder="Add portfolio URL..." className={inputCls + " flex-1"} />
+              <input type="url" value={newPortfolioLink} onChange={e => setNewPortfolioLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPortfolioLink()} aria-label="Add portfolio URL" placeholder="Add portfolio URL..." className={inputCls + " flex-1"} />
               <button onClick={addPortfolioLink} className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-all" style={{ background: '#10B981' }}><Plus size={15} /></button>
             </div>
           </div>

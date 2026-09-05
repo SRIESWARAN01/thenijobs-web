@@ -545,14 +545,14 @@ export default function CompanyProfilePage() {
                   <div className="w-full sm:flex-1 pb-1">
                     <input
                       type="text"
-                      placeholder="Enter Business Name *"
+                      aria-label="Enter Business Name *" placeholder="Enter Business Name *"
                       value={company.name}
                       onChange={(e) => update('name', e.target.value)}
                       className="text-base sm:text-xl font-black text-gray-900 bg-gray-50/60 sm:bg-transparent rounded-xl sm:rounded-none px-3 py-2 sm:p-0 border sm:border-0 border-gray-200 sm:border-b sm:border-transparent hover:border-gray-300 focus:border-blue-600 focus:outline-none w-full text-center sm:text-left"
                     />
                     <input
                       type="text"
-                      placeholder="e.g. Leading Spices & Agro Manufacturer in Theni"
+                      aria-label="e.g. Leading Spices & Agro Manufacturer in Theni" placeholder="e.g. Leading Spices & Agro Manufacturer in Theni"
                       value={company.tagline}
                       onChange={(e) => update('tagline', e.target.value)}
                       className="text-base sm:text-xs text-gray-500 bg-gray-50/40 sm:bg-transparent rounded-xl sm:rounded-none px-3 py-1.5 sm:p-0 border sm:border-0 border-gray-200 sm:border-b sm:border-transparent hover:border-gray-300 focus:border-blue-600 focus:outline-none w-full mt-1.5 text-center sm:text-left font-medium"
@@ -572,7 +572,7 @@ export default function CompanyProfilePage() {
                   rows={5}
                   value={company.description}
                   onChange={(e) => handleDescChange(e.target.value)}
-                  placeholder="Describe your company, products, work culture, services, and career opportunities..."
+                  aria-label="Describe your company, products, work culture, services, and career opportunities" placeholder="Describe your company, products, work culture, services, and career opportunities..."
                   className="w-full p-3.5 rounded-2xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none transition-all resize-none leading-relaxed font-medium"
                 />
                 <div className="flex justify-end mt-1">
@@ -595,7 +595,7 @@ export default function CompanyProfilePage() {
                     <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="tel"
-                      placeholder="+91 93605 19460"
+                      aria-label="+91 93605 19460" placeholder="+91 93605 19460"
                       value={company.phone}
                       onChange={(e) => update('phone', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium font-mono"
@@ -608,7 +608,7 @@ export default function CompanyProfilePage() {
                     <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="email"
-                      placeholder="contact@company.com"
+                      aria-label="contact@company.com" placeholder="contact@company.com"
                       value={company.email}
                       onChange={(e) => update('email', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
@@ -621,7 +621,7 @@ export default function CompanyProfilePage() {
                     <MessageCircle size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500" />
                     <input
                       type="tel"
-                      placeholder="+91 70948 26886"
+                      aria-label="+91 70948 26886" placeholder="+91 70948 26886"
                       value={company.whatsapp}
                       onChange={(e) => update('whatsapp', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium font-mono"
@@ -634,7 +634,7 @@ export default function CompanyProfilePage() {
                     <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="url"
-                      placeholder="https://www.example.com"
+                      aria-label="https://www.example.com" placeholder="https://www.example.com"
                       value={company.website}
                       onChange={(e) => update('website', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
@@ -822,14 +822,14 @@ export default function CompanyProfilePage() {
                   <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-3 animate-fade-in">
                     <input
                       type="text"
-                      placeholder="Branch name (e.g. Cumbum Branch)"
+                      aria-label="Branch name (e.g. Cumbum Branch)" placeholder="Branch name (e.g. Cumbum Branch)"
                       value={newBranch.name}
                       onChange={(e) => setNewBranch((p) => ({ ...p, name: e.target.value }))}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                     <input
                       type="text"
-                      placeholder="Branch address"
+                      aria-label="Branch address" placeholder="Branch address"
                       value={newBranch.address}
                       onChange={(e) => setNewBranch((p) => ({ ...p, address: e.target.value }))}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"

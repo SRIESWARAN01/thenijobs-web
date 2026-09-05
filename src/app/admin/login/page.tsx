@@ -87,7 +87,7 @@ export default function AdminLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@thenijobs.com"
+                  aria-label="admin@thenijobs.com" placeholder="admin@thenijobs.com"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
                 />
               </div>
@@ -102,7 +102,7 @@ export default function AdminLoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  aria-label="••••••••" placeholder="••••••••"
                   className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)}

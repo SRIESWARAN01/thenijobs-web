@@ -208,7 +208,7 @@ export default function MarketplacePage() {
                 <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search products, AC repair, hospitals, groceries, businesses..."
+                  aria-label="Search products, AC repair, hospitals, groceries, businesses" placeholder="Search products, AC repair, hospitals, groceries, businesses..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium"

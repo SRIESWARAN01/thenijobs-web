@@ -686,7 +686,7 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
               <textarea
                 value={hrNote}
                 onChange={(e) => setHrNote(e.target.value)}
-                placeholder="Write private notes about this candidate (visible only to your hiring team)..."
+                aria-label="Write private notes about this candidate (visible only to your hiring team)" placeholder="Write private notes about this candidate (visible only to your hiring team)..."
                 className="w-full p-3 bg-white border border-amber-200 rounded-2xl text-base sm:text-xs text-gray-900 placeholder-amber-700/50 focus:outline-none focus:border-amber-400 resize-none"
                 rows={2}
               />

@@ -350,7 +350,7 @@ export default function UsersPage() {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name, email, or phone..."
+            aria-label="Search by name, email, or phone" placeholder="Search by name, email, or phone..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
@@ -504,7 +504,7 @@ export default function UsersPage() {
                   <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter new password (min 6 chars)..."
+                    aria-label="Enter new password (min 6 chars)" placeholder="Enter new password (min 6 chars)..."
                     value={editForm.newPassword}
                     onChange={e => setEditForm({ ...editForm, newPassword: e.target.value })}
                     className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"

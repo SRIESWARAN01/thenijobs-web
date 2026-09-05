@@ -462,7 +462,7 @@ export default function PostJobPage() {
                   value={newSkill}
                   onChange={e => setNewSkill(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-                  placeholder="e.g. Tally, GST, Photoshop, Java"
+                  aria-label="e.g. Tally, GST, Photoshop, Java" placeholder="e.g. Tally, GST, Photoshop, Java"
                   className={inputCls + " flex-1"}
                 />
                 <button

@@ -106,7 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="px-3 py-2.5 border-b border-gray-50">
             <div className="relative">
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input placeholder="Quick search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-base sm:text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-all" />
+              <input aria-label="Quick search" placeholder="Quick search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-base sm:text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-all" />
             </div>
           </div>
         )}

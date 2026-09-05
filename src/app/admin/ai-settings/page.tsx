@@ -286,7 +286,7 @@ export default function AdminAISettingsPage() {
                       type={isShowKey ? 'text' : 'password'}
                       value={provider.apiKey}
                       onChange={e => updateProvider(name, { apiKey: e.target.value })}
-                      placeholder={`Enter ${info.label} API key...`}
+                      aria-label="Enter ${info.label} API key" placeholder={`Enter ${info.label} API key...`}
                       className="w-full px-3 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-mono text-xs"
                     />
                     <button

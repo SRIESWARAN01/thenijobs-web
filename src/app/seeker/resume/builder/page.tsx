@@ -593,7 +593,7 @@ Return strictly valid JSON with format:
               type="text"
               value={targetRole}
               onChange={e => setTargetRole(e.target.value)}
-              placeholder="e.g. Digital Marketing, React Developer, Accountant..."
+              aria-label="e.g. Digital Marketing, React Developer, Accountant" placeholder="e.g. Digital Marketing, React Developer, Accountant..."
               className="px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-base sm:text-xs text-white placeholder-blue-200/60 focus:outline-none focus:bg-white/20 w-full sm:w-64 font-medium"
             />
             <button
@@ -924,7 +924,7 @@ Return strictly valid JSON with format:
                     value={newSkill}
                     onChange={e => setNewSkill(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addSkill()}
-                    placeholder="Type a skill (e.g., Tally Prime, React.js, Sales Management, MS Excel)..."
+                    aria-label="Type a skill (e.g., Tally Prime, React.js, Sales Management, MS Excel)" placeholder="Type a skill (e.g., Tally Prime, React.js, Sales Management, MS Excel)..."
                     className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none focus:bg-white focus:border-blue-500"
                   />
                   <button onClick={addSkill} className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer">

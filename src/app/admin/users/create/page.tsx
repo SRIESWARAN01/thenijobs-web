@@ -11,6 +11,7 @@ import { logActivity } from '@/lib/firebase/firestoreService';
 import { useAuth } from '@/contexts/AuthContext';
 import { TN_DISTRICTS } from '@/lib/types';
 import type { UserRole } from '@/lib/types';
+import { Button, PageHeader } from '@/components/dashboard';
 
 type CreateRole = 'job_seeker' | 'employer' | 'business_owner';
 
@@ -110,18 +111,20 @@ export default function AdminCreateUserPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/admin/users" className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
-          <ArrowLeft size={16} />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Create User Account
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manually create a company or job seeker account</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Create user account"
+        description="Manually create a company or job seeker account."
+        breadcrumbs={[
+          { label: 'Admin', href: '/admin/dashboard' },
+          { label: 'Users', href: '/admin/users' },
+          { label: 'Create' },
+        ]}
+        actions={
+          <Link href="/admin/users">
+            <Button variant="secondary"><ArrowLeft size={15} /> Back to users</Button>
+          </Link>
+        }
+      />
 
       {/* Success Result */}
       {result?.success && (

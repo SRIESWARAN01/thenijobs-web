@@ -8,6 +8,7 @@ import { CreditCard, Check, ShieldCheck, Zap, Shield, Crown, Building2, Loader2,
 import Link from 'next/link';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
+import { PageHeader } from '@/components/dashboard';
 
 export default function EmployerBillingPage() {
   const { user } = useAuth();
@@ -68,11 +69,11 @@ export default function EmployerBillingPage() {
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-4 sm:space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Pricing &amp; Subscriptions</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Manage your annual recruitment subscription and feature unlocks</p>
-      </div>
+      <PageHeader
+        title="Pricing & subscriptions"
+        description="Your annual recruitment subscription and feature unlocks."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Billing' }]}
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">

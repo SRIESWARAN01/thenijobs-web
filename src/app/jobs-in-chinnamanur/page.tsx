@@ -1,6 +1,7 @@
 import LocationJobPageClient from '@/components/seo/LocationJobPageClient';
 import { createLocationMetadata } from '@/lib/seo/locationPageFactory';
 import { generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 export const metadata = createLocationMetadata('chinnamanur');
 
@@ -15,7 +16,7 @@ export default function ChinnamanurJobsPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(breadcrumbSchema) }}
       />
       <LocationJobPageClient locationSlug="chinnamanur" />
     </>

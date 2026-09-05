@@ -16,6 +16,7 @@ import FAQSection from '@/components/home/FAQSection';
 import FinalCTA from '@/components/home/FinalCTA';
 import HomeFooter from '@/components/home/HomeFooter';
 import ClientFloatingWidgets from '@/components/home/ClientFloatingWidgets';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 export const metadata: Metadata = {
   title: 'THENIJOBS – Latest Jobs in Theni | Private Jobs, Fresher Jobs & Vacancies',
@@ -119,7 +120,7 @@ export default function HomePage() {
     <main className="min-h-screen" style={{ background: '#F8FAFC' }}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(homeStructuredData) }}
       />
       <Header />
       <AnnouncementBar />

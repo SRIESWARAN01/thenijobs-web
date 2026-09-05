@@ -1,4 +1,5 @@
 import { ChevronDown } from 'lucide-react';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 const faqs = [
   {
@@ -50,7 +51,7 @@ export default function FAQSection() {
     <section className="py-14" style={{ background: '#F8FAFC' }}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(faqStructuredData) }}
       />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">

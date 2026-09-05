@@ -17,6 +17,7 @@ import { getPortfolioSectionsForPlan } from '@/lib/plans';
 import type { PortfolioSite, PortfolioSection, PortfolioTheme, EditorState } from '@/lib/types/portfolio';
 import { DEFAULT_EDITOR_STATE, DEVICE_SIZES, FONT_OPTIONS } from '@/lib/types/portfolio';
 import TemplateRenderer from '@/components/portfolio/TemplateRenderer';
+import { Switch } from '@/components/dashboard';
 
 type EditorTab = 'sections' | 'theme' | 'branding' | 'seo';
 
@@ -382,10 +383,11 @@ export default function WebsiteEditorPage() {
                       <p className="text-xs font-semibold text-gray-900">Google Visibility</p>
                       <p className="text-[10px] text-gray-500">Allow search engines to index your site</p>
                     </div>
-                    <button onClick={() => updateSiteField('googleIndex', !site.googleIndex)}
-                      className={`w-11 h-6 rounded-full transition-all relative ${site.googleIndex ? 'bg-emerald-500' : 'bg-gray-300'}`}>
-                      <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all ${site.googleIndex ? 'left-[22px]' : 'left-0.5'}`} />
-                    </button>
+                    <Switch
+                      checked={site.googleIndex}
+                      onChange={(next) => updateSiteField('googleIndex', next)}
+                      label="Allow search engines to index your site"
+                    />
                   </div>
                 </div>
               </div>

@@ -17,6 +17,7 @@ import { useCollection } from '@/hooks/useFirestore';
 import { where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { INDUSTRY_THEMES, type IndustryTemplateKey } from '@/components/company/CompanyLandingWebsite';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 
 export default function EmployerWebsitePage() {
   const { user } = useAuth();
@@ -144,27 +145,20 @@ export default function EmployerWebsitePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans text-slate-900" style={{ fontFamily: "'Inter', sans-serif" }}>
-      
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Two-Layer Company Website Manager
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Your business is published across two distinct experiences: a high-speed Directory Profile and a standalone Landing Website.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={runAIAssistant}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-        >
-          <Bot size={15} /> AI Content Generator
-        </button>
-      </div>
+    <PageShell className="max-w-6xl pb-16">
+      <PageHeader
+        title="Two-layer company website manager"
+        description="Your business is published across two distinct experiences: a high-speed directory profile and a standalone landing website."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Website' }]}
+        actions={
+          <Button
+            onClick={runAIAssistant}
+            className="border-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+          >
+            <Bot size={15} /> AI content generator
+          </Button>
+        }
+      />
 
       {/* ── Verification Notice ── */}
       {!isVerified && (
@@ -433,6 +427,6 @@ export default function EmployerWebsitePage() {
         </div>
       )}
 
-    </div>
+    </PageShell>
   );
 }

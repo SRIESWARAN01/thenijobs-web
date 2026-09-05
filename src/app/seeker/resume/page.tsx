@@ -13,6 +13,7 @@ import { useUploadFile, useDeleteFile } from '@/hooks/useStorage';
 import { db } from '@/lib/firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
+import { PageHeader, PageShell } from '@/components/dashboard';
 
 interface ResumeFile {
   id: string;
@@ -128,12 +129,12 @@ export default function ResumeManagementPage() {
   };
 
   return (
-    <div className="animate-fade-in-up space-y-6 max-w-4xl mx-auto font-outfit text-gray-900">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-xl font-outfit font-bold text-gray-900">Resume Management</h1>
-        <p className="text-sm text-slate-500 mt-1">Upload, manage, and build your professional resume</p>
-      </div>
+    <PageShell className="max-w-4xl">
+      <PageHeader
+        title="Resume management"
+        description="Upload, manage and build your professional resume."
+        breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'Resume' }]}
+      />
 
       {uploading && (
         <div className="glass-card rounded-2xl p-4 border border-emerald-200 bg-emerald-50 flex items-center gap-3">
@@ -367,6 +368,6 @@ export default function ResumeManagementPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

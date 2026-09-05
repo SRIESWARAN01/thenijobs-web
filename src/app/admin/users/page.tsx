@@ -5,7 +5,7 @@ import {
   Users, Search, Download, ShieldCheck, Ban, Trash2,
   UserCheck, AlertCircle, Loader2, CheckCircle, XCircle,
   Plus, X, Phone, Mail, MapPin, Shield, Clock,
-  Edit3, Key, Eye, EyeOff
+  Edit3
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import {
@@ -14,8 +14,9 @@ import {
 } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { updateDocument, deleteDocument, verifyUser } from '@/lib/firebase/firestoreService';
-import { db } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
 import { doc, setDoc, serverTimestamp, collection as fbCollection } from 'firebase/firestore';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { useToast } from '@/contexts/ToastContext';
 
 interface UserDoc {
@@ -29,7 +30,6 @@ interface UserDoc {
   isVerified?: boolean;
   createdAt?: any;
   phone?: string;
-  tempPassword?: string;
 }
 
 const ROLE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
@@ -83,11 +83,10 @@ export default function UsersPage() {
     role: 'job_seeker',
     district: 'Theni',
     status: 'active',
-    newPassword: '',
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [resetSending, setResetSending] = useState(false);
 
   const openEditModal = (u: UserDoc) => {
     setEditingUser(u);
@@ -98,20 +97,14 @@ export default function UsersPage() {
       role: u.role || 'job_seeker',
       district: u.district || 'Theni',
       status: u.status || 'active',
-      newPassword: u.tempPassword || '',
     });
     setEditError('');
-    setShowPassword(false);
   };
 
   const handleSaveUserEdit = async () => {
     if (!editingUser) return;
     if (!editForm.displayName.trim() || !editForm.email.trim()) {
       setEditError('Name and email are required.');
-      return;
-    }
-    if (editForm.newPassword && editForm.newPassword.length < 6) {
-      setEditError('Password must be at least 6 characters.');
       return;
     }
     setEditLoading(true);
@@ -127,17 +120,31 @@ export default function UsersPage() {
         status: editForm.status,
         updatedAt: serverTimestamp(),
       };
-      if (editForm.newPassword.trim()) {
-        updatePayload.tempPassword = editForm.newPassword.trim();
-      }
       await updateDocument('users', editingUser.id, updatePayload);
-      toast.success('User profile & credentials updated successfully!');
+      toast.success('User profile updated successfully!');
       setEditingUser(null);
     } catch (e: any) {
       console.error('Error updating user:', e);
       setEditError(e.message || 'Failed to update user.');
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  // Firebase Auth's client SDK cannot set another user's password directly — that needs
+  // the Admin SDK, which this app has nowhere. Sending a real reset email is the one
+  // password-recovery action a client app can genuinely perform on someone else's behalf.
+  const handleSendPasswordReset = async () => {
+    if (!editingUser?.email) return;
+    setResetSending(true);
+    try {
+      await sendPasswordResetEmail(auth, editingUser.email);
+      toast.success(`Password reset email sent to ${editingUser.email}.`);
+    } catch (e: any) {
+      console.error('Password reset email error:', e);
+      toast.error(e.message || 'Failed to send password reset email.');
+    } finally {
+      setResetSending(false);
     }
   };
 
@@ -489,28 +496,20 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-gray-700">Account Password / Temp Password</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-[11px] font-semibold text-blue-600 flex items-center gap-1 cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
-                    <span>{showPassword ? 'Hide' : 'Show'}</span>
-                  </button>
-                </div>
-                <div className="relative">
-                  <Key size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    aria-label="Enter new password (min 6 chars)" placeholder="Enter new password (min 6 chars)..."
-                    value={editForm.newPassword}
-                    onChange={e => setEditForm({ ...editForm, newPassword: e.target.value })}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
-                  />
-                </div>
-                <p className="text-[10px] text-gray-500 mt-1">Set a temporary or updated password for this user.</p>
+                <label className="text-xs font-bold text-gray-700 block mb-1">Password</label>
+                <button
+                  type="button"
+                  onClick={handleSendPasswordReset}
+                  disabled={resetSending || !editingUser?.email}
+                  className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 hover:border-blue-600 hover:text-blue-600 disabled:opacity-50 cursor-pointer"
+                >
+                  {resetSending ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                  <span>{resetSending ? 'Sending…' : 'Send password reset email'}</span>
+                </button>
+                <p className="text-[10px] text-gray-500 mt-1">
+                  This app cannot set another user&apos;s password directly — it sends them a real
+                  Firebase reset-link email to their registered address instead.
+                </p>
               </div>
 
               <div className="grid grid-cols-3 gap-2.5">

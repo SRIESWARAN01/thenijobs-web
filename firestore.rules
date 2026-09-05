@@ -462,9 +462,15 @@ service cloud.firestore {
 
     // ===== USERNAMES (Reservation) =====
     match /usernames/{username} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAdmin();
+      // RULES-6: this had `allow read: if true` and an authenticated create rule, but a
+      // repository-wide search finds NO reference to this collection anywhere in src/ — no
+      // read, no write, in either direction. The same shape RULES-2 found in
+      // whatsappApplications and RULES-3 found in certificates/uploads: a rule block written
+      // for a feature that was never built, left exactly as open as the day it was drafted
+      // because nothing exercises it and nothing complains. Default-denied rather than left
+      // open for a feature that does not exist; a real implementation would add a rule shaped
+      // like the ones this collection's siblings already use.
+      allow read, write: if false;
     }
 
     // ===== COUNTERS (THENIJOBS ID Generation) =====
@@ -539,7 +545,15 @@ service cloud.firestore {
 
     // ===== COMPANY FOLLOWS =====
     match /companyFollows/{followId} {
-      allow read:   if true;
+      // RULES-6: read was `if true` — the only user-relationship collection in this file with
+      // no ownership check at all. savedJobs, jobAlerts, notifications and subscriptions all
+      // gate read on `resource.data.userId == request.auth.uid`; this one let any stranger
+      // learn which real user follows which real company, confirmed against the one live
+      // document in production with a plain unauthenticated read. Every call site in
+      // firestoreService.ts already queries by the caller's own userId, and the one UI caller
+      // only runs when a uid is present, so this closes what a stranger could do without
+      // changing what a signed-in user already does.
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow update: if isAdmin();
@@ -576,8 +590,14 @@ service cloud.firestore {
 
     // ===== SEO & KEYWORD ANALYTICS =====
     match /seoAnalytics/{docId} {
-      allow read:   if true;
-      allow write:  if isAdmin();   // RULES-1: was any authenticated user (security.md S-12)
+      // RULES-6: read was `if true` while write was already admin-only (RULES-1's own fix to
+      // this same block). A repository-wide search finds no reference to this collection
+      // anywhere in src/ — nothing reads it, nothing ever will have written it beyond that
+      // one admin-only path, and nothing depends on the public read. Matched to the write
+      // rule it already had: admin-only, not fully closed, since a genuine admin analytics
+      // feature is a plausible future use for a name like this one, unlike usernames above.
+      allow read: if isAdmin();
+      allow write: if isAdmin();
     }
 
     // ===== COMPANY SLUG RESERVATIONS (RULES-1, D-SLUG) =====

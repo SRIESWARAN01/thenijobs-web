@@ -11,7 +11,50 @@ import {
 } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit as fbLimit } from 'firebase/firestore';
+
+const PUBLIC_LIST_LIMIT = 500;
 import { LOCATIONS_DATA, CATEGORIES_LIST } from './locationData';
+
+// SEO-6: `.includes(categorySlug)` on raw job text let a two-letter slug like 'it' match
+// anywhere the letters appeared together — 'hospitality', 'security' and 'kitchen' all
+// contain the substring 'it', so a Hospitality, Security or Kitchen job could be listed on
+// the IT & Software category page. Confirmed against the real category list: 'it' is a
+// substring of both 'hospitality' and 'security'.
+//
+// A word-boundary match can only be STRICTER than `.includes()`, never looser: anything that
+// matched as a whole word before still matches, and only mid-word accidents like the ones
+// above are excluded. It does not fix recall (a job titled "Driver Required" still will not
+// match the slug 'driving', because the two words share no substring at all) — that is a
+// synonym-expansion problem, the kind /jobs/page.tsx solves with RULE_BASED_SYNONYMS, and it
+// is a different, larger fix than the false-positive bug this one closes.
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&');
+}
+function matchesCategoryWord(text: string | undefined, categorySlug: string): boolean {
+  if (!text) return false;
+  return new RegExp(`\\b${escapeRegex(categorySlug)}\\b`, 'i').test(text);
+}
+
+// SEO-6: real job documents store jobType as 'full_time' / 'part_time' (underscore), while the
+// category slugs in the URL and in CATEGORIES_LIST are 'full-time' / 'part-time' (hyphen).
+// `.includes('full-time')` against 'full_time' never matches — confirmed against the live
+// database, both real jobs are 'full_time'. So /jobs-in-*/full-time and /jobs-in-*/part-time
+// could never show a job by jobType at all, only by an exact literal hyphen in a title, which
+// no real title has. Comparing on the normalised form fixes that without loosening anything
+// else: it is an exact-equality check, not a broader substring test.
+// 'work-from-home' has no hyphen/underscore relationship to the raw value at all — the app's
+// own jobType vocabulary (src/app/jobs/page.tsx:371-372) stores it as 'remote' or 'wfh'. This
+// is the one explicit exception, grounded in that existing vocabulary rather than invented.
+const JOB_TYPE_SLUG_ALIASES: Record<string, string[]> = {
+  'work-from-home': ['remote', 'wfh'],
+};
+function jobTypeMatchesSlug(jobType: string | undefined, categorySlug: string): boolean {
+  if (!jobType) return false;
+  const normalized = jobType.toLowerCase().replace(/_/g, '-');
+  if (normalized === categorySlug.toLowerCase()) return true;
+  const aliases = JOB_TYPE_SLUG_ALIASES[categorySlug.toLowerCase()];
+  return aliases ? aliases.includes(jobType.toLowerCase()) : false;
+}
 
 export default function CategoryJobPageClient({
   locationSlug,
@@ -42,7 +85,12 @@ export default function CategoryJobPageClient({
           collection(db, 'jobs'),
           where('isActive', '==', true),
           where('status', '==', 'active'),
-          fbLimit(15)
+          // SEO-6: was fbLimit(15). Filtering happens client-side after this fetch, so a
+          // genuine match beyond the 15th most-recent job was silently missed. Matches
+          // PUBLIC_LIST_LIMIT, the cap PERF-3 set on /jobs and /businesses for the same
+          // reason: bounded, but generous enough that a real result isn't dropped before
+          // the filter even sees it.
+          fbLimit(PUBLIC_LIST_LIMIT)
         );
         const snap = await getDocs(q);
         const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -63,9 +111,9 @@ export default function CategoryJobPageClient({
           const matchLoc = !locationSlug ||
             (j.location && j.location.toLowerCase().includes(locationSlug)) ||
             (j.district && j.district.toLowerCase().includes(locationSlug));
-          const matchCat = (j.title && j.title.toLowerCase().includes(categorySlug)) ||
-            (j.category && j.category.toLowerCase().includes(categorySlug)) ||
-            (j.jobType && j.jobType.toLowerCase().includes(categorySlug));
+          const matchCat = matchesCategoryWord(j.title, categorySlug) ||
+            matchesCategoryWord(j.category, categorySlug) ||
+            jobTypeMatchesSlug(j.jobType, categorySlug);
           return matchLoc && matchCat;
         });
         setJobs(filtered);

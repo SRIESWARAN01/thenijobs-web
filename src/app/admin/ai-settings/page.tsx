@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
 import { PROVIDER_MODELS, DEFAULT_AI_CONFIG } from '@/lib/ai/providers/index';
 import type { AIProviderConfig, ProviderEntry } from '@/lib/ai/providers/index';
 import { Button, Card, CardBody, PageHeader, PageShell, Switch } from '@/components/dashboard';
@@ -98,9 +98,23 @@ export default function AdminAISettingsPage() {
     setTestResults(prev => ({ ...prev, [providerName]: undefined as any }));
 
     try {
+      // AI-2: the route now requires a verified admin, so the token has to be sent. Without
+      // this the button would simply stop working — the endpoint used to accept anyone.
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) {
+        setTestResults(prev => ({
+          ...prev,
+          [providerName]: { success: false, error: 'Your session has expired. Sign in again to test a connection.' } as any,
+        }));
+        return;
+      }
+
       const response = await fetch('/api/ai/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           provider: providerName,
           apiKey: provider.apiKey,

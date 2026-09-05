@@ -232,14 +232,28 @@ service cloud.firestore {
     // ===== REVIEWS =====
     match /reviews/{reviewId} {
       allow read: if true;
-      // P0 FIX: reviewerId must match authenticated user
+      // RULES-7: this block checked `reviewerId`, a field from the unused `Review` type
+      // (types/index.ts) that nothing ever writes. The only write path,
+      // CompanyReviewsSection.tsx's handleSubmitReview(), uses `userId` — the actively-used
+      // `CompanyReview` type's own field — so every submission was denied by
+      // hasAll(['reviewerId', ...]) failing on a key that was never present.
       allow create: if isAuthenticated() &&
-        request.resource.data.reviewerId == request.auth.uid &&
-        request.resource.data.keys().hasAll(['reviewerId', 'companyId', 'rating']);
-      allow update: if isAuthenticated() && (resource.data.reviewerId == request.auth.uid || isAdmin()) &&
-        // Cannot change companyId or reviewerId after posting
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['reviewerId', 'companyId']);
-      allow delete: if isAuthenticated() && (resource.data.reviewerId == request.auth.uid || isAdmin());
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['userId', 'companyId', 'rating']);
+      // RULES-7: same field-name fix, plus a real second gap — CompanyReviewsManager.tsx
+      // lets the reviewed company's owner reply (companyReply) or flag (adminNote) a review
+      // about their own company; the original rule authorised only the review's own author
+      // or an admin, denying that reply feature for the identical reason as the badge
+      // toggles this ruleset already grants the employer side elsewhere (RULES-4). Scoped
+      // narrowly: a company owner may change only companyReply/adminNote, nothing else.
+      allow update: if isAuthenticated() && (
+        (resource.data.userId == request.auth.uid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'companyId'])) ||
+        (isCompanyOwner(resource.data.companyId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['companyReply', 'adminNote'])) ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ===== SEEKER PROFILES =====

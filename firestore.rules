@@ -425,7 +425,26 @@ service cloud.firestore {
 
     // ===== PORTFOLIO SITES =====
     match /portfolioSites/{siteId} {
-      allow read: if true; // Public site viewing (filtering by status handled in query/client)
+      // RULES-5: this was `allow read: if true`, with a comment admitting that filtering by
+      // status was "handled in query/client" — meaning nowhere, as far as the database is
+      // concerned. A plain unauthenticated REST read against this collection, carrying only
+      // the public web API key every page already ships, returned full draft content in
+      // production: sections, branding, theme, seo — everything an owner had not chosen to
+      // publish. PublicPortfolioPageClient.tsx checks `site.status !== 'published'` and shows
+      // "currently in draft mode" instead of the content, but that check runs in the browser,
+      // after the data has already left the server. Anything that is not that one component —
+      // a REST call, a devtools query — read the draft anyway.
+      //
+      // The static export was never the exposure: generateStaticParams filters
+      // status == 'published' in the query itself at build time, so no draft was ever baked
+      // into a static page. The gap was purely the rule.
+      //
+      // A draft is now readable only by its own owner or an admin, matching the one real
+      // authenticated case this app has — the owner previewing their own unpublished site.
+      // There is no unauthenticated draft-preview-link feature to break; checked before
+      // assuming.
+      allow read: if resource.data.status == 'published' ||
+        (isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin()));
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
       allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
       allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());

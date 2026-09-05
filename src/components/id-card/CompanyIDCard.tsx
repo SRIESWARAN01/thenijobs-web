@@ -44,6 +44,7 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
   
   const companyId = `TNJ-C-${company.id.slice(0, 8).toUpperCase()}`;
   const portfolioUrl = `${BASE_URL}/company/${company.slug || slugifyCompany(company.name || company.id)}`;
+  const isVerified = company.verificationStatus === 'verified';
   const initial = company.name?.[0]?.toUpperCase() || 'C';
   const growthSlogan = getCompanyGrowthSlogan(company);
   const contactName = company.contactPerson || company.ownerName || 'Representative';
@@ -104,7 +105,7 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
   }, [company.slug, flipped, downloading, toast]);
 
   const handleShareWhatsApp = () => {
-    const text = `📇 *${company.name}* - Official Digital Visiting Card\n📍 ${company.district || 'Theni'}, Tamil Nadu\n💬 "${growthSlogan}"\n\n🌐 View our verified profile, catalog & openings on THENIJOBS:\n${portfolioUrl}`;
+    const text = `📇 *${company.name}* - Digital Visiting Card\n📍 ${company.district || 'Theni'}, Tamil Nadu\n💬 "${growthSlogan}"\n\n🌐 View our${isVerified ? ' verified' : ''} profile, catalog & openings on THENIJOBS:\n${portfolioUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -133,13 +134,15 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
             }}
           >
             <div className="relative h-full p-4 sm:p-5 flex flex-col justify-between text-white">
-              {/* Top Row: Subtle THENIJOBS Verified Partner Badge */}
+              {/* Top Row: Subtle THENIJOBS Badge */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20">
                   <div className="w-4 h-4 rounded-md bg-white p-0.5 flex items-center justify-center shadow-xs">
                     <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
                   </div>
-                  <span className="text-[9px] font-bold text-blue-100 tracking-wide">Verified Partner · THENIJOBS</span>
+                  <span className="text-[9px] font-bold text-blue-100 tracking-wide">
+                    {isVerified ? 'Verified Partner · THENIJOBS' : 'Digital Visiting Card · THENIJOBS'}
+                  </span>
                 </div>
 
                 <span className="text-[9px] font-mono font-bold bg-black/25 px-2.5 py-0.5 rounded-full border border-white/15 text-blue-200">

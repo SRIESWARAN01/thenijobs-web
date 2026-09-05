@@ -10,7 +10,7 @@ import { getCompanyGrowthSlogan } from '@/lib/branding/slogans';
 import { useToast } from '@/contexts/ToastContext';
 import { slugifyCompany } from '@/lib/companySlug';
 
-interface CompanyIDCardProps {
+export interface CompanyIDCardProps {
   company: {
     id: string;
     name: string;

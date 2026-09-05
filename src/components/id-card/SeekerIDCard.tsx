@@ -6,7 +6,7 @@ import QRCodeGenerator from './QRCodeGenerator';
 import { getSeekerGrowthSlogan } from '@/lib/branding/slogans';
 import { useToast } from '@/contexts/ToastContext';
 
-interface SeekerIDCardProps {
+export interface SeekerIDCardProps {
   seeker: {
     uid: string;
     name: string;

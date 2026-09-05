@@ -135,6 +135,10 @@
   ],
   "rewrites": [
     {
+      "source": "/employer/jobs/:path+",
+      "destination": "/employer/jobs/_fallback"
+    },
+    {
       "source": "/jobs/:path+",
       "destination": "/jobs/_fallback"
     },

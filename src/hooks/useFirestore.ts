@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   collection,
   doc,
@@ -9,6 +9,7 @@ import {
   deleteDoc,
   onSnapshot,
   query,
+  queryEqual,
   type QueryConstraint,
   type DocumentData,
   type Query,
@@ -60,33 +61,58 @@ export function useCollection<T extends DocumentData>(
   queryConstraints: QueryConstraint[] = [],
   options: UseCollectionOptions = {},
 ): UseCollectionReturn<T> {
+  const skip = options.skip ?? false;
+
   const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(!options.skip);
+  const [loading, setLoading] = useState(!skip);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Serialise constraints so the effect doesn't re-run on every render
-  // when the caller constructs constraints inline.
-  const constraintsRef = useRef(queryConstraints);
-  constraintsRef.current = queryConstraints;
+  // FIX-3 — re-subscribe when the query actually changes.
+  //
+  // This used to stash the caller's constraints in a ref and depend only on
+  // [collectionName, options.skip, refreshKey], so a caller that changed a filter kept
+  // streaming results from the query built on the first run. It was almost always invisible,
+  // because every call site pairs its constraint with a `skip` that flips at the same moment
+  // the constraint becomes real — but invisible is not absent, and /employer/jobs/[id] now
+  // changes jobId while skip stays false the whole time.
+  //
+  // The query is rebuilt every render, which is pure object construction and no I/O, and then
+  // compared with the one we are actually subscribed to using the SDK's own structural
+  // comparison. A caller that rebuilds an identical constraint array every render — which is
+  // what all of them do — produces an equal query and changes nothing. Only a genuinely
+  // different query replaces the listener.
+  let nextQuery: Query<DocumentData> | null = null;
+  let buildError: string | null = null;
+  if (!skip) {
+    try {
+      nextQuery = query(collection(db, collectionName), ...queryConstraints);
+    } catch (err) {
+      // Previously an impossible constraint combination threw inside the effect. Building the
+      // query during render would make the same mistake crash the tree instead, so it is
+      // reported the same way a listener error is.
+      buildError = err instanceof Error ? err.message : 'Invalid query';
+    }
+  }
+
+  const [activeQuery, setActiveQuery] = useState<Query<DocumentData> | null>(nextQuery);
+  if (nextQuery !== null && (activeQuery === null || !queryEqual(activeQuery, nextQuery))) {
+    // Adjusting state during render, which React re-runs immediately — before it paints and
+    // before any effect fires. The listener is therefore attached once, to the right query,
+    // instead of being attached to the stale one and swapped a moment later.
+    setActiveQuery(nextQuery);
+  }
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
-    if (options.skip) return;
+    if (skip || activeQuery === null) return;
 
     setLoading(true);
     setError(null);
 
-    let q: Query<DocumentData>;
-    if (constraintsRef.current.length > 0) {
-      q = query(collection(db, collectionName), ...constraintsRef.current);
-    } else {
-      q = collection(db, collectionName);
-    }
-
     const unsubscribe = onSnapshot(
-      q,
+      activeQuery,
       (snapshot) => {
         const docs = snapshot.docs.map(
           (d) => ({ id: d.id, ...d.data() }) as unknown as T,
@@ -102,9 +128,11 @@ export function useCollection<T extends DocumentData>(
     );
 
     return () => unsubscribe();
-  }, [collectionName, options.skip, refreshKey]);
+    // collectionName is baked into activeQuery, so it does not need its own entry: a changed
+    // collection produces an unequal query and lands here through activeQuery.
+  }, [activeQuery, skip, refreshKey, collectionName]);
 
-  return { data, loading, error, refresh };
+  return { data, loading, error: buildError ?? error, refresh };
 }
 
 // ───────────────────────────── useDocument ────────────────────────

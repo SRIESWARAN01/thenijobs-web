@@ -50,7 +50,9 @@ export default function SeekerSubscriptionPage() {
     <PageShell className="max-w-4xl">
       <PageHeader
         title="Choose your candidate plan"
-        description="Accelerate your job search and stand out to 500+ verified employers in Theni & Tamil Nadu."
+        // TRUST-2: was 'stand out to 500+ verified employers'. There were 104 verified
+        // companies, and this number sits on the page that asks a job seeker to pay.
+        description="Accelerate your job search and stand out to verified employers in Theni & Tamil Nadu."
         breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'Subscription' }]}
         actions={
           <Pill tone="info">

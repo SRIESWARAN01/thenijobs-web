@@ -314,7 +314,7 @@ export default function SeekerProfilePage() {
                   <Eye size={13} />
                   <span>Live Preview</span>
                 </button>
-                <label htmlFor="seeker-profile-open-to-work-setprofile-p-classname-w-10" className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500 font-medium">Open to Work</span>
                   <div onClick={() => setProfile(p => ({ ...p, isOpenToWork: !p.isOpenToWork }))}
                     className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${profile.isOpenToWork ? '' : 'bg-gray-200'}`}

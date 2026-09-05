@@ -154,7 +154,7 @@ export default function JobQuickUpdateModals({
                     <input id="employer-jobquickupdatemodals-max-salary-mo" type="number" value={salaryMax} onChange={e => setSalaryMax(e.target.value)} className={inputCls} placeholder="25000" />
                   </div>
                 </div>
-                <label htmlFor="employer-jobquickupdatemodals-setisnegotiable-e-target-checked-classna" className="flex items-center gap-2 text-sm text-gray-700">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
                   <input type="checkbox" checked={isNegotiable} onChange={e => setIsNegotiable(e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300 text-blue-600 tap-target-auto" />
                   Salary is negotiable

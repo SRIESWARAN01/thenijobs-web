@@ -1149,7 +1149,7 @@ export default function BusinessesPage() {
 
               {/* Row 7: Toggles */}
               <div className="flex items-center gap-6 p-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs">
-                <label htmlFor="admin-businesses-seteditbizform-classname-w-4-h-4-rounded" className="flex items-center gap-2 cursor-pointer font-bold text-gray-800">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800">
                   <input
                     type="checkbox"
                     checked={editBizForm.isFeatured}

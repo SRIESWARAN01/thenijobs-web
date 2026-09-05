@@ -590,7 +590,7 @@ export default function CompanyProfilePage() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                 <div>
-                  <label htmlFor="employer-company-profile-primary-calling-phone-update-phone-e-tar" className="text-xs text-gray-700 font-bold block mb-1">Primary Calling Phone *</label>
+                  <label className="text-xs text-gray-700 font-bold block mb-1">Primary Calling Phone *</label>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input

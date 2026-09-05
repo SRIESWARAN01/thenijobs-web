@@ -570,7 +570,7 @@ export default function AdminJobsPage() {
             </p>
 
             <div className="space-y-1.5">
-              <label htmlFor="admin-jobs-quick-reasons-classname-w-full-text-left" className="text-xs font-bold text-gray-700 block">Quick Reasons:</label>
+              <label className="text-xs font-bold text-gray-700 block">Quick Reasons:</label>
               {QUICK_REJECTION_REASONS.map(r => (
                 <button
                   key={r}

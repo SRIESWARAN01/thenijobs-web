@@ -365,7 +365,7 @@ export default function PostJobPage() {
             </div>
 
             <div>
-              <label htmlFor="employer-post-job-employment-type-classname-px-3-5-py-2-ro" className={labelCls}>Employment Type <span className="text-red-500">*</span></label>
+              <label className={labelCls}>Employment Type <span className="text-red-500">*</span></label>
               <div className="flex flex-wrap gap-2">
                 {JOB_TYPES.map(t => (
                   <button
@@ -547,7 +547,7 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            <label htmlFor="employer-post-job-update-isnegotiable-form-isnegotiable-cl" className="flex items-center gap-3 cursor-pointer p-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all">
+            <label className="flex items-center gap-3 cursor-pointer p-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all">
               <div
                 onClick={() => update('isNegotiable', !form.isNegotiable)}
                 className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${form.isNegotiable ? 'bg-blue-600' : 'bg-gray-300'}`}

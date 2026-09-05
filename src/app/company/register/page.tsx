@@ -283,7 +283,7 @@ export default function CompanyRegisterPage() {
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="company-register-mobile-number-91-update-phone-e-target-v" className="text-xs text-slate-600 font-medium block mb-1.5">Mobile Number *</label>
+                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Mobile Number *</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
                     <input type="tel" maxLength={10} aria-label="Mobile number" placeholder="Mobile number"
@@ -307,7 +307,7 @@ export default function CompanyRegisterPage() {
                     className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div>
-                  <label htmlFor="company-register-whatsapp-number-91-update-whatsapp-e-tar" className="text-xs text-slate-600 font-medium block mb-1.5">WhatsApp Number</label>
+                  <label className="text-xs text-slate-600 font-medium block mb-1.5">WhatsApp Number</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
                     <input type="tel" maxLength={10} aria-label="WhatsApp number" placeholder="WhatsApp number"

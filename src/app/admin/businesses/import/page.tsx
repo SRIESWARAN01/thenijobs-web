@@ -456,7 +456,7 @@ export default function BulkCompanyImportPage() {
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2.5">
-                  <label htmlFor="admin-businesses-import-handlecolumntoggle-idx-e-target-checked-" className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={col.isIncluded}

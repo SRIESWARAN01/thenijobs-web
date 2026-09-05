@@ -911,7 +911,7 @@ export default function SeekerSiteEditor() {
                     </div>
                   </div>
 
-                  <label htmlFor="portfolio-seekersiteeditor-updatesectiondata-hero-prev-classname-ro" className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer pt-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer pt-2">
                     <input
                       type="checkbox"
                       checked={heroData.isOpenToWork !== false}

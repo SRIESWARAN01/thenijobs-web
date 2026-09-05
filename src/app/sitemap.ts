@@ -32,23 +32,54 @@ const LOCATIONS = Object.keys(LOCATIONS_DATA);
 
 const CATEGORIES = CATEGORIES_LIST.map((c) => c.slug);
 
+/**
+ * SEO-4 — a `lastModified` field, or nothing at all.
+ *
+ * Returns `{ lastModified }` when the value is a date we can actually stand behind, and an
+ * empty object otherwise, so it can be spread into an entry. The three dynamic families each
+ * used to write `let lastMod = now` and overwrite it only on success, which meant an absent or
+ * unparseable `updatedAt` was reported as "changed at deploy time" rather than "unknown".
+ */
+function withLastModified(value: unknown): { lastModified?: Date } {
+  if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) return {};
+  const d = new Date(value as string | number | Date);
+  return isNaN(d.getTime()) ? {} : { lastModified: d };
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE = 'https://thenijobs.com';
-  const now = new Date();
+
+  /**
+   * SEO-4 — there is deliberately no `const now = new Date()` here any more.
+   *
+   * It used to be handed to every static page, every location page, every location-category
+   * page and every business category: 173 of 384 entries all claiming, on each deploy, to have
+   * been modified at the instant of the build. Two builds a minute apart differed by 346 lines
+   * with nothing in the repository changed.
+   *
+   * `lastmod` is optional, and a wrong one is worse than none: search engines stop trusting the
+   * field when it does not match what they observe, which would have discounted it for the 211
+   * entries here that carry a genuine `updatedAt`. So the URLs with no real modification signal
+   * now carry no date, and only the ones that know when they changed say so.
+   *
+   * If these pages ever need a real date, it should come from something that actually changes
+   * with them — the newest `updatedAt` among the jobs a listing renders, say — not from the
+   * clock.
+   */
 
   // Core static pages
   const staticPages: MetadataRoute.Sitemap = [
-    { url: `${BASE}/`, changeFrequency: 'daily', priority: 1.0, lastModified: now },
-    { url: `${BASE}/jobs`, changeFrequency: 'hourly', priority: 0.95, lastModified: now },
-    { url: `${BASE}/marketplace`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
-    { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
-    { url: `${BASE}/services`, changeFrequency: 'daily', priority: 0.85, lastModified: now },
-    { url: `${BASE}/daily-jobs`, changeFrequency: 'daily', priority: 0.9, lastModified: now },
-    { url: `${BASE}/about`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
-    { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.6, lastModified: now },
-    { url: `${BASE}/pricing`, changeFrequency: 'weekly', priority: 0.7, lastModified: now },
-    { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.4, lastModified: now },
-    { url: `${BASE}/terms`, changeFrequency: 'monthly', priority: 0.4, lastModified: now },
+    { url: `${BASE}/`, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${BASE}/jobs`, changeFrequency: 'hourly', priority: 0.95 },
+    { url: `${BASE}/marketplace`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.85 },
+    { url: `${BASE}/services`, changeFrequency: 'daily', priority: 0.85 },
+    { url: `${BASE}/daily-jobs`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/about`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE}/pricing`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE}/terms`, changeFrequency: 'monthly', priority: 0.4 },
   ];
 
   // Location landing pages (/jobs-in-theni, /jobs-in-cumbum, etc.)
@@ -56,7 +87,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${BASE}/jobs-in-${loc}`,
     changeFrequency: 'daily',
     priority: 0.95,
-    lastModified: now,
   }));
 
   // Location x Category landing pages (/jobs-in-theni/freshers, /jobs-in-theni/sales, etc.)
@@ -67,7 +97,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${BASE}/jobs-in-${loc}/${cat}`,
         changeFrequency: 'daily',
         priority: 0.9,
-        lastModified: now,
       });
     }
   }
@@ -78,30 +107,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${BASE}/businesses/${cat}`,
     changeFrequency: 'daily',
     priority: 0.8,
-    lastModified: now,
   }));
 
   // ── DYNAMIC: Individual active job URLs from Firestore ──────────────────
   let jobPages: MetadataRoute.Sitemap = [];
   try {
     const activeJobs = await getActiveJobsForSitemap();
-    jobPages = activeJobs.map(job => {
-      // Use accurate lastmod from job.updatedAt
-      let lastMod = now;
-      if (job.updatedAt) {
-        try {
-          const d = new Date(job.updatedAt);
-          if (!isNaN(d.getTime())) lastMod = d;
-        } catch { /* use now */ }
-      }
-
-      return {
-        url: `${BASE}/jobs/${job.id}`,
-        changeFrequency: 'daily' as const,
-        priority: 0.85,
-        lastModified: lastMod,
-      };
-    });
+    jobPages = activeJobs.map(job => ({
+      url: `${BASE}/jobs/${job.id}`,
+      changeFrequency: 'daily' as const,
+      priority: 0.85,
+      // SEO-4: this used to default to the build time and only overwrite it when updatedAt
+      // parsed, so a job with a missing or malformed updatedAt quietly claimed to have changed
+      // at deploy. Now it either says when it changed or says nothing.
+      ...withLastModified(job.updatedAt),
+    }));
   } catch (error) {
     console.error('[Sitemap] Error fetching active jobs:', error);
   }
@@ -111,20 +131,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const companies = await getVerifiedCompanySlugsForSitemap();
     companies.forEach(c => {
-      let lastMod = now;
-      if (c.updatedAt) {
-        try {
-          const d = new Date(c.updatedAt);
-          if (!isNaN(d.getTime())) lastMod = d;
-        } catch { /* use now */ }
-      }
-
       // 1. Standard Company Profile URL
       companyPages.push({
         url: `${BASE}/company/${c.slug}`,
         changeFrequency: 'weekly' as const,
         priority: 0.85,
-        lastModified: lastMod,
+        ...withLastModified(c.updatedAt),
       });
 
       // 2. Professional Company Landing Website URL
@@ -132,7 +144,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${BASE}/${c.slug}`,
         changeFrequency: 'weekly' as const,
         priority: 0.9,
-        lastModified: lastMod,
+        ...withLastModified(c.updatedAt),
       });
     });
   } catch (error) {
@@ -144,19 +156,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const portfolios = await getPublishedPortfolioSitesForSitemap();
     portfolios.forEach(p => {
-      let lastMod = now;
-      if (p.updatedAt) {
-        try {
-          const d = new Date(p.updatedAt);
-          if (!isNaN(d.getTime())) lastMod = d;
-        } catch { /* use now */ }
-      }
-
       portfolioPages.push({
         url: `${BASE}/portfolio/${p.customUrl}`,
         changeFrequency: 'weekly' as const,
         priority: 0.8,
-        lastModified: lastMod,
+        ...withLastModified(p.updatedAt),
       });
     });
   } catch (error) {

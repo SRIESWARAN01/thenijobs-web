@@ -37,12 +37,16 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
         );
         const snap = await getDocs(q);
         const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const filtered = fetched.filter((j: any) => 
+        // SEO-5: the third clause was `|| j.district === 'theni'`, which matched every Theni
+        // job on every location page, and the line below fell back to eight unrelated jobs
+        // when nothing matched. Between them, all nine location pages showed the same list.
+        // The empty state below — "No specific openings currently listed in {loc.name}" — was
+        // already written and unreachable.
+        const filtered = fetched.filter((j: any) =>
           (j.location && j.location.toLowerCase().includes(loc.slug)) ||
-          (j.district && j.district.toLowerCase().includes(loc.slug)) ||
-          (j.district && j.district.toLowerCase() === 'theni')
+          (j.district && j.district.toLowerCase().includes(loc.slug))
         );
-        setJobs(filtered.length > 0 ? filtered : fetched.slice(0, 8));
+        setJobs(filtered);
       } catch (err) {
         console.error('Error loading location jobs:', err);
       } finally {

@@ -23,10 +23,19 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thenijobs.com"),
-  title: {
-    default: "THENIJOBS – Jobs in Theni, Tamil Nadu | Local Job Portal",
-    template: "%s | THENIJOBS",
-  },
+  // SEO-2: there is deliberately no `template` here. It used to be "%s | THENIJOBS", which
+  // appended a suffix that most page titles already carried — 362 of the 464 exported pages
+  // shipped a title ending "| THENIJOBS | THENIJOBS", and the doubled ones were live in
+  // production. It doubled on some routes and not others because `title` is a single field:
+  // a nested layout that sets it to a plain string replaces this whole object, template
+  // included, so its children inherit no template. That is why /jobs doubled and /jobs/demo
+  // did not. Rather than leave the correct way to write a title depending on whether some
+  // ancestor happens to set one, every title now stands on its own and carries its own
+  // suffix. This is a plain string rather than `{ default }` because Next's type for the
+  // object form requires a `template` beside it, and a template is the thing being removed. A
+  // plain string is inherited by every page that sets no title of its own, which is all of
+  // /admin, /employer and /seeker, so the fallback behaviour is unchanged.
+  title: "THENIJOBS – Jobs in Theni, Tamil Nadu | Local Job Portal",
   description:
     "THENIJOBS is the #1 local job portal for Theni and Tamil Nadu. Find verified private, fresher, and full-time jobs across Theni, Cumbum, Periyakulam, Bodinayakanur and nearby areas. Apply directly online.",
   keywords: [

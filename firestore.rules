@@ -625,6 +625,21 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ===== PORTFOLIO SLUG RESERVATIONS (SEEKER-2) =====
+    // Same idea as companySlugs, one deliberate difference: a company's slug is fixed at
+    // registration, but a seeker can retype customUrl in the portfolio editor at any time, so the
+    // owner (not just an admin) must be able to release a reservation when they move off it —
+    // otherwise an abandoned slug stays blocked forever, including against its own former owner.
+    // Fields: slug, ownerId, siteId, createdAt.
+    match /portfolioSlugs/{slug} {
+      allow read:   if true;
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['slug', 'ownerId', 'siteId', 'createdAt']);
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow update: if isAdmin();
+    }
+
     // ===== ERROR REPORTS (RULES-1, D-ERRORS) =====
     match /errors/{errorId} {
       allow read, update, delete: if isAdmin();

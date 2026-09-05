@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Clock, CreditCard, Download, TrendingUp, Users2 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
+import { SITE_CONTACT } from '@/lib/constants';
 import type { FirestoreTime } from '@/lib/firestoreTime';
 import {
   Button, DataTable, FilterSelect, PageHeader, PageShell, Pill, Stat, StatGrid, Toolbar,
@@ -60,49 +61,44 @@ export default function SubscriptionsPage() {
   const expiredCount = subscriptions.filter((s) => s.status === 'expired' || s.status === 'cancelled').length;
   const monthlyRevenue = activeSubs.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
 
-  const handleDownloadGSTInvoice = async (item: SubscriptionDoc) => {
+  const handleDownloadReceipt = async (item: SubscriptionDoc) => {
     try {
       const { jsPDF } = await import('jspdf');
       const pdf = new jsPDF('p', 'mm', 'a4');
 
-      const invNum = `INV-TNJ-${String(item.id || Date.now()).slice(-6).toUpperCase()}`;
+      const receiptNum = `RCPT-TNJ-${String(item.id || Date.now()).slice(-6).toUpperCase()}`;
       const amount = Number(item.amount) || 999;
-      const baseAmount = Math.round(amount / 1.18);
-      const gstAmount = amount - baseAmount;
-      const cgst = Math.round(gstAmount / 2);
-      const sgst = gstAmount - cgst;
       const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
       // Header
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(20);
       pdf.setTextColor(15, 23, 42);
-      pdf.text('TAX INVOICE', 105, 25, { align: 'center' });
+      pdf.text('PAYMENT RECEIPT', 105, 25, { align: 'center' });
 
       pdf.setFontSize(12);
       pdf.setTextColor(5, 150, 105);
-      pdf.text('THENIJOBS DIGITAL PRIVATE LIMITED', 20, 38);
+      pdf.text('THENIJOBS', 20, 38);
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(9);
       pdf.setTextColor(71, 85, 105);
-      pdf.text('Reg Office: NRT Road, Theni District, Tamil Nadu - 625531', 20, 44);
-      pdf.text('GSTIN: 33AAAAA0000A1Z5 | Support: support@thenijobs.com', 20, 49);
+      pdf.text(SITE_CONTACT.fullAddress, 20, 44);
+      pdf.text(`Support: ${SITE_CONTACT.supportEmail}`, 20, 49);
 
-      // Invoice Meta
+      // Receipt Meta
       pdf.setDrawColor(226, 232, 240);
       pdf.line(20, 55, 190, 55);
 
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(10);
       pdf.setTextColor(15, 23, 42);
-      pdf.text(`Invoice No: ${invNum}`, 20, 64);
-      pdf.text(`Invoice Date: ${dateStr}`, 140, 64);
+      pdf.text(`Receipt No: ${receiptNum}`, 20, 64);
+      pdf.text(`Receipt Date: ${dateStr}`, 140, 64);
 
-      pdf.text('Billed To (Customer):', 20, 75);
+      pdf.text('Received From:', 20, 75);
       pdf.setFont('helvetica', 'normal');
       pdf.text(`Company: ${item.businessName || item.companyName || 'Registered Employer'}`, 20, 81);
-      pdf.text('State: Tamil Nadu (Code: 33)', 20, 86);
 
       // Table Header
       pdf.setFillColor(241, 245, 249);
@@ -110,42 +106,29 @@ export default function SubscriptionsPage() {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(9);
       pdf.text('Description / Service Plan', 24, 100);
-      pdf.text('HSN / SAC', 110, 100);
       pdf.text('Amount (INR)', 160, 100);
 
       // Table Item
       pdf.setFont('helvetica', 'normal');
       pdf.text(`THENIJOBS — ${(item.plan || 'Standard').toUpperCase()} Annual Subscription`, 24, 110);
-      pdf.text('998314', 110, 110);
-      pdf.text(`₹${baseAmount.toLocaleString('en-IN')}`, 160, 110);
+      pdf.text(`₹${amount.toLocaleString('en-IN')}`, 160, 110);
 
       pdf.line(20, 116, 190, 116);
 
-      // Totals Breakdown
-      pdf.text('Taxable Base Amount:', 110, 125);
-      pdf.text(`₹${baseAmount.toLocaleString('en-IN')}`, 165, 125);
-
-      pdf.text('CGST (9%):', 110, 131);
-      pdf.text(`₹${cgst.toLocaleString('en-IN')}`, 165, 131);
-
-      pdf.text('SGST (9%):', 110, 137);
-      pdf.text(`₹${sgst.toLocaleString('en-IN')}`, 165, 137);
-
-      pdf.line(110, 142, 190, 142);
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(11);
-      pdf.text('Total Paid Amount:', 110, 150);
-      pdf.text(`₹${amount.toLocaleString('en-IN')}`, 165, 150);
+      pdf.text('Total Amount Paid:', 110, 128);
+      pdf.text(`₹${amount.toLocaleString('en-IN')}`, 165, 128);
 
       // Footer
       pdf.setFont('helvetica', 'italic');
       pdf.setFontSize(8);
       pdf.setTextColor(148, 163, 184);
-      pdf.text('This is a computer-generated tax invoice and requires no physical signature.', 105, 270, { align: 'center' });
+      pdf.text('This is a computer-generated payment receipt, not a GST tax invoice, and requires no physical signature.', 105, 270, { align: 'center' });
 
-      pdf.save(`${invNum}-invoice.pdf`);
+      pdf.save(`${receiptNum}-receipt.pdf`);
     } catch (e) {
-      console.error('Invoice error:', e);
+      console.error('Receipt error:', e);
     }
   };
 
@@ -273,10 +256,10 @@ export default function SubscriptionsPage() {
           <Button
             size="sm"
             variant="subtle"
-            onClick={() => handleDownloadGSTInvoice(sub)}
-            title="Download GST tax invoice PDF"
+            onClick={() => handleDownloadReceipt(sub)}
+            title="Download payment receipt PDF"
           >
-            <Download size={13} /> Tax invoice
+            <Download size={13} /> Receipt
           </Button>
         )}
       />

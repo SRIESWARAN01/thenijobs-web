@@ -227,11 +227,10 @@ export default function SeekerSiteEditor() {
                         category: 'technical',
                         level: typeof s === 'object' && s.level ? 85 : 80,
                         levelLabel: 'Advanced',
-                        verified: true,
                       }))
                     : [
-                        { id: 's-1', name: 'Communication & Leadership', category: 'soft', level: 90, levelLabel: 'Expert', verified: true },
-                        { id: 's-2', name: 'Problem Solving', category: 'soft', level: 85, levelLabel: 'Advanced', verified: true },
+                        { id: 's-1', name: 'Communication & Leadership', category: 'soft', level: 90, levelLabel: 'Expert' },
+                        { id: 's-2', name: 'Problem Solving', category: 'soft', level: 85, levelLabel: 'Advanced' },
                       ],
                 },
               },
@@ -498,7 +497,6 @@ export default function SeekerSiteEditor() {
             category: 'technical',
             level: typeof s === 'object' && s.level ? 85 : 80,
             levelLabel: 'Advanced',
-            verified: true,
           })),
         }));
       }
@@ -958,7 +956,6 @@ export default function SeekerSiteEditor() {
                           category: 'technical',
                           level: 80,
                           levelLabel: 'Advanced',
-                          verified: true,
                         };
                         updateSectionData('skills', prev => ({
                           skills: [...(prev.skills || []), newSkill],

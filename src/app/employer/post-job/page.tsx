@@ -18,6 +18,7 @@ import { notifyAllAdmins } from '@/lib/firebase/adminNotify';
 import { where, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { canPostNewJob, getPlan } from '@/lib/plans';
+import { Switch } from '@/components/dashboard';
 
 const STEPS = [
   { id: 1, label: 'Job Details' },
@@ -547,15 +548,14 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            <label className="flex items-center gap-3 cursor-pointer p-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all">
-              <div
-                onClick={() => update('isNegotiable', !form.isNegotiable)}
-                className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${form.isNegotiable ? 'bg-blue-600' : 'bg-gray-300'}`}
-              >
-                <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-xs transition-all ${form.isNegotiable ? 'left-5' : 'left-1'}`} />
-              </div>
-              <span className="text-xs sm:text-sm text-gray-800 font-bold">Salary is negotiable based on candidate experience</span>
-            </label>
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 p-3.5 transition-all hover:bg-gray-50">
+              <Switch
+                checked={form.isNegotiable}
+                onChange={(next) => update('isNegotiable', next)}
+                label="Salary is negotiable based on candidate experience"
+              />
+              <span className="text-xs font-bold text-gray-800 sm:text-sm">Salary is negotiable based on candidate experience</span>
+            </div>
 
             <div>
               <label className={labelCls}>Benefits &amp; Perks</label>

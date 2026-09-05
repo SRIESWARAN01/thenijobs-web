@@ -15,6 +15,7 @@ import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
 import SeekerPortfolioClient from '@/app/portfolio/seeker/[id]/SeekerPortfolioClient';
 import { useToast } from '@/contexts/ToastContext';
+import { Switch } from '@/components/dashboard';
 
 /** Skill suggestions for tag input */
 const SKILL_SUGGESTIONS = [
@@ -314,25 +315,25 @@ export default function SeekerProfilePage() {
                   <Eye size={13} />
                   <span>Live Preview</span>
                 </button>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-gray-500 font-medium">Open to Work</span>
-                  <div onClick={() => setProfile(p => ({ ...p, isOpenToWork: !p.isOpenToWork }))}
-                    className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${profile.isOpenToWork ? '' : 'bg-gray-200'}`}
-                    style={profile.isOpenToWork ? { background: '#10B981' } : {}}>
-                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${profile.isOpenToWork ? 'left-5' : 'left-1'}`} />
-                  </div>
-                </label>
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500">Open to Work</span>
+                  <Switch
+                    checked={profile.isOpenToWork}
+                    onChange={(next) => setProfile(p => ({ ...p, isOpenToWork: next }))}
+                    label="Open to work"
+                  />
+                </span>
                 {profile.isOpenToWork && (
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold border" style={{ background: '#ECFDF5', color: '#059669', borderColor: '#A7F3D0' }}>● Open to Work</span>
                 )}
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-gray-500 font-medium">Public Portfolio Page</span>
-                  <div onClick={() => setProfile(p => ({ ...p, isPortfolioPublic: !p.isPortfolioPublic }))}
-                    className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${profile.isPortfolioPublic ? '' : 'bg-gray-200'}`}
-                    style={profile.isPortfolioPublic ? { background: '#2563EB' } : {}}>
-                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${profile.isPortfolioPublic ? 'left-5' : 'left-1'}`} />
-                  </div>
-                </label>
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500">Public Portfolio Page</span>
+                  <Switch
+                    checked={profile.isPortfolioPublic}
+                    onChange={(next) => setProfile(p => ({ ...p, isPortfolioPublic: next }))}
+                    label="Public portfolio page"
+                  />
+                </span>
               </div>
             </div>
             <p className="text-[11px] text-slate-500 mt-1.5 max-w-md">

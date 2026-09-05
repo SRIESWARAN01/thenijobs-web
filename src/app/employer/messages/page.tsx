@@ -233,11 +233,13 @@ export default function EmployerMessagesPage() {
               filtered.map((conv) => {
                 const isSelected = activeConv?.id === conv.id;
                 return (
-                  <div
+                  <button
                     key={conv.id}
+                    type="button"
+                    aria-current={isSelected ? 'true' : undefined}
                     onClick={() => selectConversation(conv)}
-                    className={`p-3.5 sm:p-4 cursor-pointer transition-all flex items-start gap-3 ${
-                      isSelected ? 'bg-blue-50/80 border-l-4 border-blue-600' : 'hover:bg-gray-100/70 bg-white'
+                    className={`flex w-full items-start gap-3 p-3.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:p-4 ${
+                      isSelected ? 'border-l-4 border-blue-600 bg-blue-50/80' : 'bg-white hover:bg-gray-100/70'
                     }`}
                   >
                     <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-700 font-black text-sm flex items-center justify-center shrink-0 border border-blue-200">
@@ -259,7 +261,7 @@ export default function EmployerMessagesPage() {
                         {conv.lastMessage}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}

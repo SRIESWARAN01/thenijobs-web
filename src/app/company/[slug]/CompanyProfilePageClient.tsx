@@ -296,7 +296,7 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
       document.getElementById('company-jsonld')?.remove();
       document.querySelector('link[rel="canonical"]')?.remove();
     };
-  }, [company, reviews.length, slug]);
+  }, [company, reviews, slug]);
 
   if (loading) {
     return (

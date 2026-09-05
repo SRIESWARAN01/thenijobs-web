@@ -41,7 +41,7 @@ const EDUCATION_LEVELS = ['8th Pass', '10th Pass', '12th Pass', 'Diploma', 'Any 
 const OPENINGS_OPTIONS = ['1', '2', '3', '4', '5', '10', '15', '20', '20+'];
 const BENEFITS_OPTIONS = ['PF', 'ESI', 'Health Insurance', 'Food Allowance', 'Travel Allowance', 'Bonus', 'Accommodation', 'Paid Leave'];
 
-const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-medium";
+const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-medium";
 const labelCls = "text-xs font-bold text-gray-700 block mb-1.5";
 
 function getJobOrdinalName(num: number): string {
@@ -281,7 +281,7 @@ export default function PostJobPage() {
   const isStep1Valid = form.title && form.description && form.district && form.openings;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 font-outfit text-gray-900 pb-20">
+    <div className="mx-auto max-w-3xl pb-20 text-slate-900">
       {/* Header */}
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-2 bg-blue-50 text-blue-700 border border-blue-200">

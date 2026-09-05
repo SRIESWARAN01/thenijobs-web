@@ -29,7 +29,7 @@ interface JobQuickUpdateModalsProps {
   onSuccess?: () => void;
 }
 
-const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all";
+const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all";
 const labelCls = "text-xs font-semibold text-gray-600 block mb-1.5";
 
 export default function JobQuickUpdateModals({

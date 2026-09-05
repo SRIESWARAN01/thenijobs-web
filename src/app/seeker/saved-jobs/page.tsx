@@ -143,7 +143,7 @@ export default function SavedJobsPage() {
         actions={
           <>
             <ViewToggle value={view} onChange={setView} />
-            <Link href="/jobs">
+            <Link href="/seeker/jobs">
               <Button variant="primary"><Briefcase size={15} /> Browse jobs</Button>
             </Link>
           </>
@@ -173,7 +173,7 @@ export default function SavedJobsPage() {
         emptyTitle="No saved jobs yet"
         emptyDescription="Explore open positions and use the bookmark button to save them here."
         emptyAction={
-          <Link href="/jobs">
+          <Link href="/seeker/jobs">
             <Button variant="primary">Browse jobs</Button>
           </Link>
         }

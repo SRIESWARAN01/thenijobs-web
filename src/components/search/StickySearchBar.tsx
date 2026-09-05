@@ -23,6 +23,13 @@ interface StickySearchBarProps {
   children?: ReactNode;
   /** Aligns the bar with the page's own content width. Defaults to the wider (3-column) layouts. */
   maxWidthClassName?: string;
+  /**
+   * True when rendered inside a shell that already reserves its own header height (e.g. the
+   * seeker/employer dashboard sidebar layout) rather than the public site's `<Header/>`. Swaps
+   * the sticky offset from `top-16` (Header's 64px) to `top-0`, so the bar doesn't leave a dead
+   * 64px gap above it.
+   */
+  embedded?: boolean;
 }
 
 /**
@@ -42,9 +49,10 @@ export default function StickySearchBar({
   extraActions,
   children,
   maxWidthClassName = 'max-w-7xl',
+  embedded = false,
 }: StickySearchBarProps) {
   return (
-    <div className="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm px-4 sm:px-6 py-3">
+    <div className={`sticky ${embedded ? 'top-0' : 'top-16'} z-40 bg-white border-b border-gray-100 shadow-sm px-4 sm:px-6 py-3`}>
       <div className={`${maxWidthClassName} mx-auto flex flex-wrap gap-2`}>
         <div className="flex-[1_1_260px] flex items-stretch bg-white border border-gray-200 rounded-xl overflow-hidden focus-within:border-blue-300 transition-colors">
           <div className="flex-1 flex items-center gap-2 px-4 py-2.5 min-w-0">

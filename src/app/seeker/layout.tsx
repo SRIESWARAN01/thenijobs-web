@@ -20,13 +20,13 @@ const SEEKER_NAV = [
   { label: 'My Profile', icon: User, href: '/seeker/profile' },
   { label: 'Portfolio Website', icon: Globe, href: '/seeker/website', highlight: true },
   { label: 'Resume', icon: FileText, href: '/seeker/resume' },
-  { label: 'Browse Jobs', icon: Search, href: '/jobs', external: true },
+  { label: 'Browse Jobs', icon: Search, href: '/seeker/jobs' },
   { label: 'Post Job / Employer', icon: Briefcase, href: '/seeker/become-employer' },
   { label: 'Applications', icon: Send, href: '/seeker/applications' },
   { label: 'Saved Jobs', icon: Bookmark, href: '/seeker/saved-jobs' },
   { label: 'Job Alerts', icon: Bell, href: '/seeker/job-alerts' },
   { label: 'Interviews', icon: Calendar, href: '/seeker/interviews' },
-  { label: 'Companies', icon: Building2, href: '/businesses', external: true },
+  { label: 'Companies', icon: Building2, href: '/seeker/companies' },
   { label: 'AI Coach', icon: Sparkles, href: '/seeker/ai-coach', accent: true },
   { label: 'Skills', icon: GraduationCap, href: '/seeker/skills' },
   { label: 'Digital ID Card', icon: CreditCard, href: '/seeker/id-card' },
@@ -129,7 +129,7 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5 no-scrollbar">
           {SEEKER_NAV.map(item => {
             const Icon = item.icon;
-            const active = pathname === item.href || (!item.external && item.href !== '/seeker/dashboard' && pathname.startsWith(item.href));
+            const active = pathname === item.href || (item.href !== '/seeker/dashboard' && pathname.startsWith(item.href));
             const isHighlight = (item as any).highlight;
 
             return (
@@ -226,7 +226,7 @@ export default function SeekerLayout({ children }: { children: React.ReactNode }
               </span>
             )}
           </Link>
-          <Link href="/jobs" className="text-xs text-emerald-600 font-semibold border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-50 transition-all">
+          <Link href="/seeker/jobs" className="text-xs text-emerald-600 font-semibold border border-emerald-200 px-3 py-1.5 rounded-xl hover:bg-emerald-50 transition-all">
             Browse Jobs
           </Link>
         </header>

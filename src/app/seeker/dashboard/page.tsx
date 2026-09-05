@@ -100,7 +100,7 @@ export default function SeekerDashboard() {
         actions={
           <>
             <Link href="/seeker/profile"><Button variant="secondary">Update profile</Button></Link>
-            <Link href="/jobs">
+            <Link href="/seeker/jobs">
               <Button variant="primary"><Search size={15} /> Find jobs</Button>
             </Link>
           </>
@@ -148,7 +148,7 @@ export default function SeekerDashboard() {
           <CardHeader
             title="Recommended jobs"
             description="Latest matching opportunities"
-            action={<Link href="/jobs" className="text-xs font-semibold text-emerald-700 hover:text-emerald-800">Browse all →</Link>}
+            action={<Link href="/seeker/jobs" className="text-xs font-semibold text-emerald-700 hover:text-emerald-800">Browse all →</Link>}
           />
           {jobs.length === 0 ? (
             <EmptyState variant="inline" icon={Briefcase} title="No active jobs listed" />
@@ -328,7 +328,7 @@ export default function SeekerDashboard() {
             title="No applications sent yet"
             description="Browse the latest openings and apply in a couple of taps."
             action={
-              <Link href="/jobs" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600">
+              <Link href="/seeker/jobs" className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600">
                 Browse jobs <ArrowUpRight size={12} />
               </Link>
             }

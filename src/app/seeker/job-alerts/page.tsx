@@ -349,7 +349,7 @@ export default function JobAlertsPage() {
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                   placeholder="Alert name"
-                  className="search-input w-full px-3 py-2.5 text-sm"
+                  className="search-input w-full px-3 py-2.5 text-base sm:text-sm"
                 />
               </div>
 
@@ -361,7 +361,7 @@ export default function JobAlertsPage() {
                     value={category}
                     onChange={e => setCategory(e.target.value)}
                     placeholder="Keywords"
-                    className="search-input w-full px-3 py-2.5 text-sm"
+                    className="search-input w-full px-3 py-2.5 text-base sm:text-sm"
                   />
                 </div>
                 <div>
@@ -369,7 +369,7 @@ export default function JobAlertsPage() {
                   <select
                     value={district}
                     onChange={e => setDistrict(e.target.value)}
-                    className="search-input w-full px-3 py-2.5 text-sm"
+                    className="search-input w-full px-3 py-2.5 text-base sm:text-sm"
                   >
                     <option value="">Any District</option>
                     {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -382,7 +382,7 @@ export default function JobAlertsPage() {
                 <select
                   value={jobType}
                   onChange={e => setJobType(e.target.value)}
-                  className="search-input w-full px-3 py-2.5 text-sm"
+                  className="search-input w-full px-3 py-2.5 text-base sm:text-sm"
                 >
                   <option value="Full-time">Full-time</option>
                   <option value="Part-time">Part-time</option>

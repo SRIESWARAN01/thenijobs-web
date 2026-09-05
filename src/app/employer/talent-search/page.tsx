@@ -124,14 +124,14 @@ export default function TalentSearchPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search skill, role, candidate name..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-base sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
-              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-slate-500 outline-none focus:border-blue-500"
+              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-base sm:text-xs text-slate-500 outline-none focus:border-blue-500"
             >
               <option value="All Districts">All Districts</option>
               {districts.map((d) => (
@@ -141,7 +141,7 @@ export default function TalentSearchPage() {
             <select
               value={expFilter}
               onChange={(e) => setExpFilter(e.target.value)}
-              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-slate-500 outline-none focus:border-blue-500"
+              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-base sm:text-xs text-slate-500 outline-none focus:border-blue-500"
             >
               <option value="All Experience">All Experience</option>
               <option value="Fresher">Fresher (No Experience)</option>

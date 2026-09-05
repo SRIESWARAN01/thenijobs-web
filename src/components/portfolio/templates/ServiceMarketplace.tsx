@@ -35,7 +35,7 @@ export default function ServiceMarketplace({ site }: Props) {
         <div className="max-w-4xl mx-auto px-6">
           <h1 className="text-3xl sm:text-5xl font-bold" style={{ fontFamily: `'${hf}'` }}>{hero.headline || `${b.companyName} Services`}</h1>
           <p className="text-sm mt-3 max-w-xl mx-auto" style={{ color: m }}>{hero.subheadline || 'Professional services tailored to your needs'}</p>
-          <div className="relative max-w-md mx-auto mt-6"><Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: m }} /><input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search services..." className="w-full pl-10 pr-4 py-3 bg-white border text-sm shadow-sm" style={{ borderRadius: r, borderColor: `${m}15` }} /></div>
+          <div className="relative max-w-md mx-auto mt-6"><Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: m }} /><input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search services..." className="w-full pl-10 pr-4 py-3 bg-white border text-base sm:text-sm shadow-sm" style={{ borderRadius: r, borderColor: `${m}15` }} /></div>
         </div>
       </section>)}
 

@@ -306,7 +306,7 @@ export default function AdminErrorsPage() {
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value as any)}
-          className="px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
+          className="px-3 py-2 text-base sm:text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
         >
           <option value="">All Status</option>
           <option value="open">Open</option>
@@ -317,7 +317,7 @@ export default function AdminErrorsPage() {
         <select
           value={filterSeverity}
           onChange={e => setFilterSeverity(e.target.value as any)}
-          className="px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
+          className="px-3 py-2 text-base sm:text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
         >
           <option value="">All Severity</option>
           <option value="critical">Critical</option>
@@ -328,7 +328,7 @@ export default function AdminErrorsPage() {
         <select
           value={filterType}
           onChange={e => setFilterType(e.target.value as any)}
-          className="px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
+          className="px-3 py-2 text-base sm:text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
         >
           <option value="">All Types</option>
           <option value="runtime">Runtime</option>
@@ -344,7 +344,7 @@ export default function AdminErrorsPage() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search errors..."
-            className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
+            className="w-full pl-9 pr-3 py-2 text-base sm:text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-400"
           />
         </div>
         <ViewToggle value={view} onChange={setView} />

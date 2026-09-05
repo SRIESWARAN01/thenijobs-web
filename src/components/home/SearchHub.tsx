@@ -103,12 +103,12 @@ export default function SearchHub() {
                 key={active.id}
                 type="search"
                 placeholder={active.placeholder}
-                className="w-full bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-500"
+                className="w-full bg-transparent text-base sm:text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-500"
               />
             </label>
             <label className="flex min-h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4">
               <MapPin size={18} className="shrink-0 text-teal-700" />
-              <select className="w-full bg-transparent text-sm font-bold text-slate-700 outline-none">
+              <select className="w-full bg-transparent text-base sm:text-sm font-bold text-slate-700 outline-none">
                 <option>Theni</option>
                 <option>Bodinayakanur</option>
                 <option>Periyakulam</option>

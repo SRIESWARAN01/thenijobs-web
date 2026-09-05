@@ -481,7 +481,7 @@ export default function BulkCompanyImportPage() {
                       value={col.targetField}
                       onChange={(e) => handleColumnTargetChange(idx, e.target.value as any)}
                       disabled={!col.isIncluded}
-                      className="w-full text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
+                      className="w-full text-base sm:text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
                     >
                       <option value="ignore">❌ Ignore (Do Not Import)</option>
                       <option value="name">🏢 Company Name *</option>
@@ -609,7 +609,7 @@ export default function BulkCompanyImportPage() {
                   placeholder="Filter rows..."
                   value={tableSearch}
                   onChange={(e) => setTableSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-base sm:text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -795,7 +795,7 @@ export default function BulkCompanyImportPage() {
                   <select
                     value={importOptions.overrideStatus}
                     onChange={(e) => setImportOptions({ ...importOptions, overrideStatus: e.target.value as any })}
-                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full text-base sm:text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
                   >
                     <option value="verified">✅ Verified &amp; Active (Recommended)</option>
                     <option value="pending">⏳ Pending Admin Verification</option>
@@ -810,7 +810,7 @@ export default function BulkCompanyImportPage() {
                   <select
                     value={importOptions.overrideDistrict}
                     onChange={(e) => setImportOptions({ ...importOptions, overrideDistrict: e.target.value })}
-                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full text-base sm:text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
                   >
                     <option value="">Use District from Excel</option>
                     {DISTRICT_OPTIONS.map((d) => (

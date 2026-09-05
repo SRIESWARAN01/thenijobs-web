@@ -92,7 +92,7 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                   <input
                     name="search"
                     placeholder="Search job title, skills..."
-                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:border-blue-500 focus:outline-none"
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm focus:bg-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
                 <button

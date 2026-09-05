@@ -332,7 +332,7 @@ function CandidateDetailModal({
                     required
                     value={interviewDate}
                     onChange={e => setInterviewDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-gray-300 text-xs text-gray-900 font-medium"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-gray-300 text-base sm:text-xs text-gray-900 font-medium"
                   />
                 </div>
                 <div>
@@ -342,7 +342,7 @@ function CandidateDetailModal({
                     required
                     value={interviewTime}
                     onChange={e => setInterviewTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-gray-300 text-xs text-gray-900 font-medium"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-gray-300 text-base sm:text-xs text-gray-900 font-medium"
                   />
                 </div>
               </div>
@@ -351,7 +351,7 @@ function CandidateDetailModal({
                 <select
                   value={interviewMode}
                   onChange={e => setInterviewMode(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-gray-300 text-xs text-gray-900 font-medium"
+                  className="w-full px-3 py-2 rounded-xl bg-white border border-gray-300 text-base sm:text-xs text-gray-900 font-medium"
                 >
                   <option value="In-Person (Office)">In-Person (Office / Branch)</option>
                   <option value="Phone Call">Phone Call</option>
@@ -389,7 +389,7 @@ function CandidateDetailModal({
             value={localNotes}
             onChange={e => setLocalNotes(e.target.value)}
             placeholder="Add notes about candidate interview performance, salary expectations, notice period..."
-            className="w-full p-3 rounded-xl border border-gray-300 text-xs text-gray-900 outline-none focus:border-blue-500 font-medium leading-relaxed"
+            className="w-full p-3 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium leading-relaxed"
           />
           <div className="flex justify-end">
             <button
@@ -612,13 +612,13 @@ export default function CandidatesPage() {
                 placeholder="Search candidates by name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-gray-300 text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <select
               value={jobFilter}
               onChange={(e) => setJobFilter(e.target.value)}
-              className="px-3.5 py-2.5 rounded-2xl bg-white border border-gray-300 text-xs font-bold text-gray-700 outline-none cursor-pointer"
+              className="px-3.5 py-2.5 rounded-2xl bg-white border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
             >
               {jobOptions.map((j) => (
                 <option key={j} value={j}>{j}</option>

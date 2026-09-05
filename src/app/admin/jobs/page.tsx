@@ -388,7 +388,7 @@ export default function AdminJobsPage() {
             placeholder="Search by job title, company name, or district..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -401,7 +401,7 @@ export default function AdminJobsPage() {
               key={i}
               value={s.value}
               onChange={e => s.onChange(e.target.value)}
-              className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer bg-white"
+              className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer bg-white"
             >
               {s.options.map(o => <option key={o}>{o}</option>)}
             </select>
@@ -592,7 +592,7 @@ export default function AdminJobsPage() {
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}
                 placeholder="Explain what details the employer needs to correct..."
-                className="w-full p-3 rounded-xl border border-gray-300 text-xs text-gray-900 outline-none focus:border-red-500 font-medium leading-relaxed"
+                className="w-full p-3 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 outline-none focus:border-red-500 font-medium leading-relaxed"
               />
             </div>
 

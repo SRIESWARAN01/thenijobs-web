@@ -117,7 +117,7 @@ export default function AITalentMatcherModal({ isOpen, onClose }: { isOpen: bool
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="Describe the candidate you're looking for..."
-              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-purple-500 focus:bg-white transition-all"
+              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 focus:outline-none focus:border-purple-500 focus:bg-white transition-all"
             />
             <button
               onClick={handleSearch}

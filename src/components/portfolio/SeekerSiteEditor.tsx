@@ -793,7 +793,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.name || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="e.g. Anand Kumar"
                       />
                     </div>
@@ -803,7 +803,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.title || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="e.g. Senior Digital Marketing Specialist"
                       />
                     </div>
@@ -815,7 +815,7 @@ export default function SeekerSiteEditor() {
                       type="text"
                       value={heroData.tagline || ''}
                       onChange={e => updateSectionData('hero', prev => ({ ...prev, tagline: e.target.value }))}
-                      className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                      className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                       placeholder="e.g. Driving revenue growth through high-converting ROI campaigns."
                     />
                   </div>
@@ -827,7 +827,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.location || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, location: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="Theni, Tamil Nadu"
                       />
                     </div>
@@ -837,7 +837,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.experienceYears || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, experienceYears: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="e.g. 3+ Years"
                       />
                     </div>
@@ -847,7 +847,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.joiningAvailability || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, joiningAvailability: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="Immediate Joiner"
                       />
                     </div>
@@ -861,7 +861,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.avatarUrl || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, avatarUrl: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="https://..."
                       />
                     </div>
@@ -871,7 +871,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.coverUrl || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, coverUrl: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="https://..."
                       />
                     </div>
@@ -885,7 +885,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.whatsapp || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, whatsapp: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="9360519460"
                       />
                     </div>
@@ -895,7 +895,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.phone || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="9360519460"
                       />
                     </div>
@@ -905,7 +905,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={heroData.resumeUrl || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, resumeUrl: e.target.value }))}
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                        className="w-full mt-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                         placeholder="https://..."
                       />
                     </div>
@@ -935,7 +935,7 @@ export default function SeekerSiteEditor() {
                       rows={5}
                       value={aboutData.content || ''}
                       onChange={e => updateSectionData('about', prev => ({ ...prev, content: e.target.value }))}
-                      className="w-full mt-1 px-3 py-2.5 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden leading-relaxed"
+                      className="w-full mt-1 px-3 py-2.5 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden leading-relaxed"
                       placeholder="Write your background, skills, and value proposition..."
                     />
                   </div>
@@ -982,7 +982,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].name = e.target.value;
                               updateSectionData('skills', () => ({ skills: updated }));
                             }}
-                            className="text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                            className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
                             placeholder="Skill Name (e.g. SEO Optimization)"
                           />
                           <button
@@ -1060,7 +1060,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].role = e.target.value;
                               updateSectionData('experience', () => ({ experience: updated }));
                             }}
-                            className="text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                            className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
                             placeholder="Job Title / Role"
                           />
                           <button
@@ -1084,7 +1084,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].company = e.target.value;
                               updateSectionData('experience', () => ({ experience: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="Company Name"
                           />
                           <input
@@ -1097,7 +1097,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].endDate = parts[1]?.trim() || 'Present';
                               updateSectionData('experience', () => ({ experience: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="e.g. 2022 - Present"
                           />
                         </div>
@@ -1110,7 +1110,7 @@ export default function SeekerSiteEditor() {
                             updated[idx].description = e.target.value;
                             updateSectionData('experience', () => ({ experience: updated }));
                           }}
-                          className="w-full text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                          className="w-full text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                           placeholder="Responsibilities and achievements..."
                         />
                       </div>
@@ -1160,7 +1160,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].title = e.target.value;
                               updateSectionData('projects', () => ({ projects: updated }));
                             }}
-                            className="text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                            className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
                             placeholder="Project Title"
                           />
                           <button
@@ -1183,7 +1183,7 @@ export default function SeekerSiteEditor() {
                             updated[idx].description = e.target.value;
                             updateSectionData('projects', () => ({ projects: updated }));
                           }}
-                          className="w-full text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                          className="w-full text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                           placeholder="Project details & outcomes..."
                         />
 
@@ -1196,7 +1196,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].liveUrl = e.target.value;
                               updateSectionData('projects', () => ({ projects: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="Live Preview URL (https://...)"
                           />
                           <input
@@ -1207,7 +1207,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].imageUrl = e.target.value;
                               updateSectionData('projects', () => ({ projects: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="Screenshot Image URL"
                           />
                         </div>
@@ -1256,7 +1256,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].degree = e.target.value;
                               updateSectionData('education', () => ({ education: updated }));
                             }}
-                            className="text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                            className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
                             placeholder="Degree (e.g. B.Tech / MBA / B.Sc)"
                           />
                           <button
@@ -1279,7 +1279,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].institution = e.target.value;
                               updateSectionData('education', () => ({ education: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="Institution Name"
                           />
                           <input
@@ -1290,7 +1290,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].year = e.target.value;
                               updateSectionData('education', () => ({ education: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="Graduation Year"
                           />
                         </div>
@@ -1339,7 +1339,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].name = e.target.value;
                               updateSectionData('certifications', () => ({ certifications: updated }));
                             }}
-                            className="text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                            className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
                             placeholder="Certificate Title"
                           />
                           <button
@@ -1362,7 +1362,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].issuer = e.target.value;
                               updateSectionData('certifications', () => ({ certifications: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="Issuer (e.g. Google, IBM)"
                           />
                           <input
@@ -1373,7 +1373,7 @@ export default function SeekerSiteEditor() {
                               updated[idx].credentialUrl = e.target.value;
                               updateSectionData('certifications', () => ({ certifications: updated }));
                             }}
-                            className="text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
                             placeholder="Verification Link (https://...)"
                           />
                         </div>
@@ -1482,7 +1482,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={site.theme.primaryColor || '#059669'}
                         onChange={e => updateField('theme.primaryColor', e.target.value)}
-                        className="w-full text-xs font-mono px-2.5 py-1.5 rounded-lg border border-slate-200"
+                        className="w-full text-base sm:text-xs font-mono px-2.5 py-1.5 rounded-lg border border-slate-200"
                       />
                     </div>
                   </div>
@@ -1500,7 +1500,7 @@ export default function SeekerSiteEditor() {
                         type="text"
                         value={site.theme.backgroundColor || '#FFFFFF'}
                         onChange={e => updateField('theme.backgroundColor', e.target.value)}
-                        className="w-full text-xs font-mono px-2.5 py-1.5 rounded-lg border border-slate-200"
+                        className="w-full text-base sm:text-xs font-mono px-2.5 py-1.5 rounded-lg border border-slate-200"
                       />
                     </div>
                   </div>
@@ -1518,7 +1518,7 @@ export default function SeekerSiteEditor() {
                     <select
                       value={site.theme.headingFont || 'Poppins'}
                       onChange={e => updateField('theme.headingFont', e.target.value)}
-                      className="w-full mt-1 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                      className="w-full mt-1 text-base sm:text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"
                     >
                       {FONT_OPTIONS.map(f => (
                         <option key={f.value} value={f.value}>{f.label} ({f.category})</option>
@@ -1530,7 +1530,7 @@ export default function SeekerSiteEditor() {
                     <select
                       value={site.theme.fontFamily || 'Inter'}
                       onChange={e => updateField('theme.fontFamily', e.target.value)}
-                      className="w-full mt-1 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                      className="w-full mt-1 text-base sm:text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"
                     >
                       {FONT_OPTIONS.map(f => (
                         <option key={f.value} value={f.value}>{f.label} ({f.category})</option>
@@ -1608,7 +1608,7 @@ export default function SeekerSiteEditor() {
                       updateField('customUrl', clean);
                       updateField('seo.canonicalUrl', `https://thenijobs.com/portfolio/${clean}`);
                     }}
-                    className="flex-1 px-3 py-2 text-xs font-mono font-bold rounded-r-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                    className="flex-1 px-3 py-2 text-base sm:text-xs font-mono font-bold rounded-r-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                     placeholder="your-name"
                   />
                 </div>
@@ -1624,7 +1624,7 @@ export default function SeekerSiteEditor() {
                   type="text"
                   value={site.seo?.title || ''}
                   onChange={e => updateField('seo.title', e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                   placeholder="e.g. Anand Kumar - Senior Digital Marketer in Theni | Portfolio & Resume"
                 />
               </div>
@@ -1639,7 +1639,7 @@ export default function SeekerSiteEditor() {
                   rows={3}
                   value={site.seo?.description || ''}
                   onChange={e => updateField('seo.description', e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden leading-relaxed"
+                  className="w-full px-3 py-2 text-base sm:text-xs rounded-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden leading-relaxed"
                   placeholder="e.g. Verified digital marketing professional with 3+ years experience in SEO, PPC & Social Media in Theni, Tamil Nadu. View projects & hire directly."
                 />
               </div>

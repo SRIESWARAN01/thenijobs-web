@@ -386,7 +386,7 @@ function LoginPageContent() {
                         <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input type="tel" required maxLength={10} placeholder="Enter 10-digit mobile"
                           value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none transition-all font-medium" />
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none transition-all font-medium" />
                       </div>
                     </div>
                     <p className="text-[11px] text-gray-400 mt-1.5">We will send an OTP via SMS and voice call options</p>
@@ -399,7 +399,7 @@ function LoginPageContent() {
                         <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input type="email" required placeholder="your@email.com"
                           value={email} onChange={e => setEmail(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                       </div>
                     </div>
                     <div>
@@ -408,7 +408,7 @@ function LoginPageContent() {
                         <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input type={showPass ? 'text' : 'password'} required placeholder="••••••••"
                           value={password} onChange={e => setPassword(e.target.value)}
-                          className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
+                          className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                         <button type="button" onClick={() => setShowPass(!showPass)}
                           className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                           {showPass ? <EyeOff size={15} /> : <Eye size={15} />}

@@ -353,14 +353,14 @@ export default function UsersPage() {
             placeholder="Search by name, email, or phone..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
           <select
             value={roleFilter}
             onChange={e => setRoleFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
           >
             <option value="all">All Roles</option>
             <option value="job_seeker">Job Seeker</option>
@@ -372,7 +372,7 @@ export default function UsersPage() {
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -382,7 +382,7 @@ export default function UsersPage() {
           <select
             value={districtFilter}
             onChange={e => setDistrictFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
           >
             {DISTRICTS.map(d => <option key={d}>{d}</option>)}
           </select>
@@ -462,7 +462,7 @@ export default function UsersPage() {
                   placeholder="e.g. Ramesh Kumar"
                   value={editForm.displayName}
                   onChange={e => setEditForm({ ...editForm, displayName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
 
@@ -473,7 +473,7 @@ export default function UsersPage() {
                   placeholder="user@example.com"
                   value={editForm.email}
                   onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
 
@@ -484,7 +484,7 @@ export default function UsersPage() {
                   placeholder="+91 93605 19460"
                   value={editForm.phone}
                   onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
 
@@ -507,7 +507,7 @@ export default function UsersPage() {
                     placeholder="Enter new password (min 6 chars)..."
                     value={editForm.newPassword}
                     onChange={e => setEditForm({ ...editForm, newPassword: e.target.value })}
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
                 <p className="text-[10px] text-gray-500 mt-1">Set a temporary or updated password for this user.</p>
@@ -519,7 +519,7 @@ export default function UsersPage() {
                   <select
                     value={editForm.role}
                     onChange={e => setEditForm({ ...editForm, role: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     <option value="job_seeker">Job Seeker</option>
                     <option value="employer">Employer</option>
@@ -535,7 +535,7 @@ export default function UsersPage() {
                   <select
                     value={editForm.status}
                     onChange={e => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     <option value="active">Active</option>
                     <option value="suspended">Suspended</option>
@@ -547,7 +547,7 @@ export default function UsersPage() {
                   <select
                     value={editForm.district}
                     onChange={e => setEditForm({ ...editForm, district: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     {DISTRICTS.filter(d => d !== 'All Districts').map(d => <option key={d}>{d}</option>)}
                   </select>
@@ -602,7 +602,7 @@ export default function UsersPage() {
                   placeholder="e.g. Ramesh Kumar"
                   value={newUser.displayName}
                   onChange={e => setNewUser({ ...newUser, displayName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
 
@@ -613,7 +613,7 @@ export default function UsersPage() {
                   placeholder="user@example.com"
                   value={newUser.email}
                   onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
 
@@ -624,7 +624,7 @@ export default function UsersPage() {
                   placeholder="+91 93605 19460"
                   value={newUser.phone}
                   onChange={e => setNewUser({ ...newUser, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
 
@@ -634,7 +634,7 @@ export default function UsersPage() {
                   <select
                     value={newUser.role}
                     onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     <option value="job_seeker">Job Seeker</option>
                     <option value="employer">Employer</option>
@@ -647,7 +647,7 @@ export default function UsersPage() {
                   <select
                     value={newUser.district}
                     onChange={e => setNewUser({ ...newUser, district: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     {DISTRICTS.filter(d => d !== 'All Districts').map(d => <option key={d}>{d}</option>)}
                   </select>

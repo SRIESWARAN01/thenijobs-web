@@ -1115,7 +1115,7 @@ export default function CompanyLandingWebsite({
                       placeholder="e.g. Saravanan K"
                       value={leadForm.name}
                       onChange={e => setLeadForm({ ...leadForm, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 
@@ -1127,7 +1127,7 @@ export default function CompanyLandingWebsite({
                       placeholder="e.g. 9876543210"
                       value={leadForm.phone}
                       onChange={e => setLeadForm({ ...leadForm, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 
@@ -1138,7 +1138,7 @@ export default function CompanyLandingWebsite({
                       placeholder="e.g. Order, Consultation, Service Booking, Careers"
                       value={leadForm.service}
                       onChange={e => setLeadForm({ ...leadForm, service: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 
@@ -1149,7 +1149,7 @@ export default function CompanyLandingWebsite({
                       placeholder="Describe your requirements..."
                       value={leadForm.message}
                       onChange={e => setLeadForm({ ...leadForm, message: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 

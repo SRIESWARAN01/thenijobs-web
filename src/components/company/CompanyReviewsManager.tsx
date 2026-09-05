@@ -150,7 +150,7 @@ export default function CompanyReviewsManager({ companyId }: CompanyReviewsManag
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
                     placeholder="Write official company response..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
                   />
                   <div className="flex justify-end gap-2">
                     <button onClick={() => setReplyingId(null)} className="px-3 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100">

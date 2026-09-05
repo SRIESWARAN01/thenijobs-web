@@ -288,7 +288,7 @@ export default function CompanyReviewsSection({
                     value={title}
                     onChange={e => setTitle(e.target.value)}
                     placeholder="Write a review title"
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
 
@@ -299,7 +299,7 @@ export default function CompanyReviewsSection({
                     value={content}
                     onChange={e => setContent(e.target.value)}
                     placeholder="Share your work experience, hiring process, or overall feedback about this company..."
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
                     required
                   />
                 </div>

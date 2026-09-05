@@ -376,7 +376,7 @@ export default function EmployerWebsitePage() {
                     rows={3}
                     value={aiGeneratedStory}
                     onChange={e => setAiGeneratedStory(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                    className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs text-slate-900"
                   />
                 </div>
 
@@ -387,14 +387,14 @@ export default function EmployerWebsitePage() {
                     type="text"
                     value={aiGeneratedSeo.title}
                     onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, title: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs text-slate-900"
                     placeholder="SEO Title"
                   />
                   <textarea
                     rows={2}
                     value={aiGeneratedSeo.desc}
                     onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, desc: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs text-slate-900"
                     placeholder="Meta Description"
                   />
                 </div>

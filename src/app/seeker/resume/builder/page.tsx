@@ -594,7 +594,7 @@ Return strictly valid JSON with format:
               value={targetRole}
               onChange={e => setTargetRole(e.target.value)}
               placeholder="e.g. Digital Marketing, React Developer, Accountant..."
-              className="px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-xs text-white placeholder-blue-200/60 focus:outline-none focus:bg-white/20 w-full sm:w-64 font-medium"
+              className="px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-base sm:text-xs text-white placeholder-blue-200/60 focus:outline-none focus:bg-white/20 w-full sm:w-64 font-medium"
             />
             <button
               onClick={handleAIFullGeneration}
@@ -685,7 +685,7 @@ Return strictly valid JSON with format:
                       type="text"
                       value={personal.name}
                       onChange={e => setPersonal({ ...personal, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="e.g. Muthu Kumar S"
                     />
                   </div>
@@ -695,7 +695,7 @@ Return strictly valid JSON with format:
                       type="email"
                       value={personal.email}
                       onChange={e => setPersonal({ ...personal, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="muthu@example.com"
                     />
                   </div>
@@ -705,7 +705,7 @@ Return strictly valid JSON with format:
                       type="text"
                       value={personal.phone}
                       onChange={e => setPersonal({ ...personal, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="+91 98765 43210"
                     />
                   </div>
@@ -715,7 +715,7 @@ Return strictly valid JSON with format:
                       type="text"
                       value={personal.district}
                       onChange={e => setPersonal({ ...personal, district: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="Theni, Periyakulam, Cumbum..."
                     />
                   </div>
@@ -725,7 +725,7 @@ Return strictly valid JSON with format:
                       type="text"
                       value={personal.address}
                       onChange={e => setPersonal({ ...personal, address: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="North Street, Theni District, Tamil Nadu"
                     />
                   </div>
@@ -735,7 +735,7 @@ Return strictly valid JSON with format:
                       rows={3}
                       value={personal.summary}
                       onChange={e => setPersonal({ ...personal, summary: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium resize-none leading-relaxed"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium resize-none leading-relaxed"
                       placeholder="Experienced professional with domain expertise..."
                     />
                   </div>
@@ -776,7 +776,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={edu.degree}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, degree: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. B.Com / B.E / MBA / 12th"
                           />
                         </div>
@@ -786,7 +786,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={edu.field}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, field: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Computer Science / Finance"
                           />
                         </div>
@@ -796,7 +796,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={edu.institution}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, institution: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. CPA College, Bodinayakanur"
                           />
                         </div>
@@ -807,7 +807,7 @@ Return strictly valid JSON with format:
                               type="text"
                               value={edu.year}
                               onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, year: e.target.value } : x))}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                               placeholder="2023"
                             />
                           </div>
@@ -817,7 +817,7 @@ Return strictly valid JSON with format:
                               type="text"
                               value={edu.grade}
                               onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, grade: e.target.value } : x))}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                               placeholder="82%"
                             />
                           </div>
@@ -862,7 +862,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={exp.company}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, company: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Cardamom Exports, Theni"
                           />
                         </div>
@@ -872,7 +872,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={exp.role}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, role: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Accounts Executive / Marketing"
                           />
                         </div>
@@ -882,7 +882,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={exp.duration}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, duration: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. 2022 – Present (2 Years)"
                           />
                         </div>
@@ -892,7 +892,7 @@ Return strictly valid JSON with format:
                             rows={3}
                             value={exp.description}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, description: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900 resize-none leading-relaxed"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900 resize-none leading-relaxed"
                             placeholder="• Managed daily invoicing and customer accounts&#10;• Generated weekly performance reports for management"
                           />
                         </div>
@@ -925,7 +925,7 @@ Return strictly valid JSON with format:
                     onChange={e => setNewSkill(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addSkill()}
                     placeholder="Type a skill (e.g., Tally Prime, React.js, Sales Management, MS Excel)..."
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none focus:bg-white focus:border-blue-500"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none focus:bg-white focus:border-blue-500"
                   />
                   <button onClick={addSkill} className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer">
                     Add Skill
@@ -967,7 +967,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={cert.name}
                             onChange={e => setCertifications(prev => prev.map(x => x.id === cert.id ? { ...x, name: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Certified Tally Professional / Digital Marketing"
                           />
                         </div>
@@ -977,7 +977,7 @@ Return strictly valid JSON with format:
                             type="text"
                             value={cert.year}
                             onChange={e => setCertifications(prev => prev.map(x => x.id === cert.id ? { ...x, year: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="2024"
                           />
                         </div>

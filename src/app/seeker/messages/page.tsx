@@ -206,7 +206,7 @@ export default function SeekerMessagesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search employer chats..."
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 outline-none focus:border-emerald-500"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-emerald-500"
               />
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function SeekerMessagesPage() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Type a message to the employer..."
-                  className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-xs text-gray-900 focus:bg-white focus:border-emerald-500 outline-none"
+                  className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-base sm:text-xs text-gray-900 focus:bg-white focus:border-emerald-500 outline-none"
                 />
                 <button
                   type="submit"

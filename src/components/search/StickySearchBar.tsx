@@ -58,7 +58,7 @@ export default function StickySearchBar({
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              className="canonical-search-field flex-1 min-w-0 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
+              className="canonical-search-field flex-1 min-w-0 bg-transparent text-base sm:text-sm text-gray-900 placeholder-gray-400 outline-none"
             />
             {searchValue && (
               <button
@@ -79,7 +79,7 @@ export default function StickySearchBar({
                 <select
                   value={location.value}
                   onChange={e => location.onChange(e.target.value)}
-                  className="canonical-search-field bg-transparent text-sm text-gray-700 outline-none pr-1 w-16 cursor-pointer"
+                  className="canonical-search-field bg-transparent text-base sm:text-sm text-gray-700 outline-none pr-1 w-16 cursor-pointer"
                 >
                   {location.options.map(opt => (
                     <option key={opt}>{opt}</option>

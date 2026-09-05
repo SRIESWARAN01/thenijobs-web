@@ -231,7 +231,7 @@ export default function CompanyServicesManager({
                 value={form.name || ''}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g. GST Filing & Accounting / Solar Installation"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
@@ -241,7 +241,7 @@ export default function CompanyServicesManager({
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
                 placeholder="e.g. Financial / Construction / Technical"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
@@ -255,7 +255,7 @@ export default function CompanyServicesManager({
                   setForm({ ...form, priceRange: val, startingPrice: isNaN(num) || num === 0 ? undefined : num });
                 }}
                 placeholder="e.g. Starts from ₹999 or Hourly Rate"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
@@ -265,7 +265,7 @@ export default function CompanyServicesManager({
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
@@ -275,7 +275,7 @@ export default function CompanyServicesManager({
                 value={form.websiteUrl || ''}
                 onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
                 placeholder="https://yourcompany.com/service-booking"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
@@ -285,7 +285,7 @@ export default function CompanyServicesManager({
                 value={form.description || ''}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="Describe your service scope, turnaround time, guarantee, and client benefits..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
               />
             </div>
             <div className="sm:col-span-2 space-y-2">
@@ -301,7 +301,7 @@ export default function CompanyServicesManager({
                       setForm({ ...form, details: copy });
                     }}
                     placeholder={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none font-medium"
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none font-medium"
                   />
                   {(form.details || []).length > 1 && (
                     <button

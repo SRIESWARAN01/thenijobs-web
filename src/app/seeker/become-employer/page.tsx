@@ -414,7 +414,7 @@ export default function BecomeEmployerPage() {
                     placeholder="e.g. Theni Textiles &amp; Garments Pvt Ltd"
                     value={form.name}
                     onChange={e => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
@@ -424,7 +424,7 @@ export default function BecomeEmployerPage() {
                     <select
                       value={form.category}
                       onChange={e => setForm({ ...form, category: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                     >
                       {BUSINESS_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                     </select>
@@ -434,7 +434,7 @@ export default function BecomeEmployerPage() {
                     <select
                       value={form.district}
                       onChange={e => setForm({ ...form, district: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                     >
                       {DISTRICTS.map(d => <option key={d}>{d}</option>)}
                     </select>
@@ -448,7 +448,7 @@ export default function BecomeEmployerPage() {
                     placeholder="e.g. Quality Garments &amp; Retail Manufacturing Since 2012"
                     value={form.tagline}
                     onChange={e => setForm({ ...form, tagline: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
@@ -459,7 +459,7 @@ export default function BecomeEmployerPage() {
                     placeholder="Describe your business, products, services, and workforce requirements..."
                     value={form.description}
                     onChange={e => setForm({ ...form, description: e.target.value })}
-                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -482,7 +482,7 @@ export default function BecomeEmployerPage() {
                       placeholder="+91 93605 19460"
                       value={form.phone}
                       onChange={e => setForm({ ...form, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
@@ -492,7 +492,7 @@ export default function BecomeEmployerPage() {
                       placeholder="+91 93605 19460"
                       value={form.whatsapp}
                       onChange={e => setForm({ ...form, whatsapp: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                 </div>
@@ -505,7 +505,7 @@ export default function BecomeEmployerPage() {
                       placeholder="info@company.com"
                       value={form.email}
                       onChange={e => setForm({ ...form, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
@@ -515,7 +515,7 @@ export default function BecomeEmployerPage() {
                       placeholder="e.g. S. Murugesan"
                       value={form.contactPerson}
                       onChange={e => setForm({ ...form, contactPerson: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                 </div>
@@ -528,7 +528,7 @@ export default function BecomeEmployerPage() {
                     placeholder="Door No, Street Name, Landmark, Theni - 625531"
                     value={form.address}
                     onChange={e => setForm({ ...form, address: e.target.value })}
-                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -549,7 +549,7 @@ export default function BecomeEmployerPage() {
                     placeholder="https://example.com/logo.png"
                     value={form.logoUrl}
                     onChange={e => setForm({ ...form, logoUrl: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                   <p className="text-[10px] text-slate-500 mt-1">If empty, a stylish avatar with company initials will be auto-generated.</p>
                 </div>
@@ -561,7 +561,7 @@ export default function BecomeEmployerPage() {
                     placeholder="https://example.com/shop-banner.jpg"
                     value={form.bannerUrl}
                     onChange={e => setForm({ ...form, bannerUrl: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
@@ -572,7 +572,7 @@ export default function BecomeEmployerPage() {
                     placeholder="https://mycompany.com"
                     value={form.website}
                     onChange={e => setForm({ ...form, website: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -593,7 +593,7 @@ export default function BecomeEmployerPage() {
                     placeholder="e.g. Yarn Spinning, Cotton Weaving, Fabric Dyeing, Bulk Garment Supply"
                     value={form.servicesText}
                     onChange={e => setForm({ ...form, servicesText: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
@@ -602,7 +602,7 @@ export default function BecomeEmployerPage() {
                   <select
                     value={form.employeeCount}
                     onChange={e => setForm({ ...form, employeeCount: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                   >
                     <option>1-10 Employees</option>
                     <option>11-50 Employees</option>
@@ -628,7 +628,7 @@ export default function BecomeEmployerPage() {
                     <select
                       value={form.proofType}
                       onChange={e => setForm({ ...form, proofType: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                     >
                       {PROOF_TYPES.map(p => <option key={p}>{p}</option>)}
                     </select>
@@ -640,7 +640,7 @@ export default function BecomeEmployerPage() {
                       placeholder="e.g. UDYAM-TN-XX-XXXXXXX or GSTIN"
                       value={form.proofNumber}
                       onChange={e => setForm({ ...form, proofNumber: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                 </div>

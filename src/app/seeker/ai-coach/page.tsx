@@ -328,7 +328,7 @@ export default function AICoachPage() {
               onChange={e => setQuestion(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAskQuestion()}
               placeholder="Ask about suitable jobs, salary ranges, skills to learn, or interview tips..."
-              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-xs text-gray-900 focus:bg-white focus:border-indigo-500 outline-none"
+              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-base sm:text-xs text-gray-900 focus:bg-white focus:border-indigo-500 outline-none"
             />
             <button
               onClick={handleAskQuestion}
@@ -384,7 +384,7 @@ export default function AICoachPage() {
                 value={roleInput}
                 onChange={e => setRoleInput(e.target.value)}
                 placeholder={interviewLang === 'ta' ? 'எ.கா. அக்கவுண்டன்ட், சேல்ஸ் எக்சிகியூட்டிவ், வெப் டெவலப்பர்' : 'e.g. Accounts Assistant, Sales Executive, React Developer'}
-                className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none"
+                className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none"
               />
               <button
                 onClick={handleGenerateQuestions}
@@ -444,7 +444,7 @@ export default function AICoachPage() {
                       value={userAnswers[q.id || idx] || ''}
                       onChange={e => setUserAnswers(prev => ({ ...prev, [q.id || idx]: e.target.value }))}
                       placeholder={interviewLang === 'ta' ? 'உங்கள் பதிலை இங்கே உள்ளிடவும்...' : 'Type or speak your response here...'}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none leading-relaxed"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none leading-relaxed"
                     />
 
                     <button
@@ -503,7 +503,7 @@ export default function AICoachPage() {
                   value={clJobTitle}
                   onChange={e => setClJobTitle(e.target.value)}
                   placeholder="e.g. Senior Accountant"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none"
                 />
               </div>
               <div>
@@ -513,7 +513,7 @@ export default function AICoachPage() {
                   value={clCompany}
                   onChange={e => setClCompany(e.target.value)}
                   placeholder="e.g. Cardamom Exports Ltd"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none"
                 />
               </div>
             </div>

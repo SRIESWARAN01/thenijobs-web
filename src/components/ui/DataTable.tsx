@@ -119,12 +119,12 @@ export function DataTable<T extends Record<string, unknown>>({
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={searchPlaceholder}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all" />
+                className="w-full pl-9 pr-4 py-2 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all" />
             </div>
           )}
           {filters.map(filter => (
             <select key={filter.key} value={filterValues[filter.key] ?? ''} onChange={e => setFilterValues(prev => ({ ...prev, [filter.key]: e.target.value }))}
-              className="px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl text-gray-600 appearance-none cursor-pointer focus:outline-none focus:border-blue-400 transition-all min-w-[120px]">
+              className="px-3 py-2 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-600 appearance-none cursor-pointer focus:outline-none focus:border-blue-400 transition-all min-w-[120px]">
               <option value="">{filter.label}</option>
               {filter.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>

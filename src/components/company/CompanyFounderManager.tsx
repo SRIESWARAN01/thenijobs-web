@@ -82,7 +82,7 @@ export default function CompanyFounderManager({
                 value={founder.photoUrl || ''}
                 onChange={e => updateField('photoUrl', e.target.value)}
                 placeholder="https://..."
-                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function CompanyFounderManager({
                 value={founder.name || ''}
                 onChange={e => updateField('name', e.target.value)}
                 placeholder="Full name"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -108,7 +108,7 @@ export default function CompanyFounderManager({
                 value={founder.designation || ''}
                 onChange={e => updateField('designation', e.target.value)}
                 placeholder="Designation or title"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -118,7 +118,7 @@ export default function CompanyFounderManager({
                 value={founder.nativePlace || ''}
                 onChange={e => updateField('nativePlace', e.target.value)}
                 placeholder="Location"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -128,7 +128,7 @@ export default function CompanyFounderManager({
                 value={founder.experienceYears || ''}
                 onChange={e => updateField('experienceYears', e.target.value)}
                 placeholder="Years of experience"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function CompanyFounderManager({
               value={founder.bio || ''}
               onChange={e => updateField('bio', e.target.value)}
               placeholder="Background, qualifications, and journey..."
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -151,7 +151,7 @@ export default function CompanyFounderManager({
               value={founder.message || ''}
               onChange={e => updateField('message', e.target.value)}
               placeholder="&quot;Our mission is to empower local agriculture and trade...&quot;"
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -163,7 +163,7 @@ export default function CompanyFounderManager({
                 value={founder.linkedinUrl || ''}
                 onChange={e => updateField('linkedinUrl', e.target.value)}
                 placeholder="https://linkedin.com/in/..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -173,7 +173,7 @@ export default function CompanyFounderManager({
                 value={founder.twitterUrl || ''}
                 onChange={e => updateField('twitterUrl', e.target.value)}
                 placeholder="https://x.com/..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
           </div>

@@ -111,7 +111,7 @@ export default function HeroSection() {
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   placeholder="Job title, skills, or company (e.g. Sales, Driver, IT)..."
-                  className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] placeholder-gray-500 text-sm focus:border-blue-600 focus:outline-none focus:ring-0 shadow-sm transition-all"
+                  className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] placeholder-gray-500 text-base sm:text-sm focus:border-blue-600 focus:outline-none focus:ring-0 shadow-sm transition-all"
                   aria-label="Search jobs by title, skills, or company"
                 />
               </div>
@@ -121,7 +121,7 @@ export default function HeroSection() {
                   <select
                     value={district}
                     onChange={e => setDistrict(e.target.value)}
-                    className="w-full pl-9 pr-3 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] font-medium text-sm focus:border-blue-600 focus:outline-none appearance-none shadow-sm cursor-pointer"
+                    className="w-full pl-9 pr-3 py-3.5 bg-white border-2 border-gray-300 rounded-xl text-[#0F172A] font-medium text-base sm:text-sm focus:border-blue-600 focus:outline-none appearance-none shadow-sm cursor-pointer"
                     aria-label="Select location"
                   >
                     {DISTRICTS.map(d => <option key={d}>{d}</option>)}

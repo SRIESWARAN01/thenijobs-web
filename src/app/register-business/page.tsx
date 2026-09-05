@@ -306,7 +306,7 @@ export default function RegisterBusinessPage() {
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   placeholder="e.g. Sri Murugan Textiles / Theni Fresh Spices"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
               <div>
@@ -314,7 +314,7 @@ export default function RegisterBusinessPage() {
                 <select
                   value={form.category}
                   onChange={e => setForm({ ...form, category: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
                 >
                   {BUSINESS_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -324,7 +324,7 @@ export default function RegisterBusinessPage() {
                 <select
                   value={form.district}
                   onChange={e => setForm({ ...form, district: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
                 >
                   {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -334,7 +334,7 @@ export default function RegisterBusinessPage() {
                 <select
                   value={form.employeeCount}
                   onChange={e => setForm({ ...form, employeeCount: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
                 >
                   <option>1-5 Employees</option>
                   <option>5-15 Employees</option>
@@ -351,7 +351,7 @@ export default function RegisterBusinessPage() {
                   value={form.address}
                   onChange={e => setForm({ ...form, address: e.target.value })}
                   placeholder="Door No, Street Name, Landmark, Town/City, Pincode"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none leading-relaxed"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none leading-relaxed"
                 />
               </div>
             </div>
@@ -371,7 +371,7 @@ export default function RegisterBusinessPage() {
                   value={form.contactPerson}
                   onChange={e => setForm({ ...form, contactPerson: e.target.value })}
                   placeholder="e.g. S. Ramasamy"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
               <div>
@@ -381,7 +381,7 @@ export default function RegisterBusinessPage() {
                   value={form.designation}
                   onChange={e => setForm({ ...form, designation: e.target.value })}
                   placeholder="Proprietor / HR Manager / Founder"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
               <div>
@@ -392,7 +392,7 @@ export default function RegisterBusinessPage() {
                   value={form.phone}
                   onChange={e => setForm({ ...form, phone: e.target.value })}
                   placeholder="+91 93605 19460"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
                 />
               </div>
               <div>
@@ -402,7 +402,7 @@ export default function RegisterBusinessPage() {
                   value={form.whatsapp}
                   onChange={e => setForm({ ...form, whatsapp: e.target.value })}
                   placeholder="+91 70948 26886"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
                 />
               </div>
               <div className="sm:col-span-2">
@@ -412,7 +412,7 @@ export default function RegisterBusinessPage() {
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
                   placeholder="contact@yourbusiness.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
             </div>
@@ -429,7 +429,7 @@ export default function RegisterBusinessPage() {
                 <select
                   value={form.proofType}
                   onChange={e => setForm({ ...form, proofType: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
                 >
                   {PROOF_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
@@ -441,7 +441,7 @@ export default function RegisterBusinessPage() {
                   value={form.proofNumber}
                   onChange={e => setForm({ ...form, proofNumber: e.target.value })}
                   placeholder="e.g. UDYAM-TN-24-000000 / GSTIN"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
                 />
               </div>
               <div className="sm:col-span-2">
@@ -451,7 +451,7 @@ export default function RegisterBusinessPage() {
                   value={form.website}
                   onChange={e => setForm({ ...form, website: e.target.value })}
                   placeholder="https://..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                 />
               </div>
               <div className="sm:col-span-2">
@@ -461,7 +461,7 @@ export default function RegisterBusinessPage() {
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder="Describe what your business does, key products/services, and recruiting requirements..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none leading-relaxed"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none leading-relaxed"
                 />
               </div>
             </div>

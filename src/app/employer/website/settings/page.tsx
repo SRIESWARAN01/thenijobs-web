@@ -163,7 +163,7 @@ export default function WebsiteSettingsPage() {
                 type="text"
                 value={site.seo?.title || ''}
                 onChange={e => setSite({ ...site, seo: { ...site.seo, title: e.target.value } })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs"
               />
             </div>
             <div>
@@ -172,7 +172,7 @@ export default function WebsiteSettingsPage() {
                 value={site.seo?.description || ''}
                 onChange={e => setSite({ ...site, seo: { ...site.seo, description: e.target.value } })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs resize-none"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs resize-none"
               />
             </div>
           </div>

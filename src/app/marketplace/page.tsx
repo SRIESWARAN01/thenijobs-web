@@ -211,14 +211,14 @@ export default function MarketplacePage() {
                   placeholder="Search products, AC repair, hospitals, groceries, businesses..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium"
+                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium"
                 />
               </div>
 
               <select
                 value={selectedLocation}
                 onChange={e => setSelectedLocation(e.target.value)}
-                className="px-3.5 py-3 bg-white rounded-xl text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
+                className="px-3.5 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
               >
                 {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
               </select>
@@ -226,7 +226,7 @@ export default function MarketplacePage() {
               <select
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="px-3.5 py-3 bg-white rounded-xl text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
+                className="px-3.5 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
               >
                 {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>

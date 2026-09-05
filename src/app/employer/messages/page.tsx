@@ -211,7 +211,7 @@ export default function EmployerMessagesPage() {
                 placeholder="Search chats & applicants..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-100/80 border border-gray-200 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+                className="w-full pl-10 pr-4 py-2 bg-gray-100/80 border border-gray-200 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
               />
             </div>
           </div>
@@ -384,7 +384,7 @@ export default function EmployerMessagesPage() {
                   placeholder="Type your message to candidate..."
                   value={inputText}
                   onChange={e => setInputText(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+                  className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
                 />
                 <button
                   type="submit"

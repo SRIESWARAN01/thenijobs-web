@@ -189,7 +189,7 @@ export default function AIChatbotModal({
                 ? 'Ask about candidate search or JD generator...'
                 : 'Type your prompt here...'
             }
-            className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-xs text-gray-900 focus:bg-white focus:border-emerald-500 outline-none"
+            className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-base sm:text-xs text-gray-900 focus:bg-white focus:border-emerald-500 outline-none"
           />
           <button
             onClick={handleSend}

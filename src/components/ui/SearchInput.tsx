@@ -60,7 +60,7 @@ export function SearchInput({
         </div>
         <input ref={inputRef} type="text" value={localValue} onChange={e => handleChange(e.target.value)}
           onFocus={() => setShowSuggestions(true)} onKeyDown={handleKeyDown} placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all"
+          className="w-full pl-10 pr-10 py-2.5 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all"
           autoComplete="off" />
         {localValue && (
           <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-slate-500 hover:text-gray-600 hover:bg-gray-100 transition-all" aria-label="Clear search">

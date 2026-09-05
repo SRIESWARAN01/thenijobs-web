@@ -807,7 +807,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                   <select
                     value={selectedResumeId}
                     onChange={e => setSelectedResumeId(e.target.value)}
-                    className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:border-blue-500 font-medium"
+                    className="w-full px-3 py-2.5 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:border-blue-500 font-medium"
                   >
                     <option value="">Standard THENIJOBS Profile Resume</option>
                     {resumes.map((r: any) => (
@@ -831,7 +831,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                   value={coverLetter}
                   onChange={e => setCoverLetter(e.target.value)}
                   placeholder="Briefly state why you're a great fit for this position..."
-                  className="w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 resize-none focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2.5 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-900 resize-none focus:outline-none focus:border-blue-500"
                 />
               </div>
 

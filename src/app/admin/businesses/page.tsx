@@ -606,21 +606,21 @@ export default function BusinessesPage() {
             placeholder="Search by business name, phone, or contact person..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
           >
             {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
           <select
             value={districtFilter}
             onChange={e => setDistrictFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
           >
             {DISTRICTS.map(d => <option key={d}>{d}</option>)}
           </select>
@@ -902,7 +902,7 @@ export default function BusinessesPage() {
                     type="text"
                     value={editBizForm.name}
                     onChange={e => setEditBizForm({ ...editBizForm, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="e.g. Royal Grand Hospital"
                   />
                 </div>
@@ -911,7 +911,7 @@ export default function BusinessesPage() {
                   <select
                     value={editBizForm.category}
                     onChange={e => setEditBizForm({ ...editBizForm, category: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     {CATEGORIES.filter(c => c !== 'All Categories').map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -925,7 +925,7 @@ export default function BusinessesPage() {
                   <select
                     value={editBizForm.district}
                     onChange={e => setEditBizForm({ ...editBizForm, district: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     {DISTRICTS.filter(d => d !== 'All Districts').map(d => <option key={d}>{d}</option>)}
                   </select>
@@ -936,7 +936,7 @@ export default function BusinessesPage() {
                     type="text"
                     value={editBizForm.address}
                     onChange={e => setEditBizForm({ ...editBizForm, address: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="e.g. 45, Main Bazaar, Theni"
                   />
                 </div>
@@ -950,7 +950,7 @@ export default function BusinessesPage() {
                     type="text"
                     value={editBizForm.contactPerson}
                     onChange={e => setEditBizForm({ ...editBizForm, contactPerson: e.target.value, ownerName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="e.g. K. Suresh"
                   />
                 </div>
@@ -960,7 +960,7 @@ export default function BusinessesPage() {
                     type="tel"
                     value={editBizForm.phone}
                     onChange={e => setEditBizForm({ ...editBizForm, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="9876543210"
                   />
                 </div>
@@ -970,7 +970,7 @@ export default function BusinessesPage() {
                     type="tel"
                     value={editBizForm.whatsapp}
                     onChange={e => setEditBizForm({ ...editBizForm, whatsapp: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="9876543210"
                   />
                 </div>
@@ -984,7 +984,7 @@ export default function BusinessesPage() {
                     type="email"
                     value={editBizForm.email}
                     onChange={e => setEditBizForm({ ...editBizForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="contact@company.com"
                   />
                 </div>
@@ -994,7 +994,7 @@ export default function BusinessesPage() {
                     type="url"
                     value={editBizForm.website}
                     onChange={e => setEditBizForm({ ...editBizForm, website: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="https://mycompany.com"
                   />
                 </div>
@@ -1007,7 +1007,7 @@ export default function BusinessesPage() {
                   <select
                     value={editBizForm.proofType}
                     onChange={e => setEditBizForm({ ...editBizForm, proofType: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     <option value="MSME / Udyam Registration">MSME / Udyam</option>
                     <option value="GST Registration Certificate">GST Certificate</option>
@@ -1024,7 +1024,7 @@ export default function BusinessesPage() {
                     type="text"
                     value={editBizForm.proofNumber}
                     onChange={e => setEditBizForm({ ...editBizForm, proofNumber: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
                     placeholder="e.g. 33AAAAA0000A1Z5"
                   />
                 </div>
@@ -1033,7 +1033,7 @@ export default function BusinessesPage() {
                   <select
                     value={editBizForm.verificationStatus}
                     onChange={e => setEditBizForm({ ...editBizForm, verificationStatus: e.target.value as any })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     <option value="verified">Verified &amp; Active</option>
                     <option value="pending">Pending Verification</option>
@@ -1054,7 +1054,7 @@ export default function BusinessesPage() {
                       type="url"
                       value={editBizForm.logoUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, logoUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="https://…/logo.png"
                     />
                   </div>
@@ -1064,7 +1064,7 @@ export default function BusinessesPage() {
                       type="url"
                       value={editBizForm.coverUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, coverUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="https://…/banner.jpg"
                     />
                   </div>
@@ -1088,7 +1088,7 @@ export default function BusinessesPage() {
                       type="text"
                       value={editBizForm.establishedYear}
                       onChange={e => setEditBizForm({ ...editBizForm, establishedYear: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="e.g. 2015"
                     />
                   </div>
@@ -1098,7 +1098,7 @@ export default function BusinessesPage() {
                       type="url"
                       value={editBizForm.googleMapsUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, googleMapsUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="https://maps.google.com/…"
                     />
                   </div>
@@ -1116,7 +1116,7 @@ export default function BusinessesPage() {
                         type="url"
                         value={editBizForm[key]}
                         onChange={e => setEditBizForm({ ...editBizForm, [key]: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                         placeholder="https://…"
                       />
                     </div>
@@ -1131,7 +1131,7 @@ export default function BusinessesPage() {
                   type="text"
                   value={editBizForm.tagline}
                   onChange={e => setEditBizForm({ ...editBizForm, tagline: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                   placeholder="e.g. Leading IT & Cloud Solutions in Theni"
                 />
               </div>
@@ -1142,7 +1142,7 @@ export default function BusinessesPage() {
                   rows={3}
                   value={editBizForm.description}
                   onChange={e => setEditBizForm({ ...editBizForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none"
                   placeholder="Describe company history, products, and services..."
                 />
               </div>
@@ -1238,7 +1238,7 @@ export default function BusinessesPage() {
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}
                 placeholder="Explain what details need to be updated..."
-                className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none focus:bg-white focus:border-red-400 resize-none font-medium"
+                className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none focus:bg-white focus:border-red-400 resize-none font-medium"
               />
             </div>
 

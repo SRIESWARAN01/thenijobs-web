@@ -160,7 +160,7 @@ export default function CompanyPortfolioManager({
                 value={form.title || ''}
                 onChange={e => setForm({ ...form, title: e.target.value })}
                 placeholder="Project title"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -170,7 +170,7 @@ export default function CompanyPortfolioManager({
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
                 placeholder="Category"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -180,7 +180,7 @@ export default function CompanyPortfolioManager({
                 value={form.location || ''}
                 onChange={e => setForm({ ...form, location: e.target.value })}
                 placeholder="Location"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
@@ -190,7 +190,7 @@ export default function CompanyPortfolioManager({
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
                 placeholder="https://..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
           </div>
@@ -202,7 +202,7 @@ export default function CompanyPortfolioManager({
               value={form.description || ''}
               onChange={e => setForm({ ...form, description: e.target.value })}
               placeholder="Describe project highlights, scope, and key outcomes..."
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
             />
           </div>
 

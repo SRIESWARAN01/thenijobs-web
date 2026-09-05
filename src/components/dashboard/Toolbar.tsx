@@ -111,7 +111,7 @@ export function FilterSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
-        'h-10 shrink-0 cursor-pointer rounded-xl border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20',
+        'h-10 shrink-0 cursor-pointer rounded-xl border border-slate-300 bg-white px-3 text-base sm:text-sm font-medium text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20',
         value && value !== 'all' && 'border-blue-300 bg-[#EFF6FF] text-[#1E40AF]',
         className,
       )}

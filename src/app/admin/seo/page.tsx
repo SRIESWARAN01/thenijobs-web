@@ -460,13 +460,13 @@ export default function AdminSeoManagementPage() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search slug, name, keywords..."
-                className="pl-8 pr-3 py-1.5 text-xs bg-white rounded-xl border border-slate-200 focus:outline-hidden focus:border-blue-500 w-48 sm:w-64"
+                className="pl-8 pr-3 py-1.5 text-base sm:text-xs bg-white rounded-xl border border-slate-200 focus:outline-hidden focus:border-blue-500 w-48 sm:w-64"
               />
             </div>
             <select
               value={filterIndexed}
               onChange={e => setFilterIndexed(e.target.value as any)}
-              className="px-2.5 py-1.5 text-xs bg-white rounded-xl border border-slate-200"
+              className="px-2.5 py-1.5 text-base sm:text-xs bg-white rounded-xl border border-slate-200"
             >
               <option value="all">All Status</option>
               <option value="indexed">🟢 Google Indexed</option>

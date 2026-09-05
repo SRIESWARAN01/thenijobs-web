@@ -226,7 +226,7 @@ export default function LeadsPage() {
                       value={lead.status || 'new'}
                       disabled={busy}
                       onChange={e => handleStatusChange(lead.id, e.target.value as LeadStatus)}
-                      className="h-10 flex-1 rounded-xl border border-slate-300 bg-white px-2.5 text-sm font-medium text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+                      className="h-10 flex-1 rounded-xl border border-slate-300 bg-white px-2.5 text-base sm:text-sm font-medium text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
                     >
                       {PIPELINE_STAGES.map(s => (
                         <option key={s.status} value={s.status}>{s.label}</option>

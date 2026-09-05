@@ -630,7 +630,7 @@ export default function PostJobPage() {
                         type="date"
                         value={form.walkInDate}
                         onChange={e => update('walkInDate', e.target.value)}
-                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-base sm:text-xs text-gray-900"
                       />
                     </div>
                     <div>
@@ -640,7 +640,7 @@ export default function PostJobPage() {
                         value={form.walkInTime}
                         onChange={e => update('walkInTime', e.target.value)}
                         placeholder="e.g. 10:00 AM – 4:00 PM"
-                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-base sm:text-xs text-gray-900"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -650,7 +650,7 @@ export default function PostJobPage() {
                         value={form.walkInVenue}
                         onChange={e => update('walkInVenue', e.target.value)}
                         placeholder="e.g. 45, NRT Road, Opp. Bus Stand, Theni"
-                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-base sm:text-xs text-gray-900"
                       />
                     </div>
                   </div>

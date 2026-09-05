@@ -222,7 +222,7 @@ export default function CompanyProductsManager({
                 value={form.name || ''}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g. Pure Theni Cardamom 1kg / PVC Pipes"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
@@ -232,7 +232,7 @@ export default function CompanyProductsManager({
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
                 placeholder="e.g. Agriculture / Spices / Electronics"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
@@ -246,7 +246,7 @@ export default function CompanyProductsManager({
                   setForm({ ...form, priceRange: val, price: isNaN(num) || num === 0 ? undefined : num });
                 }}
                 placeholder="e.g. ₹1,200 or ₹500 - ₹1,500"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
@@ -256,7 +256,7 @@ export default function CompanyProductsManager({
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
@@ -266,7 +266,7 @@ export default function CompanyProductsManager({
                 value={form.websiteUrl || ''}
                 onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
                 placeholder="https://yourcompany.com/product-link"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
@@ -276,7 +276,7 @@ export default function CompanyProductsManager({
                 value={form.description || ''}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="Describe product quality, dimensions, specifications, bulk order discounts..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
               />
             </div>
             <div className="sm:col-span-2 space-y-2">
@@ -292,7 +292,7 @@ export default function CompanyProductsManager({
                       setForm({ ...form, features: copy });
                     }}
                     placeholder={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none font-medium"
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none font-medium"
                   />
                   {(form.features || []).length > 1 && (
                     <button

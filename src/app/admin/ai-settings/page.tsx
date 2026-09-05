@@ -187,7 +187,7 @@ export default function AdminAISettingsPage() {
             <select
               value={config.activeProvider}
               onChange={e => setConfig(prev => ({ ...prev, activeProvider: e.target.value as any }))}
-              className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-base sm:text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500"
             >
               <option value="gemini">Google Gemini</option>
               <option value="groq">Groq</option>
@@ -204,7 +204,7 @@ export default function AdminAISettingsPage() {
             <select
               value={config.fallbackProvider}
               onChange={e => setConfig(prev => ({ ...prev, fallbackProvider: e.target.value as any }))}
-              className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-base sm:text-sm font-medium text-gray-900 focus:outline-none focus:border-blue-500"
             >
               <option value="none">None</option>
               <option value="gemini">Google Gemini</option>
@@ -287,7 +287,7 @@ export default function AdminAISettingsPage() {
                       value={provider.apiKey}
                       onChange={e => updateProvider(name, { apiKey: e.target.value })}
                       placeholder={`Enter ${info.label} API key...`}
-                      className="w-full px-3 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-mono text-xs"
+                      className="w-full px-3 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-mono text-xs"
                     />
                     <button
                       onClick={() => setShowKeys(prev => ({ ...prev, [name]: !prev[name] }))}
@@ -309,7 +309,7 @@ export default function AdminAISettingsPage() {
                   <select
                     value={provider.model}
                     onChange={e => updateProvider(name, { model: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
+                    className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 focus:outline-none focus:border-blue-500 transition-all"
                   >
                     {(PROVIDER_MODELS[name] || []).map(m => (
                       <option key={m} value={m}>{m}</option>

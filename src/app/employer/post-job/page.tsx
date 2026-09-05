@@ -587,8 +587,7 @@ export default function PostJobPage() {
                 return (
                   <div
                     key={key}
-                    onClick={() => update(key, !isChecked)}
-                    className={`flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between rounded-2xl border p-3.5 transition-all sm:p-4 ${
                       isChecked ? 'border-transparent shadow-xs' : 'border-gray-200 hover:border-gray-300'
                     }`}
                     style={isChecked ? { background: bg, borderColor: color + '40' } : {}}
@@ -597,19 +596,14 @@ export default function PostJobPage() {
                       <div className="text-xs sm:text-sm font-bold text-gray-900">{label}</div>
                       <div className="text-[11px] text-gray-500 mt-0.5">{desc}</div>
                     </div>
-                    <div
-                      className={`w-10 h-6 rounded-full relative shrink-0 transition-all ${isChecked ? '' : 'bg-gray-300'}`}
-                      style={isChecked ? { background: color } : {}}
-                    >
-                      <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-xs transition-all ${isChecked ? 'left-5' : 'left-1'}`} />
-                    </div>
+                    <Switch checked={isChecked} onChange={(next) => update(key, next)} label={label} />
                   </div>
                 );
               })}
 
               {/* Urgent Walk-in Drive Toggle & Venue */}
               <div className="p-4 rounded-2xl border border-red-200 bg-red-50/50 space-y-3 mt-3">
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => update('isWalkIn', !form.isWalkIn)}>
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
                     <div>
@@ -617,16 +611,18 @@ export default function PostJobPage() {
                       <p className="text-[11px] text-red-700">Display top urgent countdown banner across the platform.</p>
                     </div>
                   </div>
-                  <div className={`w-10 h-6 rounded-full relative transition-all ${form.isWalkIn ? 'bg-red-600' : 'bg-gray-300'}`}>
-                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-xs transition-all ${form.isWalkIn ? 'left-5' : 'left-1'}`} />
-                  </div>
+                  <Switch
+                    checked={form.isWalkIn}
+                    onChange={(next) => update('isWalkIn', next)}
+                    label="Urgent walk-in interview drive"
+                  />
                 </div>
 
                 {form.isWalkIn && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-red-200/60 animate-fade-in text-xs">
                     <div>
-                      <label className="font-bold text-red-950 block mb-1">Walk-in Interview Date</label>
-                      <input id="employer-post-job-update-isnegotiable-form-isnegotiable-cl"
+                      <label htmlFor="employer-post-job-walk-in-date" className="font-bold text-red-950 block mb-1">Walk-in Interview Date</label>
+                      <input id="employer-post-job-walk-in-date"
                         type="date"
                         value={form.walkInDate}
                         onChange={e => update('walkInDate', e.target.value)}

@@ -151,14 +151,20 @@ export default function ResumeManagementPage() {
               <Upload size={15} className="text-emerald-600" /> Upload Resume
             </h2>
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Upload resume file"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`flex flex-col items-center justify-center gap-3 p-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); }
+              }}
+              className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 isDragging
                   ? 'border-emerald-500/60 bg-emerald-100'
-                  : 'border-white/15 hover:border-emerald-500/40 hover:bg-emerald-50'
+                  : 'border-slate-200 hover:border-emerald-500/40 hover:bg-emerald-50'
               }`}
             >
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${

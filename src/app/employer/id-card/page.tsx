@@ -36,7 +36,7 @@ export default function EmployerIDCardPage() {
         <EmptyState
           icon={Building2}
           title="No company registered"
-          description="Register your business profile first to generate your official THENIJOBS digital visiting card with a verified QR pass."
+          description="Register your business profile first to generate your THENIJOBS digital visiting card with a shareable QR pass."
           action={
             <Link href="/employer/company-profile">
               <Button variant="primary">Create company profile</Button>
@@ -53,7 +53,7 @@ export default function EmployerIDCardPage() {
     <PageShell className="max-w-4xl">
       <PageHeader
         title="Digital business visiting card"
-        description="Your official company visiting card with instant QR portfolio pass, downloadable in high resolution for print and WhatsApp sharing."
+        description="Your company visiting card with instant QR portfolio pass, downloadable in high resolution for print and WhatsApp sharing."
         breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'ID card' }]}
       />
 
@@ -90,7 +90,7 @@ export default function EmployerIDCardPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-blue-600">•</span>
-              <span>QR code opens your live verified products &amp; services catalogue</span>
+              <span>QR code opens your live products &amp; services catalogue</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-blue-600">•</span>

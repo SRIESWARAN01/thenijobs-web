@@ -12,7 +12,16 @@ import {
   Share2, ChevronRight, Star, CheckCircle, Copy,
   MessageCircle, Loader2, Calendar, Flame, ArrowRight
 } from 'lucide-react';
-import { collection, getDocs, query, where, addDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, writeBatch, serverTimestamp, limit as fbLimit } from 'firebase/firestore';
+
+// PERF-3: an explicit ceiling on a public list read. It used to fetch every matching
+// document. Measured against production on 2026-09-05: 2 active jobs and 104 verified
+// companies, so this ceiling is far above real data and no visitor loses a result today.
+// No orderBy is added on purpose: zero job documents carry `postedAt` and only one of the
+// two carries `createdAt`, and Firestore's orderBy drops every document missing the field
+// it sorts on, so ordering here would hide a live job. Sorting stays client-side, where a
+// missing timestamp falls back instead of vanishing.
+const PUBLIC_LIST_LIMIT = 500;
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
@@ -313,6 +322,9 @@ export default function JobsPage() {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  // PERF-3: true when the read hit PUBLIC_LIST_LIMIT, so the page can say so instead of
+  // silently truncating. A seeker who cannot see a job cannot apply for it.
+  const [capped, setCapped] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [savedJobs, setSavedJobs] = useState<string[]>([]);
@@ -349,10 +361,12 @@ export default function JobsPage() {
         const q = query(
           collection(db, 'jobs'),
           where('isActive', '==', true),
-          where('status', '==', 'active')
+          where('status', '==', 'active'),
+          fbLimit(PUBLIC_LIST_LIMIT)
         );
         const snap = await getDocs(q);
         if (cancelled) return;
+        setCapped(snap.size >= PUBLIC_LIST_LIMIT);
         const TYPE_MAP: Record<string, string> = {
           full_time: 'Full Time', part_time: 'Part Time', remote: 'Remote',
           wfh: 'WFH', contract: 'Contract', internship: 'Internship',
@@ -581,6 +595,11 @@ export default function JobsPage() {
             </h1>
             <p className="text-xs text-gray-500 mt-0.5">
               {loading ? 'Searching...' : `${visibleJobs.length.toLocaleString()} verified career opportunities found`}
+              {capped && !loading && (
+                <span className="ml-1 font-normal text-gray-500">
+                  {' '}· showing the first {PUBLIC_LIST_LIMIT.toLocaleString()}, narrow your search to see more
+                </span>
+              )}
             </p>
           </div>
 

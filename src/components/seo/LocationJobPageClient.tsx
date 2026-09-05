@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit as fbLimit } from 'firebase/firestore';
+
+const PUBLIC_LIST_LIMIT = 500;
 import { LOCATIONS_DATA, CATEGORIES_LIST } from './locationData';
 
 export default function LocationJobPageClient({ locationSlug }: { locationSlug: string }) {
@@ -33,7 +35,12 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
           collection(db, 'jobs'),
           where('isActive', '==', true),
           where('status', '==', 'active'),
-          fbLimit(15)
+          // SEO-6: was fbLimit(15). Filtering happens client-side after this fetch, so a
+          // genuine match beyond the 15th most-recent job was silently missed. Matches
+          // PUBLIC_LIST_LIMIT, the cap PERF-3 set on /jobs and /businesses for the same
+          // reason: bounded, but generous enough that a real result isn't dropped before
+          // the filter even sees it.
+          fbLimit(PUBLIC_LIST_LIMIT)
         );
         const snap = await getDocs(q);
         const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() }));

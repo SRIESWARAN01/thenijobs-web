@@ -69,7 +69,6 @@ export default function CompanyReviewsSection({
         userId: user.uid,
         userName: user.displayName || 'Job Seeker',
         userPhotoUrl: user.photoURL || '',
-        isVerifiedSeeker: true,
         rating,
         title: title.trim() || 'Work Experience Review',
         content: content.trim(),
@@ -185,7 +184,7 @@ export default function CompanyReviewsSection({
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                       {r.userName}
-                      {r.isVerifiedSeeker !== false && (
+                      {r.isVerifiedSeeker === true && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
                           <ShieldCheck size={11} /> Verified Candidate
                         </span>

@@ -152,7 +152,7 @@ export default function FeaturedBusinesses() {
             rating: d.rating || 0,
             reviews: d.reviewCount || 0,
             jobs: d.jobCount || 0,
-            isVerified: d.isVerified ?? true,
+            isVerified: d.isVerified || false,
             isPremium: d.isPremium || false,
             tagline: d.tagline || '',
             logo: d.name ? d.name.substring(0, 2).toUpperCase() : 'C',

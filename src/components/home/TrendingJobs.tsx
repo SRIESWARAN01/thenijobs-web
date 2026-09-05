@@ -207,7 +207,7 @@ export default function TrendingJobs() {
             logo: d.logoUrl || d.logo || '',
             isUrgent: !!d.isUrgent,
             isFeatured: !!d.isFeatured,
-            isVerified: d.isVerified ?? true,
+            isVerified: d.isVerified || false,
             category: d.category || 'General',
             trendingScore,
             viewCount: views,

@@ -12,6 +12,7 @@ import { useCollection } from '@/hooks/useFirestore';
 import { useSeekerStats } from '@/hooks/useRealtimeStats';
 import { where, orderBy, limit } from 'firebase/firestore';
 import { formatDate, type FirestoreTime } from '@/lib/firestoreTime';
+import { jobMatchesAlert } from '@/lib/firebase/firestoreService';
 import {
   Button, Card, CardBody, CardHeader, EmptyState, PageHeader, PageShell, Pill,
   Stat, StatGrid, type PillTone,
@@ -35,7 +36,8 @@ const QUICK_ACTIONS = [
 
 interface ApplicationDoc { id: string; jobTitle?: string; companyName?: string; status?: string; createdAt?: FirestoreTime }
 interface InterviewDoc { id: string; companyName?: string; jobTitle?: string; date?: string; time?: string; mode?: string }
-interface JobDoc { id: string; title?: string; companyName?: string; district?: string; jobType?: string; salaryMin?: number | string; isUrgent?: boolean }
+interface JobDoc { id: string; title?: string; category?: string; companyName?: string; district?: string; jobType?: string; salaryMin?: number | string; isUrgent?: boolean; createdAt?: { toMillis?: () => number } }
+interface JobAlertDoc { id: string; userId?: string; title?: string; category?: string; district?: string; jobType?: string; status?: string }
 
 interface SeekerProfile {
   uid?: string;
@@ -67,10 +69,24 @@ export default function SeekerDashboard() {
   const { data: interviews } = useCollection<InterviewDoc>('interviews', [
     where('seekerId', '==', uid || ''), limit(4)
   ], { skip: !uid });
-  const { data: jobs, loading: jobsLoading } = useCollection<JobDoc>('jobs', [
-    where('isActive', '==', true), where('status', '==', 'active'),
-    orderBy('createdAt', 'desc'), limit(4)
+  // SEEKER-4: no orderBy('createdAt') here — PERF-3 already found that at least one live job
+  // document has no createdAt field at all, and Firestore's orderBy silently drops any document
+  // missing the field it sorts on. Sorted client-side below instead, where a missing timestamp
+  // falls back to the end of the list rather than vanishing from it. Fetches a wider candidate
+  // set than the 4 actually shown so alert-matching (below) has something real to filter.
+  const { data: jobsRaw, loading: jobsLoading } = useCollection<JobDoc>('jobs', [
+    where('isActive', '==', true), where('status', '==', 'active'), limit(50)
   ]);
+  const { data: activeAlerts } = useCollection<JobAlertDoc>('jobAlerts', [
+    where('userId', '==', uid || ''), where('status', '==', 'active')
+  ], { skip: !uid });
+
+  const sortedJobs = [...jobsRaw].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  const hasActiveAlerts = activeAlerts.length > 0;
+  const matchedJobs = hasActiveAlerts
+    ? sortedJobs.filter(job => activeAlerts.some(alert => jobMatchesAlert(job, alert)))
+    : sortedJobs;
+  const jobs = matchedJobs.slice(0, 4);
 
   const displayName = user?.displayName || firebaseUser?.displayName || 'Seeker';
   const loading = statsLoading || appsLoading || jobsLoading;
@@ -143,15 +159,21 @@ export default function SeekerDashboard() {
       </StatGrid>
 
       <div className="grid gap-4 sm:gap-6 xl:grid-cols-3">
-        {/* Recommended jobs */}
+        {/* Recommended jobs — only called "Recommended" when a real job alert actually
+            narrowed the list; otherwise this is the plain latest-jobs feed, said honestly. */}
         <Card className="overflow-hidden xl:col-span-2">
           <CardHeader
-            title="Recommended jobs"
-            description="Latest matching opportunities"
+            title={hasActiveAlerts ? 'Recommended jobs' : 'Latest jobs'}
+            description={hasActiveAlerts ? 'Matched to your job alerts' : 'Create a job alert to personalize this list'}
             action={<Link href="/seeker/jobs" className="text-xs font-semibold text-emerald-700 hover:text-emerald-800">Browse all →</Link>}
           />
           {jobs.length === 0 ? (
-            <EmptyState variant="inline" icon={Briefcase} title="No active jobs listed" />
+            <EmptyState
+              variant="inline"
+              icon={Briefcase}
+              title={hasActiveAlerts ? 'No jobs match your alerts yet' : 'No active jobs listed'}
+              description={hasActiveAlerts ? 'We’ll show matches here as new jobs are approved.' : undefined}
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {jobs.map(job => (

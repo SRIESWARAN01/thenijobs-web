@@ -92,6 +92,25 @@ service cloud.firestore {
       ]);
     }
 
+    // RULES-2: who a conversation is BETWEEN is not something a participant may edit.
+    //
+    // `update` allowed a participant, the seeker, the company owner or an admin to rewrite the
+    // document freely — `participants`, `seekerId` and `companyId` included. Changing
+    // `companyId` makes a different employer pass `isCompanyOwner()` in the READ rule above, so
+    // a stranger gains the whole thread; rewriting `participants` drops the other party or adds
+    // someone who was never in it.
+    //
+    // This is deliberately a diff test and not a `hasOnly` whitelist of writable fields.
+    // `applyToJob` writes the thread with `setDoc(..., { merge: true })` on a deterministic
+    // chatId, so a repeat application is an UPDATE carrying every field, and a whitelist would
+    // deny it. `affectedKeys()` reports only keys whose value actually changed, so re-writing
+    // identical values passes and a real membership edit does not.
+    function conversationMembershipUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'participants', 'seekerId', 'companyId', 'applicationId', 'id'
+      ]);
+    }
+
     // SEC-2: the same membership test the conversation READ rule already used, named once so
     // the messages subcollection can reuse it for create instead of accepting anyone signed in.
     // The company-owner arm matters: threads created before FIX-1 hold a company document id in
@@ -442,11 +461,21 @@ service cloud.firestore {
       allow create: if isAdmin() || (isAuthenticated() &&
         request.resource.data.seekerId == request.auth.uid &&
         request.auth.uid in request.resource.data.participants);
+      // The order of these terms is deliberate and matches what the rule did before: the
+      // participants check is a field comparison and costs nothing, while isCompanyOwner() and
+      // isAdmin() each spend one of the ten document reads a rule evaluation is allowed. Putting
+      // isAdmin() first — which the first draft of this change did — makes every participant
+      // sending a message pay for a users/ lookup, and on an account with no users document it
+      // raises a null-value evaluation error rather than short-circuiting. The emulator probe
+      // caught it: the denials were arriving as evaluation errors instead of clean refusals.
       allow update: if isAuthenticated() && (
-        request.auth.uid in resource.data.participants ||
-        resource.data.seekerId == request.auth.uid ||
-        isCompanyOwner(resource.data.companyId) ||
-        isAdmin()
+        (
+          (
+            request.auth.uid in resource.data.participants ||
+            resource.data.seekerId == request.auth.uid ||
+            isCompanyOwner(resource.data.companyId)
+          ) && conversationMembershipUnchanged()
+        ) || isAdmin()
       );
       allow delete: if isAdmin();
     }
@@ -486,7 +515,25 @@ service cloud.firestore {
         isCompanyOwner(resource.data.companyId) ||
         isAdmin()
       );
-      allow create: if isAuthenticated();
+      // RULES-2: create was `isAuthenticated()` and nothing else — no ownership test and no
+      // required fields, while the READ rule above keys on `seekerId` and `companyId`. So a
+      // signed-in user could file an application naming ANOTHER seeker, at any company, or omit
+      // both fields and leave a document only an admin could see. The keys below are exactly
+      // what `trackWhatsAppApplication()` writes; `phone` is its one optional field.
+      //
+      // Worth knowing while reading this: nothing in src/ reads this collection, and that
+      // writer currently has no callers. The rule is written to be correct if the feature is
+      // wired up rather than to bless it — an unconstrained write is not worth leaving open for
+      // a feature that does not exist.
+      allow create: if isAuthenticated()
+        && request.resource.data.seekerId == request.auth.uid
+        && request.resource.data.keys().hasAll([
+             'seekerId', 'seekerName', 'jobId', 'jobTitle', 'companyId', 'appliedVia', 'createdAt'
+           ])
+        && request.resource.data.keys().hasOnly([
+             'seekerId', 'seekerName', 'jobId', 'jobTitle', 'companyId', 'phone',
+             'appliedVia', 'createdAt'
+           ]);
       allow update, delete: if isAdmin();
     }
 

@@ -202,7 +202,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="register-mobile-number-optional-91-setform-classn" className="text-xs font-semibold text-gray-600 block mb-1">Mobile Number <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <label className="text-xs font-semibold text-gray-600 block mb-1">Mobile Number <span className="text-gray-400 font-normal">(optional)</span></label>
                   <div className="flex gap-2">
                     <div className="flex items-center px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 font-medium whitespace-nowrap">🇮🇳 +91</div>
                     <div className="relative flex-1">
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                   <label className="text-xs font-semibold text-gray-600 block mb-1">Email Address *</label>
                   <div className="relative">
                     <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input id="register-mobile-number-optional-91-setform-classn" type="email" placeholder="your@email.com" value={form.email}
+                    <input type="email" placeholder="your@email.com" value={form.email}
                       onChange={e => setForm({ ...form, email: e.target.value })}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                   </div>

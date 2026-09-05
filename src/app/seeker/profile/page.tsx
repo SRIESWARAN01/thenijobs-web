@@ -514,7 +514,7 @@ export default function SeekerProfilePage() {
               {LANGUAGE_OPTIONS.map(lang => {
                 const isSel = languages.includes(lang);
                 return (
-                  <label htmlFor="seeker-profile-setlanguages-p-issel-p-filter-l-l-lang-p" key={lang} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${ isSel ? '' : 'border-gray-100 hover:border-gray-200 bg-gray-50'}`}
+                  <label key={lang} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${ isSel ? '' : 'border-gray-100 hover:border-gray-200 bg-gray-50'}`}
                     style={isSel ? { background: '#ECFDF5', borderColor: '#A7F3D0' } : {}}>
                     <input type="checkbox" checked={isSel} onChange={() => setLanguages(p => isSel ? p.filter(l => l !== lang) : [...p, lang])} className="hidden" />
                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all`} style={isSel ? { background: '#10B981', borderColor: '#10B981' } : { borderColor: '#D1D5DB' }}>
@@ -540,7 +540,7 @@ export default function SeekerProfilePage() {
                 <div key={cert.id} className={cardCls}>
                   <button onClick={() => removeCertification(cert.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><X size={14} /></button>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><label className={labelCls}>Certification Name</label><input id="seeker-profile-setlanguages-p-issel-p-filter-l-l-lang-p" type="text" value={cert.name} onChange={e => updateCertification(cert.id, 'name', e.target.value)} className={inputCls} placeholder="Certification name" /></div>
+                    <div><label className={labelCls}>Certification Name</label><input type="text" value={cert.name} onChange={e => updateCertification(cert.id, 'name', e.target.value)} className={inputCls} placeholder="Certification name" /></div>
                     <div><label htmlFor="seeker-profile-organization" className={labelCls}>Organization</label><input id="seeker-profile-organization" type="text" value={cert.organization} onChange={e => updateCertification(cert.id, 'organization', e.target.value)} className={inputCls} placeholder="Issuing organization" /></div>
                     <div><label htmlFor="seeker-profile-date" className={labelCls}>Date</label><input id="seeker-profile-date" type="month" value={cert.date} onChange={e => updateCertification(cert.id, 'date', e.target.value)} className={inputCls} /></div>
                     <div><label htmlFor="seeker-profile-certificate-link-optional" className={labelCls}>Certificate Link (Optional)</label><input id="seeker-profile-certificate-link-optional" type="url" value={cert.link} onChange={e => updateCertification(cert.id, 'link', e.target.value)} className={inputCls} placeholder="https://..." /></div>

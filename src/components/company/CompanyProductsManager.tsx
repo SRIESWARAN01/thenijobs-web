@@ -291,7 +291,7 @@ export default function CompanyProductsManager({
                       copy[i] = e.target.value;
                       setForm({ ...form, features: copy });
                     }}
-                    aria-label="Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)" placeholder={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`}
+                    aria-label={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`} placeholder={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`}
                     className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none font-medium"
                   />
                   {(form.features || []).length > 1 && (

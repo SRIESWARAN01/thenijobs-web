@@ -490,7 +490,7 @@ export default function UsersPage() {
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="admin-users-account-password-temp-password-setshowpa" className="text-xs font-bold text-gray-700">Account Password / Temp Password</label>
+                  <label className="text-xs font-bold text-gray-700">Account Password / Temp Password</label>
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -516,7 +516,7 @@ export default function UsersPage() {
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
                   <label className="text-xs font-bold text-gray-700 block mb-1">Role</label>
-                  <select id="admin-users-account-password-temp-password-setshowpa"
+                  <select
                     value={editForm.role}
                     onChange={e => setEditForm({ ...editForm, role: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"

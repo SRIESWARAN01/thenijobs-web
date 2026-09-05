@@ -278,7 +278,7 @@ export default function AdminAISettingsPage() {
               <div className="p-5 space-y-4">
                 {/* API Key */}
                 <div>
-                  <label htmlFor="admin-ai-settings-api-key-updateprovider-name-placeholder-" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1.5">
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1.5">
                     <Key size={10} className="inline mr-1" /> API Key
                   </label>
                   <div className="relative">
@@ -286,7 +286,7 @@ export default function AdminAISettingsPage() {
                       type={isShowKey ? 'text' : 'password'}
                       value={provider.apiKey}
                       onChange={e => updateProvider(name, { apiKey: e.target.value })}
-                      aria-label="Enter ${info.label} API key" placeholder={`Enter ${info.label} API key...`}
+                      aria-label={`Enter ${info.label} API key`} placeholder={`Enter ${info.label} API key...`}
                       className="w-full px-3 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-mono text-xs"
                     />
                     <button
@@ -306,7 +306,7 @@ export default function AdminAISettingsPage() {
                   <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1.5">
                     <Settings2 size={10} className="inline mr-1" /> Model
                   </label>
-                  <select id="admin-ai-settings-api-key-updateprovider-name-placeholder-"
+                  <select
                     value={provider.model}
                     onChange={e => updateProvider(name, { model: e.target.value })}
                     className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 focus:outline-none focus:border-blue-500 transition-all"

@@ -456,7 +456,7 @@ export default function PostJobPage() {
             </div>
 
             <div>
-              <label htmlFor="employer-post-job-required-skills-and-keywords-setnewskill" className={labelCls}>Required Skills &amp; Keywords</label>
+              <label className={labelCls}>Required Skills &amp; Keywords</label>
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
@@ -528,7 +528,7 @@ export default function PostJobPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Minimum Salary (₹)</label>
-                <input id="employer-post-job-required-skills-and-keywords-setnewskill"
+                <input
                   type="number"
                   value={form.salaryMin}
                   onChange={e => update('salaryMin', e.target.value)}

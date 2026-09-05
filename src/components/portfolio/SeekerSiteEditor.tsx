@@ -1470,7 +1470,7 @@ export default function SeekerSiteEditor() {
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="portfolio-seekersiteeditor-primary-brand-color-updatefield-theme-pr" className="text-xs font-bold text-slate-700">Primary Brand Color</label>
+                    <label className="text-xs font-bold text-slate-700">Primary Brand Color</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="color"
@@ -1515,7 +1515,7 @@ export default function SeekerSiteEditor() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-700">Heading Font</label>
-                    <select id="portfolio-seekersiteeditor-primary-brand-color-updatefield-theme-pr"
+                    <select
                       value={site.theme.headingFont || 'Poppins'}
                       onChange={e => updateField('theme.headingFont', e.target.value)}
                       className="w-full mt-1 text-base sm:text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"

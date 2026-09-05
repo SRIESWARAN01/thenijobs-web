@@ -362,7 +362,7 @@ export default function CompanyRegisterPage() {
                 { label: 'Cover Image', hint: 'JPG/PNG, Landscape 1200×400px recommended', accept: '.png,.jpg,.jpeg', icon: '🏞️' },
               ].map(item => (
                 <div key={item.label}>
-                  <label htmlFor="company-register-click-to-upload-gallery-images-up-to-10-" className="text-xs text-slate-600 font-medium block mb-2">{item.label}</label>
+                  <label className="text-xs text-slate-600 font-medium block mb-2">{item.label}</label>
                   <label className="flex flex-col items-center justify-center gap-3 p-8 rounded-2xl border-2 border-dashed border-white/15 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all cursor-pointer group">
                     <div className="text-4xl">{item.icon}</div>
                     <div className="text-center">
@@ -406,7 +406,7 @@ export default function CompanyRegisterPage() {
                 ].map(({ key, label, placeholder, icon }) => (
                   <div key={key}>
                     <label className="text-xs text-slate-600 font-medium block mb-1.5">{icon} {label}</label>
-                    <input id="company-register-click-to-upload-gallery-images-up-to-10-" type="url" placeholder={placeholder}
+                    <input type="url" placeholder={placeholder}
                       value={(form as any)[key]} onChange={e => update(key, e.target.value)}
                       className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                   </div>

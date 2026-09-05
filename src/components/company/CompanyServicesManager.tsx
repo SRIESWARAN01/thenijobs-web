@@ -300,7 +300,7 @@ export default function CompanyServicesManager({
                       copy[i] = e.target.value;
                       setForm({ ...form, details: copy });
                     }}
-                    aria-label="Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)" placeholder={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`}
+                    aria-label={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`} placeholder={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`}
                     className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none font-medium"
                   />
                   {(form.details || []).length > 1 && (

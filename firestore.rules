@@ -175,8 +175,26 @@ service cloud.firestore {
     // ===== JOBS =====
     match /jobs/{jobId} {
       // H3 FIX: Allow public read for multiple valid status values — aligns with admin workflows
+      //
+      // RULES-4: `isCompanyOwner(...)` is not decoration. Without it, deploying this file breaks
+      // every employer's job list. A LIST query has to be provably safe from its own
+      // constraints, and NO query in this application filters on `postedBy` — employer/jobs,
+      // employer/dashboard and employer/post-job all filter on `companyId`. So a query that
+      // could return a draft or pending job could not be shown safe against the `postedBy`
+      // clause, and Firestore refuses the whole query rather than filtering it. An emulator
+      // probe on the previous version of this rule denied exactly those screens' queries.
+      //
+      // This is not a new policy: applications, interviews, leads and conversations already
+      // authorise the employer side with isCompanyOwner(resource.data.companyId). jobs was the
+      // only collection that did not, and the queries were written for the policy the rest of
+      // the file uses.
+      //
+      // Order matters. The two comparisons above cost nothing; isCompanyOwner() and isAdmin()
+      // each spend one of the ten document reads a rule evaluation is allowed, so they come
+      // last and the common paths never reach them.
       allow read: if resource.data.status in ['active', 'APPROVED', 'LIVE'] ||
-        (isAuthenticated() && resource.data.postedBy == request.auth.uid) || isAdmin();
+        (isAuthenticated() && resource.data.postedBy == request.auth.uid) ||
+        isCompanyOwner(resource.data.companyId) || isAdmin();
       allow create: if (isAuthenticated() && safeJobCreate() &&
         request.resource.data.postedBy == request.auth.uid) || isAdmin();
       allow update: if

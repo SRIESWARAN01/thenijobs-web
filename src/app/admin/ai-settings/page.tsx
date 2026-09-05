@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import {
   Sparkles, Key, Zap, CheckCircle2, XCircle, AlertCircle,
-  Loader2, Eye, EyeOff, Play, Shield, Save, RefreshCw, Clock, Settings2
+  Loader2, Eye, EyeOff, Play, Shield, Save, Clock, Settings2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { PROVIDER_MODELS, DEFAULT_AI_CONFIG } from '@/lib/ai/providers/index';
 import type { AIProviderConfig, ProviderEntry } from '@/lib/ai/providers/index';
+import { Button, Card, CardBody, PageHeader, PageShell, Switch } from '@/components/dashboard';
 
 function maskApiKey(key: string): string {
   if (!key || key.length < 10) return key ? '****' : '';
@@ -140,46 +141,34 @@ export default function AdminAISettingsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            AI Provider Settings
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Configure and manage AI providers. Switch providers without code changes.
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 cursor-pointer"
-        >
-          {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-          Save Changes
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="AI provider settings"
+        description="Configure and manage AI providers. Switch providers without code changes."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'AI settings' }]}
+        actions={
+          <Button variant="primary" onClick={handleSave} loading={saving}>
+            {!saving && <Save size={15} />}
+            {saving ? 'Saving…' : 'Save changes'}
+          </Button>
+        }
+      />
 
-      {/* Master Controls */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* AI Enable/Disable */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+      <Card>
+        <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="flex items-center justify-between rounded-xl bg-slate-50 p-3">
             <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-blue-600" />
-              <span className="text-sm font-semibold text-gray-700">AI Features</span>
+              <Sparkles size={16} className="text-blue-600" aria-hidden />
+              <span className="text-sm font-semibold text-slate-700">AI features</span>
             </div>
-            <button
-              onClick={() => setConfig(prev => ({ ...prev, aiEnabled: !prev.aiEnabled }))}
-              className={`w-11 h-6 rounded-full transition-all relative ${config.aiEnabled ? 'bg-emerald-500' : 'bg-gray-300'}`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all ${config.aiEnabled ? 'left-[22px]' : 'left-0.5'}`} />
-            </button>
+            <Switch
+              checked={config.aiEnabled}
+              onChange={(next) => setConfig(prev => ({ ...prev, aiEnabled: next }))}
+              label="Enable AI features"
+            />
           </div>
 
-          {/* Active Provider */}
-          <div className="p-3 bg-gray-50 rounded-xl">
+          <div className="rounded-xl bg-slate-50 p-3">
             <div className="flex items-center gap-2 mb-1.5">
               <Zap size={14} className="text-emerald-600" />
               <span className="text-[10px] font-semibold text-gray-500 uppercase">Active Provider</span>
@@ -195,8 +184,7 @@ export default function AdminAISettingsPage() {
             </select>
           </div>
 
-          {/* Fallback Provider */}
-          <div className="p-3 bg-gray-50 rounded-xl">
+          <div className="rounded-xl bg-slate-50 p-3">
             <div className="flex items-center gap-2 mb-1.5">
               <Shield size={14} className="text-amber-600" />
               <span className="text-[10px] font-semibold text-gray-500 uppercase">Fallback Provider</span>
@@ -212,12 +200,10 @@ export default function AdminAISettingsPage() {
               <option value="openai">OpenAI</option>
             </select>
           </div>
-        </div>
-
-        {/* Last Updated */}
+        </CardBody>
         {config.updatedAt && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-            <Clock size={12} className="text-slate-500" />
+          <div className="flex items-center gap-2 border-t border-slate-100 px-5 pb-4 pt-3">
+            <Clock size={12} className="text-slate-400" aria-hidden />
             <span className="text-[10px] text-slate-500">
               Last updated: {config.updatedAt?.toDate?.()
                 ? config.updatedAt.toDate().toLocaleString('en-IN')
@@ -225,7 +211,7 @@ export default function AdminAISettingsPage() {
             </span>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Provider Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -371,19 +357,20 @@ export default function AdminAISettingsPage() {
         })}
       </div>
 
-      {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-        <h4 className="text-sm font-bold text-blue-800 mb-2 flex items-center gap-2">
-          <Shield size={15} /> Security Information
-        </h4>
-        <ul className="text-xs text-blue-700 space-y-1">
-          <li>• API keys are stored in Firestore, readable only by admin accounts</li>
-          <li>• Keys are never exposed to the browser frontend</li>
-          <li>• The active provider&apos;s key is used server-side in the AI API route</li>
-          <li>• Changing the active provider instantly affects all AI features (Resume Builder, Chatbot, etc.)</li>
-          <li>• If the active provider fails, the fallback provider is used automatically</li>
-        </ul>
-      </div>
-    </div>
+      <Card className="border-blue-200 bg-[#EFF6FF]">
+        <CardBody>
+          <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-[#1E3A8A]">
+            <Shield size={15} aria-hidden /> Security information
+          </h2>
+          <ul className="space-y-1 text-xs text-[#1E40AF]">
+            <li>• API keys are stored in Firestore, readable only by admin accounts</li>
+            <li>• Keys are never exposed to the browser frontend</li>
+            <li>• The active provider&apos;s key is used server-side in the AI API route</li>
+            <li>• Changing the active provider instantly affects all AI features (Resume Builder, Chatbot, etc.)</li>
+            <li>• If the active provider fails, the fallback provider is used automatically</li>
+          </ul>
+        </CardBody>
+      </Card>
+    </PageShell>
   );
 }

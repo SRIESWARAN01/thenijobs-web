@@ -2,6 +2,7 @@
 
 import { Phone, Mail, MessageCircle, ChevronRight, ArrowUpRight } from 'lucide-react';
 import type { PortfolioSite, PortfolioSection, ServiceItem, ContactSectionData } from '@/lib/types/portfolio';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 interface Props { site: PortfolioSite; }
 
@@ -205,7 +206,7 @@ export default function CleanCorporate({ site }: Props) {
                     {socialData?.links?.map(link => {
                       const Icon = SOCIAL_ICONS[link.platform.toLowerCase()];
                       return Icon ? (
-                        <a key={link.platform} href={link.url} target="_blank" rel="noopener"
+                        <a key={link.platform} href={safeExternalUrl(link.url)} target="_blank" rel="noopener"
                           className="p-2 border rounded-lg hover:shadow-sm transition-all" style={{ borderColor: `${muted}20`, color: muted }}>
                           <Icon size={16} />
                         </a>

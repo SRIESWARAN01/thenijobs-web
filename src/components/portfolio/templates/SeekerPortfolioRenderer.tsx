@@ -14,6 +14,7 @@ import type {
   SeekerExperienceItem, SeekerEducationItem, SeekerProjectItem,
   SeekerCertificationItem, TestimonialItem, ContactSectionData
 } from '@/lib/types/portfolio';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 interface Props {
   site: PortfolioSite;
@@ -151,7 +152,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
             )}
             {heroData.resumeUrl && (
               <a
-                href={heroData.resumeUrl}
+                href={safeExternalUrl(heroData.resumeUrl)}
                 target="_blank"
                 rel="noopener"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all shadow-xs hover:opacity-90"
@@ -268,7 +269,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
                 )}
                 {heroData.resumeUrl && (
                   <a
-                    href={heroData.resumeUrl}
+                    href={safeExternalUrl(heroData.resumeUrl)}
                     target="_blank"
                     rel="noopener"
                     className="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex items-center gap-1.5 shadow-md hover:scale-[1.02] transition-all"
@@ -527,7 +528,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
                   <div className="p-4 pt-0 flex items-center gap-2 border-t border-slate-100 mt-2">
                     {proj.liveUrl && (
                       <a
-                        href={proj.liveUrl}
+                        href={safeExternalUrl(proj.liveUrl)}
                         target="_blank"
                         rel="noopener"
                         className="flex-1 py-2 rounded-xl text-center text-xs font-bold text-white flex items-center justify-center gap-1.5 shadow-xs hover:opacity-95 transition-all"
@@ -538,7 +539,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
                     )}
                     {proj.githubUrl && (
                       <a
-                        href={proj.githubUrl}
+                        href={safeExternalUrl(proj.githubUrl)}
                         target="_blank"
                         rel="noopener"
                         className="px-3 py-2 rounded-xl border text-xs font-bold hover:bg-slate-100 flex items-center gap-1.5 transition-all"
@@ -628,7 +629,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
                   </div>
                   {cert.credentialUrl && (
                     <a
-                      href={cert.credentialUrl}
+                      href={safeExternalUrl(cert.credentialUrl)}
                       target="_blank"
                       rel="noopener"
                       className="text-xs font-bold text-blue-600 hover:underline inline-flex items-center gap-1 pt-2 border-t border-slate-100"
@@ -761,7 +762,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
                   {contactData.socialLinks.map((soc, idx) => (
                     <a
                       key={idx}
-                      href={soc.url}
+                      href={safeExternalUrl(soc.url)}
                       target="_blank"
                       rel="noopener"
                       className="p-2.5 rounded-xl border hover:bg-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs"

@@ -16,6 +16,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import SeekerIDCard from '@/components/id-card/SeekerIDCard';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { getSeekerGrowthSlogan } from '@/lib/branding/slogans';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 interface SeekerData {
   name: string;
@@ -365,7 +366,7 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
                 <div className="flex items-center gap-2 pt-2 w-full justify-center max-w-md">
                   {seeker.resumeUrl ? (
                     <a
-                      href={seeker.resumeUrl}
+                      href={safeExternalUrl(seeker.resumeUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex-1 py-2.5 px-4 rounded-2xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
@@ -532,7 +533,7 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
                       </div>
                       {cert.link && (
                         <a
-                          href={cert.link}
+                          href={safeExternalUrl(cert.link)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors shrink-0 ml-2"
@@ -576,7 +577,7 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
                   {workSamples.map((sample, i) => (
                     <a
                       key={sample.id || i}
-                      href={sample.url}
+                      href={safeExternalUrl(sample.url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -635,7 +636,7 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
 
                   {seeker.resumeUrl ? (
                     <a
-                      href={seeker.resumeUrl}
+                      href={safeExternalUrl(seeker.resumeUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shrink-0"
@@ -872,12 +873,12 @@ function ProjectsSection({ projects }: { projects: any[] }) {
             )}
             <div className="flex gap-2 pt-2">
               {proj.liveUrl && (
-                <a href={proj.liveUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700">
+                <a href={safeExternalUrl(proj.liveUrl)} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700">
                   Live Demo
                 </a>
               )}
               {proj.githubUrl && (
-                <a href={proj.githubUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-bold hover:bg-black">
+                <a href={safeExternalUrl(proj.githubUrl)} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-bold hover:bg-black">
                   GitHub
                 </a>
               )}

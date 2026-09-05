@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Package, X, Phone, MessageCircle, ShoppingCart, Building2, MapPin, ExternalLink, CheckCircle2, ShieldCheck, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 export interface ProductDetailModalProps {
   product: {
@@ -148,7 +149,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
             {(product.websiteUrl || product.productUrl) && (
               <div className="pt-1">
                 <a
-                  href={product.websiteUrl || product.productUrl}
+                  href={safeExternalUrl(product.websiteUrl || product.productUrl)}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl border border-blue-200 transition-all"

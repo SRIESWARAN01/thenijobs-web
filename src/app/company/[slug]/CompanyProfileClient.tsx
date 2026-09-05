@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, LinkedinIcon } from '@/components/ui/BrandIcons';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 export default function CompanyProfileClient({ company, jobs = [], reviews = [] }: {
   company: any; jobs: any[]; reviews: any[];
@@ -429,19 +430,19 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                               {(leader.linkedinUrl || leader.twitterUrl || leader.facebookUrl) && (
                                 <div className="flex items-center justify-center gap-2 pt-2">
                                   {leader.linkedinUrl && (
-                                    <a href={leader.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                                    <a href={safeExternalUrl(leader.linkedinUrl)} target="_blank" rel="noopener noreferrer"
                                       className="w-8 h-8 rounded-full bg-white/10 text-blue-300 hover:bg-[#0A66C2] hover:text-white flex items-center justify-center transition-all duration-300">
                                       <LinkedinIcon size={14} />
                                     </a>
                                   )}
                                   {leader.facebookUrl && (
-                                    <a href={leader.facebookUrl} target="_blank" rel="noopener noreferrer"
+                                    <a href={safeExternalUrl(leader.facebookUrl)} target="_blank" rel="noopener noreferrer"
                                       className="w-8 h-8 rounded-full bg-white/10 text-blue-300 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-all duration-300">
                                       <FacebookIcon size={14} />
                                     </a>
                                   )}
                                   {leader.twitterUrl && (
-                                    <a href={leader.twitterUrl} target="_blank" rel="noopener noreferrer"
+                                    <a href={safeExternalUrl(leader.twitterUrl)} target="_blank" rel="noopener noreferrer"
                                       className="w-8 h-8 rounded-full bg-white/10 text-blue-300 hover:bg-gray-800 hover:text-white flex items-center justify-center transition-all duration-300">
                                       <ExternalLink size={14} />
                                     </a>
@@ -517,7 +518,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 {company.website && (
                   <div className="pt-2">
                     <a
-                      href={company.website}
+                      href={safeExternalUrl(company.website)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:underline"
@@ -531,17 +532,17 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 {/* Social Media Circular Buttons */}
                 <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
                   {company.facebook && (
-                    <a href={company.facebook} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity">
+                    <a href={safeExternalUrl(company.facebook)} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity">
                       <FacebookIcon size={16} />
                     </a>
                   )}
                   {company.instagram && (
-                    <a href={company.instagram} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity">
+                    <a href={safeExternalUrl(company.instagram)} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity">
                       <InstagramIcon size={16} />
                     </a>
                   )}
                   {company.linkedin && (
-                    <a href={company.linkedin} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-[#0A66C2] text-white flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity">
+                    <a href={safeExternalUrl(company.linkedin)} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-[#0A66C2] text-white flex items-center justify-center shadow-sm hover:opacity-90 transition-opacity">
                       <LinkedinIcon size={16} />
                     </a>
                   )}
@@ -614,7 +615,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
 
                     {company.website && (
                       <a
-                        href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                        href={safeExternalUrl(company.website)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 text-sm text-blue-600 hover:underline"
@@ -1058,7 +1059,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
 
                 {/* Website */}
                 {item.websiteUrl && (
-                  <a href={item.websiteUrl} target="_blank" rel="noopener noreferrer"
+                  <a href={safeExternalUrl(item.websiteUrl)} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm text-blue-600 font-semibold hover:underline">
                     <Globe size={14} /> Visit Website <ExternalLink size={12} />
                   </a>

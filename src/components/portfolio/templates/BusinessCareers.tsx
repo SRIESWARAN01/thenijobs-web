@@ -2,6 +2,7 @@
 
 import { Phone, Mail, MessageCircle, Briefcase, MapPin, Users, ArrowRight } from 'lucide-react';
 import type { PortfolioSite, PortfolioSection, CareerOpening, ServiceItem, ContactSectionData } from '@/lib/types/portfolio';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 interface Props { site: PortfolioSite; }
 function getS<T>(s: PortfolioSection[], t: string): T | null { const f = s.find(x => x.type === t && x.visible); return f ? (f.data as T) : null; }
@@ -55,7 +56,7 @@ export default function BusinessCareers({ site }: Props) {
                     <h3 className="text-base font-bold text-slate-900">{job.title}</h3>
                     <p className="text-xs text-slate-500 mt-1">{job.department} • {job.location} • {job.type}</p>
                   </div>
-                  <a href={job.link || '#contact'} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-blue-700">
+                  <a href={safeExternalUrl(job.link) || '#contact'} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-blue-700">
                     Apply Now <ArrowRight size={14} />
                   </a>
                 </div>

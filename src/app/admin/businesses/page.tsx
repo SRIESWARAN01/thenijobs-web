@@ -15,6 +15,7 @@ import { approveCompany, rejectCompany, featureCompany, updateDocument, deleteCo
 import { useToast } from '@/contexts/ToastContext';
 import { exportCompaniesToExcel } from '@/lib/excel/companyExcelService';
 import { slugifyCompany } from '@/lib/companySlug';
+import { safeExternalUrl } from '@/lib/safeUrl';
 import {
   ActionMenu, DataTable, Pill, ViewToggle, useViewMode,
   type ActionItem, type Column, type PillTone,
@@ -783,7 +784,7 @@ export default function BusinessesPage() {
               {previewBiz.website && (
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1 sm:col-span-2">
                   <span className="text-slate-500 font-bold block">Website / Domain URL</span>
-                  <a href={previewBiz.website.startsWith('http') ? previewBiz.website : `https://${previewBiz.website}`} target="_blank" rel="noreferrer" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-1">
+                  <a href={safeExternalUrl(previewBiz.website)} target="_blank" rel="noreferrer" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-1">
                     {previewBiz.website} <ExternalLink size={12} />
                   </a>
                 </div>

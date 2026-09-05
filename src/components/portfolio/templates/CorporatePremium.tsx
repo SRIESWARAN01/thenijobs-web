@@ -1,6 +1,7 @@
 'use client';
 import { Phone, MessageCircle, ChevronRight, Users, Briefcase, Star, MapPin, Mail, ArrowUpRight } from 'lucide-react';
 import type { PortfolioSite, PortfolioSection, ServiceItem, ProductItem, TeamMember, TestimonialItem, ProjectItem, GalleryImage, CareerOpening, ContactSectionData } from '@/lib/types/portfolio';
+import { safeExternalUrl } from '@/lib/safeUrl';
 interface Props { site: PortfolioSite; }
 function getS<T>(s: PortfolioSection[], t: string): T | null { const f = s.find(x => x.type === t && x.visible); return f ? (f.data as T) : null; }
 
@@ -115,7 +116,7 @@ export default function CorporatePremium({ site }: Props) {
         <div className="max-w-3xl mx-auto space-y-3">{careers?.openings?.map(job => (
           <div key={job.id} className="bg-white p-5 border flex items-center justify-between hover:shadow-md transition-all" style={{ borderRadius: r, borderColor: `${m}08` }}>
             <div><h4 className="text-sm font-bold">{job.title}</h4><p className="text-[10px]" style={{ color: m }}>{job.department} · {job.location} · {job.type}</p></div>
-            <a href={job.link || '#contact'} className="px-4 py-2 text-xs font-bold text-white" style={{ borderRadius: r, background: p }}>Apply</a>
+            <a href={safeExternalUrl(job.link) || '#contact'} className="px-4 py-2 text-xs font-bold text-white" style={{ borderRadius: r, background: p }}>Apply</a>
           </div>
         ))}</div>
       </div></section>)}

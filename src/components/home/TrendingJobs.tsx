@@ -279,9 +279,9 @@ export default function TrendingJobs() {
               <Briefcase size={36} className="mx-auto mb-2 text-slate-500" />
               <p className="text-sm font-semibold text-gray-600 mb-1">No active jobs right now</p>
               <p className="text-xs text-gray-500 mb-4">Check back soon or post a job to get started</p>
-              <a href="/employer/post-job" className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
+              <Link href="/employer/post-job" className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
                 Post a Job
-              </a>
+              </Link>
             </div>
           ) : (
             jobs.map((job, idx) => (

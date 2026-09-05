@@ -46,6 +46,24 @@ interface IndustryTheme {
   jobCtaText: string;
 }
 
+/**
+ * TRUST-3 — what a preset may and may not say.
+ *
+ * Every string here is published on a REAL, NAMED business's page, under a "Verified Official
+ * Website" badge, chosen automatically from a category. The business wrote none of it.
+ *
+ * So a badge names the category and nothing more. It must not assert:
+ *   a credential   — 'ISO Certified', 'accredited degree programs', 'certified auditing'
+ *   an availability — '24/7 Medical Care', 'Open Daily', 'Admissions Open'
+ *   a guarantee     — 'Service Warranty', 'verified warranty on all repair services'
+ *
+ * All of those were here and were being applied to whichever businesses happened to fall in
+ * the category. A clinic that closes at five was advertised as open around the clock; a
+ * workshop that holds no ISO certification was advertised as holding one.
+ *
+ * Taglines follow the same rule: say what the directory knows — the category, the town, and
+ * that the listing is on THENIJOBS — and point the reader at the business to confirm the rest.
+ */
 export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
   'healthcare-hospital': {
     key: 'healthcare-hospital',
@@ -57,8 +75,8 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#F0FDFA',
     accentBorder: '#99F6E4',
     accentText: '#0F766E',
-    heroBadge: '🏥 24/7 Medical Care & Healthcare Services',
-    heroTaglineDefault: 'Providing advanced diagnosis, dedicated medical specialists, and compassionate patient care in Theni district.',
+    heroBadge: '🏥 Healthcare & Medical Services',
+    heroTaglineDefault: 'A healthcare provider listed on THENIJOBS, serving Theni district. Contact them directly for services, timings and appointments.',
     icon: Stethoscope,
     featuresTitle: 'Medical Specialities & Clinical Departments',
     serviceBadge: 'Clinical Care',
@@ -74,8 +92,8 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#EFF6FF',
     accentBorder: '#BFDBFE',
     accentText: '#1E40AF',
-    heroBadge: '🎓 Admissions Open • Academic Excellence',
-    heroTaglineDefault: 'Shaping future leaders through disciplined learning, accredited degree programs, and modern smart campus facilities.',
+    heroBadge: '🎓 Education & Training',
+    heroTaglineDefault: 'An education provider listed on THENIJOBS, based in Theni. Contact them directly for courses, admissions and facilities.',
     icon: GraduationCap,
     featuresTitle: 'Courses, Programs & Academic Labs',
     serviceBadge: 'Curriculum & Courses',
@@ -91,7 +109,7 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#F0F9FF',
     accentBorder: '#BAE6FD',
     accentText: '#0369A1',
-    heroBadge: '🏭 ISO Certified Production & Industrial Plant',
+    heroBadge: '🏭 Manufacturing & Industry',
     heroTaglineDefault: 'Precision manufacturing, advanced industrial machinery, and consistent production output for global & domestic markets.',
     icon: Factory,
     featuresTitle: 'Production Capabilities & Machinery',
@@ -108,7 +126,7 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#EEF2FF',
     accentBorder: '#C7D2FE',
     accentText: '#4338CA',
-    heroBadge: '⚡ Cloud, Mobile & Modern Tech Solutions',
+    heroBadge: '⚡ IT, Software & Digital',
     heroTaglineDefault: 'Architecting scalable software, custom enterprise applications, and AI-powered digital products for modern business.',
     icon: Code2,
     featuresTitle: 'Digital Solutions & Technology Stack',
@@ -125,7 +143,7 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#F0FDF4',
     accentBorder: '#BBF7D0',
     accentText: '#15803D',
-    heroBadge: '🌾 Fresh Agricultural Produce & Agro-Services',
+    heroBadge: '🌾 Agriculture & Farming',
     heroTaglineDefault: 'Sustainable farming methods, fertile agro-produce, high-yield seeds, and expert consultation from the heart of Theni.',
     icon: Sprout,
     featuresTitle: 'Seasonal Harvest Produce & Farm Services',
@@ -142,7 +160,7 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#FFF1F2',
     accentBorder: '#FECDD3',
     accentText: '#BE123C',
-    heroBadge: '🏨 Premium Stays, Dining & Banquets',
+    heroBadge: '🏨 Hotel, Food & Restaurant',
     heroTaglineDefault: 'Warm hospitality, authentic multi-cuisine dining, and comfortable luxury rooms tailored for your family stay.',
     icon: UtensilsCrossed,
     featuresTitle: 'Suites, Dining & Guest Amenities',
@@ -159,7 +177,7 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#FFF7ED',
     accentBorder: '#FED7AA',
     accentText: '#C2410C',
-    heroBadge: '🛍️ Daily Special Offers & Store Aisles',
+    heroBadge: '🛍️ Retail, Shop & Supermarket',
     heroTaglineDefault: 'Wide range of daily essentials, verified quality brands, wholesale pricing, and convenient local home delivery.',
     icon: ShoppingBag,
     featuresTitle: 'Supermarket Aisles & Today’s Specials',
@@ -176,8 +194,8 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#EFF6FF',
     accentBorder: '#BFDBFE',
     accentText: '#1D4ED8',
-    heroBadge: '🔧 On-Demand Repairs & Trusted Service Guarantee',
-    heroTaglineDefault: 'Prompt on-site technicians, transparent price estimation, and verified warranty on all repair services in Theni.',
+    heroBadge: '🔧 Services & Repairs',
+    heroTaglineDefault: 'A service business listed on THENIJOBS, based in Theni. Contact them directly for what they cover, pricing and availability.',
     icon: Wrench,
     featuresTitle: 'Service Packages & Emergency Repairs',
     serviceBadge: 'Repair Service',
@@ -193,8 +211,8 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#F8FAFC',
     accentBorder: '#E2E8F0',
     accentText: '#0F172A',
-    heroBadge: '🏢 Strategic Corporate Advisory & Compliance',
-    heroTaglineDefault: 'Providing expert corporate consulting, certified financial auditing, and business advisory services with strict integrity.',
+    heroBadge: '🏢 Professional & Business Services',
+    heroTaglineDefault: 'A professional services firm listed on THENIJOBS, based in Theni. Contact them directly for the services they offer.',
     icon: Landmark,
     featuresTitle: 'Corporate Practice Areas & Advisory',
     serviceBadge: 'Advisory Practice',
@@ -210,7 +228,7 @@ export const INDUSTRY_THEMES: Record<IndustryTemplateKey, IndustryTheme> = {
     accentBg: '#EEF2FF',
     accentBorder: '#C7D2FE',
     accentText: '#3730A3',
-    heroBadge: '🏪 Open Daily • Trusted Neighborhood Store',
+    heroBadge: '🏪 Local Business',
     heroTaglineDefault: 'Serving our community with personalized service, trusted products, and dependable local support in Theni.',
     icon: Store,
     featuresTitle: 'Featured Offerings & Local Specialities',
@@ -225,14 +243,27 @@ export function resolveTemplateTheme(category?: string, explicitTemplate?: strin
   }
   if (!category) return INDUSTRY_THEMES['local-business'];
 
+  // TRUST-3: this used to return the FIRST preset with any matching token, iterating in
+  // declaration order. `service-business` lists the bare token 'Services' and is declared
+  // before `corporate-professional`, so the category "Professional & Business Services" matched
+  // 'Services' and a travel agency was dressed as a repair shop — technicians and warranty
+  // included. Any category containing a generic word went to whichever preset claimed that word
+  // earliest, which is a property of the source order rather than of the business.
+  //
+  // The longest matching token wins instead: "Professional & Business Services" beats
+  // "Services", so the more specific description decides and declaration order stops mattering.
   const catLower = category.toLowerCase();
+  let best: { theme: IndustryTheme; len: number } | null = null;
   for (const key of Object.keys(INDUSTRY_THEMES) as IndustryTemplateKey[]) {
     const t = INDUSTRY_THEMES[key];
-    if (t.categoryMatch.some(m => catLower.includes(m.toLowerCase()))) {
-      return t;
+    for (const m of t.categoryMatch) {
+      const token = m.toLowerCase();
+      if (catLower.includes(token) && (!best || token.length > best.len)) {
+        best = { theme: t, len: token.length };
+      }
     }
   }
-  return INDUSTRY_THEMES['local-business'];
+  return best ? best.theme : INDUSTRY_THEMES['local-business'];
 }
 
 // ─── MAIN LANDING WEBSITE COMPONENT ─────────────────────────────────────────
@@ -275,7 +306,13 @@ export default function CompanyLandingWebsite({
   const defaultFaqs = [
     {
       q: `What are the operating hours for ${company.name}?`,
-      a: company.businessHours || `${company.name} is open Monday through Saturday from 9:00 AM to 8:00 PM. Please contact directly for holiday timings.`,
+      // TRUST-3: this fell back to "open Monday through Saturday from 9:00 AM to 8:00 PM" when
+      // the business had supplied no hours — a statement of fact about a real business that
+      // nobody had made. Someone can travel to a shop that is shut because a page said it was
+      // open. Where the hours are unknown, the page now says so.
+      a: company.businessHours
+        ? `${company.name} is open ${company.businessHours}. Please contact directly for holiday timings.`
+        : `${company.name} has not listed its opening hours here. Please call before visiting to confirm.`,
     },
     {
       q: `How can I apply for job vacancies at ${company.name}?`,
@@ -512,7 +549,9 @@ export default function CompanyLandingWebsite({
                       <span>Specialist Care &amp; Doctors Desk</span>
                     </div>
                     <p className="text-teal-700 text-[11px]">
-                      General Medicine • Pediatrics • Orthopedics • 24/7 Pharmacy
+                      {/* TRUST-3: was 'General Medicine • Pediatrics • Orthopedics • 24/7 Pharmacy'
+                          — four claims applied to any healthcare business in the directory. */}
+                      Contact the practice directly to confirm services and timings
                     </p>
                   </div>
                 )}
@@ -593,10 +632,13 @@ export default function CompanyLandingWebsite({
                   <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2 text-xs">
                     <div className="flex items-center gap-2 font-bold text-blue-900">
                       <Wrench size={16} className="text-blue-600" />
-                      <span>Express Service &amp; Technician Booking</span>
+                      {/* TRUST-3: was 'Express Service & Technician Booking'. */}
+                      <span>Enquiries &amp; Bookings</span>
                     </div>
                     <p className="text-blue-700 text-[11px]">
-                      On-site Visits • Certified Technicians • Service Warranty
+                      {/* TRUST-3: was 'On-site Visits • Certified Technicians • Service Warranty' —
+                          three claims about a business that supplied none of them. */}
+                      Contact the business directly to confirm what they offer
                     </p>
                   </div>
                 )}
@@ -1188,7 +1230,8 @@ export default function CompanyLandingWebsite({
                   </p>
                   <p className="flex items-center gap-2">
                     <Clock size={16} className="text-slate-400 shrink-0" />
-                    <span>{company.businessHours || 'Monday - Saturday: 9:00 AM – 8:00 PM'}</span>
+                    {/* TRUST-3: this fallback invented the same hours the FAQ did. */}
+                    <span>{company.businessHours || 'Opening hours not listed — please call to confirm'}</span>
                   </p>
                 </div>
 

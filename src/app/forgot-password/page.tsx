@@ -3,19 +3,35 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Loader2, CheckCircle, Mail, ArrowLeft } from 'lucide-react';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 import AuthShell from '@/components/auth/AuthShell';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    setSent(true);
+    setError('');
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setSent(true);
+    } catch (err: any) {
+      // Never reveal whether an email is registered — treat "no such account" as
+      // success, same as a real send, so this page can't be used to enumerate accounts.
+      if (err?.code === 'auth/user-not-found') {
+        setSent(true);
+      } else {
+        console.error('Password reset error:', err);
+        setError('Could not send the reset email right now. Please try again in a moment.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,6 +68,7 @@ export default function ForgotPasswordPage() {
                     />
                   </div>
                 </div>
+                {error && <p className="text-xs font-semibold text-rose-600">{error}</p>}
                 <button
                   type="submit"
                   disabled={loading}

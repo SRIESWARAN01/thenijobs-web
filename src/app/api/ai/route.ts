@@ -42,9 +42,11 @@ function isRateLimited(identifier: string): boolean {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { feature, userId, userRole = 'SEEKER', payload = {} } = body as {
+    // AI-1: `userId` is deliberately NOT destructured from the body any more. It used to be
+    // the only thing this route knew about who was calling, and it was whatever the caller
+    // typed. Identity now comes from the verified token below and nothing else.
+    const { feature, userRole = 'SEEKER', payload = {} } = body as {
       feature: AIFeatureKey;
-      userId: string;
       userRole?: 'SEEKER' | 'COMPANY' | 'ADMIN' | 'GUEST';
       payload?: any;
     };
@@ -53,55 +55,64 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Feature specification required' }, { status: 400 });
     }
 
-    // ─── C6 FIX: Authentication Guard ────────────────────────────────────────
-    // Guest chatbot is the only feature allowed without authentication
-    const isGuestFeature = feature === 'chatbot' && userRole === 'GUEST';
+    // ─── Authentication ──────────────────────────────────────────────────────
+    // AI-1. This block had three fail-open steps, and every one of them was reachable:
+    //
+    //   1. `userId` came from the request body, so the caller named whoever they liked and
+    //      that user's AI credits were spent.
+    //   2. The token was verified only `if (authHeader)` — and aiClient.ts sent no such
+    //      header, ever, so in practice verification never ran at all.
+    //   3. If verification threw, the catch block let the request continue, with a comment
+    //      calling it graceful degradation. A failure to establish who is calling is not a
+    //      reason to proceed as though they are trustworthy.
+    //
+    // Identity is now the verified token or nothing. The body cannot influence it.
+    const authHeader = req.headers.get('authorization');
+    const idToken = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
 
-    if (!isGuestFeature) {
-      // All other features require a valid userId
-      if (!userId) {
-        return NextResponse.json(
-          { success: false, error: 'Authentication required. Please log in to use AI features.' },
-          { status: 401 }
-        );
-      }
+    let authenticatedUserId: string | null = null;
 
-      // Verify Firebase Auth token if provided in Authorization header
-      const authHeader = req.headers.get('authorization');
-      if (authHeader) {
-        const idToken = authHeader.replace('Bearer ', '');
-        try {
-          const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`;
-          const verifyRes = await fetch(verifyUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
-          });
-          const verifyData = await verifyRes.json();
-          if (!verifyData.users || verifyData.users.length === 0) {
-            return NextResponse.json(
-              { success: false, error: 'Invalid authentication token. Please re-login.' },
-              { status: 401 }
-            );
-          }
-          // Verify userId matches the token
-          const tokenUid = verifyData.users[0].localId;
-          if (tokenUid !== userId) {
-            return NextResponse.json(
-              { success: false, error: 'User ID mismatch. Access denied.' },
-              { status: 403 }
-            );
-          }
-        } catch (authErr) {
-          console.error('[AI API] Token verification failed:', authErr);
-          // Allow request to continue if token check fails (graceful degradation)
-          // Rate limiting will still protect against abuse
+    if (idToken) {
+      try {
+        const verifyUrl = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`;
+        const verifyRes = await fetch(verifyUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        });
+        const verifyData = await verifyRes.json().catch(() => null);
+
+        if (!verifyRes.ok || !verifyData?.users?.length) {
+          return NextResponse.json(
+            { success: false, error: 'Your session could not be verified. Please sign in again.' },
+            { status: 401 }
+          );
         }
+        authenticatedUserId = verifyData.users[0].localId as string;
+      } catch (authErr) {
+        console.error('[AI API] Token verification failed:', authErr);
+        return NextResponse.json(
+          { success: false, error: 'Your session could not be verified right now. Please try again shortly.' },
+          { status: 503 }
+        );
       }
     }
 
+    // The guest chatbot is the one feature that runs without a token, and it is identified by
+    // the ABSENCE of a verified user — not by a role the caller puts in the request body.
+    if (!authenticatedUserId && feature !== 'chatbot') {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required. Please log in to use AI features.' },
+        { status: 401 }
+      );
+    }
+
+    // Used only for prompt tone and usage logging, never for access. An unauthenticated caller
+    // is a guest whatever the body claims.
+    const effectiveRole = authenticatedUserId ? userRole : 'GUEST';
+
     // Rate Limiting
-    const rateLimitId = userId || req.headers.get('x-forwarded-for') || 'anonymous';
+    const rateLimitId = authenticatedUserId || req.headers.get('x-forwarded-for') || 'anonymous';
     if (isRateLimited(rateLimitId)) {
       return NextResponse.json(
         { success: false, error: 'Rate limit exceeded. Please wait a minute before making another request.' },
@@ -109,9 +120,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Credit Check (Only enforce if userId provided)
-    if (userId) {
-      const creditStatus = await checkUserCredits(userId, feature);
+    // Credit check. Reached only by a verified user; a guest chatbot request has no account
+    // to charge.
+    if (authenticatedUserId) {
+      const creditStatus = await checkUserCredits(authenticatedUserId, feature);
       if (!creditStatus.allowed) {
         return NextResponse.json({
           success: false,
@@ -211,7 +223,7 @@ export async function POST(req: NextRequest) {
 
       case 'chatbot': {
         systemPrompt = CHATBOT_SYSTEM_PROMPT;
-        userPrompt = buildChatbotPrompt(userRole, payload.message || '', payload.context);
+        userPrompt = buildChatbotPrompt(effectiveRole, payload.message || '', payload.context);
         responseFormatJson = false;
         break;
       }
@@ -241,10 +253,10 @@ export async function POST(req: NextRequest) {
 
     if (!aiResponse || !aiResponse.success) {
       // Log failure (no credit deduction)
-      if (userId) {
+      if (authenticatedUserId) {
         await logAIUsage({
-          userId,
-          role: userRole,
+          userId: authenticatedUserId,
+          role: effectiveRole,
           feature,
           creditsUsed: 0,
           provider: aiResponse?.provider || 'gemini',
@@ -323,11 +335,11 @@ export async function POST(req: NextRequest) {
 
     // On Success: Deduct credits & Log usage
     const creditsUsed = AI_CREDIT_COSTS[feature] || 1;
-    if (userId) {
-      await deductUserCredits(userId, feature);
+    if (authenticatedUserId) {
+      await deductUserCredits(authenticatedUserId, feature);
       await logAIUsage({
-        userId,
-        role: userRole,
+        userId: authenticatedUserId,
+        role: effectiveRole,
         feature,
         creditsUsed,
         provider: 'groq',

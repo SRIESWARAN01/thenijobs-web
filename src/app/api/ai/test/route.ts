@@ -7,11 +7,19 @@ export async function POST(req: NextRequest) {
   try {
     const { provider, apiKey, model } = await req.json();
 
-    const resolvedApiKey = apiKey || (
-      provider === 'groq' ? process.env.GROQ_API_KEY :
-      provider === 'gemini' ? (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) :
-      provider === 'openai' ? process.env.OPENAI_API_KEY : undefined
-    );
+    // AI-1: this endpoint has no authentication, and it used to fall back to the SERVER's
+    // GROQ_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY when the caller sent none. So anyone able
+    // to POST here could spend the owner's provider quota, and use the response as an oracle
+    // for whether those keys were live — without ever holding one.
+    //
+    // The only caller, the admin AI-settings page, returns early unless it has a key and
+    // always sends it, so requiring one costs that page nothing. A caller must now bring their
+    // own key, which makes this useless as a way to spend ours.
+    //
+    // This is NOT the whole fix. The endpoint still needs an admin check, which has to be
+    // added alongside the admin page that calls it; that page is currently held by another
+    // branch. Recorded in the ledger rather than half-done here.
+    const resolvedApiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
 
     if (!provider || !resolvedApiKey) {
       return NextResponse.json(

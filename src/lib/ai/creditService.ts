@@ -52,8 +52,16 @@ export async function checkUserCredits(userId: string, feature: AIFeatureKey): P
     return { allowed: true, requiredCredits, currentBalance };
   } catch (err: any) {
     console.error('[Credit Check Error]:', err);
-    // Graceful fallback during dev if field isn't set
-    return { allowed: true, requiredCredits, currentBalance: 100 };
+    // A balance that can't be verified is not evidence of one to spend. This route reads
+    // through the unauthenticated client SDK (no signed-in session server-side), so this
+    // branch is not a rare failure -- it is the path every call takes until a privileged
+    // backend identity exists to read/write these fields for real.
+    return {
+      allowed: false,
+      requiredCredits,
+      currentBalance: 0,
+      message: 'Could not verify your AI credit balance right now. Please try again shortly.',
+    };
   }
 }
 

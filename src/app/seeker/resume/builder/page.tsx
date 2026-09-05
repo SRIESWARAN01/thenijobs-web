@@ -113,26 +113,6 @@ export default function ResumeBuilderPage() {
     { id: '1', name: '', issuer: '', year: '' },
   ]);
 
-  // Auto-fill from user's profile on load
-  useEffect(() => {
-    if (profileDoc && !autoFilled) {
-      populateFromProfileData(profileDoc);
-      setAutoFilled(true);
-    }
-  }, [profileDoc, autoFilled]);
-
-  // Fallback to user auth object if profileDoc is empty
-  useEffect(() => {
-    if (user && !personal.name && !personal.email) {
-      setPersonal(prev => ({
-        ...prev,
-        name: prev.name || user.displayName || '',
-        email: prev.email || user.email || '',
-        phone: prev.phone || (user as any).phoneNumber || (user as any).phone || '',
-      }));
-    }
-  }, [user, personal.name, personal.email]);
-
   const populateFromProfileData = (data: any) => {
     if (!data) return;
     setPersonal({
@@ -185,6 +165,26 @@ export default function ResumeBuilderPage() {
       })));
     }
   };
+
+  // Auto-fill from user's profile on load
+  useEffect(() => {
+    if (profileDoc && !autoFilled) {
+      populateFromProfileData(profileDoc);
+      setAutoFilled(true);
+    }
+  }, [profileDoc, autoFilled]);
+
+  // Fallback to user auth object if profileDoc is empty
+  useEffect(() => {
+    if (user && !personal.name && !personal.email) {
+      setPersonal(prev => ({
+        ...prev,
+        name: prev.name || user.displayName || '',
+        email: prev.email || user.email || '',
+        phone: prev.phone || (user as any).phoneNumber || (user as any).phone || '',
+      }));
+    }
+  }, [user, personal.name, personal.email]);
 
   const handleManualSyncProfile = () => {
     if (profileDoc) {

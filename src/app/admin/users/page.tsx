@@ -15,7 +15,7 @@ import {
 } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { updateDocument, deleteDocument, verifyUser } from '@/lib/firebase/firestoreService';
-import { auth, db } from '@/lib/firebase/config';
+import { auth } from '@/lib/firebase/config';
 import { serverTimestamp } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { useToast } from '@/contexts/ToastContext';

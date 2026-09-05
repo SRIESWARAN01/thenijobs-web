@@ -18,7 +18,15 @@ interface AuthShellProps {
   children: ReactNode;
 }
 
-const DEFAULT_TRUST_ROW = ['1,200+ Active Jobs', '500+ Verified Companies', '98% Placement Rate'];
+// TRUST-2: this was ['1,200+ Active Jobs', '500+ Verified Companies', '98% Placement Rate'].
+// Production held 2 active jobs and 104 verified companies when that was measured, and a
+// placement rate is not merely wrong — nothing in this system records placements, so there is
+// no figure to be right about. These are the claims the sign-in screen makes to someone
+// deciding whether to trust the platform with their details.
+//
+// Replaced with statements that are true and checkable, matching the shape register/page.tsx
+// already passes: ['Free for job seekers', 'Verified local businesses', 'Setup in minutes'].
+const DEFAULT_TRUST_ROW = ['Free for job seekers', 'Direct employer contact', 'Local to Theni district'];
 
 /**
  * Shared shell for every auth surface (login, register, forgot-password).

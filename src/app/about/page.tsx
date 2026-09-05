@@ -97,10 +97,18 @@ export default function AboutPage() {
   ];
 
   const metrics = [
-    { icon: Users, value: '10,000+', label: 'Active Users', sub: 'Job Seekers & Professionals', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { icon: Building2, value: '1,500+', label: 'Verified Companies', sub: 'Employers & Partners', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { icon: Link2, value: '5,000+', label: 'Connections Made', sub: 'Successful Matchmaking', color: 'text-amber-600', bg: 'bg-amber-50' },
-    { icon: MapPin, value: '15+', label: 'Cities Served', sub: 'Across Tamil Nadu & India', color: 'text-purple-600', bg: 'bg-purple-50' },
+    // TRUST-2: these read '10,000+ Active Users', '1,500+ Verified Companies',
+    // '5,000+ Connections Made' and '15+ Cities Served'. Measured against production on
+    // 2026-09-05: 104 companies in total, and LOCATIONS_DATA lists nine locations, not fifteen.
+    // Users and "connections" are not countable by anyone without admin access, so there was
+    // never a figure behind them.
+    //
+    // What is true is said instead. The nine locations are a real number from a real list, so
+    // it stays as a number; the rest describe what the platform does, which needs no figure.
+    { icon: Users, value: 'Free', label: 'For Job Seekers', sub: 'No fee to search or apply', color: 'text-blue-600', bg: 'bg-blue-50' },
+    { icon: Building2, value: 'Verified', label: 'Local Employers', sub: 'Reviewed before they publish', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { icon: Link2, value: 'Direct', label: 'Employer Contact', sub: 'No agency in between', color: 'text-amber-600', bg: 'bg-amber-50' },
+    { icon: MapPin, value: '9', label: 'Locations Covered', sub: 'Across Theni district & nearby', color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
   const milestones = [

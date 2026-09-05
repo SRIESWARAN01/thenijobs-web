@@ -3,7 +3,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Jobs in Theni | Latest Private & Fresher Job Vacancies | THENIJOBS',
   description:
-    'Search 1,200+ verified private jobs, fresher openings, IT, sales, textile, and technical vacancies in Theni, Cumbum, Periyakulam, Bodinayakanur, and across Tamil Nadu. Filter by salary, type, and apply with 1-click.',
+    // TRUST-2: began 'Search 1,200+ verified private jobs'. This is the META DESCRIPTION, so
+    // the number reached search results as well as the page.
+    'Search verified private jobs, fresher openings, IT, sales, textile, and technical vacancies in Theni, Cumbum, Periyakulam, Bodinayakanur, and across Tamil Nadu. Filter by salary, type, and apply with 1-click.',
   keywords: [
     'Jobs in Theni',
     'Theni job vacancy',

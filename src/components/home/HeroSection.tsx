@@ -1,10 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+// `query` is aliased: this component already has a `query` state for the search box, and the
+// unaliased import silently shadowed it — tsc caught it as "Type 'String' has no call
+// signatures" rather than it reaching a browser.
+import { collection, getCountFromServer, query as fsQuery, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import {
-  Search, MapPin, Briefcase, Building2, Users, ArrowRight, SlidersHorizontal,
+  Search, MapPin, Briefcase, Building2, ArrowRight, SlidersHorizontal,
   Target, Zap, Home, ClipboardList, GraduationCap, Wrench, PlusCircle, Store,
 } from 'lucide-react';
 
@@ -26,10 +31,13 @@ const quickActions = [
   { label: 'Services', href: '/services', icon: Wrench },
 ];
 
+// TRUST-2: the 'Job Seekers' card was removed rather than made accurate. Counting `users`
+// needs a read the security rules restrict to the owner and admins, correctly, so there is no
+// honest number a visitor could be shown — and an invented one is what this phase exists to
+// remove. Two cards that are true beat three where one is decoration.
 const heroStats = [
   { label: 'Active Jobs', icon: Briefcase, color: '#2563EB', bg: '#EFF6FF' },
   { label: 'Verified Companies', icon: Building2, color: '#10B981', bg: '#ECFDF5' },
-  { label: 'Job Seekers', icon: Users, color: '#F59E0B', bg: '#FFFBEB' },
 ];
 
 export default function HeroSection() {
@@ -37,10 +45,41 @@ export default function HeroSection() {
   const [query, setQuery] = useState('');
   const [district, setDistrict] = useState('All Tamil Nadu');
 
-  const [jobCount] = useState(500);
-  const [companyCount] = useState(190);
-  const [seekerCount] = useState(1200);
-  const [statsLoading] = useState(false);
+  // TRUST-2: these were `useState(500)`, `useState(190)` and `useState(1200)` — constants with
+  // no setter, beside a `statsLoading` pinned to false so they rendered as figures that had
+  // finished loading. Measured against production on 2026-09-05: 2 active jobs and 104 verified
+  // companies. The page was telling every visitor there were 500+ jobs when there were two.
+  //
+  // Both counts below are aggregation queries an ANONYMOUS visitor is allowed to run: the jobs
+  // read rule permits `status == 'active'` and the companies rule permits
+  // `verificationStatus == 'verified'`, so each query carries the constraint its rule needs to
+  // be provable. getCountFromServer bills one read per thousand documents rather than reading
+  // the documents, so this costs less than the list it sits beside.
+  const [jobCount, setJobCount] = useState<number | null>(null);
+  const [companyCount, setCompanyCount] = useState<number | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [jobs, companies] = await Promise.all([
+          getCountFromServer(fsQuery(collection(db, 'jobs'), where('status', '==', 'active'))),
+          getCountFromServer(fsQuery(collection(db, 'companies'), where('verificationStatus', '==', 'verified'))),
+        ]);
+        if (cancelled) return;
+        setJobCount(jobs.data().count);
+        setCompanyCount(companies.data().count);
+      } catch (err) {
+        // A count that will not load is not worth guessing at. Leaving both null hides the
+        // cards, which is the honest outcome and the one the render below already handles.
+        console.error('[HeroSection] Could not load platform counts:', err);
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +92,6 @@ export default function HeroSection() {
   const statsData = [
     { count: jobCount, loading: statsLoading },
     { count: companyCount, loading: statsLoading },
-    { count: seekerCount, loading: statsLoading },
   ];
 
   return (
@@ -186,7 +224,9 @@ export default function HeroSection() {
                 const Icon = stat.icon;
                 const { count, loading } = statsData[i];
 
-                if (!loading && count === 0) return null;
+                // Hidden when the count is zero or could not be loaded — the same branch that
+                // already existed, now reachable for a real reason rather than never.
+                if (!loading && !count) return null;
 
                 return (
                   <div key={i} className="flex flex-col lg:flex-row items-center lg:items-center gap-2 lg:gap-4 bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-gray-100 text-center lg:text-left">
@@ -199,7 +239,9 @@ export default function HeroSection() {
                         <div className="h-6 sm:h-7 w-14 sm:w-16 bg-gray-100 rounded animate-pulse mx-auto lg:mx-0" />
                       ) : (
                         <p className="text-lg sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                          {count.toLocaleString('en-IN')}+
+                          {/* TRUST-2: the trailing '+' is gone. These are exact counts, and a
+                              plus sign on an exact number is its own small untruth. */}
+                          {count?.toLocaleString('en-IN')}
                         </p>
                       )}
                       <p className="text-[11px] sm:text-sm text-gray-600 font-medium leading-tight">{stat.label}</p>

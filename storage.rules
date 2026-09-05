@@ -91,8 +91,16 @@ service firebase.storage {
     }
 
     // ===== SEEKER SKILLS / CERTIFICATES =====
+    // RULES-3: read was `isAuthenticated()` — any account, not the owner's. These are
+    // qualification and identity documents, the same class as the resumes block above, which is
+    // owner-or-admin. One of the two was protected and the other was not, for no stated reason.
+    // Nothing in src/ writes to this path, so nothing depended on the looser rule.
+    //
+    // If employers are ever meant to see a candidate's certificates, that is a deliberate
+    // widening with a named condition — an employer who has an application from that seeker,
+    // say — not a blanket allowance to everyone with an account.
     match /certificates/{userId}/{fileName} {
-      allow read:  if isAuthenticated();
+      allow read:  if isOwner(userId) || isAdmin();
       allow write: if isOwner(userId) && (isImage() || isPDF()) && isUnder5MB();
       allow delete: if isOwner(userId) || isAdmin();
     }
@@ -105,9 +113,18 @@ service firebase.storage {
     }
 
     // ===== GENERAL AUTHENTICATED UPLOADS =====
+    // RULES-3: this was `allow read: if true` with a write rule that checked only ownership and
+    // size — no content type. A world-readable area accepting any file up to 10MB, served back
+    // with whatever type it was stored as, on the owner's Storage bill. Every other write block
+    // in this file restricts the type to image or PDF; this one is a general-purpose bucket with
+    // no stated purpose, and a repository-wide search finds nothing that writes to it.
+    //
+    // Closed to match its neighbours rather than deleted, so that a future feature finds a
+    // sensible default instead of an open one. A path that genuinely needs public read should
+    // say which files and why, the way /portfolio and /users/{id}/profile do.
     match /uploads/{userId}/{allPaths=**} {
-      allow read:  if true;
-      allow write: if isOwner(userId) && isUnder10MB();   // RULES-1: was any authenticated user (S-11)
+      allow read:  if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && (isImage() || isPDF()) && isUnder10MB();   // RULES-1: was any authenticated user (S-11)
       allow delete: if isOwner(userId) || isAdmin();
     }
 

@@ -82,7 +82,10 @@ export interface PlatformStatsData {
   totalLeads: number;
   totalRevenue: number;
   pendingBusinesses: number;
-  pendingJobs: number;
+  // DATA-4: `pendingJobs` used to live here, fed by `jobs where isActive == false`. That also
+  // matches draft, rejected, closed and expired, so it counted the whole dormant job table as
+  // "pending" — and nothing rendered it. admin/dashboard already asks the right question a few
+  // lines from where it displayed the answer, with where('status','==','pending').
   pendingUsers: number;
 }
 
@@ -99,7 +102,6 @@ export function usePlatformStats(skip = false) {
     totalLeads: 0,
     totalRevenue: 0,
     pendingBusinesses: 0,
-    pendingJobs: 0,
     pendingUsers: 0 });
   const [loading, setLoading] = useState(!skip);
   const [error, setError] = useState<string | null>(null);
@@ -133,13 +135,20 @@ export function usePlatformStats(skip = false) {
     // Core stats
     listen('users', 'totalUsers');
     listen('companies', 'totalBusinesses', [where('verificationStatus', '==', 'verified')]);
-    listen('jobs', 'activeJobs', [where('isActive', '==', true)]);
+    // DATA-4: counted by `isActive` where the jobs read rule, every public page and
+    // firestoreService.ts:99 all use `status == 'active'` — that line already carries the note
+    // "matches the jobs read rule (status), not isActive". This figure is rendered as "Active
+    // Listings" on admin/reports, so it should mean the same thing the site means by active.
+    listen('jobs', 'activeJobs', [where('status', '==', 'active')]);
     listen('applications', 'totalApplications');
     listen('leads', 'totalLeads');
 
     // Pending counts
     listen('companies', 'pendingBusinesses', [where('verificationStatus', '==', 'pending')]);
-    listen('jobs', 'pendingJobs', [where('isActive', '==', false)]);
+    // DATA-4: the `pendingJobs` listener was removed here. It opened an onSnapshot over every
+    // non-active job on each admin dashboard load, to maintain a number that was both wrong and
+    // never displayed. Same shape PERF-1 removed from the home page: a live subscription is an
+    // expensive way to compute something nobody reads.
     listen('users', 'pendingUsers', [where('isVerified', '==', false)]);
 
     // Revenue from subscriptions

@@ -129,7 +129,7 @@ export default function DailyJobsPage() {
             postedAt: millis,
             postedText,
             isUrgent: !!d.isUrgent,
-            isVerified: d.isVerified ?? true,
+            isVerified: d.isVerified || false,
             whatsapp: d.whatsapp || d.phone || '',
             phone: d.phone || '',
             description: d.description || '',

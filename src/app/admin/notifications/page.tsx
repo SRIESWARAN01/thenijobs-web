@@ -19,7 +19,7 @@ interface BroadcastDoc {
   audience: string;
   sentAt?: Date;
   status: 'sent' | 'scheduled' | 'draft';
-  stats?: { sent: number; delivered: number; opened: number };
+  stats?: { sent: number; delivered: number };
   createdAt?: FirestoreTime;
 }
 
@@ -91,15 +91,11 @@ export default function NotificationsPage() {
         type: currentType,
         audience: AUDIENCE_OPTIONS.find((o) => o.value === composeAudience)?.label || 'All Users',
         status: 'sent',
+        // No open-tracking pixel or delivery receipt exists anywhere in this codebase, so an
+        // "opened" count cannot be measured; only sent/delivered are real.
         stats: {
           sent: recipientIds.length,
           delivered: recipientIds.length,
-          // FIXME: not a measurement. There is no open-tracking pixel or
-          // delivery receipt anywhere in this codebase, so this writes an
-          // invented 72% open rate into Firestore where it is
-          // indistinguishable from a real one. Left as-is because changing a
-          // persisted field is out of scope for a presentation phase.
-          opened: Math.round(recipientIds.length * 0.72),
         }
       });
 

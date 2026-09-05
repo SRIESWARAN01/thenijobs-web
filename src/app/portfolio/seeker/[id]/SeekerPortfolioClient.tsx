@@ -259,12 +259,12 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
             seeker={{
               uid: seekerId || 'demo',
               name,
-              phone: seeker.phone,
-              email: seeker.email,
+              // PRIV-1: this ID card renders on the public portfolio page — no working opt-in
+              // exists yet for a visitor-facing contact share, so phone/email/address are never
+              // passed here regardless of what the profile document holds.
               profilePhotoUrl: photoUrl,
               district,
               state,
-              address: seeker.address,
               skills: rawSkills.map(s => (typeof s === 'string' ? s : s.name)),
               currentRole,
               experience: experience.map(e => ({ company: e.company, role: e.role })),
@@ -700,31 +700,19 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-w-md mx-auto pt-2">
-                {!seeker.privacySettings?.hidePhone && seeker.phone ? (
-                  <a
-                    href={`tel:${seeker.phone}`}
-                    className="py-3 px-3 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    <Phone size={14} /> Call
-                  </a>
-                ) : (
-                  <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
-                    <Lock size={12} /> Phone Hidden
-                  </div>
-                )}
+                {/* PRIV-1: `privacySettings.hidePhone/hideEmail` used to gate these, but nothing
+                    in the app ever writes that field — there is no real opt-in, so it always
+                    evaluated to "not hidden" and every public portfolio showed a working
+                    tel:/mailto: link regardless of what the seeker intended. Until a real,
+                    rule-enforced share flag exists (PRIV-1 workstreams 2-3), contact info is
+                    never shown here. */}
+                <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
+                  <Lock size={12} /> Phone Hidden
+                </div>
 
-                {!seeker.privacySettings?.hideEmail && seeker.email ? (
-                  <a
-                    href={`mailto:${seeker.email}`}
-                    className="py-3 px-3 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    <Mail size={14} /> Email
-                  </a>
-                ) : (
-                  <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
-                    <Lock size={12} /> Email Hidden
-                  </div>
-                )}
+                <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
+                  <Lock size={12} /> Email Hidden
+                </div>
 
                 <button
                   onClick={() => {

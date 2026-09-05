@@ -43,7 +43,7 @@ export default function TrustedEmployersStrip() {
           });
         });
         setEmployers(logos);
-      } catch (err) {
+      } catch {
         if (!cancelled) setEmployers([]);
       }
     }

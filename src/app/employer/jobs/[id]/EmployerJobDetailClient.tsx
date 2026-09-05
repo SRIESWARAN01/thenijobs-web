@@ -190,7 +190,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="mx-auto max-w-5xl space-y-4 sm:space-y-6">
       {/* Back + Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">

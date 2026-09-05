@@ -27,7 +27,7 @@ export default function EmployerIDCardPage() {
 
   if (!company) {
     return (
-      <div className="p-4 sm:p-6 max-w-2xl mx-auto font-outfit">
+      <div className="mx-auto max-w-2xl">
         <div className="bg-white rounded-3xl border border-gray-200 p-8 text-center shadow-xs space-y-4">
           <div className="w-14 h-14 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-200">
             <Building2 size={26} />

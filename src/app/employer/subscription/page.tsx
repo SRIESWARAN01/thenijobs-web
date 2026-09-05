@@ -61,7 +61,7 @@ export default function EmployerSubscriptionPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 font-sans">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Portal Subscription</h1>

@@ -317,7 +317,7 @@ export default function AdminJobsPage() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 font-outfit text-gray-900 pb-20">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-4 pb-20 text-slate-900 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>

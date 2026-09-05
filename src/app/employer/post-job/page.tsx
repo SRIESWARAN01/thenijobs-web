@@ -144,6 +144,13 @@ export default function PostJobPage() {
       return;
     }
 
+    // Firestore rules can't cheaply enforce a count-based limit without a get() this app
+    // avoids elsewhere for cost, so the plan cap has to be checked here instead.
+    if (!planCheck.allowed) {
+      toast.warning(`Your ${planInfo.name} plan allows ${planCheck.limit} active job postings. Upgrade to post more.`);
+      return;
+    }
+
     if (!form.title.trim()) {
       toast.warning('Please enter a Job Title.');
       setStep(1);
@@ -756,7 +763,9 @@ export default function PostJobPage() {
           <button
             type="button"
             onClick={step === 4 ? handlePost : () => setStep(s => s + 1)}
-            disabled={loading || (step === 1 && !isStep1Valid)}
+            // Steps 1-3 stay open (the limit banner already runs the whole time); only the
+            // step that actually creates the job needs to stop.
+            disabled={loading || (step === 1 && !isStep1Valid) || (step === 4 && !planCheck.allowed)}
             className="flex-1 py-3.5 rounded-2xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-40"
             style={{ background: step === 4 ? '#10B981' : '#2563EB' }}
           >

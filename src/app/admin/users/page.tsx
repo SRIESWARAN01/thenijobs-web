@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Users, Search, Download, ShieldCheck, Ban, Trash2,
   UserCheck, AlertCircle, Loader2, CheckCircle, XCircle,
@@ -14,8 +15,8 @@ import {
 } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { updateDocument, deleteDocument, verifyUser } from '@/lib/firebase/firestoreService';
-import { auth, db } from '@/lib/firebase/config';
-import { doc, setDoc, serverTimestamp, collection as fbCollection } from 'firebase/firestore';
+import { auth } from '@/lib/firebase/config';
+import { serverTimestamp } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -60,19 +61,6 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [districtFilter, setDistrictFilter] = useState('All Districts');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  // Create User modal
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createLoading, setCreateLoading] = useState(false);
-  const [createError, setCreateError] = useState('');
-  const [newUser, setNewUser] = useState({
-    displayName: '',
-    email: '',
-    phone: '',
-    role: 'job_seeker',
-    district: 'Theni',
-    status: 'active',
-  });
 
   // Edit User modal
   const [editingUser, setEditingUser] = useState<UserDoc | null>(null);
@@ -145,43 +133,6 @@ export default function UsersPage() {
       toast.error(e.message || 'Failed to send password reset email.');
     } finally {
       setResetSending(false);
-    }
-  };
-
-  const resetCreateForm = () => {
-    setNewUser({ displayName: '', email: '', phone: '', role: 'job_seeker', district: 'Theni', status: 'active' });
-    setCreateError('');
-  };
-
-  const handleCreateUser = async () => {
-    if (!newUser.displayName.trim() || !newUser.email.trim()) {
-      setCreateError('Name and email are required.');
-      return;
-    }
-    setCreateLoading(true);
-    setCreateError('');
-    try {
-      const newDocRef = doc(fbCollection(db, 'users'));
-      await setDoc(newDocRef, {
-        displayName: newUser.displayName.trim(),
-        email: newUser.email.trim().toLowerCase(),
-        phone: newUser.phone.trim(),
-        role: newUser.role,
-        district: newUser.district,
-        status: newUser.status,
-        isVerified: false,
-        createdAt: serverTimestamp(),
-        createdBy: currentUser?.uid || 'admin',
-        source: 'admin_manual',
-      });
-      toast.success('User created successfully!');
-      setShowCreateModal(false);
-      resetCreateForm();
-    } catch (e: any) {
-      console.error('Error creating user:', e);
-      setCreateError(e.message || 'Failed to create user.');
-    } finally {
-      setCreateLoading(false);
     }
   };
 
@@ -317,13 +268,12 @@ export default function UsersPage() {
           <h1 className="text-xl sm:text-2xl font-black text-gray-900">User Management</h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Manage all job seekers, employers, businesses, and staff roles</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreateModal(true)}
+        <Link
+          href="/admin/users/create"
           className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
         >
           <Plus size={16} /> Create User
-        </button>
+        </Link>
       </div>
 
       {/* KPI Stats Grid */}
@@ -576,105 +526,6 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Create User Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4 font-outfit" onClick={() => setShowCreateModal(false)}>
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-200 animate-fade-in" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-base font-bold text-gray-900">Create New Platform User</h3>
-              <button onClick={() => setShowCreateModal(false)} className="p-1 rounded-lg text-slate-500 hover:text-gray-600">
-                <X size={18} />
-              </button>
-            </div>
-
-            {createError && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
-                {createError}
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <div>
-                <label htmlFor="admin-users-full-name" className="text-xs font-bold text-gray-700 block mb-1">Full Name *</label>
-                <input id="admin-users-full-name"
-                  type="text"
-                  placeholder="e.g. Ramesh Kumar"
-                  value={newUser.displayName}
-                  onChange={e => setNewUser({ ...newUser, displayName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="admin-users-email-address" className="text-xs font-bold text-gray-700 block mb-1">Email Address *</label>
-                <input id="admin-users-email-address"
-                  type="email"
-                  placeholder="user@example.com"
-                  value={newUser.email}
-                  onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="admin-users-phone-number-2" className="text-xs font-bold text-gray-700 block mb-1">Phone Number</label>
-                <input id="admin-users-phone-number-2"
-                  type="tel"
-                  placeholder="+91 93605 19460"
-                  value={newUser.phone}
-                  onChange={e => setNewUser({ ...newUser, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="admin-users-role" className="text-xs font-bold text-gray-700 block mb-1">Role</label>
-                  <select id="admin-users-role"
-                    value={newUser.role}
-                    onChange={e => setNewUser({ ...newUser, role: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
-                  >
-                    <option value="job_seeker">Job Seeker</option>
-                    <option value="employer">Employer</option>
-                    <option value="business_owner">Business Owner</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="admin-users-district-2" className="text-xs font-bold text-gray-700 block mb-1">District</label>
-                  <select id="admin-users-district-2"
-                    value={newUser.district}
-                    onChange={e => setNewUser({ ...newUser, district: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
-                  >
-                    {DISTRICTS.filter(d => d !== 'All Districts').map(d => <option key={d}>{d}</option>)}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateUser}
-                disabled={createLoading}
-                className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5"
-              >
-                {createLoading ? <Loader2 size={14} className="animate-spin" /> : null}
-                <span>Create User</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

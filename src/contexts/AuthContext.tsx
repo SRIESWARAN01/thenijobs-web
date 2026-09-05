@@ -119,10 +119,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  // ── Auth state listener (non-blocking idle initialization) ───
+  // ── Auth state listener ────────────────────────────────────────
   useEffect(() => {
     let isMounted = true;
-    let unsubscribe: (() => void) | null = null;
 
     // Fast-path: Check cached user on client mount
     try {
@@ -136,45 +135,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setLoading(false);
     }
 
-    const initAuthListener = () => {
-      if (!isMounted) return;
-      try {
-        unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-          if (!isMounted) return;
-          setFirebaseUser(fbUser);
+    // AUTH-1: this used to defer subscribing via requestIdleCallback (up to a 2000ms
+    // timeout, or a 50ms setTimeout fallback) "so critical render and LCP complete first" —
+    // but every page that gates its content on `loading` (every /seeker, /employer, /admin
+    // dashboard) shows a spinner regardless, so the defer bought no LCP benefit there, only a
+    // real cost: Header.tsx renders its "Sign In" button whenever `!mounted || !user`, so an
+    // already-logged-in visitor saw it instead of their own account on every page load, for
+    // up to two seconds. Subscribing immediately is what Firebase's own guidance recommends;
+    // the listener stays a cheap, stateless subscription and its callback stays async.
+    let unsubscribe: (() => void) | null = null;
+    try {
+      unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+        if (!isMounted) return;
+        setFirebaseUser(fbUser);
 
-          if (fbUser) {
-            const profile = await fetchUserProfile(fbUser.uid);
-            if (isMounted) setUser(profile);
-          } else {
-            if (isMounted) setUser(null);
-            try { localStorage.removeItem('tj_cached_user'); } catch {}
-          }
+        if (fbUser) {
+          const profile = await fetchUserProfile(fbUser.uid);
+          if (isMounted) setUser(profile);
+        } else {
+          if (isMounted) setUser(null);
+          try { localStorage.removeItem('tj_cached_user'); } catch {}
+        }
 
-          if (isMounted) setLoading(false);
-        });
-      } catch (err) {
-        console.warn('[AuthContext] Lazy auth initialization failed:', err);
         if (isMounted) setLoading(false);
-      }
-    };
-
-    // Defer auth initialization to idle callback so critical render and LCP complete first
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const idleId = (window as any).requestIdleCallback(initAuthListener, { timeout: 2000 });
-      return () => {
-        isMounted = false;
-        if ('cancelIdleCallback' in window) (window as any).cancelIdleCallback(idleId);
-        if (unsubscribe) unsubscribe();
-      };
-    } else {
-      const timeoutId = setTimeout(initAuthListener, 50);
-      return () => {
-        isMounted = false;
-        clearTimeout(timeoutId);
-        if (unsubscribe) unsubscribe();
-      };
+      });
+    } catch (err) {
+      console.warn('[AuthContext] Auth initialization failed:', err);
+      if (isMounted) setLoading(false);
     }
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
   }, [fetchUserProfile]);
 
 

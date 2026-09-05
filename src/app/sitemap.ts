@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap, getPublishedPortfolioSitesForSitemap } from '@/lib/firebase/firestoreServer';
+import { LOCATIONS_DATA, CATEGORIES_LIST } from '@/components/seo/locationData';
+import { BUSINESS_CATEGORY_SITEMAP_SLUGS } from '@/lib/seo/businessCategories';
 
 export const dynamic = 'force-static';
 
@@ -13,35 +15,22 @@ export const dynamic = 'force-static';
  * As the job count grows beyond 50,000, use generateSitemaps() to split.
  */
 
-const LOCATIONS = [
-  'theni',
-  'cumbum',
-  'periyakulam',
-  'bodinayakanur',
-  'uthamapalayam',
-  'andipatti',
-  'chinnamanur',
-  'madurai',
-  'dindigul',
-];
+/**
+ * SEO-3 — these are derived, not typed out again.
+ *
+ * This file used to hand-maintain its own copies of the location and category lists. They
+ * happened to match the data, but nothing tied them to the ROUTES, so the sitemap advertised
+ * nine locations x fifteen categories while only theni and cumbum had a [category] route.
+ * 105 of the 374 URLs it published returned 404 in production, measured on 2026-09-05.
+ *
+ * Every jobs-in-<location> route now has a [category] route and all nine read
+ * getCategoryStaticParams(), which is CATEGORIES_LIST. Reading the same two exports here means
+ * adding a location or a category updates the routes and the sitemap together, and dropping one
+ * cannot leave the sitemap pointing at a page that no longer exists.
+ */
+const LOCATIONS = Object.keys(LOCATIONS_DATA);
 
-const CATEGORIES = [
-  'freshers',
-  'sales',
-  'it',
-  'accounts',
-  'healthcare',
-  'education',
-  'banking',
-  'hospitality',
-  'manufacturing',
-  'driving',
-  'security',
-  'customer-service',
-  'part-time',
-  'full-time',
-  'work-from-home',
-];
+const CATEGORIES = CATEGORIES_LIST.map((c) => c.slug);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const BASE = 'https://thenijobs.com';
@@ -83,11 +72,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // Business Category pages
-  const businessCategoryPages: MetadataRoute.Sitemap = [
-    'agriculture', 'construction', 'education', 'healthcare',
-    'it-software', 'textiles', 'manufacturing', 'retail', 'transport', 'finance',
-  ].map(cat => ({
+  // Business Category pages. SEO-3: this was a hand-written list of ten while the route
+  // generated eighteen real pages, so eight existed and were advertised to nobody.
+  const businessCategoryPages: MetadataRoute.Sitemap = BUSINESS_CATEGORY_SITEMAP_SLUGS.map(cat => ({
     url: `${BASE}/businesses/${cat}`,
     changeFrequency: 'daily',
     priority: 0.8,

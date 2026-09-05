@@ -680,8 +680,8 @@ Return strictly valid JSON with format:
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Full Name *</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-full-name" className="text-xs font-bold text-gray-700 mb-1 block">Full Name *</label>
+                    <input id="seeker-resume-builder-full-name"
                       type="text"
                       value={personal.name}
                       onChange={e => setPersonal({ ...personal, name: e.target.value })}
@@ -690,8 +690,8 @@ Return strictly valid JSON with format:
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Email Address *</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-email-address" className="text-xs font-bold text-gray-700 mb-1 block">Email Address *</label>
+                    <input id="seeker-resume-builder-email-address"
                       type="email"
                       value={personal.email}
                       onChange={e => setPersonal({ ...personal, email: e.target.value })}
@@ -700,8 +700,8 @@ Return strictly valid JSON with format:
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Phone Number *</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-phone-number" className="text-xs font-bold text-gray-700 mb-1 block">Phone Number *</label>
+                    <input id="seeker-resume-builder-phone-number"
                       type="text"
                       value={personal.phone}
                       onChange={e => setPersonal({ ...personal, phone: e.target.value })}
@@ -710,8 +710,8 @@ Return strictly valid JSON with format:
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">District / Location</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-district-location" className="text-xs font-bold text-gray-700 mb-1 block">District / Location</label>
+                    <input id="seeker-resume-builder-district-location"
                       type="text"
                       value={personal.district}
                       onChange={e => setPersonal({ ...personal, district: e.target.value })}
@@ -720,8 +720,8 @@ Return strictly valid JSON with format:
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Full Address</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-full-address" className="text-xs font-bold text-gray-700 mb-1 block">Full Address</label>
+                    <input id="seeker-resume-builder-full-address"
                       type="text"
                       value={personal.address}
                       onChange={e => setPersonal({ ...personal, address: e.target.value })}
@@ -730,8 +730,8 @@ Return strictly valid JSON with format:
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Professional Summary</label>
-                    <textarea
+                    <label htmlFor="seeker-resume-builder-professional-summary" className="text-xs font-bold text-gray-700 mb-1 block">Professional Summary</label>
+                    <textarea id="seeker-resume-builder-professional-summary"
                       rows={3}
                       value={personal.summary}
                       onChange={e => setPersonal({ ...personal, summary: e.target.value })}
@@ -771,8 +771,8 @@ Return strictly valid JSON with format:
                       )}
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Degree / Course</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-degree-course" className="text-xs font-bold text-gray-700 mb-1 block">Degree / Course</label>
+                          <input id="seeker-resume-builder-degree-course"
                             type="text"
                             value={edu.degree}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, degree: e.target.value } : x))}
@@ -781,8 +781,8 @@ Return strictly valid JSON with format:
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Specialization / Major</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-specialization-major" className="text-xs font-bold text-gray-700 mb-1 block">Specialization / Major</label>
+                          <input id="seeker-resume-builder-specialization-major"
                             type="text"
                             value={edu.field}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, field: e.target.value } : x))}
@@ -791,8 +791,8 @@ Return strictly valid JSON with format:
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">College / School Name</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-college-school-name" className="text-xs font-bold text-gray-700 mb-1 block">College / School Name</label>
+                          <input id="seeker-resume-builder-college-school-name"
                             type="text"
                             value={edu.institution}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, institution: e.target.value } : x))}
@@ -802,8 +802,8 @@ Return strictly valid JSON with format:
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
-                            <input
+                            <label htmlFor="seeker-resume-builder-year" className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
+                            <input id="seeker-resume-builder-year"
                               type="text"
                               value={edu.year}
                               onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, year: e.target.value } : x))}
@@ -812,8 +812,8 @@ Return strictly valid JSON with format:
                             />
                           </div>
                           <div>
-                            <label className="text-xs font-bold text-gray-700 mb-1 block">Grade / %</label>
-                            <input
+                            <label htmlFor="seeker-resume-builder-grade" className="text-xs font-bold text-gray-700 mb-1 block">Grade / %</label>
+                            <input id="seeker-resume-builder-grade"
                               type="text"
                               value={edu.grade}
                               onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, grade: e.target.value } : x))}
@@ -857,8 +857,8 @@ Return strictly valid JSON with format:
                       )}
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Company / Business Name</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-company-business-name" className="text-xs font-bold text-gray-700 mb-1 block">Company / Business Name</label>
+                          <input id="seeker-resume-builder-company-business-name"
                             type="text"
                             value={exp.company}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, company: e.target.value } : x))}
@@ -867,8 +867,8 @@ Return strictly valid JSON with format:
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Job Role / Designation</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-job-role-designation" className="text-xs font-bold text-gray-700 mb-1 block">Job Role / Designation</label>
+                          <input id="seeker-resume-builder-job-role-designation"
                             type="text"
                             value={exp.role}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, role: e.target.value } : x))}
@@ -877,8 +877,8 @@ Return strictly valid JSON with format:
                           />
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Duration</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-duration" className="text-xs font-bold text-gray-700 mb-1 block">Duration</label>
+                          <input id="seeker-resume-builder-duration"
                             type="text"
                             value={exp.duration}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, duration: e.target.value } : x))}
@@ -887,8 +887,8 @@ Return strictly valid JSON with format:
                           />
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Key Responsibilities &amp; Bullet Points</label>
-                          <textarea
+                          <label htmlFor="seeker-resume-builder-key-responsibilities-and-bullet-points" className="text-xs font-bold text-gray-700 mb-1 block">Key Responsibilities &amp; Bullet Points</label>
+                          <textarea id="seeker-resume-builder-key-responsibilities-and-bullet-points"
                             rows={3}
                             value={exp.description}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, description: e.target.value } : x))}
@@ -962,8 +962,8 @@ Return strictly valid JSON with format:
                       )}
                       <div className="grid sm:grid-cols-3 gap-3">
                         <div className="sm:col-span-2">
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Certificate / Course Title</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-certificate-course-title" className="text-xs font-bold text-gray-700 mb-1 block">Certificate / Course Title</label>
+                          <input id="seeker-resume-builder-certificate-course-title"
                             type="text"
                             value={cert.name}
                             onChange={e => setCertifications(prev => prev.map(x => x.id === cert.id ? { ...x, name: e.target.value } : x))}
@@ -972,8 +972,8 @@ Return strictly valid JSON with format:
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-year-2" className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
+                          <input id="seeker-resume-builder-year-2"
                             type="text"
                             value={cert.year}
                             onChange={e => setCertifications(prev => prev.map(x => x.id === cert.id ? { ...x, year: e.target.value } : x))}

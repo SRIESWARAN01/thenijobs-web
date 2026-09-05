@@ -114,7 +114,7 @@ export default function WebsiteSettingsPage() {
               <Globe size={16} className="text-blue-600" /> Public Website URL
             </h3>
             <div>
-              <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Username / Slug</label>
+              <label htmlFor="employer-website-settings-username-slug-thenijobs-com-portfolio-se" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Username / Slug</label>
               <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden text-xs">
                 <span className="bg-gray-50 px-3 py-2 text-slate-500 border-r border-gray-200">thenijobs.com/portfolio/</span>
                 <input
@@ -159,7 +159,7 @@ export default function WebsiteSettingsPage() {
             </h3>
             <div>
               <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Page Title</label>
-              <input
+              <input id="employer-website-settings-username-slug-thenijobs-com-portfolio-se"
                 type="text"
                 value={site.seo?.title || ''}
                 onChange={e => setSite({ ...site, seo: { ...site.seo, title: e.target.value } })}
@@ -167,8 +167,8 @@ export default function WebsiteSettingsPage() {
               />
             </div>
             <div>
-              <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Page Description</label>
-              <textarea
+              <label htmlFor="employer-website-settings-page-description" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Page Description</label>
+              <textarea id="employer-website-settings-page-description"
                 value={site.seo?.description || ''}
                 onChange={e => setSite({ ...site, seo: { ...site.seo, description: e.target.value } })}
                 rows={3}

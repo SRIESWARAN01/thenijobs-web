@@ -456,8 +456,8 @@ export default function UsersPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Full Name / Contact Person *</label>
-                <input
+                <label htmlFor="admin-users-full-name-contact-person" className="text-xs font-bold text-gray-700 block mb-1">Full Name / Contact Person *</label>
+                <input id="admin-users-full-name-contact-person"
                   type="text"
                   placeholder="e.g. Ramesh Kumar"
                   value={editForm.displayName}
@@ -467,8 +467,8 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Login Email Address (User ID) *</label>
-                <input
+                <label htmlFor="admin-users-login-email-address-user-id" className="text-xs font-bold text-gray-700 block mb-1">Login Email Address (User ID) *</label>
+                <input id="admin-users-login-email-address-user-id"
                   type="email"
                   placeholder="user@example.com"
                   value={editForm.email}
@@ -478,8 +478,8 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Phone Number</label>
-                <input
+                <label htmlFor="admin-users-phone-number" className="text-xs font-bold text-gray-700 block mb-1">Phone Number</label>
+                <input id="admin-users-phone-number"
                   type="tel"
                   placeholder="+91 93605 19460"
                   value={editForm.phone}
@@ -490,7 +490,7 @@ export default function UsersPage() {
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-gray-700">Account Password / Temp Password</label>
+                  <label htmlFor="admin-users-account-password-temp-password-setshowpa" className="text-xs font-bold text-gray-700">Account Password / Temp Password</label>
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -516,7 +516,7 @@ export default function UsersPage() {
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
                   <label className="text-xs font-bold text-gray-700 block mb-1">Role</label>
-                  <select
+                  <select id="admin-users-account-password-temp-password-setshowpa"
                     value={editForm.role}
                     onChange={e => setEditForm({ ...editForm, role: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -531,8 +531,8 @@ export default function UsersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Status</label>
-                  <select
+                  <label htmlFor="admin-users-status" className="text-xs font-bold text-gray-700 block mb-1">Status</label>
+                  <select id="admin-users-status"
                     value={editForm.status}
                     onChange={e => setEditForm({ ...editForm, status: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -543,8 +543,8 @@ export default function UsersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">District</label>
-                  <select
+                  <label htmlFor="admin-users-district" className="text-xs font-bold text-gray-700 block mb-1">District</label>
+                  <select id="admin-users-district"
                     value={editForm.district}
                     onChange={e => setEditForm({ ...editForm, district: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -596,8 +596,8 @@ export default function UsersPage() {
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Full Name *</label>
-                <input
+                <label htmlFor="admin-users-full-name" className="text-xs font-bold text-gray-700 block mb-1">Full Name *</label>
+                <input id="admin-users-full-name"
                   type="text"
                   placeholder="e.g. Ramesh Kumar"
                   value={newUser.displayName}
@@ -607,8 +607,8 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Email Address *</label>
-                <input
+                <label htmlFor="admin-users-email-address" className="text-xs font-bold text-gray-700 block mb-1">Email Address *</label>
+                <input id="admin-users-email-address"
                   type="email"
                   placeholder="user@example.com"
                   value={newUser.email}
@@ -618,8 +618,8 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Phone Number</label>
-                <input
+                <label htmlFor="admin-users-phone-number-2" className="text-xs font-bold text-gray-700 block mb-1">Phone Number</label>
+                <input id="admin-users-phone-number-2"
                   type="tel"
                   placeholder="+91 93605 19460"
                   value={newUser.phone}
@@ -630,8 +630,8 @@ export default function UsersPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Role</label>
-                  <select
+                  <label htmlFor="admin-users-role" className="text-xs font-bold text-gray-700 block mb-1">Role</label>
+                  <select id="admin-users-role"
                     value={newUser.role}
                     onChange={e => setNewUser({ ...newUser, role: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -643,8 +643,8 @@ export default function UsersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">District</label>
-                  <select
+                  <label htmlFor="admin-users-district-2" className="text-xs font-bold text-gray-700 block mb-1">District</label>
+                  <select id="admin-users-district-2"
                     value={newUser.district}
                     onChange={e => setNewUser({ ...newUser, district: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"

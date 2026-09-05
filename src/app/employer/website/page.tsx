@@ -371,8 +371,8 @@ export default function EmployerWebsitePage() {
               <div className="space-y-4 text-xs max-h-96 overflow-y-auto pr-1">
                 {/* About Story */}
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Company Story &amp; About Us</label>
-                  <textarea
+                  <label htmlFor="employer-website-company-story-and-about-us" className="font-bold text-slate-700 block mb-1">Company Story &amp; About Us</label>
+                  <textarea id="employer-website-company-story-and-about-us"
                     rows={3}
                     value={aiGeneratedStory}
                     onChange={e => setAiGeneratedStory(e.target.value)}
@@ -382,8 +382,8 @@ export default function EmployerWebsitePage() {
 
                 {/* SEO Metadata */}
                 <div className="space-y-2">
-                  <label className="font-bold text-slate-700 block">Dynamic Local SEO Title &amp; Description</label>
-                  <input
+                  <label htmlFor="employer-website-dynamic-local-seo-title-and-description" className="font-bold text-slate-700 block">Dynamic Local SEO Title &amp; Description</label>
+                  <input id="employer-website-dynamic-local-seo-title-and-description"
                     type="text"
                     value={aiGeneratedSeo.title}
                     onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, title: e.target.value })}

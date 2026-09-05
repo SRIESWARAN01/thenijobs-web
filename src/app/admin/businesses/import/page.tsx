@@ -456,7 +456,7 @@ export default function BulkCompanyImportPage() {
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-2.5">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label htmlFor="admin-businesses-import-handlecolumntoggle-idx-e-target-checked-" className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={col.isIncluded}
@@ -477,7 +477,7 @@ export default function BulkCompanyImportPage() {
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
                       Map to Field:
                     </label>
-                    <select
+                    <select id="admin-businesses-import-handlecolumntoggle-idx-e-target-checked-"
                       value={col.targetField}
                       onChange={(e) => handleColumnTargetChange(idx, e.target.value as any)}
                       disabled={!col.isIncluded}
@@ -789,10 +789,10 @@ export default function BulkCompanyImportPage() {
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  <label htmlFor="admin-businesses-import-initial-verification-status" className="text-xs font-bold text-gray-700 block mb-1.5">
                     Initial Verification Status:
                   </label>
-                  <select
+                  <select id="admin-businesses-import-initial-verification-status"
                     value={importOptions.overrideStatus}
                     onChange={(e) => setImportOptions({ ...importOptions, overrideStatus: e.target.value as any })}
                     className="w-full text-base sm:text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
@@ -804,10 +804,10 @@ export default function BulkCompanyImportPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  <label htmlFor="admin-businesses-import-default-district-if-empty" className="text-xs font-bold text-gray-700 block mb-1.5">
                     Default District (if empty):
                   </label>
-                  <select
+                  <select id="admin-businesses-import-default-district-if-empty"
                     value={importOptions.overrideDistrict}
                     onChange={(e) => setImportOptions({ ...importOptions, overrideDistrict: e.target.value })}
                     className="w-full text-base sm:text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"

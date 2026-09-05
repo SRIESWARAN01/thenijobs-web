@@ -342,8 +342,8 @@ export default function JobAlertsPage() {
               <p className="text-xs text-slate-500">Define search criteria for matches and specify delivery channels.</p>
 
               <div>
-                <label className="text-xs text-slate-500 block mb-1.5 font-medium">Alert Name</label>
-                <input
+                <label htmlFor="seeker-job-alerts-alert-name" className="text-xs text-slate-500 block mb-1.5 font-medium">Alert Name</label>
+                <input id="seeker-job-alerts-alert-name"
                   type="text"
                   required
                   value={title}
@@ -355,8 +355,8 @@ export default function JobAlertsPage() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-slate-500 block mb-1.5 font-medium">Category</label>
-                  <input
+                  <label htmlFor="seeker-job-alerts-category" className="text-xs text-slate-500 block mb-1.5 font-medium">Category</label>
+                  <input id="seeker-job-alerts-category"
                     type="text"
                     value={category}
                     onChange={e => setCategory(e.target.value)}
@@ -365,8 +365,8 @@ export default function JobAlertsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-500 block mb-1.5 font-medium">District</label>
-                  <select
+                  <label htmlFor="seeker-job-alerts-district" className="text-xs text-slate-500 block mb-1.5 font-medium">District</label>
+                  <select id="seeker-job-alerts-district"
                     value={district}
                     onChange={e => setDistrict(e.target.value)}
                     className="search-input w-full px-3 py-2.5 text-base sm:text-sm"
@@ -378,8 +378,8 @@ export default function JobAlertsPage() {
               </div>
 
               <div>
-                <label className="text-xs text-slate-500 block mb-1.5 font-medium">Job Type</label>
-                <select
+                <label htmlFor="seeker-job-alerts-job-type" className="text-xs text-slate-500 block mb-1.5 font-medium">Job Type</label>
+                <select id="seeker-job-alerts-job-type"
                   value={jobType}
                   onChange={e => setJobType(e.target.value)}
                   className="search-input w-full px-3 py-2.5 text-base sm:text-sm"

@@ -326,8 +326,8 @@ function CandidateDetailModal({
             <form onSubmit={handleScheduleInterview} className="space-y-3 pt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="text-[11px] font-bold text-gray-700 block mb-1">Date</label>
-                  <input
+                  <label htmlFor="employer-candidates-date" className="text-[11px] font-bold text-gray-700 block mb-1">Date</label>
+                  <input id="employer-candidates-date"
                     type="date"
                     required
                     value={interviewDate}
@@ -336,8 +336,8 @@ function CandidateDetailModal({
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-gray-700 block mb-1">Time</label>
-                  <input
+                  <label htmlFor="employer-candidates-time" className="text-[11px] font-bold text-gray-700 block mb-1">Time</label>
+                  <input id="employer-candidates-time"
                     type="time"
                     required
                     value={interviewTime}
@@ -347,8 +347,8 @@ function CandidateDetailModal({
                 </div>
               </div>
               <div>
-                <label className="text-[11px] font-bold text-gray-700 block mb-1">Interview Mode</label>
-                <select
+                <label htmlFor="employer-candidates-interview-mode" className="text-[11px] font-bold text-gray-700 block mb-1">Interview Mode</label>
+                <select id="employer-candidates-interview-mode"
                   value={interviewMode}
                   onChange={e => setInterviewMode(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-white border border-gray-300 text-base sm:text-xs text-gray-900 font-medium"
@@ -383,8 +383,8 @@ function CandidateDetailModal({
 
         {/* Private Employer Notes */}
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-gray-800 block">Employer Notes (Internal):</label>
-          <textarea
+          <label htmlFor="employer-candidates-employer-notes-internal" className="text-xs font-bold text-gray-800 block">Employer Notes (Internal):</label>
+          <textarea id="employer-candidates-employer-notes-internal"
             rows={3}
             value={localNotes}
             onChange={e => setLocalNotes(e.target.value)}

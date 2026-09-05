@@ -76,8 +76,8 @@ export default function CompanyFounderManager({
               )}
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Founder Photo URL</label>
-              <input
+              <label htmlFor="company-companyfoundermanager-founder-photo-url" className="text-xs font-semibold text-slate-700 block mb-1">Founder Photo URL</label>
+              <input id="company-companyfoundermanager-founder-photo-url"
                 type="url"
                 value={founder.photoUrl || ''}
                 onChange={e => updateField('photoUrl', e.target.value)}
@@ -92,8 +92,8 @@ export default function CompanyFounderManager({
         <div className="space-y-4 md:col-span-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Founder Name *</label>
-              <input
+              <label htmlFor="company-companyfoundermanager-founder-name" className="text-xs font-semibold text-slate-700 block mb-1">Founder Name *</label>
+              <input id="company-companyfoundermanager-founder-name"
                 type="text"
                 value={founder.name || ''}
                 onChange={e => updateField('name', e.target.value)}
@@ -102,8 +102,8 @@ export default function CompanyFounderManager({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Designation *</label>
-              <input
+              <label htmlFor="company-companyfoundermanager-designation" className="text-xs font-semibold text-slate-700 block mb-1">Designation *</label>
+              <input id="company-companyfoundermanager-designation"
                 type="text"
                 value={founder.designation || ''}
                 onChange={e => updateField('designation', e.target.value)}
@@ -112,8 +112,8 @@ export default function CompanyFounderManager({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Native Place / Location</label>
-              <input
+              <label htmlFor="company-companyfoundermanager-native-place-location" className="text-xs font-semibold text-slate-700 block mb-1">Native Place / Location</label>
+              <input id="company-companyfoundermanager-native-place-location"
                 type="text"
                 value={founder.nativePlace || ''}
                 onChange={e => updateField('nativePlace', e.target.value)}
@@ -122,8 +122,8 @@ export default function CompanyFounderManager({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Experience Years</label>
-              <input
+              <label htmlFor="company-companyfoundermanager-experience-years" className="text-xs font-semibold text-slate-700 block mb-1">Experience Years</label>
+              <input id="company-companyfoundermanager-experience-years"
                 type="text"
                 value={founder.experienceYears || ''}
                 onChange={e => updateField('experienceYears', e.target.value)}
@@ -134,8 +134,8 @@ export default function CompanyFounderManager({
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Short Biography</label>
-            <textarea
+            <label htmlFor="company-companyfoundermanager-short-biography" className="text-xs font-semibold text-slate-700 block mb-1">Short Biography</label>
+            <textarea id="company-companyfoundermanager-short-biography"
               rows={3}
               value={founder.bio || ''}
               onChange={e => updateField('bio', e.target.value)}
@@ -145,8 +145,8 @@ export default function CompanyFounderManager({
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Founder&apos;s Message to Clients & Candidates</label>
-            <textarea
+            <label htmlFor="company-companyfoundermanager-founder-apos-s-message-to-clients-candid" className="text-xs font-semibold text-slate-700 block mb-1">Founder&apos;s Message to Clients & Candidates</label>
+            <textarea id="company-companyfoundermanager-founder-apos-s-message-to-clients-candid"
               rows={3}
               value={founder.message || ''}
               onChange={e => updateField('message', e.target.value)}
@@ -157,8 +157,8 @@ export default function CompanyFounderManager({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">LinkedIn URL</label>
-              <input
+              <label htmlFor="company-companyfoundermanager-linkedin-url" className="text-xs font-semibold text-slate-700 block mb-1">LinkedIn URL</label>
+              <input id="company-companyfoundermanager-linkedin-url"
                 type="url"
                 value={founder.linkedinUrl || ''}
                 onChange={e => updateField('linkedinUrl', e.target.value)}
@@ -167,8 +167,8 @@ export default function CompanyFounderManager({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Twitter / X URL</label>
-              <input
+              <label htmlFor="company-companyfoundermanager-twitter-x-url" className="text-xs font-semibold text-slate-700 block mb-1">Twitter / X URL</label>
+              <input id="company-companyfoundermanager-twitter-x-url"
                 type="url"
                 value={founder.twitterUrl || ''}
                 onChange={e => updateField('twitterUrl', e.target.value)}

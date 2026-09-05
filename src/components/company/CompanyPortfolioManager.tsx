@@ -154,8 +154,8 @@ export default function CompanyPortfolioManager({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Project Title *</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-project-title" className="text-xs font-semibold text-slate-700 block mb-1">Project Title *</label>
+              <input id="company-companyportfoliomanager-project-title"
                 type="text"
                 value={form.title || ''}
                 onChange={e => setForm({ ...form, title: e.target.value })}
@@ -164,8 +164,8 @@ export default function CompanyPortfolioManager({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Category</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-category" className="text-xs font-semibold text-slate-700 block mb-1">Category</label>
+              <input id="company-companyportfoliomanager-category"
                 type="text"
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
@@ -174,8 +174,8 @@ export default function CompanyPortfolioManager({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Location</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-location" className="text-xs font-semibold text-slate-700 block mb-1">Location</label>
+              <input id="company-companyportfoliomanager-location"
                 type="text"
                 value={form.location || ''}
                 onChange={e => setForm({ ...form, location: e.target.value })}
@@ -184,8 +184,8 @@ export default function CompanyPortfolioManager({
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Image URL</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-image-url" className="text-xs font-semibold text-slate-700 block mb-1">Image URL</label>
+              <input id="company-companyportfoliomanager-image-url"
                 type="url"
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
@@ -196,8 +196,8 @@ export default function CompanyPortfolioManager({
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Project Summary</label>
-            <textarea
+            <label htmlFor="company-companyportfoliomanager-project-summary" className="text-xs font-semibold text-slate-700 block mb-1">Project Summary</label>
+            <textarea id="company-companyportfoliomanager-project-summary"
               rows={3}
               value={form.description || ''}
               onChange={e => setForm({ ...form, description: e.target.value })}

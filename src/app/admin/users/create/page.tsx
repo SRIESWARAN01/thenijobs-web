@@ -191,7 +191,7 @@ export default function AdminCreateUserPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           {/* Role Selection */}
           <div>
-            <label className={labelCls}>Account Type</label>
+            <label htmlFor="admin-users-create-account-type-role-options-map-r-classnam" className={labelCls}>Account Type</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {ROLE_OPTIONS.map(r => {
                 const Icon = r.icon;
@@ -217,37 +217,37 @@ export default function AdminCreateUserPage() {
           {/* Name */}
           <div>
             <label className={labelCls}><User size={12} className="inline mr-1" />Full Name *</label>
-            <input type="text" value={form.name} onChange={e => update('name', e.target.value)}
+            <input id="admin-users-create-account-type-role-options-map-r-classnam" type="text" value={form.name} onChange={e => update('name', e.target.value)}
               placeholder="Enter full name" className={inputCls} />
           </div>
 
           {/* Company Name (for employer/business_owner) */}
           {(form.role === 'employer' || form.role === 'business_owner') && (
             <div>
-              <label className={labelCls}><Building2 size={12} className="inline mr-1" />Company Name</label>
-              <input type="text" value={form.companyName} onChange={e => update('companyName', e.target.value)}
+              <label htmlFor="admin-users-create-company-name" className={labelCls}><Building2 size={12} className="inline mr-1" />Company Name</label>
+              <input id="admin-users-create-company-name" type="text" value={form.companyName} onChange={e => update('companyName', e.target.value)}
                 placeholder="Enter company/business name" className={inputCls} />
             </div>
           )}
 
           {/* Email */}
           <div>
-            <label className={labelCls}><Mail size={12} className="inline mr-1" />Email Address *</label>
-            <input type="email" value={form.email} onChange={e => update('email', e.target.value)}
+            <label htmlFor="admin-users-create-email-address" className={labelCls}><Mail size={12} className="inline mr-1" />Email Address *</label>
+            <input id="admin-users-create-email-address" type="email" value={form.email} onChange={e => update('email', e.target.value)}
               placeholder="user@example.com" className={inputCls} />
           </div>
 
           {/* Phone */}
           <div>
-            <label className={labelCls}><Phone size={12} className="inline mr-1" />Phone Number</label>
-            <input type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
+            <label htmlFor="admin-users-create-phone-number" className={labelCls}><Phone size={12} className="inline mr-1" />Phone Number</label>
+            <input id="admin-users-create-phone-number" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
               placeholder="+91 98765 43210" className={inputCls} />
           </div>
 
           {/* District */}
           <div>
-            <label className={labelCls}><MapPin size={12} className="inline mr-1" />District</label>
-            <select value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
+            <label htmlFor="admin-users-create-district" className={labelCls}><MapPin size={12} className="inline mr-1" />District</label>
+            <select id="admin-users-create-district" value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
               {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>

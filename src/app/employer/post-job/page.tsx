@@ -354,8 +354,8 @@ export default function PostJobPage() {
             </h2>
 
             <div>
-              <label className={labelCls}>Job Title / Designation <span className="text-red-500">*</span></label>
-              <input
+              <label htmlFor="employer-post-job-job-title-designation" className={labelCls}>Job Title / Designation <span className="text-red-500">*</span></label>
+              <input id="employer-post-job-job-title-designation"
                 type="text"
                 value={form.title}
                 onChange={e => update('title', e.target.value)}
@@ -365,7 +365,7 @@ export default function PostJobPage() {
             </div>
 
             <div>
-              <label className={labelCls}>Employment Type <span className="text-red-500">*</span></label>
+              <label htmlFor="employer-post-job-employment-type-classname-px-3-5-py-2-ro" className={labelCls}>Employment Type <span className="text-red-500">*</span></label>
               <div className="flex flex-wrap gap-2">
                 {JOB_TYPES.map(t => (
                   <button
@@ -384,7 +384,7 @@ export default function PostJobPage() {
 
             <div>
               <label className={labelCls}>Job Description &amp; Responsibilities <span className="text-red-500">*</span></label>
-              <textarea
+              <textarea id="employer-post-job-employment-type-classname-px-3-5-py-2-ro"
                 rows={6}
                 value={form.description}
                 onChange={e => update('description', e.target.value)}
@@ -395,14 +395,14 @@ export default function PostJobPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>District <span className="text-red-500">*</span></label>
-                <select value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-district" className={labelCls}>District <span className="text-red-500">*</span></label>
+                <select id="employer-post-job-district" value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
                   {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Location (Town / Area)</label>
-                <input
+                <label htmlFor="employer-post-job-location-town-area" className={labelCls}>Location (Town / Area)</label>
+                <input id="employer-post-job-location-town-area"
                   type="text"
                   value={form.location}
                   onChange={e => update('location', e.target.value)}
@@ -414,14 +414,14 @@ export default function PostJobPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Number of Openings <span className="text-red-500">*</span></label>
-                <select value={form.openings} onChange={e => update('openings', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-number-of-openings" className={labelCls}>Number of Openings <span className="text-red-500">*</span></label>
+                <select id="employer-post-job-number-of-openings" value={form.openings} onChange={e => update('openings', e.target.value)} className={inputCls}>
                   {OPENINGS_OPTIONS.map(o => <option key={o} value={o}>{o} Opening{parseInt(o) > 1 ? 's' : ''}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Application Deadline</label>
-                <input type="date" value={form.deadline} onChange={e => update('deadline', e.target.value)} className={inputCls} />
+                <label htmlFor="employer-post-job-application-deadline" className={labelCls}>Application Deadline</label>
+                <input id="employer-post-job-application-deadline" type="date" value={form.deadline} onChange={e => update('deadline', e.target.value)} className={inputCls} />
               </div>
             </div>
           </div>
@@ -439,15 +439,15 @@ export default function PostJobPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Experience Level Required</label>
-                <select value={form.experience} onChange={e => update('experience', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-experience-level-required" className={labelCls}>Experience Level Required</label>
+                <select id="employer-post-job-experience-level-required" value={form.experience} onChange={e => update('experience', e.target.value)} className={inputCls}>
                   <option value="">Select experience</option>
                   {EXPERIENCE_LEVELS.map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Minimum Qualification</label>
-                <select value={form.education} onChange={e => update('education', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-minimum-qualification" className={labelCls}>Minimum Qualification</label>
+                <select id="employer-post-job-minimum-qualification" value={form.education} onChange={e => update('education', e.target.value)} className={inputCls}>
                   <option value="">Select qualification</option>
                   {EDUCATION_LEVELS.map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
@@ -455,7 +455,7 @@ export default function PostJobPage() {
             </div>
 
             <div>
-              <label className={labelCls}>Required Skills &amp; Keywords</label>
+              <label htmlFor="employer-post-job-required-skills-and-keywords-setnewskill" className={labelCls}>Required Skills &amp; Keywords</label>
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
@@ -527,7 +527,7 @@ export default function PostJobPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>Minimum Salary (₹)</label>
-                <input
+                <input id="employer-post-job-required-skills-and-keywords-setnewskill"
                   type="number"
                   value={form.salaryMin}
                   onChange={e => update('salaryMin', e.target.value)}
@@ -536,8 +536,8 @@ export default function PostJobPage() {
                 />
               </div>
               <div>
-                <label className={labelCls}>Maximum Salary (₹)</label>
-                <input
+                <label htmlFor="employer-post-job-maximum-salary" className={labelCls}>Maximum Salary (₹)</label>
+                <input id="employer-post-job-maximum-salary"
                   type="number"
                   value={form.salaryMax}
                   onChange={e => update('salaryMax', e.target.value)}
@@ -547,7 +547,7 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            <label className="flex items-center gap-3 cursor-pointer p-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all">
+            <label htmlFor="employer-post-job-update-isnegotiable-form-isnegotiable-cl" className="flex items-center gap-3 cursor-pointer p-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all">
               <div
                 onClick={() => update('isNegotiable', !form.isNegotiable)}
                 className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${form.isNegotiable ? 'bg-blue-600' : 'bg-gray-300'}`}
@@ -626,7 +626,7 @@ export default function PostJobPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-red-200/60 animate-fade-in text-xs">
                     <div>
                       <label className="font-bold text-red-950 block mb-1">Walk-in Interview Date</label>
-                      <input
+                      <input id="employer-post-job-update-isnegotiable-form-isnegotiable-cl"
                         type="date"
                         value={form.walkInDate}
                         onChange={e => update('walkInDate', e.target.value)}
@@ -634,8 +634,8 @@ export default function PostJobPage() {
                       />
                     </div>
                     <div>
-                      <label className="font-bold text-red-950 block mb-1">Time &amp; Slots</label>
-                      <input
+                      <label htmlFor="employer-post-job-time-and-slots" className="font-bold text-red-950 block mb-1">Time &amp; Slots</label>
+                      <input id="employer-post-job-time-and-slots"
                         type="text"
                         value={form.walkInTime}
                         onChange={e => update('walkInTime', e.target.value)}
@@ -644,8 +644,8 @@ export default function PostJobPage() {
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="font-bold text-red-950 block mb-1">Walk-in Venue Address &amp; Landmarks</label>
-                      <input
+                      <label htmlFor="employer-post-job-walk-in-venue-address-and-landmarks" className="font-bold text-red-950 block mb-1">Walk-in Venue Address &amp; Landmarks</label>
+                      <input id="employer-post-job-walk-in-venue-address-and-landmarks"
                         type="text"
                         value={form.walkInVenue}
                         onChange={e => update('walkInVenue', e.target.value)}

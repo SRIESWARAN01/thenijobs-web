@@ -423,7 +423,7 @@ export default function AICoachPage() {
                   {/* Practice Answer Box */}
                   <div className="space-y-2 pt-2 border-t border-gray-100">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-gray-700">
+                      <label htmlFor="seeker-ai-coach-handletogglevoicerecord-string-q-id-idx-" className="text-xs font-bold text-gray-700">
                         {interviewLang === 'ta' ? 'உங்கள் பதிலை டைப் செய்யவும் அல்லது பேசவும்:' : 'Practice Your Answer (Type or Speak):'}
                       </label>
                       <button
@@ -498,7 +498,7 @@ export default function AICoachPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-gray-700 block mb-1">Target Job Title</label>
-                <input
+                <input id="seeker-ai-coach-handletogglevoicerecord-string-q-id-idx-"
                   type="text"
                   value={clJobTitle}
                   onChange={e => setClJobTitle(e.target.value)}
@@ -507,8 +507,8 @@ export default function AICoachPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Company Name</label>
-                <input
+                <label htmlFor="seeker-ai-coach-company-name" className="text-xs font-bold text-gray-700 block mb-1">Company Name</label>
+                <input id="seeker-ai-coach-company-name"
                   type="text"
                   value={clCompany}
                   onChange={e => setClCompany(e.target.value)}

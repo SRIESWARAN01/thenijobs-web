@@ -299,8 +299,8 @@ export default function RegisterBusinessPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Registered Business Name *</label>
-                <input
+                <label htmlFor="register-business-registered-business-name" className="text-xs font-bold text-gray-700 block mb-1">Registered Business Name *</label>
+                <input id="register-business-registered-business-name"
                   type="text"
                   required
                   value={form.name}
@@ -310,8 +310,8 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Industry / Category *</label>
-                <select
+                <label htmlFor="register-business-industry-category" className="text-xs font-bold text-gray-700 block mb-1">Industry / Category *</label>
+                <select id="register-business-industry-category"
                   value={form.category}
                   onChange={e => setForm({ ...form, category: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
@@ -320,8 +320,8 @@ export default function RegisterBusinessPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">District / Region *</label>
-                <select
+                <label htmlFor="register-business-district-region" className="text-xs font-bold text-gray-700 block mb-1">District / Region *</label>
+                <select id="register-business-district-region"
                   value={form.district}
                   onChange={e => setForm({ ...form, district: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
@@ -330,8 +330,8 @@ export default function RegisterBusinessPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Employee Team Size</label>
-                <select
+                <label htmlFor="register-business-employee-team-size" className="text-xs font-bold text-gray-700 block mb-1">Employee Team Size</label>
+                <select id="register-business-employee-team-size"
                   value={form.employeeCount}
                   onChange={e => setForm({ ...form, employeeCount: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
@@ -344,8 +344,8 @@ export default function RegisterBusinessPage() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-gray-700 block mb-1">Complete Business Address *</label>
-                <textarea
+                <label htmlFor="register-business-complete-business-address" className="text-xs font-bold text-gray-700 block mb-1">Complete Business Address *</label>
+                <textarea id="register-business-complete-business-address"
                   rows={2}
                   required
                   value={form.address}
@@ -364,8 +364,8 @@ export default function RegisterBusinessPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Owner / Contact Person *</label>
-                <input
+                <label htmlFor="register-business-owner-contact-person" className="text-xs font-bold text-gray-700 block mb-1">Owner / Contact Person *</label>
+                <input id="register-business-owner-contact-person"
                   type="text"
                   required
                   value={form.contactPerson}
@@ -375,8 +375,8 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Designation</label>
-                <input
+                <label htmlFor="register-business-designation" className="text-xs font-bold text-gray-700 block mb-1">Designation</label>
+                <input id="register-business-designation"
                   type="text"
                   value={form.designation}
                   onChange={e => setForm({ ...form, designation: e.target.value })}
@@ -385,8 +385,8 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Primary Calling Phone *</label>
-                <input
+                <label htmlFor="register-business-primary-calling-phone" className="text-xs font-bold text-gray-700 block mb-1">Primary Calling Phone *</label>
+                <input id="register-business-primary-calling-phone"
                   type="tel"
                   required
                   value={form.phone}
@@ -396,8 +396,8 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Business WhatsApp Number</label>
-                <input
+                <label htmlFor="register-business-business-whatsapp-number" className="text-xs font-bold text-gray-700 block mb-1">Business WhatsApp Number</label>
+                <input id="register-business-business-whatsapp-number"
                   type="tel"
                   value={form.whatsapp}
                   onChange={e => setForm({ ...form, whatsapp: e.target.value })}
@@ -406,8 +406,8 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
-                <input
+                <label htmlFor="register-business-official-email-address" className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
+                <input id="register-business-official-email-address"
                   type="email"
                   value={form.email}
                   onChange={e => setForm({ ...form, email: e.target.value })}
@@ -425,8 +425,8 @@ export default function RegisterBusinessPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Business Proof Type</label>
-                <select
+                <label htmlFor="register-business-business-proof-type" className="text-xs font-bold text-gray-700 block mb-1">Business Proof Type</label>
+                <select id="register-business-business-proof-type"
                   value={form.proofType}
                   onChange={e => setForm({ ...form, proofType: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 bg-white"
@@ -435,8 +435,8 @@ export default function RegisterBusinessPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Proof / Registration Number</label>
-                <input
+                <label htmlFor="register-business-proof-registration-number" className="text-xs font-bold text-gray-700 block mb-1">Proof / Registration Number</label>
+                <input id="register-business-proof-registration-number"
                   type="text"
                   value={form.proofNumber}
                   onChange={e => setForm({ ...form, proofNumber: e.target.value })}
@@ -445,8 +445,8 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-gray-700 block mb-1">Business Website or Facebook/Instagram Page (Optional)</label>
-                <input
+                <label htmlFor="register-business-business-website-or-facebook-instagram-p" className="text-xs font-bold text-gray-700 block mb-1">Business Website or Facebook/Instagram Page (Optional)</label>
+                <input id="register-business-business-website-or-facebook-instagram-p"
                   type="url"
                   value={form.website}
                   onChange={e => setForm({ ...form, website: e.target.value })}
@@ -455,8 +455,8 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-gray-700 block mb-1">Brief Description / Products &amp; Services Scope</label>
-                <textarea
+                <label htmlFor="register-business-brief-description-products-and-services-" className="text-xs font-bold text-gray-700 block mb-1">Brief Description / Products &amp; Services Scope</label>
+                <textarea id="register-business-brief-description-products-and-services-"
                   rows={3}
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}

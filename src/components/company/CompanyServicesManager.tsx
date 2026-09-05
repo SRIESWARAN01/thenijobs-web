@@ -225,8 +225,8 @@ export default function CompanyServicesManager({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Name *</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-service-name" className="text-xs font-bold text-gray-700 block mb-1">Service Name *</label>
+              <input id="company-companyservicesmanager-service-name"
                 type="text"
                 value={form.name || ''}
                 onChange={e => setForm({ ...form, name: e.target.value })}
@@ -235,8 +235,8 @@ export default function CompanyServicesManager({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Category</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-category" className="text-xs font-bold text-gray-700 block mb-1">Category</label>
+              <input id="company-companyservicesmanager-category"
                 type="text"
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
@@ -245,8 +245,8 @@ export default function CompanyServicesManager({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Starting Price (₹) or Range</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-starting-price-or-range" className="text-xs font-bold text-gray-700 block mb-1">Starting Price (₹) or Range</label>
+              <input id="company-companyservicesmanager-starting-price-or-range"
                 type="text"
                 value={form.priceRange || (form.startingPrice ? `₹${form.startingPrice}` : '')}
                 onChange={e => {
@@ -259,8 +259,8 @@ export default function CompanyServicesManager({
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Banner Image URL</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-service-banner-image-url" className="text-xs font-bold text-gray-700 block mb-1">Service Banner Image URL</label>
+              <input id="company-companyservicesmanager-service-banner-image-url"
                 type="url"
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
@@ -269,8 +269,8 @@ export default function CompanyServicesManager({
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Page / Booking Link (Optional)</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-service-page-booking-link-optional" className="text-xs font-bold text-gray-700 block mb-1">Service Page / Booking Link (Optional)</label>
+              <input id="company-companyservicesmanager-service-page-booking-link-optional"
                 type="url"
                 value={form.websiteUrl || ''}
                 onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
@@ -279,8 +279,8 @@ export default function CompanyServicesManager({
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Description</label>
-              <textarea
+              <label htmlFor="company-companyservicesmanager-service-description" className="text-xs font-bold text-gray-700 block mb-1">Service Description</label>
+              <textarea id="company-companyservicesmanager-service-description"
                 rows={3}
                 value={form.description || ''}
                 onChange={e => setForm({ ...form, description: e.target.value })}

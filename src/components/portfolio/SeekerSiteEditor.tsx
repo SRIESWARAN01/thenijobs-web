@@ -788,8 +788,8 @@ export default function SeekerSiteEditor() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Full Name</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-full-name" className="text-xs font-bold text-slate-700">Full Name</label>
+                      <input id="portfolio-seekersiteeditor-full-name"
                         type="text"
                         value={heroData.name || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, name: e.target.value }))}
@@ -798,8 +798,8 @@ export default function SeekerSiteEditor() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Professional Title / Role</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-professional-title-role" className="text-xs font-bold text-slate-700">Professional Title / Role</label>
+                      <input id="portfolio-seekersiteeditor-professional-title-role"
                         type="text"
                         value={heroData.title || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, title: e.target.value }))}
@@ -810,8 +810,8 @@ export default function SeekerSiteEditor() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700">Growth Slogan / Personal Tagline</label>
-                    <input
+                    <label htmlFor="portfolio-seekersiteeditor-growth-slogan-personal-tagline" className="text-xs font-bold text-slate-700">Growth Slogan / Personal Tagline</label>
+                    <input id="portfolio-seekersiteeditor-growth-slogan-personal-tagline"
                       type="text"
                       value={heroData.tagline || ''}
                       onChange={e => updateSectionData('hero', prev => ({ ...prev, tagline: e.target.value }))}
@@ -822,8 +822,8 @@ export default function SeekerSiteEditor() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Location / City</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-location-city" className="text-xs font-bold text-slate-700">Location / City</label>
+                      <input id="portfolio-seekersiteeditor-location-city"
                         type="text"
                         value={heroData.location || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, location: e.target.value }))}
@@ -832,8 +832,8 @@ export default function SeekerSiteEditor() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Years Experience</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-years-experience" className="text-xs font-bold text-slate-700">Years Experience</label>
+                      <input id="portfolio-seekersiteeditor-years-experience"
                         type="text"
                         value={heroData.experienceYears || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, experienceYears: e.target.value }))}
@@ -842,8 +842,8 @@ export default function SeekerSiteEditor() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Availability Status</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-availability-status" className="text-xs font-bold text-slate-700">Availability Status</label>
+                      <input id="portfolio-seekersiteeditor-availability-status"
                         type="text"
                         value={heroData.joiningAvailability || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, joiningAvailability: e.target.value }))}
@@ -856,8 +856,8 @@ export default function SeekerSiteEditor() {
                   {/* Image URLs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Profile Photo / Avatar URL</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-profile-photo-avatar-url" className="text-xs font-bold text-slate-700">Profile Photo / Avatar URL</label>
+                      <input id="portfolio-seekersiteeditor-profile-photo-avatar-url"
                         type="text"
                         value={heroData.avatarUrl || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, avatarUrl: e.target.value }))}
@@ -866,8 +866,8 @@ export default function SeekerSiteEditor() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Cover Banner Image URL</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-cover-banner-image-url" className="text-xs font-bold text-slate-700">Cover Banner Image URL</label>
+                      <input id="portfolio-seekersiteeditor-cover-banner-image-url"
                         type="text"
                         value={heroData.coverUrl || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, coverUrl: e.target.value }))}
@@ -880,8 +880,8 @@ export default function SeekerSiteEditor() {
                   {/* Contact Buttons */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-xs font-bold text-slate-700">WhatsApp Number</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-whatsapp-number" className="text-xs font-bold text-slate-700">WhatsApp Number</label>
+                      <input id="portfolio-seekersiteeditor-whatsapp-number"
                         type="text"
                         value={heroData.whatsapp || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, whatsapp: e.target.value }))}
@@ -890,8 +890,8 @@ export default function SeekerSiteEditor() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Phone for Calls</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-phone-for-calls" className="text-xs font-bold text-slate-700">Phone for Calls</label>
+                      <input id="portfolio-seekersiteeditor-phone-for-calls"
                         type="text"
                         value={heroData.phone || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, phone: e.target.value }))}
@@ -900,8 +900,8 @@ export default function SeekerSiteEditor() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-700">Resume / CV Link</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-resume-cv-link" className="text-xs font-bold text-slate-700">Resume / CV Link</label>
+                      <input id="portfolio-seekersiteeditor-resume-cv-link"
                         type="text"
                         value={heroData.resumeUrl || ''}
                         onChange={e => updateSectionData('hero', prev => ({ ...prev, resumeUrl: e.target.value }))}
@@ -911,7 +911,7 @@ export default function SeekerSiteEditor() {
                     </div>
                   </div>
 
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer pt-2">
+                  <label htmlFor="portfolio-seekersiteeditor-updatesectiondata-hero-prev-classname-ro" className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer pt-2">
                     <input
                       type="checkbox"
                       checked={heroData.isOpenToWork !== false}
@@ -931,7 +931,7 @@ export default function SeekerSiteEditor() {
                   </h3>
                   <div>
                     <label className="text-xs font-bold text-slate-700">About Me Description</label>
-                    <textarea
+                    <textarea id="portfolio-seekersiteeditor-updatesectiondata-hero-prev-classname-ro"
                       rows={5}
                       value={aboutData.content || ''}
                       onChange={e => updateSectionData('about', prev => ({ ...prev, content: e.target.value }))}
@@ -1391,8 +1391,8 @@ export default function SeekerSiteEditor() {
                   </h3>
                   <div className="space-y-3 text-xs">
                     <div>
-                      <label className="font-bold text-slate-700">LinkedIn Profile URL</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-linkedin-profile-url" className="font-bold text-slate-700">LinkedIn Profile URL</label>
+                      <input id="portfolio-seekersiteeditor-linkedin-profile-url"
                         type="text"
                         value={site.sections.find(s => s.type === 'contact')?.data?.socialLinks?.find((l: any) => l.platform === 'LinkedIn')?.url || ''}
                         onChange={e => {
@@ -1406,8 +1406,8 @@ export default function SeekerSiteEditor() {
                       />
                     </div>
                     <div>
-                      <label className="font-bold text-slate-700">GitHub Profile URL</label>
-                      <input
+                      <label htmlFor="portfolio-seekersiteeditor-github-profile-url" className="font-bold text-slate-700">GitHub Profile URL</label>
+                      <input id="portfolio-seekersiteeditor-github-profile-url"
                         type="text"
                         value={site.sections.find(s => s.type === 'contact')?.data?.socialLinks?.find((l: any) => l.platform === 'GitHub')?.url || ''}
                         onChange={e => {
@@ -1470,7 +1470,7 @@ export default function SeekerSiteEditor() {
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-700">Primary Brand Color</label>
+                    <label htmlFor="portfolio-seekersiteeditor-primary-brand-color-updatefield-theme-pr" className="text-xs font-bold text-slate-700">Primary Brand Color</label>
                     <div className="flex items-center gap-2 mt-1">
                       <input
                         type="color"
@@ -1515,7 +1515,7 @@ export default function SeekerSiteEditor() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-700">Heading Font</label>
-                    <select
+                    <select id="portfolio-seekersiteeditor-primary-brand-color-updatefield-theme-pr"
                       value={site.theme.headingFont || 'Poppins'}
                       onChange={e => updateField('theme.headingFont', e.target.value)}
                       className="w-full mt-1 text-base sm:text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"
@@ -1526,8 +1526,8 @@ export default function SeekerSiteEditor() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700">Body Font</label>
-                    <select
+                    <label htmlFor="portfolio-seekersiteeditor-body-font" className="text-xs font-bold text-slate-700">Body Font</label>
+                    <select id="portfolio-seekersiteeditor-body-font"
                       value={site.theme.fontFamily || 'Inter'}
                       onChange={e => updateField('theme.fontFamily', e.target.value)}
                       className="w-full mt-1 text-base sm:text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white"

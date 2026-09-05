@@ -407,8 +407,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Company / Shop / Business Name *</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-company-shop-business-name" className="text-xs font-bold text-gray-700 block mb-1">Company / Shop / Business Name *</label>
+                  <input id="seeker-become-employer-company-shop-business-name"
                     type="text"
                     required
                     placeholder="e.g. Theni Textiles &amp; Garments Pvt Ltd"
@@ -420,8 +420,8 @@ export default function BecomeEmployerPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
-                    <select
+                    <label htmlFor="seeker-become-employer-business-category" className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
+                    <select id="seeker-become-employer-business-category"
                       value={form.category}
                       onChange={e => setForm({ ...form, category: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
@@ -430,8 +430,8 @@ export default function BecomeEmployerPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Primary District *</label>
-                    <select
+                    <label htmlFor="seeker-become-employer-primary-district" className="text-xs font-bold text-gray-700 block mb-1">Primary District *</label>
+                    <select id="seeker-become-employer-primary-district"
                       value={form.district}
                       onChange={e => setForm({ ...form, district: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
@@ -442,8 +442,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Tagline / Motto</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-tagline-motto" className="text-xs font-bold text-gray-700 block mb-1">Tagline / Motto</label>
+                  <input id="seeker-become-employer-tagline-motto"
                     type="text"
                     placeholder="e.g. Quality Garments &amp; Retail Manufacturing Since 2012"
                     value={form.tagline}
@@ -453,8 +453,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Business Description</label>
-                  <textarea
+                  <label htmlFor="seeker-become-employer-business-description" className="text-xs font-bold text-gray-700 block mb-1">Business Description</label>
+                  <textarea id="seeker-become-employer-business-description"
                     rows={3}
                     placeholder="Describe your business, products, services, and workforce requirements..."
                     value={form.description}
@@ -475,8 +475,8 @@ export default function BecomeEmployerPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Primary Calling Phone *</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-primary-calling-phone" className="text-xs font-bold text-gray-700 block mb-1">Primary Calling Phone *</label>
+                    <input id="seeker-become-employer-primary-calling-phone"
                       type="tel"
                       required
                       placeholder="+91 93605 19460"
@@ -486,8 +486,8 @@ export default function BecomeEmployerPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Business Number</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-whatsapp-business-number" className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Business Number</label>
+                    <input id="seeker-become-employer-whatsapp-business-number"
                       type="tel"
                       placeholder="+91 93605 19460"
                       value={form.whatsapp}
@@ -499,8 +499,8 @@ export default function BecomeEmployerPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-official-email-address" className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
+                    <input id="seeker-become-employer-official-email-address"
                       type="email"
                       placeholder="info@company.com"
                       value={form.email}
@@ -509,8 +509,8 @@ export default function BecomeEmployerPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Contact Person Name</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-contact-person-name" className="text-xs font-bold text-gray-700 block mb-1">Contact Person Name</label>
+                    <input id="seeker-become-employer-contact-person-name"
                       type="text"
                       placeholder="e.g. S. Murugesan"
                       value={form.contactPerson}
@@ -521,8 +521,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Complete Office / Shop Address *</label>
-                  <textarea
+                  <label htmlFor="seeker-become-employer-complete-office-shop-address" className="text-xs font-bold text-gray-700 block mb-1">Complete Office / Shop Address *</label>
+                  <textarea id="seeker-become-employer-complete-office-shop-address"
                     rows={2}
                     required
                     placeholder="Door No, Street Name, Landmark, Theni - 625531"
@@ -543,8 +543,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-logo-image-url" className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
+                  <input id="seeker-become-employer-logo-image-url"
                     type="url"
                     placeholder="https://example.com/logo.png"
                     value={form.logoUrl}
@@ -555,8 +555,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Banner / Shop Front Image URL</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-banner-shop-front-image-url" className="text-xs font-bold text-gray-700 block mb-1">Banner / Shop Front Image URL</label>
+                  <input id="seeker-become-employer-banner-shop-front-image-url"
                     type="url"
                     placeholder="https://example.com/shop-banner.jpg"
                     value={form.bannerUrl}
@@ -566,8 +566,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Official Website URL (Optional)</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-official-website-url-optional" className="text-xs font-bold text-gray-700 block mb-1">Official Website URL (Optional)</label>
+                  <input id="seeker-become-employer-official-website-url-optional"
                     type="url"
                     placeholder="https://mycompany.com"
                     value={form.website}
@@ -587,8 +587,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Key Services / Products (Comma Separated)</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-key-services-products-comma-separated" className="text-xs font-bold text-gray-700 block mb-1">Key Services / Products (Comma Separated)</label>
+                  <input id="seeker-become-employer-key-services-products-comma-separated"
                     type="text"
                     placeholder="e.g. Yarn Spinning, Cotton Weaving, Fabric Dyeing, Bulk Garment Supply"
                     value={form.servicesText}
@@ -598,8 +598,8 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Company Size / Workforce</label>
-                  <select
+                  <label htmlFor="seeker-become-employer-company-size-workforce" className="text-xs font-bold text-gray-700 block mb-1">Company Size / Workforce</label>
+                  <select id="seeker-become-employer-company-size-workforce"
                     value={form.employeeCount}
                     onChange={e => setForm({ ...form, employeeCount: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
@@ -624,8 +624,8 @@ export default function BecomeEmployerPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Government Proof Type</label>
-                    <select
+                    <label htmlFor="seeker-become-employer-government-proof-type" className="text-xs font-bold text-gray-700 block mb-1">Government Proof Type</label>
+                    <select id="seeker-become-employer-government-proof-type"
                       value={form.proofType}
                       onChange={e => setForm({ ...form, proofType: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
@@ -634,8 +634,8 @@ export default function BecomeEmployerPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Proof Registration Number</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-proof-registration-number" className="text-xs font-bold text-gray-700 block mb-1">Proof Registration Number</label>
+                    <input id="seeker-become-employer-proof-registration-number"
                       type="text"
                       placeholder="e.g. UDYAM-TN-XX-XXXXXXX or GSTIN"
                       value={form.proofNumber}

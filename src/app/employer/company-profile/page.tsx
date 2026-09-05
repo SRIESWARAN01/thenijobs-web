@@ -590,7 +590,7 @@ export default function CompanyProfilePage() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1">Primary Calling Phone *</label>
+                  <label htmlFor="employer-company-profile-primary-calling-phone-update-phone-e-tar" className="text-xs text-gray-700 font-bold block mb-1">Primary Calling Phone *</label>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
@@ -652,7 +652,7 @@ export default function CompanyProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                 <div className="sm:col-span-2">
                   <label className="text-xs text-gray-700 font-bold block mb-1">Full Door Address *</label>
-                  <input
+                  <input id="employer-company-profile-primary-calling-phone-update-phone-e-tar"
                     type="text"
                     placeholder="Door No, Street Name, Area, Landmark, Pincode"
                     value={company.address}
@@ -661,8 +661,8 @@ export default function CompanyProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1">District / Region *</label>
-                  <select
+                  <label htmlFor="employer-company-profile-district-region" className="text-xs text-gray-700 font-bold block mb-1">District / Region *</label>
+                  <select id="employer-company-profile-district-region"
                     value={company.district}
                     onChange={(e) => update('district', e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 focus:border-blue-600 outline-none font-medium"
@@ -674,8 +674,8 @@ export default function CompanyProfilePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1">Established Year</label>
-                  <input
+                  <label htmlFor="employer-company-profile-established-year" className="text-xs text-gray-700 font-bold block mb-1">Established Year</label>
+                  <input id="employer-company-profile-established-year"
                     type="text"
                     placeholder="e.g. 2018"
                     value={company.establishedYear}
@@ -693,10 +693,10 @@ export default function CompanyProfilePage() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                  <label htmlFor="employer-company-profile-facebook" className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
                     <Link2 size={13} className="text-blue-600" /> Facebook
                   </label>
-                  <input
+                  <input id="employer-company-profile-facebook"
                     type="url"
                     value={company.facebook}
                     onChange={(e) => update('facebook', e.target.value)}
@@ -705,10 +705,10 @@ export default function CompanyProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                  <label htmlFor="employer-company-profile-instagram" className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
                     <Heart size={13} className="text-pink-600" /> Instagram
                   </label>
-                  <input
+                  <input id="employer-company-profile-instagram"
                     type="url"
                     value={company.instagram}
                     onChange={(e) => update('instagram', e.target.value)}
@@ -717,10 +717,10 @@ export default function CompanyProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                  <label htmlFor="employer-company-profile-linkedin" className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
                     <LinkedinIcon size={13} className="text-blue-700" /> LinkedIn
                   </label>
-                  <input
+                  <input id="employer-company-profile-linkedin"
                     type="url"
                     value={company.linkedin}
                     onChange={(e) => update('linkedin', e.target.value)}
@@ -729,10 +729,10 @@ export default function CompanyProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
+                  <label htmlFor="employer-company-profile-youtube" className="text-xs text-gray-700 font-bold block mb-1 flex items-center gap-1.5">
                     <Play size={13} className="text-red-600" /> YouTube
                   </label>
-                  <input
+                  <input id="employer-company-profile-youtube"
                     type="url"
                     value={company.youtube}
                     onChange={(e) => update('youtube', e.target.value)}

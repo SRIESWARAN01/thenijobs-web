@@ -258,7 +258,7 @@ export default function CompanyReviewsSection({
               <form onSubmit={handleSubmitReview} className="space-y-4">
                 {/* 1-5 Star Interactive Selector */}
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Your Rating *</label>
+                  <label htmlFor="company-companyreviewssection-your-rating-onmouseenter-onmouseleave-cl" className="text-xs font-semibold text-slate-700 block mb-1">Your Rating *</label>
                   <div className="flex items-center gap-2 py-1">
                     {[1, 2, 3, 4, 5].map(star => (
                       <button
@@ -283,7 +283,7 @@ export default function CompanyReviewsSection({
 
                 <div>
                   <label className="text-xs font-semibold text-slate-700 block mb-1">Review Headline</label>
-                  <input
+                  <input id="company-companyreviewssection-your-rating-onmouseenter-onmouseleave-cl"
                     type="text"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
@@ -293,8 +293,8 @@ export default function CompanyReviewsSection({
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 block mb-1">Your Experience / Feedback *</label>
-                  <textarea
+                  <label htmlFor="company-companyreviewssection-your-experience-feedback" className="text-xs font-semibold text-slate-700 block mb-1">Your Experience / Feedback *</label>
+                  <textarea id="company-companyreviewssection-your-experience-feedback"
                     rows={4}
                     value={content}
                     onChange={e => setContent(e.target.value)}

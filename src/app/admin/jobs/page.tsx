@@ -570,7 +570,7 @@ export default function AdminJobsPage() {
             </p>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700 block">Quick Reasons:</label>
+              <label htmlFor="admin-jobs-quick-reasons-classname-w-full-text-left" className="text-xs font-bold text-gray-700 block">Quick Reasons:</label>
               {QUICK_REJECTION_REASONS.map(r => (
                 <button
                   key={r}
@@ -587,7 +587,7 @@ export default function AdminJobsPage() {
 
             <div>
               <label className="text-xs font-bold text-gray-700 block mb-1">Custom Rejection Reason:</label>
-              <textarea
+              <textarea id="admin-jobs-quick-reasons-classname-w-full-text-left"
                 rows={3}
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}

@@ -301,15 +301,15 @@ export default function WebsiteEditorPage() {
                   <p className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Typography</p>
                   <div className="space-y-2">
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Body Font</label>
-                      <select value={site.theme.fontFamily} onChange={e => updateSiteField('theme.fontFamily', e.target.value)}
+                      <label htmlFor="employer-website-editor-body-font" className="text-[10px] text-gray-500 block mb-1">Body Font</label>
+                      <select id="employer-website-editor-body-font" value={site.theme.fontFamily} onChange={e => updateSiteField('theme.fontFamily', e.target.value)}
                         className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Heading Font</label>
-                      <select value={site.theme.headingFont} onChange={e => updateSiteField('theme.headingFont', e.target.value)}
+                      <label htmlFor="employer-website-editor-heading-font" className="text-[10px] text-gray-500 block mb-1">Heading Font</label>
+                      <select id="employer-website-editor-heading-font" value={site.theme.headingFont} onChange={e => updateSiteField('theme.headingFont', e.target.value)}
                         className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                       </select>
@@ -320,15 +320,15 @@ export default function WebsiteEditorPage() {
                   <p className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Style</p>
                   <div className="space-y-2">
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Border Radius</label>
-                      <select value={site.theme.borderRadius} onChange={e => updateSiteField('theme.borderRadius', e.target.value)}
+                      <label htmlFor="employer-website-editor-border-radius" className="text-[10px] text-gray-500 block mb-1">Border Radius</label>
+                      <select id="employer-website-editor-border-radius" value={site.theme.borderRadius} onChange={e => updateSiteField('theme.borderRadius', e.target.value)}
                         className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         <option value="none">None</option><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option><option value="full">Full</option>
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Animation</label>
-                      <select value={site.theme.animation} onChange={e => updateSiteField('theme.animation', e.target.value)}
+                      <label htmlFor="employer-website-editor-animation" className="text-[10px] text-gray-500 block mb-1">Animation</label>
+                      <select id="employer-website-editor-animation" value={site.theme.animation} onChange={e => updateSiteField('theme.animation', e.target.value)}
                         className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         <option value="none">None</option><option value="subtle">Subtle</option><option value="moderate">Moderate</option><option value="dynamic">Dynamic</option>
                       </select>
@@ -349,8 +349,8 @@ export default function WebsiteEditorPage() {
                   { key: 'coverImage', label: 'Cover Image URL', type: 'text' },
                 ].map(field => (
                   <div key={field.key}>
-                    <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">{field.label}</label>
-                    <input type={field.type} value={(site.branding as any)[field.key] || ''}
+                    <label htmlFor="employer-website-editor-field" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">{field.label}</label>
+                    <input id="employer-website-editor-field" type={field.type} value={(site.branding as any)[field.key] || ''}
                       onChange={e => updateSiteField(`branding.${field.key}`, e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs text-gray-900 placeholder-gray-400" />
                   </div>
@@ -362,18 +362,18 @@ export default function WebsiteEditorPage() {
             {activeTab === 'seo' && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">SEO Title</label>
-                  <input type="text" value={site.seo.title} onChange={e => updateSiteField('seo.title', e.target.value)}
+                  <label htmlFor="employer-website-editor-seo-title" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">SEO Title</label>
+                  <input id="employer-website-editor-seo-title" type="text" value={site.seo.title} onChange={e => updateSiteField('seo.title', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Meta Description</label>
-                  <textarea value={site.seo.description} onChange={e => updateSiteField('seo.description', e.target.value)}
+                  <label htmlFor="employer-website-editor-meta-description" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Meta Description</label>
+                  <textarea id="employer-website-editor-meta-description" value={site.seo.description} onChange={e => updateSiteField('seo.description', e.target.value)}
                     rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs resize-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Keywords (comma-separated)</label>
-                  <input type="text" value={site.seo.keywords?.join(', ') || ''} onChange={e => updateSiteField('seo.keywords', e.target.value.split(',').map((k: string) => k.trim()).filter(Boolean))}
+                  <label htmlFor="employer-website-editor-keywords-comma-separated" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Keywords (comma-separated)</label>
+                  <input id="employer-website-editor-keywords-comma-separated" type="text" value={site.seo.keywords?.join(', ') || ''} onChange={e => updateSiteField('seo.keywords', e.target.value.split(',').map((k: string) => k.trim()).filter(Boolean))}
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs" />
                 </div>
                 <div className="pt-3 border-t border-gray-100">

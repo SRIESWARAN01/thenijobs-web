@@ -278,7 +278,7 @@ export default function AdminAISettingsPage() {
               <div className="p-5 space-y-4">
                 {/* API Key */}
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1.5">
+                  <label htmlFor="admin-ai-settings-api-key-updateprovider-name-placeholder-" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1.5">
                     <Key size={10} className="inline mr-1" /> API Key
                   </label>
                   <div className="relative">
@@ -306,7 +306,7 @@ export default function AdminAISettingsPage() {
                   <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1.5">
                     <Settings2 size={10} className="inline mr-1" /> Model
                   </label>
-                  <select
+                  <select id="admin-ai-settings-api-key-updateprovider-name-placeholder-"
                     value={provider.model}
                     onChange={e => updateProvider(name, { model: e.target.value })}
                     className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 focus:outline-none focus:border-blue-500 transition-all"

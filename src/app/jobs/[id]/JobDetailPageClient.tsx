@@ -802,7 +802,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-gray-700 block mb-1.5 font-bold">Application Resume / Profile</label>
+                <label htmlFor="jobs-id-jobdetailpageclient-application-resume-profile-classname-w-f" className="text-xs text-gray-700 block mb-1.5 font-bold">Application Resume / Profile</label>
                 {resumes.length > 0 ? (
                   <select
                     value={selectedResumeId}
@@ -826,7 +826,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
 
               <div>
                 <label className="text-xs text-gray-700 block mb-1.5 font-bold">Cover Letter / Note to Recruiter (Optional)</label>
-                <textarea
+                <textarea id="jobs-id-jobdetailpageclient-application-resume-profile-classname-w-f"
                   rows={4}
                   value={coverLetter}
                   onChange={e => setCoverLetter(e.target.value)}

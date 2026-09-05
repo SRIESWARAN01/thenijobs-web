@@ -314,7 +314,7 @@ export default function SeekerProfilePage() {
                   <Eye size={13} />
                   <span>Live Preview</span>
                 </button>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label htmlFor="seeker-profile-open-to-work-setprofile-p-classname-w-10" className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500 font-medium">Open to Work</span>
                   <div onClick={() => setProfile(p => ({ ...p, isOpenToWork: !p.isOpenToWork }))}
                     className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${profile.isOpenToWork ? '' : 'bg-gray-200'}`}
@@ -419,11 +419,11 @@ export default function SeekerProfilePage() {
               ))}
               <div className="sm:col-span-2">
                 <label className={labelCls}>Address</label>
-                <input type="text" value={profile.address} onChange={e => setProfile(p => ({ ...p, address: e.target.value }))} className={inputCls} />
+                <input id="seeker-profile-open-to-work-setprofile-p-classname-w-10" type="text" value={profile.address} onChange={e => setProfile(p => ({ ...p, address: e.target.value }))} className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>District</label>
-                <select value={profile.district} onChange={e => setProfile(p => ({ ...p, district: e.target.value }))} className={inputCls}>
+                <label htmlFor="seeker-profile-district" className={labelCls}>District</label>
+                <select id="seeker-profile-district" value={profile.district} onChange={e => setProfile(p => ({ ...p, district: e.target.value }))} className={inputCls}>
                   <option value="">Select district</option>
                   {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -444,10 +444,10 @@ export default function SeekerProfilePage() {
                 <div key={edu.id} className={cardCls}>
                   <button onClick={() => removeEducation(edu.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><X size={14} /></button>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><label className={labelCls}>Institution</label><input type="text" value={edu.institution} onChange={e => updateEducation(edu.id, 'institution', e.target.value)} className={inputCls} placeholder="Institution name" /></div>
-                    <div><label className={labelCls}>Degree</label><input type="text" value={edu.degree} onChange={e => updateEducation(edu.id, 'degree', e.target.value)} className={inputCls} placeholder="Degree" /></div>
-                    <div><label className={labelCls}>Field of Study</label><input type="text" value={edu.field} onChange={e => updateEducation(edu.id, 'field', e.target.value)} className={inputCls} placeholder="Field of study" /></div>
-                    <div><label className={labelCls}>Year</label><input type="text" value={edu.year} onChange={e => updateEducation(edu.id, 'year', e.target.value)} className={inputCls} placeholder="Year" /></div>
+                    <div><label htmlFor="seeker-profile-institution" className={labelCls}>Institution</label><input id="seeker-profile-institution" type="text" value={edu.institution} onChange={e => updateEducation(edu.id, 'institution', e.target.value)} className={inputCls} placeholder="Institution name" /></div>
+                    <div><label htmlFor="seeker-profile-degree" className={labelCls}>Degree</label><input id="seeker-profile-degree" type="text" value={edu.degree} onChange={e => updateEducation(edu.id, 'degree', e.target.value)} className={inputCls} placeholder="Degree" /></div>
+                    <div><label htmlFor="seeker-profile-field-of-study" className={labelCls}>Field of Study</label><input id="seeker-profile-field-of-study" type="text" value={edu.field} onChange={e => updateEducation(edu.id, 'field', e.target.value)} className={inputCls} placeholder="Field of study" /></div>
+                    <div><label htmlFor="seeker-profile-year" className={labelCls}>Year</label><input id="seeker-profile-year" type="text" value={edu.year} onChange={e => updateEducation(edu.id, 'year', e.target.value)} className={inputCls} placeholder="Year" /></div>
                   </div>
                 </div>
               ))}
@@ -468,11 +468,11 @@ export default function SeekerProfilePage() {
                 <div key={exp.id} className={cardCls}>
                   <button onClick={() => removeExperience(exp.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><X size={14} /></button>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><label className={labelCls}>Company</label><input type="text" value={exp.company} onChange={e => updateExperience(exp.id, 'company', e.target.value)} className={inputCls} placeholder="Company name" /></div>
-                    <div><label className={labelCls}>Role / Title</label><input type="text" value={exp.role} onChange={e => updateExperience(exp.id, 'role', e.target.value)} className={inputCls} placeholder="Role or title" /></div>
-                    <div><label className={labelCls}>Start Date</label><input type="text" value={exp.startDate} onChange={e => updateExperience(exp.id, 'startDate', e.target.value)} className={inputCls} placeholder="YYYY-MM" /></div>
-                    <div><label className={labelCls}>End Date</label><input type="text" value={exp.endDate} onChange={e => updateExperience(exp.id, 'endDate', e.target.value)} className={inputCls} placeholder="Present or 2024-05" /></div>
-                    <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={2} value={exp.description} onChange={e => updateExperience(exp.id, 'description', e.target.value)} className={inputCls + " resize-none"} placeholder="Describe responsibilities..." /></div>
+                    <div><label htmlFor="seeker-profile-company" className={labelCls}>Company</label><input id="seeker-profile-company" type="text" value={exp.company} onChange={e => updateExperience(exp.id, 'company', e.target.value)} className={inputCls} placeholder="Company name" /></div>
+                    <div><label htmlFor="seeker-profile-role-title" className={labelCls}>Role / Title</label><input id="seeker-profile-role-title" type="text" value={exp.role} onChange={e => updateExperience(exp.id, 'role', e.target.value)} className={inputCls} placeholder="Role or title" /></div>
+                    <div><label htmlFor="seeker-profile-start-date" className={labelCls}>Start Date</label><input id="seeker-profile-start-date" type="text" value={exp.startDate} onChange={e => updateExperience(exp.id, 'startDate', e.target.value)} className={inputCls} placeholder="YYYY-MM" /></div>
+                    <div><label htmlFor="seeker-profile-end-date" className={labelCls}>End Date</label><input id="seeker-profile-end-date" type="text" value={exp.endDate} onChange={e => updateExperience(exp.id, 'endDate', e.target.value)} className={inputCls} placeholder="Present or 2024-05" /></div>
+                    <div className="sm:col-span-2"><label htmlFor="seeker-profile-description" className={labelCls}>Description</label><textarea id="seeker-profile-description" rows={2} value={exp.description} onChange={e => updateExperience(exp.id, 'description', e.target.value)} className={inputCls + " resize-none"} placeholder="Describe responsibilities..." /></div>
                   </div>
                 </div>
               ))}
@@ -513,7 +513,7 @@ export default function SeekerProfilePage() {
               {LANGUAGE_OPTIONS.map(lang => {
                 const isSel = languages.includes(lang);
                 return (
-                  <label key={lang} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${ isSel ? '' : 'border-gray-100 hover:border-gray-200 bg-gray-50'}`}
+                  <label htmlFor="seeker-profile-setlanguages-p-issel-p-filter-l-l-lang-p" key={lang} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${ isSel ? '' : 'border-gray-100 hover:border-gray-200 bg-gray-50'}`}
                     style={isSel ? { background: '#ECFDF5', borderColor: '#A7F3D0' } : {}}>
                     <input type="checkbox" checked={isSel} onChange={() => setLanguages(p => isSel ? p.filter(l => l !== lang) : [...p, lang])} className="hidden" />
                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all`} style={isSel ? { background: '#10B981', borderColor: '#10B981' } : { borderColor: '#D1D5DB' }}>
@@ -539,10 +539,10 @@ export default function SeekerProfilePage() {
                 <div key={cert.id} className={cardCls}>
                   <button onClick={() => removeCertification(cert.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><X size={14} /></button>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><label className={labelCls}>Certification Name</label><input type="text" value={cert.name} onChange={e => updateCertification(cert.id, 'name', e.target.value)} className={inputCls} placeholder="Certification name" /></div>
-                    <div><label className={labelCls}>Organization</label><input type="text" value={cert.organization} onChange={e => updateCertification(cert.id, 'organization', e.target.value)} className={inputCls} placeholder="Issuing organization" /></div>
-                    <div><label className={labelCls}>Date</label><input type="month" value={cert.date} onChange={e => updateCertification(cert.id, 'date', e.target.value)} className={inputCls} /></div>
-                    <div><label className={labelCls}>Certificate Link (Optional)</label><input type="url" value={cert.link} onChange={e => updateCertification(cert.id, 'link', e.target.value)} className={inputCls} placeholder="https://..." /></div>
+                    <div><label className={labelCls}>Certification Name</label><input id="seeker-profile-setlanguages-p-issel-p-filter-l-l-lang-p" type="text" value={cert.name} onChange={e => updateCertification(cert.id, 'name', e.target.value)} className={inputCls} placeholder="Certification name" /></div>
+                    <div><label htmlFor="seeker-profile-organization" className={labelCls}>Organization</label><input id="seeker-profile-organization" type="text" value={cert.organization} onChange={e => updateCertification(cert.id, 'organization', e.target.value)} className={inputCls} placeholder="Issuing organization" /></div>
+                    <div><label htmlFor="seeker-profile-date" className={labelCls}>Date</label><input id="seeker-profile-date" type="month" value={cert.date} onChange={e => updateCertification(cert.id, 'date', e.target.value)} className={inputCls} /></div>
+                    <div><label htmlFor="seeker-profile-certificate-link-optional" className={labelCls}>Certificate Link (Optional)</label><input id="seeker-profile-certificate-link-optional" type="url" value={cert.link} onChange={e => updateCertification(cert.id, 'link', e.target.value)} className={inputCls} placeholder="https://..." /></div>
                   </div>
                 </div>
               ))}

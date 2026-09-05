@@ -897,8 +897,8 @@ export default function BusinessesPage() {
               {/* Row 1: Company Name & Category */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Company / Business Name *</label>
-                  <input
+                  <label htmlFor="admin-businesses-company-business-name" className="text-xs font-bold text-gray-700 block mb-1">Company / Business Name *</label>
+                  <input id="admin-businesses-company-business-name"
                     type="text"
                     value={editBizForm.name}
                     onChange={e => setEditBizForm({ ...editBizForm, name: e.target.value })}
@@ -907,8 +907,8 @@ export default function BusinessesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
-                  <select
+                  <label htmlFor="admin-businesses-business-category" className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
+                  <select id="admin-businesses-business-category"
                     value={editBizForm.category}
                     onChange={e => setEditBizForm({ ...editBizForm, category: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -921,8 +921,8 @@ export default function BusinessesPage() {
               {/* Row 2: District & Full Address */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">District / Town *</label>
-                  <select
+                  <label htmlFor="admin-businesses-district-town" className="text-xs font-bold text-gray-700 block mb-1">District / Town *</label>
+                  <select id="admin-businesses-district-town"
                     value={editBizForm.district}
                     onChange={e => setEditBizForm({ ...editBizForm, district: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -931,8 +931,8 @@ export default function BusinessesPage() {
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Office / Shop Address</label>
-                  <input
+                  <label htmlFor="admin-businesses-office-shop-address" className="text-xs font-bold text-gray-700 block mb-1">Office / Shop Address</label>
+                  <input id="admin-businesses-office-shop-address"
                     type="text"
                     value={editBizForm.address}
                     onChange={e => setEditBizForm({ ...editBizForm, address: e.target.value })}
@@ -945,8 +945,8 @@ export default function BusinessesPage() {
               {/* Row 3: Contacts */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Contact Person / Owner</label>
-                  <input
+                  <label htmlFor="admin-businesses-contact-person-owner" className="text-xs font-bold text-gray-700 block mb-1">Contact Person / Owner</label>
+                  <input id="admin-businesses-contact-person-owner"
                     type="text"
                     value={editBizForm.contactPerson}
                     onChange={e => setEditBizForm({ ...editBizForm, contactPerson: e.target.value, ownerName: e.target.value })}
@@ -955,8 +955,8 @@ export default function BusinessesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Phone Number *</label>
-                  <input
+                  <label htmlFor="admin-businesses-phone-number" className="text-xs font-bold text-gray-700 block mb-1">Phone Number *</label>
+                  <input id="admin-businesses-phone-number"
                     type="tel"
                     value={editBizForm.phone}
                     onChange={e => setEditBizForm({ ...editBizForm, phone: e.target.value })}
@@ -965,8 +965,8 @@ export default function BusinessesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Number</label>
-                  <input
+                  <label htmlFor="admin-businesses-whatsapp-number" className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Number</label>
+                  <input id="admin-businesses-whatsapp-number"
                     type="tel"
                     value={editBizForm.whatsapp}
                     onChange={e => setEditBizForm({ ...editBizForm, whatsapp: e.target.value })}
@@ -979,8 +979,8 @@ export default function BusinessesPage() {
               {/* Row 4: Email & Website */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
-                  <input
+                  <label htmlFor="admin-businesses-official-email-address" className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
+                  <input id="admin-businesses-official-email-address"
                     type="email"
                     value={editBizForm.email}
                     onChange={e => setEditBizForm({ ...editBizForm, email: e.target.value })}
@@ -989,8 +989,8 @@ export default function BusinessesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Website / Domain URL</label>
-                  <input
+                  <label htmlFor="admin-businesses-website-domain-url" className="text-xs font-bold text-gray-700 block mb-1">Website / Domain URL</label>
+                  <input id="admin-businesses-website-domain-url"
                     type="url"
                     value={editBizForm.website}
                     onChange={e => setEditBizForm({ ...editBizForm, website: e.target.value })}
@@ -1003,8 +1003,8 @@ export default function BusinessesPage() {
               {/* Row 5: Proof & Verification */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Verification Proof Type</label>
-                  <select
+                  <label htmlFor="admin-businesses-verification-proof-type" className="text-xs font-bold text-gray-700 block mb-1">Verification Proof Type</label>
+                  <select id="admin-businesses-verification-proof-type"
                     value={editBizForm.proofType}
                     onChange={e => setEditBizForm({ ...editBizForm, proofType: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -1019,8 +1019,8 @@ export default function BusinessesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Proof / License / GST Number</label>
-                  <input
+                  <label htmlFor="admin-businesses-proof-license-gst-number" className="text-xs font-bold text-gray-700 block mb-1">Proof / License / GST Number</label>
+                  <input id="admin-businesses-proof-license-gst-number"
                     type="text"
                     value={editBizForm.proofNumber}
                     onChange={e => setEditBizForm({ ...editBizForm, proofNumber: e.target.value })}
@@ -1029,8 +1029,8 @@ export default function BusinessesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Verification Status</label>
-                  <select
+                  <label htmlFor="admin-businesses-verification-status" className="text-xs font-bold text-gray-700 block mb-1">Verification Status</label>
+                  <select id="admin-businesses-verification-status"
                     value={editBizForm.verificationStatus}
                     onChange={e => setEditBizForm({ ...editBizForm, verificationStatus: e.target.value as any })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
@@ -1049,8 +1049,8 @@ export default function BusinessesPage() {
                 <p className="text-xs font-bold text-gray-900">Branding &amp; Media</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
-                    <input
+                    <label htmlFor="admin-businesses-logo-image-url" className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
+                    <input id="admin-businesses-logo-image-url"
                       type="url"
                       value={editBizForm.logoUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, logoUrl: e.target.value })}
@@ -1059,8 +1059,8 @@ export default function BusinessesPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Banner / Cover Image URL</label>
-                    <input
+                    <label htmlFor="admin-businesses-banner-cover-image-url" className="text-xs font-bold text-gray-700 block mb-1">Banner / Cover Image URL</label>
+                    <input id="admin-businesses-banner-cover-image-url"
                       type="url"
                       value={editBizForm.coverUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, coverUrl: e.target.value })}
@@ -1083,8 +1083,8 @@ export default function BusinessesPage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Established Year</label>
-                    <input
+                    <label htmlFor="admin-businesses-established-year" className="text-xs font-bold text-gray-700 block mb-1">Established Year</label>
+                    <input id="admin-businesses-established-year"
                       type="text"
                       value={editBizForm.establishedYear}
                       onChange={e => setEditBizForm({ ...editBizForm, establishedYear: e.target.value })}
@@ -1093,8 +1093,8 @@ export default function BusinessesPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Google Maps URL</label>
-                    <input
+                    <label htmlFor="admin-businesses-google-maps-url" className="text-xs font-bold text-gray-700 block mb-1">Google Maps URL</label>
+                    <input id="admin-businesses-google-maps-url"
                       type="url"
                       value={editBizForm.googleMapsUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, googleMapsUrl: e.target.value })}
@@ -1111,8 +1111,8 @@ export default function BusinessesPage() {
                     ['linkedin', 'LinkedIn'],
                   ] as const).map(([key, label]) => (
                     <div key={key}>
-                      <label className="text-xs font-bold text-gray-700 block mb-1">{label}</label>
-                      <input
+                      <label htmlFor="admin-businesses-field" className="text-xs font-bold text-gray-700 block mb-1">{label}</label>
+                      <input id="admin-businesses-field"
                         type="url"
                         value={editBizForm[key]}
                         onChange={e => setEditBizForm({ ...editBizForm, [key]: e.target.value })}
@@ -1126,8 +1126,8 @@ export default function BusinessesPage() {
 
               {/* Row 6: Tagline & Description */}
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Tagline / Short Slogan</label>
-                <input
+                <label htmlFor="admin-businesses-tagline-short-slogan" className="text-xs font-bold text-gray-700 block mb-1">Tagline / Short Slogan</label>
+                <input id="admin-businesses-tagline-short-slogan"
                   type="text"
                   value={editBizForm.tagline}
                   onChange={e => setEditBizForm({ ...editBizForm, tagline: e.target.value })}
@@ -1137,8 +1137,8 @@ export default function BusinessesPage() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Company Overview / Description</label>
-                <textarea
+                <label htmlFor="admin-businesses-company-overview-description" className="text-xs font-bold text-gray-700 block mb-1">Company Overview / Description</label>
+                <textarea id="admin-businesses-company-overview-description"
                   rows={3}
                   value={editBizForm.description}
                   onChange={e => setEditBizForm({ ...editBizForm, description: e.target.value })}
@@ -1149,7 +1149,7 @@ export default function BusinessesPage() {
 
               {/* Row 7: Toggles */}
               <div className="flex items-center gap-6 p-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs">
-                <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800">
+                <label htmlFor="admin-businesses-seteditbizform-classname-w-4-h-4-rounded" className="flex items-center gap-2 cursor-pointer font-bold text-gray-800">
                   <input
                     type="checkbox"
                     checked={editBizForm.isFeatured}
@@ -1233,7 +1233,7 @@ export default function BusinessesPage() {
             {/* Reason Textarea */}
             <div>
               <label className="text-xs font-bold text-gray-700 block mb-1">Custom Rejection Reason / Instructions *</label>
-              <textarea
+              <textarea id="admin-businesses-seteditbizform-classname-w-4-h-4-rounded"
                 rows={3}
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}

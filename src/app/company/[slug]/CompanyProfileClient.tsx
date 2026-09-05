@@ -16,17 +16,58 @@ import {
 import { FacebookIcon, InstagramIcon, LinkedinIcon } from '@/components/ui/BrandIcons';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { safeExternalUrl } from '@/lib/safeUrl';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
+import { followCompany, unfollowCompany, isFollowingCompany } from '@/lib/firebase/firestoreService';
 
 export default function CompanyProfileClient({ company, jobs = [], reviews = [] }: {
   company: any; jobs: any[]; reviews: any[];
 }) {
+  const { user } = useAuth();
+  const toast = useToast();
+  const uid = user?.uid;
+  const isOwnCompany = !!uid && uid === company?.ownerId;
+
   const [activeTab, setActiveTab] = useState('about');
+  // SEEKER-1: this used to be a bare `useState(false)` toggle with no persistence at all —
+  // "saved" reset on every refresh while looking exactly like a real bookmark. There is no
+  // separate savedCompanies collection anywhere in this app; `companyFollows` (RULES-6) is the
+  // one real relationship, already proven correct on JobDetailPageClient.tsx's own follow
+  // toggle, so this reuses it rather than inventing a second, competing mechanism.
   const [saved, setSaved] = useState(false);
-  const [followed, setFollowed] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [enquirySent, setEnquirySent] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedItemType, setSelectedItemType] = useState<'product'|'service'>('product');
   const [showFullDesc, setShowFullDesc] = useState(false);
+
+  useEffect(() => {
+    if (!uid || !company?.id) return;
+    isFollowingCompany(uid, company.id).then(setSaved).catch(() => {});
+  }, [uid, company?.id]);
+
+  const handleToggleSave = async () => {
+    if (!uid || !company?.id) {
+      toast.warning('Please login to save companies.');
+      return;
+    }
+    setSaveLoading(true);
+    try {
+      if (saved) {
+        await unfollowCompany(uid, company.id);
+        setSaved(false);
+        toast.info('Removed from saved');
+      } else {
+        await followCompany(uid, company.id);
+        setSaved(true);
+        toast.success('Company saved! You\'ll get alerts for new jobs from them.');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   // NOTE: SEO meta tags, JSON-LD, and robots directives are now handled
   // exclusively in CompanyProfilePageClient.tsx to avoid duplicate injection.
@@ -105,11 +146,13 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                 where they floated over the cover photo at an arbitrary height. The frosted
                 backdrop keeps them legible against any uploaded image. */}
             <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex gap-2">
+              {!isOwnCompany && (
               <button
-                onClick={() => setSaved(!saved)}
+                onClick={handleToggleSave}
+                disabled={saveLoading}
                 aria-label={saved ? 'Remove from saved' : 'Save company'}
                 aria-pressed={saved}
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-sm border shadow-sm transition-all ${
+                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-sm border shadow-sm transition-all disabled:opacity-60 ${
                   saved ? 'bg-rose-50/95 border-rose-200' : 'bg-white/90 border-white/60 hover:bg-white'
                 }`}
                 // Inline colour, not a text-* class: globals.css has an unlayered
@@ -120,6 +163,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
               >
                 <Heart className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill={saved ? 'currentColor' : 'none'} />
               </button>
+              )}
               <button
                 onClick={() => {
                   if (navigator.share) {

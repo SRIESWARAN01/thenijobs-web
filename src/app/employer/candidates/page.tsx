@@ -29,6 +29,7 @@ import { updateApplicationStatus, createDocument, createNotification } from '@/l
 import { where, orderBy } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import InterviewConfirmedModal from '@/components/ui/InterviewConfirmedModal';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 type PipelineStatus = 'all' | 'applied' | 'shortlisted' | 'interview_scheduled' | 'selected' | 'rejected';
 
@@ -242,7 +243,7 @@ function CandidateDetailModal({
           )}
           {resumeUrl ? (
             <a
-              href={resumeUrl}
+              href={safeExternalUrl(resumeUrl)}
               target="_blank"
               rel="noreferrer"
               className="py-2.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all text-center"

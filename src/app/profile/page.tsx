@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
+import { safeExternalUrl } from '@/lib/safeUrl';
 
 export default function ProfileHubPage() {
   const { user, firebaseUser, loading: authLoading, logout } = useAuth() as any;
@@ -220,7 +221,7 @@ export default function ProfileHubPage() {
                 <span className="truncate">{company?.email || user?.email}</span>
               </div>
               {company?.website && (
-                <a href={company.website} target="_blank" rel="noopener noreferrer"
+                <a href={safeExternalUrl(company.website)} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 text-blue-600 hover:underline">
                   <Globe size={14} />
                   <span className="truncate">{company.website}</span>

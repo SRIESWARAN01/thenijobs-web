@@ -4,6 +4,7 @@ import JobDetailPageClient from './JobDetailPageClient';
 import { getJobByIdServer, getCompanyByIdServer, getActiveJobsForSitemap } from '@/lib/firebase/firestoreServer';
 import { generateJobPostingSchema, generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
 import { isJobExpired, formatSalaryDisplay } from '@/lib/seo/expiredJobUtils';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 export const dynamicParams = false;
 
@@ -185,13 +186,13 @@ export default async function JobDetailPage({ params }: PageProps) {
       {/* BreadcrumbList JSON-LD — always rendered server-side */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(breadcrumbSchema) }}
       />
       {/* JobPosting JSON-LD — only for active jobs, rendered server-side for Google */}
       {jobPostingSchema && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
+          dangerouslySetInnerHTML={{ __html: toJsonLdScript(jobPostingSchema) }}
         />
       )}
       <JobDetailPageClient id={id} initialJob={initialJobData} />

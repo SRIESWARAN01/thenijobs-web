@@ -8,6 +8,7 @@ import { Loader2, AlertCircle, Globe, ShieldCheck } from 'lucide-react';
 import TemplateRenderer from '@/components/portfolio/TemplateRenderer';
 import type { PortfolioSite } from '@/lib/types/portfolio';
 import Head from 'next/head';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 interface PublicPortfolioPageClientProps {
   username: string;
@@ -176,7 +177,7 @@ export default function PublicPortfolioPageClient({ username: usernameProp }: Pu
       {/* Schema.org Rich Snippet */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(personSchema) }}
       />
 
       <TemplateRenderer site={site} />

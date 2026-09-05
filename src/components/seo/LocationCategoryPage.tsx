@@ -1,6 +1,7 @@
 import CategoryJobPageClient from '@/components/seo/CategoryJobPageClient';
 import { LOCATIONS_DATA, CATEGORIES_LIST } from '@/components/seo/locationData';
 import { generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 const BASE = 'https://thenijobs.com';
 
@@ -41,7 +42,7 @@ export default function LocationCategoryPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(breadcrumbSchema) }}
       />
       <CategoryJobPageClient locationSlug={locationSlug} categorySlug={categorySlug} />
     </>

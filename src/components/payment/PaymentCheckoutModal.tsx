@@ -148,10 +148,22 @@ export default function PaymentCheckoutModal({
             },
           },
           handler: async function (response: any) {
+            // PAY-1: these two used to fall back to `pay_${Date.now()}` and an empty string.
+            // A Razorpay success callback always carries both; if one is missing something is
+            // wrong, and substituting a value we made up is how an unverifiable payment used to
+            // reach the server looking verifiable. Pass them through as they came.
+            if (!response?.razorpay_payment_id || !response?.razorpay_signature) {
+              setLoading(false);
+              setPaymentState('failed');
+              setErrorMessage(
+                'The gateway returned an incomplete confirmation, so the subscription was not activated. If money was debited, contact support with your order id — do not pay again.',
+              );
+              return;
+            }
             await handleVerifyPayment(
               orderData.orderId,
-              response.razorpay_payment_id || `pay_${Date.now()}`,
-              response.razorpay_signature || ''
+              response.razorpay_payment_id,
+              response.razorpay_signature,
             );
           },
         };
@@ -164,11 +176,19 @@ export default function PaymentCheckoutModal({
         });
         rzp.open();
       } else {
-        // Fallback direct verified authorization
-        await handleVerifyPayment(
-          orderData.orderId,
-          `pay_direct_${Date.now()}`,
-          'direct_authorized'
+        // PAY-1: this used to call handleVerifyPayment with a made-up payment id and the
+        // literal signature 'direct_authorized' — the browser asserting to our own server that
+        // a payment it never saw had succeeded. Anything that stops checkout.razorpay.com from
+        // loading (an ad blocker, a corporate proxy, request blocking in devtools, no network)
+        // took this branch, and the server activated a year's subscription for free because it
+        // only verified signatures when a secret happened to be configured.
+        //
+        // A payment gateway that cannot load is a failure. There is no honest way for the
+        // client to authorise a payment on its own.
+        setLoading(false);
+        setPaymentState('failed');
+        setErrorMessage(
+          'The secure payment window could not be opened. This is usually an ad blocker or a network restriction. Please disable it or try another network — no money has been debited.',
         );
       }
     } catch (err: any) {

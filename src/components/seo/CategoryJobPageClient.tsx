@@ -46,14 +46,29 @@ export default function CategoryJobPageClient({
         );
         const snap = await getDocs(q);
         const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // SEO-5: the location test used to end with `|| j.district === 'theni'`, which made
+        // EVERY Theni job match EVERY location — so a Theni job appeared on the Madurai page,
+        // the Dindigul page and every other one. And the line below used to read
+        // `filtered.length > 0 ? filtered : fetched.slice(0, 6)`, so a page with no genuine
+        // matches showed six unrelated jobs rather than admitting it had none.
+        //
+        // Together those made all 135 of these pages render the same list with a different
+        // heading. /jobs-in-madurai/it and /jobs-in-madurai/driving listed the identical two
+        // jobs, neither in Madurai and neither in either category.
+        //
+        // The empty state further down this file — "No specific {catName} openings in
+        // {loc.name} right now." — was already written and simply unreachable behind that
+        // fallback. Removing it is what makes the page tell the truth.
         const filtered = fetched.filter((j: any) => {
-          const matchLoc = !locationSlug || (j.location && j.location.toLowerCase().includes(locationSlug)) || (j.district && j.district.toLowerCase().includes(locationSlug)) || (j.district && j.district.toLowerCase() === 'theni');
+          const matchLoc = !locationSlug ||
+            (j.location && j.location.toLowerCase().includes(locationSlug)) ||
+            (j.district && j.district.toLowerCase().includes(locationSlug));
           const matchCat = (j.title && j.title.toLowerCase().includes(categorySlug)) ||
             (j.category && j.category.toLowerCase().includes(categorySlug)) ||
             (j.jobType && j.jobType.toLowerCase().includes(categorySlug));
           return matchLoc && matchCat;
         });
-        setJobs(filtered.length > 0 ? filtered : fetched.slice(0, 6));
+        setJobs(filtered);
       } catch (err) {
         console.error('Error loading category jobs:', err);
       } finally {

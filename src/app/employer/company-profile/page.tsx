@@ -590,12 +590,11 @@ export default function CompanyProfilePage() {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1">Primary Calling Phone *</label>
+                  <label htmlFor="employer-company-profile-primary-calling-phone" className="text-xs text-gray-700 font-bold block mb-1">Primary Calling Phone *</label>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="tel"
-                      aria-label="+91 93605 19460" placeholder="+91 93605 19460"
+                    <input id="employer-company-profile-primary-calling-phone"
+                      type="tel" placeholder="+91 93605 19460"
                       value={company.phone}
                       onChange={(e) => update('phone', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium font-mono"
@@ -603,12 +602,11 @@ export default function CompanyProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1">Official Email *</label>
+                  <label htmlFor="employer-company-profile-official-email" className="text-xs text-gray-700 font-bold block mb-1">Official Email *</label>
                   <div className="relative">
                     <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="email"
-                      aria-label="contact@company.com" placeholder="contact@company.com"
+                    <input id="employer-company-profile-official-email"
+                      type="email" placeholder="contact@company.com"
                       value={company.email}
                       onChange={(e) => update('email', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"
@@ -616,12 +614,11 @@ export default function CompanyProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1">WhatsApp Number</label>
+                  <label htmlFor="employer-company-profile-whatsapp-number" className="text-xs text-gray-700 font-bold block mb-1">WhatsApp Number</label>
                   <div className="relative">
                     <MessageCircle size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500" />
-                    <input
-                      type="tel"
-                      aria-label="+91 70948 26886" placeholder="+91 70948 26886"
+                    <input id="employer-company-profile-whatsapp-number"
+                      type="tel" placeholder="+91 70948 26886"
                       value={company.whatsapp}
                       onChange={(e) => update('whatsapp', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium font-mono"
@@ -629,12 +626,11 @@ export default function CompanyProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-700 font-bold block mb-1">Company Website URL</label>
+                  <label htmlFor="employer-company-profile-company-website-url" className="text-xs text-gray-700 font-bold block mb-1">Company Website URL</label>
                   <div className="relative">
                     <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="url"
-                      aria-label="https://www.example.com" placeholder="https://www.example.com"
+                    <input id="employer-company-profile-company-website-url"
+                      type="url" placeholder="https://www.example.com"
                       value={company.website}
                       onChange={(e) => update('website', e.target.value)}
                       className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-600 outline-none font-medium"

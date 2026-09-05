@@ -79,30 +79,28 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs text-slate-700 font-bold">Admin Email</label>
+              <label htmlFor="admin-login-admin-email" className="text-xs text-slate-700 font-bold">Admin Email</label>
               <div className="relative">
                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
+                <input id="admin-login-admin-email"
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  aria-label="admin@thenijobs.com" placeholder="admin@thenijobs.com"
+                  onChange={(e) => setEmail(e.target.value)} placeholder="admin@thenijobs.com"
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-slate-700 font-bold">Password</label>
+              <label htmlFor="admin-login-password" className="text-xs text-slate-700 font-bold">Password</label>
               <div className="relative">
                 <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
+                <input id="admin-login-password"
                   type={showPass ? 'text' : 'password'}
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  aria-label="••••••••" placeholder="••••••••"
+                  onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
                   className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)}

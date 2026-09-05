@@ -377,7 +377,7 @@ function LoginPageContent() {
               <form onSubmit={mode === 'email' ? handleEmailLogin : handlePhoneSubmit} className="space-y-[clamp(0.5rem,1.8dvh,0.875rem)]">
                 {mode === 'phone' ? (
                   <div>
-                    <label className="text-xs font-semibold text-gray-700 block mb-1.5">Mobile Number</label>
+                    <label htmlFor="login-mobile-number-91-setphone-e-target-value" className="text-xs font-semibold text-gray-700 block mb-1.5">Mobile Number</label>
                     <div className="flex gap-2">
                       <div className="flex items-center px-3 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-700 font-semibold whitespace-nowrap">
                         🇮🇳 +91
@@ -397,16 +397,16 @@ function LoginPageContent() {
                       <label className="text-xs font-semibold text-gray-700 block mb-1.5">Email Address</label>
                       <div className="relative">
                         <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type="email" required aria-label="your@email.com" placeholder="your@email.com"
+                        <input id="login-mobile-number-91-setphone-e-target-value" type="email" required placeholder="your@email.com"
                           value={email} onChange={e => setEmail(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-700 block mb-1.5">Password</label>
+                      <label htmlFor="login-password" className="text-xs font-semibold text-gray-700 block mb-1.5">Password</label>
                       <div className="relative">
                         <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type={showPass ? 'text' : 'password'} required aria-label="••••••••" placeholder="••••••••"
+                        <input id="login-password" type={showPass ? 'text' : 'password'} required placeholder="••••••••"
                           value={password} onChange={e => setPassword(e.target.value)}
                           className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                         <button type="button" onClick={() => setShowPass(!showPass)}

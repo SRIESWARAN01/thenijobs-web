@@ -145,8 +145,13 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
     const phone = company.phone || company.contactNumber || '';
     const website = company.website || '';
     const address = company.address || '';
-    const rating = company.rating || 5;
     const reviewCount = reviews.length;
+    // schema.org's AggregateRating declares bestRating/worstRating 5/1 below, so a
+    // missing company.rating can't honestly fall back to 0 once real reviews exist —
+    // compute the real average of the reviews actually being cited instead.
+    const rating = reviewCount > 0
+      ? reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviewCount
+      : (company.rating || 0);
     const canonicalUrl = `https://www.thenijobs.com/company/${slug}`;
     const logoUrl = company.logoUrl || company.logo || '';
 

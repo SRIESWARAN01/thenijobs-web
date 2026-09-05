@@ -23,7 +23,7 @@ export default function CompanyReviewsSection({
   companyId,
   companyName,
   reviews = [],
-  averageRating = 5.0,
+  averageRating = 0,
   onReviewSubmitted,
 }: CompanyReviewsSectionProps) {
   const { user } = useAuth();

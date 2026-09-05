@@ -3,7 +3,6 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, isSupported } from 'firebase/analytics';
-import { getDatabase, type Database } from 'firebase/database';
 
 /**
  * Firebase configuration using environment variables.
@@ -26,7 +25,11 @@ export const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseC
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
-export const rtdb: Database = getDatabase(app);
+// SEC-3: the Realtime Database client was constructed here on every page load and exported
+// through getFirebaseRtdb(), and nothing in src/ ever used either. Its SDK was shipping in
+// the shared chunk that every page downloads. NEXT_PUBLIC_FIREBASE_DATABASE_URL is left in
+// the environment on purpose: removing an env key is the owner's, and nothing here should
+// break while it is still set.
 
 // ─── Singleton Accessors ───────────────────────────────────────────────────────
 
@@ -44,10 +47,6 @@ export function getFirebaseDb(): Firestore {
 
 export function getFirebaseStorage(): FirebaseStorage {
   return storage;
-}
-
-export function getFirebaseRtdb(): Database {
-  return rtdb;
 }
 
 /**

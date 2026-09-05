@@ -24,6 +24,7 @@ import CompanyPortfolioManager from '@/components/company/CompanyPortfolioManage
 import CompanyFounderManager from '@/components/company/CompanyFounderManager';
 import CompanySectionToggler from '@/components/company/CompanySectionToggler';
 import CompanyReviewsManager from '@/components/company/CompanyReviewsManager';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 
 const DEFAULT_COMPANY = {
   name: '',
@@ -261,35 +262,32 @@ export default function CompanyProfilePage() {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6 animate-fade-in-up font-outfit pb-24 sm:pb-12 max-w-7xl mx-auto">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Company Profile</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Manage your company branding, products, services, and branches</p>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          <button
-            type="button"
-            onClick={() => setShowPreviewModal(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-2xl border border-blue-200 bg-blue-50 px-3.5 py-2.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-blue-700 hover:bg-blue-600 hover:text-white transition-all shadow-xs cursor-pointer"
-          >
-            <Eye size={15} />
-            <span>Preview</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 rounded-2xl bg-blue-600 px-4 py-2.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md shadow-blue-500/20 cursor-pointer"
-          >
-            {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
-            <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-          </button>
-        </div>
-      </div>
+    <PageShell className="pb-24 sm:pb-12">
+      <PageHeader
+        title="Company profile"
+        description="Manage your company branding, products, services and branches."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Company profile' }]}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setShowPreviewModal(true)}
+              className="flex-1 border-blue-200 bg-[#EFF6FF] text-blue-700 hover:bg-blue-600 hover:text-white sm:flex-none"
+            >
+              <Eye size={15} /> Preview
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              loading={saving}
+              className="flex-1 sm:flex-none"
+            >
+              {!saving && <Save size={15} />}
+              {saving ? 'Saving…' : 'Save changes'}
+            </Button>
+          </>
+        }
+      />
 
       {/* Profile Completion Banner */}
       {completion < 100 && (
@@ -480,8 +478,14 @@ export default function CompanyProfilePage() {
             <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-xs">
               {/* Cover Banner Upload */}
               <div
-                className="relative h-36 sm:h-48 md:h-56 bg-slate-950 border-b border-gray-100 group cursor-pointer flex items-center justify-center overflow-hidden"
+                role="button"
+                tabIndex={0}
+                aria-label="Upload business cover banner"
+                className="relative flex h-36 cursor-pointer items-center justify-center overflow-hidden border-b border-gray-100 bg-slate-950 group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:h-48 md:h-56"
                 onClick={() => coverInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); coverInputRef.current?.click(); }
+                }}
               >
                 {company.coverUrl ? (
                   <>
@@ -510,7 +514,7 @@ export default function CompanyProfilePage() {
                   onChange={handleUploadCover}
                 />
                 <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/60 backdrop-blur-xs text-white text-xs font-bold transition-all shadow-md">
+                  <button type="button" tabIndex={-1} aria-hidden className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/60 backdrop-blur-xs text-white text-xs font-bold transition-all shadow-md pointer-events-none">
                     <Upload size={14} /> Change Cover Banner
                   </button>
                 </div>
@@ -520,8 +524,14 @@ export default function CompanyProfilePage() {
               <div className="p-4 sm:p-6 -mt-10 sm:-mt-12 relative z-10">
                 <div className="flex flex-col sm:flex-row items-center sm:items-end gap-3.5 sm:gap-5 text-center sm:text-left">
                   <div
-                    className="relative group cursor-pointer shrink-0"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload company logo"
+                    className="group relative shrink-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     onClick={() => logoInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); logoInputRef.current?.click(); }
+                    }}
                   >
                     <input
                       ref={logoInputRef}
@@ -537,7 +547,7 @@ export default function CompanyProfilePage() {
                         <Building2 size={32} className="text-blue-600" />
                       )}
                     </div>
-                    <button className="absolute inset-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button type="button" tabIndex={-1} aria-hidden className="pointer-events-none absolute inset-0 flex h-20 w-20 items-center justify-center rounded-2xl bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 sm:h-24 sm:w-24">
                       <Camera size={20} className="text-white" />
                     </button>
                   </div>
@@ -748,8 +758,14 @@ export default function CompanyProfilePage() {
                 {company.gallery.map((imgUrl, i) => (
                   <div
                     key={i}
-                    className="aspect-square rounded-2xl bg-gray-50 border-2 border-dashed border-gray-300 hover:border-blue-500 flex items-center justify-center group transition-all cursor-pointer relative overflow-hidden"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Upload gallery photo ${i + 1}`}
+                    className="group relative flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 transition-all hover:border-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     onClick={() => galleryInputRefs[i].current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); galleryInputRefs[i].current?.click(); }
+                    }}
                   >
                     <input
                       ref={galleryInputRefs[i]}
@@ -962,6 +978,6 @@ export default function CompanyProfilePage() {
       >
         <CompanyProfileClient company={company} jobs={[]} reviews={[]} />
       </DeviceLivePreviewModal>
-    </div>
+    </PageShell>
   );
 }

@@ -13,8 +13,8 @@ import {
   Calendar, FileText, MapPin, Briefcase, ArrowLeft, Check, CheckCheck,
   Sparkles, User
 } from 'lucide-react';
-import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { Card, PageHeader, PageShell } from '@/components/dashboard';
 
 interface Message {
   id: string;
@@ -191,15 +191,14 @@ export default function EmployerMessagesPage() {
   );
 
   return (
-    <div className="space-y-4 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900">Communication &amp; Messages</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Real-time chat, interview invites, and hiring communications with applicants</p>
-      </div>
+    <PageShell className="pb-20">
+      <PageHeader
+        title="Communication & messages"
+        description="Real-time chat, interview invites and hiring communications with applicants."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Messages' }]}
+      />
 
-      {/* Main Container */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden h-[calc(100vh-210px)] min-h-[520px] flex">
+      <Card className="flex h-[calc(100vh-210px)] min-h-[520px] overflow-hidden">
         {/* Left Side: Conversation List (Hidden on mobile when chat is open) */}
         <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col bg-gray-50/50 ${mobileChatOpen ? 'hidden md:flex' : 'flex'}`}>
           {/* Search box */}
@@ -409,7 +408,7 @@ export default function EmployerMessagesPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

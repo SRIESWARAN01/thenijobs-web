@@ -8,6 +8,7 @@ import { collection, query, where, limit, addDoc, serverTimestamp, onSnapshot, d
 import { MessageSquare, Send, Search, Loader2, ArrowLeft, Building2, Briefcase, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { Button, Card, PageHeader, PageShell } from '@/components/dashboard';
 
 interface Message {
   id: string;
@@ -177,25 +178,19 @@ export default function SeekerMessagesPage() {
   );
 
   return (
-    <div className="animate-fade-in-up max-w-6xl mx-auto font-outfit text-gray-900 py-4 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            Employer Chat &amp; Messages <MessageSquare size={18} className="text-emerald-600" />
-          </h1>
-          <p className="text-xs text-gray-500">Direct real-time communication with hiring managers</p>
-        </div>
-        <Link
-          href="/seeker/applications"
-          className="px-3.5 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-all flex items-center gap-1.5"
-        >
-          <FileText size={14} /> My Applications
-        </Link>
-      </div>
+    <PageShell className="max-w-6xl">
+      <PageHeader
+        title="Employer chat & messages"
+        description="Direct real-time communication with hiring managers."
+        breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'Messages' }]}
+        actions={
+          <Link href="/seeker/applications">
+            <Button variant="secondary"><FileText size={14} /> My applications</Button>
+          </Link>
+        }
+      />
 
-      {/* Main Chat Interface */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[560px]">
+      <Card className="grid min-h-[560px] grid-cols-1 overflow-hidden lg:grid-cols-12">
         {/* Left Sidebar — Conversations List */}
         <div className={`lg:col-span-4 border-r border-gray-100 flex flex-col ${activeConv ? 'hidden lg:flex' : 'flex'}`}>
           <div className="p-4 border-b border-gray-100 bg-gray-50/50 space-y-3">
@@ -348,7 +343,7 @@ export default function SeekerMessagesPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

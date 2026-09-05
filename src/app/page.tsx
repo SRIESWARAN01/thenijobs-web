@@ -12,7 +12,6 @@ import HowItWorksSection from '@/components/home/HowItWorksSection';
 import JobSeekerEmployerCTA from '@/components/home/JobSeekerEmployerCTA';
 import FeaturedBusinesses from '@/components/home/FeaturedBusinesses';
 import ServicesSection from '@/components/home/ServicesSection';
-import TestimonialsSection from '@/components/home/TestimonialsSection';
 import FAQSection from '@/components/home/FAQSection';
 import FinalCTA from '@/components/home/FinalCTA';
 import HomeFooter from '@/components/home/HomeFooter';
@@ -135,7 +134,6 @@ export default function HomePage() {
       <JobSeekerEmployerCTA />
       <FeaturedBusinesses />
       <ServicesSection />
-      <TestimonialsSection />
       <FAQSection />
       <FinalCTA />
       <HomeFooter />

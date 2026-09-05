@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import Link from 'next/link';
+import { EmptyState } from '@/components/dashboard';
 
 export default function TalentSearchPage() {
   const { user } = useAuth();
@@ -78,7 +79,7 @@ export default function TalentSearchPage() {
         ].map(({ icon: Icon, label, text }) => (
           <div key={label} className="glass-card rounded-2xl p-4 flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <Icon size={16} className="text-cyan-300" />
+              <Icon size={16} className="text-blue-600" />
             </div>
             <div>
               <p className="text-xs font-bold text-gray-900">{label}</p>
@@ -94,13 +95,13 @@ export default function TalentSearchPage() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <Lock size={18} className="text-amber-400" />
+                <Lock size={18} className="text-amber-600" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                  Premium Search Mode <Sparkles size={13} className="text-amber-400" />
+                  Premium Search Mode <Sparkles size={13} className="text-amber-600" />
                 </p>
-                <p className="text-[11px] text-gray-400">Upgrade your company listing to Premium to contact candidates directly and view full portfolios.</p>
+                <p className="text-[11px] text-slate-500">Upgrade your company listing to Premium to contact candidates directly and view full portfolios.</p>
               </div>
             </div>
             <Link
@@ -122,15 +123,15 @@ export default function TalentSearchPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search skill, role, candidate name..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-slate-400 focus:border-blue-500 outline-none transition-all"
+              aria-label="Search skill, role, candidate name" placeholder="Search skill, role, candidate name..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-gray-200 text-base sm:text-sm text-gray-900 placeholder:text-slate-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
-              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-300 outline-none focus:border-blue-500"
+              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-base sm:text-xs text-slate-500 outline-none focus:border-blue-500"
             >
               <option value="All Districts">All Districts</option>
               {districts.map((d) => (
@@ -140,7 +141,7 @@ export default function TalentSearchPage() {
             <select
               value={expFilter}
               onChange={(e) => setExpFilter(e.target.value)}
-              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs text-gray-300 outline-none focus:border-blue-500"
+              className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-base sm:text-xs text-slate-500 outline-none focus:border-blue-500"
             >
               <option value="All Experience">All Experience</option>
               <option value="Fresher">Fresher (No Experience)</option>
@@ -154,7 +155,7 @@ export default function TalentSearchPage() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-          <p className="text-sm text-gray-400">Searching profiles...</p>
+          <p className="text-sm text-slate-500">Searching profiles...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -181,11 +182,13 @@ export default function TalentSearchPage() {
               const strength = Math.round((strengthItems.filter(i => i.done).length / strengthItems.length) * 100);
 
               return (
-                <div
+                <button
                   key={c.id}
+                  type="button"
+                  aria-pressed={selectedCandidate?.id === c.id}
                   onClick={() => setSelectedCandidate(c)}
-                  className={`glass-card rounded-2xl p-5 hover:border-white/15 transition-all cursor-pointer ${
-                    selectedCandidate?.id === c.id ? 'border-cyan-500/40' : ''
+                  className={`tap-target-auto w-full rounded-2xl border bg-white p-5 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:border-slate-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    selectedCandidate?.id === c.id ? 'border-blue-400 ring-1 ring-blue-200' : 'border-slate-200'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -199,7 +202,7 @@ export default function TalentSearchPage() {
                           · {hasExperience ? `${experienceCount} work place(s)` : 'Fresher'}
                         </span>
                       </div>
-                      <p className="text-xs text-cyan-400 mt-0.5 font-medium">{c.currentRole || 'Job Seeker'}</p>
+                      <p className="mt-0.5 text-xs font-medium text-blue-700">{c.currentRole || 'Job Seeker'}</p>
                       <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <MapPin size={11} /> {c.district || 'Theni'}
@@ -212,7 +215,7 @@ export default function TalentSearchPage() {
                         {skillsList.slice(0, 5).map((s: string) => (
                           <span
                             key={s}
-                            className="px-2.5 py-1 rounded-lg bg-blue-100 text-cyan-300 text-[10px] font-medium"
+                            className="rounded-lg bg-[#EFF6FF] px-2.5 py-1 text-[10px] font-medium text-[#1E40AF]"
                           >
                             {s}
                           </span>
@@ -220,7 +223,7 @@ export default function TalentSearchPage() {
                       </div>
                       <div className="mt-3 flex items-center gap-2">
                         <span className="text-[10px] text-gray-500 font-medium">Profile Strength</span>
-                        <div className="w-24 h-1.5 bg-white rounded-full overflow-hidden">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-200">
                           <div
                             className={`h-full rounded-full ${
                               strength >= 80 ? 'bg-emerald-500' : strength >= 60 ? 'bg-amber-500' : 'bg-rose-500'
@@ -228,20 +231,20 @@ export default function TalentSearchPage() {
                             style={{ width: `${strength}%` }}
                           />
                         </div>
-                        <span className="text-[10px] font-bold text-gray-400">{strength}%</span>
+                        <span className="text-[10px] font-bold tabular-nums text-slate-600">{strength}%</span>
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
 
             {filtered.length === 0 && (
-              <div className="glass-card rounded-2xl p-12 text-center">
-                <User size={32} className="text-gray-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">No candidates found</p>
-                <p className="text-xs text-gray-600 mt-1">Try resetting filters or typing another keyword</p>
-              </div>
+              <EmptyState
+                icon={User}
+                title="No candidates found"
+                description="Reset the filters or try another keyword."
+              />
             )}
           </div>
 
@@ -266,8 +269,8 @@ export default function TalentSearchPage() {
 
                 {/* Candidate Overview */}
                 <div className="space-y-3 pt-3 border-t border-gray-100">
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <MapPin size={13} className="text-cyan-400" />
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <MapPin size={13} className="text-blue-600" />
                     <span>Resident of {selectedCandidate.district || 'Theni'}</span>
                   </div>
                   {selectedCandidate.address && (
@@ -276,16 +279,16 @@ export default function TalentSearchPage() {
                 </div>
 
                 {/* Contact Card */}
-                <div className="p-4 rounded-xl bg-[#0e0e22] border border-white/[0.04] space-y-3">
-                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact Information</h4>
+                <div className="p-4 rounded-xl border border-white/[0.04] space-y-3">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Information</h4>
                   {isPremiumCompany ? (
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center gap-2">
-                        <Phone size={13} className="text-cyan-400" />
+                        <Phone size={13} className="text-blue-600" />
                         <span className="text-white font-medium">{selectedCandidate.phone || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Mail size={13} className="text-cyan-400" />
+                        <Mail size={13} className="text-blue-600" />
                         <span className="text-white font-medium truncate block max-w-[180px]">{selectedCandidate.email || 'N/A'}</span>
                       </div>
                     </div>
@@ -307,7 +310,7 @@ export default function TalentSearchPage() {
 
                 {/* Experience details */}
                 <div className="space-y-3 pt-3 border-t border-gray-100">
-                  <h4 className="text-xs font-semibold text-gray-400">Experience History</h4>
+                  <h4 className="text-xs font-semibold text-slate-500">Experience History</h4>
                   {(selectedCandidate.experience || []).length === 0 ? (
                     <p className="text-xs text-gray-500 italic">No experience documented</p>
                   ) : (
@@ -315,7 +318,7 @@ export default function TalentSearchPage() {
                       {selectedCandidate.experience.map((exp: any, idx: number) => (
                         <div key={idx} className="text-xs pl-2.5 border-l border-violet-500/30">
                           <p className="font-semibold text-gray-900">{exp.role}</p>
-                          <p className="text-gray-400">{exp.company} ({exp.startDate} - {exp.endDate})</p>
+                          <p className="text-slate-500">{exp.company} ({exp.startDate} - {exp.endDate})</p>
                         </div>
                       ))}
                     </div>
@@ -324,7 +327,7 @@ export default function TalentSearchPage() {
 
                 {/* Education details */}
                 <div className="space-y-3 pt-3 border-t border-gray-100">
-                  <h4 className="text-xs font-semibold text-gray-400">Education Details</h4>
+                  <h4 className="text-xs font-semibold text-slate-500">Education Details</h4>
                   {(selectedCandidate.education || []).length === 0 ? (
                     <p className="text-xs text-gray-500 italic">No education documented</p>
                   ) : (
@@ -332,7 +335,7 @@ export default function TalentSearchPage() {
                       {selectedCandidate.education.map((edu: any, idx: number) => (
                         <div key={idx} className="text-xs pl-2.5 border-l border-emerald-500/30">
                           <p className="font-semibold text-gray-900">{edu.degree} in {edu.field}</p>
-                          <p className="text-gray-400">{edu.institution} ({edu.year})</p>
+                          <p className="text-slate-500">{edu.institution} ({edu.year})</p>
                         </div>
                       ))}
                     </div>
@@ -353,7 +356,7 @@ export default function TalentSearchPage() {
       {showUpgradeModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="glass-card rounded-3xl p-6 max-w-sm w-full border border-violet-200 text-center space-y-4 animate-scale-in">
-            <div className="w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center mx-auto text-violet-400">
+            <div className="w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center mx-auto text-violet-600">
               <Lock size={20} />
             </div>
             <div>
@@ -372,7 +375,7 @@ export default function TalentSearchPage() {
               </Link>
               <button
                 onClick={() => setShowUpgradeModal(false)}
-                className="flex-1 py-2 rounded-xl bg-white text-gray-400 text-xs font-medium hover:text-white transition-colors"
+                className="flex-1 py-2 rounded-xl bg-white text-slate-500 text-xs font-medium hover:text-white transition-colors"
               >
                 Close
               </button>

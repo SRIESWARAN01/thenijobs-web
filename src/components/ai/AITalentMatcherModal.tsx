@@ -104,7 +104,7 @@ export default function AITalentMatcherModal({ isOpen, onClose }: { isOpen: bool
               <p className="text-[11px] text-gray-500">Natural Language Candidate Search</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold">×</button>
+          <button onClick={onClose} className="text-slate-500 hover:text-gray-600 font-bold">×</button>
         </div>
 
         {/* Query Input */}
@@ -116,8 +116,8 @@ export default function AITalentMatcherModal({ isOpen, onClose }: { isOpen: bool
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="Describe the candidate you're looking for..."
-              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-purple-500 focus:bg-white transition-all"
+              aria-label="Describe the candidate you're looking for" placeholder="Describe the candidate you're looking for..."
+              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 focus:outline-none focus:border-purple-500 focus:bg-white transition-all"
             />
             <button
               onClick={handleSearch}

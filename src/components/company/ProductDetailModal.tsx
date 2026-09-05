@@ -184,13 +184,13 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
                 <button type="button" onClick={() => setShowOrderForm(false)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Quantity / Delivery Address / Special Instructions:</label>
-                <textarea
+                <label htmlFor="company-productdetailmodal-quantity-delivery-address-special-instru" className="text-xs font-bold text-gray-700 block mb-1">Quantity / Delivery Address / Special Instructions:</label>
+                <textarea id="company-productdetailmodal-quantity-delivery-address-special-instru"
                   rows={2}
                   value={orderNote}
                   onChange={e => setOrderNote(e.target.value)}
                   placeholder="e.g. Quantity: 2 Units, Delivery to Cumbum, Please confirm total price."
-                  className="w-full p-2.5 rounded-xl bg-white border border-gray-200 text-xs text-gray-900 outline-none focus:border-emerald-500 font-medium"
+                  className="w-full p-2.5 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900 outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
               <button

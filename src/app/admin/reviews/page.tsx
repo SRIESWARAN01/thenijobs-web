@@ -5,13 +5,20 @@ import { CompanyReview } from '@/lib/types';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateDocument, deleteDocument } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
+import { Check, CheckCircle, Clock, Loader2, MessageSquare, Star, Trash2, X, XCircle } from 'lucide-react';
 import {
-  MessageSquare, Star, CheckCircle, XCircle, Eye, ShieldAlert,
-  Loader2, Trash2, Check, X, Filter
-} from 'lucide-react';
+  Button, Card, EmptyState, FilterSelect, PageHeader, PageShell, Pill, Stat, StatGrid, Toolbar,
+  type PillTone,
+} from '@/components/dashboard';
+
+const STATUS_TONE: Record<string, PillTone> = {
+  approved: 'success',
+  pending: 'warning',
+  rejected: 'danger',
+};
 
 export default function AdminReviewsPage() {
-  const { data: reviews, loading, refresh } = useCollection<CompanyReview>('reviews');
+  const { data: reviews, loading } = useCollection<CompanyReview>('reviews');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const toast = useToast();
 
@@ -21,6 +28,10 @@ export default function AdminReviewsPage() {
     if (filterStatus === 'rejected') return r.status === 'rejected';
     return true;
   });
+
+  const pendingCount = reviews.filter(r => r.status === 'pending').length;
+  const approvedCount = reviews.filter(r => r.status === 'approved').length;
+  const rejectedCount = reviews.filter(r => r.status === 'rejected').length;
 
   const handleApprove = async (id: string) => {
     try {
@@ -49,115 +60,125 @@ export default function AdminReviewsPage() {
         toast.success('Review deleted.');
       } catch (err) {
         console.error(err);
+        toast.error('Failed to delete review.');
       }
     }
   };
 
   return (
-    <div className="space-y-6 font-outfit">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Review Moderation Queue</h1>
-          <p className="text-xs text-slate-500 mt-1">Approve, reject, or moderate user reviews submitted for companies</p>
-        </div>
+    <PageShell>
+      <PageHeader
+        title="Review moderation queue"
+        description="Approve, reject or remove reviews submitted for companies."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Reviews' }]}
+      />
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-            <Filter size={13} className="text-slate-400" />
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="bg-transparent border-none outline-none font-semibold text-slate-800 cursor-pointer"
-            >
-              <option value="all">All Statuses ({reviews.length})</option>
-              <option value="pending">Pending ({reviews.filter(r => r.status === 'pending').length})</option>
-              <option value="approved">Approved ({reviews.filter(r => r.status === 'approved').length})</option>
-              <option value="rejected">Rejected ({reviews.filter(r => r.status === 'rejected').length})</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      <StatGrid columns={4}>
+        <Stat label="All reviews" value={reviews.length} icon={MessageSquare} tone="blue" loading={loading} />
+        <Stat label="Pending" value={pendingCount} icon={Clock} tone="amber" loading={loading} />
+        <Stat label="Approved" value={approvedCount} icon={CheckCircle} tone="emerald" loading={loading} />
+        <Stat label="Rejected" value={rejectedCount} icon={XCircle} tone="rose" loading={loading} />
+      </StatGrid>
+
+      <Toolbar
+        filters={
+          <FilterSelect
+            label="Moderation status"
+            value={filterStatus}
+            onChange={setFilterStatus}
+            options={[
+              { label: `All statuses (${reviews.length})`, value: 'all' },
+              { label: `Pending (${pendingCount})`, value: 'pending' },
+              { label: `Approved (${approvedCount})`, value: 'approved' },
+              { label: `Rejected (${rejectedCount})`, value: 'rejected' },
+            ]}
+          />
+        }
+      />
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-xs text-slate-400">
-          <Loader2 size={24} className="animate-spin text-blue-600 mr-2" /> Loading review queue...
+        <div className="flex flex-col items-center justify-center gap-3 py-20">
+          <Loader2 size={30} className="animate-spin text-blue-600" />
+          <p className="text-xs font-semibold text-slate-500">Loading review queue…</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-16 text-center text-xs text-slate-400">
-          <MessageSquare size={36} className="mx-auto mb-2 text-slate-300" />
-          No reviews found in this moderation view.
-        </div>
+        <EmptyState
+          icon={MessageSquare}
+          title="No reviews in this view"
+          description="Change the moderation filter to see reviews in another state."
+        />
       ) : (
         <div className="space-y-4">
           {filtered.map(r => (
-            <div key={r.id} className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 shadow-xs hover:border-slate-300 transition-all">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-slate-900">{r.userName}</h4>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                      r.status === 'approved'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : r.status === 'pending'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-red-50 text-red-700 border border-red-200'
-                    }`}>
-                      {r.status || 'PENDING'}
-                    </span>
+            <Card key={r.id} className="space-y-3 p-4 transition-colors hover:border-slate-300 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900">{r.userName || 'Anonymous'}</h3>
+                    <Pill tone={STATUS_TONE[r.status ?? 'pending'] ?? 'warning'} dot>
+                      {r.status || 'pending'}
+                    </Pill>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Company ID: {r.companyId} | {r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleDateString('en-IN') : 'Recently'}
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Company {r.companyId} ·{' '}
+                    {r.createdAt?.seconds
+                      ? new Date(r.createdAt.seconds * 1000).toLocaleDateString('en-IN')
+                      : 'Recently'}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1 text-amber-500 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/60">
-                  <Star size={13} className="fill-amber-400 text-amber-400" />
-                  <span className="text-xs font-bold text-amber-700">{r.rating}.0</span>
-                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 self-start rounded-xl border border-amber-200 bg-[#FFFBEB] px-2.5 py-1">
+                  <Star size={13} className="fill-amber-500 text-amber-500" aria-hidden />
+                  <span className="text-xs font-bold text-[#92400E]">{r.rating}.0</span>
+                </span>
               </div>
 
               <div>
-                {r.title && <h5 className="text-xs font-bold text-slate-800 mb-1">&quot;{r.title}&quot;</h5>}
-                <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{r.content}</p>
+                {r.title && <h4 className="mb-1 text-sm font-semibold text-slate-800">&ldquo;{r.title}&rdquo;</h4>}
+                <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+                  {r.content}
+                </p>
               </div>
 
               {r.adminNote && (
-                <div className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200">
-                  ⚠️ Note: {r.adminNote}
-                </div>
+                <p className="rounded-lg border border-amber-200 bg-[#FFFBEB] p-2 text-xs text-[#92400E]">
+                  Note: {r.adminNote}
+                </p>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
                 {r.status !== 'approved' && (
-                  <button
+                  <Button
+                    size="sm"
                     onClick={() => handleApprove(r.id)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 shadow-xs"
+                    className="border-0 bg-emerald-600 text-white hover:bg-emerald-700"
                   >
                     <Check size={13} /> Approve
-                  </button>
+                  </Button>
                 )}
-
                 {r.status !== 'rejected' && (
-                  <button
+                  <Button
+                    size="sm"
+                    variant="secondary"
                     onClick={() => handleReject(r.id)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 shadow-xs"
+                    className="border-amber-200 text-amber-700 hover:bg-amber-50"
                   >
                     <X size={13} /> Reject
-                  </button>
+                  </Button>
                 )}
-
-                <button
+                <Button
+                  size="sm"
+                  variant="secondary"
                   onClick={() => handleDelete(r.id)}
-                  className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-600 hover:text-white transition-all"
+                  className="border-rose-200 text-rose-700 hover:bg-rose-50"
                 >
                   <Trash2 size={13} /> Delete
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

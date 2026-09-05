@@ -17,7 +17,7 @@ export default function ChipScroller({ label, items, isActive, onSelect, classNa
   return (
     <div className={`-mx-4 sm:mx-0 overflow-x-auto no-scrollbar px-4 sm:px-0 ${className}`}>
       <div className="flex w-max items-center gap-2">
-        {label && <span className="text-gray-400 shrink-0 font-semibold text-[11px] mr-0.5">{label}</span>}
+        {label && <span className="text-slate-500 shrink-0 font-semibold text-[11px] mr-0.5">{label}</span>}
         {items.map(item => {
           const active = isActive(item);
           return (

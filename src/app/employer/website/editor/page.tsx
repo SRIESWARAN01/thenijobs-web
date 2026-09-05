@@ -17,6 +17,7 @@ import { getPortfolioSectionsForPlan } from '@/lib/plans';
 import type { PortfolioSite, PortfolioSection, PortfolioTheme, EditorState } from '@/lib/types/portfolio';
 import { DEFAULT_EDITOR_STATE, DEVICE_SIZES, FONT_OPTIONS } from '@/lib/types/portfolio';
 import TemplateRenderer from '@/components/portfolio/TemplateRenderer';
+import { Switch } from '@/components/dashboard';
 
 type EditorTab = 'sections' | 'theme' | 'branding' | 'seo';
 
@@ -151,7 +152,7 @@ export default function WebsiteEditorPage() {
   if (!site) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <Globe size={32} className="text-gray-300" />
+        <Globe size={32} className="text-slate-500" />
         <p className="text-sm text-gray-500">No website found. Please select a template first.</p>
         <Link href="/employer/website/templates" className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold">
           Choose Template
@@ -188,7 +189,7 @@ export default function WebsiteEditorPage() {
             return (
               <button key={d.key} onClick={() => setEditor(prev => ({ ...prev, previewDevice: d.key }))}
                 title={d.label}
-                className={`p-1.5 rounded-md transition-all ${editor.previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>
+                className={`p-1.5 rounded-md transition-all ${editor.previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-gray-600'}`}>
                 <Icon size={14} />
               </button>
             );
@@ -240,15 +241,15 @@ export default function WebsiteEditorPage() {
                 {sortedSections.map((section, index) => (
                   <div key={section.id} className={`border rounded-xl p-3 transition-all ${section.visible ? 'border-gray-100 bg-white' : 'border-gray-50 bg-gray-50 opacity-60'}`}>
                     <div className="flex items-center gap-2">
-                      <GripVertical size={13} className="text-gray-300 cursor-grab flex-shrink-0" />
+                      <GripVertical size={13} className="text-slate-500 cursor-grab flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 truncate">{section.title}</p>
-                        <p className="text-[9px] text-gray-400">{section.type}</p>
+                        <p className="text-[9px] text-slate-500">{section.type}</p>
                       </div>
                       <div className="flex items-center gap-0.5">
-                        <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronUp size={12} className="text-gray-400" /></button>
-                        <button onClick={() => moveSection(index, 'down')} disabled={index === sortedSections.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronDown size={12} className="text-gray-400" /></button>
-                        <button onClick={() => toggleSection(section.id)} className={`p-1 rounded hover:bg-gray-100 ${section.visible ? 'text-blue-500' : 'text-gray-300'}`}><Eye size={12} /></button>
+                        <button onClick={() => moveSection(index, 'up')} disabled={index === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronUp size={12} className="text-slate-500" /></button>
+                        <button onClick={() => moveSection(index, 'down')} disabled={index === sortedSections.length - 1} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronDown size={12} className="text-slate-500" /></button>
+                        <button onClick={() => toggleSection(section.id)} className={`p-1 rounded hover:bg-gray-100 ${section.visible ? 'text-blue-500' : 'text-slate-500'}`}><Eye size={12} /></button>
                         <button onClick={() => setEditor(prev => ({ ...prev, selectedSectionId: section.id }))} className="p-1 rounded hover:bg-blue-50 text-blue-500"><Edit3 size={12} /></button>
                         <button onClick={() => removeSection(section.id)} className="p-1 rounded hover:bg-red-50 text-red-400"><Trash2 size={12} /></button>
                       </div>
@@ -264,7 +265,7 @@ export default function WebsiteEditorPage() {
                       <button key={sectionDef.type} onClick={() => addSection(sectionDef.type)}
                         className="text-left p-2 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all">
                         <p className="text-[10px] font-semibold text-gray-700">{sectionDef.label}</p>
-                        <p className="text-[8px] text-gray-400">{sectionDef.tamilLabel}</p>
+                        <p className="text-[8px] text-slate-500">{sectionDef.tamilLabel}</p>
                       </button>
                     ))}
                   </div>
@@ -301,16 +302,16 @@ export default function WebsiteEditorPage() {
                   <p className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Typography</p>
                   <div className="space-y-2">
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Body Font</label>
-                      <select value={site.theme.fontFamily} onChange={e => updateSiteField('theme.fontFamily', e.target.value)}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-xs">
+                      <label htmlFor="employer-website-editor-body-font" className="text-[10px] text-gray-500 block mb-1">Body Font</label>
+                      <select id="employer-website-editor-body-font" value={site.theme.fontFamily} onChange={e => updateSiteField('theme.fontFamily', e.target.value)}
+                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Heading Font</label>
-                      <select value={site.theme.headingFont} onChange={e => updateSiteField('theme.headingFont', e.target.value)}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-xs">
+                      <label htmlFor="employer-website-editor-heading-font" className="text-[10px] text-gray-500 block mb-1">Heading Font</label>
+                      <select id="employer-website-editor-heading-font" value={site.theme.headingFont} onChange={e => updateSiteField('theme.headingFont', e.target.value)}
+                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         {FONT_OPTIONS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
                       </select>
                     </div>
@@ -320,16 +321,16 @@ export default function WebsiteEditorPage() {
                   <p className="text-[10px] font-semibold text-gray-500 uppercase mb-2">Style</p>
                   <div className="space-y-2">
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Border Radius</label>
-                      <select value={site.theme.borderRadius} onChange={e => updateSiteField('theme.borderRadius', e.target.value)}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-xs">
+                      <label htmlFor="employer-website-editor-border-radius" className="text-[10px] text-gray-500 block mb-1">Border Radius</label>
+                      <select id="employer-website-editor-border-radius" value={site.theme.borderRadius} onChange={e => updateSiteField('theme.borderRadius', e.target.value)}
+                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         <option value="none">None</option><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option><option value="full">Full</option>
                       </select>
                     </div>
                     <div>
-                      <label className="text-[10px] text-gray-500 block mb-1">Animation</label>
-                      <select value={site.theme.animation} onChange={e => updateSiteField('theme.animation', e.target.value)}
-                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-xs">
+                      <label htmlFor="employer-website-editor-animation" className="text-[10px] text-gray-500 block mb-1">Animation</label>
+                      <select id="employer-website-editor-animation" value={site.theme.animation} onChange={e => updateSiteField('theme.animation', e.target.value)}
+                        className="w-full px-2 py-2 border border-gray-200 rounded-lg text-base sm:text-xs">
                         <option value="none">None</option><option value="subtle">Subtle</option><option value="moderate">Moderate</option><option value="dynamic">Dynamic</option>
                       </select>
                     </div>
@@ -349,10 +350,10 @@ export default function WebsiteEditorPage() {
                   { key: 'coverImage', label: 'Cover Image URL', type: 'text' },
                 ].map(field => (
                   <div key={field.key}>
-                    <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">{field.label}</label>
-                    <input type={field.type} value={(site.branding as any)[field.key] || ''}
+                    <label htmlFor="employer-website-editor-field" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">{field.label}</label>
+                    <input id="employer-website-editor-field" type={field.type} value={(site.branding as any)[field.key] || ''}
                       onChange={e => updateSiteField(`branding.${field.key}`, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs text-gray-900 placeholder-gray-400" />
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs text-gray-900 placeholder-gray-400" />
                   </div>
                 ))}
               </div>
@@ -362,19 +363,19 @@ export default function WebsiteEditorPage() {
             {activeTab === 'seo' && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">SEO Title</label>
-                  <input type="text" value={site.seo.title} onChange={e => updateSiteField('seo.title', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+                  <label htmlFor="employer-website-editor-seo-title" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">SEO Title</label>
+                  <input id="employer-website-editor-seo-title" type="text" value={site.seo.title} onChange={e => updateSiteField('seo.title', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Meta Description</label>
-                  <textarea value={site.seo.description} onChange={e => updateSiteField('seo.description', e.target.value)}
-                    rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs resize-none" />
+                  <label htmlFor="employer-website-editor-meta-description" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Meta Description</label>
+                  <textarea id="employer-website-editor-meta-description" value={site.seo.description} onChange={e => updateSiteField('seo.description', e.target.value)}
+                    rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs resize-none" />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Keywords (comma-separated)</label>
-                  <input type="text" value={site.seo.keywords?.join(', ') || ''} onChange={e => updateSiteField('seo.keywords', e.target.value.split(',').map((k: string) => k.trim()).filter(Boolean))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+                  <label htmlFor="employer-website-editor-keywords-comma-separated" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Keywords (comma-separated)</label>
+                  <input id="employer-website-editor-keywords-comma-separated" type="text" value={site.seo.keywords?.join(', ') || ''} onChange={e => updateSiteField('seo.keywords', e.target.value.split(',').map((k: string) => k.trim()).filter(Boolean))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs" />
                 </div>
                 <div className="pt-3 border-t border-gray-100">
                   <div className="flex items-center justify-between">
@@ -382,10 +383,11 @@ export default function WebsiteEditorPage() {
                       <p className="text-xs font-semibold text-gray-900">Google Visibility</p>
                       <p className="text-[10px] text-gray-500">Allow search engines to index your site</p>
                     </div>
-                    <button onClick={() => updateSiteField('googleIndex', !site.googleIndex)}
-                      className={`w-11 h-6 rounded-full transition-all relative ${site.googleIndex ? 'bg-emerald-500' : 'bg-gray-300'}`}>
-                      <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all ${site.googleIndex ? 'left-[22px]' : 'left-0.5'}`} />
-                    </button>
+                    <Switch
+                      checked={site.googleIndex}
+                      onChange={(next) => updateSiteField('googleIndex', next)}
+                      label="Allow search engines to index your site"
+                    />
                   </div>
                 </div>
               </div>

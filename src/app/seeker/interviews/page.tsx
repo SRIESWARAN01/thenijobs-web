@@ -24,9 +24,9 @@ const tabs: WorkflowTab[] = [
 ];
 
 const statusConfig = {
-  scheduled: { label: 'Scheduled', color: 'bg-amber-100 text-amber-400 border-amber-200' },
-  completed: { label: 'Completed', color: 'bg-emerald-100 text-emerald-400 border-emerald-200' },
-  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-rose-400 border-red-200' } };
+  scheduled: { label: 'Scheduled', color: 'bg-amber-100 text-amber-600 border-amber-200' },
+  completed: { label: 'Completed', color: 'bg-emerald-100 text-emerald-600 border-emerald-200' },
+  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-rose-600 border-red-200' } };
 
 export default function SeekerInterviewsPage() {
   const { user } = useAuth();
@@ -41,8 +41,8 @@ export default function SeekerInterviewsPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 font-outfit text-gray-900">
-        <Loader2 size={36} className="text-emerald-400 animate-spin mb-4" />
-        <p className="text-sm text-gray-400">Loading interviews...</p>
+        <Loader2 size={36} className="text-emerald-600 animate-spin mb-4" />
+        <p className="text-sm text-slate-500">Loading interviews...</p>
       </div>
     );
   }

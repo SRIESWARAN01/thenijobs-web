@@ -2,14 +2,19 @@
 
 import { useState } from 'react';
 import {
-  TrendingUp, Search, ChevronDown, Phone, Mail,
-  Download, User, Building2, Wrench,
-  ArrowRight, Clock, CheckCircle, ChevronRight,
-  Loader2, MessageCircle, MapPin
+  Building2, CheckCircle, Clock, Loader2, MapPin, MessageCircle, Phone, TrendingUp, User, Wrench,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateLeadStatus } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
+import type { FirestoreTime } from '@/lib/firestoreTime';
+import {
+  Card, EmptyState, FilterSelect, PageHeader, PageShell, Pill, Stat, StatGrid, Toolbar,
+  type PillTone,
+} from '@/components/dashboard';
+
+type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
 
 interface LeadDoc {
   id: string;
@@ -21,25 +26,23 @@ interface LeadDoc {
   type: 'candidate' | 'business' | 'service';
   status: LeadStatus;
   assignedTo?: string;
-  createdAt?: any;
+  createdAt?: FirestoreTime;
   notes?: string;
   district?: string;
 }
 
-type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-
-const STATUS_CONFIG: Record<LeadStatus, { label: string; bg: string; text: string; dot: string }> = {
-  new:       { label: 'New Lead', bg: '#EFF6FF', text: '#2563EB', dot: '#2563EB' },
-  contacted: { label: 'Contacted', bg: '#F5F3FF', text: '#7C3AED', dot: '#7C3AED' },
-  qualified: { label: 'Qualified', bg: '#FFFBEB', text: '#D97706', dot: '#D97706' },
-  converted: { label: 'Converted', bg: '#ECFDF5', text: '#059669', dot: '#059669' },
-  lost:      { label: 'Lost', bg: '#FEF2F2', text: '#DC2626', dot: '#DC2626' },
+const STATUS_CONFIG: Record<LeadStatus, { label: string; tone: PillTone }> = {
+  new:       { label: 'New lead', tone: 'info' },
+  contacted: { label: 'Contacted', tone: 'violet' },
+  qualified: { label: 'Qualified', tone: 'warning' },
+  converted: { label: 'Converted', tone: 'success' },
+  lost:      { label: 'Lost', tone: 'danger' },
 };
 
-const TYPE_CONFIG: Record<string, { label: string; icon: typeof User; bg: string; text: string }> = {
-  candidate: { label: 'Candidate', icon: User, bg: '#EFF6FF', text: '#2563EB' },
-  business:  { label: 'Business', icon: Building2, bg: '#F5F3FF', text: '#7C3AED' },
-  service:   { label: 'Service', icon: Wrench, bg: '#FFFBEB', text: '#D97706' },
+const TYPE_CONFIG: Record<string, { label: string; icon: LucideIcon; tone: PillTone }> = {
+  candidate: { label: 'Candidate', icon: User, tone: 'info' },
+  business:  { label: 'Business', icon: Building2, tone: 'violet' },
+  service:   { label: 'Service', icon: Wrench, tone: 'warning' },
 };
 
 const PIPELINE_STAGES: { status: LeadStatus; label: string }[] = [
@@ -64,13 +67,13 @@ export default function LeadsPage() {
     const matchSearch = contactName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       company.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (lead.phone || '').includes(searchQuery);
-    
+
     const leadType = lead.type || 'candidate';
     const matchType = typeFilter === 'all' || leadType === typeFilter;
-    
+
     const leadStatus = lead.status || 'new';
     const matchStatus = statusFilter === 'all' || leadStatus === statusFilter;
-    
+
     return matchSearch && matchType && matchStatus;
   });
 
@@ -79,7 +82,7 @@ export default function LeadsPage() {
     try {
       await updateLeadStatus(leadId, newStatus);
       toast.success(`Lead moved to ${newStatus}`);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Update lead status error:', err);
       toast.error('Failed to update lead status');
     } finally {
@@ -93,185 +96,150 @@ export default function LeadsPage() {
   const qualifiedCount = leads.filter((l) => l.status === 'qualified').length;
   const convertedCount = leads.filter((l) => l.status === 'converted').length;
 
-  const stats = [
-    { label: 'Total Inquiries', value: totalCount, icon: TrendingUp, bg: '#EFF6FF', color: '#2563EB' },
-    { label: 'New Leads', value: newCount, icon: Clock, bg: '#EFF6FF', color: '#2563EB' },
-    { label: 'In Discussions', value: contactedCount, icon: Phone, bg: '#F5F3FF', color: '#7C3AED' },
-    { label: 'Qualified', value: qualifiedCount, icon: CheckCircle, bg: '#FFFBEB', color: '#D97706' },
-    { label: 'Onboarded', value: convertedCount, icon: TrendingUp, bg: '#ECFDF5', color: '#059669' },
-  ];
-
   return (
-    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900">Lead &amp; Marketplace Enquiries</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Track customer inquiries, supplier requests, and franchise onboarding leads</p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Leads & marketplace enquiries"
+        description="Customer enquiries, supplier requests and franchise onboarding leads."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Leads' }]}
+      />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.label} className="bg-white border border-gray-200 rounded-3xl p-4 sm:p-5 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs" style={{ background: stat.bg }}>
-                  <Icon size={18} style={{ color: stat.color }} />
-                </div>
-                <div>
-                  <p className="text-xl font-black text-gray-900">{stat.value}</p>
-                  <p className="text-xs text-gray-500 font-bold">{stat.label}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <StatGrid columns={5}>
+        <Stat label="Total enquiries" value={totalCount} icon={TrendingUp} tone="blue" loading={loading} />
+        <Stat label="New leads" value={newCount} icon={Clock} tone="blue" loading={loading} />
+        <Stat label="In discussion" value={contactedCount} icon={Phone} tone="violet" loading={loading} />
+        <Stat label="Qualified" value={qualifiedCount} icon={CheckCircle} tone="amber" loading={loading} />
+        <Stat label="Onboarded" value={convertedCount} icon={TrendingUp} tone="emerald" loading={loading} />
+      </StatGrid>
 
-      {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search leads by contact name, phone, or company..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
-          />
-        </div>
-        <div className="flex gap-2">
-          <select
-            value={typeFilter}
-            onChange={e => setTypeFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
-          >
-            <option value="all">All Types</option>
-            <option value="candidate">Candidate</option>
-            <option value="business">Business</option>
-            <option value="service">Service</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
-          >
-            <option value="all">All Status</option>
-            <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="qualified">Qualified</option>
-            <option value="converted">Converted</option>
-            <option value="lost">Lost</option>
-          </select>
-        </div>
-      </div>
+      <Toolbar
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search by contact, phone or company…"
+        filters={
+          <>
+            <FilterSelect
+              label="Lead type"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                { label: 'All types', value: 'all' },
+                { label: 'Candidate', value: 'candidate' },
+                { label: 'Business', value: 'business' },
+                { label: 'Service', value: 'service' },
+              ]}
+            />
+            <FilterSelect
+              label="Lead status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { label: 'All status', value: 'all' },
+                ...PIPELINE_STAGES.map(s => ({ label: s.label, value: s.status })),
+              ]}
+            />
+          </>
+        }
+      />
 
-      {/* Leads Content List */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 size={32} className="text-blue-600 animate-spin" />
-          <p className="text-xs text-gray-500 font-semibold">Loading inquiries...</p>
+        <div className="flex flex-col items-center justify-center gap-3 py-20">
+          <Loader2 size={30} className="animate-spin text-blue-600" />
+          <p className="text-xs font-semibold text-slate-500">Loading enquiries…</p>
         </div>
       ) : filteredLeads.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
-          <TrendingUp size={36} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-sm font-bold text-gray-700">No leads found</p>
-        </div>
+        <EmptyState
+          icon={TrendingUp}
+          title="No leads match this filter"
+          description="Clear the type or status filter to see every enquiry."
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredLeads.map((lead) => {
             const typeCfg = TYPE_CONFIG[lead.type || 'candidate'] || TYPE_CONFIG.candidate;
             const statusCfg = STATUS_CONFIG[lead.status || 'new'] || STATUS_CONFIG.new;
+            const TypeIcon = typeCfg.icon;
             const cleanPhone = (lead.phone || '').replace(/[^0-9+]/g, '');
             const cleanWa = cleanPhone.replace(/[^0-9]/g, '');
+            const busy = actionLoading === lead.id;
 
             return (
-              <div
-                key={lead.id}
-                className="bg-white rounded-3xl p-5 border border-gray-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-3.5"
-              >
+              <Card key={lead.id} className="flex flex-col justify-between gap-3.5 p-4 transition-shadow hover:shadow-md sm:p-5">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <span
-                      className="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
-                      style={{ background: typeCfg.bg, color: typeCfg.text }}
-                    >
-                      {typeCfg.label}
-                    </span>
-                    <span
-                      className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1"
-                      style={{ background: statusCfg.bg, color: statusCfg.text }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusCfg.dot }} />
-                      {statusCfg.label}
-                    </span>
+                    <Pill tone={typeCfg.tone}>
+                      <TypeIcon size={11} aria-hidden /> {typeCfg.label}
+                    </Pill>
+                    <Pill tone={statusCfg.tone} dot>{statusCfg.label}</Pill>
                   </div>
 
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900 leading-snug">{lead.contactName}</h3>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-bold leading-snug text-slate-900">{lead.contactName || 'Unnamed contact'}</h3>
                     {lead.company && (
-                      <p className="text-xs text-gray-600 flex items-center gap-1 mt-0.5 font-medium">
-                        <Building2 size={13} className="text-blue-600 shrink-0" /> {lead.company}
+                      <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-slate-600">
+                        <Building2 size={13} className="shrink-0 text-blue-600" aria-hidden /> {lead.company}
                       </p>
                     )}
                     {lead.district && (
-                      <p className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
-                        <MapPin size={11} /> {lead.district}
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                        <MapPin size={11} aria-hidden /> {lead.district}
                       </p>
                     )}
                   </div>
 
                   {lead.notes && (
-                    <p className="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-2xl border border-gray-100 leading-relaxed line-clamp-3">
+                    <p className="line-clamp-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs leading-relaxed text-slate-600">
                       {lead.notes}
                     </p>
                   )}
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-gray-100">
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {cleanPhone ? (
+                <div className="space-y-2 border-t border-slate-100 pt-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {cleanPhone && (
                       <a
                         href={`tel:${cleanPhone}`}
-                        className="py-2 px-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-indigo-200"
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-[#EFF6FF] text-xs font-semibold text-[#1E40AF] transition-colors hover:bg-blue-100"
                       >
-                        <Phone size={13} /> Call
+                        <Phone size={13} aria-hidden /> Call
                       </a>
-                    ) : null}
-
-                    {cleanWa ? (
+                    )}
+                    {cleanWa && (
                       <a
                         href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${lead.contactName}, this is THENIJOBS regarding your inquiry.`)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="py-2 px-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl text-xs font-semibold text-white shadow-sm"
                         style={{ background: '#25D366' }}
                       >
-                        <MessageCircle size={13} /> WhatsApp
+                        <MessageCircle size={13} aria-hidden /> WhatsApp
                       </a>
-                    ) : null}
+                    )}
                   </div>
 
-                  {/* Move stage dropdown */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-gray-400">Move:</span>
+                  <div className="flex items-center gap-2">
+                    <label htmlFor={`stage-${lead.id}`} className="shrink-0 text-xs font-semibold text-slate-500">
+                      Stage
+                    </label>
                     <select
+                      id={`stage-${lead.id}`}
                       value={lead.status || 'new'}
+                      disabled={busy}
                       onChange={e => handleStatusChange(lead.id, e.target.value as LeadStatus)}
-                      className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-2 py-1 text-xs font-bold text-gray-800 outline-none"
+                      className="h-10 flex-1 rounded-xl border border-slate-300 bg-white px-2.5 text-base sm:text-sm font-medium text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
                     >
                       {PIPELINE_STAGES.map(s => (
                         <option key={s.status} value={s.status}>{s.label}</option>
                       ))}
                     </select>
+                    {busy && <Loader2 size={14} className="shrink-0 animate-spin text-blue-600" aria-label="Saving" />}
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

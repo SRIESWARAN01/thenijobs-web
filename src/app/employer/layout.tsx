@@ -90,7 +90,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
                 <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</p>
                 <p className="text-[10px] text-blue-600 font-semibold">Employer Portal</p>
               </div>
-              <button onClick={() => setMobileOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-600">
+              <button onClick={() => setMobileOpen(false)} className="lg:hidden text-slate-500 hover:text-gray-600">
                 <X size={16} />
               </button>
             </>
@@ -149,7 +149,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
                 style={{ background: '#EFF6FF' }}>{initials}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-gray-900 truncate">{user.displayName || user.email?.split('@')[0]}</p>
-                <p className="text-[10px] text-gray-400 truncate">Employer</p>
+                <p className="text-[10px] text-slate-500 truncate">Employer</p>
               </div>
             </div>
           )}
@@ -160,7 +160,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
               {!collapsed && 'Sign Out'}
             </button>
             <button onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-all">
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl border border-gray-200 text-slate-500 hover:text-gray-600 hover:border-gray-300 transition-all">
               {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
             </button>
           </div>
@@ -168,7 +168,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* Main */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${collapsed ? 'lg:ml-[68px]' : 'lg:ml-[240px]'}`}>
+      <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? 'lg:ml-[68px]' : 'lg:ml-[240px]'}`}>
         {/* Top bar */}
         <header className="sticky top-0 z-30 h-14 bg-white border-b border-gray-100 flex items-center px-4 gap-3">
           <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-600">
@@ -189,7 +189,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import { useCollection } from '@/hooks/useFirestore';
 import { where, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { INDUSTRY_THEMES, type IndustryTemplateKey } from '@/components/company/CompanyLandingWebsite';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 
 export default function EmployerWebsitePage() {
   const { user } = useAuth();
@@ -144,27 +145,20 @@ export default function EmployerWebsitePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans text-slate-900" style={{ fontFamily: "'Inter', sans-serif" }}>
-      
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Two-Layer Company Website Manager
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Your business is published across two distinct experiences: a high-speed Directory Profile and a standalone Landing Website.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={runAIAssistant}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
-        >
-          <Bot size={15} /> AI Content Generator
-        </button>
-      </div>
+    <PageShell className="max-w-6xl pb-16">
+      <PageHeader
+        title="Two-layer company website manager"
+        description="Your business is published across two distinct experiences: a high-speed directory profile and a standalone landing website."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Website' }]}
+        actions={
+          <Button
+            onClick={runAIAssistant}
+            className="border-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+          >
+            <Bot size={15} /> AI content generator
+          </Button>
+        }
+      />
 
       {/* ── Verification Notice ── */}
       {!isVerified && (
@@ -190,7 +184,7 @@ export default function EmployerWebsitePage() {
                 <Building2 size={18} />
               </div>
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Layer 1</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">Layer 1</span>
                 <h2 className="text-base font-bold text-slate-900">Standard Directory Profile</h2>
               </div>
             </div>
@@ -348,7 +342,7 @@ export default function EmployerWebsitePage() {
               <button
                 type="button"
                 onClick={() => setAiModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100"
               >
                 ✕
               </button>
@@ -371,31 +365,31 @@ export default function EmployerWebsitePage() {
               <div className="space-y-4 text-xs max-h-96 overflow-y-auto pr-1">
                 {/* About Story */}
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Company Story &amp; About Us</label>
-                  <textarea
+                  <label htmlFor="employer-website-company-story-and-about-us" className="font-bold text-slate-700 block mb-1">Company Story &amp; About Us</label>
+                  <textarea id="employer-website-company-story-and-about-us"
                     rows={3}
                     value={aiGeneratedStory}
                     onChange={e => setAiGeneratedStory(e.target.value)}
-                    className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                    className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs text-slate-900"
                   />
                 </div>
 
                 {/* SEO Metadata */}
                 <div className="space-y-2">
-                  <label className="font-bold text-slate-700 block">Dynamic Local SEO Title &amp; Description</label>
-                  <input
+                  <label htmlFor="employer-website-dynamic-local-seo-title-and-description" className="font-bold text-slate-700 block">Dynamic Local SEO Title &amp; Description</label>
+                  <input id="employer-website-dynamic-local-seo-title-and-description"
                     type="text"
                     value={aiGeneratedSeo.title}
                     onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, title: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs text-slate-900"
                     placeholder="SEO Title"
                   />
                   <textarea
                     rows={2}
                     value={aiGeneratedSeo.desc}
                     onChange={e => setAiGeneratedSeo({ ...aiGeneratedSeo, desc: e.target.value })}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900"
-                    placeholder="Meta Description"
+                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs text-slate-900"
+                    aria-label="Meta Description" placeholder="Meta Description"
                   />
                 </div>
 
@@ -433,6 +427,6 @@ export default function EmployerWebsitePage() {
         </div>
       )}
 
-    </div>
+    </PageShell>
   );
 }

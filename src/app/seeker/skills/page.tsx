@@ -90,9 +90,9 @@ const paths: WorkflowItem[] = [
 ];
 
 const statusConfig = {
-  recommended: { label: 'Recommended', color: 'bg-emerald-100 text-emerald-400 border-emerald-200' },
-  in_progress: { label: 'In Progress', color: 'bg-amber-100 text-amber-400 border-amber-200' },
-  completed: { label: 'Completed', color: 'bg-violet-500/10 text-violet-400 border-violet-200' },
+  recommended: { label: 'Recommended', color: 'bg-emerald-100 text-emerald-600 border-emerald-200' },
+  in_progress: { label: 'In Progress', color: 'bg-amber-100 text-amber-600 border-amber-200' },
+  completed: { label: 'Completed', color: 'bg-violet-500/10 text-violet-600 border-violet-200' },
 };
 
 export default function SkillsPage() {

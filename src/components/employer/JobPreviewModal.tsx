@@ -96,21 +96,21 @@ export default function JobPreviewModal({ isOpen, onClose, job, companyData }: J
           <div className="flex flex-wrap gap-3 mt-4">
             {job.district && (
               <span className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
-                <MapPin size={13} className="text-gray-400" /> {job.district}
+                <MapPin size={13} className="text-slate-500" /> {job.district}
               </span>
             )}
             <span className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
-              <Banknote size={13} className="text-gray-400" /> {salary}
+              <Banknote size={13} className="text-slate-500" /> {salary}
             </span>
             <span className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
-              <Clock size={13} className="text-gray-400" /> {job.jobType || 'Full Time'}
+              <Clock size={13} className="text-slate-500" /> {job.jobType || 'Full Time'}
             </span>
             <span className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
-              <Calendar size={13} className="text-gray-400" /> Posted Today
+              <Calendar size={13} className="text-slate-500" /> Posted Today
             </span>
             {job.openings && (
               <span className="flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2.5 py-1.5 rounded-lg">
-                <Users size={13} className="text-gray-400" /> {job.openings} Openings
+                <Users size={13} className="text-slate-500" /> {job.openings} Openings
               </span>
             )}
           </div>
@@ -173,7 +173,7 @@ export default function JobPreviewModal({ isOpen, onClose, job, companyData }: J
             {job.education && (
               <div className="bg-gray-50 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <GraduationCap size={14} className="text-gray-400" />
+                  <GraduationCap size={14} className="text-slate-500" />
                   <span className="text-[10px] font-semibold text-gray-500 uppercase">Education</span>
                 </div>
                 <p className="text-sm font-medium text-gray-800">{job.education}</p>
@@ -182,7 +182,7 @@ export default function JobPreviewModal({ isOpen, onClose, job, companyData }: J
             {job.experience && (
               <div className="bg-gray-50 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Briefcase size={14} className="text-gray-400" />
+                  <Briefcase size={14} className="text-slate-500" />
                   <span className="text-[10px] font-semibold text-gray-500 uppercase">Experience</span>
                 </div>
                 <p className="text-sm font-medium text-gray-800">{job.experience}</p>

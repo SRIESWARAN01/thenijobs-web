@@ -147,62 +147,62 @@ export default function CompanyPortfolioManager({
             <h4 className="text-sm font-bold text-slate-900">
               {editingId ? 'Edit Project' : 'Add New Portfolio Project'}
             </h4>
-            <button onClick={resetForm} className="text-slate-400 hover:text-slate-600">
+            <button onClick={resetForm} className="text-slate-500 hover:text-slate-600">
               <X size={16} />
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Project Title *</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-project-title" className="text-xs font-semibold text-slate-700 block mb-1">Project Title *</label>
+              <input id="company-companyportfoliomanager-project-title"
                 type="text"
                 value={form.title || ''}
                 onChange={e => setForm({ ...form, title: e.target.value })}
                 placeholder="Project title"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Category</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-category" className="text-xs font-semibold text-slate-700 block mb-1">Category</label>
+              <input id="company-companyportfoliomanager-category"
                 type="text"
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
                 placeholder="Category"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Location</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-location" className="text-xs font-semibold text-slate-700 block mb-1">Location</label>
+              <input id="company-companyportfoliomanager-location"
                 type="text"
                 value={form.location || ''}
                 onChange={e => setForm({ ...form, location: e.target.value })}
                 placeholder="Location"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Image URL</label>
-              <input
+              <label htmlFor="company-companyportfoliomanager-image-url" className="text-xs font-semibold text-slate-700 block mb-1">Image URL</label>
+              <input id="company-companyportfoliomanager-image-url"
                 type="url"
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
                 placeholder="https://..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Project Summary</label>
-            <textarea
+            <label htmlFor="company-companyportfoliomanager-project-summary" className="text-xs font-semibold text-slate-700 block mb-1">Project Summary</label>
+            <textarea id="company-companyportfoliomanager-project-summary"
               rows={3}
               value={form.description || ''}
               onChange={e => setForm({ ...form, description: e.target.value })}
               placeholder="Describe project highlights, scope, and key outcomes..."
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -228,7 +228,7 @@ export default function CompanyPortfolioManager({
 
       {/* Projects List Grid */}
       {portfolioProjects.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-500">
           <FolderGit2 size={32} className="mx-auto mb-2 text-slate-300" />
           No portfolio projects added yet. Click &quot;Add Project&quot; to highlight past achievements.
         </div>
@@ -254,7 +254,7 @@ export default function CompanyPortfolioManager({
               <div>
                 <h4 className="text-sm font-bold text-slate-900 line-clamp-1">{p.title}</h4>
                 {p.location && (
-                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                     <MapPin size={11} /> {p.location}
                   </p>
                 )}
@@ -262,10 +262,10 @@ export default function CompanyPortfolioManager({
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button onClick={() => handleEdit(p)} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
+                <button onClick={() => handleEdit(p)} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50">
                   <Edit3 size={14} />
                 </button>
-                <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
+                <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50">
                   <Trash2 size={14} />
                 </button>
               </div>

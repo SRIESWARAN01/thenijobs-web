@@ -68,7 +68,7 @@ export default function AICareerCoachModal({ isOpen, onClose }: { isOpen: boolea
             </div>
             <div>
               <h3 className="font-bold text-sm flex items-center gap-1.5 font-sans">
-                THENIJOBS AI Assistant <Sparkles size={14} className="text-amber-400 fill-amber-400" />
+                THENIJOBS AI Assistant <Sparkles size={14} className="text-amber-600 fill-amber-400" />
               </h3>
               <p className="text-[11px] text-blue-100">Powered by Groq AI Engine</p>
             </div>
@@ -112,8 +112,8 @@ export default function AICareerCoachModal({ isOpen, onClose }: { isOpen: boolea
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder="Ask about jobs, career advice, or interview tips..."
-            className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
+            aria-label="Ask about jobs, career advice, or interview tips" placeholder="Ask about jobs, career advice, or interview tips..."
+            className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-base sm:text-xs text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
           />
           <button
             onClick={handleSend}

@@ -1108,48 +1108,48 @@ export default function CompanyLandingWebsite({
               ) : (
                 <form onSubmit={handleLeadSubmit} className="space-y-3.5 bg-slate-50 p-6 sm:p-8 rounded-3xl border border-slate-200">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Your Full Name *</label>
-                    <input
+                    <label htmlFor="company-companylandingwebsite-your-full-name" className="text-xs font-bold text-slate-700 block mb-1">Your Full Name *</label>
+                    <input id="company-companylandingwebsite-your-full-name"
                       type="text"
                       required
                       placeholder="e.g. Saravanan K"
                       value={leadForm.name}
                       onChange={e => setLeadForm({ ...leadForm, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Mobile Number (WhatsApp) *</label>
-                    <input
+                    <label htmlFor="company-companylandingwebsite-mobile-number-whatsapp" className="text-xs font-bold text-slate-700 block mb-1">Mobile Number (WhatsApp) *</label>
+                    <input id="company-companylandingwebsite-mobile-number-whatsapp"
                       type="tel"
                       required
                       placeholder="e.g. 9876543210"
                       value={leadForm.phone}
                       onChange={e => setLeadForm({ ...leadForm, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Product / Service Interest</label>
-                    <input
+                    <label htmlFor="company-companylandingwebsite-product-service-interest" className="text-xs font-bold text-slate-700 block mb-1">Product / Service Interest</label>
+                    <input id="company-companylandingwebsite-product-service-interest"
                       type="text"
                       placeholder="e.g. Order, Consultation, Service Booking, Careers"
                       value={leadForm.service}
                       onChange={e => setLeadForm({ ...leadForm, service: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-slate-700 block mb-1">Message</label>
-                    <textarea
+                    <label htmlFor="company-companylandingwebsite-message" className="text-xs font-bold text-slate-700 block mb-1">Message</label>
+                    <textarea id="company-companylandingwebsite-message"
                       rows={3}
                       placeholder="Describe your requirements..."
                       value={leadForm.message}
                       onChange={e => setLeadForm({ ...leadForm, message: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600"
                     />
                   </div>
 

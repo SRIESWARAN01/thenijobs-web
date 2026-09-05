@@ -4,9 +4,9 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Briefcase, Eye, Users2, Star, Mic, CheckCircle2, XCircle,
+  Briefcase, Eye, Users2, Star, Mic, CheckCircle2, XCircle,
   Pause, Play, X as XIcon, RotateCcw, Copy, Trash2, Archive, Share2,
-  MoreVertical, Loader2, MapPin, Banknote, Clock, Calendar, FileText,
+  Loader2, MapPin, Banknote, Clock, Calendar, FileText,
   Zap, Phone, Video, History, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +18,10 @@ import JobShareModal from '@/components/employer/JobShareModal';
 import JobPreviewModal from '@/components/employer/JobPreviewModal';
 import JobPerformanceDashboard from '@/components/employer/JobPerformanceDashboard';
 import JobQuickUpdateModals from '@/components/employer/JobQuickUpdateModals';
+import {
+  ActionMenu, Button, PageHeader, PageShell, Pill, Stat, StatGrid, Tabs,
+  type ActionItem,
+} from '@/components/dashboard';
 
 type JobStatus = 'active' | 'pending' | 'rejected' | 'paused' | 'draft' | 'closed' | 'expired';
 type TabId = 'overview' | 'applications' | 'performance' | 'history';
@@ -69,7 +73,6 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [quickModal, setQuickModal] = useState<QuickModal>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [showMenu, setShowMenu] = useState(false);
 
   const jobStatus = job ? resolveStatus(job) : 'draft';
   const statusStyle = STATUS_STYLES[jobStatus];
@@ -95,7 +98,6 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   // Actions
   const handleStatusChange = async (newStatus: JobStatus) => {
     setActionLoading(newStatus);
-    setShowMenu(false);
     try {
       // RULES-1 (D-JOBSTATE): a poster cannot self-activate; "resume" re-submits for admin review.
       const status: JobStatus = newStatus === 'active' ? 'pending' : newStatus;
@@ -110,7 +112,6 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   const handleDuplicate = async () => {
     if (!job) return;
     setActionLoading('duplicate');
-    setShowMenu(false);
     try {
       const { id: _id, createdAt: _ca, viewCount: _vc, applicationsCount: _ac, status: _s, isActive: _ia, ...rest } = job;
       const newId = await createDocument('jobs', {
@@ -130,7 +131,6 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
 
   const handleArchive = async () => {
     setActionLoading('archive');
-    setShowMenu(false);
     try {
       await updateDocument('jobs', jobId, { status: 'closed', isActive: false, archived: true, updatedAt: new Date() });
       router.push('/employer/jobs');
@@ -164,7 +164,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   if (!job) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <Briefcase size={32} className="text-gray-300 mb-3" />
+        <Briefcase size={32} className="text-slate-500 mb-3" />
         <h2 className="text-lg font-bold text-gray-900">Job Not Found</h2>
         <p className="text-sm text-gray-500 mt-1 mb-4">This job posting may have been deleted.</p>
         <Link href="/employer/jobs" className="text-sm font-semibold text-blue-600 hover:text-blue-800">← Back to Jobs</Link>
@@ -189,132 +189,66 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
     { label: 'Update Interview', icon: Video, modal: 'interview' as QuickModal, color: '#E11D48' },
   ];
 
+  const menuItems: ActionItem[] = [
+    { label: 'Share job', icon: Share2, onClick: () => setShowShareModal(true) },
+    { label: 'Preview', icon: Eye, onClick: () => setShowPreviewModal(true) },
+  ];
+  if (jobStatus !== 'closed') {
+    menuItems.push({ label: 'Close job', icon: XIcon, separatorBefore: true, onClick: () => handleStatusChange('closed') });
+  }
+  if (jobStatus === 'expired') {
+    menuItems.push({ label: 'Extend deadline', icon: RotateCcw, onClick: handleExtend });
+  }
+  menuItems.push({ label: 'Duplicate job', icon: Copy, onClick: handleDuplicate });
+  menuItems.push({ label: 'Archive', icon: Archive, onClick: handleArchive });
+  menuItems.push({ label: 'Delete', icon: Trash2, tone: 'danger', separatorBefore: true, onClick: handleDelete });
+
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Back + Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <Link href="/employer/jobs" className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all mt-0.5">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              {job.title}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold" style={{ background: statusStyle.bg, color: statusStyle.text }}>
-                ● {statusStyle.label}
-              </span>
-              <span className="text-xs text-gray-500">{job.district || 'Theni'} · {salary}</span>
-              <span className="text-xs text-gray-400">{job.jobType || 'Full Time'}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button onClick={() => setShowShareModal(true)}
-            className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all" title="Share">
-            <Share2 size={16} />
-          </button>
-          <button onClick={() => setShowPreviewModal(true)}
-            className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200 transition-all" title="Preview">
-            <Eye size={16} />
-          </button>
-
-          {/* Status toggle */}
-          {(jobStatus === 'active' || jobStatus === 'paused') && (
-            <button
-              onClick={() => handleStatusChange(jobStatus === 'active' ? 'paused' : 'active')}
-              disabled={!!actionLoading}
-              className={`p-2 rounded-xl border transition-all ${
-                jobStatus === 'active'
-                  ? 'border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100'
-                  : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-              }`}
-              title={jobStatus === 'active' ? 'Pause' : 'Resume (re-submits for admin approval)'}
-            >
-              {actionLoading === 'paused' || actionLoading === 'active'
-                ? <Loader2 size={16} className="animate-spin" />
-                : jobStatus === 'active' ? <Pause size={16} /> : <Play size={16} />}
-            </button>
-          )}
-
-          {/* More menu */}
-          <div className="relative">
-            <button onClick={() => setShowMenu(!showMenu)}
-              className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
-              <MoreVertical size={16} />
-            </button>
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-10 w-52 bg-white border border-gray-100 rounded-xl shadow-xl z-50 overflow-hidden py-1">
-                  {jobStatus !== 'closed' && (
-                    <button onClick={() => handleStatusChange('closed')}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                      <XIcon size={14} /> Close Job
-                    </button>
-                  )}
-                  {jobStatus === 'expired' && (
-                    <button onClick={handleExtend}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                      <RotateCcw size={14} /> Extend Deadline
-                    </button>
-                  )}
-                  <button onClick={handleDuplicate} disabled={!!actionLoading}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                    {actionLoading === 'duplicate' ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />} Duplicate Job
-                  </button>
-                  <button onClick={handleArchive}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                    <Archive size={14} /> Archive
-                  </button>
-                  <div className="border-t border-gray-50 mt-1">
-                    <button onClick={handleDelete}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50">
-                      <Trash2 size={14} /> Delete
-                    </button>
-                  </div>
-                </div>
-              </>
+    <PageShell className="max-w-5xl">
+      <PageHeader
+        title={job.title}
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Jobs', href: '/employer/jobs' }, { label: job.title }]}
+        actions={
+          <>
+            {(jobStatus === 'active' || jobStatus === 'paused') && (
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={() => handleStatusChange(jobStatus === 'active' ? 'paused' : 'active')}
+                disabled={!!actionLoading}
+                title={jobStatus === 'active' ? 'Pause' : 'Resume (re-submits for admin approval)'}
+                className={
+                  jobStatus === 'active'
+                    ? 'border-amber-200 bg-amber-50 text-amber-600 hover:bg-amber-100'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                }
+              >
+                {actionLoading === 'paused' || actionLoading === 'active'
+                  ? <Loader2 size={16} className="animate-spin" />
+                  : jobStatus === 'active' ? <Pause size={16} /> : <Play size={16} />}
+              </Button>
             )}
-          </div>
-        </div>
+            <ActionMenu label={`Actions for ${job.title}`} items={menuItems} />
+          </>
+        }
+      />
+
+      <div className="-mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-600 sm:-mt-4">
+        <Pill tone="neutral">{statusStyle.label}</Pill>
+        <span>{job.district || 'Theni'} · {salary}</span>
+        <span>{job.jobType || 'Full Time'}</span>
       </div>
 
-      {/* KPI Summary Row */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        {[
-          { label: 'Views', value: perfData.views, icon: Eye, color: '#2563EB', bg: '#EFF6FF' },
-          { label: 'Applied', value: perfData.applications, icon: FileText, color: '#7C3AED', bg: '#F5F3FF' },
-          { label: 'Shortlisted', value: perfData.shortlisted, icon: Star, color: '#059669', bg: '#ECFDF5' },
-          { label: 'Interview', value: perfData.interview, icon: Mic, color: '#0891B2', bg: '#ECFEFF' },
-          { label: 'Selected', value: perfData.selected, icon: CheckCircle2, color: '#16A34A', bg: '#F0FDF4' },
-          { label: 'Rejected', value: perfData.rejected, icon: XCircle, color: '#DC2626', bg: '#FEF2F2' },
-        ].map(s => {
-          const Icon = s.icon;
-          return (
-            <div key={s.label} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm text-center">
-              <Icon size={14} style={{ color: s.color }} className="mx-auto mb-1" />
-              <p className="text-lg font-bold text-gray-900">{s.value}</p>
-              <p className="text-[9px] text-gray-500 font-medium">{s.label}</p>
-            </div>
-          );
-        })}
-      </div>
+      <StatGrid columns={6}>
+        <Stat label="Views" value={perfData.views} icon={Eye} tone="blue" />
+        <Stat label="Applied" value={perfData.applications} icon={FileText} tone="violet" />
+        <Stat label="Shortlisted" value={perfData.shortlisted} icon={Star} tone="emerald" />
+        <Stat label="Interview" value={perfData.interview} icon={Mic} tone="blue" />
+        <Stat label="Selected" value={perfData.selected} icon={CheckCircle2} tone="emerald" />
+        <Stat label="Rejected" value={perfData.rejected} icon={XCircle} tone="rose" />
+      </StatGrid>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-gray-100 overflow-x-auto no-scrollbar">
-        {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-              activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'
-            }`}>
-            {tab.label}{tab.count !== undefined ? ` (${tab.count})` : ''}
-          </button>
-        ))}
-      </div>
+      <Tabs label="Job detail sections" value={activeTab} onChange={(id) => setActiveTab(id as TabId)} tabs={TABS} />
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
@@ -352,7 +286,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
                 return (
                   <div key={item.label} className="bg-gray-50 rounded-xl p-3">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <Icon size={12} className="text-gray-400" />
+                      <Icon size={12} className="text-slate-500" />
                       <span className="text-[10px] font-semibold text-gray-500 uppercase">{item.label}</span>
                     </div>
                     <p className="text-sm font-medium text-gray-800">{item.value}</p>
@@ -410,9 +344,9 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
             </div>
           ) : applications.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-              <Users2 size={28} className="mx-auto text-gray-300 mb-2" />
+              <Users2 size={28} className="mx-auto text-slate-500 mb-2" />
               <p className="text-sm font-medium text-gray-500">No applications yet</p>
-              <p className="text-xs text-gray-400 mt-1">Applications will appear here once candidates apply</p>
+              <p className="text-xs text-slate-500 mt-1">Applications will appear here once candidates apply</p>
             </div>
           ) : (
             <>
@@ -447,7 +381,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
                     }`}>
                       {(app.status || 'applied').replace('_', ' ')}
                     </span>
-                    <ChevronRight size={14} className="text-gray-300" />
+                    <ChevronRight size={14} className="text-slate-500" />
                   </div>
                 </div>
               ))}
@@ -468,10 +402,10 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
       {/* History Tab */}
       {activeTab === 'history' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-          <History size={28} className="mx-auto text-gray-300 mb-2" />
+          <History size={28} className="mx-auto text-slate-500 mb-2" />
           <p className="text-sm font-medium text-gray-500">Change History</p>
-          <p className="text-xs text-gray-400 mt-1">All job updates and changes will be logged here</p>
-          <p className="text-xs text-gray-400 mt-0.5">Created: {job.createdAt ? new Date(job.createdAt?.toMillis?.() || job.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown'}</p>
+          <p className="text-xs text-slate-500 mt-1">All job updates and changes will be logged here</p>
+          <p className="text-xs text-slate-500 mt-0.5">Created: {job.createdAt ? new Date(job.createdAt?.toMillis?.() || job.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown'}</p>
         </div>
       )}
 
@@ -531,10 +465,7 @@ export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
           meetingLink: job.meetingLink,
         }}
       />
-
-      {/* Click outside to close menu */}
-      {showMenu && <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)} />}
-    </div>
+    </PageShell>
   );
 }
 

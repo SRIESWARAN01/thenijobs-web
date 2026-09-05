@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Star, Award, Zap, Loader2, Crown, CheckCircle2 } from 'lucide-react';
+import { Button, Card, PageHeader, PageShell, Pill } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
@@ -21,7 +22,7 @@ export default function SeekerSubscriptionPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // Fetch seekerProfile to see if they have any active subscription
-  const { data: profile, loading } = useDocument<any>('seekerProfiles', uid);
+  const { data: profile, loading } = useDocument<{ isPremium?: boolean }>('seekerProfiles', uid);
 
   const isPremium = profile?.isPremium === true;
 
@@ -36,34 +37,34 @@ export default function SeekerSubscriptionPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 font-sans">
-        <Loader2 size={36} className="text-blue-600 animate-spin mb-4" />
-        <p className="text-xs text-gray-500 font-medium">Loading plan details...</p>
-      </div>
+      <PageShell className="max-w-4xl">
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 size={36} className="mb-4 animate-spin text-blue-600" />
+          <p className="text-xs font-medium text-slate-500">Loading plan details…</p>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto font-sans text-gray-900 animate-in fade-in">
-      {/* Header */}
-      <div className="text-center max-w-xl mx-auto py-4">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-3 border border-blue-100">
-          <Zap size={13} className="text-blue-600" /> Accelerate Your Career in Theni
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-          Choose Your Candidate Plan
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">
-          Accelerate your job search and stand out to 500+ verified employers in Theni &amp; Tamil Nadu
-        </p>
-      </div>
+    <PageShell className="max-w-4xl">
+      <PageHeader
+        title="Choose your candidate plan"
+        description="Accelerate your job search and stand out to 500+ verified employers in Theni & Tamil Nadu."
+        breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'Subscription' }]}
+        actions={
+          <Pill tone="info">
+            <Zap size={12} /> Accelerate your career in Theni
+          </Pill>
+        }
+      />
 
       <div className="grid md:grid-cols-2 gap-6 items-stretch">
         {/* Free Plan */}
-        <div className="bg-white rounded-3xl p-6 flex flex-col justify-between border border-gray-200 shadow-sm">
+        <Card className="flex flex-col justify-between p-6">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Basic Tier</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Basic Tier</span>
               {!isPremium && (
                 <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold uppercase">
                   Active
@@ -92,16 +93,13 @@ export default function SeekerSubscriptionPage() {
               </div>
             </div>
           </div>
-          <button
-            disabled
-            className="w-full mt-8 py-3 rounded-xl bg-gray-100 border border-gray-200 text-xs font-bold text-gray-400 cursor-default"
-          >
-            {isPremium ? 'Standard Free Plan' : 'Current Active Plan'}
-          </button>
-        </div>
+          <Button variant="subtle" disabled block className="mt-8 cursor-default disabled:opacity-100">
+            {isPremium ? 'Standard free plan' : 'Current active plan'}
+          </Button>
+        </Card>
 
         {/* Premium Plan */}
-        <div className="bg-white rounded-3xl p-6 flex flex-col justify-between border-2 border-blue-500 shadow-md relative overflow-hidden ring-4 ring-blue-50">
+        <Card className="relative flex flex-col justify-between overflow-hidden border-2 border-blue-500 p-6 shadow-md ring-4 ring-blue-50">
           <div className="absolute top-4 right-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
             Recommended
           </div>
@@ -132,16 +130,19 @@ export default function SeekerSubscriptionPage() {
               ))}
             </div>
           </div>
-          
-          <button
+
+          <Button
+            variant="primary"
+            size="lg"
+            block
             onClick={() => setIsCheckoutOpen(true)}
             disabled={isPremium}
-            className="w-full mt-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs hover:opacity-95 transition-all flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50"
+            className="mt-8 border-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95"
           >
-            <Star size={14} className="fill-current" />
-            {isPremium ? 'Plan Active' : 'Upgrade to Pro — ₹199'}
-          </button>
-        </div>
+            <Star size={14} className="fill-current" aria-hidden />
+            {isPremium ? 'Plan active' : 'Upgrade to Pro — ₹199'}
+          </Button>
+        </Card>
       </div>
 
       {/* Trust Badges */}
@@ -153,15 +154,15 @@ export default function SeekerSubscriptionPage() {
         ].map((item, idx) => {
           const Icon = item.icon;
           return (
-            <div key={idx} className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-gray-200 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Icon size={18} />
-              </div>
-              <div>
-                <h3 className="text-xs font-bold text-gray-900">{item.title}</h3>
-                <p className="text-[11px] text-gray-500 mt-0.5">{item.desc}</p>
-              </div>
-            </div>
+            <Card key={idx} className="flex items-center gap-3 p-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EFF6FF] text-blue-600">
+                <Icon size={18} aria-hidden />
+              </span>
+              <span>
+                <h3 className="text-xs font-bold text-slate-900">{item.title}</h3>
+                <p className="mt-0.5 text-[11px] text-slate-500">{item.desc}</p>
+              </span>
+            </Card>
           );
         })}
       </div>
@@ -172,6 +173,6 @@ export default function SeekerSubscriptionPage() {
         onClose={() => setIsCheckoutOpen(false)}
         plan={seekerPlan}
       />
-    </div>
+    </PageShell>
   );
 }

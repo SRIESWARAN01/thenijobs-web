@@ -43,3 +43,6 @@ extract-git.js
 # Claude Code local settings & worktrees (the skill itself is tracked under .claude/skills/)
 .claude/settings.local.json
 .claude/worktrees/
+
+# Local-only UI preview route — must never reach the static export.
+src/app/uiux-preview/

@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Mail, Shield } from 'lucide-react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
+import { Button, Card } from '@/components/dashboard';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function AdminLoginPage() {
     try {
       // 1. Sign in via Firebase Auth
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      
+
       // 2. Fetch role from Firestore
       const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
       if (userDoc.exists()) {
@@ -34,13 +35,14 @@ export default function AdminLoginPage() {
           return;
         }
       }
-      
+
       // Not an admin → log out and show error
       await auth.signOut();
       setError('Access Denied. You do not have administrative permissions.');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Admin login error:', err);
-      if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      const code = (err as { code?: string })?.code;
+      if (code === 'auth/wrong-password' || code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
         setError('Invalid credentials. Please check your email and password.');
       } else {
         setError('Authentication failed. Please verify your connection and try again.');
@@ -51,86 +53,96 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 blob-bg grid-pattern">
-      <div className="w-full max-w-sm animate-fade-in-up">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8 select-none">
-          <Link href="/" className="flex flex-col items-center mb-2">
-            <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 p-1.5 flex items-center justify-center shrink-0 shadow-md mb-3">
-              <img src="/logo.png" alt="THENIJOBS" className="w-full h-full object-contain" />
+    <div className="flex min-h-screen items-center justify-center bg-white px-4 py-10">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex select-none flex-col items-center">
+          <Link href="/" className="mb-2 flex flex-col items-center">
+            <div className="mb-3 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-1.5 shadow-md">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="THENIJOBS" className="h-full w-full object-contain" />
             </div>
-            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS Admin</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              THENIJOBS Admin
+            </h1>
           </Link>
-          <p className="text-xs text-gray-500 font-medium">Secure Administrative Access</p>
+          <p className="text-xs font-medium text-slate-500">Secure administrative access</p>
         </div>
 
-        <div className="bg-white rounded-3xl p-7 shadow-xl border border-slate-200">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 mb-6">
-            <Shield size={14} className="text-blue-600 shrink-0" />
-            <p className="text-[11px] text-blue-900 font-semibold">This portal is restricted to authorized administrators only.</p>
+        <Card className="p-7 shadow-xl">
+          <div className="mb-6 flex items-center gap-2 rounded-xl border border-blue-200 bg-[#EFF6FF] px-3 py-2">
+            <Shield size={14} className="shrink-0 text-blue-600" aria-hidden />
+            <p className="text-[11px] font-semibold text-[#1E3A8A]">
+              This portal is restricted to authorized administrators only.
+            </p>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-rose-50 border border-rose-200 mb-4">
-              <AlertCircle size={14} className="text-rose-600 flex-shrink-0" />
-              <p className="text-xs text-rose-800 font-medium">{error}</p>
+            <div role="alert" className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-[#FEF2F2] px-3 py-2.5">
+              <AlertCircle size={14} className="shrink-0 text-rose-600" aria-hidden />
+              <p className="text-xs font-medium text-[#991B1B]">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs text-slate-700 font-bold">Admin Email</label>
+              <label htmlFor="admin-login-email" className="text-xs font-bold text-slate-700">Admin email</label>
               <div className="relative">
-                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Mail size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input
+                  id="admin-login-email"
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@thenijobs.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 py-3 pl-10 pr-4 text-base font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-600 focus:bg-white sm:text-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs text-slate-700 font-bold">Password</label>
+              <label htmlFor="admin-login-password" className="text-xs font-bold text-slate-700">Password</label>
               <div className="relative">
-                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input
+                  id="admin-login-password"
                   type={showPass ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 outline-none font-medium"
+                  className="w-full rounded-xl border border-slate-300 bg-slate-50 py-3 pl-10 pr-10 text-base font-medium text-slate-900 placeholder-slate-400 outline-none focus:border-blue-600 focus:bg-white sm:text-sm"
                 />
-                <button type="button" onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                  className="tap-target-auto absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
                   {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-2xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 mt-2 transition-all cursor-pointer disabled:opacity-50"
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-              {loading ? 'Authenticating...' : 'Access Admin Portal'}
-              {!loading && <ArrowRight size={15} />}
-            </button>
+            <Button type="submit" variant="primary" size="lg" block loading={loading} className="mt-2">
+              {!loading && (
+                <>
+                  Access admin portal
+                  <ArrowRight size={15} />
+                </>
+              )}
+              {loading && 'Authenticating…'}
+            </Button>
           </form>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 text-center">
-            <Link href="/" className="text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors">
+          <div className="mt-6 border-t border-slate-100 pt-4 text-center">
+            <Link href="/" className="text-xs font-semibold text-slate-600 transition-colors hover:text-blue-600">
               ← Back to THENIJOBS
             </Link>
           </div>
-        </div>
+        </Card>
 
-        <p className="text-center text-[10px] text-slate-500 font-medium mt-6">
+        <p className="mt-6 text-center text-[10px] font-medium text-slate-500">
           Protected by Firebase Auth · Secure Admin Dashboard
         </p>
       </div>

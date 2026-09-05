@@ -62,9 +62,9 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
           {/* Breadcrumb */}
           <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-6" aria-label="Breadcrumb">
             <Link href="/" className="hover:text-blue-600 font-medium">Home</Link>
-            <ChevronRight size={12} className="text-gray-400" />
+            <ChevronRight size={12} className="text-slate-500" />
             <Link href="/jobs" className="hover:text-blue-600 font-medium">Jobs</Link>
-            <ChevronRight size={12} className="text-gray-400" />
+            <ChevronRight size={12} className="text-slate-500" />
             <span className="text-gray-900 font-semibold">Jobs in {loc.name}</span>
           </nav>
 
@@ -88,11 +88,11 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
               <form action="/jobs" method="GET" className="space-y-3">
                 <input type="hidden" name="location" value={loc.name} />
                 <div className="relative">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     name="search"
-                    placeholder="Search job title, skills..."
-                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:border-blue-500 focus:outline-none"
+                    aria-label="Search job title, skills" placeholder="Search job title, skills..."
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm focus:bg-white focus:border-blue-500 focus:outline-none"
                   />
                 </div>
                 <button
@@ -169,9 +169,9 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                             {job.isVerified && <BadgeCheck size={14} className="text-emerald-500" />}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-                            <span className="flex items-center gap-1"><MapPin size={13} className="text-gray-400" /> {job.location || loc.name}</span>
-                            <span className="flex items-center gap-1"><Banknote size={13} className="text-gray-400" /> {job.salaryMin ? `₹${job.salaryMin.toLocaleString('en-IN')} - ₹${(job.salaryMax || job.salaryMin).toLocaleString('en-IN')}/mo` : 'Best in Industry'}</span>
-                            <span className="flex items-center gap-1"><Briefcase size={13} className="text-gray-400" /> {job.jobType || 'Full-time'}</span>
+                            <span className="flex items-center gap-1"><MapPin size={13} className="text-slate-500" /> {job.location || loc.name}</span>
+                            <span className="flex items-center gap-1"><Banknote size={13} className="text-slate-500" /> {job.salaryMin ? `₹${job.salaryMin.toLocaleString('en-IN')} - ₹${(job.salaryMax || job.salaryMin).toLocaleString('en-IN')}/mo` : 'Best in Industry'}</span>
+                            <span className="flex items-center gap-1"><Briefcase size={13} className="text-slate-500" /> {job.jobType || 'Full-time'}</span>
                           </div>
                         </div>
                       </div>
@@ -227,7 +227,7 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                     className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                   >
                     <span>{cat.name} in {loc.name}</span>
-                    <span className="text-[11px] text-gray-400 font-semibold">{cat.count}</span>
+                    <span className="text-[11px] text-slate-500 font-semibold">{cat.count}</span>
                   </Link>
                 ))}
               </div>
@@ -246,7 +246,7 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                     className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                   >
                     <span>Jobs in {other.name}</span>
-                    <ChevronRight size={13} className="text-gray-400" />
+                    <ChevronRight size={13} className="text-slate-500" />
                   </Link>
                 ))}
               </div>

@@ -15,6 +15,7 @@ import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
 import SeekerPortfolioClient from '@/app/portfolio/seeker/[id]/SeekerPortfolioClient';
 import { useToast } from '@/contexts/ToastContext';
+import { Switch } from '@/components/dashboard';
 
 /** Skill suggestions for tag input */
 const SKILL_SUGGESTIONS = [
@@ -301,7 +302,7 @@ export default function SeekerProfilePage() {
               <div>
                 <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>{profile.name || 'Set Your Name'}</h1>
                 <p className="text-sm font-medium mt-0.5" style={{ color: '#10B981' }}>{profile.currentRole || 'Specify Current Role'}</p>
-                <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-400">
+                <div className="flex items-center gap-1.5 mt-1 text-xs text-slate-500">
                   <MapPin size={11} /> {profile.district || 'Select district'}, Tamil Nadu
                 </div>
               </div>
@@ -314,33 +315,33 @@ export default function SeekerProfilePage() {
                   <Eye size={13} />
                   <span>Live Preview</span>
                 </button>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-gray-500 font-medium">Open to Work</span>
-                  <div onClick={() => setProfile(p => ({ ...p, isOpenToWork: !p.isOpenToWork }))}
-                    className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${profile.isOpenToWork ? '' : 'bg-gray-200'}`}
-                    style={profile.isOpenToWork ? { background: '#10B981' } : {}}>
-                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${profile.isOpenToWork ? 'left-5' : 'left-1'}`} />
-                  </div>
-                </label>
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500">Open to Work</span>
+                  <Switch
+                    checked={profile.isOpenToWork}
+                    onChange={(next) => setProfile(p => ({ ...p, isOpenToWork: next }))}
+                    label="Open to work"
+                  />
+                </span>
                 {profile.isOpenToWork && (
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold border" style={{ background: '#ECFDF5', color: '#059669', borderColor: '#A7F3D0' }}>● Open to Work</span>
                 )}
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-gray-500 font-medium">Public Portfolio Page</span>
-                  <div onClick={() => setProfile(p => ({ ...p, isPortfolioPublic: !p.isPortfolioPublic }))}
-                    className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${profile.isPortfolioPublic ? '' : 'bg-gray-200'}`}
-                    style={profile.isPortfolioPublic ? { background: '#2563EB' } : {}}>
-                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-sm transition-all ${profile.isPortfolioPublic ? 'left-5' : 'left-1'}`} />
-                  </div>
-                </label>
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500">Public Portfolio Page</span>
+                  <Switch
+                    checked={profile.isPortfolioPublic}
+                    onChange={(next) => setProfile(p => ({ ...p, isPortfolioPublic: next }))}
+                    label="Public portfolio page"
+                  />
+                </span>
               </div>
             </div>
-            <p className="text-[11px] text-gray-400 mt-1.5 max-w-md">
+            <p className="text-[11px] text-slate-500 mt-1.5 max-w-md">
               {profile.isPortfolioPublic
                 ? 'Your portfolio is public — anyone with the link can view it at thenijobs.com/portfolio/seeker/…'
                 : 'Your portfolio is private by default. Turn this on to make it viewable by anyone with the link.'}
             </p>
-            <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-gray-400">
+            <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
               <span className="flex items-center gap-1"><Phone size={11} /> {profile.phone || 'No phone'}</span>
               <span className="flex items-center gap-1"><Mail size={11} /> {profile.email}</span>
             </div>
@@ -367,7 +368,7 @@ export default function SeekerProfilePage() {
               {item.done
                 ? <CheckCircle size={13} style={{ color: '#059669' }} className="shrink-0" />
                 : <Circle size={13} className="text-gray-300 shrink-0" />}
-              <span className={item.done ? 'text-gray-700 font-medium' : 'text-gray-400'}>{item.label}</span>
+              <span className={item.done ? 'text-gray-700 font-medium' : 'text-slate-500'}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -419,11 +420,11 @@ export default function SeekerProfilePage() {
               ))}
               <div className="sm:col-span-2">
                 <label className={labelCls}>Address</label>
-                <input type="text" value={profile.address} onChange={e => setProfile(p => ({ ...p, address: e.target.value }))} className={inputCls} />
+                <input id="seeker-profile-open-to-work-setprofile-p-classname-w-10" type="text" value={profile.address} onChange={e => setProfile(p => ({ ...p, address: e.target.value }))} className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>District</label>
-                <select value={profile.district} onChange={e => setProfile(p => ({ ...p, district: e.target.value }))} className={inputCls}>
+                <label htmlFor="seeker-profile-district" className={labelCls}>District</label>
+                <select id="seeker-profile-district" value={profile.district} onChange={e => setProfile(p => ({ ...p, district: e.target.value }))} className={inputCls}>
                   <option value="">Select district</option>
                   {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -444,10 +445,10 @@ export default function SeekerProfilePage() {
                 <div key={edu.id} className={cardCls}>
                   <button onClick={() => removeEducation(edu.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><X size={14} /></button>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><label className={labelCls}>Institution</label><input type="text" value={edu.institution} onChange={e => updateEducation(edu.id, 'institution', e.target.value)} className={inputCls} placeholder="Institution name" /></div>
-                    <div><label className={labelCls}>Degree</label><input type="text" value={edu.degree} onChange={e => updateEducation(edu.id, 'degree', e.target.value)} className={inputCls} placeholder="Degree" /></div>
-                    <div><label className={labelCls}>Field of Study</label><input type="text" value={edu.field} onChange={e => updateEducation(edu.id, 'field', e.target.value)} className={inputCls} placeholder="Field of study" /></div>
-                    <div><label className={labelCls}>Year</label><input type="text" value={edu.year} onChange={e => updateEducation(edu.id, 'year', e.target.value)} className={inputCls} placeholder="Year" /></div>
+                    <div><label htmlFor="seeker-profile-institution" className={labelCls}>Institution</label><input id="seeker-profile-institution" type="text" value={edu.institution} onChange={e => updateEducation(edu.id, 'institution', e.target.value)} className={inputCls} placeholder="Institution name" /></div>
+                    <div><label htmlFor="seeker-profile-degree" className={labelCls}>Degree</label><input id="seeker-profile-degree" type="text" value={edu.degree} onChange={e => updateEducation(edu.id, 'degree', e.target.value)} className={inputCls} placeholder="Degree" /></div>
+                    <div><label htmlFor="seeker-profile-field-of-study" className={labelCls}>Field of Study</label><input id="seeker-profile-field-of-study" type="text" value={edu.field} onChange={e => updateEducation(edu.id, 'field', e.target.value)} className={inputCls} placeholder="Field of study" /></div>
+                    <div><label htmlFor="seeker-profile-year" className={labelCls}>Year</label><input id="seeker-profile-year" type="text" value={edu.year} onChange={e => updateEducation(edu.id, 'year', e.target.value)} className={inputCls} placeholder="Year" /></div>
                   </div>
                 </div>
               ))}
@@ -468,11 +469,11 @@ export default function SeekerProfilePage() {
                 <div key={exp.id} className={cardCls}>
                   <button onClick={() => removeExperience(exp.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><X size={14} /></button>
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div><label className={labelCls}>Company</label><input type="text" value={exp.company} onChange={e => updateExperience(exp.id, 'company', e.target.value)} className={inputCls} placeholder="Company name" /></div>
-                    <div><label className={labelCls}>Role / Title</label><input type="text" value={exp.role} onChange={e => updateExperience(exp.id, 'role', e.target.value)} className={inputCls} placeholder="Role or title" /></div>
-                    <div><label className={labelCls}>Start Date</label><input type="text" value={exp.startDate} onChange={e => updateExperience(exp.id, 'startDate', e.target.value)} className={inputCls} placeholder="YYYY-MM" /></div>
-                    <div><label className={labelCls}>End Date</label><input type="text" value={exp.endDate} onChange={e => updateExperience(exp.id, 'endDate', e.target.value)} className={inputCls} placeholder="Present or 2024-05" /></div>
-                    <div className="sm:col-span-2"><label className={labelCls}>Description</label><textarea rows={2} value={exp.description} onChange={e => updateExperience(exp.id, 'description', e.target.value)} className={inputCls + " resize-none"} placeholder="Describe responsibilities..." /></div>
+                    <div><label htmlFor="seeker-profile-company" className={labelCls}>Company</label><input id="seeker-profile-company" type="text" value={exp.company} onChange={e => updateExperience(exp.id, 'company', e.target.value)} className={inputCls} placeholder="Company name" /></div>
+                    <div><label htmlFor="seeker-profile-role-title" className={labelCls}>Role / Title</label><input id="seeker-profile-role-title" type="text" value={exp.role} onChange={e => updateExperience(exp.id, 'role', e.target.value)} className={inputCls} placeholder="Role or title" /></div>
+                    <div><label htmlFor="seeker-profile-start-date" className={labelCls}>Start Date</label><input id="seeker-profile-start-date" type="text" value={exp.startDate} onChange={e => updateExperience(exp.id, 'startDate', e.target.value)} className={inputCls} placeholder="YYYY-MM" /></div>
+                    <div><label htmlFor="seeker-profile-end-date" className={labelCls}>End Date</label><input id="seeker-profile-end-date" type="text" value={exp.endDate} onChange={e => updateExperience(exp.id, 'endDate', e.target.value)} className={inputCls} placeholder="Present or 2024-05" /></div>
+                    <div className="sm:col-span-2"><label htmlFor="seeker-profile-description" className={labelCls}>Description</label><textarea id="seeker-profile-description" rows={2} value={exp.description} onChange={e => updateExperience(exp.id, 'description', e.target.value)} className={inputCls + " resize-none"} placeholder="Describe responsibilities..." /></div>
                   </div>
                 </div>
               ))}
@@ -493,7 +494,7 @@ export default function SeekerProfilePage() {
               ))}
             </div>
             <div className="flex gap-2 mb-4">
-              <input type="text" value={newSkill} onChange={e => setNewSkill(e.target.value)} onKeyDown={e => e.key === 'Enter' && addSkill()} placeholder="Type a skill and press Enter..." className={inputCls + " flex-1"} />
+              <input type="text" value={newSkill} onChange={e => setNewSkill(e.target.value)} onKeyDown={e => e.key === 'Enter' && addSkill()} aria-label="Type a skill and press Enter" placeholder="Type a skill and press Enter..." className={inputCls + " flex-1"} />
               <button onClick={addSkill} className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-all" style={{ background: '#10B981' }}><Plus size={15} /></button>
             </div>
             <p className="text-xs text-slate-600 font-medium mb-2">Suggested:</p>
@@ -540,9 +541,9 @@ export default function SeekerProfilePage() {
                   <button onClick={() => removeCertification(cert.id)} className="absolute top-3 right-3 p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"><X size={14} /></button>
                   <div className="grid sm:grid-cols-2 gap-3">
                     <div><label className={labelCls}>Certification Name</label><input type="text" value={cert.name} onChange={e => updateCertification(cert.id, 'name', e.target.value)} className={inputCls} placeholder="Certification name" /></div>
-                    <div><label className={labelCls}>Organization</label><input type="text" value={cert.organization} onChange={e => updateCertification(cert.id, 'organization', e.target.value)} className={inputCls} placeholder="Issuing organization" /></div>
-                    <div><label className={labelCls}>Date</label><input type="month" value={cert.date} onChange={e => updateCertification(cert.id, 'date', e.target.value)} className={inputCls} /></div>
-                    <div><label className={labelCls}>Certificate Link (Optional)</label><input type="url" value={cert.link} onChange={e => updateCertification(cert.id, 'link', e.target.value)} className={inputCls} placeholder="https://..." /></div>
+                    <div><label htmlFor="seeker-profile-organization" className={labelCls}>Organization</label><input id="seeker-profile-organization" type="text" value={cert.organization} onChange={e => updateCertification(cert.id, 'organization', e.target.value)} className={inputCls} placeholder="Issuing organization" /></div>
+                    <div><label htmlFor="seeker-profile-date" className={labelCls}>Date</label><input id="seeker-profile-date" type="month" value={cert.date} onChange={e => updateCertification(cert.id, 'date', e.target.value)} className={inputCls} /></div>
+                    <div><label htmlFor="seeker-profile-certificate-link-optional" className={labelCls}>Certificate Link (Optional)</label><input id="seeker-profile-certificate-link-optional" type="url" value={cert.link} onChange={e => updateCertification(cert.id, 'link', e.target.value)} className={inputCls} placeholder="https://..." /></div>
                   </div>
                 </div>
               ))}
@@ -567,7 +568,7 @@ export default function SeekerProfilePage() {
               ))}
             </div>
             <div className="flex gap-2">
-              <input type="url" value={newPortfolioLink} onChange={e => setNewPortfolioLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPortfolioLink()} placeholder="Add portfolio URL..." className={inputCls + " flex-1"} />
+              <input type="url" value={newPortfolioLink} onChange={e => setNewPortfolioLink(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPortfolioLink()} aria-label="Add portfolio URL" placeholder="Add portfolio URL..." className={inputCls + " flex-1"} />
               <button onClick={addPortfolioLink} className="px-4 py-2.5 rounded-xl text-white text-sm font-semibold hover:opacity-90 transition-all" style={{ background: '#10B981' }}><Plus size={15} /></button>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 import { useRouter } from 'next/navigation';
 import {
   Upload, FileSpreadsheet, Download, CheckCircle2, AlertTriangle,
@@ -246,61 +247,42 @@ export default function BulkCompanyImportPage() {
   });
 
   return (
-    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
-      {/* Header & Breadcrumb */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 font-bold mb-1">
-            <Link href="/admin/businesses" className="hover:text-blue-600 transition-colors">
-              Business Management
-            </Link>
-            <span>/</span>
-            <span className="text-blue-600">Bulk Import Studio</span>
-          </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-            Bulk Company Import &amp; Management
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-            Analyze, validate, filter, and import multiple businesses into Firebase with automated logins
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyAiPrompt}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors cursor-pointer"
-          >
-            {copyPromptSuccess ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
-            {copyPromptSuccess ? 'AI Prompt Copied!' : 'Copy AI Prompt (Claude / GPT)'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setGuideTab('categories');
-              setShowGuideModal(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
-          >
-            <HelpCircle size={14} />
-            Categories Guide
-          </button>
-          <button
-            type="button"
-            onClick={generateCompanyTemplateExcel}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
-          >
-            <Download size={14} />
-            Download Multi-Sheet Template
-          </button>
-          <Link
-            href="/admin/businesses"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-          >
-            Back to Companies
-          </Link>
-        </div>
-      </div>
+    <PageShell className="pb-20">
+      <PageHeader
+        title="Bulk company import & management"
+        description="Analyze, validate, filter and import multiple businesses into Firebase with automated logins."
+        breadcrumbs={[
+          { label: 'Admin', href: '/admin/dashboard' },
+          { label: 'Business management', href: '/admin/businesses' },
+          { label: 'Bulk import studio' },
+        ]}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={handleCopyAiPrompt}
+              className="border-indigo-200 bg-[#EEF2FF] text-indigo-700 hover:bg-indigo-100"
+            >
+              {copyPromptSuccess ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+              {copyPromptSuccess ? 'AI prompt copied!' : 'Copy AI prompt (Claude / GPT)'}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => { setGuideTab('categories'); setShowGuideModal(true); }}
+              className="border-violet-200 bg-[#F5F3FF] text-violet-700 hover:bg-violet-100"
+            >
+              <HelpCircle size={14} /> Categories guide
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={generateCompanyTemplateExcel}
+              className="border-emerald-200 bg-[#ECFDF5] text-emerald-700 hover:bg-emerald-100"
+            >
+              <Download size={14} /> Download multi-sheet template
+            </Button>
+          </>
+        }
+      />
 
       {/* Wizard Progress Steps */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-white p-2.5 rounded-2xl border border-gray-200 shadow-xs">
@@ -318,7 +300,7 @@ export default function BulkCompanyImportPage() {
                 ? 'bg-blue-600 text-white shadow-xs'
                 : currentStep > s.step
                 ? 'bg-emerald-50 text-emerald-800'
-                : 'text-gray-400 bg-gray-50'
+                : 'text-slate-500 bg-gray-50'
             }`}
           >
             {currentStep > s.step ? <Check size={14} className="text-emerald-600" /> : <span>{s.step}.</span>}
@@ -367,10 +349,19 @@ export default function BulkCompanyImportPage() {
 
           {/* Drag and Drop Zone */}
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Upload Excel or CSV file"
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 hover:border-blue-500 bg-slate-50/50 hover:bg-blue-50/30 rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-gray-300 bg-slate-50/50 p-8 text-center transition-all hover:border-blue-500 hover:bg-blue-50/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:p-12"
           >
             <input
               ref={fileInputRef}
@@ -393,7 +384,7 @@ export default function BulkCompanyImportPage() {
                   <p className="text-sm font-bold text-gray-800">
                     Click to browse or drag &amp; drop file here
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Supports Excel Workbook (.xlsx, .xls) and CSV</p>
+                  <p className="text-xs text-slate-500 mt-1">Supports Excel Workbook (.xlsx, .xls) and CSV</p>
                 </div>
               </>
             )}
@@ -477,11 +468,11 @@ export default function BulkCompanyImportPage() {
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">
                       Map to Field:
                     </label>
-                    <select
+                    <select id="admin-businesses-import-handlecolumntoggle-idx-e-target-checked-"
                       value={col.targetField}
                       onChange={(e) => handleColumnTargetChange(idx, e.target.value as any)}
                       disabled={!col.isIncluded}
-                      className="w-full text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
+                      className="w-full text-base sm:text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
                     >
                       <option value="ignore">❌ Ignore (Do Not Import)</option>
                       <option value="name">🏢 Company Name *</option>
@@ -521,57 +512,65 @@ export default function BulkCompanyImportPage() {
         <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs space-y-6">
           {/* Top summary KPIs */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div
+            <button
+              type="button"
+              aria-pressed={tableFilter === 'valid'}
               onClick={() => setTableFilter('valid')}
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+              className={`rounded-2xl border p-3.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 tableFilter === 'valid' ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-400/30' : 'border-emerald-100 bg-emerald-50/20'
               }`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold text-emerald-800">Valid Rows</p>
-                <CheckCircle2 size={16} className="text-emerald-600" />
+                <CheckCircle2 size={16} className="text-emerald-600" aria-hidden />
               </div>
               <p className="text-xl font-black text-emerald-950 mt-1">{summary.validCount}</p>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
+              aria-pressed={tableFilter === 'warning'}
               onClick={() => setTableFilter('warning')}
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+              className={`rounded-2xl border p-3.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 tableFilter === 'warning' ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-400/30' : 'border-amber-100 bg-amber-50/20'
               }`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold text-amber-800">Warnings</p>
-                <AlertTriangle size={16} className="text-amber-600" />
+                <AlertTriangle size={16} className="text-amber-600" aria-hidden />
               </div>
               <p className="text-xl font-black text-amber-950 mt-1">{summary.warningCount}</p>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
+              aria-pressed={tableFilter === 'duplicate'}
               onClick={() => setTableFilter('duplicate')}
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+              className={`rounded-2xl border p-3.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 tableFilter === 'duplicate' ? 'border-purple-500 bg-purple-50/60 ring-2 ring-purple-400/30' : 'border-purple-100 bg-purple-50/20'
               }`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold text-purple-800">Duplicates</p>
-                <Copy size={16} className="text-purple-600" />
+                <Copy size={16} className="text-purple-600" aria-hidden />
               </div>
               <p className="text-xl font-black text-purple-950 mt-1">{summary.duplicateCount}</p>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
+              aria-pressed={tableFilter === 'error'}
               onClick={() => setTableFilter('error')}
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+              className={`rounded-2xl border p-3.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 tableFilter === 'error' ? 'border-red-500 bg-red-50/60 ring-2 ring-red-400/30' : 'border-red-100 bg-red-50/20'
               }`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold text-red-800">Missing/Error</p>
-                <XCircle size={16} className="text-red-600" />
+                <XCircle size={16} className="text-red-600" aria-hidden />
               </div>
               <p className="text-xl font-black text-red-950 mt-1">{summary.errorCount}</p>
-            </div>
+            </button>
           </div>
 
           {/* Quick Selection Toolbar */}
@@ -606,10 +605,10 @@ export default function BulkCompanyImportPage() {
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Filter rows..."
+                  aria-label="Filter rows" placeholder="Filter rows..."
                   value={tableSearch}
                   onChange={(e) => setTableSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-base sm:text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -665,7 +664,7 @@ export default function BulkCompanyImportPage() {
                         className="w-4 h-4 rounded text-blue-600"
                       />
                     </td>
-                    <td className="p-3 text-gray-400 font-mono">{r.originalIndex + 1}</td>
+                    <td className="p-3 text-slate-500 font-mono">{r.originalIndex + 1}</td>
                     <td className="p-3">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
@@ -716,14 +715,14 @@ export default function BulkCompanyImportPage() {
                       {r.mapped.website ? (
                         <span className="text-blue-600 font-medium">{r.mapped.website}</span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-slate-500">—</span>
                       )}
                     </td>
                     <td className="p-3 text-gray-600 truncate max-w-[150px]">
                       {r.mapped.accountEmail || r.mapped.email ? (
                         <span className="font-mono text-[11px] text-gray-800">{r.mapped.accountEmail || r.mapped.email}</span>
                       ) : (
-                        <span className="text-gray-400 italic">Auto-generated</span>
+                        <span className="text-slate-500 italic">Auto-generated</span>
                       )}
                     </td>
                     <td className="p-3 text-gray-500">
@@ -789,13 +788,13 @@ export default function BulkCompanyImportPage() {
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  <label htmlFor="admin-businesses-import-initial-verification-status" className="text-xs font-bold text-gray-700 block mb-1.5">
                     Initial Verification Status:
                   </label>
-                  <select
+                  <select id="admin-businesses-import-initial-verification-status"
                     value={importOptions.overrideStatus}
                     onChange={(e) => setImportOptions({ ...importOptions, overrideStatus: e.target.value as any })}
-                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full text-base sm:text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
                   >
                     <option value="verified">✅ Verified &amp; Active (Recommended)</option>
                     <option value="pending">⏳ Pending Admin Verification</option>
@@ -804,13 +803,13 @@ export default function BulkCompanyImportPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  <label htmlFor="admin-businesses-import-default-district-if-empty" className="text-xs font-bold text-gray-700 block mb-1.5">
                     Default District (if empty):
                   </label>
-                  <select
+                  <select id="admin-businesses-import-default-district-if-empty"
                     value={importOptions.overrideDistrict}
                     onChange={(e) => setImportOptions({ ...importOptions, overrideDistrict: e.target.value })}
-                    className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
+                    className="w-full text-base sm:text-xs font-semibold px-3 py-2 rounded-xl border border-gray-300 bg-white focus:outline-none focus:border-blue-600"
                   >
                     <option value="">Use District from Excel</option>
                     {DISTRICT_OPTIONS.map((d) => (
@@ -1104,7 +1103,7 @@ export default function BulkCompanyImportPage() {
                       <tbody className="divide-y divide-gray-100">
                         {CATEGORY_GUIDE_ROWS.map((cat, i) => (
                           <tr key={cat['Official Category Name']} className="hover:bg-blue-50/40">
-                            <td className="py-2 px-3 font-bold text-gray-400">{i + 1}</td>
+                            <td className="py-2 px-3 font-bold text-slate-500">{i + 1}</td>
                             <td className="py-2 px-3 font-bold text-blue-700 whitespace-nowrap">
                               {cat['Official Category Name']}
                             </td>
@@ -1176,6 +1175,6 @@ export default function BulkCompanyImportPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

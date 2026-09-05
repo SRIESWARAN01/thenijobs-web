@@ -8,6 +8,7 @@ import { Crown, ChevronRight, Loader2, Sparkles, ShieldCheck, Zap, ArrowRight, C
 import Link from 'next/link';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
+import { PageHeader } from '@/components/dashboard';
 
 export default function EmployerSubscriptionPage() {
   const { user } = useAuth();
@@ -47,7 +48,7 @@ export default function EmployerSubscriptionPage() {
 
   if (!companyId && !companyLoading) {
     return (
-      <div className="p-6 max-w-2xl mx-auto text-center font-sans">
+      <div className="mx-auto max-w-2xl text-center">
         <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
           <Crown size={48} className="text-blue-600 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-gray-900 font-sans">No Company Profile</h2>
@@ -61,12 +62,12 @@ export default function EmployerSubscriptionPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 font-sans">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Portal Subscription</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Manage and monitor your employer subscription and plan benefits</p>
-      </div>
+    <div className="mx-auto w-full max-w-screen-2xl space-y-4 sm:space-y-6">
+      <PageHeader
+        title="Portal subscription"
+        description="Monitor your employer subscription and plan benefits."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Subscription' }]}
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">

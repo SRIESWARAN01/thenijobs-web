@@ -180,7 +180,7 @@ export function FileUpload({
             >
               <Upload
                 className={`w-7 h-7 transition-colors ${
-                  isDragOver ? 'text-purple-400' : 'text-gray-400 group-hover:text-gray-600'
+                  isDragOver ? 'text-purple-400' : 'text-slate-500 group-hover:text-gray-600'
                 }`}
                 strokeWidth={1.5}
               />
@@ -230,7 +230,7 @@ export function FileUpload({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-900 font-medium truncate">{file.name}</p>
-                <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>
+                <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
               </div>
 
               {/* Status / remove */}
@@ -240,10 +240,10 @@ export function FileUpload({
                 </span>
               ) : (
                 <>
-                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                   <button
                     onClick={handleRemove}
-                    className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-600
+                    className="shrink-0 p-1.5 rounded-lg text-slate-500 hover:text-gray-600
                       hover:bg-gray-100 transition-all"
                     aria-label="Remove file"
                   >
@@ -279,8 +279,8 @@ export function FileUpload({
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center gap-2 mt-2 px-1"
         >
-          <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-          <span className="text-xs text-rose-400">{error}</span>
+          <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+          <span className="text-xs text-rose-600">{error}</span>
         </motion.div>
       )}
     </div>

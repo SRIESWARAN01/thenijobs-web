@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { MapPin, Grid3X3, Users, Sparkles, DollarSign, Wrench, Plus, Trash2, Loader2, Check } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { DollarSign, Grid3X3, Loader2, MapPin, Plus, Sparkles, Trash2, Users, Wrench } from 'lucide-react';
 import { useDocument } from '@/hooks/useFirestore';
 import { updateDocument } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
+import {
+  Button, Card, CardBody, CardHeader, DataTable, PageHeader, PageShell, Pill,
+  SettingRow, Switch, Tabs, type Column,
+} from '@/components/dashboard';
 
 const DEFAULT_DISTRICTS = [
   'Chennai', 'Coimbatore', 'Madurai', 'Trichy', 'Salem', 'Tirunelveli', 'Erode', 'Vellore', 'Thoothukudi', 'Dindigul',
@@ -13,15 +17,80 @@ const DEFAULT_DISTRICTS = [
 
 const DEFAULT_CATEGORIES = ['Agriculture', 'Construction', 'Manufacturing', 'Textile', 'IT & Software', 'Education', 'Healthcare', 'Retail', 'Transportation'];
 
-const FRANCHISE_DATA = [
-  { district: 'Theni', manager: 'Tamilselvan K', phone: '9876543210', status: 'active', businesses: 45, revenue: '₹12,400' },
-  { district: 'Madurai', manager: 'Rajesh Kumar', phone: '9876543211', status: 'active', businesses: 38, revenue: '₹9,800' },
-  { district: 'Dindigul', manager: 'Pending', phone: '-', status: 'pending', businesses: 12, revenue: '₹3,200' },
+interface FranchiseRow {
+  id: string;
+  district: string;
+  manager: string;
+  phone: string;
+  status: string;
+  businesses: number;
+  revenue: string;
+}
+
+/**
+ * Placeholder rows. These are NOT read from Firestore — they are literals that
+ * have always lived in this file, and the table below is labelled as such so an
+ * administrator does not mistake them for a real franchise ledger.
+ */
+const FRANCHISE_DATA: FranchiseRow[] = [
+  { id: 'theni', district: 'Theni', manager: 'Tamilselvan K', phone: '9876543210', status: 'active', businesses: 45, revenue: '₹12,400' },
+  { id: 'madurai', district: 'Madurai', manager: 'Rajesh Kumar', phone: '9876543211', status: 'active', businesses: 38, revenue: '₹9,800' },
+  { id: 'dindigul', district: 'Dindigul', manager: 'Pending', phone: '-', status: 'pending', businesses: 12, revenue: '₹3,200' },
 ];
+
+interface PlatformSettingsDoc {
+  id: string;
+  districts?: string[];
+  categories?: string[];
+  aiFeatures?: { recommendations: boolean; resumeAnalysis: boolean; smartSearch: boolean };
+  maintenance?: boolean;
+  revenueShare?: string;
+  features?: {
+    registrationEnabled: boolean;
+    jobPostingEnabled: boolean;
+    reviewsEnabled: boolean;
+    leadFormsEnabled: boolean;
+  };
+}
+
+type SettingsPatch = Partial<Omit<PlatformSettingsDoc, 'id'>>;
+
+const AI_FEATURES = [
+  { key: 'recommendations', label: 'AI job recommendations', desc: 'Auto-suggest relevant jobs from seeker profile keywords' },
+  { key: 'resumeAnalysis', label: 'AI resume scoring & ATS optimisation', desc: 'Resume strength breakdown and keyword suggestions' },
+  { key: 'smartSearch', label: 'Gemini semantic search', desc: 'Natural-language intent mapping in search' },
+] as const;
+
+const PLATFORM_FEATURES = [
+  { key: 'registrationEnabled', label: 'User & business registration', desc: 'Allow visitors to create candidate and business accounts' },
+  { key: 'jobPostingEnabled', label: 'Job opening submissions', desc: 'Enable employers to create new vacancies' },
+  { key: 'reviewsEnabled', label: 'Public reviews & feedback', desc: 'Allow job seekers to rate companies' },
+  { key: 'leadFormsEnabled', label: 'Marketplace enquiry forms', desc: 'Show WhatsApp enquiry and product order forms' },
+] as const;
+
+/** A removable chip used for the districts and categories lists. */
+function TokenChip({ label, index, onRemove }: { label: string; index?: number; onRemove: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition-colors hover:border-slate-300">
+      <span className="flex min-w-0 items-center gap-2">
+        {index !== undefined && <span className="text-xs font-semibold text-slate-500">{index + 1}.</span>}
+        <span className="truncate text-xs font-semibold text-slate-800">{label}</span>
+      </span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="tap-target-auto -m-1 shrink-0 rounded-lg p-1 text-slate-500 transition-colors hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const toast = useToast();
-  const { data: remoteSettings, loading } = useDocument<any>('platformSettings', 'global');
+  const { data: remoteSettings, loading } = useDocument<PlatformSettingsDoc>('platformSettings', 'global');
   const [activeTab, setActiveTab] = useState('districts');
   const [saveLoading, setSaveLoading] = useState(false);
 
@@ -51,7 +120,7 @@ export default function SettingsPage() {
     }
   }, [remoteSettings]);
 
-  const handleSave = async (updatedFields: any) => {
+  const handleSave = async (updatedFields: SettingsPatch) => {
     setSaveLoading(true);
     try {
       await updateDocument('platformSettings', 'global', updatedFields);
@@ -92,292 +161,227 @@ export default function SettingsPage() {
     handleSave({ categories: list });
   };
 
-  const toggleAi = (key: string) => {
-    const next = { ...aiFeatures, [key]: !aiFeatures[key as keyof typeof aiFeatures] };
+  const toggleAi = (key: keyof typeof aiFeatures) => {
+    const next = { ...aiFeatures, [key]: !aiFeatures[key] };
     setAiFeatures(next);
     handleSave({ aiFeatures: next });
   };
 
-  const toggleFeature = (key: string) => {
-    const next = { ...features, [key]: !features[key as keyof typeof features] };
+  const toggleFeature = (key: keyof typeof features) => {
+    const next = { ...features, [key]: !features[key] };
     setFeatures(next);
     handleSave({ features: next });
   };
 
+  const franchiseColumns = useMemo<Column<FranchiseRow>[]>(() => [
+    { key: 'district', header: 'District', card: 'title', sortValue: f => f.district, render: f => <span className="font-semibold text-slate-900">{f.district}</span> },
+    { key: 'manager', header: 'Franchise head', sortValue: f => f.manager },
+    { key: 'phone', header: 'Phone', hideBelow: 'lg', sortValue: f => f.phone },
+    { key: 'businesses', header: 'Businesses', align: 'center', sortValue: f => f.businesses, render: f => <span className="font-semibold tabular-nums">{f.businesses}</span> },
+    { key: 'revenue', header: 'Revenue', align: 'right', hideBelow: 'xl', sortValue: f => f.revenue },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      sortValue: f => f.status,
+      render: f => <Pill tone={f.status === 'active' ? 'success' : 'warning'} dot>{f.status}</Pill>,
+    },
+  ], []);
+
   const tabs = [
-    { id: 'districts', label: 'Districts', icon: MapPin },
-    { id: 'categories', label: 'Categories', icon: Grid3X3 },
-    { id: 'franchise', label: 'Franchise Hub', icon: Users },
-    { id: 'ai', label: 'AI Features', icon: Sparkles },
-    { id: 'revenue', label: 'Revenue Share', icon: DollarSign },
-    { id: 'platform', label: 'Platform Controls', icon: Wrench },
+    { id: 'districts', label: 'Districts', icon: MapPin, count: districts.length },
+    { id: 'categories', label: 'Categories', icon: Grid3X3, count: categories.length },
+    { id: 'franchise', label: 'Franchise hub', icon: Users },
+    { id: 'ai', label: 'AI features', icon: Sparkles },
+    { id: 'revenue', label: 'Revenue share', icon: DollarSign },
+    { id: 'platform', label: 'Platform controls', icon: Wrench },
   ];
 
   return (
-    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Platform Settings</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Configure districts, business categories, franchise commissions, and feature toggles</p>
-        </div>
-        {saveLoading && (
-          <div className="flex items-center gap-2 text-blue-600 text-xs font-bold bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">
-            <Loader2 size={14} className="animate-spin" />
-            <span>Saving changes...</span>
-          </div>
-        )}
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Platform settings"
+        description="Districts, business categories, franchise commissions and feature toggles."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Settings' }]}
+        actions={saveLoading ? <Pill tone="info"><Loader2 size={12} className="animate-spin" /> Saving…</Pill> : undefined}
+      />
 
-      {/* Tabs (Touch-Scrollable) */}
-      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                isActive ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Icon size={14} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} label="Settings sections" />
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 size={32} className="text-blue-600 animate-spin" />
-          <p className="text-xs text-gray-500 font-semibold">Loading platform settings...</p>
-        </div>
+        <Card>
+          <CardBody className="flex flex-col items-center gap-3 py-16">
+            <Loader2 size={28} className="animate-spin text-blue-600" />
+            <p className="text-xs font-semibold text-slate-500">Loading platform settings…</p>
+          </CardBody>
+        </Card>
       ) : (
         <>
-          {/* Districts */}
           {activeTab === 'districts' && (
-            <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
-                <h2 className="text-sm font-bold text-gray-900">Supported Districts ({districts.length})</h2>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={newDistrict}
-                    onChange={(e) => setNewDistrict(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addDistrict()}
-                    placeholder="New district name..."
-                    className="px-3 py-1.5 text-xs rounded-xl border border-gray-300 outline-none focus:border-blue-600 font-medium w-44"
-                  />
-                  <button
-                    type="button"
-                    onClick={addDistrict}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                  >
-                    <Plus size={13} /> Add
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                {districts.map(d => (
-                  <div key={d} className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all">
-                    <span className="text-xs font-bold text-gray-800">{d}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeDistrict(d)}
-                      className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+            <Card>
+              <CardHeader
+                title={`Supported districts (${districts.length})`}
+                action={
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
+                    <input
+                      type="text"
+                      value={newDistrict}
+                      onChange={(e) => setNewDistrict(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addDistrict()}
+                      placeholder="New district name…"
+                      aria-label="New district name"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-base font-medium text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:w-48 sm:flex-none sm:text-sm"
+                    />
+                    <Button variant="primary" onClick={addDistrict}><Plus size={14} /> Add</Button>
                   </div>
-                ))}
-              </div>
-            </div>
+                }
+              />
+              <CardBody>
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+                  {districts.map(d => <TokenChip key={d} label={d} onRemove={() => removeDistrict(d)} />)}
+                </div>
+              </CardBody>
+            </Card>
           )}
 
-          {/* Categories */}
           {activeTab === 'categories' && (
-            <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
-                <h2 className="text-sm font-bold text-gray-900">Business &amp; Industry Categories ({categories.length})</h2>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addCategory()}
-                    placeholder="New category..."
-                    className="px-3 py-1.5 text-xs rounded-xl border border-gray-300 outline-none focus:border-blue-600 font-medium w-44"
-                  />
-                  <button
-                    type="button"
-                    onClick={addCategory}
-                    className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                  >
-                    <Plus size={13} /> Add
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {categories.map((cat, i) => (
-                  <div key={cat} className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-[10px] text-gray-400 font-bold">{i + 1}.</span>
-                      <span className="text-xs font-bold text-gray-800 truncate">{cat}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(cat)}
-                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+            <Card>
+              <CardHeader
+                title={`Business & industry categories (${categories.length})`}
+                action={
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
+                    <input
+                      type="text"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addCategory()}
+                      placeholder="New category…"
+                      aria-label="New category name"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-base font-medium text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:w-48 sm:flex-none sm:text-sm"
+                    />
+                    <Button variant="primary" onClick={addCategory}><Plus size={14} /> Add</Button>
                   </div>
-                ))}
-              </div>
-            </div>
+                }
+              />
+              <CardBody>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {categories.map((cat, i) => (
+                    <TokenChip key={cat} label={cat} index={i} onRemove={() => removeCategory(cat)} />
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
           )}
 
-          {/* Franchise */}
           {activeTab === 'franchise' && (
-            <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h2 className="text-sm font-bold text-gray-900">District Franchise Directory</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50/80 border-b border-gray-200">
-                      <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">District</th>
-                      <th className="text-left px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Franchise Head</th>
-                      <th className="text-left px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Phone</th>
-                      <th className="text-center px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Businesses</th>
-                      <th className="text-center px-3 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {FRANCHISE_DATA.map(f => (
-                      <tr key={f.district} className="hover:bg-gray-50/60 transition-colors">
-                        <td className="px-5 py-3 text-xs font-bold text-gray-900">{f.district}</td>
-                        <td className="px-3 py-3 text-xs text-gray-700 font-medium">{f.manager}</td>
-                        <td className="px-3 py-3 text-xs text-gray-500 hidden sm:table-cell">{f.phone}</td>
-                        <td className="px-3 py-3 text-xs text-center font-bold text-gray-900">{f.businesses}</td>
-                        <td className="px-3 py-3 text-center">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${f.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                            {f.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <Card>
+              <CardHeader
+                title="District franchise directory"
+                description="Placeholder rows held in the page source — not yet backed by Firestore"
+                action={<Pill tone="warning">Sample data</Pill>}
+              />
+              <CardBody className="p-0">
+                <DataTable
+                  label="District franchise directory"
+                  className="rounded-none border-0"
+                  columns={franchiseColumns}
+                  rows={FRANCHISE_DATA}
+                  getRowId={f => f.id}
+                />
+              </CardBody>
+            </Card>
           )}
 
-          {/* AI Settings */}
           {activeTab === 'ai' && (
-            <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
-              <h2 className="text-sm font-bold text-gray-900">AI Capabilities Configuration</h2>
-              <div className="space-y-3">
-                {[
-                  { key: 'recommendations', label: 'AI Job Recommendations', desc: 'Auto-suggest relevant jobs based on seeker profile keywords' },
-                  { key: 'resumeAnalysis', label: 'AI Resume Scoring & ATS Optimization', desc: 'Provide resume strength breakdown and keyword suggestions' },
-                  { key: 'smartSearch', label: 'Gemini Semantic Search', desc: 'Enable natural language AI intent mapping in search' },
-                ].map(f => (
-                  <div key={f.key} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-200">
-                    <div>
-                      <p className="text-xs sm:text-sm font-bold text-gray-900">{f.label}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">{f.desc}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleAi(f.key)}
-                      className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${aiFeatures[f.key as keyof typeof aiFeatures] ? 'bg-emerald-600' : 'bg-gray-300'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${aiFeatures[f.key as keyof typeof aiFeatures] ? 'left-6' : 'left-1'}`} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Revenue */}
-          {activeTab === 'revenue' && (
-            <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
-              <h2 className="text-sm font-bold text-gray-900">Franchise Revenue Distribution</h2>
-              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
-                <p className="text-xs font-bold text-gray-900">Franchise Commission Split</p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min="10"
-                    max="50"
-                    value={revenueShare}
-                    onChange={e => setRevenueShare(e.target.value)}
-                    onMouseUp={() => handleSave({ revenueShare })}
-                    className="flex-1 accent-blue-600"
+            <Card>
+              <CardHeader title="AI capabilities" description="Which AI features are offered to users" />
+              <CardBody className="space-y-3">
+                {AI_FEATURES.map(f => (
+                  <SettingRow
+                    key={f.key}
+                    title={f.label}
+                    description={f.desc}
+                    control={
+                      <Switch
+                        checked={aiFeatures[f.key]}
+                        onChange={() => toggleAi(f.key)}
+                        label={f.label}
+                      />
+                    }
                   />
-                  <span className="text-base font-black text-blue-700 w-12 text-right">{revenueShare}%</span>
-                </div>
-                <p className="text-[11px] text-gray-500">Platform keeps {100 - parseInt(revenueShare)}%, Franchise partner receives {revenueShare}% on localized business onboarding.</p>
-              </div>
-            </div>
+                ))}
+              </CardBody>
+            </Card>
           )}
 
-          {/* Platform */}
-          {activeTab === 'platform' && (
-            <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
-              <h2 className="text-sm font-bold text-gray-900">System Modules &amp; Feature Toggles</h2>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-red-50 border border-red-200">
-                  <div>
-                    <p className="text-xs sm:text-sm font-bold text-red-950">Maintenance Mode</p>
-                    <p className="text-[11px] text-red-700 mt-0.5">Temporarily restrict public access for platform upgrades</p>
+          {activeTab === 'revenue' && (
+            <Card>
+              <CardHeader title="Franchise revenue distribution" />
+              <CardBody>
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <label htmlFor="revenue-share" className="block text-sm font-semibold text-slate-900">
+                    Franchise commission split
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="revenue-share"
+                      type="range"
+                      min="10"
+                      max="50"
+                      value={revenueShare}
+                      onChange={e => setRevenueShare(e.target.value)}
+                      onMouseUp={() => handleSave({ revenueShare })}
+                      onTouchEnd={() => handleSave({ revenueShare })}
+                      className="tap-target-auto h-2 flex-1 accent-blue-600"
+                    />
+                    <span className="w-14 text-right text-base font-bold tabular-nums text-[#1D4ED8]">{revenueShare}%</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = !maintenance;
-                      setMaintenance(next);
-                      handleSave({ maintenance: next });
-                    }}
-                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${maintenance ? 'bg-red-600' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${maintenance ? 'left-6' : 'left-1'}`} />
-                  </button>
+                  <p className="text-xs text-slate-500">
+                    Platform keeps {100 - parseInt(revenueShare, 10)}%; the franchise partner receives {revenueShare}% on localised business onboarding.
+                  </p>
                 </div>
+              </CardBody>
+            </Card>
+          )}
 
-                {[
-                  { key: 'registrationEnabled', label: 'User & Business Registration', desc: 'Allow visitors to create new candidate and business accounts' },
-                  { key: 'jobPostingEnabled', label: 'Job Opening Submissions', desc: 'Enable employers to create new job vacancies' },
-                  { key: 'reviewsEnabled', label: 'Public Reviews & Feedback', desc: 'Allow job seekers to submit ratings for companies' },
-                  { key: 'leadFormsEnabled', label: 'Marketplace Enquiry Forms', desc: 'Show WhatsApp inquiry and product order forms' },
-                ].map(f => (
-                  <div key={f.key} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-200">
-                    <div>
-                      <p className="text-xs sm:text-sm font-bold text-gray-900">{f.label}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5">{f.desc}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleFeature(f.key)}
-                      className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${features[f.key as keyof typeof features] ? 'bg-emerald-600' : 'bg-gray-300'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${features[f.key as keyof typeof features] ? 'left-6' : 'left-1'}`} />
-                    </button>
-                  </div>
+          {activeTab === 'platform' && (
+            <Card>
+              <CardHeader title="System modules & feature toggles" />
+              <CardBody className="space-y-3">
+                <SettingRow
+                  className="border-rose-200 bg-[#FEF2F2]"
+                  title="Maintenance mode"
+                  description="Temporarily restrict public access for platform upgrades"
+                  control={
+                    <Switch
+                      checked={maintenance}
+                      label="Maintenance mode"
+                      onChange={(next) => {
+                        setMaintenance(next);
+                        handleSave({ maintenance: next });
+                      }}
+                    />
+                  }
+                />
+                {PLATFORM_FEATURES.map(f => (
+                  <SettingRow
+                    key={f.key}
+                    title={f.label}
+                    description={f.desc}
+                    control={
+                      <Switch
+                        checked={features[f.key]}
+                        onChange={() => toggleFeature(f.key)}
+                        label={f.label}
+                      />
+                    }
+                  />
                 ))}
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           )}
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

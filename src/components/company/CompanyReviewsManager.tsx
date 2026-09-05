@@ -61,7 +61,7 @@ export default function CompanyReviewsManager({ companyId }: CompanyReviewsManag
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-10 font-outfit text-xs text-slate-400">
+      <div className="flex items-center justify-center py-10 font-outfit text-xs text-slate-500">
         <Loader2 size={18} className="animate-spin text-blue-600 mr-2" /> Loading reviews...
       </div>
     );
@@ -77,7 +77,7 @@ export default function CompanyReviewsManager({ companyId }: CompanyReviewsManag
       </div>
 
       {reviews.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-xs text-slate-500">
           <MessageSquare size={32} className="mx-auto mb-2 text-slate-300" />
           No candidate reviews received yet.
         </div>
@@ -99,13 +99,13 @@ export default function CompanyReviewsManager({ companyId }: CompanyReviewsManag
                       {r.status?.toUpperCase() || 'APPROVED'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5">
                     {r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleDateString('en-IN') : 'Recently'}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1 text-amber-500 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200/60">
-                  <Star size={13} className="fill-amber-400 text-amber-400" />
+                  <Star size={13} className="fill-amber-400 text-amber-600" />
                   <span className="text-xs font-bold text-amber-700">{r.rating}.0</span>
                 </div>
               </div>
@@ -128,7 +128,7 @@ export default function CompanyReviewsManager({ companyId }: CompanyReviewsManag
                 <button
                   type="button"
                   onClick={() => handleReport(r.id)}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-red-600"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-red-600"
                 >
                   <Flag size={12} /> Report Review
                 </button>
@@ -149,8 +149,8 @@ export default function CompanyReviewsManager({ companyId }: CompanyReviewsManag
                     rows={2}
                     value={replyText}
                     onChange={e => setReplyText(e.target.value)}
-                    placeholder="Write official company response..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 outline-none focus:border-blue-500"
+                    aria-label="Write official company response" placeholder="Write official company response..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-xs text-slate-900 outline-none focus:border-blue-500"
                   />
                   <div className="flex justify-end gap-2">
                     <button onClick={() => setReplyingId(null)} className="px-3 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100">

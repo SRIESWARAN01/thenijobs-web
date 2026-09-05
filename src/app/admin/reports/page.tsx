@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/useRealtimeStats';
 import { useCollection } from '@/hooks/useFirestore';
+import { Button, PageHeader, PageShell, Tabs } from '@/components/dashboard';
 
 // ===== CONSTANTS =====
 const TIME_PERIODS = ['7D', '1M', '3M', '6M', '1Y'] as const;
@@ -116,53 +117,40 @@ export default function ReportsPage() {
   ];
 
   const colorMap: Record<string, { bg: string; text: string; chartBg: string }> = {
-    violet: { bg: 'bg-violet-500/15', text: 'text-violet-400', chartBg: 'from-violet-500/20 to-violet-500/5' },
-    cyan: { bg: 'bg-cyan-500/15', text: 'text-cyan-400', chartBg: 'from-cyan-500/20 to-cyan-500/5' },
-    emerald: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', chartBg: 'from-emerald-500/20 to-emerald-500/5' },
-    amber: { bg: 'bg-amber-500/15', text: 'text-amber-400', chartBg: 'from-amber-500/20 to-amber-500/5' },
-    rose: { bg: 'bg-rose-500/15', text: 'text-rose-400', chartBg: 'from-rose-500/20 to-rose-500/5' },
+    violet: { bg: 'bg-violet-500/15', text: 'text-violet-600', chartBg: 'from-violet-500/20 to-violet-500/5' },
+    cyan: { bg: 'bg-cyan-500/15', text: 'text-cyan-600', chartBg: 'from-cyan-500/20 to-cyan-500/5' },
+    emerald: { bg: 'bg-emerald-500/15', text: 'text-emerald-600', chartBg: 'from-emerald-500/20 to-emerald-500/5' },
+    amber: { bg: 'bg-amber-500/15', text: 'text-amber-600', chartBg: 'from-amber-500/20 to-amber-500/5' },
+    rose: { bg: 'bg-rose-500/15', text: 'text-rose-600', chartBg: 'from-rose-500/20 to-rose-500/5' },
   };
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 font-outfit">Analytics & Reports</h1>
-          <p className="text-sm text-slate-500 mt-1">Platform insights and performance metrics</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all">
-            <Download size={16} />
-            <span>CSV</span>
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-sm text-gray-300 hover:bg-white/[0.08] hover:border-white/[0.15] transition-all">
-            <FileText size={16} />
-            <span>PDF</span>
-          </button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Analytics & reports"
+        description="Platform insights and performance metrics."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Reports' }]}
+        actions={
+          <>
+            <Button variant="secondary"><Download size={15} /> CSV</Button>
+            <Button variant="secondary"><FileText size={15} /> PDF</Button>
+          </>
+        }
+      />
 
-      {/* Time Period Selector */}
-      <div className="flex items-center gap-2">
-        {TIME_PERIODS.map((period) => (
-          <button
-            key={period}
-            onClick={() => setTimePeriod(period)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${timePeriod === period
-              ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
-              : 'text-gray-500 hover:text-white hover:bg-white border border-transparent'
-              }`}
-          >
-            {period}
-          </button>
-        ))}
-      </div>
+      {/* The inactive time-period button was `hover:bg-slate-100 hover:text-slate-900`
+          — white text on a white fill, so the label vanished on hover. */}
+      <Tabs
+        label="Reporting period"
+        value={timePeriod}
+        onChange={(id) => setTimePeriod(id as typeof timePeriod)}
+        tabs={TIME_PERIODS.map(period => ({ id: period, label: period }))}
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 size={36} className="text-violet-400 animate-spin mb-4" />
-          <p className="text-sm text-gray-400">Aggregating platform metrics...</p>
+          <Loader2 size={36} className="text-violet-600 animate-spin mb-4" />
+          <p className="text-sm text-slate-500">Aggregating platform metrics...</p>
         </div>
       ) : (
         <>
@@ -183,14 +171,14 @@ export default function ReportsPage() {
                         <p className="text-[10px] text-gray-500">{chart.description}</p>
                       </div>
                     </div>
-                    <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-400">
+                    <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-600">
                       <ArrowUpRight size={12} />
                       {chart.trend}
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-gray-900 font-outfit mb-4">{chart.value}</p>
                   {/* Visual Sparkline */}
-                  <div className={`h-16 rounded-xl bg-gradient-to-b ${colors.chartBg} border border-white/[0.04] flex items-end justify-between px-6 pb-2`}>
+                  <div className={`h-16 rounded-xl bg-gradient-to-b ${colors.chartBg} border border-slate-200 flex items-end justify-between px-6 pb-2`}>
                     {[40, 55, 45, 60, 75, 90].map((h, i) => (
                       <div
                         key={i}
@@ -210,24 +198,24 @@ export default function ReportsPage() {
             <div className="glass-card rounded-2xl overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
                 <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <MapPin size={16} className="text-violet-400" />
+                  <MapPin size={16} className="text-violet-600" />
                 </div>
                 <h2 className="text-sm font-semibold text-gray-900">Top Districts</h2>
               </div>
-              <div className="divide-y divide-white/[0.04]">
+              <div className="divide-y divide-slate-100">
                 {formattedDistricts.length === 0 ? (
                   <div className="p-8 text-center text-xs text-gray-500">No district records found.</div>
                 ) : (
                   formattedDistricts.map((district, i) => (
-                    <div key={district.name} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                    <div key={district.name} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-100 transition-colors">
                       <span className="text-xs font-bold text-gray-600 w-5">#{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{district.name}</p>
-                        <div className="w-full h-1 bg-white rounded-full mt-1.5 overflow-hidden">
+                        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-slate-200">
                           <div className="h-full bg-gradient-to-r from-violet-500 to-cyan-500 rounded-full" style={{ width: `${district.pct}%` }} />
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-violet-400">{district.users} users</span>
+                      <span className="text-xs font-bold text-violet-600">{district.users} users</span>
                     </div>
                   ))
                 )}
@@ -238,24 +226,24 @@ export default function ReportsPage() {
             <div className="glass-card rounded-2xl overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Award size={16} className="text-cyan-400" />
+                  <Award size={16} className="text-cyan-600" />
                 </div>
                 <h2 className="text-sm font-semibold text-gray-900 font-outfit">Top Categories (Jobs)</h2>
               </div>
-              <div className="divide-y divide-white/[0.04]">
+              <div className="divide-y divide-slate-100">
                 {formattedCategories.length === 0 ? (
                   <div className="p-8 text-center text-xs text-gray-500">No category records found.</div>
                 ) : (
                   formattedCategories.map((category, i) => (
-                    <div key={category.name} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                    <div key={category.name} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-100 transition-colors">
                       <span className="text-xs font-bold text-gray-600 w-5">#{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900">{category.name}</p>
-                        <div className="w-full h-1 bg-white rounded-full mt-1.5 overflow-hidden">
+                        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-slate-200">
                           <div className="h-full bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full" style={{ width: `${category.pct}%` }} />
                         </div>
                       </div>
-                      <span className="text-xs font-bold text-cyan-400">{category.count}</span>
+                      <span className="text-xs font-bold text-cyan-600">{category.count}</span>
                     </div>
                   ))
                 )}
@@ -266,24 +254,24 @@ export default function ReportsPage() {
             <div className="glass-card rounded-2xl overflow-hidden">
               <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <Crown size={16} className="text-emerald-400" />
+                  <Crown size={16} className="text-emerald-600" />
                 </div>
                 <h2 className="text-sm font-semibold text-gray-900 font-outfit">Top Employers</h2>
               </div>
-              <div className="divide-y divide-white/[0.04]">
+              <div className="divide-y divide-slate-100">
                 {formattedEmployers.length === 0 ? (
                   <div className="p-8 text-center text-xs text-gray-500">No employers registered yet.</div>
                 ) : (
                   formattedEmployers.map((employer, i) => (
-                    <div key={employer.name} className="flex items-center gap-3 px-5 py-3 hover:bg-white/[0.02] transition-colors">
+                    <div key={employer.name} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-100 transition-colors">
                       <span className="text-xs font-bold text-gray-600 w-5">#{i + 1}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{employer.name}</p>
                         <p className="text-[10px] text-gray-500">{employer.jobs} jobs · {employer.applications} apps</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <Star size={12} className="text-amber-400" fill="currentColor" />
-                        <span className="text-xs font-bold text-amber-400">{employer.rating}</span>
+                        <Star size={12} className="text-amber-600" fill="currentColor" />
+                        <span className="text-xs font-bold text-amber-600">{employer.rating}</span>
                       </div>
                     </div>
                   ))
@@ -293,6 +281,6 @@ export default function ReportsPage() {
           </div>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -218,57 +218,57 @@ export default function CompanyRegisterPage() {
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Company / Business Name *</label>
-                  <input type="text" placeholder="Company or business name"
+                  <label htmlFor="company-register-company-business-name" className="text-xs text-slate-600 font-medium block mb-1.5">Company / Business Name *</label>
+                  <input id="company-register-company-business-name" type="text" placeholder="Company or business name"
                     value={form.name} onChange={e => update('name', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                   <p className="text-xs text-gray-600 mt-1">Your URL: thenijobs.com/company/<span className="text-violet-400">{form.name.toLowerCase().replace(/\s+/g, '-') || 'your-business-name'}</span></p>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Business Category *</label>
-                  <select value={form.category} onChange={e => update('category', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm">
+                  <label htmlFor="company-register-business-category" className="text-xs text-slate-600 font-medium block mb-1.5">Business Category *</label>
+                  <select id="company-register-business-category" value={form.category} onChange={e => update('category', e.target.value)}
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm">
                     <option value="">Select category</option>
                     {BUSINESS_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Sub-category</label>
-                  <input type="text" placeholder="Sub-category"
+                  <label htmlFor="company-register-sub-category" className="text-xs text-slate-600 font-medium block mb-1.5">Sub-category</label>
+                  <input id="company-register-sub-category" type="text" placeholder="Sub-category"
                     value={form.subcategory} onChange={e => update('subcategory', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Founded Year</label>
-                  <input type="number" placeholder="Year" min="1900" max="2025"
+                  <label htmlFor="company-register-founded-year" className="text-xs text-slate-600 font-medium block mb-1.5">Founded Year</label>
+                  <input id="company-register-founded-year" type="number" placeholder="Year" min="1900" max="2025"
                     value={form.foundedYear} onChange={e => update('foundedYear', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Company Size</label>
-                  <select value={form.companySize} onChange={e => update('companySize', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm">
+                  <label htmlFor="company-register-company-size" className="text-xs text-slate-600 font-medium block mb-1.5">Company Size</label>
+                  <select id="company-register-company-size" value={form.companySize} onChange={e => update('companySize', e.target.value)}
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm">
                     <option value="">Select size</option>
                     {COMPANY_SIZES.map(s => <option key={s} value={s}>{s} employees</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">GST Number (Optional)</label>
-                  <input type="text" placeholder="GST Number"
+                  <label htmlFor="company-register-gst-number-optional" className="text-xs text-slate-600 font-medium block mb-1.5">GST Number (Optional)</label>
+                  <input id="company-register-gst-number-optional" type="text" placeholder="GST Number"
                     value={form.gstNumber} onChange={e => update('gstNumber', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm font-mono" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm font-mono" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Registration Number (Optional)</label>
-                  <input type="text" placeholder="Registration or license number"
+                  <label htmlFor="company-register-registration-number-optional" className="text-xs text-slate-600 font-medium block mb-1.5">Registration Number (Optional)</label>
+                  <input id="company-register-registration-number-optional" type="text" placeholder="Registration or license number"
                     value={form.registrationNumber} onChange={e => update('registrationNumber', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Business Description * <span className="text-gray-600">(for SEO – min 100 words)</span></label>
-                  <textarea rows={5} placeholder="Describe your business, services offered, and what makes you unique. This will appear on Google Search results."
+                  <label htmlFor="company-register-business-description-for-seo-min-100-wor" className="text-xs text-slate-600 font-medium block mb-1.5">Business Description * <span className="text-gray-600">(for SEO – min 100 words)</span></label>
+                  <textarea id="company-register-business-description-for-seo-min-100-wor" rows={5} placeholder="Describe your business, services offered, and what makes you unique. This will appear on Google Search results."
                     value={form.description} onChange={e => update('description', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm resize-none leading-relaxed" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm resize-none leading-relaxed" />
                   <p className="text-xs text-gray-600 mt-1">{form.description.split(' ').filter(Boolean).length} words</p>
                 </div>
               </div>
@@ -286,66 +286,66 @@ export default function CompanyRegisterPage() {
                   <label className="text-xs text-slate-600 font-medium block mb-1.5">Mobile Number *</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
-                    <input type="tel" maxLength={10} placeholder="Mobile number"
+                    <input type="tel" maxLength={10} aria-label="Mobile number" placeholder="Mobile number"
                       value={form.phone} onChange={e => update('phone', e.target.value)}
-                      className="search-input flex-1 px-4 py-3 text-sm" />
+                      className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-slate-600 font-medium block mb-1.5">Alternate Number</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
-                    <input type="tel" maxLength={10} placeholder="Optional"
+                    <input type="tel" maxLength={10} aria-label="Optional" placeholder="Optional"
                       value={form.alternatePhone} onChange={e => update('alternatePhone', e.target.value)}
-                      className="search-input flex-1 px-4 py-3 text-sm" />
+                      className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-slate-600 font-medium block mb-1.5">Email Address *</label>
-                  <input type="email" placeholder="contact@yourbusiness.com"
+                  <input id="company-register-mobile-number-91-update-phone-e-target-v" type="email" placeholder="contact@yourbusiness.com"
                     value={form.email} onChange={e => update('email', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-slate-600 font-medium block mb-1.5">WhatsApp Number</label>
                   <div className="flex gap-2">
                     <div className="search-input px-3 py-3 text-sm text-gray-400 w-14 text-center rounded-xl">+91</div>
-                    <input type="tel" maxLength={10} placeholder="WhatsApp number"
+                    <input type="tel" maxLength={10} aria-label="WhatsApp number" placeholder="WhatsApp number"
                       value={form.whatsapp} onChange={e => update('whatsapp', e.target.value)}
-                      className="search-input flex-1 px-4 py-3 text-sm" />
+                      className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                   </div>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="text-xs text-slate-600 font-medium block mb-1.5">Website URL</label>
-                  <input type="url" placeholder="https://yourbusiness.com"
+                  <input id="company-register-whatsapp-number-91-update-whatsapp-e-tar" type="url" placeholder="https://yourbusiness.com"
                     value={form.website} onChange={e => update('website', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Full Address *</label>
-                  <textarea rows={2} placeholder="Door no., Street, Area, Town"
+                  <label htmlFor="company-register-full-address" className="text-xs text-slate-600 font-medium block mb-1.5">Full Address *</label>
+                  <textarea id="company-register-full-address" rows={2} placeholder="Door no., Street, Area, Town"
                     value={form.address} onChange={e => update('address', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm resize-none" />
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm resize-none" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">District *</label>
-                  <select value={form.district} onChange={e => update('district', e.target.value)}
-                    className="search-input w-full px-4 py-3 text-sm">
+                  <label htmlFor="company-register-district" className="text-xs text-slate-600 font-medium block mb-1.5">District *</label>
+                  <select id="company-register-district" value={form.district} onChange={e => update('district', e.target.value)}
+                    className="search-input w-full px-4 py-3 text-base sm:text-sm">
                     <option value="">Select district</option>
                     {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">State</label>
-                  <input type="text" value={form.state} readOnly className="search-input w-full px-4 py-3 text-sm opacity-60" />
+                  <label htmlFor="company-register-state" className="text-xs text-slate-600 font-medium block mb-1.5">State</label>
+                  <input id="company-register-state" type="text" value={form.state} readOnly className="search-input w-full px-4 py-3 text-base sm:text-sm opacity-60" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Opening Time</label>
-                  <input type="time" value="09:00" className="search-input w-full px-4 py-3 text-sm" />
+                  <label htmlFor="company-register-opening-time" className="text-xs text-slate-600 font-medium block mb-1.5">Opening Time</label>
+                  <input id="company-register-opening-time" type="time" value="09:00" className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-600 font-medium block mb-1.5">Closing Time</label>
-                  <input type="time" value="18:00" className="search-input w-full px-4 py-3 text-sm" />
+                  <label htmlFor="company-register-closing-time" className="text-xs text-slate-600 font-medium block mb-1.5">Closing Time</label>
+                  <input id="company-register-closing-time" type="time" value="18:00" className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
               </div>
             </div>
@@ -408,7 +408,7 @@ export default function CompanyRegisterPage() {
                     <label className="text-xs text-slate-600 font-medium block mb-1.5">{icon} {label}</label>
                     <input type="url" placeholder={placeholder}
                       value={(form as any)[key]} onChange={e => update(key, e.target.value)}
-                      className="search-input w-full px-4 py-3 text-sm" />
+                      className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                   </div>
                 ))}
               </div>
@@ -425,8 +425,8 @@ export default function CompanyRegisterPage() {
               <div className="flex gap-2">
                 <input type="text" value={newService} onChange={e => setNewService(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addService()}
-                  placeholder="Add a service your business offers"
-                  className="search-input flex-1 px-4 py-3 text-sm" />
+                  aria-label="Add a service your business offers" placeholder="Add a service your business offers"
+                  className="search-input flex-1 px-4 py-3 text-base sm:text-sm" />
                 <button onClick={addService}
                   className="btn-gradient px-4 py-3 rounded-xl relative z-10 flex items-center gap-1 text-sm font-semibold">
                   <Plus size={15} /> Add

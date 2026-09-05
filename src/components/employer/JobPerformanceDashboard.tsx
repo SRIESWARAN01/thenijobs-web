@@ -166,7 +166,7 @@ export default function JobPerformanceDashboard({ data, jobTitle, jobStatus, com
             <p className="text-xl font-bold text-gray-900 mt-1">
               {m.value.toFixed(1)}%
             </p>
-            <p className="text-[10px] text-gray-400 mt-0.5">{m.desc}</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">{m.desc}</p>
           </div>
         ))}
       </div>

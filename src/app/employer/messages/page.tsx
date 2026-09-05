@@ -13,8 +13,8 @@ import {
   Calendar, FileText, MapPin, Briefcase, ArrowLeft, Check, CheckCheck,
   Sparkles, User
 } from 'lucide-react';
-import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { Card, PageHeader, PageShell } from '@/components/dashboard';
 
 interface Message {
   id: string;
@@ -191,27 +191,26 @@ export default function EmployerMessagesPage() {
   );
 
   return (
-    <div className="space-y-4 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900">Communication &amp; Messages</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Real-time chat, interview invites, and hiring communications with applicants</p>
-      </div>
+    <PageShell className="pb-20">
+      <PageHeader
+        title="Communication & messages"
+        description="Real-time chat, interview invites and hiring communications with applicants."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Messages' }]}
+      />
 
-      {/* Main Container */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden h-[calc(100vh-210px)] min-h-[520px] flex">
+      <Card className="flex h-[calc(100vh-210px)] min-h-[520px] overflow-hidden">
         {/* Left Side: Conversation List (Hidden on mobile when chat is open) */}
         <div className={`w-full md:w-80 lg:w-96 border-r border-gray-200 flex flex-col bg-gray-50/50 ${mobileChatOpen ? 'hidden md:flex' : 'flex'}`}>
           {/* Search box */}
           <div className="p-3.5 border-b border-gray-200 bg-white">
             <div className="relative">
-              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
-                placeholder="Search chats & applicants..."
+                aria-label="Search chats & applicants" placeholder="Search chats & applicants..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-100/80 border border-gray-200 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+                className="w-full pl-10 pr-4 py-2 bg-gray-100/80 border border-gray-200 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
               />
             </div>
           </div>
@@ -221,11 +220,11 @@ export default function EmployerMessagesPage() {
             {convsLoading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <Loader2 size={24} className="text-blue-600 animate-spin" />
-                <span className="text-xs text-gray-400">Loading inbox...</span>
+                <span className="text-xs text-slate-500">Loading inbox...</span>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="p-8 text-center text-gray-400 space-y-2">
-                <MessageSquare size={32} className="mx-auto text-gray-300" />
+              <div className="p-8 text-center text-slate-500 space-y-2">
+                <MessageSquare size={32} className="mx-auto text-slate-500" />
                 <p className="text-xs font-bold text-gray-600">No active conversations</p>
                 <p className="text-[11px]">When candidates apply or message, chats will appear here.</p>
               </div>
@@ -233,11 +232,13 @@ export default function EmployerMessagesPage() {
               filtered.map((conv) => {
                 const isSelected = activeConv?.id === conv.id;
                 return (
-                  <div
+                  <button
                     key={conv.id}
+                    type="button"
+                    aria-current={isSelected ? 'true' : undefined}
                     onClick={() => selectConversation(conv)}
-                    className={`p-3.5 sm:p-4 cursor-pointer transition-all flex items-start gap-3 ${
-                      isSelected ? 'bg-blue-50/80 border-l-4 border-blue-600' : 'hover:bg-gray-100/70 bg-white'
+                    className={`flex w-full items-start gap-3 p-3.5 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:p-4 ${
+                      isSelected ? 'border-l-4 border-blue-600 bg-blue-50/80' : 'bg-white hover:bg-gray-100/70'
                     }`}
                   >
                     <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-700 font-black text-sm flex items-center justify-center shrink-0 border border-blue-200">
@@ -248,7 +249,7 @@ export default function EmployerMessagesPage() {
                         <h4 className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                           {conv.otherUserName}
                         </h4>
-                        <span className="text-[10px] text-gray-400 shrink-0">
+                        <span className="text-[10px] text-slate-500 shrink-0">
                           {conv.lastMessageAt ? new Date(conv.lastMessageAt?.toMillis?.() || conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                       </div>
@@ -259,7 +260,7 @@ export default function EmployerMessagesPage() {
                         {conv.lastMessage}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })
             )}
@@ -330,8 +331,8 @@ export default function EmployerMessagesPage() {
                     <Loader2 size={24} className="text-blue-600 animate-spin" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400 space-y-2">
-                    <Sparkles size={28} className="mx-auto text-blue-400" />
+                  <div className="text-center py-12 text-slate-500 space-y-2">
+                    <Sparkles size={28} className="mx-auto text-blue-600" />
                     <p className="text-xs font-bold text-gray-700">Start the conversation with {activeConv.otherUserName}</p>
                     <p className="text-[11px]">Use quick response templates below or type a custom message.</p>
                   </div>
@@ -351,7 +352,7 @@ export default function EmployerMessagesPage() {
                           }`}
                         >
                           <p className="whitespace-pre-wrap">{m.text}</p>
-                          <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
+                          <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMe ? 'text-blue-200' : 'text-slate-500'}`}>
                             <span>{messageMillis(m) ? new Date(messageMillis(m)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...'}</span>
                             {isMe && <CheckCheck size={11} />}
                           </div>
@@ -381,10 +382,10 @@ export default function EmployerMessagesPage() {
               <form onSubmit={e => { e.preventDefault(); handleSendMessage(); }} className="p-3 sm:p-4 bg-white border-t border-gray-200 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Type your message to candidate..."
+                  aria-label="Type your message to candidate" placeholder="Type your message to candidate..."
                   value={inputText}
                   onChange={e => setInputText(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+                  className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
                 />
                 <button
                   type="submit"
@@ -396,7 +397,7 @@ export default function EmployerMessagesPage() {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-3">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-3">
               <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-200 shadow-xs">
                 <MessageSquare size={28} />
               </div>
@@ -407,7 +408,7 @@ export default function EmployerMessagesPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function AdminLoading() {
   return (
-    <div className="p-4 sm:p-6 flex items-center justify-center min-h-[60vh]">
+    <div className="flex min-h-[60vh] items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <Loader2 className="animate-spin text-blue-600" size={32} />
         <p className="text-sm text-gray-500 font-medium">Loading admin panel...</p>

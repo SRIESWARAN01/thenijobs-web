@@ -216,28 +216,28 @@ export default function CompanyProductsManager({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Product Name *</label>
-              <input
+              <label htmlFor="company-companyproductsmanager-product-name" className="text-xs font-bold text-gray-700 block mb-1">Product Name *</label>
+              <input id="company-companyproductsmanager-product-name"
                 type="text"
                 value={form.name || ''}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g. Pure Theni Cardamom 1kg / PVC Pipes"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Category / Group</label>
-              <input
+              <label htmlFor="company-companyproductsmanager-category-group" className="text-xs font-bold text-gray-700 block mb-1">Category / Group</label>
+              <input id="company-companyproductsmanager-category-group"
                 type="text"
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
                 placeholder="e.g. Agriculture / Spices / Electronics"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Price (₹) or Price Range</label>
-              <input
+              <label htmlFor="company-companyproductsmanager-price-or-price-range" className="text-xs font-bold text-gray-700 block mb-1">Price (₹) or Price Range</label>
+              <input id="company-companyproductsmanager-price-or-price-range"
                 type="text"
                 value={form.priceRange || (form.price ? `₹${form.price}` : '')}
                 onChange={e => {
@@ -246,37 +246,37 @@ export default function CompanyProductsManager({
                   setForm({ ...form, priceRange: val, price: isNaN(num) || num === 0 ? undefined : num });
                 }}
                 placeholder="e.g. ₹1,200 or ₹500 - ₹1,500"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Product Image URL</label>
-              <input
+              <label htmlFor="company-companyproductsmanager-product-image-url" className="text-xs font-bold text-gray-700 block mb-1">Product Image URL</label>
+              <input id="company-companyproductsmanager-product-image-url"
                 type="url"
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-gray-700 block mb-1">Product / Website URL (Optional)</label>
-              <input
+              <label htmlFor="company-companyproductsmanager-product-website-url-optional" className="text-xs font-bold text-gray-700 block mb-1">Product / Website URL (Optional)</label>
+              <input id="company-companyproductsmanager-product-website-url-optional"
                 type="url"
                 value={form.websiteUrl || ''}
                 onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
                 placeholder="https://yourcompany.com/product-link"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-gray-700 block mb-1">Product Description</label>
-              <textarea
+              <label htmlFor="company-companyproductsmanager-product-description" className="text-xs font-bold text-gray-700 block mb-1">Product Description</label>
+              <textarea id="company-companyproductsmanager-product-description"
                 rows={3}
                 value={form.description || ''}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="Describe product quality, dimensions, specifications, bulk order discounts..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
               />
             </div>
             <div className="sm:col-span-2 space-y-2">
@@ -291,8 +291,8 @@ export default function CompanyProductsManager({
                       copy[i] = e.target.value;
                       setForm({ ...form, features: copy });
                     }}
-                    placeholder={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none font-medium"
+                    aria-label={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`} placeholder={`Feature #${i + 1} (e.g. 100% Organic, 1 Year Warranty, Same Day Delivery)`}
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none font-medium"
                   />
                   {(form.features || []).length > 1 && (
                     <button

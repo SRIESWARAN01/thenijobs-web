@@ -9,6 +9,7 @@ import {
   Globe, Check, X, ChevronRight, MessageSquare, Plus, Trash2
 } from 'lucide-react';
 import Link from 'next/link';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
@@ -254,30 +255,28 @@ export default function BecomeEmployerPage() {
   const applicationStatus = existingCompany?.verificationStatus || userDoc?.employerApplication?.status || 'none';
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto font-outfit text-gray-900 pb-20">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Link href="/seeker/dashboard" className="p-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 hover:text-gray-900 transition-all shadow-xs">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
-              Register Your Business / Become an Employer <Briefcase size={20} className="text-blue-600" />
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Post jobs, hire local candidates in Theni &amp; showcase your products &amp; services</p>
-          </div>
-        </div>
-
-        {applicationStatus === 'verified' && (
-          <Link
-            href="/employer/dashboard"
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20"
-          >
-            <Building2 size={15} /> Employer Portal <ArrowRight size={13} />
-          </Link>
-        )}
-      </div>
+    <PageShell className="max-w-4xl pb-20">
+      <PageHeader
+        title="Register your business / become an employer"
+        description="Post jobs, hire local candidates in Theni & showcase your products & services."
+        breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'Become an employer' }]}
+        actions={
+          <>
+            <Link href="/seeker/dashboard">
+              <Button variant="secondary" size="icon" aria-label="Back to dashboard">
+                <ArrowLeft size={16} />
+              </Button>
+            </Link>
+            {applicationStatus === 'verified' && (
+              <Link href="/employer/dashboard">
+                <Button variant="primary" className="border-0 bg-emerald-600 hover:bg-emerald-700">
+                  <Building2 size={15} /> Employer portal <ArrowRight size={13} />
+                </Button>
+              </Link>
+            )}
+          </>
+        }
+      />
 
       {/* STATE 1: ALREADY VERIFIED */}
       {applicationStatus === 'verified' && (
@@ -364,6 +363,12 @@ export default function BecomeEmployerPage() {
         <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
           {/* Wizard Step Progress Bar */}
           <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-5">
+            {/* Below sm the five labels get ~62px each and truncate to noise,
+                so the current step is named once above the dots instead. */}
+            <p className="mb-2.5 text-center text-xs font-bold text-blue-700 sm:hidden">
+              Step {currentStep} of {STEPS.length}
+              {STEPS[currentStep - 1] ? ` — ${STEPS[currentStep - 1].label}` : ''}
+            </p>
             <div className="grid grid-cols-5 gap-2 text-center">
               {STEPS.map((s) => {
                 const isCurrent = currentStep === s.step;
@@ -381,7 +386,7 @@ export default function BecomeEmployerPage() {
                     >
                       {isDone ? <Check size={14} /> : s.step}
                     </div>
-                    <p className={`text-[10px] sm:text-xs font-bold truncate ${isCurrent ? 'text-blue-700' : 'text-gray-500'}`}>
+                    <p className={`hidden truncate text-[10px] font-bold sm:block sm:text-xs ${isCurrent ? 'text-blue-700' : 'text-slate-500'}`}>
                       {s.label}
                     </p>
                   </div>
@@ -401,34 +406,34 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Company / Shop / Business Name *</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-company-shop-business-name" className="text-xs font-bold text-gray-700 block mb-1">Company / Shop / Business Name *</label>
+                  <input id="seeker-become-employer-company-shop-business-name"
                     type="text"
                     required
                     placeholder="e.g. Theni Textiles &amp; Garments Pvt Ltd"
                     value={form.name}
                     onChange={e => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
-                    <select
+                    <label htmlFor="seeker-become-employer-business-category" className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
+                    <select id="seeker-become-employer-business-category"
                       value={form.category}
                       onChange={e => setForm({ ...form, category: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                     >
                       {BUSINESS_CATEGORIES.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Primary District *</label>
-                    <select
+                    <label htmlFor="seeker-become-employer-primary-district" className="text-xs font-bold text-gray-700 block mb-1">Primary District *</label>
+                    <select id="seeker-become-employer-primary-district"
                       value={form.district}
                       onChange={e => setForm({ ...form, district: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                     >
                       {DISTRICTS.map(d => <option key={d}>{d}</option>)}
                     </select>
@@ -436,24 +441,24 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Tagline / Motto</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-tagline-motto" className="text-xs font-bold text-gray-700 block mb-1">Tagline / Motto</label>
+                  <input id="seeker-become-employer-tagline-motto"
                     type="text"
                     placeholder="e.g. Quality Garments &amp; Retail Manufacturing Since 2012"
                     value={form.tagline}
                     onChange={e => setForm({ ...form, tagline: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Business Description</label>
-                  <textarea
+                  <label htmlFor="seeker-become-employer-business-description" className="text-xs font-bold text-gray-700 block mb-1">Business Description</label>
+                  <textarea id="seeker-become-employer-business-description"
                     rows={3}
                     placeholder="Describe your business, products, services, and workforce requirements..."
                     value={form.description}
                     onChange={e => setForm({ ...form, description: e.target.value })}
-                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -469,60 +474,60 @@ export default function BecomeEmployerPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Primary Calling Phone *</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-primary-calling-phone" className="text-xs font-bold text-gray-700 block mb-1">Primary Calling Phone *</label>
+                    <input id="seeker-become-employer-primary-calling-phone"
                       type="tel"
                       required
                       placeholder="+91 93605 19460"
                       value={form.phone}
                       onChange={e => setForm({ ...form, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Business Number</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-whatsapp-business-number" className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Business Number</label>
+                    <input id="seeker-become-employer-whatsapp-business-number"
                       type="tel"
                       placeholder="+91 93605 19460"
                       value={form.whatsapp}
                       onChange={e => setForm({ ...form, whatsapp: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-official-email-address" className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
+                    <input id="seeker-become-employer-official-email-address"
                       type="email"
                       placeholder="info@company.com"
                       value={form.email}
                       onChange={e => setForm({ ...form, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Contact Person Name</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-contact-person-name" className="text-xs font-bold text-gray-700 block mb-1">Contact Person Name</label>
+                    <input id="seeker-become-employer-contact-person-name"
                       type="text"
                       placeholder="e.g. S. Murugesan"
                       value={form.contactPerson}
                       onChange={e => setForm({ ...form, contactPerson: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Complete Office / Shop Address *</label>
-                  <textarea
+                  <label htmlFor="seeker-become-employer-complete-office-shop-address" className="text-xs font-bold text-gray-700 block mb-1">Complete Office / Shop Address *</label>
+                  <textarea id="seeker-become-employer-complete-office-shop-address"
                     rows={2}
                     required
                     placeholder="Door No, Street Name, Landmark, Theni - 625531"
                     value={form.address}
                     onChange={e => setForm({ ...form, address: e.target.value })}
-                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full p-3.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -537,36 +542,36 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-logo-image-url" className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
+                  <input id="seeker-become-employer-logo-image-url"
                     type="url"
                     placeholder="https://example.com/logo.png"
                     value={form.logoUrl}
                     onChange={e => setForm({ ...form, logoUrl: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
-                  <p className="text-[10px] text-gray-400 mt-1">If empty, a stylish avatar with company initials will be auto-generated.</p>
+                  <p className="text-[10px] text-slate-500 mt-1">If empty, a stylish avatar with company initials will be auto-generated.</p>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Banner / Shop Front Image URL</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-banner-shop-front-image-url" className="text-xs font-bold text-gray-700 block mb-1">Banner / Shop Front Image URL</label>
+                  <input id="seeker-become-employer-banner-shop-front-image-url"
                     type="url"
                     placeholder="https://example.com/shop-banner.jpg"
                     value={form.bannerUrl}
                     onChange={e => setForm({ ...form, bannerUrl: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Official Website URL (Optional)</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-official-website-url-optional" className="text-xs font-bold text-gray-700 block mb-1">Official Website URL (Optional)</label>
+                  <input id="seeker-become-employer-official-website-url-optional"
                     type="url"
                     placeholder="https://mycompany.com"
                     value={form.website}
                     onChange={e => setForm({ ...form, website: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -581,22 +586,22 @@ export default function BecomeEmployerPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Key Services / Products (Comma Separated)</label>
-                  <input
+                  <label htmlFor="seeker-become-employer-key-services-products-comma-separated" className="text-xs font-bold text-gray-700 block mb-1">Key Services / Products (Comma Separated)</label>
+                  <input id="seeker-become-employer-key-services-products-comma-separated"
                     type="text"
                     placeholder="e.g. Yarn Spinning, Cotton Weaving, Fabric Dyeing, Bulk Garment Supply"
                     value={form.servicesText}
                     onChange={e => setForm({ ...form, servicesText: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Company Size / Workforce</label>
-                  <select
+                  <label htmlFor="seeker-become-employer-company-size-workforce" className="text-xs font-bold text-gray-700 block mb-1">Company Size / Workforce</label>
+                  <select id="seeker-become-employer-company-size-workforce"
                     value={form.employeeCount}
                     onChange={e => setForm({ ...form, employeeCount: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                   >
                     <option>1-10 Employees</option>
                     <option>11-50 Employees</option>
@@ -618,23 +623,23 @@ export default function BecomeEmployerPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Government Proof Type</label>
-                    <select
+                    <label htmlFor="seeker-become-employer-government-proof-type" className="text-xs font-bold text-gray-700 block mb-1">Government Proof Type</label>
+                    <select id="seeker-become-employer-government-proof-type"
                       value={form.proofType}
                       onChange={e => setForm({ ...form, proofType: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm font-bold text-gray-700 outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm font-bold text-gray-700 outline-none"
                     >
                       {PROOF_TYPES.map(p => <option key={p}>{p}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Proof Registration Number</label>
-                    <input
+                    <label htmlFor="seeker-become-employer-proof-registration-number" className="text-xs font-bold text-gray-700 block mb-1">Proof Registration Number</label>
+                    <input id="seeker-become-employer-proof-registration-number"
                       type="text"
                       placeholder="e.g. UDYAM-TN-XX-XXXXXXX or GSTIN"
                       value={form.proofNumber}
                       onChange={e => setForm({ ...form, proofNumber: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-base sm:text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
                     />
                   </div>
                 </div>
@@ -696,6 +701,6 @@ export default function BecomeEmployerPage() {
           </form>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

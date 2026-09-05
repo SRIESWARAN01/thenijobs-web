@@ -122,7 +122,7 @@ export default function JobShareModal({ isOpen, onClose, job }: JobShareModalPro
             <Share2 size={18} className="text-blue-600" />
             <h3 className="text-sm font-bold text-gray-900">Share Job</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all tap-target-auto">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-slate-500 transition-all tap-target-auto">
             <X size={16} />
           </button>
         </div>

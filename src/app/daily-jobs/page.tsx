@@ -253,10 +253,10 @@ export default function DailyJobsPage() {
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search today's jobs, skills, roles..."
+                aria-label="Search today's jobs, skills, roles" placeholder="Search today's jobs, skills, roles..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-2xl text-xs font-semibold placeholder-gray-400 outline-none shadow-sm"
+                className="w-full pl-10 pr-4 py-3 bg-white text-gray-900 rounded-2xl text-base sm:text-xs font-semibold placeholder-gray-400 outline-none shadow-sm"
               />
             </div>
 
@@ -264,7 +264,7 @@ export default function DailyJobsPage() {
               <select
                 value={selectedDistrict}
                 onChange={e => setSelectedDistrict(e.target.value)}
-                className="w-full px-3.5 py-3 bg-white text-gray-900 rounded-2xl text-xs font-semibold outline-none shadow-sm cursor-pointer"
+                className="w-full px-3.5 py-3 bg-white text-gray-900 rounded-2xl text-base sm:text-xs font-semibold outline-none shadow-sm cursor-pointer"
               >
                 {DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
@@ -274,7 +274,7 @@ export default function DailyJobsPage() {
               <select
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full px-3.5 py-3 bg-white text-gray-900 rounded-2xl text-xs font-semibold outline-none shadow-sm cursor-pointer"
+                className="w-full px-3.5 py-3 bg-white text-gray-900 rounded-2xl text-base sm:text-xs font-semibold outline-none shadow-sm cursor-pointer"
               >
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>

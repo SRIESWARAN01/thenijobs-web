@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { requestAIService } from '@/lib/ai/aiClient';
 import { useToast } from '@/contexts/ToastContext';
+import { PageShell } from '@/components/dashboard';
 
 type Tab = 'assistant' | 'interview' | 'cover_letter';
 
@@ -227,7 +228,7 @@ export default function AICoachPage() {
   };
 
   return (
-    <div className="animate-fade-in-up space-y-6 max-w-5xl mx-auto font-outfit text-gray-900 py-4">
+    <PageShell className="max-w-5xl">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-indigo-800/40 relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -327,8 +328,8 @@ export default function AICoachPage() {
               value={question}
               onChange={e => setQuestion(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAskQuestion()}
-              placeholder="Ask about suitable jobs, salary ranges, skills to learn, or interview tips..."
-              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-xs text-gray-900 focus:bg-white focus:border-indigo-500 outline-none"
+              aria-label="Ask about suitable jobs, salary ranges, skills to learn, or interview tips" placeholder="Ask about suitable jobs, salary ranges, skills to learn, or interview tips..."
+              className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-base sm:text-xs text-gray-900 focus:bg-white focus:border-indigo-500 outline-none"
             />
             <button
               onClick={handleAskQuestion}
@@ -384,7 +385,7 @@ export default function AICoachPage() {
                 value={roleInput}
                 onChange={e => setRoleInput(e.target.value)}
                 placeholder={interviewLang === 'ta' ? 'எ.கா. அக்கவுண்டன்ட், சேல்ஸ் எக்சிகியூட்டிவ், வெப் டெவலப்பர்' : 'e.g. Accounts Assistant, Sales Executive, React Developer'}
-                className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none"
+                className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none"
               />
               <button
                 onClick={handleGenerateQuestions}
@@ -408,7 +409,7 @@ export default function AICoachPage() {
                     <span className="px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
                       {q.category || 'Interview Question'}
                     </span>
-                    <span className="text-[10px] font-semibold text-gray-400">Question #{idx + 1}</span>
+                    <span className="text-[10px] font-semibold text-slate-500">Question #{idx + 1}</span>
                   </div>
 
                   <h5 className="font-bold text-sm text-gray-900 leading-snug">{q.question}</h5>
@@ -444,7 +445,7 @@ export default function AICoachPage() {
                       value={userAnswers[q.id || idx] || ''}
                       onChange={e => setUserAnswers(prev => ({ ...prev, [q.id || idx]: e.target.value }))}
                       placeholder={interviewLang === 'ta' ? 'உங்கள் பதிலை இங்கே உள்ளிடவும்...' : 'Type or speak your response here...'}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none leading-relaxed"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none leading-relaxed"
                     />
 
                     <button
@@ -503,17 +504,17 @@ export default function AICoachPage() {
                   value={clJobTitle}
                   onChange={e => setClJobTitle(e.target.value)}
                   placeholder="e.g. Senior Accountant"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Company Name</label>
-                <input
+                <label htmlFor="seeker-ai-coach-company-name" className="text-xs font-bold text-gray-700 block mb-1">Company Name</label>
+                <input id="seeker-ai-coach-company-name"
                   type="text"
                   value={clCompany}
                   onChange={e => setClCompany(e.target.value)}
                   placeholder="e.g. Cardamom Exports Ltd"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none"
                 />
               </div>
             </div>
@@ -550,6 +551,6 @@ export default function AICoachPage() {
           )}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

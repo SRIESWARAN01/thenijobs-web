@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Bell, Send, Mail, Smartphone, Users, Building2, Globe, Loader2, ChevronDown, CheckCircle, Clock
-} from 'lucide-react';
+import { Bell, Building2, Clock, Globe, Loader2, Send, Users } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
-import { useAuth } from '@/hooks/useAuth';
 import { createDocument, getUsers, createNotification } from '@/lib/firebase/firestoreService';
-import { orderBy, limit } from 'firebase/firestore';
+import { orderBy, limit, type DocumentData } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
+import type { FirestoreTime } from '@/lib/firestoreTime';
+import {
+  Button, Card, CardBody, CardHeader, EmptyState, PageHeader, PageShell, Pill, Tabs,
+} from '@/components/dashboard';
 
 interface BroadcastDoc {
   id: string;
@@ -19,7 +20,7 @@ interface BroadcastDoc {
   sentAt?: Date;
   status: 'sent' | 'scheduled' | 'draft';
   stats?: { sent: number; delivered: number; opened: number };
-  createdAt?: any;
+  createdAt?: FirestoreTime;
 }
 
 const TABS = ['Push Notifications', 'SMS Broadcast', 'Email Campaign'] as const;
@@ -31,7 +32,6 @@ const AUDIENCE_OPTIONS = [
 ];
 
 export default function NotificationsPage() {
-  const { user: _currentUser } = useAuth();
   const { data: broadcasts, loading } = useCollection<BroadcastDoc>('broadcasts', [
     orderBy('createdAt', 'desc'),
     limit(30)
@@ -55,7 +55,7 @@ export default function NotificationsPage() {
 
     setActionLoading(true);
     try {
-      let recipients: any[] = [];
+      let recipients: DocumentData[] = [];
       if (composeAudience === 'all') {
         recipients = await getUsers();
       } else if (composeAudience === 'job_seekers') {
@@ -66,7 +66,12 @@ export default function NotificationsPage() {
         recipients = [...employers, ...businessOwners];
       }
 
-      const recipientIds = Array.from(new Set(recipients.map((r) => r.id)));
+      // getUsers() is typed DocumentData[], so an id is not guaranteed on
+      // every row; a missing one would send createNotification a userId of
+      // undefined and write an unaddressable notification.
+      const recipientIds = Array.from(
+        new Set(recipients.map((r) => r.id).filter((id): id is string => typeof id === 'string' && id.length > 0)),
+      );
 
       await Promise.all(
         recipientIds.map((userId) =>
@@ -89,6 +94,11 @@ export default function NotificationsPage() {
         stats: {
           sent: recipientIds.length,
           delivered: recipientIds.length,
+          // FIXME: not a measurement. There is no open-tracking pixel or
+          // delivery receipt anywhere in this codebase, so this writes an
+          // invented 72% open rate into Firestore where it is
+          // indistinguishable from a real one. Left as-is because changing a
+          // persisted field is out of scope for a presentation phase.
           opened: Math.round(recipientIds.length * 0.72),
         }
       });
@@ -96,7 +106,7 @@ export default function NotificationsPage() {
       setComposeTitle('');
       setComposeMessage('');
       toast.success('Broadcast sent successfully!', `Delivered to ${recipientIds.length} users.`);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Send broadcast error:', err);
       toast.error('Failed to send broadcast.');
     } finally {
@@ -105,40 +115,29 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-black text-gray-900">Notification &amp; Broadcast Center</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Dispatch platform announcements, alerts, and campaigns to candidates and employers</p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Notification & broadcast centre"
+        description="Dispatch platform announcements, alerts and campaigns to candidates and employers."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Notifications' }]}
+      />
 
-      {/* Channel Tabs */}
-      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === tab ? 'bg-white text-blue-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        label="Broadcast channel"
+        tabs={TABS.map(t => ({ id: t, label: t }))}
+        value={activeTab}
+        onChange={(id) => setActiveTab(id as typeof TABS[number])}
+      />
 
-      {/* Compose Card */}
-      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
-        <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-          <Bell size={18} className="text-blue-600" />
-          Compose {activeTab}
-        </h2>
-
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-bold text-gray-700 block mb-1">Target Audience</label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <Card>
+        <CardHeader
+          title={`Compose ${activeTab.toLowerCase()}`}
+          action={<Bell size={16} className="text-slate-400" aria-hidden />}
+        />
+        <CardBody className="space-y-4">
+          <fieldset>
+            <legend className="mb-1.5 text-xs font-semibold text-slate-700">Target audience</legend>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {AUDIENCE_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const isSelected = composeAudience === opt.value;
@@ -146,89 +145,102 @@ export default function NotificationsPage() {
                   <button
                     key={opt.value}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setComposeAudience(opt.value)}
-                    className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       isSelected
-                        ? 'bg-blue-50 border-blue-300 text-blue-900'
-                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                        ? 'border-blue-300 bg-[#EFF6FF] text-[#1E40AF]'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    <Icon size={16} className={isSelected ? 'text-blue-600' : 'text-gray-400'} />
-                    <span>{opt.label}</span>
+                    <Icon size={16} className={isSelected ? 'text-blue-600' : 'text-slate-400'} aria-hidden />
+                    <span className="text-left">{opt.label}</span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </fieldset>
 
           <div>
-            <label className="text-xs font-bold text-gray-700 block mb-1">Notification Title *</label>
+            <label htmlFor="broadcast-title" className="mb-1.5 block text-xs font-semibold text-slate-700">
+              Notification title <span className="text-rose-600">*</span>
+            </label>
             <input
+              id="broadcast-title"
               type="text"
-              placeholder="e.g. 🌟 New Job Openings Available in Theni"
+              placeholder="e.g. New job openings available in Theni"
               value={composeTitle}
               onChange={e => setComposeTitle(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600"
+              className="h-11 w-full rounded-xl border border-slate-300 px-3.5 text-base font-medium text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-gray-700 block mb-1">Notification Body *</label>
+            <label htmlFor="broadcast-body" className="mb-1.5 block text-xs font-semibold text-slate-700">
+              Notification body <span className="text-rose-600">*</span>
+            </label>
             <textarea
+              id="broadcast-body"
               rows={4}
-              placeholder="Write your broadcast announcement message..."
+              placeholder="Write your broadcast announcement…"
               value={composeMessage}
               onChange={e => setComposeMessage(e.target.value)}
-              className="w-full p-3.5 rounded-2xl border border-gray-300 text-xs sm:text-sm text-gray-900 font-medium outline-none focus:border-blue-600 leading-relaxed"
+              className="w-full rounded-xl border border-slate-300 p-3.5 text-base font-medium leading-relaxed text-slate-900 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
             />
           </div>
 
-          <div className="flex justify-end pt-2">
-            <button
-              type="button"
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              size="lg"
               onClick={handleSend}
-              disabled={actionLoading}
-              className="py-3 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
+              loading={actionLoading}
+              block
+              className="sm:w-auto"
             >
-              {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              <span>{actionLoading ? 'Dispatching Broadcast...' : 'Send Broadcast Now'}</span>
-            </button>
+              {!actionLoading && <Send size={15} />}
+              {actionLoading ? 'Dispatching broadcast…' : 'Send broadcast now'}
+            </Button>
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
-      {/* Broadcast History */}
-      <div className="bg-white rounded-3xl p-5 sm:p-7 border border-gray-200 shadow-xs space-y-4">
-        <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-          <Clock size={18} className="text-blue-600" />
-          Broadcast History
-        </h2>
-
+      <Card>
+        <CardHeader
+          title="Broadcast history"
+          description={`Previous ${activeTab.toLowerCase()} sends`}
+          action={<Clock size={16} className="text-slate-400" aria-hidden />}
+        />
         {loading ? (
           <div className="flex justify-center py-10">
-            <Loader2 size={24} className="text-blue-600 animate-spin" />
+            <Loader2 size={22} className="animate-spin text-blue-600" />
           </div>
         ) : filteredBroadcasts.length === 0 ? (
-          <p className="text-xs text-gray-400 py-6 text-center">No broadcasts sent under this channel yet.</p>
+          <EmptyState
+            variant="inline"
+            icon={Send}
+            title="Nothing sent on this channel yet"
+            description="Broadcasts you dispatch above will be listed here."
+          />
         ) : (
-          <div className="space-y-3">
+          <CardBody className="space-y-3">
             {filteredBroadcasts.map((b) => (
-              <div key={b.id} className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2">
+              <div key={b.id} className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-gray-900">{b.title}</h4>
-                    <p className="text-[11px] text-gray-500 font-medium">Audience: {b.audience}</p>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-slate-900">{b.title}</h3>
+                    <p className="text-xs text-slate-500">Audience: {b.audience}</p>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Delivered
-                  </span>
+                  <Pill tone={b.status === 'sent' ? 'success' : b.status === 'scheduled' ? 'warning' : 'neutral'} dot>
+                    {b.status || 'draft'}
+                  </Pill>
                 </div>
-                <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">{b.message}</p>
+                <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">{b.message}</p>
               </div>
             ))}
-          </div>
+          </CardBody>
         )}
-      </div>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

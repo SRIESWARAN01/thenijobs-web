@@ -18,6 +18,7 @@ import { notifyAllAdmins } from '@/lib/firebase/adminNotify';
 import { where, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { canPostNewJob, getPlan } from '@/lib/plans';
+import { Switch } from '@/components/dashboard';
 
 const STEPS = [
   { id: 1, label: 'Job Details' },
@@ -41,7 +42,7 @@ const EDUCATION_LEVELS = ['8th Pass', '10th Pass', '12th Pass', 'Diploma', 'Any 
 const OPENINGS_OPTIONS = ['1', '2', '3', '4', '5', '10', '15', '20', '20+'];
 const BENEFITS_OPTIONS = ['PF', 'ESI', 'Health Insurance', 'Food Allowance', 'Travel Allowance', 'Bonus', 'Accommodation', 'Paid Leave'];
 
-const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-medium";
+const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-300 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all font-medium";
 const labelCls = "text-xs font-bold text-gray-700 block mb-1.5";
 
 function getJobOrdinalName(num: number): string {
@@ -281,7 +282,7 @@ export default function PostJobPage() {
   const isStep1Valid = form.title && form.description && form.district && form.openings;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 font-outfit text-gray-900 pb-20">
+    <div className="mx-auto max-w-3xl pb-20 text-slate-900">
       {/* Header */}
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold mb-2 bg-blue-50 text-blue-700 border border-blue-200">
@@ -327,12 +328,12 @@ export default function PostJobPage() {
           <div key={s.id} className="flex items-center flex-1 gap-2 shrink-0">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all ${
               step > s.id ? 'bg-emerald-500 text-white shadow-xs' :
-              step === s.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-400'
+              step === s.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-slate-500'
             }`}>
               {step > s.id ? <Check size={12} /> : s.id}
             </div>
             <span className={`text-xs font-bold transition-colors whitespace-nowrap ${
-              step === s.id ? 'text-blue-600' : step > s.id ? 'text-emerald-700' : 'text-gray-400'
+              step === s.id ? 'text-blue-600' : step > s.id ? 'text-emerald-700' : 'text-slate-500'
             }`}>{s.label}</span>
             {i < STEPS.length - 1 && (
               <div className={`flex-1 h-0.5 rounded-full ml-1 transition-all ${step > s.id ? 'bg-emerald-400' : 'bg-gray-200'}`} />
@@ -354,8 +355,8 @@ export default function PostJobPage() {
             </h2>
 
             <div>
-              <label className={labelCls}>Job Title / Designation <span className="text-red-500">*</span></label>
-              <input
+              <label htmlFor="employer-post-job-job-title-designation" className={labelCls}>Job Title / Designation <span className="text-red-500">*</span></label>
+              <input id="employer-post-job-job-title-designation"
                 type="text"
                 value={form.title}
                 onChange={e => update('title', e.target.value)}
@@ -384,7 +385,7 @@ export default function PostJobPage() {
 
             <div>
               <label className={labelCls}>Job Description &amp; Responsibilities <span className="text-red-500">*</span></label>
-              <textarea
+              <textarea id="employer-post-job-employment-type-classname-px-3-5-py-2-ro"
                 rows={6}
                 value={form.description}
                 onChange={e => update('description', e.target.value)}
@@ -395,14 +396,14 @@ export default function PostJobPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>District <span className="text-red-500">*</span></label>
-                <select value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-district" className={labelCls}>District <span className="text-red-500">*</span></label>
+                <select id="employer-post-job-district" value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
                   {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Location (Town / Area)</label>
-                <input
+                <label htmlFor="employer-post-job-location-town-area" className={labelCls}>Location (Town / Area)</label>
+                <input id="employer-post-job-location-town-area"
                   type="text"
                   value={form.location}
                   onChange={e => update('location', e.target.value)}
@@ -414,14 +415,14 @@ export default function PostJobPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Number of Openings <span className="text-red-500">*</span></label>
-                <select value={form.openings} onChange={e => update('openings', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-number-of-openings" className={labelCls}>Number of Openings <span className="text-red-500">*</span></label>
+                <select id="employer-post-job-number-of-openings" value={form.openings} onChange={e => update('openings', e.target.value)} className={inputCls}>
                   {OPENINGS_OPTIONS.map(o => <option key={o} value={o}>{o} Opening{parseInt(o) > 1 ? 's' : ''}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Application Deadline</label>
-                <input type="date" value={form.deadline} onChange={e => update('deadline', e.target.value)} className={inputCls} />
+                <label htmlFor="employer-post-job-application-deadline" className={labelCls}>Application Deadline</label>
+                <input id="employer-post-job-application-deadline" type="date" value={form.deadline} onChange={e => update('deadline', e.target.value)} className={inputCls} />
               </div>
             </div>
           </div>
@@ -439,15 +440,15 @@ export default function PostJobPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>Experience Level Required</label>
-                <select value={form.experience} onChange={e => update('experience', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-experience-level-required" className={labelCls}>Experience Level Required</label>
+                <select id="employer-post-job-experience-level-required" value={form.experience} onChange={e => update('experience', e.target.value)} className={inputCls}>
                   <option value="">Select experience</option>
                   {EXPERIENCE_LEVELS.map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Minimum Qualification</label>
-                <select value={form.education} onChange={e => update('education', e.target.value)} className={inputCls}>
+                <label htmlFor="employer-post-job-minimum-qualification" className={labelCls}>Minimum Qualification</label>
+                <select id="employer-post-job-minimum-qualification" value={form.education} onChange={e => update('education', e.target.value)} className={inputCls}>
                   <option value="">Select qualification</option>
                   {EDUCATION_LEVELS.map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
@@ -462,7 +463,7 @@ export default function PostJobPage() {
                   value={newSkill}
                   onChange={e => setNewSkill(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-                  placeholder="e.g. Tally, GST, Photoshop, Java"
+                  aria-label="e.g. Tally, GST, Photoshop, Java" placeholder="e.g. Tally, GST, Photoshop, Java"
                   className={inputCls + " flex-1"}
                 />
                 <button
@@ -536,8 +537,8 @@ export default function PostJobPage() {
                 />
               </div>
               <div>
-                <label className={labelCls}>Maximum Salary (₹)</label>
-                <input
+                <label htmlFor="employer-post-job-maximum-salary" className={labelCls}>Maximum Salary (₹)</label>
+                <input id="employer-post-job-maximum-salary"
                   type="number"
                   value={form.salaryMax}
                   onChange={e => update('salaryMax', e.target.value)}
@@ -547,15 +548,14 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            <label className="flex items-center gap-3 cursor-pointer p-3.5 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all">
-              <div
-                onClick={() => update('isNegotiable', !form.isNegotiable)}
-                className={`w-10 h-6 rounded-full relative transition-all cursor-pointer ${form.isNegotiable ? 'bg-blue-600' : 'bg-gray-300'}`}
-              >
-                <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-xs transition-all ${form.isNegotiable ? 'left-5' : 'left-1'}`} />
-              </div>
-              <span className="text-xs sm:text-sm text-gray-800 font-bold">Salary is negotiable based on candidate experience</span>
-            </label>
+            <div className="flex items-center gap-3 rounded-2xl border border-gray-200 p-3.5 transition-all hover:bg-gray-50">
+              <Switch
+                checked={form.isNegotiable}
+                onChange={(next) => update('isNegotiable', next)}
+                label="Salary is negotiable based on candidate experience"
+              />
+              <span className="text-xs font-bold text-gray-800 sm:text-sm">Salary is negotiable based on candidate experience</span>
+            </div>
 
             <div>
               <label className={labelCls}>Benefits &amp; Perks</label>
@@ -587,8 +587,7 @@ export default function PostJobPage() {
                 return (
                   <div
                     key={key}
-                    onClick={() => update(key, !isChecked)}
-                    className={`flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between rounded-2xl border p-3.5 transition-all sm:p-4 ${
                       isChecked ? 'border-transparent shadow-xs' : 'border-gray-200 hover:border-gray-300'
                     }`}
                     style={isChecked ? { background: bg, borderColor: color + '40' } : {}}
@@ -597,19 +596,14 @@ export default function PostJobPage() {
                       <div className="text-xs sm:text-sm font-bold text-gray-900">{label}</div>
                       <div className="text-[11px] text-gray-500 mt-0.5">{desc}</div>
                     </div>
-                    <div
-                      className={`w-10 h-6 rounded-full relative shrink-0 transition-all ${isChecked ? '' : 'bg-gray-300'}`}
-                      style={isChecked ? { background: color } : {}}
-                    >
-                      <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-xs transition-all ${isChecked ? 'left-5' : 'left-1'}`} />
-                    </div>
+                    <Switch checked={isChecked} onChange={(next) => update(key, next)} label={label} />
                   </div>
                 );
               })}
 
               {/* Urgent Walk-in Drive Toggle & Venue */}
               <div className="p-4 rounded-2xl border border-red-200 bg-red-50/50 space-y-3 mt-3">
-                <div className="flex items-center justify-between cursor-pointer" onClick={() => update('isWalkIn', !form.isWalkIn)}>
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
                     <div>
@@ -617,40 +611,42 @@ export default function PostJobPage() {
                       <p className="text-[11px] text-red-700">Display top urgent countdown banner across the platform.</p>
                     </div>
                   </div>
-                  <div className={`w-10 h-6 rounded-full relative transition-all ${form.isWalkIn ? 'bg-red-600' : 'bg-gray-300'}`}>
-                    <div className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow-xs transition-all ${form.isWalkIn ? 'left-5' : 'left-1'}`} />
-                  </div>
+                  <Switch
+                    checked={form.isWalkIn}
+                    onChange={(next) => update('isWalkIn', next)}
+                    label="Urgent walk-in interview drive"
+                  />
                 </div>
 
                 {form.isWalkIn && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-red-200/60 animate-fade-in text-xs">
                     <div>
-                      <label className="font-bold text-red-950 block mb-1">Walk-in Interview Date</label>
-                      <input
+                      <label htmlFor="employer-post-job-walk-in-date" className="font-bold text-red-950 block mb-1">Walk-in Interview Date</label>
+                      <input id="employer-post-job-walk-in-date"
                         type="date"
                         value={form.walkInDate}
                         onChange={e => update('walkInDate', e.target.value)}
-                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-base sm:text-xs text-gray-900"
                       />
                     </div>
                     <div>
-                      <label className="font-bold text-red-950 block mb-1">Time &amp; Slots</label>
-                      <input
+                      <label htmlFor="employer-post-job-time-and-slots" className="font-bold text-red-950 block mb-1">Time &amp; Slots</label>
+                      <input id="employer-post-job-time-and-slots"
                         type="text"
                         value={form.walkInTime}
                         onChange={e => update('walkInTime', e.target.value)}
                         placeholder="e.g. 10:00 AM – 4:00 PM"
-                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-base sm:text-xs text-gray-900"
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="font-bold text-red-950 block mb-1">Walk-in Venue Address &amp; Landmarks</label>
-                      <input
+                      <label htmlFor="employer-post-job-walk-in-venue-address-and-landmarks" className="font-bold text-red-950 block mb-1">Walk-in Venue Address &amp; Landmarks</label>
+                      <input id="employer-post-job-walk-in-venue-address-and-landmarks"
                         type="text"
                         value={form.walkInVenue}
                         onChange={e => update('walkInVenue', e.target.value)}
                         placeholder="e.g. 45, NRT Road, Opp. Bus Stand, Theni"
-                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-xs text-gray-900"
+                        className="w-full px-3 py-2 bg-white rounded-xl border border-red-300 text-base sm:text-xs text-gray-900"
                       />
                     </div>
                   </div>

@@ -89,7 +89,7 @@ export default function AuthShell({
 
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
             {trustRow.map((t, i) => (
-              <span key={t} className="flex items-center gap-2.5 text-xs font-semibold text-slate-400">
+              <span key={t} className="flex items-center gap-2.5 text-xs font-semibold text-slate-500">
                 {i > 0 && <span className="w-1 h-1 rounded-full bg-slate-300" aria-hidden />}
                 {t}
               </span>

@@ -8,6 +8,7 @@ import { collection, query, where, limit, addDoc, serverTimestamp, onSnapshot, d
 import { MessageSquare, Send, Search, Loader2, ArrowLeft, Building2, Briefcase, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { Button, Card, PageHeader, PageShell } from '@/components/dashboard';
 
 interface Message {
   id: string;
@@ -177,49 +178,43 @@ export default function SeekerMessagesPage() {
   );
 
   return (
-    <div className="animate-fade-in-up max-w-6xl mx-auto font-outfit text-gray-900 py-4 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            Employer Chat &amp; Messages <MessageSquare size={18} className="text-emerald-600" />
-          </h1>
-          <p className="text-xs text-gray-500">Direct real-time communication with hiring managers</p>
-        </div>
-        <Link
-          href="/seeker/applications"
-          className="px-3.5 py-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-all flex items-center gap-1.5"
-        >
-          <FileText size={14} /> My Applications
-        </Link>
-      </div>
+    <PageShell className="max-w-6xl">
+      <PageHeader
+        title="Employer chat & messages"
+        description="Direct real-time communication with hiring managers."
+        breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'Messages' }]}
+        actions={
+          <Link href="/seeker/applications">
+            <Button variant="secondary"><FileText size={14} /> My applications</Button>
+          </Link>
+        }
+      />
 
-      {/* Main Chat Interface */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-[560px]">
+      <Card className="grid min-h-[560px] grid-cols-1 overflow-hidden lg:grid-cols-12">
         {/* Left Sidebar — Conversations List */}
         <div className={`lg:col-span-4 border-r border-gray-100 flex flex-col ${activeConv ? 'hidden lg:flex' : 'flex'}`}>
           <div className="p-4 border-b border-gray-100 bg-gray-50/50 space-y-3">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search employer chats..."
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 outline-none focus:border-emerald-500"
+                aria-label="Search employer chats" placeholder="Search employer chats..."
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
             {convsLoading ? (
-              <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+              <div className="p-8 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                 <Loader2 size={18} className="animate-spin text-emerald-600" /> Loading chats...
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-8 text-center text-xs text-gray-500 space-y-1">
                 <p className="font-bold">No active employer chats</p>
-                <p className="text-[11px] text-gray-400">Chats are automatically created when you apply for a job.</p>
+                <p className="text-[11px] text-slate-500">Chats are automatically created when you apply for a job.</p>
               </div>
             ) : (
               filtered.map((conv) => {
@@ -282,11 +277,11 @@ export default function SeekerMessagesPage() {
               {/* Chat Thread Area */}
               <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
                 {loadingMsgs ? (
-                  <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
+                  <div className="p-8 text-center text-xs text-slate-500 flex flex-col items-center gap-2">
                     <Loader2 size={16} className="animate-spin text-emerald-600" /> Loading messages...
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-gray-400">
+                  <div className="p-8 text-center text-xs text-slate-500">
                     No messages yet. Send a message to start conversing with the hiring manager!
                   </div>
                 ) : (
@@ -326,8 +321,8 @@ export default function SeekerMessagesPage() {
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Type a message to the employer..."
-                  className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-xs text-gray-900 focus:bg-white focus:border-emerald-500 outline-none"
+                  aria-label="Type a message to the employer" placeholder="Type a message to the employer..."
+                  className="flex-1 px-4 py-2.5 rounded-2xl bg-gray-100 border border-gray-200 text-base sm:text-xs text-gray-900 focus:bg-white focus:border-emerald-500 outline-none"
                 />
                 <button
                   type="submit"
@@ -339,8 +334,8 @@ export default function SeekerMessagesPage() {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 space-y-2">
-              <MessageSquare size={36} className="text-gray-300" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-2">
+              <MessageSquare size={36} className="text-slate-500" />
               <h3 className="text-sm font-bold text-gray-700">Select a Conversation</h3>
               <p className="text-xs text-gray-500 max-w-xs">
                 Select an employer conversation from the list to start messaging in real time.
@@ -348,7 +343,7 @@ export default function SeekerMessagesPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

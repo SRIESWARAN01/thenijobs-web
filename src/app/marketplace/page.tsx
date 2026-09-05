@@ -208,17 +208,17 @@ export default function MarketplacePage() {
                 <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search products, AC repair, hospitals, groceries, businesses..."
+                  aria-label="Search products, AC repair, hospitals, groceries, businesses" placeholder="Search products, AC repair, hospitals, groceries, businesses..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium"
+                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium"
                 />
               </div>
 
               <select
                 value={selectedLocation}
                 onChange={e => setSelectedLocation(e.target.value)}
-                className="px-3.5 py-3 bg-white rounded-xl text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
+                className="px-3.5 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
               >
                 {LOCATIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
               </select>
@@ -226,7 +226,7 @@ export default function MarketplacePage() {
               <select
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="px-3.5 py-3 bg-white rounded-xl text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
+                className="px-3.5 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 font-bold focus:outline-none"
               >
                 {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
@@ -240,7 +240,7 @@ export default function MarketplacePage() {
         
         {/* Navigation Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div className="flex gap-1.5 p-1 rounded-2xl bg-slate-200/80 overflow-x-auto no-scrollbar w-fit">
+          <div className="flex gap-1.5 p-1 rounded-2xl bg-slate-200/80 overflow-x-auto no-scrollbar w-fit max-w-full">
             <button
               onClick={() => setActiveTab('all')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${

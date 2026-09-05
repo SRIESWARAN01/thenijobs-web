@@ -15,6 +15,7 @@ import { canAccessTemplate, getRequiredPlanForTemplate } from '@/lib/plans';
 import type { PortfolioTemplate, PlanTier, PortfolioSite, PortfolioSection } from '@/lib/types/portfolio';
 import { DEFAULT_THEME, DEVICE_SIZES } from '@/lib/types/portfolio';
 import TemplateRenderer from '@/components/portfolio/TemplateRenderer';
+import { Button, PageHeader, PageShell, Tabs } from '@/components/dashboard';
 
 const PLAN_COLORS: Record<PlanTier, { bg: string; text: string; label: string; icon: any }> = {
   free: { bg: '#F3F4F6', text: '#6B7280', label: 'Free', icon: Shield },
@@ -154,31 +155,26 @@ export default function TemplateGalleryPage() {
   });
 
   return (
-    <div className="space-y-6" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/employer/website" className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
-          <ArrowLeft size={16} />
-        </Link>
-        <div>
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Choose Template
-          </h1>
-          <p className="text-xs text-gray-500">
-            {PORTFOLIO_TEMPLATES.length} templates available • {canAccessTemplate(planSlug, 'ultimate-business-pro') ? 'All unlocked' : `${filteredTemplates.filter(t => canAccessTemplate(planSlug, t.id)).length} unlocked in your plan`}
-          </p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Choose template"
+        description={`${PORTFOLIO_TEMPLATES.length} templates available · ${canAccessTemplate(planSlug, 'ultimate-business-pro') ? 'All unlocked' : `${filteredTemplates.filter(t => canAccessTemplate(planSlug, t.id)).length} unlocked in your plan`}`}
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Website', href: '/employer/website' }, { label: 'Templates' }]}
+        actions={
+          <Link href="/employer/website">
+            <Button variant="secondary" size="icon" aria-label="Back to website">
+              <ArrowLeft size={16} />
+            </Button>
+          </Link>
+        }
+      />
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-gray-100 overflow-x-auto no-scrollbar">
-        {FILTER_TABS.map(tab => (
-          <button key={tab.value} onClick={() => setFilter(tab.value)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filter === tab.value ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        label="Template filter"
+        value={filter}
+        onChange={(v) => setFilter(v as typeof filter)}
+        tabs={FILTER_TABS.map(t => ({ id: t.value, label: t.label }))}
+      />
 
       {/* Template Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -213,7 +209,7 @@ export default function TemplateGalleryPage() {
                 {!isAccessible && (
                   <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
                     <div className="text-center">
-                      <Lock size={20} className="mx-auto text-gray-400 mb-1" />
+                      <Lock size={20} className="mx-auto text-slate-500 mb-1" />
                       <p className="text-[10px] font-bold text-gray-500">Upgrade to {template.plan.toUpperCase()}</p>
                     </div>
                   </div>
@@ -286,7 +282,7 @@ export default function TemplateGalleryPage() {
                     const Icon = d.icon;
                     return (
                       <button key={d.key} onClick={() => setPreviewDevice(d.key)}
-                        className={`p-1.5 rounded-md transition-all ${previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}>
+                        className={`p-1.5 rounded-md transition-all ${previewDevice === d.key ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-gray-600'}`}>
                         <Icon size={14} />
                       </button>
                     );
@@ -301,7 +297,7 @@ export default function TemplateGalleryPage() {
                     {selecting ? <Loader2 size={13} className="animate-spin" /> : <Zap size={13} />} Use This Template
                   </button>
                 )}
-                <button onClick={() => setPreviewTemplate(null)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400">
+                <button onClick={() => setPreviewTemplate(null)} className="p-2 rounded-lg hover:bg-gray-100 text-slate-500">
                   <X size={16} />
                 </button>
               </div>
@@ -324,7 +320,7 @@ export default function TemplateGalleryPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
 

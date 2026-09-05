@@ -225,28 +225,28 @@ export default function CompanyServicesManager({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Name *</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-service-name" className="text-xs font-bold text-gray-700 block mb-1">Service Name *</label>
+              <input id="company-companyservicesmanager-service-name"
                 type="text"
                 value={form.name || ''}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 placeholder="e.g. GST Filing & Accounting / Solar Installation"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Category</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-category" className="text-xs font-bold text-gray-700 block mb-1">Category</label>
+              <input id="company-companyservicesmanager-category"
                 type="text"
                 value={form.category || ''}
                 onChange={e => setForm({ ...form, category: e.target.value })}
                 placeholder="e.g. Financial / Construction / Technical"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Starting Price (₹) or Range</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-starting-price-or-range" className="text-xs font-bold text-gray-700 block mb-1">Starting Price (₹) or Range</label>
+              <input id="company-companyservicesmanager-starting-price-or-range"
                 type="text"
                 value={form.priceRange || (form.startingPrice ? `₹${form.startingPrice}` : '')}
                 onChange={e => {
@@ -255,37 +255,37 @@ export default function CompanyServicesManager({
                   setForm({ ...form, priceRange: val, startingPrice: isNaN(num) || num === 0 ? undefined : num });
                 }}
                 placeholder="e.g. Starts from ₹999 or Hourly Rate"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Banner Image URL</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-service-banner-image-url" className="text-xs font-bold text-gray-700 block mb-1">Service Banner Image URL</label>
+              <input id="company-companyservicesmanager-service-banner-image-url"
                 type="url"
                 value={form.imageUrl || ''}
                 onChange={e => setForm({ ...form, imageUrl: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Page / Booking Link (Optional)</label>
-              <input
+              <label htmlFor="company-companyservicesmanager-service-page-booking-link-optional" className="text-xs font-bold text-gray-700 block mb-1">Service Page / Booking Link (Optional)</label>
+              <input id="company-companyservicesmanager-service-page-booking-link-optional"
                 type="url"
                 value={form.websiteUrl || ''}
                 onChange={e => setForm({ ...form, websiteUrl: e.target.value })}
                 placeholder="https://yourcompany.com/service-booking"
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs font-bold text-gray-700 block mb-1">Service Description</label>
-              <textarea
+              <label htmlFor="company-companyservicesmanager-service-description" className="text-xs font-bold text-gray-700 block mb-1">Service Description</label>
+              <textarea id="company-companyservicesmanager-service-description"
                 rows={3}
                 value={form.description || ''}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 placeholder="Describe your service scope, turnaround time, guarantee, and client benefits..."
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
+                className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none focus:border-blue-500 font-medium resize-none leading-relaxed"
               />
             </div>
             <div className="sm:col-span-2 space-y-2">
@@ -300,8 +300,8 @@ export default function CompanyServicesManager({
                       copy[i] = e.target.value;
                       setForm({ ...form, details: copy });
                     }}
-                    placeholder={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`}
-                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none font-medium"
+                    aria-label={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`} placeholder={`Inclusion #${i + 1} (e.g. Free Consultation, Doorstep Visit, Certified Technicians)`}
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-xl text-base sm:text-xs text-gray-900 outline-none font-medium"
                   />
                   {(form.details || []).length > 1 && (
                     <button

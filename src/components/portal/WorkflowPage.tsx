@@ -117,7 +117,7 @@ export default function WorkflowPage({
     }, {}), [items, tabs]);
 
   return (
-    <div className="p-4 sm:p-6 space-y-5" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="mx-auto w-full max-w-screen-2xl space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -149,7 +149,7 @@ export default function WorkflowPage({
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
                   <p className="mt-0.5 text-xs font-medium text-gray-500">{metric.label}</p>
-                  {metric.description && <p className="mt-0.5 text-[10px] text-gray-400">{metric.description}</p>}
+                  {metric.description && <p className="mt-0.5 text-[10px] text-slate-500">{metric.description}</p>}
                 </div>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: mc.bg }}>
                   <Icon size={18} style={{ color: mc.color }} />
@@ -163,13 +163,19 @@ export default function WorkflowPage({
       {/* Search + tabs */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input value={query} onChange={e => setQuery(e.target.value)} placeholder={searchPlaceholder}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all" />
+          <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input
+            type="search"
+            aria-label={searchPlaceholder}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="h-10 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-base text-slate-900 placeholder:text-slate-500 transition-all focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:text-sm"
+          />
         </div>
-        <div className="flex gap-1 p-1 rounded-xl bg-gray-100 overflow-x-auto no-scrollbar">
+        <div className="-mx-4 flex max-w-[calc(100%+2rem)] gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 px-4 no-scrollbar sm:mx-0 sm:max-w-full sm:px-1">
           {tabs.map(tab => (
-            <button key={tab.value} type="button" onClick={() => setActiveTab(tab.value)}
+            <button key={tab.value} type="button" role="tab" aria-selected={activeTab === tab.value} onClick={() => setActiveTab(tab.value)}
               className={`whitespace-nowrap px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === tab.value ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-800'
               }`} style={activeTab === tab.value ? { color: ac.text } : {}}>
@@ -197,14 +203,14 @@ export default function WorkflowPage({
                     {item.amount && <span className="text-sm font-bold" style={{ color: '#059669' }}>{item.amount}</span>}
                   </div>
                   <p className="mt-0.5 text-sm text-gray-500">{item.subtitle}</p>
-                  {item.description && <p className="mt-2 text-xs leading-5 text-gray-400 max-w-3xl line-clamp-2">{item.description}</p>}
+                  {item.description && <p className="mt-2 text-xs leading-5 text-slate-500 max-w-3xl line-clamp-2">{item.description}</p>}
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                    {item.meta.map(m => <span key={m} className="text-xs text-gray-400">{m}</span>)}
+                    {item.meta.map(m => <span key={m} className="text-xs text-slate-500">{m}</span>)}
                   </div>
                   {item.tags && item.tags.length > 0 && (
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                       {item.tags.map(tag => (
-                        <span key={tag} className="rounded-lg border px-2.5 py-0.5 text-[10px] font-medium text-gray-500 border-gray-100 bg-gray-50">{tag}</span>
+                        <span key={tag} className="rounded-lg border px-2.5 py-0.5 text-[10px] font-medium text-slate-600 border-slate-200 bg-slate-50">{tag}</span>
                       ))}
                     </div>
                   )}
@@ -213,7 +219,7 @@ export default function WorkflowPage({
                 {item.score && scoreColor && (
                   <div className="w-full xl:w-40 shrink-0 rounded-xl border border-gray-100 bg-gray-50 p-3">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{item.score.label}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{item.score.label}</span>
                       <span className="text-sm font-bold" style={{ color: scoreColor.color }}>{item.score.value}%</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
@@ -238,7 +244,7 @@ export default function WorkflowPage({
                       }} />
                       <div>
                         <p className="text-xs font-semibold text-gray-700">{step.label}</p>
-                        {step.detail && <p className="mt-0.5 text-[10px] text-gray-400">{step.detail}</p>}
+                        {step.detail && <p className="mt-0.5 text-[10px] text-slate-500">{step.detail}</p>}
                       </div>
                     </div>
                   ))}
@@ -255,7 +261,7 @@ export default function WorkflowPage({
             <ChevronRight size={24} style={{ color: ac.text }} />
           </div>
           <h2 className="text-sm font-semibold text-gray-900">{emptyTitle}</h2>
-          <p className="mt-1 text-xs text-gray-400 max-w-md mx-auto">{emptyDescription}</p>
+          <p className="mt-1 text-xs text-slate-500 max-w-md mx-auto">{emptyDescription}</p>
         </div>
       )}
     </div>

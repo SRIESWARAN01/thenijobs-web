@@ -37,10 +37,19 @@ html {
     min-width: 44px;
   }
   
-  /* Except inline/small intentional targets */
+  /* Except inline/small intentional targets.
+     The escape hatch must out-specify the rule above. `.tap-target-auto` alone
+     scores (0,1,0) and loses to `input[type="checkbox"]` at (0,1,1), which is
+     why an opted-out checkbox still rendered as a 44px box. Qualifying the
+     class with each element raises it to (0,2,1). */
+  button.tap-target-auto,
+  a.tap-target-auto,
+  [role="button"].tap-target-auto,
+  input[type="checkbox"].tap-target-auto,
+  input[type="radio"].tap-target-auto,
   .tap-target-auto {
-    min-height: auto;
-    min-width: auto;
+    min-height: 0;
+    min-width: 0;
   }
 }
 

@@ -10,6 +10,7 @@ import { updateDocument } from '@/lib/firebase/firestoreService';
 import type { PortfolioSite } from '@/lib/types/portfolio';
 import TheniJobsIdCard from '@/components/identity/TheniJobsIdCard';
 import QRCodeCard from '@/components/identity/QRCodeCard';
+import { Button, PageHeader, PageShell, Switch } from '@/components/dashboard';
 
 export default function WebsiteSettingsPage() {
   const { user } = useAuth();
@@ -63,7 +64,7 @@ export default function WebsiteSettingsPage() {
   if (!site) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Globe size={32} className="text-gray-300" />
+        <Globe size={32} className="text-slate-500" />
         <p className="text-sm text-gray-500">No website found. Please select a template first.</p>
         <Link href="/employer/website/templates" className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold">
           Choose Template
@@ -75,28 +76,25 @@ export default function WebsiteSettingsPage() {
   const siteUrl = `https://thenijobs.com/portfolio/${site.customUrl}`;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/employer/website" className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Website Settings
-            </h1>
-            <p className="text-xs text-gray-500">Manage URL, Google SEO visibility, digital ID cards, and QR codes</p>
-          </div>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5 transition-all shadow-sm"
-        >
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save Settings
-        </button>
-      </div>
+    <PageShell className="max-w-4xl">
+      <PageHeader
+        title="Website settings"
+        description="Manage URL, Google SEO visibility, digital ID cards and QR codes."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Website', href: '/employer/website' }, { label: 'Settings' }]}
+        actions={
+          <>
+            <Link href="/employer/website">
+              <Button variant="secondary" size="icon" aria-label="Back to website">
+                <ArrowLeft size={16} />
+              </Button>
+            </Link>
+            <Button variant="primary" onClick={handleSave} loading={saving}>
+              {!saving && <Save size={14} />}
+              {saving ? 'Saving…' : 'Save settings'}
+            </Button>
+          </>
+        }
+      />
 
       {success && (
         <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-center gap-2">
@@ -116,7 +114,7 @@ export default function WebsiteSettingsPage() {
             <div>
               <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Username / Slug</label>
               <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden text-xs">
-                <span className="bg-gray-50 px-3 py-2 text-gray-400 border-r border-gray-200">thenijobs.com/portfolio/</span>
+                <span className="bg-gray-50 px-3 py-2 text-slate-500 border-r border-gray-200">thenijobs.com/portfolio/</span>
                 <input
                   type="text"
                   value={site.customUrl}
@@ -125,7 +123,7 @@ export default function WebsiteSettingsPage() {
                 />
               </div>
             </div>
-            <p className="text-[10px] text-gray-400">Unique URL for sharing your website. Only letters, numbers, and hyphens.</p>
+            <p className="text-[10px] text-slate-500">Unique URL for sharing your website. Only letters, numbers, and hyphens.</p>
           </div>
 
           {/* Search Indexing */}
@@ -138,12 +136,11 @@ export default function WebsiteSettingsPage() {
                 <p className="text-xs font-bold text-gray-900">Google Search Indexing</p>
                 <p className="text-[10px] text-gray-500">Allow Google & Bing to discover your website</p>
               </div>
-              <button
-                onClick={() => setSite({ ...site, googleIndex: !site.googleIndex })}
-                className={`w-11 h-6 rounded-full transition-all relative ${site.googleIndex ? 'bg-emerald-500' : 'bg-gray-300'}`}
-              >
-                <div className={`w-5 h-5 bg-white rounded-full shadow-sm absolute top-0.5 transition-all ${site.googleIndex ? 'left-[22px]' : 'left-0.5'}`} />
-              </button>
+              <Switch
+                checked={site.googleIndex}
+                onChange={(next) => setSite({ ...site, googleIndex: next })}
+                label="Allow Google & Bing to discover your website"
+              />
             </div>
             {!site.googleIndex && (
               <div className="p-2.5 rounded-lg bg-amber-50 text-amber-700 text-[10px] flex items-center gap-1.5">
@@ -163,16 +160,16 @@ export default function WebsiteSettingsPage() {
                 type="text"
                 value={site.seo?.title || ''}
                 onChange={e => setSite({ ...site, seo: { ...site.seo, title: e.target.value } })}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs"
               />
             </div>
             <div>
-              <label className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Page Description</label>
-              <textarea
+              <label htmlFor="employer-website-settings-page-description" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Page Description</label>
+              <textarea id="employer-website-settings-page-description"
                 value={site.seo?.description || ''}
                 onChange={e => setSite({ ...site, seo: { ...site.seo, description: e.target.value } })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs resize-none"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs resize-none"
               />
             </div>
           </div>
@@ -208,6 +205,6 @@ export default function WebsiteSettingsPage() {
           />
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -7,6 +7,10 @@ import {
   Phone, MessageCircle, Eye, Building2, Banknote, Users, ShieldCheck, X, RefreshCw
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
+import {
+  ActionMenu, DataTable, ViewToggle, useViewMode,
+  type ActionItem, type Column,
+} from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { approveJob, rejectJob, deleteDocument, updateDocument } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
@@ -92,6 +96,7 @@ export default function AdminJobsPage() {
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [districtFilter, setDistrictFilter] = useState('All Districts');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [view, setView] = useViewMode('admin-jobs', 'table');
 
   // Rejection modal
   const [rejectingJob, setRejectingJob] = useState<JobDoc | null>(null);
@@ -229,8 +234,90 @@ export default function AdminJobsPage() {
     return (Date.now() - createdMillis) > 7 * 86400000;
   });
 
+  const jobColumns: Column<JobDoc>[] = [
+    {
+      key: 'title',
+      header: 'Job',
+      card: 'title',
+      sortValue: job => job.title ?? '',
+      render: job => (
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate font-semibold text-slate-900">{job.title}</span>
+            {job.jobOrdinal && (
+              <span className="shrink-0 rounded-full border border-blue-100 bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-bold text-[#1E40AF]">
+                {job.jobOrdinal}
+              </span>
+            )}
+          </div>
+          <span className="flex items-center gap-1 text-xs text-slate-500">
+            <Building2 size={11} className="shrink-0 text-blue-600" aria-hidden />
+            <span className="truncate">{job.companyName || job.company || 'Company'}</span>
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'jobType',
+      header: 'Type',
+      sortValue: job => job.jobType ?? '',
+      render: job => {
+        const t = JOB_TYPE_STYLES[job.jobType];
+        return (
+          <span
+            className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+            style={{ background: t?.bg ?? '#F1F5F9', color: t?.text ?? '#475569' }}
+          >
+            {t?.label ?? job.jobType ?? '—'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'district',
+      header: 'Location',
+      hideBelow: 'lg',
+      sortValue: job => job.district || job.location || '',
+      render: job => job.district || job.location || 'Theni',
+    },
+    {
+      key: 'salary',
+      header: 'Salary',
+      hideBelow: 'xl',
+      sortValue: job => Number(job.salaryMin) || 0,
+      render: job => job.salaryMin && job.salaryMax
+        ? `₹${Number(job.salaryMin).toLocaleString('en-IN')} – ₹${Number(job.salaryMax).toLocaleString('en-IN')}/${job.salaryType || 'mo'}`
+        : job.salary || 'On request',
+    },
+    {
+      key: 'applicationsCount',
+      header: 'Applied',
+      align: 'center',
+      sortValue: job => job.applicationsCount ?? 0,
+      render: job => <span className="font-semibold tabular-nums">{job.applicationsCount || 0}</span>,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      sortValue: job => getStatus(job),
+      render: job => {
+        const st = STATUS_STYLES[getStatus(job)] || STATUS_STYLES.pending;
+        return (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+            style={{ background: st.bg, color: st.text }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: st.dot }} />
+            {st.label}
+          </span>
+        );
+      },
+    },
+  ];
+
   return (
-    <div className="p-4 sm:p-6 space-y-6 font-outfit text-gray-900 pb-20">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-4 pb-20 text-slate-900 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -268,7 +355,7 @@ export default function AdminJobsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
+      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit max-w-full">
         {TABS.map(tab => (
           <button
             key={tab}
@@ -298,10 +385,10 @@ export default function AdminJobsPage() {
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by job title, company name, or district..."
+            aria-label="Search by job title, company name, or district" placeholder="Search by job title, company name, or district..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -314,11 +401,12 @@ export default function AdminJobsPage() {
               key={i}
               value={s.value}
               onChange={e => s.onChange(e.target.value)}
-              className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer bg-white"
+              className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer bg-white"
             >
               {s.options.map(o => <option key={o}>{o}</option>)}
             </select>
           ))}
+          <ViewToggle value={view} onChange={setView} />
         </div>
       </div>
 
@@ -362,7 +450,7 @@ export default function AdminJobsPage() {
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                           <Clock size={11} className="text-amber-700" /> Overdue: {daysAgo} Days Pending
                         </span>
-                        <span className="text-[10px] font-bold text-gray-400">
+                        <span className="text-[10px] font-bold text-slate-500">
                           {new Date(createdMillis).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </span>
                       </div>
@@ -378,8 +466,8 @@ export default function AdminJobsPage() {
                       </div>
 
                       <div className="p-3 bg-gray-50 rounded-xl text-xs space-y-1 text-gray-600">
-                        <p><span className="text-gray-400">Candidate Phone:</span> <strong>{app.seekerPhone || 'Provided in app'}</strong></p>
-                        <p><span className="text-gray-400">Status:</span> <strong className="text-blue-700 uppercase">{app.status || 'applied'}</strong></p>
+                        <p><span className="text-slate-500">Candidate Phone:</span> <strong>{app.seekerPhone || 'Provided in app'}</strong></p>
+                        <p><span className="text-slate-500">Status:</span> <strong className="text-blue-700 uppercase">{app.status || 'applied'}</strong></p>
                       </div>
                     </div>
 
@@ -415,195 +503,52 @@ export default function AdminJobsPage() {
         <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
           <Briefcase size={36} className="mx-auto text-gray-300 mb-2" />
           <p className="text-sm font-bold text-gray-700">No jobs match this filter</p>
-          <p className="text-xs text-gray-400 mt-0.5">Try selecting a different tab or clearing search filters.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Try selecting a different tab or clearing search filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(job => {
-            const typeStyle = JOB_TYPE_STYLES[job.jobType] || { bg: '#F9FAFB', text: '#6B7280', label: job.jobType };
+        <DataTable
+          label="Job moderation queue"
+          view={view}
+          gridColumns={3}
+          columns={jobColumns}
+          rows={filtered}
+          getRowId={job => job.id}
+          rowActions={job => {
+            if (actionLoading === job.id) {
+              return <Loader2 size={16} className="animate-spin text-blue-600" aria-label="Saving" />;
+            }
             const jobStatus = getStatus(job);
-            const statusStyle = STATUS_STYLES[jobStatus] || STATUS_STYLES.pending;
             const { phone, whatsapp } = getCompanyContact(job);
-
-            const salary = job.salaryMin && job.salaryMax
-              ? `₹${Number(job.salaryMin).toLocaleString('en-IN')} – ₹${Number(job.salaryMax).toLocaleString('en-IN')}/${job.salaryType || 'mo'}`
-              : job.salary || 'Salary on Request';
-
-            return (
-              <div
-                key={job.id}
-                className={`bg-white rounded-3xl p-5 border shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-3.5 ${
-                  jobStatus === 'pending' ? 'border-amber-300 ring-2 ring-amber-100' : 'border-gray-200'
-                }`}
-              >
-                <div className="space-y-3">
-                  {/* Top: Ordinal badge & Status */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold" style={{ background: typeStyle.bg, color: typeStyle.text }}>
-                        {typeStyle.label}
-                      </span>
-                      {job.jobOrdinal && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
-                          {job.jobOrdinal}
-                        </span>
-                      )}
-                    </div>
-
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shrink-0" style={{ background: statusStyle.bg, color: statusStyle.text }}>
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusStyle.dot }} />
-                      {statusStyle.label}
-                    </span>
-                  </div>
-
-                  {/* Title & Company */}
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900 leading-snug">{job.title}</h3>
-                    <p className="text-xs text-gray-600 flex items-center gap-1 mt-0.5 font-medium">
-                      <Building2 size={13} className="text-blue-600 shrink-0" /> {job.companyName || job.company || 'Company'}
-                    </p>
-                  </div>
-
-                  {/* Meta summary chip */}
-                  <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs space-y-1.5 text-gray-700">
-                    <p className="flex justify-between items-center">
-                      <span className="text-gray-500">Location:</span>
-                      <span className="font-semibold text-gray-900">{job.location ? `${job.location}, ` : ''}{job.district || 'Theni'}</span>
-                    </p>
-                    <p className="flex justify-between items-center">
-                      <span className="text-gray-500">Salary:</span>
-                      <span className="font-bold text-emerald-700">{salary}</span>
-                    </p>
-                    <p className="flex justify-between items-center">
-                      <span className="text-gray-500">Openings:</span>
-                      <span className="font-bold text-gray-900">{job.openings || 1} Opening{(Number(job.openings) || 1) > 1 ? 's' : ''}</span>
-                    </p>
-                  </div>
-
-                  {/* Rejection Note */}
-                  {jobStatus === 'rejected' && job.rejectionReason && (
-                    <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-900">
-                      <span className="font-bold block">Revision Reason:</span>
-                      <span>{job.rejectionReason}</span>
-                    </div>
-                  )}
-
-                  {/* Description snippet */}
-                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                    {job.description || 'No description provided.'}
-                  </p>
-                </div>
-
-                {/* Bottom Actions & Contacts */}
-                <div className="space-y-2 pt-2 border-t border-gray-100">
-                  {/* Call & WhatsApp Buttons */}
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {phone ? (
-                      <a
-                        href={`tel:${phone}`}
-                        className="py-2 px-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all border border-indigo-200 cursor-pointer"
-                      >
-                        <Phone size={13} /> Call Employer
-                      </a>
-                    ) : (
-                      <span className="py-2 text-center text-[10px] text-gray-400">No Phone</span>
-                    )}
-
-                    {whatsapp ? (
-                      <a
-                        href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi ${job.companyName || 'Employer'}, this is THENIJOBS Admin regarding your job posting "${job.title}".`)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="py-2 px-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                        style={{ background: '#25D366' }}
-                      >
-                        <MessageCircle size={13} /> WhatsApp
-                      </a>
-                    ) : (
-                      <span className="py-2 text-center text-[10px] text-gray-400">No WhatsApp</span>
-                    )}
-                  </div>
-
-                  {/* Approve / Reject / Delete Row */}
-                  <div className="flex items-center gap-1.5">
-                    {actionLoading === job.id ? (
-                      <div className="py-2 w-full text-center">
-                        <Loader2 size={16} className="animate-spin text-blue-600 mx-auto" />
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setInspectingJob(job)}
-                          className="p-2.5 rounded-xl text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
-                          title="View Full Job Details"
-                        >
-                          <Eye size={15} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => doToggleFeatured(job.id, job.isFeatured)}
-                          className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                            job.isFeatured ? 'bg-amber-100 text-amber-600 border-amber-300' : 'text-gray-400 border-gray-200 hover:text-amber-500'
-                          }`}
-                          title="Toggle Featured on Homepage"
-                        >
-                          <Star size={15} fill={job.isFeatured ? 'currentColor' : 'none'} />
-                        </button>
-
-                        {jobStatus === 'pending' || job.isActive === false ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => doApprove(job)}
-                              className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                            >
-                              <CheckCircle size={14} /> Approve &amp; Make Live
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openRejectModal(job)}
-                              className="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-1 border border-red-200 transition-all cursor-pointer"
-                              title="Reject with Reason"
-                            >
-                              <XCircle size={14} /> Reject
-                            </button>
-                          </>
-                        ) : jobStatus === 'active' ? (
-                          <button
-                            type="button"
-                            onClick={() => openRejectModal(job)}
-                            className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                          >
-                            <XCircle size={14} /> Request Revisions
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => doApprove(job)}
-                            className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                          >
-                            <RefreshCw size={14} /> Re-Approve Job
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => doDelete(job.id)}
-                          className="p-2.5 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                          title="Delete Listing"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+            const items: ActionItem[] = [
+              { label: 'View full details', icon: Eye, onClick: () => setInspectingJob(job) },
+            ];
+            if (phone) items.push({ label: 'Call employer', icon: Phone, href: `tel:${phone}` });
+            if (whatsapp) {
+              items.push({
+                label: 'WhatsApp employer',
+                icon: MessageCircle,
+                external: true,
+                href: `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi ${job.companyName || 'Employer'}, this is THENIJOBS Admin regarding your job posting "${job.title}".`)}`,
+              });
+            }
+            if (jobStatus === 'pending' || job.isActive === false) {
+              items.push({ label: 'Approve & make live', icon: CheckCircle, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
+              items.push({ label: 'Reject with reason', icon: XCircle, tone: 'danger', onClick: () => openRejectModal(job) });
+            } else if (jobStatus === 'active') {
+              items.push({ label: 'Request revisions', icon: XCircle, separatorBefore: true, onClick: () => openRejectModal(job) });
+            } else {
+              items.push({ label: 'Re-approve job', icon: RefreshCw, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
+            }
+            items.push({
+              label: job.isFeatured ? 'Remove from homepage' : 'Feature on homepage',
+              icon: Star,
+              separatorBefore: true,
+              onClick: () => doToggleFeatured(job.id, job.isFeatured),
+            });
+            items.push({ label: 'Delete listing', icon: Trash2, tone: 'danger', separatorBefore: true, onClick: () => doDelete(job.id) });
+            return <ActionMenu label={`Actions for ${job.title}`} items={items} />;
+          }}
+        />
       )}
 
       {/* Reject Modal */}
@@ -615,7 +560,7 @@ export default function AdminJobsPage() {
                 <XCircle size={18} className="text-red-600" />
                 Reject Job Listing — {rejectingJob.title}
               </h3>
-              <button onClick={() => setRejectingJob(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <button onClick={() => setRejectingJob(null)} className="p-1 rounded-lg text-slate-500 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
@@ -642,12 +587,12 @@ export default function AdminJobsPage() {
 
             <div>
               <label className="text-xs font-bold text-gray-700 block mb-1">Custom Rejection Reason:</label>
-              <textarea
+              <textarea id="admin-jobs-quick-reasons-classname-w-full-text-left"
                 rows={3}
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}
                 placeholder="Explain what details the employer needs to correct..."
-                className="w-full p-3 rounded-xl border border-gray-300 text-xs text-gray-900 outline-none focus:border-red-500 font-medium leading-relaxed"
+                className="w-full p-3 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 outline-none focus:border-red-500 font-medium leading-relaxed"
               />
             </div>
 
@@ -691,7 +636,7 @@ export default function AdminJobsPage() {
                 <h3 className="text-lg font-black text-gray-900 mt-1">{inspectingJob.title}</h3>
                 <p className="text-xs text-gray-500">{inspectingJob.companyName || 'Company'}</p>
               </div>
-              <button onClick={() => setInspectingJob(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <button onClick={() => setInspectingJob(null)} className="p-1 rounded-lg text-slate-500 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>

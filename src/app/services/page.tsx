@@ -197,8 +197,8 @@ export default function ServicesPage() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search products, services, or company names..."
-              className="w-full bg-transparent text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none"
+              aria-label="Search products, services, or company names" placeholder="Search products, services, or company names..."
+              className="w-full bg-transparent text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none"
             />
             {search && <button onClick={() => setSearch('')}><X size={14} className="text-gray-400" /></button>}
           </div>
@@ -208,7 +208,7 @@ export default function ServicesPage() {
             <select
               value={selectedDistrict}
               onChange={e => setSelectedDistrict(e.target.value)}
-              className="bg-transparent text-xs font-bold text-gray-900 outline-none w-full cursor-pointer"
+              className="bg-transparent text-base sm:text-xs font-bold text-gray-900 outline-none w-full cursor-pointer"
             >
               {DISTRICTS.map(d => <option key={d} value={d}>{d === 'All' ? 'All Districts' : d}</option>)}
             </select>

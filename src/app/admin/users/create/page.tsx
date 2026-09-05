@@ -11,6 +11,7 @@ import { logActivity } from '@/lib/firebase/firestoreService';
 import { useAuth } from '@/contexts/AuthContext';
 import { TN_DISTRICTS } from '@/lib/types';
 import type { UserRole } from '@/lib/types';
+import { Button, PageHeader } from '@/components/dashboard';
 
 type CreateRole = 'job_seeker' | 'employer' | 'business_owner';
 
@@ -109,19 +110,21 @@ export default function AdminCreateUserPage() {
   const labelCls = "text-xs font-semibold text-gray-600 block mb-1.5";
 
   return (
-    <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-6" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/admin/users" className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
-          <ArrowLeft size={16} />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Create User Account
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manually create a company or job seeker account</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-6">
+      <PageHeader
+        title="Create user account"
+        description="Manually create a company or job seeker account."
+        breadcrumbs={[
+          { label: 'Admin', href: '/admin/dashboard' },
+          { label: 'Users', href: '/admin/users' },
+          { label: 'Create' },
+        ]}
+        actions={
+          <Link href="/admin/users">
+            <Button variant="secondary"><ArrowLeft size={15} /> Back to users</Button>
+          </Link>
+        }
+      />
 
       {/* Success Result */}
       {result?.success && (
@@ -146,12 +149,12 @@ export default function AdminCreateUserPage() {
             ].map(item => (
               <div key={item.key} className="flex items-center justify-between px-4 py-3">
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase">{item.label}</p>
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase">{item.label}</p>
                   <p className="text-sm font-medium text-gray-900 mt-0.5 font-mono">{item.value}</p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(item.value, item.key)}
-                  className="p-2 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-all"
+                  className="p-2 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition-all"
                 >
                   {copied === item.key ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                 </button>
@@ -191,7 +194,7 @@ export default function AdminCreateUserPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           {/* Role Selection */}
           <div>
-            <label className={labelCls}>Account Type</label>
+            <label htmlFor="admin-users-create-account-type-role-options-map-r-classnam" className={labelCls}>Account Type</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {ROLE_OPTIONS.map(r => {
                 const Icon = r.icon;
@@ -217,37 +220,37 @@ export default function AdminCreateUserPage() {
           {/* Name */}
           <div>
             <label className={labelCls}><User size={12} className="inline mr-1" />Full Name *</label>
-            <input type="text" value={form.name} onChange={e => update('name', e.target.value)}
+            <input id="admin-users-create-account-type-role-options-map-r-classnam" type="text" value={form.name} onChange={e => update('name', e.target.value)}
               placeholder="Enter full name" className={inputCls} />
           </div>
 
           {/* Company Name (for employer/business_owner) */}
           {(form.role === 'employer' || form.role === 'business_owner') && (
             <div>
-              <label className={labelCls}><Building2 size={12} className="inline mr-1" />Company Name</label>
-              <input type="text" value={form.companyName} onChange={e => update('companyName', e.target.value)}
+              <label htmlFor="admin-users-create-company-name" className={labelCls}><Building2 size={12} className="inline mr-1" />Company Name</label>
+              <input id="admin-users-create-company-name" type="text" value={form.companyName} onChange={e => update('companyName', e.target.value)}
                 placeholder="Enter company/business name" className={inputCls} />
             </div>
           )}
 
           {/* Email */}
           <div>
-            <label className={labelCls}><Mail size={12} className="inline mr-1" />Email Address *</label>
-            <input type="email" value={form.email} onChange={e => update('email', e.target.value)}
+            <label htmlFor="admin-users-create-email-address" className={labelCls}><Mail size={12} className="inline mr-1" />Email Address *</label>
+            <input id="admin-users-create-email-address" type="email" value={form.email} onChange={e => update('email', e.target.value)}
               placeholder="user@example.com" className={inputCls} />
           </div>
 
           {/* Phone */}
           <div>
-            <label className={labelCls}><Phone size={12} className="inline mr-1" />Phone Number</label>
-            <input type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
+            <label htmlFor="admin-users-create-phone-number" className={labelCls}><Phone size={12} className="inline mr-1" />Phone Number</label>
+            <input id="admin-users-create-phone-number" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)}
               placeholder="+91 98765 43210" className={inputCls} />
           </div>
 
           {/* District */}
           <div>
-            <label className={labelCls}><MapPin size={12} className="inline mr-1" />District</label>
-            <select value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
+            <label htmlFor="admin-users-create-district" className={labelCls}><MapPin size={12} className="inline mr-1" />District</label>
+            <select id="admin-users-create-district" value={form.district} onChange={e => update('district', e.target.value)} className={inputCls}>
               {TN_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
@@ -264,17 +267,17 @@ export default function AdminCreateUserPage() {
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                 <button onClick={() => setShowPassword(!showPassword)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all tap-target-auto">
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-slate-500 transition-all tap-target-auto">
                   {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
                 <button onClick={regeneratePassword}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all tap-target-auto"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-slate-500 transition-all tap-target-auto"
                   title="Generate new password">
                   <RefreshCw size={14} />
                 </button>
               </div>
             </div>
-            <p className="text-[10px] text-gray-400 mt-1">Auto-generated secure password. Click 🔄 to regenerate.</p>
+            <p className="text-[10px] text-slate-500 mt-1">Auto-generated secure password. Click 🔄 to regenerate.</p>
           </div>
 
           {/* Submit */}

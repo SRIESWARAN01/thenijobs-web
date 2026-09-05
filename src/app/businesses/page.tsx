@@ -329,7 +329,7 @@ export default function BusinessesPage() {
             </p>
           </div>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-            className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-600 outline-none cursor-pointer">
+            className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-base sm:text-xs text-gray-600 outline-none cursor-pointer">
             <option value="premium">Featured First</option>
             <option value="rating">Top Rated</option>
             <option value="jobs">Most Jobs</option>

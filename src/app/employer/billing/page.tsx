@@ -8,6 +8,7 @@ import { CreditCard, Check, ShieldCheck, Zap, Shield, Crown, Building2, Loader2,
 import Link from 'next/link';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
+import { PageHeader } from '@/components/dashboard';
 
 export default function EmployerBillingPage() {
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export default function EmployerBillingPage() {
 
   if (!companyId && !companyLoading) {
     return (
-      <div className="p-6 max-w-2xl mx-auto text-center font-sans">
+      <div className="mx-auto max-w-2xl text-center">
         <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
           <CreditCard size={48} className="text-blue-600 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-gray-900 font-sans">No Company Profile Found</h2>
@@ -67,12 +68,12 @@ export default function EmployerBillingPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 font-sans">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Pricing &amp; Subscriptions</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Manage your annual recruitment subscription and feature unlocks</p>
-      </div>
+    <div className="mx-auto w-full max-w-screen-2xl space-y-4 sm:space-y-6">
+      <PageHeader
+        title="Pricing & subscriptions"
+        description="Your annual recruitment subscription and feature unlocks."
+        breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Billing' }]}
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -103,11 +104,11 @@ export default function EmployerBillingPage() {
 
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Active Jobs</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Active Jobs</p>
                   <p className="text-base font-extrabold text-gray-900">{jobs.length}</p>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Status</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Status</p>
                   <p className="text-base font-extrabold text-emerald-600">Active</p>
                 </div>
               </div>
@@ -142,7 +143,7 @@ export default function EmployerBillingPage() {
                     <div className="text-center py-2 bg-gray-50 rounded-2xl border border-gray-100">
                       <div className="text-2xl font-extrabold text-gray-900">
                         ₹{plan.price.toLocaleString('en-IN')}
-                        <span className="text-xs text-gray-400 font-normal"> /yr</span>
+                        <span className="text-xs text-slate-500 font-normal"> /yr</span>
                       </div>
                       {plan.price > 0 && (
                         <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
@@ -163,7 +164,7 @@ export default function EmployerBillingPage() {
 
                   <div className="pt-4 mt-4 border-t border-gray-100">
                     {isCurrent ? (
-                      <button disabled className="w-full py-2.5 rounded-xl bg-gray-100 text-gray-400 text-xs font-bold cursor-default">
+                      <button disabled className="w-full py-2.5 rounded-xl bg-gray-100 text-slate-500 text-xs font-bold cursor-default">
                         Plan Active
                       </button>
                     ) : (

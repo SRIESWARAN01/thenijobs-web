@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 import {
   User, GraduationCap, Briefcase, Star, Eye, ChevronLeft, ChevronRight, Check, FileText, Sparkles,
   Mail, Phone, MapPin, ArrowLeft, Palette, Loader2, Download, RefreshCw, Zap, Award, Printer,
@@ -536,31 +537,32 @@ Return strictly valid JSON with format:
   };
 
   return (
-    <div className="animate-fade-in space-y-6 max-w-6xl mx-auto font-outfit text-gray-900 pb-16">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Link href="/seeker/resume" className="p-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 hover:text-gray-900 transition-all shadow-xs">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
-              Professional Resume Builder <Sparkles size={18} className="text-blue-600" />
-            </h1>
-            <p className="text-xs text-gray-500">Auto-filled from Profile • AI Optimization • 1-Click ATS PDF Export</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleManualSyncProfile}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white border border-gray-300 text-gray-800 text-xs font-bold hover:bg-gray-50 transition-all shadow-xs cursor-pointer"
-            title="Re-read Name, Education, Experience from your Profile"
-          >
-            <RefreshCw size={13} className="text-blue-600" /> Re-sync Profile
-          </button>
-        </div>
-      </div>
+    <PageShell className="max-w-6xl pb-16">
+      <PageHeader
+        title="Professional resume builder"
+        description="Auto-filled from profile · AI optimisation · 1-click ATS PDF export."
+        breadcrumbs={[
+          { label: 'Seeker', href: '/seeker/dashboard' },
+          { label: 'Resume', href: '/seeker/resume' },
+          { label: 'Builder' },
+        ]}
+        actions={
+          <>
+            <Link href="/seeker/resume">
+              <Button variant="secondary" size="icon" aria-label="Back to resume overview">
+                <ArrowLeft size={16} />
+              </Button>
+            </Link>
+            <Button
+              variant="secondary"
+              onClick={handleManualSyncProfile}
+              title="Re-read name, education and experience from your profile"
+            >
+              <RefreshCw size={13} className="text-blue-600" /> Re-sync profile
+            </Button>
+          </>
+        }
+      />
 
       {/* Profile Auto-fill Banner */}
       {autoFilled && (
@@ -593,8 +595,8 @@ Return strictly valid JSON with format:
               type="text"
               value={targetRole}
               onChange={e => setTargetRole(e.target.value)}
-              placeholder="e.g. Digital Marketing, React Developer, Accountant..."
-              className="px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-xs text-white placeholder-blue-200/60 focus:outline-none focus:bg-white/20 w-full sm:w-64 font-medium"
+              aria-label="e.g. Digital Marketing, React Developer, Accountant" placeholder="e.g. Digital Marketing, React Developer, Accountant..."
+              className="px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-base sm:text-xs text-white placeholder-blue-200/60 focus:outline-none focus:bg-white/20 w-full sm:w-64 font-medium"
             />
             <button
               onClick={handleAIFullGeneration}
@@ -631,7 +633,7 @@ Return strictly valid JSON with format:
                   {isDone ? <Check size={14} /> : <Icon size={14} />}
                 </div>
                 <span className={`text-[10px] sm:text-xs font-bold transition-all text-center ${
-                  isActive ? 'text-blue-600' : isDone ? 'text-blue-900' : 'text-gray-400'
+                  isActive ? 'text-blue-600' : isDone ? 'text-blue-900' : 'text-slate-500'
                 }`}>
                   {step.label}
                 </span>
@@ -648,10 +650,12 @@ Return strictly valid JSON with format:
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {TEMPLATES.map(t => (
-            <div
+            <button
               key={t.id}
+              type="button"
+              aria-pressed={selectedTemplate === t.id}
               onClick={() => setSelectedTemplate(t.id)}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+              className={`flex flex-col justify-between rounded-2xl border-2 p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 selectedTemplate === t.id
                   ? 'border-blue-600 bg-blue-50/50 shadow-xs ring-2 ring-blue-100'
                   : 'border-gray-200 hover:border-gray-300'
@@ -662,7 +666,7 @@ Return strictly valid JSON with format:
                 <p className="text-[11px] text-gray-500 mt-0.5">{t.desc}</p>
               </div>
               <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${t.color} mt-3`} />
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -680,62 +684,62 @@ Return strictly valid JSON with format:
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Full Name *</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-full-name" className="text-xs font-bold text-gray-700 mb-1 block">Full Name *</label>
+                    <input id="seeker-resume-builder-full-name"
                       type="text"
                       value={personal.name}
                       onChange={e => setPersonal({ ...personal, name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="e.g. Muthu Kumar S"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Email Address *</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-email-address" className="text-xs font-bold text-gray-700 mb-1 block">Email Address *</label>
+                    <input id="seeker-resume-builder-email-address"
                       type="email"
                       value={personal.email}
                       onChange={e => setPersonal({ ...personal, email: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="muthu@example.com"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Phone Number *</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-phone-number" className="text-xs font-bold text-gray-700 mb-1 block">Phone Number *</label>
+                    <input id="seeker-resume-builder-phone-number"
                       type="text"
                       value={personal.phone}
                       onChange={e => setPersonal({ ...personal, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="+91 98765 43210"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">District / Location</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-district-location" className="text-xs font-bold text-gray-700 mb-1 block">District / Location</label>
+                    <input id="seeker-resume-builder-district-location"
                       type="text"
                       value={personal.district}
                       onChange={e => setPersonal({ ...personal, district: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="Theni, Periyakulam, Cumbum..."
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Full Address</label>
-                    <input
+                    <label htmlFor="seeker-resume-builder-full-address" className="text-xs font-bold text-gray-700 mb-1 block">Full Address</label>
+                    <input id="seeker-resume-builder-full-address"
                       type="text"
                       value={personal.address}
                       onChange={e => setPersonal({ ...personal, address: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium"
                       placeholder="North Street, Theni District, Tamil Nadu"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="text-xs font-bold text-gray-700 mb-1 block">Professional Summary</label>
-                    <textarea
+                    <label htmlFor="seeker-resume-builder-professional-summary" className="text-xs font-bold text-gray-700 mb-1 block">Professional Summary</label>
+                    <textarea id="seeker-resume-builder-professional-summary"
                       rows={3}
                       value={personal.summary}
                       onChange={e => setPersonal({ ...personal, summary: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 font-medium resize-none leading-relaxed"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 font-medium resize-none leading-relaxed"
                       placeholder="Experienced professional with domain expertise..."
                     />
                   </div>
@@ -763,7 +767,7 @@ Return strictly valid JSON with format:
                       {education.length > 1 && (
                         <button
                           onClick={() => setEducation(e => e.filter(x => x.id !== edu.id))}
-                          className="absolute top-3 right-3 text-gray-400 hover:text-red-600 font-bold p-1 cursor-pointer"
+                          className="absolute top-3 right-3 text-slate-500 hover:text-red-600 font-bold p-1 cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 size={14} />
@@ -771,53 +775,53 @@ Return strictly valid JSON with format:
                       )}
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Degree / Course</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-degree-course" className="text-xs font-bold text-gray-700 mb-1 block">Degree / Course</label>
+                          <input id="seeker-resume-builder-degree-course"
                             type="text"
                             value={edu.degree}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, degree: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. B.Com / B.E / MBA / 12th"
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Specialization / Major</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-specialization-major" className="text-xs font-bold text-gray-700 mb-1 block">Specialization / Major</label>
+                          <input id="seeker-resume-builder-specialization-major"
                             type="text"
                             value={edu.field}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, field: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Computer Science / Finance"
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">College / School Name</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-college-school-name" className="text-xs font-bold text-gray-700 mb-1 block">College / School Name</label>
+                          <input id="seeker-resume-builder-college-school-name"
                             type="text"
                             value={edu.institution}
                             onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, institution: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. CPA College, Bodinayakanur"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
-                            <input
+                            <label htmlFor="seeker-resume-builder-year" className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
+                            <input id="seeker-resume-builder-year"
                               type="text"
                               value={edu.year}
                               onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, year: e.target.value } : x))}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                               placeholder="2023"
                             />
                           </div>
                           <div>
-                            <label className="text-xs font-bold text-gray-700 mb-1 block">Grade / %</label>
-                            <input
+                            <label htmlFor="seeker-resume-builder-grade" className="text-xs font-bold text-gray-700 mb-1 block">Grade / %</label>
+                            <input id="seeker-resume-builder-grade"
                               type="text"
                               value={edu.grade}
                               onChange={e => setEducation(prev => prev.map(x => x.id === edu.id ? { ...x, grade: e.target.value } : x))}
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                               placeholder="82%"
                             />
                           </div>
@@ -849,7 +853,7 @@ Return strictly valid JSON with format:
                       {experience.length > 1 && (
                         <button
                           onClick={() => setExperience(e => e.filter(x => x.id !== exp.id))}
-                          className="absolute top-3 right-3 text-gray-400 hover:text-red-600 font-bold p-1 cursor-pointer"
+                          className="absolute top-3 right-3 text-slate-500 hover:text-red-600 font-bold p-1 cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 size={14} />
@@ -857,42 +861,42 @@ Return strictly valid JSON with format:
                       )}
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Company / Business Name</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-company-business-name" className="text-xs font-bold text-gray-700 mb-1 block">Company / Business Name</label>
+                          <input id="seeker-resume-builder-company-business-name"
                             type="text"
                             value={exp.company}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, company: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Cardamom Exports, Theni"
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Job Role / Designation</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-job-role-designation" className="text-xs font-bold text-gray-700 mb-1 block">Job Role / Designation</label>
+                          <input id="seeker-resume-builder-job-role-designation"
                             type="text"
                             value={exp.role}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, role: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Accounts Executive / Marketing"
                           />
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Duration</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-duration" className="text-xs font-bold text-gray-700 mb-1 block">Duration</label>
+                          <input id="seeker-resume-builder-duration"
                             type="text"
                             value={exp.duration}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, duration: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. 2022 – Present (2 Years)"
                           />
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Key Responsibilities &amp; Bullet Points</label>
-                          <textarea
+                          <label htmlFor="seeker-resume-builder-key-responsibilities-and-bullet-points" className="text-xs font-bold text-gray-700 mb-1 block">Key Responsibilities &amp; Bullet Points</label>
+                          <textarea id="seeker-resume-builder-key-responsibilities-and-bullet-points"
                             rows={3}
                             value={exp.description}
                             onChange={e => setExperience(prev => prev.map(x => x.id === exp.id ? { ...x, description: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900 resize-none leading-relaxed"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900 resize-none leading-relaxed"
                             placeholder="• Managed daily invoicing and customer accounts&#10;• Generated weekly performance reports for management"
                           />
                         </div>
@@ -924,8 +928,8 @@ Return strictly valid JSON with format:
                     value={newSkill}
                     onChange={e => setNewSkill(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addSkill()}
-                    placeholder="Type a skill (e.g., Tally Prime, React.js, Sales Management, MS Excel)..."
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none focus:bg-white focus:border-blue-500"
+                    aria-label="Type a skill (e.g., Tally Prime, React.js, Sales Management, MS Excel)" placeholder="Type a skill (e.g., Tally Prime, React.js, Sales Management, MS Excel)..."
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none focus:bg-white focus:border-blue-500"
                   />
                   <button onClick={addSkill} className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer">
                     Add Skill
@@ -954,7 +958,7 @@ Return strictly valid JSON with format:
                       {certifications.length > 1 && (
                         <button
                           onClick={() => setCertifications(c => c.filter(x => x.id !== cert.id))}
-                          className="absolute top-3 right-3 text-gray-400 hover:text-red-600 font-bold p-1 cursor-pointer"
+                          className="absolute top-3 right-3 text-slate-500 hover:text-red-600 font-bold p-1 cursor-pointer"
                           title="Remove item"
                         >
                           <Trash2 size={14} />
@@ -962,22 +966,22 @@ Return strictly valid JSON with format:
                       )}
                       <div className="grid sm:grid-cols-3 gap-3">
                         <div className="sm:col-span-2">
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Certificate / Course Title</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-certificate-course-title" className="text-xs font-bold text-gray-700 mb-1 block">Certificate / Course Title</label>
+                          <input id="seeker-resume-builder-certificate-course-title"
                             type="text"
                             value={cert.name}
                             onChange={e => setCertifications(prev => prev.map(x => x.id === cert.id ? { ...x, name: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="e.g. Certified Tally Professional / Digital Marketing"
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
-                          <input
+                          <label htmlFor="seeker-resume-builder-year-2" className="text-xs font-bold text-gray-700 mb-1 block">Year</label>
+                          <input id="seeker-resume-builder-year-2"
                             type="text"
                             value={cert.year}
                             onChange={e => setCertifications(prev => prev.map(x => x.id === cert.id ? { ...x, year: e.target.value } : x))}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-xs text-gray-900"
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-gray-200 text-base sm:text-xs text-gray-900"
                             placeholder="2024"
                           />
                         </div>
@@ -1032,7 +1036,7 @@ Return strictly valid JSON with format:
               onClick={goPrev}
               disabled={stepIndex === 0}
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                stepIndex === 0 ? 'text-gray-400 cursor-not-allowed opacity-50' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 cursor-pointer shadow-xs'
+                stepIndex === 0 ? 'text-slate-500 cursor-not-allowed opacity-50' : 'bg-white border border-gray-300 text-gray-800 hover:bg-gray-50 cursor-pointer shadow-xs'
               }`}
             >
               <ChevronLeft size={16} /> Previous
@@ -1187,6 +1191,6 @@ Return strictly valid JSON with format:
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -8,6 +8,8 @@ import { doc, updateDoc, writeBatch, where, orderBy } from 'firebase/firestore';
 import { Bell, Check, Eye, Calendar, Star, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { formatDateTime, type FirestoreTime } from '@/lib/firestoreTime';
+import { Button, Card, EmptyState, PageHeader, PageShell, Tabs } from '@/components/dashboard';
 
 interface NotificationItem {
   id: string;
@@ -19,7 +21,7 @@ interface NotificationItem {
   link?: string;
   isRead?: boolean;
   read?: boolean;
-  createdAt: any;
+  createdAt: FirestoreTime;
 }
 
 const typeIcons = {
@@ -79,114 +81,110 @@ export default function SeekerNotificationsPage() {
   const displayed = filter === 'all' ? notifications : notifications.filter(n => !n.isRead && !n.read);
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto font-outfit text-gray-900 pb-20">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">Notifications &amp; Alerts</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Track updates on job applications, interview calls, and hiring messages</p>
-        </div>
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={handleMarkAllRead}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-bold border border-emerald-200 transition-all cursor-pointer shadow-2xs"
-          >
-            <CheckCircle2 size={14} /> Mark all as read
-          </button>
-        )}
-      </div>
+    <PageShell className="max-w-4xl">
+      <PageHeader
+        title="Notifications & alerts"
+        description="Updates on your applications, interview calls and hiring messages."
+        actions={
+          unreadCount > 0 ? (
+            <Button
+              variant="secondary"
+              onClick={handleMarkAllRead}
+              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            >
+              <CheckCircle2 size={14} /> Mark all as read
+            </Button>
+          ) : undefined
+        }
+      />
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
-        <button
-          type="button"
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-            filter === 'all' ? 'bg-white text-emerald-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          All ({notifications.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilter('unread')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-            filter === 'unread' ? 'bg-white text-emerald-700 shadow-xs' : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Unread ({unreadCount})
-        </button>
-      </div>
+      <Tabs
+        label="Notification filter"
+        value={filter}
+        onChange={(id) => setFilter(id as 'all' | 'unread')}
+        tabs={[
+          { id: 'all', label: 'All', count: notifications.length },
+          { id: 'unread', label: 'Unread', count: unreadCount },
+        ]}
+      />
 
-      {/* Notification List */}
-      <div className="space-y-3">
-        {displayed.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs space-y-3">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
-              <Bell size={24} />
-            </div>
-            <h3 className="text-base font-bold text-gray-900">All caught up!</h3>
-            <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
-              {filter === 'unread' ? "You don't have any unread notifications." : "You have no notifications yet."}
-            </p>
-          </div>
-        ) : (
-          displayed.map((item) => {
+      {displayed.length === 0 ? (
+        <EmptyState
+          icon={Bell}
+          title="All caught up"
+          description={
+            filter === 'unread'
+              ? "You don't have any unread notifications."
+              : 'You have no notifications yet.'
+          }
+        />
+      ) : (
+        <ul className="space-y-3">
+          {displayed.map((item) => {
             const isRead = item.isRead || item.read;
             const config = typeIcons[item.type] || typeIcons.system;
             const Icon = config.icon;
             const actionTarget = item.actionUrl || item.link;
 
-            const dateStr = item.createdAt
-              ? (item.createdAt.seconds
-                  ? new Date(item.createdAt.seconds * 1000).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-                  : 'Recently')
-              : 'Recently';
-
             return (
-              <div
-                key={item.id}
-                onClick={() => !isRead && handleMarkAsRead(item.id)}
-                className={`bg-white rounded-3xl p-4 sm:p-5 border shadow-xs transition-all flex items-start gap-3.5 ${
-                  !isRead ? 'border-emerald-300 bg-emerald-50/20' : 'border-gray-200'
-                }`}
-              >
-                <div
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
-                  style={{ background: config.bg }}
+              <li key={item.id}>
+                <Card
+                  className={`flex items-start gap-3.5 p-4 transition-all sm:p-5 ${
+                    !isRead ? 'border-emerald-300 bg-emerald-50/30' : ''
+                  }`}
                 >
-                  <Icon size={18} style={{ color: config.color }} />
-                </div>
+                  <span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                    style={{ background: config.bg }}
+                  >
+                    <Icon size={18} style={{ color: config.color }} aria-hidden />
+                  </span>
 
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="text-sm font-bold text-gray-900 truncate">{item.title}</h4>
-                    <span className="text-[10px] text-gray-400 font-semibold whitespace-nowrap shrink-0">{dateStr}</span>
-                  </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">{item.message}</p>
-
-                  {actionTarget && (
-                    <div className="pt-2">
-                      <Link
-                        href={actionTarget}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline"
-                      >
-                        <span>View Details</span>
-                        <span>→</span>
-                      </Link>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="truncate text-sm font-semibold text-slate-900">{item.title}</h2>
+                      <span className="shrink-0 whitespace-nowrap text-xs text-slate-500">
+                        {formatDateTime(item.createdAt)}
+                      </span>
                     </div>
-                  )}
-                </div>
+                    <p className="text-xs leading-relaxed text-slate-600">{item.message}</p>
 
-                {!isRead && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 mt-1" />
-                )}
-              </div>
+                    <div className="flex flex-wrap items-center gap-3 pt-1.5">
+                      {actionTarget && (
+                        <Link
+                          href={actionTarget}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
+                        >
+                          View details →
+                        </Link>
+                      )}
+                      {/* Marking read was previously bound to a click anywhere on the
+                          card — a div with an onClick, so keyboard users had no way to
+                          reach it and screen readers were told nothing was actionable. */}
+                      {!isRead && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsRead(item.id)}
+                          className="tap-target-auto inline-flex items-center gap-1 rounded text-xs font-semibold text-slate-500 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                        >
+                          <Check size={12} aria-hidden /> Mark as read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {!isRead && (
+                    <span
+                      className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"
+                      aria-label="Unread"
+                    />
+                  )}
+                </Card>
+              </li>
             );
-          })
-        )}
-      </div>
-    </div>
+          })}
+        </ul>
+      )}
+    </PageShell>
   );
 }

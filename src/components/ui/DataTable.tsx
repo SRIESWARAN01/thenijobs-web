@@ -117,14 +117,14 @@ export function DataTable<T extends Record<string, unknown>>({
         <div className="px-4 md:px-5 py-3.5 border-b border-gray-50 flex flex-wrap items-center gap-3" style={{ background: '#F8FAFC' }}>
           {searchable && (
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={searchPlaceholder}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all" />
+                className="w-full pl-9 pr-4 py-2 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all" />
             </div>
           )}
           {filters.map(filter => (
             <select key={filter.key} value={filterValues[filter.key] ?? ''} onChange={e => setFilterValues(prev => ({ ...prev, [filter.key]: e.target.value }))}
-              className="px-3 py-2 text-sm bg-white border border-gray-200 rounded-xl text-gray-600 appearance-none cursor-pointer focus:outline-none focus:border-blue-400 transition-all min-w-[120px]">
+              className="px-3 py-2 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-600 appearance-none cursor-pointer focus:outline-none focus:border-blue-400 transition-all min-w-[120px]">
               <option value="">{filter.label}</option>
               {filter.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
@@ -167,7 +167,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     {col.sortable && (
                       sortKey === col.key
                         ? sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-blue-500" /> : <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
-                        : <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300" />
+                        : <ChevronsUpDown className="w-3.5 h-3.5 text-slate-500" />
                     )}
                   </span>
                 </th>
@@ -185,7 +185,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <td colSpan={columns.length + (hasBulk ? 1 : 0) + (actions.length > 0 ? 1 : 0)} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3 text-gray-200">
                     <Inbox className="w-10 h-10" strokeWidth={1.2} />
-                    <p className="text-sm text-gray-400">{emptyMessage}</p>
+                    <p className="text-sm text-slate-500">{emptyMessage}</p>
                   </div>
                 </td>
               </tr>
@@ -217,8 +217,8 @@ export function DataTable<T extends Record<string, unknown>>({
                             <button key={ai} onClick={() => action.onClick(row, rowIndex)} title={action.label}
                               className={`p-1.5 rounded-lg transition-all ${
                                 action.variant === 'danger'
-                                  ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-                                  : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                                  ? 'text-slate-500 hover:text-red-500 hover:bg-red-50'
+                                  : 'text-slate-500 hover:text-gray-700 hover:bg-gray-100'
                               }`}>
                               <ActionIcon className="w-4 h-4" />
                             </button>
@@ -236,7 +236,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
       {/* Pagination */}
       {pagination && (
-        <div className="px-4 md:px-5 py-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-400" style={{ background: '#F8FAFC' }}>
+        <div className="px-4 md:px-5 py-3 border-t border-gray-50 flex items-center justify-between text-xs text-slate-500" style={{ background: '#F8FAFC' }}>
           <span>
             {pagination.total === 0 ? 'No results' : `${(pagination.page - 1) * pagination.pageSize + 1}–${Math.min(pagination.page * pagination.pageSize, pagination.total)} of ${pagination.total}`}
           </span>
@@ -254,7 +254,7 @@ export function DataTable<T extends Record<string, unknown>>({
               return (
                 <button key={pageNum} onClick={() => pagination.onPageChange(pageNum)}
                   className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
-                    pagination.page === pageNum ? 'text-white' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-700'
+                    pagination.page === pageNum ? 'text-white' : 'text-slate-500 hover:bg-gray-100 hover:text-gray-700'
                   }`} style={pagination.page === pageNum ? { background: '#2563EB' } : {}}>
                   {pageNum}
                 </button>

@@ -1,6 +1,6 @@
 export default function EmployerLoading() {
   return (
-    <div className="p-4 sm:p-6 space-y-5 animate-pulse">
+    <div className="animate-pulse space-y-4 sm:space-y-6">
       <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gray-200" />
@@ -10,7 +10,7 @@ export default function EmployerLoading() {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
             <div className="h-8 bg-gray-200 rounded-lg w-12 mb-2" />

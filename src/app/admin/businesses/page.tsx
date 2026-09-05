@@ -15,6 +15,17 @@ import { approveCompany, rejectCompany, featureCompany, updateDocument, deleteCo
 import { useToast } from '@/contexts/ToastContext';
 import { exportCompaniesToExcel } from '@/lib/excel/companyExcelService';
 import { slugifyCompany } from '@/lib/companySlug';
+import {
+  ActionMenu, DataTable, Pill, ViewToggle, useViewMode,
+  type ActionItem, type Column, type PillTone,
+} from '@/components/dashboard';
+
+const STATUS_TONE: Record<string, PillTone> = {
+  pending: 'warning',
+  under_review: 'info',
+  verified: 'success',
+  rejected: 'danger',
+};
 
 interface BusinessDoc {
   id: string;
@@ -83,6 +94,7 @@ export default function BusinessesPage() {
   const { data: businesses, loading } = useCollection<BusinessDoc>('companies');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('All');
+  const [view, setView] = useViewMode('admin-businesses', 'table');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [districtFilter, setDistrictFilter] = useState('All Districts');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -412,6 +424,92 @@ export default function BusinessesPage() {
     } catch (e) { console.error(e); } finally { setActionLoading(null); }
   };
 
+  const businessColumns: Column<BusinessDoc>[] = [
+    {
+      key: 'name',
+      header: 'Business',
+      card: 'title',
+      sortValue: biz => biz.name ?? '',
+      render: biz => {
+        const { bg, color } = getColors(biz.name);
+        const bizStatus = biz.verificationStatus || 'pending';
+        return (
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+              style={{ background: bg, color }}
+            >
+              {getInitials(biz.name)}
+            </span>
+            <span className="min-w-0">
+              <span className="flex items-center gap-1.5">
+                <span className="truncate font-semibold text-slate-900">{biz.name}</span>
+                {bizStatus === 'verified' && <BadgeCheck size={14} className="shrink-0 text-emerald-600" aria-label="Verified" />}
+                {biz.isPremium && <Crown size={14} className="shrink-0 text-amber-500" aria-label="Premium" />}
+                {isDuplicateBiz(biz) && (
+                  <span className="shrink-0 rounded-md border border-violet-200 bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-800">
+                    Duplicate
+                  </span>
+                )}
+              </span>
+              <span className="block truncate text-xs text-slate-500">{biz.category || 'General'}</span>
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'district',
+      header: 'District',
+      hideBelow: 'lg',
+      sortValue: biz => biz.district ?? '',
+      render: biz => (
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <MapPin size={11} className="text-slate-400" aria-hidden /> {biz.district || 'Theni'}
+        </span>
+      ),
+    },
+    {
+      key: 'contact',
+      header: 'Contact',
+      sortValue: biz => biz.contactPerson || biz.ownerName || '',
+      render: biz => biz.contactPerson || biz.ownerName || <span className="text-slate-300">&mdash;</span>,
+    },
+    {
+      key: 'phone',
+      header: 'Phone',
+      sortValue: biz => biz.phone ?? '',
+      render: biz => biz.phone
+        ? <span className="whitespace-nowrap font-mono text-xs tabular-nums">{biz.phone}</span>
+        : <span className="text-slate-300">&mdash;</span>,
+    },
+    {
+      key: 'proof',
+      header: 'Govt proof',
+      hideBelow: 'xl',
+      sortValue: biz => biz.proofNumber ?? '',
+      render: biz => biz.proofNumber
+        ? (
+          <span className="block">
+            <span className="block text-[10px] uppercase tracking-wide text-slate-500">{biz.proofType || 'Proof'}</span>
+            <span className="font-mono text-xs text-blue-700">{biz.proofNumber}</span>
+          </span>
+        )
+        : <span className="text-slate-300">&mdash;</span>,
+    },
+    {
+      key: 'verificationStatus',
+      header: 'Status',
+      align: 'center',
+      sortValue: biz => biz.verificationStatus ?? 'pending',
+      render: biz => {
+        const bizStatus = biz.verificationStatus || 'pending';
+        const st = STATUS_STYLES[bizStatus] || STATUS_STYLES.pending;
+        return <Pill tone={STATUS_TONE[bizStatus] ?? 'warning'} dot>{st.label}</Pill>;
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6 font-outfit text-gray-900 pb-20 max-w-7xl mx-auto">
       {/* Header */}
@@ -474,7 +572,7 @@ export default function BusinessesPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit">
+      <div className="flex gap-1.5 p-1.5 rounded-2xl bg-gray-100/80 overflow-x-auto no-scrollbar w-fit max-w-full">
         {TABS.map(tab => (
           <button
             key={tab}
@@ -505,27 +603,28 @@ export default function BusinessesPage() {
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by business name, phone, or contact person..."
+            aria-label="Search by business name, phone, or contact person" placeholder="Search by business name, phone, or contact person..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 font-medium"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
           >
             {CATEGORIES.map(c => <option key={c}>{c}</option>)}
           </select>
           <select
             value={districtFilter}
             onChange={e => setDistrictFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 outline-none cursor-pointer"
+            className="px-3.5 py-2.5 bg-white border border-gray-300 rounded-2xl text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
           >
             {DISTRICTS.map(d => <option key={d}>{d}</option>)}
           </select>
+          <ViewToggle value={view} onChange={setView} />
         </div>
       </div>
 
@@ -557,204 +656,73 @@ export default function BusinessesPage() {
         </div>
       )}
 
-      {/* Business Cards Grid */}
-
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 size={32} className="text-blue-600 animate-spin" />
-          <p className="text-xs text-gray-500 font-semibold">Loading business applications...</p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-xs">
-          <Building2 size={36} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-sm font-bold text-gray-700">No businesses match your filter</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map(biz => {
-            const bizStatus = biz.verificationStatus || 'pending';
-            const st = STATUS_STYLES[bizStatus] || STATUS_STYLES.pending;
-            const { bg, color } = getColors(biz.name);
-            const cleanPhone = (biz.phone || '').replace(/[^0-9+]/g, '');
-            const cleanWa = (biz.whatsapp || biz.phone || '').replace(/[^0-9]/g, '');
-
-            return (
-              <div
-                key={biz.id}
-                className={`bg-white rounded-3xl p-5 shadow-xs transition-all hover:shadow-md border flex flex-col justify-between gap-3.5 ${
-                  bizStatus === 'pending' ? 'border-amber-300 ring-2 ring-amber-100/50' : 'border-gray-200'
-                }`}
-              >
-                <div>
-                  {/* Top Row: Avatar & Status */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs"
-                      style={{ background: bg, color }}
-                    >
-                      {getInitials(biz.name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <h3 className="text-sm font-bold text-gray-900 truncate">{biz.name}</h3>
-                        {bizStatus === 'verified' && <BadgeCheck size={15} className="text-emerald-600 shrink-0" />}
-                        {biz.isPremium && <Crown size={15} className="text-amber-500 shrink-0" />}
-                        {isDuplicateBiz(biz) && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[9px] font-extrabold flex items-center gap-0.5 border border-purple-200 shrink-0">
-                            <Copy size={9} /> Duplicate
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 font-medium mt-0.5">{biz.category || 'General'}</p>
-                      <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1 font-medium">
-                        <MapPin size={11} className="text-gray-400" /> {biz.district || 'Theni'}
-                      </p>
-                    </div>
-                    <span
-                      className="px-2.5 py-1 rounded-full text-[10px] font-extrabold flex-shrink-0"
-                      style={{ background: st.bg, color: st.text }}
-                    >
-                      {st.label}
-                    </span>
-                  </div>
-
-                  {/* Owner & Proof Info */}
-                  <div className="bg-gray-50 rounded-2xl p-3 text-xs text-gray-700 space-y-1.5 mb-3 border border-gray-100 font-medium">
-                    <p className="flex justify-between">
-                      <span className="text-gray-500">Contact:</span>
-                      <span className="font-bold text-gray-900">{biz.contactPerson || biz.ownerName || '—'}</span>
-                    </p>
-                    <p className="flex justify-between">
-                      <span className="text-gray-500">Phone:</span>
-                      <span className="font-mono font-bold text-gray-900">{biz.phone || '—'}</span>
-                    </p>
-                    {biz.proofNumber && (
-                      <p className="flex justify-between">
-                        <span className="text-gray-500">{biz.proofType || 'Govt Proof'}:</span>
-                        <span className="font-mono text-[11px] font-bold text-blue-700">{biz.proofNumber}</span>
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Rejection Note */}
-                  {bizStatus === 'rejected' && biz.rejectionReason && (
-                    <p className="text-[11px] text-red-700 bg-red-50 p-2.5 rounded-2xl border border-red-200 mb-3 leading-relaxed">
-                      <strong>Rejection Note:</strong> {biz.rejectionReason}
-                    </p>
-                  )}
-
-                  {/* Description */}
-                  <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                    {biz.description || biz.address || 'Local business registered on THENIJOBS.'}
-                  </p>
-                </div>
-
-                {/* Bottom Actions */}
-                <div className="space-y-2 pt-2 border-t border-gray-100">
-                  {/* Direct Contact & Edit Buttons */}
-                  <div className="grid grid-cols-4 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewBiz(biz)}
-                      className="py-2 px-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Eye size={12} /> Details
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => openEditBizModal(biz)}
-                      className="py-2 px-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-blue-200 cursor-pointer"
-                      title="Edit Business Details"
-                    >
-                      <Edit3 size={12} /> Edit
-                    </button>
-
-                    {cleanPhone ? (
-                      <a
-                        href={`tel:${cleanPhone}`}
-                        className="py-2 px-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1 transition-all border border-indigo-200 cursor-pointer"
-                      >
-                        <Phone size={12} /> Call
-                      </a>
-                    ) : (
-                      <span className="py-2 text-center text-[10px] text-gray-400">No Phone</span>
-                    )}
-
-                    {cleanWa ? (
-                      <a
-                        href={`https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${biz.name}, this is THENIJOBS Admin regarding your business verification request.`)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="py-2 px-1.5 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer"
-                        style={{ background: '#25D366' }}
-                      >
-                        <MessageCircle size={12} /> WA
-                      </a>
-                    ) : (
-                      <span className="py-2 text-center text-[10px] text-gray-400">No WA</span>
-                    )}
-                  </div>
-
-                  {/* Approval / Rejection / Delete Row */}
-                  <div className="flex items-center gap-1.5">
-                    {actionLoading === biz.id ? (
-                      <div className="py-2 w-full text-center">
-                        <Loader2 size={16} className="animate-spin text-blue-500 mx-auto" />
-                      </div>
-                    ) : (
-                      <>
-                        {bizStatus !== 'verified' && (
-                          <button
-                            type="button"
-                            onClick={() => doApprove(biz)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold text-white transition-all shadow-xs cursor-pointer bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            <CheckCircle size={14} /> Approve
-                          </button>
-                        )}
-                        {bizStatus !== 'rejected' && (
-                          <button
-                            type="button"
-                            onClick={() => openRejectModal(biz)}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold border border-red-200 text-red-600 hover:bg-red-50 transition-all cursor-pointer"
-                          >
-                            <XCircle size={14} /> Reject
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => doToggleFeatured(biz.id, biz.isFeatured)}
-                          className={`p-2 rounded-xl transition-all cursor-pointer ${biz.isFeatured ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400 hover:text-amber-500'}`}
-                          title={biz.isFeatured ? 'Remove Featured' : 'Feature Business'}
-                        >
-                          <Star size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => doTogglePremium(biz.id, biz.isPremium)}
-                          className={`p-2 rounded-xl transition-all cursor-pointer ${biz.isPremium ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400 hover:text-purple-500'}`}
-                          title={biz.isPremium ? 'Remove Premium' : 'Make Premium'}
-                        >
-                          <Crown size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingBiz(biz)}
-                          className="p-2 rounded-xl transition-all cursor-pointer bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-                          title="Delete Company Listing"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Business directory — table by default, tiles on request */}
+      <DataTable
+        label="Business and employer directory"
+        loading={loading}
+        view={view}
+        gridColumns={3}
+        columns={businessColumns}
+        rows={filtered}
+        getRowId={biz => biz.id}
+        emptyIcon={Building2}
+        emptyTitle="No businesses match your filter"
+        emptyDescription="Clear the tab, category or district filter to see the full directory."
+        rowActions={biz => {
+          const bizStatus = biz.verificationStatus || 'pending';
+          const cleanPhone = (biz.phone || '').replace(/[^0-9+]/g, '');
+          const cleanWa = (biz.whatsapp || biz.phone || '').replace(/[^0-9]/g, '');
+          if (actionLoading === biz.id) {
+            return <Loader2 size={16} className="animate-spin text-blue-600" aria-label="Saving" />;
+          }
+          const items: ActionItem[] = [
+            { label: 'View details', icon: Eye, onClick: () => setPreviewBiz(biz) },
+            { label: 'Edit business', icon: Edit3, onClick: () => openEditBizModal(biz) },
+          ];
+          if (cleanPhone) {
+            items.push({ label: `Call ${biz.phone}`, icon: Phone, href: `tel:${cleanPhone}` });
+          }
+          if (cleanWa) {
+            items.push({
+              label: 'WhatsApp',
+              icon: MessageCircle,
+              external: true,
+              href: `https://wa.me/${cleanWa}?text=${encodeURIComponent(`Hi ${biz.name}, this is THENIJOBS Admin regarding your business verification request.`)}`,
+            });
+          }
+          if (bizStatus !== 'verified') {
+            items.push({ label: 'Approve', icon: CheckCircle, tone: 'success', separatorBefore: true, onClick: () => doApprove(biz) });
+          }
+          if (bizStatus !== 'rejected') {
+            items.push({
+              label: 'Reject',
+              icon: XCircle,
+              tone: 'danger',
+              separatorBefore: bizStatus === 'verified',
+              onClick: () => openRejectModal(biz),
+            });
+          }
+          items.push({
+            label: biz.isFeatured ? 'Remove featured' : 'Feature business',
+            icon: Star,
+            separatorBefore: true,
+            onClick: () => doToggleFeatured(biz.id, biz.isFeatured),
+          });
+          items.push({
+            label: biz.isPremium ? 'Remove premium' : 'Make premium',
+            icon: Crown,
+            onClick: () => doTogglePremium(biz.id, biz.isPremium),
+          });
+          items.push({
+            label: 'Delete listing',
+            icon: Trash2,
+            tone: 'danger',
+            separatorBefore: true,
+            onClick: () => setDeletingBiz(biz),
+          });
+          return <ActionMenu label={`Actions for ${biz.name}`} items={items} />;
+        }}
+      />
 
       {/* FULL BUSINESS PREVIEW MODAL */}
       {previewBiz && (
@@ -783,7 +751,7 @@ export default function BusinessesPage() {
                 >
                   <Edit3 size={13} /> Edit
                 </button>
-                <button onClick={() => setPreviewBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
+                <button onClick={() => setPreviewBiz(null)} className="p-2 rounded-xl text-slate-500 hover:bg-gray-100">
                   <X size={18} />
                 </button>
               </div>
@@ -799,22 +767,22 @@ export default function BusinessesPage() {
             {/* Details Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
-                <span className="text-gray-400 font-bold block">Contact Person</span>
+                <span className="text-slate-500 font-bold block">Contact Person</span>
                 <span className="font-bold text-gray-900 text-sm">{previewBiz.contactPerson || previewBiz.ownerName || '—'}</span>
                 <span className="text-[11px] text-gray-500 block">{previewBiz.designation || 'Owner / Representative'}</span>
               </div>
               <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1">
-                <span className="text-gray-400 font-bold block">Calling &amp; WhatsApp</span>
+                <span className="text-slate-500 font-bold block">Calling &amp; WhatsApp</span>
                 <span className="font-mono font-bold text-gray-900 text-sm">{previewBiz.phone || '—'}</span>
                 <span className="text-[11px] text-gray-500 block">WA: {previewBiz.whatsapp || previewBiz.phone || '—'}</span>
               </div>
               <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1 sm:col-span-2">
-                <span className="text-gray-400 font-bold block">Office Address</span>
+                <span className="text-slate-500 font-bold block">Office Address</span>
                 <span className="font-semibold text-gray-900">{previewBiz.address || '—'}</span>
               </div>
               {previewBiz.website && (
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-200 space-y-1 sm:col-span-2">
-                  <span className="text-gray-400 font-bold block">Website / Domain URL</span>
+                  <span className="text-slate-500 font-bold block">Website / Domain URL</span>
                   <a href={previewBiz.website.startsWith('http') ? previewBiz.website : `https://${previewBiz.website}`} target="_blank" rel="noreferrer" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-1">
                     {previewBiz.website} <ExternalLink size={12} />
                   </a>
@@ -914,7 +882,7 @@ export default function BusinessesPage() {
                   <p className="text-xs text-gray-500">Update company profile, contact, website &amp; verification</p>
                 </div>
               </div>
-              <button onClick={() => setEditingBiz(null)} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100">
+              <button onClick={() => setEditingBiz(null)} className="p-2 rounded-xl text-slate-500 hover:bg-gray-100">
                 <X size={18} />
               </button>
             </div>
@@ -929,21 +897,21 @@ export default function BusinessesPage() {
               {/* Row 1: Company Name & Category */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Company / Business Name *</label>
-                  <input
+                  <label htmlFor="admin-businesses-company-business-name" className="text-xs font-bold text-gray-700 block mb-1">Company / Business Name *</label>
+                  <input id="admin-businesses-company-business-name"
                     type="text"
                     value={editBizForm.name}
                     onChange={e => setEditBizForm({ ...editBizForm, name: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="e.g. Royal Grand Hospital"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
-                  <select
+                  <label htmlFor="admin-businesses-business-category" className="text-xs font-bold text-gray-700 block mb-1">Business Category *</label>
+                  <select id="admin-businesses-business-category"
                     value={editBizForm.category}
                     onChange={e => setEditBizForm({ ...editBizForm, category: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     {CATEGORIES.filter(c => c !== 'All Categories').map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -953,22 +921,22 @@ export default function BusinessesPage() {
               {/* Row 2: District & Full Address */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">District / Town *</label>
-                  <select
+                  <label htmlFor="admin-businesses-district-town" className="text-xs font-bold text-gray-700 block mb-1">District / Town *</label>
+                  <select id="admin-businesses-district-town"
                     value={editBizForm.district}
                     onChange={e => setEditBizForm({ ...editBizForm, district: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     {DISTRICTS.filter(d => d !== 'All Districts').map(d => <option key={d}>{d}</option>)}
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Office / Shop Address</label>
-                  <input
+                  <label htmlFor="admin-businesses-office-shop-address" className="text-xs font-bold text-gray-700 block mb-1">Office / Shop Address</label>
+                  <input id="admin-businesses-office-shop-address"
                     type="text"
                     value={editBizForm.address}
                     onChange={e => setEditBizForm({ ...editBizForm, address: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="e.g. 45, Main Bazaar, Theni"
                   />
                 </div>
@@ -977,32 +945,32 @@ export default function BusinessesPage() {
               {/* Row 3: Contacts */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Contact Person / Owner</label>
-                  <input
+                  <label htmlFor="admin-businesses-contact-person-owner" className="text-xs font-bold text-gray-700 block mb-1">Contact Person / Owner</label>
+                  <input id="admin-businesses-contact-person-owner"
                     type="text"
                     value={editBizForm.contactPerson}
                     onChange={e => setEditBizForm({ ...editBizForm, contactPerson: e.target.value, ownerName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="e.g. K. Suresh"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Phone Number *</label>
-                  <input
+                  <label htmlFor="admin-businesses-phone-number" className="text-xs font-bold text-gray-700 block mb-1">Phone Number *</label>
+                  <input id="admin-businesses-phone-number"
                     type="tel"
                     value={editBizForm.phone}
                     onChange={e => setEditBizForm({ ...editBizForm, phone: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="9876543210"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Number</label>
-                  <input
+                  <label htmlFor="admin-businesses-whatsapp-number" className="text-xs font-bold text-gray-700 block mb-1">WhatsApp Number</label>
+                  <input id="admin-businesses-whatsapp-number"
                     type="tel"
                     value={editBizForm.whatsapp}
                     onChange={e => setEditBizForm({ ...editBizForm, whatsapp: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="9876543210"
                   />
                 </div>
@@ -1011,22 +979,22 @@ export default function BusinessesPage() {
               {/* Row 4: Email & Website */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
-                  <input
+                  <label htmlFor="admin-businesses-official-email-address" className="text-xs font-bold text-gray-700 block mb-1">Official Email Address</label>
+                  <input id="admin-businesses-official-email-address"
                     type="email"
                     value={editBizForm.email}
                     onChange={e => setEditBizForm({ ...editBizForm, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="contact@company.com"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Website / Domain URL</label>
-                  <input
+                  <label htmlFor="admin-businesses-website-domain-url" className="text-xs font-bold text-gray-700 block mb-1">Website / Domain URL</label>
+                  <input id="admin-businesses-website-domain-url"
                     type="url"
                     value={editBizForm.website}
                     onChange={e => setEditBizForm({ ...editBizForm, website: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                     placeholder="https://mycompany.com"
                   />
                 </div>
@@ -1035,11 +1003,11 @@ export default function BusinessesPage() {
               {/* Row 5: Proof & Verification */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Verification Proof Type</label>
-                  <select
+                  <label htmlFor="admin-businesses-verification-proof-type" className="text-xs font-bold text-gray-700 block mb-1">Verification Proof Type</label>
+                  <select id="admin-businesses-verification-proof-type"
                     value={editBizForm.proofType}
                     onChange={e => setEditBizForm({ ...editBizForm, proofType: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     <option value="MSME / Udyam Registration">MSME / Udyam</option>
                     <option value="GST Registration Certificate">GST Certificate</option>
@@ -1051,21 +1019,21 @@ export default function BusinessesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Proof / License / GST Number</label>
-                  <input
+                  <label htmlFor="admin-businesses-proof-license-gst-number" className="text-xs font-bold text-gray-700 block mb-1">Proof / License / GST Number</label>
+                  <input id="admin-businesses-proof-license-gst-number"
                     type="text"
                     value={editBizForm.proofNumber}
                     onChange={e => setEditBizForm({ ...editBizForm, proofNumber: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 font-mono"
                     placeholder="e.g. 33AAAAA0000A1Z5"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">Verification Status</label>
-                  <select
+                  <label htmlFor="admin-businesses-verification-status" className="text-xs font-bold text-gray-700 block mb-1">Verification Status</label>
+                  <select id="admin-businesses-verification-status"
                     value={editBizForm.verificationStatus}
                     onChange={e => setEditBizForm({ ...editBizForm, verificationStatus: e.target.value as any })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-700 outline-none"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs font-bold text-gray-700 outline-none"
                   >
                     <option value="verified">Verified &amp; Active</option>
                     <option value="pending">Pending Verification</option>
@@ -1081,22 +1049,22 @@ export default function BusinessesPage() {
                 <p className="text-xs font-bold text-gray-900">Branding &amp; Media</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
-                    <input
+                    <label htmlFor="admin-businesses-logo-image-url" className="text-xs font-bold text-gray-700 block mb-1">Logo Image URL</label>
+                    <input id="admin-businesses-logo-image-url"
                       type="url"
                       value={editBizForm.logoUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, logoUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="https://…/logo.png"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Banner / Cover Image URL</label>
-                    <input
+                    <label htmlFor="admin-businesses-banner-cover-image-url" className="text-xs font-bold text-gray-700 block mb-1">Banner / Cover Image URL</label>
+                    <input id="admin-businesses-banner-cover-image-url"
                       type="url"
                       value={editBizForm.coverUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, coverUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="https://…/banner.jpg"
                     />
                   </div>
@@ -1115,22 +1083,22 @@ export default function BusinessesPage() {
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Established Year</label>
-                    <input
+                    <label htmlFor="admin-businesses-established-year" className="text-xs font-bold text-gray-700 block mb-1">Established Year</label>
+                    <input id="admin-businesses-established-year"
                       type="text"
                       value={editBizForm.establishedYear}
                       onChange={e => setEditBizForm({ ...editBizForm, establishedYear: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="e.g. 2015"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 block mb-1">Google Maps URL</label>
-                    <input
+                    <label htmlFor="admin-businesses-google-maps-url" className="text-xs font-bold text-gray-700 block mb-1">Google Maps URL</label>
+                    <input id="admin-businesses-google-maps-url"
                       type="url"
                       value={editBizForm.googleMapsUrl}
                       onChange={e => setEditBizForm({ ...editBizForm, googleMapsUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                       placeholder="https://maps.google.com/…"
                     />
                   </div>
@@ -1143,12 +1111,12 @@ export default function BusinessesPage() {
                     ['linkedin', 'LinkedIn'],
                   ] as const).map(([key, label]) => (
                     <div key={key}>
-                      <label className="text-xs font-bold text-gray-700 block mb-1">{label}</label>
-                      <input
+                      <label htmlFor="admin-businesses-field" className="text-xs font-bold text-gray-700 block mb-1">{label}</label>
+                      <input id="admin-businesses-field"
                         type="url"
                         value={editBizForm[key]}
                         onChange={e => setEditBizForm({ ...editBizForm, [key]: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                         placeholder="https://…"
                       />
                     </div>
@@ -1158,23 +1126,23 @@ export default function BusinessesPage() {
 
               {/* Row 6: Tagline & Description */}
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Tagline / Short Slogan</label>
-                <input
+                <label htmlFor="admin-businesses-tagline-short-slogan" className="text-xs font-bold text-gray-700 block mb-1">Tagline / Short Slogan</label>
+                <input id="admin-businesses-tagline-short-slogan"
                   type="text"
                   value={editBizForm.tagline}
                   onChange={e => setEditBizForm({ ...editBizForm, tagline: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600"
                   placeholder="e.g. Leading IT & Cloud Solutions in Theni"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Company Overview / Description</label>
-                <textarea
+                <label htmlFor="admin-businesses-company-overview-description" className="text-xs font-bold text-gray-700 block mb-1">Company Overview / Description</label>
+                <textarea id="admin-businesses-company-overview-description"
                   rows={3}
                   value={editBizForm.description}
                   onChange={e => setEditBizForm({ ...editBizForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-base sm:text-xs text-gray-900 font-medium outline-none focus:border-blue-600 resize-none"
                   placeholder="Describe company history, products, and services..."
                 />
               </div>
@@ -1234,7 +1202,7 @@ export default function BusinessesPage() {
                 <AlertCircle size={20} className="text-red-600" />
                 <h3 className="font-bold text-gray-900 text-base">Reject Business Application</h3>
               </div>
-              <button onClick={() => setRejectingBiz(null)} className="p-1 rounded-xl text-gray-400 hover:bg-gray-100">
+              <button onClick={() => setRejectingBiz(null)} className="p-1 rounded-xl text-slate-500 hover:bg-gray-100">
                 <X size={18} />
               </button>
             </div>
@@ -1265,12 +1233,12 @@ export default function BusinessesPage() {
             {/* Reason Textarea */}
             <div>
               <label className="text-xs font-bold text-gray-700 block mb-1">Custom Rejection Reason / Instructions *</label>
-              <textarea
+              <textarea id="admin-businesses-seteditbizform-classname-w-4-h-4-rounded"
                 rows={3}
                 value={rejectionReason}
                 onChange={e => setRejectionReason(e.target.value)}
                 placeholder="Explain what details need to be updated..."
-                className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-900 outline-none focus:bg-white focus:border-red-400 resize-none font-medium"
+                className="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 text-base sm:text-xs text-gray-900 outline-none focus:bg-white focus:border-red-400 resize-none font-medium"
               />
             </div>
 
@@ -1310,7 +1278,7 @@ export default function BusinessesPage() {
                   <p className="text-[11px] text-gray-500">Permanently delete listing &amp; data</p>
                 </div>
               </div>
-              <button onClick={() => setDeletingBiz(null)} className="p-1 rounded-xl text-gray-400 hover:bg-gray-100">
+              <button onClick={() => setDeletingBiz(null)} className="p-1 rounded-xl text-slate-500 hover:bg-gray-100">
                 <X size={18} />
               </button>
             </div>

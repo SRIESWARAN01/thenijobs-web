@@ -56,14 +56,14 @@ export function SearchInput({
     <div ref={containerRef} className={`relative ${className}`}>
       <div className="relative">
         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-          {loading ? <Loader2 className="w-4 h-4 text-gray-400 animate-spin" /> : <Search className="w-4 h-4 text-gray-400" />}
+          {loading ? <Loader2 className="w-4 h-4 text-slate-500 animate-spin" /> : <Search className="w-4 h-4 text-slate-500" />}
         </div>
         <input ref={inputRef} type="text" value={localValue} onChange={e => handleChange(e.target.value)}
           onFocus={() => setShowSuggestions(true)} onKeyDown={handleKeyDown} placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-2.5 text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all"
+          className="w-full pl-10 pr-10 py-2.5 text-base sm:text-sm bg-white border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-all"
           autoComplete="off" />
         {localValue && (
-          <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all" aria-label="Clear search">
+          <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-slate-500 hover:text-gray-600 hover:bg-gray-100 transition-all" aria-label="Clear search">
             <X className="w-3.5 h-3.5" />
           </button>
         )}
@@ -76,7 +76,7 @@ export function SearchInput({
                 index === selectedIndex ? 'bg-blue-50' : 'hover:bg-gray-50'
               }`}>
               <span className={`text-sm font-medium ${index === selectedIndex ? 'text-blue-700' : 'text-gray-800'}`}>{suggestion.label}</span>
-              {suggestion.description && <span className="text-xs text-gray-400">{suggestion.description}</span>}
+              {suggestion.description && <span className="text-xs text-slate-500">{suggestion.description}</span>}
             </button>
           ))}
         </div>

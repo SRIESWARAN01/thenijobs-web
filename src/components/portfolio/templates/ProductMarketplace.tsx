@@ -56,7 +56,7 @@ export default function ProductMarketplace({ site }: Props) {
             <div className="flex flex-col sm:flex-row gap-3 mb-6">
               <div className="relative flex-1">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: m }} />
-                <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products..." className="w-full pl-9 pr-4 py-2.5 border text-sm" style={{ borderRadius: r, borderColor: `${m}20` }} />
+                <input type="text" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search products" placeholder="Search products..." className="w-full pl-9 pr-4 py-2.5 border text-base sm:text-sm" style={{ borderRadius: r, borderColor: `${m}20` }} />
               </div>
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
                 {categories.map(cat => (

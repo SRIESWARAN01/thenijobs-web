@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <p className="text-sm font-bold text-gray-900 truncate" style={{ fontFamily: "'Poppins', sans-serif" }}>THENIJOBS</p>
                 <p className="text-[10px] font-bold text-indigo-600">Admin Portal</p>
               </div>
-              <button onClick={() => setMobileOpen(false)} className="lg:hidden text-gray-400">
+              <button onClick={() => setMobileOpen(false)} className="lg:hidden text-slate-500">
                 <X size={16} />
               </button>
             </>
@@ -106,7 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="px-3 py-2.5 border-b border-gray-50">
             <div className="relative">
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input placeholder="Quick search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-all" />
+              <input aria-label="Quick search" placeholder="Quick search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-base sm:text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-all" />
             </div>
           </div>
         )}
@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {!collapsed && 'Sign Out'}
             </button>
             <button onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl border border-gray-200 text-gray-400 hover:text-gray-600 transition-all">
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-xl border border-gray-200 text-slate-500 hover:text-gray-600 transition-all">
               {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
             </button>
           </div>
@@ -154,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${collapsed ? 'lg:ml-[68px]' : 'lg:ml-[240px]'}`}>
+      <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? 'lg:ml-[68px]' : 'lg:ml-[240px]'}`}>
         {/* Top bar */}
         <header className="sticky top-0 z-30 h-14 bg-white border-b border-gray-100 flex items-center px-4 gap-3">
           <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-600">
@@ -182,7 +182,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
         </header>
 
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

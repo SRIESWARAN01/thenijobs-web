@@ -29,7 +29,7 @@ interface JobQuickUpdateModalsProps {
   onSuccess?: () => void;
 }
 
-const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all";
+const inputCls = "w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-50 transition-all";
 const labelCls = "text-xs font-semibold text-gray-600 block mb-1.5";
 
 export default function JobQuickUpdateModals({
@@ -126,7 +126,7 @@ export default function JobQuickUpdateModals({
             <Icon size={18} style={{ color: config.color }} />
             <h3 className="text-sm font-bold text-gray-900">{config.title}</h3>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-all tap-target-auto">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-slate-500 transition-all tap-target-auto">
             <X size={16} />
           </button>
         </div>
@@ -146,12 +146,12 @@ export default function JobQuickUpdateModals({
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelCls}>Min Salary (₹/mo)</label>
-                    <input type="number" value={salaryMin} onChange={e => setSalaryMin(e.target.value)} className={inputCls} placeholder="15000" />
+                    <label htmlFor="employer-jobquickupdatemodals-min-salary-mo" className={labelCls}>Min Salary (₹/mo)</label>
+                    <input id="employer-jobquickupdatemodals-min-salary-mo" type="number" value={salaryMin} onChange={e => setSalaryMin(e.target.value)} className={inputCls} placeholder="15000" />
                   </div>
                   <div>
-                    <label className={labelCls}>Max Salary (₹/mo)</label>
-                    <input type="number" value={salaryMax} onChange={e => setSalaryMax(e.target.value)} className={inputCls} placeholder="25000" />
+                    <label htmlFor="employer-jobquickupdatemodals-max-salary-mo" className={labelCls}>Max Salary (₹/mo)</label>
+                    <input id="employer-jobquickupdatemodals-max-salary-mo" type="number" value={salaryMax} onChange={e => setSalaryMax(e.target.value)} className={inputCls} placeholder="25000" />
                   </div>
                 </div>
                 <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -173,7 +173,7 @@ export default function JobQuickUpdateModals({
               <>
                 <div>
                   <label className={labelCls}>Job Description</label>
-                  <textarea value={description} onChange={e => setDescription(e.target.value)}
+                  <textarea id="employer-jobquickupdatemodals-setisnegotiable-e-target-checked-classna" value={description} onChange={e => setDescription(e.target.value)}
                     className={inputCls + ' min-h-[150px] resize-y'} placeholder="Describe the role..." />
                 </div>
                 <button onClick={() => saveUpdate({ description })} disabled={loading}
@@ -190,7 +190,7 @@ export default function JobQuickUpdateModals({
                 <div className="flex gap-2">
                   <input type="text" value={newSkill} onChange={e => setNewSkill(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-                    className={inputCls} placeholder="Add a skill..." />
+                    className={inputCls} aria-label="Add a skill" placeholder="Add a skill..." />
                   <button onClick={addSkill} className="px-4 py-2 rounded-xl bg-blue-50 text-blue-600 text-sm font-semibold hover:bg-blue-100 transition-all whitespace-nowrap">
                     Add
                   </button>
@@ -215,8 +215,8 @@ export default function JobQuickUpdateModals({
             {activeModal === 'vacancies' && (
               <>
                 <div>
-                  <label className={labelCls}>Number of Openings</label>
-                  <select value={openings} onChange={e => setOpenings(e.target.value)} className={inputCls}>
+                  <label htmlFor="employer-jobquickupdatemodals-number-of-openings" className={labelCls}>Number of Openings</label>
+                  <select id="employer-jobquickupdatemodals-number-of-openings" value={openings} onChange={e => setOpenings(e.target.value)} className={inputCls}>
                     {['1','2','3','4','5','10','15','20','20+','50+','100+'].map(v => (
                       <option key={v} value={v}>{v}</option>
                     ))}
@@ -234,8 +234,8 @@ export default function JobQuickUpdateModals({
             {activeModal === 'deadline' && (
               <>
                 <div>
-                  <label className={labelCls}>Application Deadline</label>
-                  <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className={inputCls}
+                  <label htmlFor="employer-jobquickupdatemodals-application-deadline" className={labelCls}>Application Deadline</label>
+                  <input id="employer-jobquickupdatemodals-application-deadline" type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className={inputCls}
                     min={new Date().toISOString().split('T')[0]} />
                 </div>
                 <button onClick={() => saveUpdate({ deadline })} disabled={loading}
@@ -250,16 +250,16 @@ export default function JobQuickUpdateModals({
             {activeModal === 'contact' && (
               <>
                 <div>
-                  <label className={labelCls}>Contact Person</label>
-                  <input type="text" value={contactPerson} onChange={e => setContactPerson(e.target.value)} className={inputCls} placeholder="HR Manager" />
+                  <label htmlFor="employer-jobquickupdatemodals-contact-person" className={labelCls}>Contact Person</label>
+                  <input id="employer-jobquickupdatemodals-contact-person" type="text" value={contactPerson} onChange={e => setContactPerson(e.target.value)} className={inputCls} placeholder="HR Manager" />
                 </div>
                 <div>
-                  <label className={labelCls}>Contact Phone</label>
-                  <input type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} className={inputCls} placeholder="+91 98765 43210" />
+                  <label htmlFor="employer-jobquickupdatemodals-contact-phone" className={labelCls}>Contact Phone</label>
+                  <input id="employer-jobquickupdatemodals-contact-phone" type="tel" value={contactPhone} onChange={e => setContactPhone(e.target.value)} className={inputCls} placeholder="+91 98765 43210" />
                 </div>
                 <div>
-                  <label className={labelCls}>Contact Email</label>
-                  <input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} className={inputCls} placeholder="hr@company.com" />
+                  <label htmlFor="employer-jobquickupdatemodals-contact-email" className={labelCls}>Contact Email</label>
+                  <input id="employer-jobquickupdatemodals-contact-email" type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} className={inputCls} placeholder="hr@company.com" />
                 </div>
                 <button onClick={() => saveUpdate({ contactPerson, contactPhone, contactEmail })} disabled={loading}
                   className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
@@ -274,21 +274,21 @@ export default function JobQuickUpdateModals({
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelCls}>Interview Date</label>
-                    <input type="date" value={interviewDate} onChange={e => setInterviewDate(e.target.value)} className={inputCls} />
+                    <label htmlFor="employer-jobquickupdatemodals-interview-date" className={labelCls}>Interview Date</label>
+                    <input id="employer-jobquickupdatemodals-interview-date" type="date" value={interviewDate} onChange={e => setInterviewDate(e.target.value)} className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls}>Interview Time</label>
-                    <input type="time" value={interviewTime} onChange={e => setInterviewTime(e.target.value)} className={inputCls} />
+                    <label htmlFor="employer-jobquickupdatemodals-interview-time" className={labelCls}>Interview Time</label>
+                    <input id="employer-jobquickupdatemodals-interview-time" type="time" value={interviewTime} onChange={e => setInterviewTime(e.target.value)} className={inputCls} />
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls}>Location / Venue</label>
-                  <input type="text" value={interviewLocation} onChange={e => setInterviewLocation(e.target.value)} className={inputCls} placeholder="Office address or venue" />
+                  <label htmlFor="employer-jobquickupdatemodals-location-venue" className={labelCls}>Location / Venue</label>
+                  <input id="employer-jobquickupdatemodals-location-venue" type="text" value={interviewLocation} onChange={e => setInterviewLocation(e.target.value)} className={inputCls} placeholder="Office address or venue" />
                 </div>
                 <div>
-                  <label className={labelCls}>Meeting Link (optional)</label>
-                  <input type="url" value={meetingLink} onChange={e => setMeetingLink(e.target.value)} className={inputCls} placeholder="https://meet.google.com/..." />
+                  <label htmlFor="employer-jobquickupdatemodals-meeting-link-optional" className={labelCls}>Meeting Link (optional)</label>
+                  <input id="employer-jobquickupdatemodals-meeting-link-optional" type="url" value={meetingLink} onChange={e => setMeetingLink(e.target.value)} className={inputCls} placeholder="https://meet.google.com/..." />
                 </div>
                 <button onClick={() => saveUpdate({ interviewDate, interviewTime, interviewLocation, meetingLink })} disabled={loading}
                   className="w-full py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"

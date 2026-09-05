@@ -40,7 +40,7 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
             <Home className="w-3.5 h-3.5" />
           </Link>
           {items.length > 0 && (
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
           )}
         </>
       )}
@@ -71,7 +71,7 @@ export function Breadcrumb({ items, showHome = true, className = '' }: Breadcrum
             )}
 
             {!isLast && (
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             )}
           </React.Fragment>
         );

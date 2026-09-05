@@ -9,6 +9,7 @@ import {
   Globe, Check, X, ChevronRight, MessageSquare, Plus, Trash2
 } from 'lucide-react';
 import Link from 'next/link';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
@@ -254,30 +255,28 @@ export default function BecomeEmployerPage() {
   const applicationStatus = existingCompany?.verificationStatus || userDoc?.employerApplication?.status || 'none';
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto font-outfit text-gray-900 pb-20">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Link href="/seeker/dashboard" className="p-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 hover:text-gray-900 transition-all shadow-xs">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
-              Register Your Business / Become an Employer <Briefcase size={20} className="text-blue-600" />
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">Post jobs, hire local candidates in Theni &amp; showcase your products &amp; services</p>
-          </div>
-        </div>
-
-        {applicationStatus === 'verified' && (
-          <Link
-            href="/employer/dashboard"
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20"
-          >
-            <Building2 size={15} /> Employer Portal <ArrowRight size={13} />
-          </Link>
-        )}
-      </div>
+    <PageShell className="max-w-4xl pb-20">
+      <PageHeader
+        title="Register your business / become an employer"
+        description="Post jobs, hire local candidates in Theni & showcase your products & services."
+        breadcrumbs={[{ label: 'Seeker', href: '/seeker/dashboard' }, { label: 'Become an employer' }]}
+        actions={
+          <>
+            <Link href="/seeker/dashboard">
+              <Button variant="secondary" size="icon" aria-label="Back to dashboard">
+                <ArrowLeft size={16} />
+              </Button>
+            </Link>
+            {applicationStatus === 'verified' && (
+              <Link href="/employer/dashboard">
+                <Button variant="primary" className="border-0 bg-emerald-600 hover:bg-emerald-700">
+                  <Building2 size={15} /> Employer portal <ArrowRight size={13} />
+                </Button>
+              </Link>
+            )}
+          </>
+        }
+      />
 
       {/* STATE 1: ALREADY VERIFIED */}
       {applicationStatus === 'verified' && (
@@ -702,6 +701,6 @@ export default function BecomeEmployerPage() {
           </form>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

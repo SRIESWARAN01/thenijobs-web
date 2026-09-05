@@ -15,6 +15,7 @@ import {
   limit,
   getCountFromServer,
   serverTimestamp,
+  runTransaction,
   Timestamp,
   type DocumentData,
   type QueryConstraint,
@@ -602,6 +603,8 @@ export async function createNotification(data: {
    * cannot be forged for a company the sender never applied to.
    */
   applicationId?: string;
+  /** SEEKER-4: carried on a job_match notification so it can be traced back to its job. */
+  jobId?: string;
 }) {
   return addDoc(collection(db, 'notifications'), {
     ...data,
@@ -743,20 +746,126 @@ export async function deleteCompany(companyId: string, adminId = 'admin'): Promi
   });
 }
 
-export async function approveJob(jobId: string, adminId: string) {
-  await updateDoc(doc(db, 'jobs', jobId), {
-    isActive: true,
-    status: 'active',
-    // The admin list reads `approvalStatus` first (admin/jobs/page.tsx getStatus/isActive),
-    // so leaving it at 'pending' kept every approved job showing as "Pending Review" with
-    // "Active & Live: 0" forever — even though the job was already live on the public site.
-    approvalStatus: 'approved',
-    approvedBy: adminId,
-    approvedAt: serverTimestamp(),
-    rejectionReason: '',
-    updatedAt: serverTimestamp() });
+// SEEKER-4 — deterministic job-alert matching.
+//
+// The job-alerts dropdown offers 'Full-time'/'Part-time'/'Contract'/'Freelance'; a real job
+// document stores jobType as 'full_time'/'part_time'/'internship'/'remote'/'work_from_home'/
+// 'fresher'/'contract' (post-job/page.tsx's own JOB_TYPES). Different casing, different
+// separator — an exact-string comparison between the two would never fire. Both sides go
+// through this table to a shared canonical form before comparing. 'Freelance' has no
+// corresponding job value today; an alert set to it simply never matches, correctly.
+const JOB_TYPE_CANONICAL: Record<string, string> = {
+  full_time: 'full-time', 'full-time': 'full-time', fulltime: 'full-time', 'full time': 'full-time',
+  part_time: 'part-time', 'part-time': 'part-time', parttime: 'part-time', 'part time': 'part-time',
+  remote: 'remote', wfh: 'remote', work_from_home: 'remote', 'work from home': 'remote',
+  contract: 'contract',
+  internship: 'internship',
+  fresher: 'fresher',
+  freelance: 'freelance',
+  walk_in: 'walk-in', 'walk-in': 'walk-in',
+};
 
-  const job = await fetchDocument<{ postedBy?: string; title?: string }>(
+function canonicalJobType(value?: string): string {
+  if (!value) return '';
+  const key = value.toLowerCase().trim();
+  return JOB_TYPE_CANONICAL[key] || key.replace(/[\s_]+/g, '-');
+}
+
+/**
+ * A job matches an alert when every field the seeker actually set on that alert is
+ * satisfied — an AND over set fields, not a weighted score, so a match is explainable by
+ * reading which condition let it through. `title` is always present (required at alert
+ * creation) and is treated as a keyword against the job's own title/category, matching how
+ * `category` is also free text in the alert form despite its label ("Keywords" placeholder).
+ */
+export function jobMatchesAlert(
+  job: { title?: string; category?: string; district?: string; jobType?: string; type?: string },
+  alert: { title?: string; category?: string; district?: string; jobType?: string },
+): boolean {
+  const jobTitle = (job.title || '').toLowerCase();
+  const jobCategory = (job.category || '').toLowerCase();
+
+  const keyword = (alert.title || '').toLowerCase().trim();
+  if (keyword && !jobTitle.includes(keyword) && !jobCategory.includes(keyword)) return false;
+
+  const category = (alert.category || '').toLowerCase().trim();
+  if (category && !jobTitle.includes(category) && !jobCategory.includes(category)) return false;
+
+  if (alert.district && alert.district.trim()) {
+    if ((job.district || '').toLowerCase().trim() !== alert.district.toLowerCase().trim()) return false;
+  }
+
+  if (alert.jobType && alert.jobType.trim()) {
+    if (canonicalJobType(job.jobType || job.type) !== canonicalJobType(alert.jobType)) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Notifies every seeker whose active job alert matches a newly-approved job. Only ever
+ * called once per real approval — approveJob()'s transaction guarantees that — so no
+ * per-notification duplicate check is needed here; the idempotency lives at the source.
+ * In-app only: no email/WhatsApp/push provider exists anywhere in this repository, so
+ * emailEnabled/whatsappEnabled/pushEnabled on the alert are not acted on here.
+ */
+async function notifyMatchingJobAlerts(
+  jobId: string,
+  job: { title?: string; category?: string; district?: string; jobType?: string; companyName?: string } | null,
+): Promise<void> {
+  if (!job) return;
+  try {
+    const alertsSnap = await getDocs(query(collection(db, 'jobAlerts'), where('status', '==', 'active')));
+    for (const alertDoc of alertsSnap.docs) {
+      const alert = alertDoc.data() as { userId?: string; title?: string; category?: string; district?: string; jobType?: string };
+      if (!alert.userId) continue;
+      if (!jobMatchesAlert(job, alert)) continue;
+
+      await createNotification({
+        userId: alert.userId,
+        type: 'job_match',
+        title: 'New Job Match 🎯',
+        message: `"${job.title}" at ${job.companyName || 'a company'} matches your "${alert.title}" alert.`,
+        actionUrl: `/jobs/${jobId}`,
+        jobId,
+      });
+    }
+  } catch (err) {
+    console.error('[notifyMatchingJobAlerts] failed:', err);
+  }
+}
+
+export async function approveJob(jobId: string, adminId: string) {
+  const jobRef = doc(db, 'jobs', jobId);
+
+  // SEEKER-4: the whole approval transition runs inside a transaction so two near-simultaneous
+  // approve calls (a double-click, or two admin tabs on the same job) can never both pass —
+  // only the call that wins the transaction proceeds to notify anyone. A plain read-then-write
+  // (the previous shape) cannot guarantee this: both calls could read "not yet active" before
+  // either one writes.
+  const alreadyApproved = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(jobRef);
+    if (snap.exists() && (snap.data() as any).status === 'active') {
+      return true;
+    }
+    tx.update(jobRef, {
+      isActive: true,
+      status: 'active',
+      // The admin list reads `approvalStatus` first (admin/jobs/page.tsx getStatus/isActive),
+      // so leaving it at 'pending' kept every approved job showing as "Pending Review" with
+      // "Active & Live: 0" forever — even though the job was already live on the public site.
+      approvalStatus: 'approved',
+      approvedBy: adminId,
+      approvedAt: serverTimestamp(),
+      rejectionReason: '',
+      updatedAt: serverTimestamp(),
+    });
+    return false;
+  });
+
+  if (alreadyApproved) return;
+
+  const job = await fetchDocument<{ postedBy?: string; title?: string; category?: string; district?: string; jobType?: string; companyName?: string }>(
     'jobs',
     jobId,
   );
@@ -769,6 +878,8 @@ export async function approveJob(jobId: string, adminId: string) {
       message: `Your job posting "${job.title}" is now live.`,
       actionUrl: `/employer/jobs` });
   }
+
+  await notifyMatchingJobAlerts(jobId, job ?? null);
 
   await logActivity({
     userId: adminId,

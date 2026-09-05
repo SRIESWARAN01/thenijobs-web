@@ -230,8 +230,12 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                     href={`/jobs-in-${loc.slug}/${cat.slug}`}
                     className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                   >
+                    {/* TRUST-4: this used to render {cat.count} — a hard-coded '60+', '95+' etc.
+                        with no query behind it, contradicting the real "Active Listings" figure
+                        above on the same page. Matches the honest sibling list in
+                        CategoryJobPageClient's "Other Categories" panel: a name and a chevron. */}
                     <span>{cat.name} in {loc.name}</span>
-                    <span className="text-[11px] text-slate-500 font-semibold">{cat.count}</span>
+                    <ChevronRight size={13} className="text-slate-500" />
                   </Link>
                 ))}
               </div>

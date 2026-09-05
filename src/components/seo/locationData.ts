@@ -72,20 +72,29 @@ export const LOCATIONS_DATA: Record<string, LocationInfo> = {
   },
 };
 
+// TRUST-4: each entry here used to carry a `count` field — '120+', '95+', '60+', down to
+// '25+' — rendered on every /jobs-in-<location> page as "IT & Software Development · 60+"
+// and so on, for all nine locations. There was never a query behind any of these numbers.
+// After SEO-5 stopped the job list itself from lying, the effect got worse rather than
+// better: /jobs-in-madurai now correctly reads "0 Active Listings" at the top of the page
+// while this sidebar, a few lines down, claimed 60+ IT jobs and 95+ Sales jobs in the same
+// city — the platform contradicting itself on one screen. Removed rather than replaced with
+// a real count: computing one honestly would mean fifteen aggregation queries per page load
+// for a sidebar link list, which is disproportionate to what the sidebar is for.
 export const CATEGORIES_LIST = [
-  { slug: 'freshers', name: 'Fresher & Entry Level', count: '120+' },
-  { slug: 'sales', name: 'Sales & Marketing', count: '95+' },
-  { slug: 'it', name: 'IT & Software Development', count: '60+' },
-  { slug: 'accounts', name: 'Finance, Accounts & Tally', count: '45+' },
-  { slug: 'healthcare', name: 'Healthcare, Hospital & Pharma', count: '50+' },
-  { slug: 'education', name: 'Teaching & Education', count: '40+' },
-  { slug: 'banking', name: 'Banking & Insurance', count: '35+' },
-  { slug: 'hospitality', name: 'Hotel & Hospitality', count: '30+' },
-  { slug: 'manufacturing', name: 'Manufacturing & Industrial', count: '55+' },
-  { slug: 'driving', name: 'Driver & Delivery', count: '40+' },
-  { slug: 'security', name: 'Security Guard & Facility', count: '25+' },
-  { slug: 'customer-service', name: 'Customer Support & BPO', count: '35+' },
-  { slug: 'part-time', name: 'Part-Time Jobs', count: '75+' },
-  { slug: 'full-time', name: 'Full-Time Regular', count: '150+' },
-  { slug: 'work-from-home', name: 'Work From Home & Remote', count: '30+' },
+  { slug: 'freshers', name: 'Fresher & Entry Level' },
+  { slug: 'sales', name: 'Sales & Marketing' },
+  { slug: 'it', name: 'IT & Software Development' },
+  { slug: 'accounts', name: 'Finance, Accounts & Tally' },
+  { slug: 'healthcare', name: 'Healthcare, Hospital & Pharma' },
+  { slug: 'education', name: 'Teaching & Education' },
+  { slug: 'banking', name: 'Banking & Insurance' },
+  { slug: 'hospitality', name: 'Hotel & Hospitality' },
+  { slug: 'manufacturing', name: 'Manufacturing & Industrial' },
+  { slug: 'driving', name: 'Driver & Delivery' },
+  { slug: 'security', name: 'Security Guard & Facility' },
+  { slug: 'customer-service', name: 'Customer Support & BPO' },
+  { slug: 'part-time', name: 'Part-Time Jobs' },
+  { slug: 'full-time', name: 'Full-Time Regular' },
+  { slug: 'work-from-home', name: 'Work From Home & Remote' },
 ];

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { Button, PageHeader, PageShell } from '@/components/dashboard';
 import {
   User, GraduationCap, Briefcase, Star, Eye, ChevronLeft, ChevronRight, Check, FileText, Sparkles,
   Mail, Phone, MapPin, ArrowLeft, Palette, Loader2, Download, RefreshCw, Zap, Award, Printer,
@@ -536,31 +537,32 @@ Return strictly valid JSON with format:
   };
 
   return (
-    <div className="animate-fade-in space-y-6 max-w-6xl mx-auto font-outfit text-gray-900 pb-16">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Link href="/seeker/resume" className="p-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 hover:text-gray-900 transition-all shadow-xs">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
-              Professional Resume Builder <Sparkles size={18} className="text-blue-600" />
-            </h1>
-            <p className="text-xs text-gray-500">Auto-filled from Profile • AI Optimization • 1-Click ATS PDF Export</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleManualSyncProfile}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white border border-gray-300 text-gray-800 text-xs font-bold hover:bg-gray-50 transition-all shadow-xs cursor-pointer"
-            title="Re-read Name, Education, Experience from your Profile"
-          >
-            <RefreshCw size={13} className="text-blue-600" /> Re-sync Profile
-          </button>
-        </div>
-      </div>
+    <PageShell className="max-w-6xl pb-16">
+      <PageHeader
+        title="Professional resume builder"
+        description="Auto-filled from profile · AI optimisation · 1-click ATS PDF export."
+        breadcrumbs={[
+          { label: 'Seeker', href: '/seeker/dashboard' },
+          { label: 'Resume', href: '/seeker/resume' },
+          { label: 'Builder' },
+        ]}
+        actions={
+          <>
+            <Link href="/seeker/resume">
+              <Button variant="secondary" size="icon" aria-label="Back to resume overview">
+                <ArrowLeft size={16} />
+              </Button>
+            </Link>
+            <Button
+              variant="secondary"
+              onClick={handleManualSyncProfile}
+              title="Re-read name, education and experience from your profile"
+            >
+              <RefreshCw size={13} className="text-blue-600" /> Re-sync profile
+            </Button>
+          </>
+        }
+      />
 
       {/* Profile Auto-fill Banner */}
       {autoFilled && (
@@ -648,10 +650,12 @@ Return strictly valid JSON with format:
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {TEMPLATES.map(t => (
-            <div
+            <button
               key={t.id}
+              type="button"
+              aria-pressed={selectedTemplate === t.id}
               onClick={() => setSelectedTemplate(t.id)}
-              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+              className={`flex flex-col justify-between rounded-2xl border-2 p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 selectedTemplate === t.id
                   ? 'border-blue-600 bg-blue-50/50 shadow-xs ring-2 ring-blue-100'
                   : 'border-gray-200 hover:border-gray-300'
@@ -662,7 +666,7 @@ Return strictly valid JSON with format:
                 <p className="text-[11px] text-gray-500 mt-0.5">{t.desc}</p>
               </div>
               <div className={`h-1.5 w-full rounded-full bg-gradient-to-r ${t.color} mt-3`} />
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -1187,6 +1191,6 @@ Return strictly valid JSON with format:
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

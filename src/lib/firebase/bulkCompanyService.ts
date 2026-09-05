@@ -234,7 +234,7 @@ export async function executeBulkCompanyImport(
         subscriptionPlan: (options.isPremium || data.isPremium) ? 'standard' : 'free',
         viewCount: 0,
         enquiryCount: 0,
-        rating: 4.8,
+        rating: 0,
         reviewCount: 0,
         jobsCount: 0,
         galleryImages: [],

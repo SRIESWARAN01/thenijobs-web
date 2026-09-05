@@ -196,7 +196,7 @@ export default function BecomeEmployerPage() {
         isActive: false,
         isVerified: false,
         jobCount: 0,
-        rating: 5.0,
+        rating: 0,
         reviewCount: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

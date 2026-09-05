@@ -100,7 +100,7 @@ export default function ReportsPage() {
         name: c.name,
         jobs: employerJobs,
         applications: employerApps,
-        rating: c.rating || 4.5,
+        rating: c.rating || 0,
       };
     })
     .sort((a, b) => b.applications - a.applications)

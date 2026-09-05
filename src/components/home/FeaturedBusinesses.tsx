@@ -149,7 +149,7 @@ export default function FeaturedBusinesses() {
             name: d.name || 'Company',
             category: d.category || 'Business',
             district: d.district || 'Theni',
-            rating: d.rating || 4.5,
+            rating: d.rating || 0,
             reviews: d.reviewCount || 0,
             jobs: d.jobCount || 0,
             isVerified: d.isVerified ?? true,

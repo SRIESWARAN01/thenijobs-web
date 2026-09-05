@@ -129,7 +129,7 @@ export default function RegisterBusinessPage() {
         isActive: false,   // RULES-1: activation is an admin decision (safeCompanyCreate); was `true`
         isVerified: false,
         jobCount: 0,
-        rating: 5.0,
+        rating: 0,
         reviewCount: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

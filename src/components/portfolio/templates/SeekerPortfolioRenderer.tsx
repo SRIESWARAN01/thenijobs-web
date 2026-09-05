@@ -125,12 +125,6 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
                 <span className="font-bold text-sm leading-none" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
                   {name}
                 </span>
-                <span
-                  className="px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white flex items-center gap-0.5"
-                  style={{ background: secondary }}
-                >
-                  <ShieldCheck size={10} /> Verified
-                </span>
               </div>
               <p className="text-[11px] truncate max-w-[200px] sm:max-w-[300px]" style={{ color: muted }}>
                 {title}

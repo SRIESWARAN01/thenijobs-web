@@ -3,7 +3,7 @@ import LocationCategoryPage from '@/components/seo/LocationCategoryPage';
 import { createCategoryMetadata, getCategoryStaticParams } from '@/lib/seo/locationPageFactory';
 
 // SEO-3: the only thing that distinguishes this route from the other eight.
-const LOCATION = 'theni';
+const LOCATION = 'bodinayakanur';
 
 export function generateStaticParams() {
   return getCategoryStaticParams();
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return createCategoryMetadata(LOCATION, category);
 }
 
-export default async function TheniCategoryJobsPage({ params }: PageProps) {
+export default async function BodinayakanurCategoryJobsPage({ params }: PageProps) {
   const { category } = await params;
   return <LocationCategoryPage locationSlug={LOCATION} categorySlug={category} />;
 }

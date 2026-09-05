@@ -1,27 +1,11 @@
 import type { Metadata } from 'next';
 import BusinessCategoryPageClient from './BusinessCategoryPageClient';
+import { BUSINESS_CATEGORY_ROUTE_SLUGS } from '@/lib/seo/businessCategories';
 
-const CATEGORIES = [
-  '_fallback',
-  'all',
-  'agriculture',
-  'construction',
-  'it-software',
-  'healthcare',
-  'healthcare-hospital',
-  'education',
-  'education-training',
-  'textiles',
-  'manufacturing',
-  'retail',
-  'transport',
-  'finance',
-  'services',
-  'automobile',
-  'hotel-restaurant',
-  'professional-corporate',
-  'local-business',
-];
+// SEO-3: this list now lives in src/lib/seo/businessCategories.ts so the sitemap reads the
+// same one. It used to be private here while sitemap.ts kept its own copy of ten of these,
+// which left eight real category pages advertised to nobody.
+const CATEGORIES = BUSINESS_CATEGORY_ROUTE_SLUGS;
 
 export function generateStaticParams() {
   return CATEGORIES.map((category) => ({ category }));

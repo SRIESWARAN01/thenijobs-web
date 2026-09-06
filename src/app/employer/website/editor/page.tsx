@@ -40,7 +40,7 @@ export default function WebsiteEditorPage() {
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
 
-  const planSlug = company?.planSlug || 'free';
+  const planSlug = company?.subscriptionPlan || 'free';
   const availableSections = getPortfolioSectionsForPlan(planSlug);
 
   useEffect(() => {

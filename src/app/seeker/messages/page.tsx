@@ -132,6 +132,15 @@ export default function SeekerMessagesPage() {
       setMessages(msgs);
       setLoadingMsgs(false);
 
+      // The employer's messages page shows a read receipt on its own sent messages by
+      // comparing them against this watermark — bump it on every refresh of an open
+      // conversation (covers both "just opened" and "new message arrived while open").
+      if (msgs.length > 0 && user?.uid) {
+        updateDoc(doc(db, 'conversations', activeConv.id), {
+          [`lastReadAt.${user.uid}`]: serverTimestamp(),
+        }).catch((err) => console.error('Failed to mark conversation as read:', err));
+      }
+
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -141,7 +150,7 @@ export default function SeekerMessagesPage() {
     });
 
     return () => unsubscribe();
-  }, [activeConv]);
+  }, [activeConv, user?.uid]);
 
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {

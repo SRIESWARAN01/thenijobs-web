@@ -32,13 +32,16 @@ interface Message {
  * other. Read unordered and sort here over whichever field the document actually carries,
  * so existing threads of either shape stay readable without a data migration.
  */
-function messageMillis(m: any): number {
-  const v = m?.createdAt ?? m?.timestamp;
+function tsMillis(v: any): number {
   if (!v) return 0;
   if (typeof v.toMillis === 'function') return v.toMillis();
   if (typeof v.seconds === 'number') return v.seconds * 1000;
   const parsed = new Date(v).getTime();
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function messageMillis(m: any): number {
+  return tsMillis(m?.createdAt ?? m?.timestamp);
 }
 
 
@@ -47,7 +50,7 @@ interface Conversation {
   participants: string[];
   lastMessage?: string;
   lastMessageAt?: any;
-  unreadCount?: number;
+  lastReadAt?: Record<string, any>;
   otherUserId?: string;
   otherUserName?: string;
   otherUserRole?: string;
@@ -109,6 +112,7 @@ export default function EmployerMessagesPage() {
         participants: conv.participants || [],
         lastMessage: conv.lastMessage || 'No messages yet',
         lastMessageAt: conv.lastMessageAt,
+        lastReadAt: conv.lastReadAt,
         otherUserId: otherId,
         otherUserName: conv.seekerName || conv.otherUserName || `Candidate (${otherId.slice(0, 4)})`,
         otherUserRole: conv.otherUserRole || 'Job Applicant',
@@ -121,6 +125,16 @@ export default function EmployerMessagesPage() {
 
     setConversations(resolved);
   }, [rawConversations, user?.uid]);
+
+  // `activeConv` is a local snapshot taken at click time, not a live reference into
+  // `conversations` — without this, the read receipt below would freeze at whatever
+  // `lastReadAt` looked like when the chat was opened and never update while it stays open.
+  useEffect(() => {
+    setActiveConv((prev) => {
+      if (!prev) return prev;
+      return conversations.find((c) => c.id === prev.id) || prev;
+    });
+  }, [conversations]);
 
   // 2. Listen to active conversation messages
   useEffect(() => {
@@ -339,6 +353,14 @@ export default function EmployerMessagesPage() {
                 ) : (
                   messages.map((m) => {
                     const isMe = m.senderId === user?.uid;
+                    // Real read receipt: read only once the candidate's own watermark
+                    // (written by seeker/messages/page.tsx) is at or past this message's
+                    // own timestamp. A missing/in-flight timestamp on either side fails
+                    // toward "not read yet" (single check), never toward the fabricated
+                    // always-read state this replaces.
+                    const ownMillis = messageMillis(m);
+                    const readMillis = tsMillis(activeConv.lastReadAt?.[activeConv.otherUserId || '']);
+                    const isRead = ownMillis > 0 && readMillis >= ownMillis;
                     return (
                       <div
                         key={m.id}
@@ -354,7 +376,7 @@ export default function EmployerMessagesPage() {
                           <p className="whitespace-pre-wrap">{m.text}</p>
                           <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] ${isMe ? 'text-blue-200' : 'text-slate-500'}`}>
                             <span>{messageMillis(m) ? new Date(messageMillis(m)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Sending...'}</span>
-                            {isMe && <CheckCheck size={11} />}
+                            {isMe && (isRead ? <CheckCheck size={11} /> : <Check size={11} />)}
                           </div>
                         </div>
                       </div>

@@ -340,6 +340,67 @@ export async function getVerifiedCompanySlugsForSitemap(): Promise<
     }));
 }
 
+export interface ServerPortfolioSeoData {
+  customUrl: string;
+  status: string;
+  googleIndex: boolean;
+  name: string;
+  tagline: string;
+  avatarUrl: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+}
+
+/**
+ * SEEKER-5 — fetch one portfolio site's SEO-relevant fields for `generateMetadata` (server-safe,
+ * runs at build time for the static export). Deliberately mirrors
+ * `PublicPortfolioPageClient.tsx`'s own 3-step resolution order (customUrl -> ownerId -> direct
+ * doc id) so the metadata this produces and the content the client component renders always agree
+ * on which site they describe.
+ */
+export async function getPortfolioSiteSeoByUsernameServer(username: string): Promise<ServerPortfolioSeoData | null> {
+  try {
+    let raw: any = null;
+
+    const byCustomUrl = await runQueryREST<any>(
+      'portfolioSites',
+      [{ field: 'customUrl', op: 'EQUAL', value: { stringValue: username } }],
+      undefined, undefined, 1,
+    );
+    if (byCustomUrl[0]) {
+      raw = byCustomUrl[0];
+    } else {
+      const byOwnerId = await runQueryREST<any>(
+        'portfolioSites',
+        [{ field: 'ownerId', op: 'EQUAL', value: { stringValue: username } }],
+        undefined, undefined, 1,
+      );
+      raw = byOwnerId[0] || await fetchDocumentREST<any>('portfolioSites', username);
+    }
+
+    if (!raw) return null;
+
+    const heroSection = Array.isArray(raw.sections) ? raw.sections.find((s: any) => s?.type === 'hero') : null;
+    const heroData = heroSection?.data || {};
+
+    return {
+      customUrl: raw.customUrl || raw.id,
+      status: raw.status || 'draft',
+      googleIndex: raw.googleIndex === true,
+      name: heroData.name || raw.branding?.companyName || 'Portfolio',
+      tagline: heroData.tagline || raw.branding?.tagline || '',
+      avatarUrl: heroData.avatarUrl || raw.branding?.logo || '',
+      seoTitle: raw.seo?.title || undefined,
+      seoDescription: raw.seo?.description || undefined,
+      seoKeywords: Array.isArray(raw.seo?.keywords) && raw.seo.keywords.length > 0 ? raw.seo.keywords : undefined,
+    };
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to fetch portfolio site seo by username:', err);
+    return null;
+  }
+}
+
 /**
  * Fetch all published portfolio sites that enabled Google Indexing for sitemap
  */

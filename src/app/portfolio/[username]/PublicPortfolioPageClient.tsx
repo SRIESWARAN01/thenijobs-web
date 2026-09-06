@@ -7,7 +7,6 @@ import { collection, query, where, getDocs, limit, doc, getDoc } from 'firebase/
 import { Loader2, AlertCircle, Globe, ShieldCheck } from 'lucide-react';
 import TemplateRenderer from '@/components/portfolio/TemplateRenderer';
 import type { PortfolioSite } from '@/lib/types/portfolio';
-import Head from 'next/head';
 import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 interface PublicPortfolioPageClientProps {
@@ -118,10 +117,11 @@ export default function PublicPortfolioPageClient({ username: usernameProp }: Pu
     );
   }
 
-  // Schema.org Person JSON-LD for Google Search Engine Indexing
+  // Schema.org Person JSON-LD for Google Search Engine Indexing. Title/description/OpenGraph
+  // meta tags are handled server-side by generateMetadata in page.tsx (SEEKER-5) — a client
+  // component under the App Router cannot set the actual served <head> via next/head.
   const heroSection = site.sections?.find(s => s.type === 'hero');
   const heroData = heroSection?.data || {};
-  const pageTitle = site.seo?.title || `${heroData.name || site.branding?.companyName || 'Portfolio'} — Official Website | THENIJOBS`;
   const pageDesc = site.seo?.description || heroData.tagline || site.branding?.tagline || `Explore the verified professional portfolio, skills, and projects of ${heroData.name || site.branding?.companyName} on THENIJOBS.`;
   const canonicalUrl = `https://thenijobs.com/portfolio/${site.customUrl || username}`;
   const isSeeker = site.ownerType === 'seeker' || site.templateId?.startsWith('seeker-');
@@ -154,26 +154,6 @@ export default function PublicPortfolioPageClient({ username: usernameProp }: Pu
 
   return (
     <>
-      <Head>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDesc} />
-        {site.googleIndex ? (
-          <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-        ) : (
-          <meta name="robots" content="noindex, nofollow" />
-        )}
-        {site.seo?.keywords && site.seo.keywords.length > 0 && (
-          <meta name="keywords" content={site.seo.keywords.join(', ')} />
-        )}
-        <link rel="canonical" href={canonicalUrl} />
-        {/* OpenGraph */}
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDesc} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="profile" />
-        {heroData.avatarUrl && <meta property="og:image" content={heroData.avatarUrl} />}
-      </Head>
-
       {/* Schema.org Rich Snippet */}
       <script
         type="application/ld+json"

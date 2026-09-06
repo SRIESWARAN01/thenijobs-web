@@ -18,7 +18,7 @@ import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { safeExternalUrl } from '@/lib/safeUrl';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
-import { followCompany, unfollowCompany, isFollowingCompany } from '@/lib/firebase/firestoreService';
+import { followCompany, unfollowCompany, isFollowingCompany, createDocument } from '@/lib/firebase/firestoreService';
 
 export default function CompanyProfileClient({ company, jobs = [], reviews = [] }: {
   company: any; jobs: any[]; reviews: any[];
@@ -37,6 +37,9 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
   const [saved, setSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [enquirySent, setEnquirySent] = useState(false);
+  const [enquiryName, setEnquiryName] = useState('');
+  const [enquiryPhone, setEnquiryPhone] = useState('');
+  const [enquirySubmitting, setEnquirySubmitting] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedItemType, setSelectedItemType] = useState<'product'|'service'>('product');
   const [showFullDesc, setShowFullDesc] = useState(false);
@@ -66,6 +69,49 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
       console.error(err);
     } finally {
       setSaveLoading(false);
+    }
+  };
+
+  // LEADS-1: this box's own copy has always said "Inquiry sent to business dashboard!" but the
+  // inputs were uncontrolled and the button did nothing but flip a boolean -- no lead has ever
+  // reached anyone. `firestore.rules`' own `leads` create rule (SEC-2, an earlier phase) already
+  // requires exactly `companyId`/`name`/`message` and permits extra fields up to 15 keys total, so
+  // this writes under all three field-name conventions this app has accumulated (the rule's own
+  // `name`/`message`, `admin/leads/page.tsx`'s `contactName`, `employer/leads/page.tsx`'s
+  // `customerName`/`customerPhone`) rather than touching either already-working dashboard's own
+  // read logic. `message` is auto-generated (not a third input) to keep this a quick two-field box.
+  const handleSendInquiry = async () => {
+    const name = enquiryName.trim();
+    const phone = enquiryPhone.trim();
+    if (!name || !phone) {
+      toast.warning('Please enter your name and mobile number.');
+      return;
+    }
+    if (!company?.id) return;
+    setEnquirySubmitting(true);
+    try {
+      const message = `${name} sent a direct inquiry via the THENIJOBS profile for ${company.name || 'this business'}. Contact number: ${phone}.`;
+      await createDocument('leads', {
+        companyId: company.id,
+        name,
+        message,
+        contactName: name,
+        customerName: name,
+        phone,
+        customerPhone: phone,
+        company: company.name || '',
+        type: 'business',
+        status: 'new',
+        district: company.district || '',
+      });
+      setEnquirySent(true);
+      setEnquiryName('');
+      setEnquiryPhone('');
+    } catch (err) {
+      console.error('Send inquiry error:', err);
+      toast.error('Could not send your inquiry. Please try again or use WhatsApp instead.');
+    } finally {
+      setEnquirySubmitting(false);
     }
   };
 
@@ -701,16 +747,36 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                   {/* Send Inquiry Box */}
                   <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-2">
                     <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Send Direct Inquiry</h3>
-                    <input type="text" aria-label="Your Name" placeholder="Your Name" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500" />
-                    <input type="tel" aria-label="Mobile Number" placeholder="Mobile Number" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500" />
-                    <button
-                      onClick={() => setEnquirySent(true)}
-                      className="w-full py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Send size={12} /> Send Inquiry
-                    </button>
-                    {enquirySent && (
-                      <p className="text-[11px] text-emerald-600 font-medium text-center">Inquiry sent to business dashboard!</p>
+                    {enquirySent ? (
+                      <p className="text-[11px] text-emerald-600 font-medium text-center py-2">Inquiry sent to business dashboard!</p>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          aria-label="Your Name"
+                          placeholder="Your Name"
+                          value={enquiryName}
+                          onChange={e => setEnquiryName(e.target.value)}
+                          disabled={enquirySubmitting}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500"
+                        />
+                        <input
+                          type="tel"
+                          aria-label="Mobile Number"
+                          placeholder="Mobile Number"
+                          value={enquiryPhone}
+                          onChange={e => setEnquiryPhone(e.target.value)}
+                          disabled={enquirySubmitting}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-base sm:text-xs focus:outline-none focus:border-blue-500"
+                        />
+                        <button
+                          onClick={handleSendInquiry}
+                          disabled={enquirySubmitting}
+                          className="w-full py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1 disabled:opacity-60"
+                        >
+                          <Send size={12} /> {enquirySubmitting ? 'Sending…' : 'Send Inquiry'}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

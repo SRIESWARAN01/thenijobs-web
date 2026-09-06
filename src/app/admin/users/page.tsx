@@ -56,7 +56,13 @@ export default function UsersPage() {
   const toast = useToast();
   const { data: users, loading } = useCollection<UserDoc>('users');
   const [view, setView] = useViewMode('admin-users', 'table');
-  const [searchQuery, setSearchQuery] = useState('');
+  // ADMIN-QS-1: seeds from the admin quick-search's own `?q=` link. A plain window.location read
+  // (not next/navigation's useSearchParams, unused anywhere else in this app and requiring a new
+  // Suspense boundary) since this is a static export where every page's real content already
+  // resolves client-side after hydration, not at build time.
+  const [searchQuery, setSearchQuery] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('q') || ''
+  );
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [districtFilter, setDistrictFilter] = useState('All Districts');

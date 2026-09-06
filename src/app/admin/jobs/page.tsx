@@ -90,7 +90,13 @@ export default function AdminJobsPage() {
   const { data: companies } = useCollection<any>('companies');
   const { data: applications = [] } = useCollection<any>('applications');
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // ADMIN-QS-1: seeds from the admin quick-search's own `?q=` link. A plain window.location read
+  // (not next/navigation's useSearchParams, unused anywhere else in this app and requiring a new
+  // Suspense boundary) since this is a static export where every page's real content already
+  // resolves client-side after hydration, not at build time.
+  const [searchQuery, setSearchQuery] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('q') || ''
+  );
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('All');
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');

@@ -20,7 +20,7 @@ import type {
   PortfolioSite, PortfolioSection, PortfolioTheme,
   SeekerHeroData, SeekerSkillItem, SeekerExperienceItem,
   SeekerEducationItem, SeekerProjectItem, SeekerCertificationItem,
-  TestimonialItem, ContactSectionData
+  TestimonialItem, ContactSectionData, SeekerAchievementItem, CustomSectionEntry
 } from '@/lib/types/portfolio';
 import { DEFAULT_THEME, FONT_OPTIONS, DEVICE_SIZES } from '@/lib/types/portfolio';
 import SeekerPortfolioRenderer from './templates/SeekerPortfolioRenderer';
@@ -146,7 +146,7 @@ export default function SeekerSiteEditor() {
   const [site, setSite] = useState<PortfolioSite | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [activeTab, setActiveTab] = useState<EditorTab>('blocks');
-  const [activeBlockTab, setActiveBlockTab] = useState<'hero' | 'about' | 'skills' | 'experience' | 'education' | 'projects' | 'certifications' | 'contact'>('hero');
+  const [activeBlockTab, setActiveBlockTab] = useState<'hero' | 'about' | 'skills' | 'experience' | 'education' | 'projects' | 'certifications' | 'achievements' | 'custom' | 'contact'>('hero');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'laptop' | 'tablet' | 'mobile'>('desktop');
   const [showLivePreview, setShowLivePreview] = useState(true);
   const [copiedUrl, setCopiedUrl] = useState(false);
@@ -354,11 +354,22 @@ export default function SeekerSiteEditor() {
                 },
               },
               {
+                // SEEKER-3B: a standard, always-present section (like certifications above),
+                // not an ad-hoc one — see the 'custom' section further down for the seeker-named
+                // kind.
+                id: 'sec-achievements',
+                type: 'achievements',
+                title: 'Achievements',
+                visible: true,
+                order: 7,
+                data: { achievements: [] },
+              },
+              {
                 id: 'sec-contact',
                 type: 'contact',
                 title: 'Contact & Hire',
                 visible: true,
-                order: 7,
+                order: 8,
                 data: {
                   socialLinks: [
                     { platform: 'WhatsApp', url: `https://wa.me/${(prof.phone || '9360519460').replace(/\D/g, '')}` },
@@ -430,7 +441,22 @@ export default function SeekerSiteEditor() {
   const updateSectionData = useCallback((type: string, dataUpdater: (prevData: any) => any) => {
     setSite(prev => {
       if (!prev) return prev;
-      const sections = prev.sections.map(sec => {
+      const exists = prev.sections.some(sec => sec.type === type);
+      // SEEKER-3B: a portfolio created before 'achievements' existed as a standard section has
+      // no section of that type at all — .map() below would silently do nothing. Every other
+      // type this function is called with has always been created up front by the new-site
+      // branch, so this only ever fires for that one, genuinely new, case.
+      const baseSections = exists
+        ? prev.sections
+        : [...prev.sections, {
+            id: `sec-${type}-${Date.now()}`,
+            type,
+            title: type.charAt(0).toUpperCase() + type.slice(1),
+            visible: true,
+            order: prev.sections.length,
+            data: {},
+          } as PortfolioSection];
+      const sections = baseSections.map(sec => {
         if (sec.type === type) {
           return {
             ...sec,
@@ -440,6 +466,52 @@ export default function SeekerSiteEditor() {
         return sec;
       });
       return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const updateSectionById = useCallback((id: string, dataUpdater: (prevData: any) => any) => {
+    setSite(prev => {
+      if (!prev) return prev;
+      const sections = prev.sections.map(sec =>
+        sec.id === id ? { ...sec, data: dataUpdater(sec.data || {}) } : sec
+      );
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const updateSectionTitleById = useCallback((id: string, title: string) => {
+    setSite(prev => {
+      if (!prev) return prev;
+      const sections = prev.sections.map(sec => (sec.id === id ? { ...sec, title } : sec));
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  // SEEKER-3B: 'custom' is inherently ad-hoc (a seeker names their own section) — unlike every
+  // other type, more than one can exist per portfolio, so it is addressed by id, not type.
+  const addCustomSection = useCallback(() => {
+    setSite(prev => {
+      if (!prev) return prev;
+      const newSection: PortfolioSection = {
+        id: `sec-custom-${Date.now()}`,
+        type: 'custom',
+        title: 'New Section',
+        visible: true,
+        order: prev.sections.length,
+        data: { entries: [] },
+      };
+      return { ...prev, sections: [...prev.sections, newSection] };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const removeSectionById = useCallback((id: string) => {
+    setSite(prev => {
+      if (!prev) return prev;
+      return { ...prev, sections: prev.sections.filter(sec => sec.id !== id) };
     });
     setIsDirty(true);
   }, []);
@@ -634,6 +706,9 @@ export default function SeekerSiteEditor() {
   const educationList: SeekerEducationItem[] = site.sections.find(s => s.type === 'education')?.data?.education || [];
   const projectsList: SeekerProjectItem[] = site.sections.find(s => s.type === 'projects')?.data?.projects || [];
   const certsList: SeekerCertificationItem[] = site.sections.find(s => s.type === 'certifications')?.data?.certifications || [];
+  const achievementsList: SeekerAchievementItem[] = site.sections.find(s => s.type === 'achievements')?.data?.achievements || [];
+  // SEEKER-3B: more than one 'custom' section can exist, so this is a filter, not a find().
+  const customSections = site.sections.filter(s => s.type === 'custom');
 
   return (
     <div className="space-y-4" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -826,6 +901,8 @@ export default function SeekerSiteEditor() {
                   { id: 'education', label: 'Education', icon: GraduationCap },
                   { id: 'projects', label: 'Projects', icon: FolderGit2 },
                   { id: 'certifications', label: 'Certs', icon: Award },
+                  { id: 'achievements', label: 'Achievements', icon: Star },
+                  { id: 'custom', label: 'Custom', icon: Layout },
                   { id: 'contact', label: 'Contact', icon: Mail },
                 ] as const).map(b => {
                   const Icon = b.icon;
@@ -1444,6 +1521,247 @@ export default function SeekerSiteEditor() {
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* ── ACHIEVEMENTS BLOCK ── */}
+              {activeBlockTab === 'achievements' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                      Awards & Achievements
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newAchievement: SeekerAchievementItem = {
+                          id: `ach-${Date.now()}`,
+                          title: 'Achievement Title',
+                          organization: '',
+                          date: '2024',
+                          description: '',
+                        };
+                        updateSectionData('achievements', prev => ({
+                          achievements: [...(prev.achievements || []), newAchievement],
+                        }));
+                      }}
+                      className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                    >
+                      <Plus size={13} /> Add Achievement
+                    </button>
+                  </div>
+
+                  {achievementsList.length === 0 && (
+                    <p className="text-xs text-slate-400">No achievements added yet. Awards, recognitions, or milestones worth highlighting.</p>
+                  )}
+
+                  <div className="space-y-3">
+                    {achievementsList.map((ach, idx) => (
+                      <div key={ach.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <input
+                            type="text"
+                            value={ach.title}
+                            onChange={e => {
+                              const updated = [...achievementsList];
+                              updated[idx] = { ...updated[idx], title: e.target.value };
+                              updateSectionData('achievements', () => ({ achievements: updated }));
+                            }}
+                            className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                            aria-label="Achievement Title" placeholder="Achievement Title"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = achievementsList.filter(a => a.id !== ach.id);
+                              updateSectionData('achievements', () => ({ achievements: updated }));
+                            }}
+                            className="p-1 text-slate-400 hover:text-red-600"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={ach.organization || ''}
+                            onChange={e => {
+                              const updated = [...achievementsList];
+                              updated[idx] = { ...updated[idx], organization: e.target.value };
+                              updateSectionData('achievements', () => ({ achievements: updated }));
+                            }}
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            aria-label="Organization (e.g. IEEE)" placeholder="Organization (e.g. IEEE)"
+                          />
+                          <input
+                            type="text"
+                            value={ach.date || ''}
+                            onChange={e => {
+                              const updated = [...achievementsList];
+                              updated[idx] = { ...updated[idx], date: e.target.value };
+                              updateSectionData('achievements', () => ({ achievements: updated }));
+                            }}
+                            className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                            aria-label="Date (e.g. 2024)" placeholder="Date (e.g. 2024)"
+                          />
+                        </div>
+                        <textarea
+                          value={ach.description || ''}
+                          onChange={e => {
+                            const updated = [...achievementsList];
+                            updated[idx] = { ...updated[idx], description: e.target.value };
+                            updateSectionData('achievements', () => ({ achievements: updated }));
+                          }}
+                          rows={2}
+                          className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 w-full resize-none"
+                          aria-label="Description (optional)" placeholder="Description (optional)"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── CUSTOM SECTIONS BLOCK ── */}
+              {activeBlockTab === 'custom' && (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                      Custom Sections
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={addCustomSection}
+                      className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                    >
+                      <Plus size={13} /> Add Custom Section
+                    </button>
+                  </div>
+
+                  {customSections.length === 0 && (
+                    <p className="text-xs text-slate-400">
+                      Add a section for anything not already covered — Publications, Hackathons, Workshops, Volunteer Work, Languages...
+                    </p>
+                  )}
+
+                  {customSections.map(section => {
+                    const entries: CustomSectionEntry[] = section.data?.entries || [];
+                    const updateEntries = (next: CustomSectionEntry[]) =>
+                      updateSectionById(section.id, () => ({ entries: next }));
+
+                    return (
+                      <div key={section.id} className="p-4 rounded-xl border-2 border-slate-200 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <input
+                            type="text"
+                            value={section.title}
+                            onChange={e => updateSectionTitleById(section.id, e.target.value)}
+                            className="text-base sm:text-sm font-extrabold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                            aria-label="Section name" placeholder="Section name (e.g. Publications)"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`Remove the "${section.title}" section and everything in it?`)) {
+                                removeSectionById(section.id);
+                              }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-red-600"
+                            title="Remove this section"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {entries.map((entry, idx) => (
+                            <div key={entry.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <input
+                                  type="text"
+                                  value={entry.title}
+                                  onChange={e => {
+                                    const updated = [...entries];
+                                    updated[idx] = { ...updated[idx], title: e.target.value };
+                                    updateEntries(updated);
+                                  }}
+                                  className="text-base sm:text-xs font-bold bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex-1"
+                                  aria-label="Entry title" placeholder="Entry title"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateEntries(entries.filter(e2 => e2.id !== entry.id))}
+                                  className="p-1 text-slate-400 hover:text-red-600"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  value={entry.date || ''}
+                                  onChange={e => {
+                                    const updated = [...entries];
+                                    updated[idx] = { ...updated[idx], date: e.target.value };
+                                    updateEntries(updated);
+                                  }}
+                                  className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                                  aria-label="Date (optional)" placeholder="Date (optional)"
+                                />
+                                <input
+                                  type="text"
+                                  value={entry.link || ''}
+                                  onChange={e => {
+                                    const updated = [...entries];
+                                    updated[idx] = { ...updated[idx], link: e.target.value };
+                                    updateEntries(updated);
+                                  }}
+                                  className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200"
+                                  aria-label="Link (optional, https://)" placeholder="Link (optional, https://...)"
+                                />
+                              </div>
+                              <input
+                                type="text"
+                                value={entry.imageUrl || ''}
+                                onChange={e => {
+                                  const updated = [...entries];
+                                  updated[idx] = { ...updated[idx], imageUrl: e.target.value };
+                                  updateEntries(updated);
+                                }}
+                                className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 w-full"
+                                aria-label="Image URL (optional)" placeholder="Image URL (optional)"
+                              />
+                              <textarea
+                                value={entry.description || ''}
+                                onChange={e => {
+                                  const updated = [...entries];
+                                  updated[idx] = { ...updated[idx], description: e.target.value };
+                                  updateEntries(updated);
+                                }}
+                                rows={2}
+                                className="text-base sm:text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 w-full resize-none"
+                                aria-label="Description (optional)" placeholder="Description (optional)"
+                              />
+                            </div>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newEntry: CustomSectionEntry = {
+                              id: `entry-${Date.now()}`,
+                              title: 'New Entry',
+                            };
+                            updateEntries([...entries, newEntry]);
+                          }}
+                          className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                        >
+                          <Plus size={12} /> Add Entry
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 

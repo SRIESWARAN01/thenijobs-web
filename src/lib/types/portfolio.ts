@@ -140,6 +140,27 @@ export interface SeekerCertificationItem {
   credentialUrl?: string;
 }
 
+// SEEKER-3B
+export interface SeekerAchievementItem {
+  id: string;
+  title: string;
+  organization?: string;
+  date?: string;
+  description?: string;
+}
+
+// SEEKER-3B — one entry inside a seeker-created custom section (Publications, Hackathons, ...).
+// No raw-HTML field on purpose: only plain text plus a date/image/link, matching the owner's own
+// explicit warning against an unrestricted HTML injection mechanism.
+export interface CustomSectionEntry {
+  id: string;
+  title: string;
+  description?: string;
+  date?: string;
+  imageUrl?: string;
+  link?: string;
+}
+
 
 // ===== SECTION DATA TYPES =====
 

@@ -103,6 +103,36 @@ const THEME_PRESETS = [
 
 type EditorTab = 'blocks' | 'design' | 'seo' | 'publish';
 
+// SEEKER-7 — the eight standard sections plus the always-visible pair. Hero and Contact are
+// deliberately excluded from show/hide+remove: SeekerPortfolioMinimal/Executive render their
+// header/footer unconditionally as page structure (falling back to placeholder text when the
+// section is hidden or missing) while SeekerPortfolioRenderer removes the block entirely — a
+// control that behaves differently per theme would be dishonest. `custom` keeps its own
+// already-built add/remove from SEEKER-3B and is not duplicated in this list.
+const SEEKER_STANDARD_SECTIONS: { type: string; label: string; icon: typeof User; removable: boolean }[] = [
+  { type: 'hero', label: 'Header/Bio', icon: User, removable: false },
+  { type: 'about', label: 'About', icon: Sparkles, removable: true },
+  { type: 'skills', label: 'Skills', icon: Code2, removable: true },
+  { type: 'experience', label: 'Experience', icon: Briefcase, removable: true },
+  { type: 'education', label: 'Education', icon: GraduationCap, removable: true },
+  { type: 'projects', label: 'Projects', icon: FolderGit2, removable: true },
+  { type: 'certifications', label: 'Certifications', icon: Award, removable: true },
+  { type: 'achievements', label: 'Achievements', icon: Star, removable: true },
+  { type: 'contact', label: 'Contact', icon: Mail, removable: false },
+];
+
+// SEEKER-7 — default empty data shape for re-adding a removed standard section, matching the
+// default every downstream reader already falls back to (`.data?.xxx || []` / `|| {}`), so a
+// freshly re-added section behaves identically to one that was simply never filled in.
+const STANDARD_SECTION_DEFAULTS: Record<string, any> = {
+  about: { content: '' },
+  skills: { skills: [] },
+  experience: { experience: [] },
+  education: { education: [] },
+  projects: { projects: [] },
+  certifications: { certifications: [] },
+};
+
 // SEEKER-2 — portfolioSlugs reservation (mirrors RULES-1's companySlugs, adapted for a slug
 // that changes over time instead of being fixed at registration). `seeker` collides with the
 // existing static route /portfolio/seeker/[id]; the rest guard against confusion with app routes
@@ -516,6 +546,37 @@ export default function SeekerSiteEditor() {
     setIsDirty(true);
   }, []);
 
+  // SEEKER-7 — generic show/hide for any removable section by id. Every seeker template already
+  // reads `sec.visible` (`getSection()`'s filter), so this has real, immediate effect on the
+  // public site once saved — verified before building (see the ledger claim row).
+  const setSectionVisibleById = useCallback((id: string, visible: boolean) => {
+    setSite(prev => {
+      if (!prev) return prev;
+      const sections = prev.sections.map(sec => (sec.id === id ? { ...sec, visible } : sec));
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  // SEEKER-7 — re-create a standard section a seeker previously removed. No-ops if one already
+  // exists (defends against a double-click re-adding a second copy of the same type).
+  const addStandardSection = useCallback((type: string) => {
+    setSite(prev => {
+      if (!prev) return prev;
+      if (prev.sections.some(sec => sec.type === type)) return prev;
+      const newSection: PortfolioSection = {
+        id: `sec-${type}-${Date.now()}`,
+        type: type as PortfolioSection['type'],
+        title: type.charAt(0).toUpperCase() + type.slice(1),
+        visible: true,
+        order: prev.sections.length,
+        data: STANDARD_SECTION_DEFAULTS[type] || {},
+      };
+      return { ...prev, sections: [...prev.sections, newSection] };
+    });
+    setIsDirty(true);
+  }, []);
+
   // Save changes to Firestore
   const handleSave = async () => {
     if (!site?.id || !user?.uid) return;
@@ -891,6 +952,86 @@ export default function SeekerSiteEditor() {
           {/* ════ TAB 1: BLOCKS & CONTENT ════ */}
           {activeTab === 'blocks' && (
             <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-5">
+              {/* ── SEEKER-7: PAGE SECTIONS MANAGER ── */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Sliders size={13} className="text-emerald-600" /> Page Sections
+                  </p>
+                  <p className="text-[10px] text-slate-400 text-right">Header &amp; Contact always show</p>
+                </div>
+                <div className="space-y-1.5">
+                  {SEEKER_STANDARD_SECTIONS.map(def => {
+                    const sec = site.sections.find(s => s.type === def.type);
+                    const Icon = def.icon;
+
+                    if (!def.removable) {
+                      return (
+                        <div key={def.type} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-slate-100">
+                          <span className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                            <Icon size={13} /> {def.label}
+                          </span>
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                            <Lock size={11} /> Always visible
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    if (!sec) {
+                      return (
+                        <div key={def.type} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-dashed border-slate-200">
+                          <span className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+                            <Icon size={13} /> {def.label} <span className="italic">(removed)</span>
+                          </span>
+                          {def.type !== 'achievements' && (
+                            <button
+                              type="button"
+                              onClick={() => addStandardSection(def.type)}
+                              className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:text-emerald-800"
+                            >
+                              <Plus size={11} /> Add back
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={def.type} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-slate-100">
+                        <span className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                          <Icon size={13} /> {def.label}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setSectionVisibleById(sec.id, !sec.visible)}
+                            className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
+                              sec.visible ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 bg-slate-100 hover:bg-slate-200'
+                            }`}
+                            title={sec.visible ? 'Hide this section from your public portfolio' : 'Show this section on your public portfolio'}
+                          >
+                            {sec.visible ? <Eye size={12} /> : <EyeOff size={12} />} {sec.visible ? 'Visible' : 'Hidden'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (confirm(`Remove the "${def.label}" section from your portfolio? You can add it back anytime.`)) {
+                                removeSectionById(sec.id);
+                              }
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                            title="Remove this section"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Block Selector Pills */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-100">
                 {([

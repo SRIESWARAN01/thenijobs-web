@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import {
   MapPin, Briefcase, GraduationCap, Award, Globe, Mail, Phone,
   ExternalLink, Download, MessageCircle, Star, Sparkles, Code2,
@@ -88,6 +88,440 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // SEEKER-8 — the seven standard "orderable" sections plus every custom section, in the
+  // seeker's own `order` (set once at creation, changeable only by a future reorder UI on top of
+  // this). Each block below is byte-identical to what this file always rendered in a fixed
+  // sequence; only the SEQUENCE is now data-driven. Hero, contact, video and testimonials stay
+  // fixed in their own structural positions (top/bottom), unchanged — they were never part of
+  // Doc 1's "reorderable standard sections" ask and this phase does not touch them.
+  const aboutBlock = aboutSection && aboutData.content && (
+    <section id="about" className="space-y-4">
+      <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+        <Sparkles size={20} style={{ color: primary }} />
+        <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+          {aboutSection.title || 'About Me'}
+        </h2>
+      </div>
+      <div
+        className="p-6 rounded-3xl border shadow-xs space-y-4"
+        style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+      >
+        <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: text }}>
+          {aboutData.content}
+        </p>
+        {aboutData.highlights && Array.isArray(aboutData.highlights) && aboutData.highlights.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t" style={{ borderColor: `${muted}15` }}>
+            {aboutData.highlights.map((h: any, i: number) => (
+              <div key={i} className="p-3 rounded-xl bg-white border border-slate-100 text-center shadow-2xs">
+                <span className="block text-lg font-black" style={{ color: primary }}>{h.value}</span>
+                <span className="text-[11px] font-medium" style={{ color: muted }}>{h.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+
+  const skillsBlock = skillsSection && skillsList.length > 0 && (
+    <section id="skills" className="space-y-4">
+      <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+        <Code2 size={20} style={{ color: primary }} />
+        <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+          {skillsSection.title || 'Skills & Core Competencies'}
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {skillsList.map((skill) => (
+          <div
+            key={skill.id}
+            className="p-4 rounded-2xl border shadow-xs transition-all hover:shadow-md"
+            style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold" style={{ color: text }}>{skill.name}</span>
+                {skill.verified && (
+                  <span title="Verified Skill" className="inline-flex items-center">
+                    <ShieldCheck size={13} className="text-blue-600" />
+                  </span>
+                )}
+              </div>
+
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full" style={{ background: `${primary}15`, color: primary }}>
+                {skill.levelLabel || (skill.level >= 80 ? 'Expert' : skill.level >= 60 ? 'Advanced' : 'Intermediate')}
+              </span>
+            </div>
+            {skill.level !== undefined && (
+              <div className="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${skill.level}%`,
+                    background: `linear-gradient(90deg, ${primary}, ${secondary})`
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  const experienceBlock = experienceSection && experienceList.length > 0 && (
+    <section id="experience" className="space-y-4">
+      <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+        <Briefcase size={20} style={{ color: primary }} />
+        <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+          {experienceSection.title || 'Career & Work Experience'}
+        </h2>
+      </div>
+      <div className="space-y-4 relative before:absolute before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+        {experienceList.map((exp) => (
+          <div
+            key={exp.id}
+            className="relative pl-10 group"
+          >
+            <div
+              className="absolute left-2.5 top-3 -translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs"
+              style={{ background: primary }}
+            />
+            <div
+              className="p-5 rounded-2xl border shadow-xs hover:shadow-md transition-all space-y-2"
+              style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <h3 className="text-sm sm:text-base font-bold" style={{ color: text }}>
+                  {exp.role} <span className="font-medium" style={{ color: primary }}>@ {exp.company}</span>
+                </h3>
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-white border border-slate-100 self-start sm:self-auto" style={{ color: muted }}>
+                  {exp.startDate} – {exp.isCurrent ? 'Present' : exp.endDate || 'N/A'}
+                </span>
+              </div>
+              {exp.location && (
+                <p className="text-[11px] flex items-center gap-1" style={{ color: muted }}>
+                  <MapPin size={11} /> {exp.location} {exp.employmentType && `• ${exp.employmentType}`}
+                </p>
+              )}
+              {exp.description && (
+                <p className="text-xs leading-relaxed" style={{ color: text }}>
+                  {exp.description}
+                </p>
+              )}
+              {exp.achievements && exp.achievements.length > 0 && (
+                <ul className="space-y-1 pt-1">
+                  {exp.achievements.map((ach, idx) => (
+                    <li key={idx} className="text-[11px] flex items-start gap-1.5" style={{ color: text }}>
+                      <CheckCircle2 size={12} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <span>{ach}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  const projectsBlock = projectsSection && projectsList.length > 0 && (
+    <section id="projects" className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+        <div className="flex items-center gap-2">
+          <FolderGit2 size={20} style={{ color: primary }} />
+          <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+            {projectsSection.title || 'Featured Projects & Portfolio'}
+          </h2>
+        </div>
+        {projectCategories.length > 2 && (
+          <div className="flex items-center gap-1 overflow-x-auto pb-1">
+            {projectCategories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveProjectCategory(cat)}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  activeProjectCategory === cat
+                    ? 'text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+                style={{
+                  background: activeProjectCategory === cat ? primary : undefined
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredProjects.map((proj) => (
+          <div
+            key={proj.id}
+            className="border rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all flex flex-col justify-between group"
+            style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+          >
+            <div>
+              {/* Project Screenshot / Thumbnail */}
+              <div className="h-44 w-full bg-slate-900 relative overflow-hidden flex items-center justify-center">
+                {proj.imageUrl ? (
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-center blur-xs opacity-30 scale-105"
+                      style={{ backgroundImage: `url(${proj.imageUrl})` }}
+                    />
+                    <img
+                      src={proj.imageUrl}
+                      alt={proj.title}
+                      className="relative z-10 w-full h-full object-contain object-center p-2 group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </>
+                ) : (
+                  <div className="text-center text-slate-400 p-4">
+                    <FolderGit2 size={36} className="mx-auto opacity-50 mb-1" />
+                    <span className="text-[10px] font-semibold">Project Showcase</span>
+                  </div>
+                )}
+                <span className="absolute top-3 left-3 z-20 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-950/80 text-white backdrop-blur-md">
+                  {proj.category || 'Project'}
+                </span>
+              </div>
+
+              {/* Project Info */}
+              <div className="p-5 space-y-3">
+                <h3 className="text-sm sm:text-base font-bold leading-snug" style={{ color: text }}>
+                  {proj.title}
+                </h3>
+                {proj.description && (
+                  <p className="text-xs leading-relaxed line-clamp-3" style={{ color: muted }}>
+                    {proj.description}
+                  </p>
+                )}
+
+                {/* Tech Stack Chips */}
+                {proj.techStack && proj.techStack.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {proj.techStack.map((tech, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white border border-slate-200/80"
+                        style={{ color: primary }}
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Project Links Footer */}
+            <div className="p-4 pt-0 flex items-center gap-2 border-t border-slate-100 mt-2">
+              {proj.liveUrl && (
+                <a
+                  href={safeExternalUrl(proj.liveUrl)}
+                  target="_blank"
+                  rel="noopener"
+                  className="flex-1 py-2 rounded-xl text-center text-xs font-bold text-white flex items-center justify-center gap-1.5 shadow-xs hover:opacity-95 transition-all"
+                  style={{ background: primary, borderRadius: radius }}
+                >
+                  <ExternalLink size={13} /> Live Preview
+                </a>
+              )}
+              {proj.githubUrl && (
+                <a
+                  href={safeExternalUrl(proj.githubUrl)}
+                  target="_blank"
+                  rel="noopener"
+                  className="px-3 py-2 rounded-xl border text-xs font-bold hover:bg-slate-100 flex items-center gap-1.5 transition-all"
+                  style={{ borderColor: `${muted}30`, color: text, borderRadius: radius }}
+                  title="View Source Code"
+                >
+                  <FolderGit2 size={14} /> Code
+                </a>
+              )}
+            </div>
+
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  const educationBlock = educationSection && educationList.length > 0 && (
+    <section id="education" className="space-y-4">
+      <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+        <GraduationCap size={20} style={{ color: primary }} />
+        <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+          {educationSection.title || 'Education & Qualifications'}
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {educationList.map((edu) => (
+          <div
+            key={edu.id}
+            className="p-5 rounded-2xl border shadow-xs space-y-1.5"
+            style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-sm sm:text-base font-bold" style={{ color: text }}>
+                {edu.degree} {edu.field && `in ${edu.field}`}
+              </h3>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-100 shrink-0" style={{ color: muted }}>
+                {edu.year}
+              </span>
+            </div>
+            <p className="text-xs font-medium" style={{ color: primary }}>
+              {edu.institution}
+            </p>
+            {edu.score && (
+              <p className="text-[11px]" style={{ color: muted }}>
+                Grade / Score: <span className="font-bold text-slate-800">{edu.score}</span>
+              </p>
+            )}
+            {edu.description && (
+              <p className="text-xs text-slate-600 pt-1 leading-relaxed">
+                {edu.description}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  const certificationsBlock = certsSection && certsList.length > 0 && (
+    <section id="certifications" className="space-y-4">
+      <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+        <Award size={20} style={{ color: primary }} />
+        <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+          {certsSection.title || 'Certifications & Honors'}
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {certsList.map((cert) => (
+          <div
+            key={cert.id}
+            className="p-4 rounded-2xl border shadow-xs space-y-2 flex flex-col justify-between"
+            style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <Award size={16} style={{ color: primary }} />
+                <span className="text-[10px] font-semibold" style={{ color: muted }}>{cert.issueDate}</span>
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{cert.name}</h3>
+              <p className="text-xs font-medium" style={{ color: primary }}>{cert.issuer}</p>
+              {cert.credentialId && (
+                <p className="text-[10px] font-mono mt-1" style={{ color: muted }}>ID: {cert.credentialId}</p>
+              )}
+            </div>
+            {cert.credentialUrl && (
+              <a
+                href={safeExternalUrl(cert.credentialUrl)}
+                target="_blank"
+                rel="noopener"
+                className="text-xs font-bold text-blue-600 hover:underline inline-flex items-center gap-1 pt-2 border-t border-slate-100"
+              >
+                Verify Credential <ExternalLink size={11} />
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  const achievementsBlock = achievementsSection && achievementsList.length > 0 && (
+    <section id="achievements" className="space-y-4">
+      <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+        <CheckCircle2 size={20} style={{ color: primary }} />
+        <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+          {achievementsSection.title || 'Achievements'}
+        </h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {achievementsList.map((ach) => (
+          <div
+            key={ach.id}
+            className="p-4 rounded-2xl border shadow-xs space-y-1"
+            style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{ach.title}</h3>
+              {ach.date && <span className="text-[10px] font-semibold shrink-0" style={{ color: muted }}>{ach.date}</span>}
+            </div>
+            {ach.organization && <p className="text-xs font-medium" style={{ color: primary }}>{ach.organization}</p>}
+            {ach.description && <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{ach.description}</p>}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+
+  const renderCustomSectionBlock = (section: typeof customSections[number]) => {
+    const entries: CustomSectionEntry[] = section.data?.entries || [];
+    if (entries.length === 0) return null;
+    return (
+      <section id={`custom-${section.id}`} className="space-y-4">
+        <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+          <Layout size={20} style={{ color: primary }} />
+          <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+            {section.title || 'More'}
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {entries.map(entry => (
+            <div
+              key={entry.id}
+              className="p-4 rounded-2xl border shadow-xs space-y-1"
+              style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+            >
+              {entry.imageUrl && (
+                <img src={entry.imageUrl} alt={entry.title} className="w-full h-32 object-cover rounded-xl mb-2" />
+              )}
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{entry.title}</h3>
+                {entry.date && <span className="text-[10px] font-semibold shrink-0" style={{ color: muted }}>{entry.date}</span>}
+              </div>
+              {entry.description && <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{entry.description}</p>}
+              {entry.link && (
+                <a
+                  href={safeExternalUrl(entry.link)}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-xs font-bold hover:underline inline-flex items-center gap-1 pt-1"
+                  style={{ color: primary }}
+                >
+                  Learn more <ExternalLink size={11} />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
+  const ORDERABLE_STANDARD_BLOCKS: Record<string, React.ReactNode> = {
+    about: aboutBlock,
+    skills: skillsBlock,
+    experience: experienceBlock,
+    projects: projectsBlock,
+    education: educationBlock,
+    certifications: certificationsBlock,
+    achievements: achievementsBlock,
+  };
+  const ORDERABLE_TYPES = new Set(Object.keys(ORDERABLE_STANDARD_BLOCKS));
+  const orderedMiddleSections = [
+    ...sections
+      .filter(s => s.visible && ORDERABLE_TYPES.has(s.type))
+      .map(s => ({ key: s.id, order: s.order ?? 0, node: ORDERABLE_STANDARD_BLOCKS[s.type] })),
+    ...customSections.map(s => ({ key: s.id, order: s.order ?? 0, node: renderCustomSectionBlock(s) })),
+  ].sort((a, b) => a.order - b.order);
 
   return (
     <div
@@ -293,424 +727,10 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
       {/* ── MAIN CONTENT SECTIONS ── */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-12">
 
-        {/* ── ABOUT ME ── */}
-        {aboutSection && aboutData.content && (
-          <section id="about" className="space-y-4">
-            <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-              <Sparkles size={20} style={{ color: primary }} />
-              <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                {aboutSection.title || 'About Me'}
-              </h2>
-            </div>
-            <div
-              className="p-6 rounded-3xl border shadow-xs space-y-4"
-              style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-            >
-              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: text }}>
-                {aboutData.content}
-              </p>
-              {aboutData.highlights && Array.isArray(aboutData.highlights) && aboutData.highlights.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t" style={{ borderColor: `${muted}15` }}>
-                  {aboutData.highlights.map((h: any, i: number) => (
-                    <div key={i} className="p-3 rounded-xl bg-white border border-slate-100 text-center shadow-2xs">
-                      <span className="block text-lg font-black" style={{ color: primary }}>{h.value}</span>
-                      <span className="text-[11px] font-medium" style={{ color: muted }}>{h.label}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* ── SKILLS & EXPERTISE ── */}
-        {skillsSection && skillsList.length > 0 && (
-          <section id="skills" className="space-y-4">
-            <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-              <Code2 size={20} style={{ color: primary }} />
-              <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                {skillsSection.title || 'Skills & Core Competencies'}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {skillsList.map((skill) => (
-                <div
-                  key={skill.id}
-                  className="p-4 rounded-2xl border shadow-xs transition-all hover:shadow-md"
-                  style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold" style={{ color: text }}>{skill.name}</span>
-                      {skill.verified && (
-                        <span title="Verified Skill" className="inline-flex items-center">
-                          <ShieldCheck size={13} className="text-blue-600" />
-                        </span>
-                      )}
-                    </div>
-
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full" style={{ background: `${primary}15`, color: primary }}>
-                      {skill.levelLabel || (skill.level >= 80 ? 'Expert' : skill.level >= 60 ? 'Advanced' : 'Intermediate')}
-                    </span>
-                  </div>
-                  {skill.level !== undefined && (
-                    <div className="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${skill.level}%`,
-                          background: `linear-gradient(90deg, ${primary}, ${secondary})`
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── WORK EXPERIENCE TIMELINE ── */}
-        {experienceSection && experienceList.length > 0 && (
-          <section id="experience" className="space-y-4">
-            <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-              <Briefcase size={20} style={{ color: primary }} />
-              <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                {experienceSection.title || 'Career & Work Experience'}
-              </h2>
-            </div>
-            <div className="space-y-4 relative before:absolute before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-              {experienceList.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="relative pl-10 group"
-                >
-                  <div
-                    className="absolute left-2.5 top-3 -translate-x-1/2 w-3.5 h-3.5 rounded-full border-2 border-white shadow-xs"
-                    style={{ background: primary }}
-                  />
-                  <div
-                    className="p-5 rounded-2xl border shadow-xs hover:shadow-md transition-all space-y-2"
-                    style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <h3 className="text-sm sm:text-base font-bold" style={{ color: text }}>
-                        {exp.role} <span className="font-medium" style={{ color: primary }}>@ {exp.company}</span>
-                      </h3>
-                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-white border border-slate-100 self-start sm:self-auto" style={{ color: muted }}>
-                        {exp.startDate} – {exp.isCurrent ? 'Present' : exp.endDate || 'N/A'}
-                      </span>
-                    </div>
-                    {exp.location && (
-                      <p className="text-[11px] flex items-center gap-1" style={{ color: muted }}>
-                        <MapPin size={11} /> {exp.location} {exp.employmentType && `• ${exp.employmentType}`}
-                      </p>
-                    )}
-                    {exp.description && (
-                      <p className="text-xs leading-relaxed" style={{ color: text }}>
-                        {exp.description}
-                      </p>
-                    )}
-                    {exp.achievements && exp.achievements.length > 0 && (
-                      <ul className="space-y-1 pt-1">
-                        {exp.achievements.map((ach, idx) => (
-                          <li key={idx} className="text-[11px] flex items-start gap-1.5" style={{ color: text }}>
-                            <CheckCircle2 size={12} className="text-emerald-600 shrink-0 mt-0.5" />
-                            <span>{ach}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── PROJECTS & PORTFOLIO GRID ── */}
-        {projectsSection && projectsList.length > 0 && (
-          <section id="projects" className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-              <div className="flex items-center gap-2">
-                <FolderGit2 size={20} style={{ color: primary }} />
-                <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                  {projectsSection.title || 'Featured Projects & Portfolio'}
-                </h2>
-              </div>
-              {projectCategories.length > 2 && (
-                <div className="flex items-center gap-1 overflow-x-auto pb-1">
-                  {projectCategories.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setActiveProjectCategory(cat)}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                        activeProjectCategory === cat
-                          ? 'text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                      style={{
-                        background: activeProjectCategory === cat ? primary : undefined
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredProjects.map((proj) => (
-                <div
-                  key={proj.id}
-                  className="border rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all flex flex-col justify-between group"
-                  style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-                >
-                  <div>
-                    {/* Project Screenshot / Thumbnail */}
-                    <div className="h-44 w-full bg-slate-900 relative overflow-hidden flex items-center justify-center">
-                      {proj.imageUrl ? (
-                        <>
-                          <div
-                            className="absolute inset-0 bg-cover bg-center blur-xs opacity-30 scale-105"
-                            style={{ backgroundImage: `url(${proj.imageUrl})` }}
-                          />
-                          <img
-                            src={proj.imageUrl}
-                            alt={proj.title}
-                            className="relative z-10 w-full h-full object-contain object-center p-2 group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </>
-                      ) : (
-                        <div className="text-center text-slate-400 p-4">
-                          <FolderGit2 size={36} className="mx-auto opacity-50 mb-1" />
-                          <span className="text-[10px] font-semibold">Project Showcase</span>
-                        </div>
-                      )}
-                      <span className="absolute top-3 left-3 z-20 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-950/80 text-white backdrop-blur-md">
-                        {proj.category || 'Project'}
-                      </span>
-                    </div>
-
-                    {/* Project Info */}
-                    <div className="p-5 space-y-3">
-                      <h3 className="text-sm sm:text-base font-bold leading-snug" style={{ color: text }}>
-                        {proj.title}
-                      </h3>
-                      {proj.description && (
-                        <p className="text-xs leading-relaxed line-clamp-3" style={{ color: muted }}>
-                          {proj.description}
-                        </p>
-                      )}
-
-                      {/* Tech Stack Chips */}
-                      {proj.techStack && proj.techStack.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {proj.techStack.map((tech, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white border border-slate-200/80"
-                              style={{ color: primary }}
-                            >
-                              {tech}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Project Links Footer */}
-                  <div className="p-4 pt-0 flex items-center gap-2 border-t border-slate-100 mt-2">
-                    {proj.liveUrl && (
-                      <a
-                        href={safeExternalUrl(proj.liveUrl)}
-                        target="_blank"
-                        rel="noopener"
-                        className="flex-1 py-2 rounded-xl text-center text-xs font-bold text-white flex items-center justify-center gap-1.5 shadow-xs hover:opacity-95 transition-all"
-                        style={{ background: primary, borderRadius: radius }}
-                      >
-                        <ExternalLink size={13} /> Live Preview
-                      </a>
-                    )}
-                    {proj.githubUrl && (
-                      <a
-                        href={safeExternalUrl(proj.githubUrl)}
-                        target="_blank"
-                        rel="noopener"
-                        className="px-3 py-2 rounded-xl border text-xs font-bold hover:bg-slate-100 flex items-center gap-1.5 transition-all"
-                        style={{ borderColor: `${muted}30`, color: text, borderRadius: radius }}
-                        title="View Source Code"
-                      >
-                        <FolderGit2 size={14} /> Code
-                      </a>
-                    )}
-                  </div>
-
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── EDUCATION ── */}
-        {educationSection && educationList.length > 0 && (
-          <section id="education" className="space-y-4">
-            <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-              <GraduationCap size={20} style={{ color: primary }} />
-              <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                {educationSection.title || 'Education & Qualifications'}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {educationList.map((edu) => (
-                <div
-                  key={edu.id}
-                  className="p-5 rounded-2xl border shadow-xs space-y-1.5"
-                  style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-sm sm:text-base font-bold" style={{ color: text }}>
-                      {edu.degree} {edu.field && `in ${edu.field}`}
-                    </h3>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white border border-slate-100 shrink-0" style={{ color: muted }}>
-                      {edu.year}
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium" style={{ color: primary }}>
-                    {edu.institution}
-                  </p>
-                  {edu.score && (
-                    <p className="text-[11px]" style={{ color: muted }}>
-                      Grade / Score: <span className="font-bold text-slate-800">{edu.score}</span>
-                    </p>
-                  )}
-                  {edu.description && (
-                    <p className="text-xs text-slate-600 pt-1 leading-relaxed">
-                      {edu.description}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── CERTIFICATIONS & LICENSES ── */}
-        {certsSection && certsList.length > 0 && (
-          <section id="certifications" className="space-y-4">
-            <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-              <Award size={20} style={{ color: primary }} />
-              <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                {certsSection.title || 'Certifications & Honors'}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {certsList.map((cert) => (
-                <div
-                  key={cert.id}
-                  className="p-4 rounded-2xl border shadow-xs space-y-2 flex flex-col justify-between"
-                  style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <Award size={16} style={{ color: primary }} />
-                      <span className="text-[10px] font-semibold" style={{ color: muted }}>{cert.issueDate}</span>
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{cert.name}</h3>
-                    <p className="text-xs font-medium" style={{ color: primary }}>{cert.issuer}</p>
-                    {cert.credentialId && (
-                      <p className="text-[10px] font-mono mt-1" style={{ color: muted }}>ID: {cert.credentialId}</p>
-                    )}
-                  </div>
-                  {cert.credentialUrl && (
-                    <a
-                      href={safeExternalUrl(cert.credentialUrl)}
-                      target="_blank"
-                      rel="noopener"
-                      className="text-xs font-bold text-blue-600 hover:underline inline-flex items-center gap-1 pt-2 border-t border-slate-100"
-                    >
-                      Verify Credential <ExternalLink size={11} />
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── ACHIEVEMENTS ── */}
-        {achievementsSection && achievementsList.length > 0 && (
-          <section id="achievements" className="space-y-4">
-            <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-              <CheckCircle2 size={20} style={{ color: primary }} />
-              <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                {achievementsSection.title || 'Achievements'}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {achievementsList.map((ach) => (
-                <div
-                  key={ach.id}
-                  className="p-4 rounded-2xl border shadow-xs space-y-1"
-                  style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{ach.title}</h3>
-                    {ach.date && <span className="text-[10px] font-semibold shrink-0" style={{ color: muted }}>{ach.date}</span>}
-                  </div>
-                  {ach.organization && <p className="text-xs font-medium" style={{ color: primary }}>{ach.organization}</p>}
-                  {ach.description && <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{ach.description}</p>}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ── CUSTOM SECTIONS ── */}
-        {customSections.map(section => {
-          const entries: CustomSectionEntry[] = section.data?.entries || [];
-          if (entries.length === 0) return null;
-          return (
-            <section key={section.id} id={`custom-${section.id}`} className="space-y-4">
-              <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
-                <Layout size={20} style={{ color: primary }} />
-                <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
-                  {section.title || 'More'}
-                </h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {entries.map(entry => (
-                  <div
-                    key={entry.id}
-                    className="p-4 rounded-2xl border shadow-xs space-y-1"
-                    style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
-                  >
-                    {entry.imageUrl && (
-                      <img src={entry.imageUrl} alt={entry.title} className="w-full h-32 object-cover rounded-xl mb-2" />
-                    )}
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{entry.title}</h3>
-                      {entry.date && <span className="text-[10px] font-semibold shrink-0" style={{ color: muted }}>{entry.date}</span>}
-                    </div>
-                    {entry.description && <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{entry.description}</p>}
-                    {entry.link && (
-                      <a
-                        href={safeExternalUrl(entry.link)}
-                        target="_blank" rel="noopener noreferrer"
-                        className="text-xs font-bold hover:underline inline-flex items-center gap-1 pt-1"
-                        style={{ color: primary }}
-                      >
-                        Learn more <ExternalLink size={11} />
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        {/* ── SEEKER-8: ORDERED STANDARD + CUSTOM SECTIONS ── */}
+        {orderedMiddleSections.map(item => (
+          <Fragment key={item.key}>{item.node}</Fragment>
+        ))}
 
         {/* ── VIDEO INTRO / PITCH ── */}
         {videoSection && videoSection.data?.videoUrl && (

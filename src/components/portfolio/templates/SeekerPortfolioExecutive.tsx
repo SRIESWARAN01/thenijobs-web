@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import {
   MapPin, Mail, Phone, ExternalLink, Download, Check, Share2,
   Briefcase, GraduationCap, Award, Calendar, ArrowUpRight,
@@ -89,6 +89,176 @@ export default function SeekerPortfolioExecutive({ site }: Props) {
       <Icon size={16} /> {children}
     </h2>
   );
+
+  // SEEKER-8 — same byte-identical blocks this file always rendered in a fixed sequence in the
+  // main column; only the SEQUENCE is now data-driven by each section's `order`. Skills is
+  // deliberately excluded from this ordering group: it renders as a "Core strengths" card pinned
+  // in the sticky sidebar (this template's own distinguishing design, see the file's own doc
+  // comment), not in the main content flow — moving it into the ordered list would delete that
+  // sidebar card and change this template's visual identity, an unrequested regression. It behaves
+  // like Hero/Contact here: structurally fixed, not reorderable, same reasoning as the SEEKER-7
+  // claim row's Hero/Contact exclusion.
+  const aboutBlock = aboutSection && aboutData.content && (
+    <Card>
+      <CardTitle icon={Briefcase}>Profile</CardTitle>
+      <p className="text-sm leading-relaxed" style={{ color: text }}>{aboutData.content}</p>
+    </Card>
+  );
+
+  const experienceBlock = experienceSection && experienceList.length > 0 && (
+    <Card>
+      <CardTitle icon={Briefcase}>Experience</CardTitle>
+      <div className="space-y-5">
+        {experienceList.map(exp => (
+          <div key={exp.id} className="pb-5 border-b last:border-0 last:pb-0" style={{ borderColor: `${muted}15` }}>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <h3 className="text-sm font-bold">{exp.role} · <span style={{ color: primary }}>{exp.company}</span></h3>
+              <span className="text-[11px] shrink-0" style={{ color: muted }}>
+                {exp.startDate} — {exp.isCurrent ? 'Present' : exp.endDate}
+              </span>
+            </div>
+            {exp.location && <p className="text-[11px] mt-0.5" style={{ color: muted }}>{exp.location}</p>}
+            {exp.description && <p className="text-xs mt-2 leading-relaxed" style={{ color: text }}>{exp.description}</p>}
+            {exp.achievements && exp.achievements.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {exp.achievements.map((ach, idx) => (
+                  <li key={idx} className="text-xs flex items-start gap-1.5" style={{ color: muted }}>
+                    <span className="mt-1 w-1 h-1 rounded-full shrink-0" style={{ background: secondary }} /> {ach}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  const educationBlock = educationSection && educationList.length > 0 && (
+    <Card>
+      <CardTitle icon={GraduationCap}>Education</CardTitle>
+      <div className="space-y-3">
+        {educationList.map(edu => (
+          <div key={edu.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <div>
+              <h3 className="text-sm font-bold">{edu.degree}{edu.field ? `, ${edu.field}` : ''}</h3>
+              <p className="text-xs" style={{ color: muted }}>{edu.institution}</p>
+            </div>
+            <span className="text-[11px] shrink-0" style={{ color: muted }}>{edu.year}{edu.score ? ` · ${edu.score}` : ''}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  const projectsBlock = projectsSection && projectsList.length > 0 && (
+    <Card>
+      <CardTitle icon={Briefcase}>Selected work</CardTitle>
+      <div className="grid sm:grid-cols-2 gap-4">
+        {projectsList.map(p => (
+          <div key={p.id} className="rounded-xl p-4" style={{ background: surface }}>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-bold">{p.title}</h3>
+              {p.liveUrl && (
+                <a href={safeExternalUrl(p.liveUrl)} target="_blank" rel="noopener noreferrer" style={{ color: primary }}>
+                  <ArrowUpRight size={12} />
+                </a>
+              )}
+            </div>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{p.description}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  const certificationsBlock = certsSection && certsList.length > 0 && (
+    <Card>
+      <CardTitle icon={Award}>Certifications</CardTitle>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {certsList.map(c => (
+          <a
+            key={c.id}
+            href={safeExternalUrl(c.credentialUrl)}
+            target={c.credentialUrl ? '_blank' : undefined}
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-xl p-3 border"
+            style={{ borderColor: `${muted}20` }}
+          >
+            <Award size={16} style={{ color: secondary }} className="shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold truncate">{c.name}</p>
+              <p className="text-[11px]" style={{ color: muted }}>{c.issuer} · {c.issueDate}</p>
+            </div>
+            {c.credentialUrl && <ExternalLink size={12} className="ml-auto shrink-0" style={{ color: muted }} />}
+          </a>
+        ))}
+      </div>
+    </Card>
+  );
+
+  const achievementsBlock = achievementsSection && achievementsList.length > 0 && (
+    <Card>
+      <CardTitle icon={CheckCircle2}>Achievements</CardTitle>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {achievementsList.map(ach => (
+          <div key={ach.id} className="rounded-xl p-3 border" style={{ borderColor: `${muted}20` }}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-bold">{ach.title}</p>
+              {ach.date && <span className="text-[10px] shrink-0" style={{ color: muted }}>{ach.date}</span>}
+            </div>
+            {ach.organization && <p className="text-[11px] mt-0.5" style={{ color: primary }}>{ach.organization}</p>}
+            {ach.description && <p className="text-[11px] mt-1" style={{ color: muted }}>{ach.description}</p>}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  const renderCustomSectionBlock = (section: typeof customSections[number]) => {
+    const entries: CustomSectionEntry[] = section.data?.entries || [];
+    if (entries.length === 0) return null;
+    return (
+      <Card>
+        <CardTitle icon={Layout}>{section.title || 'More'}</CardTitle>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {entries.map(entry => (
+            <div key={entry.id} className="rounded-xl p-3 border" style={{ borderColor: `${muted}20` }}>
+              {entry.imageUrl && (
+                <img src={entry.imageUrl} alt={entry.title} className="w-full h-24 object-cover rounded-lg mb-2" />
+              )}
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-bold">{entry.title}</p>
+                {entry.date && <span className="text-[10px] shrink-0" style={{ color: muted }}>{entry.date}</span>}
+              </div>
+              {entry.description && <p className="text-[11px] mt-1" style={{ color: muted }}>{entry.description}</p>}
+              {entry.link && (
+                <a href={safeExternalUrl(entry.link)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold mt-1 inline-flex items-center gap-1" style={{ color: primary }}>
+                  Learn more <ArrowUpRight size={11} />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  };
+
+  const ORDERABLE_STANDARD_BLOCKS: Record<string, React.ReactNode> = {
+    about: aboutBlock,
+    experience: experienceBlock,
+    education: educationBlock,
+    projects: projectsBlock,
+    certifications: certificationsBlock,
+    achievements: achievementsBlock,
+  };
+  const ORDERABLE_TYPES = new Set(Object.keys(ORDERABLE_STANDARD_BLOCKS));
+  const orderedMiddleSections = [
+    ...sections
+      .filter(s => s.visible && ORDERABLE_TYPES.has(s.type))
+      .map(s => ({ key: s.id, order: s.order ?? 0, node: ORDERABLE_STANDARD_BLOCKS[s.type] })),
+    ...customSections.map(s => ({ key: s.id, order: s.order ?? 0, node: renderCustomSectionBlock(s) })),
+  ].sort((a, b) => a.order - b.order);
 
   return (
     <div style={{ fontFamily: `'${font}', sans-serif`, background: surface, color: text }} className="min-h-screen">
@@ -195,151 +365,10 @@ export default function SeekerPortfolioExecutive({ site }: Props) {
 
         {/* Main column */}
         <div className="lg:col-span-2 space-y-4">
-          {aboutSection && aboutData.content && (
-            <Card>
-              <CardTitle icon={Briefcase}>Profile</CardTitle>
-              <p className="text-sm leading-relaxed" style={{ color: text }}>{aboutData.content}</p>
-            </Card>
-          )}
-
-          {experienceSection && experienceList.length > 0 && (
-            <Card>
-              <CardTitle icon={Briefcase}>Experience</CardTitle>
-              <div className="space-y-5">
-                {experienceList.map(exp => (
-                  <div key={exp.id} className="pb-5 border-b last:border-0 last:pb-0" style={{ borderColor: `${muted}15` }}>
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                      <h3 className="text-sm font-bold">{exp.role} · <span style={{ color: primary }}>{exp.company}</span></h3>
-                      <span className="text-[11px] shrink-0" style={{ color: muted }}>
-                        {exp.startDate} — {exp.isCurrent ? 'Present' : exp.endDate}
-                      </span>
-                    </div>
-                    {exp.location && <p className="text-[11px] mt-0.5" style={{ color: muted }}>{exp.location}</p>}
-                    {exp.description && <p className="text-xs mt-2 leading-relaxed" style={{ color: text }}>{exp.description}</p>}
-                    {exp.achievements && exp.achievements.length > 0 && (
-                      <ul className="mt-2 space-y-1">
-                        {exp.achievements.map((ach, idx) => (
-                          <li key={idx} className="text-xs flex items-start gap-1.5" style={{ color: muted }}>
-                            <span className="mt-1 w-1 h-1 rounded-full shrink-0" style={{ background: secondary }} /> {ach}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {educationSection && educationList.length > 0 && (
-            <Card>
-              <CardTitle icon={GraduationCap}>Education</CardTitle>
-              <div className="space-y-3">
-                {educationList.map(edu => (
-                  <div key={edu.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
-                    <div>
-                      <h3 className="text-sm font-bold">{edu.degree}{edu.field ? `, ${edu.field}` : ''}</h3>
-                      <p className="text-xs" style={{ color: muted }}>{edu.institution}</p>
-                    </div>
-                    <span className="text-[11px] shrink-0" style={{ color: muted }}>{edu.year}{edu.score ? ` · ${edu.score}` : ''}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {projectsSection && projectsList.length > 0 && (
-            <Card>
-              <CardTitle icon={Briefcase}>Selected work</CardTitle>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {projectsList.map(p => (
-                  <div key={p.id} className="rounded-xl p-4" style={{ background: surface }}>
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="text-sm font-bold">{p.title}</h3>
-                      {p.liveUrl && (
-                        <a href={safeExternalUrl(p.liveUrl)} target="_blank" rel="noopener noreferrer" style={{ color: primary }}>
-                          <ArrowUpRight size={12} />
-                        </a>
-                      )}
-                    </div>
-                    <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{p.description}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {certsSection && certsList.length > 0 && (
-            <Card>
-              <CardTitle icon={Award}>Certifications</CardTitle>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {certsList.map(c => (
-                  <a
-                    key={c.id}
-                    href={safeExternalUrl(c.credentialUrl)}
-                    target={c.credentialUrl ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 rounded-xl p-3 border"
-                    style={{ borderColor: `${muted}20` }}
-                  >
-                    <Award size={16} style={{ color: secondary }} className="shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold truncate">{c.name}</p>
-                      <p className="text-[11px]" style={{ color: muted }}>{c.issuer} · {c.issueDate}</p>
-                    </div>
-                    {c.credentialUrl && <ExternalLink size={12} className="ml-auto shrink-0" style={{ color: muted }} />}
-                  </a>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {achievementsSection && achievementsList.length > 0 && (
-            <Card>
-              <CardTitle icon={CheckCircle2}>Achievements</CardTitle>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {achievementsList.map(ach => (
-                  <div key={ach.id} className="rounded-xl p-3 border" style={{ borderColor: `${muted}20` }}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-bold">{ach.title}</p>
-                      {ach.date && <span className="text-[10px] shrink-0" style={{ color: muted }}>{ach.date}</span>}
-                    </div>
-                    {ach.organization && <p className="text-[11px] mt-0.5" style={{ color: primary }}>{ach.organization}</p>}
-                    {ach.description && <p className="text-[11px] mt-1" style={{ color: muted }}>{ach.description}</p>}
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {customSections.map(section => {
-            const entries: CustomSectionEntry[] = section.data?.entries || [];
-            if (entries.length === 0) return null;
-            return (
-              <Card key={section.id}>
-                <CardTitle icon={Layout}>{section.title || 'More'}</CardTitle>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {entries.map(entry => (
-                    <div key={entry.id} className="rounded-xl p-3 border" style={{ borderColor: `${muted}20` }}>
-                      {entry.imageUrl && (
-                        <img src={entry.imageUrl} alt={entry.title} className="w-full h-24 object-cover rounded-lg mb-2" />
-                      )}
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold">{entry.title}</p>
-                        {entry.date && <span className="text-[10px] shrink-0" style={{ color: muted }}>{entry.date}</span>}
-                      </div>
-                      {entry.description && <p className="text-[11px] mt-1" style={{ color: muted }}>{entry.description}</p>}
-                      {entry.link && (
-                        <a href={safeExternalUrl(entry.link)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold mt-1 inline-flex items-center gap-1" style={{ color: primary }}>
-                          Learn more <ArrowUpRight size={11} />
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
+          {/* ── SEEKER-8: ORDERED STANDARD + CUSTOM SECTIONS ── */}
+          {orderedMiddleSections.map(item => (
+            <Fragment key={item.key}>{item.node}</Fragment>
+          ))}
         </div>
       </div>
 

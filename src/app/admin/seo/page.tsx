@@ -94,7 +94,7 @@ export default function AdminSeoManagementPage() {
     const totalJobs = jobs.length || 0;
     const activeJobs = jobs.filter(j => j.isActive || j.status === 'active').length;
 
-    const healthScore = totalPort > 0 ? Math.round((indexedPort / totalPort) * 100) : 92;
+    const healthScore = totalPort > 0 ? Math.round((indexedPort / totalPort) * 100) : 0;
 
     return { totalPort, indexedPort, totalComp, verifiedComp, totalJobs, activeJobs, healthScore };
   }, [portfolios, companies, jobs]);
@@ -161,7 +161,6 @@ export default function AdminSeoManagementPage() {
         'seo.description': seoDesc,
         'seo.keywords': updatedKeywords,
         'seo.canonicalUrl': `https://thenijobs.com/${collectionName === 'portfolioSites' ? 'portfolio/' + (item.customUrl || item.id) : 'company/' + (item.slug || slugifyCompany(item.name || item.id))}`,
-        seoScore: 98,
         updatedAt: new Date(),
       });
 
@@ -381,7 +380,9 @@ export default function AdminSeoManagementPage() {
             </div>
           </div>
           <p className="text-2xl font-extrabold text-slate-900 mt-2">{stats.healthScore}%</p>
-          <span className="text-[10px] font-bold text-emerald-600">🟢 Highly Optimized for Google</span>
+          <span className={`text-[10px] font-bold ${stats.healthScore >= 80 ? 'text-emerald-600' : stats.healthScore >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+            {stats.healthScore >= 80 ? '🟢 Highly Optimized for Google' : stats.healthScore >= 50 ? '🟡 Needs Improvement' : '🔴 Needs Attention'}
+          </span>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
@@ -564,7 +565,7 @@ export default function AdminSeoManagementPage() {
                   {category.replace('_', ' ')}
                 </h3>
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  TOP 1 GOOGLE SEARCH
+                  KEYWORD SUGGESTIONS
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">

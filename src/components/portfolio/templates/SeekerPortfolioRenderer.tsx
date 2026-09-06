@@ -6,13 +6,14 @@ import {
   ExternalLink, Download, MessageCircle, Star, Sparkles, Code2,
   FolderGit2, CheckCircle2, ShieldCheck, Play, UserCheck, Eye,
   Share2, Copy, Check, ChevronRight, Calendar, ArrowRight, Heart,
-  FileText
+  FileText, Layout
 } from 'lucide-react';
 
 import type {
   PortfolioSite, SeekerHeroData, SeekerSkillItem,
   SeekerExperienceItem, SeekerEducationItem, SeekerProjectItem,
-  SeekerCertificationItem, TestimonialItem, ContactSectionData
+  SeekerCertificationItem, TestimonialItem, ContactSectionData,
+  SeekerAchievementItem, CustomSectionEntry
 } from '@/lib/types/portfolio';
 import { safeExternalUrl } from '@/lib/safeUrl';
 
@@ -51,7 +52,9 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
   const videoSection = getSection('video');
   const testimonialsSection = getSection('testimonials');
   const contactSection = getSection('contact');
-  const customSection = getSection('custom');
+  // SEEKER-3B: more than one 'custom' section can exist per portfolio (each seeker-named), so
+  // this is a filter rather than the single-match getSection() every other type uses.
+  const customSections = sections.filter(s => s.type === 'custom' && s.visible);
 
   // Data unwrappers
   const heroData: Partial<SeekerHeroData> = heroSection?.data || {};
@@ -61,7 +64,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
   const educationList: SeekerEducationItem[] = educationSection?.data?.education || [];
   const projectsList: SeekerProjectItem[] = projectsSection?.data?.projects || [];
   const certsList: SeekerCertificationItem[] = certsSection?.data?.certifications || [];
-  const achievementsList = achievementsSection?.data?.achievements || [];
+  const achievementsList: SeekerAchievementItem[] = achievementsSection?.data?.achievements || [];
   const testimonialsList: TestimonialItem[] = testimonialsSection?.data?.testimonials || [];
   const contactData: Partial<ContactSectionData> = contactSection?.data || {};
 
@@ -636,6 +639,78 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
             </div>
           </section>
         )}
+
+        {/* ── ACHIEVEMENTS ── */}
+        {achievementsSection && achievementsList.length > 0 && (
+          <section id="achievements" className="space-y-4">
+            <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+              <CheckCircle2 size={20} style={{ color: primary }} />
+              <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+                {achievementsSection.title || 'Achievements'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {achievementsList.map((ach) => (
+                <div
+                  key={ach.id}
+                  className="p-4 rounded-2xl border shadow-xs space-y-1"
+                  style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{ach.title}</h3>
+                    {ach.date && <span className="text-[10px] font-semibold shrink-0" style={{ color: muted }}>{ach.date}</span>}
+                  </div>
+                  {ach.organization && <p className="text-xs font-medium" style={{ color: primary }}>{ach.organization}</p>}
+                  {ach.description && <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{ach.description}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── CUSTOM SECTIONS ── */}
+        {customSections.map(section => {
+          const entries: CustomSectionEntry[] = section.data?.entries || [];
+          if (entries.length === 0) return null;
+          return (
+            <section key={section.id} id={`custom-${section.id}`} className="space-y-4">
+              <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: `${muted}20` }}>
+                <Layout size={20} style={{ color: primary }} />
+                <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: `'${headingFont}', sans-serif`, color: text }}>
+                  {section.title || 'More'}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {entries.map(entry => (
+                  <div
+                    key={entry.id}
+                    className="p-4 rounded-2xl border shadow-xs space-y-1"
+                    style={{ background: surface, borderColor: `${muted}15`, borderRadius: radius }}
+                  >
+                    {entry.imageUrl && (
+                      <img src={entry.imageUrl} alt={entry.title} className="w-full h-32 object-cover rounded-xl mb-2" />
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-xs sm:text-sm font-bold" style={{ color: text }}>{entry.title}</h3>
+                      {entry.date && <span className="text-[10px] font-semibold shrink-0" style={{ color: muted }}>{entry.date}</span>}
+                    </div>
+                    {entry.description && <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{entry.description}</p>}
+                    {entry.link && (
+                      <a
+                        href={safeExternalUrl(entry.link)}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-xs font-bold hover:underline inline-flex items-center gap-1 pt-1"
+                        style={{ color: primary }}
+                      >
+                        Learn more <ExternalLink size={11} />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
 
         {/* ── VIDEO INTRO / PITCH ── */}
         {videoSection && videoSection.data?.videoUrl && (

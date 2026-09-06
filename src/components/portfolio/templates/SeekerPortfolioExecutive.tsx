@@ -4,11 +4,13 @@ import { useState } from 'react';
 import {
   MapPin, Mail, Phone, ExternalLink, Download, Check, Share2,
   Briefcase, GraduationCap, Award, Calendar, ArrowUpRight,
+  CheckCircle2, Layout,
 } from 'lucide-react';
 import type {
   PortfolioSite, SeekerHeroData, SeekerSkillItem,
   SeekerExperienceItem, SeekerEducationItem, SeekerProjectItem,
-  SeekerCertificationItem, ContactSectionData
+  SeekerCertificationItem, ContactSectionData,
+  SeekerAchievementItem, CustomSectionEntry
 } from '@/lib/types/portfolio';
 import { safeExternalUrl } from '@/lib/safeUrl';
 
@@ -45,7 +47,9 @@ export default function SeekerPortfolioExecutive({ site }: Props) {
   const educationSection = getSection('education');
   const projectsSection = getSection('projects');
   const certsSection = getSection('certifications');
+  const achievementsSection = getSection('achievements');
   const contactSection = getSection('contact');
+  const customSections = sections.filter(s => s.type === 'custom' && s.visible);
 
   const heroData: Partial<SeekerHeroData> = heroSection?.data || {};
   const aboutData = aboutSection?.data || {};
@@ -54,6 +58,7 @@ export default function SeekerPortfolioExecutive({ site }: Props) {
   const educationList: SeekerEducationItem[] = educationSection?.data?.education || [];
   const projectsList: SeekerProjectItem[] = projectsSection?.data?.projects || [];
   const certsList: SeekerCertificationItem[] = certsSection?.data?.certifications || [];
+  const achievementsList: SeekerAchievementItem[] = achievementsSection?.data?.achievements || [];
   const contactData: Partial<ContactSectionData> = contactSection?.data || {};
 
   const name = heroData.name || branding?.companyName || 'Professional Seeker';
@@ -288,6 +293,53 @@ export default function SeekerPortfolioExecutive({ site }: Props) {
               </div>
             </Card>
           )}
+
+          {achievementsSection && achievementsList.length > 0 && (
+            <Card>
+              <CardTitle icon={CheckCircle2}>Achievements</CardTitle>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {achievementsList.map(ach => (
+                  <div key={ach.id} className="rounded-xl p-3 border" style={{ borderColor: `${muted}20` }}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-bold">{ach.title}</p>
+                      {ach.date && <span className="text-[10px] shrink-0" style={{ color: muted }}>{ach.date}</span>}
+                    </div>
+                    {ach.organization && <p className="text-[11px] mt-0.5" style={{ color: primary }}>{ach.organization}</p>}
+                    {ach.description && <p className="text-[11px] mt-1" style={{ color: muted }}>{ach.description}</p>}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {customSections.map(section => {
+            const entries: CustomSectionEntry[] = section.data?.entries || [];
+            if (entries.length === 0) return null;
+            return (
+              <Card key={section.id}>
+                <CardTitle icon={Layout}>{section.title || 'More'}</CardTitle>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {entries.map(entry => (
+                    <div key={entry.id} className="rounded-xl p-3 border" style={{ borderColor: `${muted}20` }}>
+                      {entry.imageUrl && (
+                        <img src={entry.imageUrl} alt={entry.title} className="w-full h-24 object-cover rounded-lg mb-2" />
+                      )}
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-bold">{entry.title}</p>
+                        {entry.date && <span className="text-[10px] shrink-0" style={{ color: muted }}>{entry.date}</span>}
+                      </div>
+                      {entry.description && <p className="text-[11px] mt-1" style={{ color: muted }}>{entry.description}</p>}
+                      {entry.link && (
+                        <a href={safeExternalUrl(entry.link)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold mt-1 inline-flex items-center gap-1" style={{ color: primary }}>
+                          Learn more <ArrowUpRight size={11} />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
 

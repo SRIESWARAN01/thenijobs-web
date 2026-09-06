@@ -8,7 +8,8 @@ import {
 import type {
   PortfolioSite, SeekerHeroData, SeekerSkillItem,
   SeekerExperienceItem, SeekerEducationItem, SeekerProjectItem,
-  SeekerCertificationItem, ContactSectionData
+  SeekerCertificationItem, ContactSectionData,
+  SeekerAchievementItem, CustomSectionEntry
 } from '@/lib/types/portfolio';
 import { safeExternalUrl } from '@/lib/safeUrl';
 
@@ -45,7 +46,9 @@ export default function SeekerPortfolioMinimal({ site }: Props) {
   const educationSection = getSection('education');
   const projectsSection = getSection('projects');
   const certsSection = getSection('certifications');
+  const achievementsSection = getSection('achievements');
   const contactSection = getSection('contact');
+  const customSections = sections.filter(s => s.type === 'custom' && s.visible);
 
   const heroData: Partial<SeekerHeroData> = heroSection?.data || {};
   const aboutData = aboutSection?.data || {};
@@ -54,6 +57,7 @@ export default function SeekerPortfolioMinimal({ site }: Props) {
   const educationList: SeekerEducationItem[] = educationSection?.data?.education || [];
   const projectsList: SeekerProjectItem[] = projectsSection?.data?.projects || [];
   const certsList: SeekerCertificationItem[] = certsSection?.data?.certifications || [];
+  const achievementsList: SeekerAchievementItem[] = achievementsSection?.data?.achievements || [];
   const contactData: Partial<ContactSectionData> = contactSection?.data || {};
 
   const name = heroData.name || branding?.companyName || 'Professional Seeker';
@@ -268,6 +272,50 @@ export default function SeekerPortfolioMinimal({ site }: Props) {
             </div>
           </Section>
         )}
+
+        {/* ── Achievements ── */}
+        {achievementsSection && achievementsList.length > 0 && (
+          <Section id="achievements" title="Achievements">
+            <div className="space-y-3">
+              {achievementsList.map(ach => (
+                <div key={ach.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <div>
+                    <h3 className="text-sm font-bold">{ach.title}</h3>
+                    {ach.organization && <p className="text-xs" style={{ color: muted }}>{ach.organization}</p>}
+                    {ach.description && <p className="text-xs mt-0.5" style={{ color: muted }}>{ach.description}</p>}
+                  </div>
+                  {ach.date && <span className="text-[11px] shrink-0" style={{ color: muted }}>{ach.date}</span>}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* ── Custom sections ── */}
+        {customSections.map(section => {
+          const entries: CustomSectionEntry[] = section.data?.entries || [];
+          if (entries.length === 0) return null;
+          return (
+            <Section key={section.id} id={`custom-${section.id}`} title={section.title || 'More'}>
+              <div className="space-y-3">
+                {entries.map(entry => (
+                  <div key={entry.id}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                      <h3 className="text-sm font-bold">{entry.title}</h3>
+                      {entry.date && <span className="text-[11px] shrink-0" style={{ color: muted }}>{entry.date}</span>}
+                    </div>
+                    {entry.description && <p className="text-xs mt-0.5" style={{ color: muted }}>{entry.description}</p>}
+                    {entry.link && (
+                      <a href={safeExternalUrl(entry.link)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold underline" style={{ color: primary }}>
+                        Learn more
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          );
+        })}
 
         {/* ── Contact footer ── */}
         <footer className="py-10 border-t mt-2" style={{ borderColor: `${muted}20` }}>

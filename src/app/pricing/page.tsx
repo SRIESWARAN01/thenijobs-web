@@ -23,17 +23,14 @@ const COMPARISON_MATRIX = [
   { feature: 'Basic Company Profile', free: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
   { feature: 'Active Job Postings Limit', free: '1 Job', standard: '15 Jobs', premium: 'High Limit', enterprise: 'High Limit' },
   { feature: 'Company Portfolio Website', free: '❌', standard: 'Full', premium: 'Premium', enterprise: 'Custom' },
-  { feature: 'Digital ID Card & QR Code', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
-  { feature: 'Reviews & Ratings', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
-  { feature: 'Services & Products Listing', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Digital ID Card & QR Code', free: 'Basic', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Reviews & Ratings', free: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Services & Products Listing', free: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
   { feature: 'Featured Company Placement', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
   { feature: 'Candidate Search & Filtering', free: '❌', standard: 'Basic', premium: 'Advanced', enterprise: 'Advanced' },
   { feature: 'Interview Scheduling & Leads', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
-  { feature: 'Advanced Analytics & Reports', free: '❌', standard: '❌', premium: '✅', enterprise: '✅' },
   { feature: 'Premium SEO Enhancement', free: '❌', standard: 'Basic', premium: 'Advanced', enterprise: 'Advanced' },
-  { feature: 'Multiple HR Users', free: '❌', standard: '❌', premium: '❌', enterprise: '✅' },
-  { feature: 'Branch / Franchise Mgmt', free: '❌', standard: '❌', premium: '❌', enterprise: '✅' },
-  { feature: 'Priority Customer Support', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Branch / Franchise Mgmt', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
 ];
 
 const WHY_US = [
@@ -52,7 +49,7 @@ const TRUST_CHIPS = [
 const FAQS = [
   {
     q: 'Which plan should I choose?',
-    a: 'Standard (₹480/yr) is a great start for local shops that need a full portfolio and reviews. Premium (₹1,200/yr) is our most popular plan — it adds advanced analytics, leads dashboard and higher job-posting limits for growing companies. Enterprise (₹5,000/yr) is built for large businesses with multiple branches and HR users.',
+    a: 'Standard (₹480/yr) is a great start for local shops that need a full portfolio and reviews. Premium (₹1,200/yr) is our most popular plan — it adds higher job-posting limits, a video banner, more branches, and a Gold Verified badge for growing companies. Enterprise (₹5,000/yr) is built for large businesses with unlimited postings, a dedicated careers portal, and our top Platinum badge.',
   },
   {
     q: 'Can I upgrade or downgrade anytime?',

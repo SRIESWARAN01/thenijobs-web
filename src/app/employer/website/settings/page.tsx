@@ -188,7 +188,7 @@ export default function WebsiteSettingsPage() {
               registrationNumber="TNJ-2026-00001"
               roleOrTagline={company?.tagline || site.branding.tagline || 'Company'}
               logoUrl={company?.logoUrl || site.branding.logo}
-              plan={company?.planSlug || 'free'}
+              plan={company?.subscriptionPlan || 'free'}
               district={company?.district || 'Theni'}
               phone={company?.phone}
               email={company?.email}

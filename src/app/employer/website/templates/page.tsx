@@ -49,7 +49,7 @@ export default function TemplateGalleryPage() {
   ], { skip: !user?.uid });
   const currentSite = sites?.[0] as PortfolioSite | undefined;
 
-  const planSlug = company?.planSlug || 'free';
+  const planSlug = company?.subscriptionPlan || 'free';
 
   const filteredTemplates = PORTFOLIO_TEMPLATES.filter(t => filter === 'all' || t.plan === filter);
 

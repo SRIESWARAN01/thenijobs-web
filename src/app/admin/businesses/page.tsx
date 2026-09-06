@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Building2, Search, CheckCircle, XCircle,
@@ -97,9 +97,18 @@ export default function BusinessesPage() {
   // (not next/navigation's useSearchParams, unused anywhere else in this app and requiring a new
   // Suspense boundary) since this is a static export where every page's real content already
   // resolves client-side after hydration, not at build time.
-  const [searchQuery, setSearchQuery] = useState(() =>
-    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('q') || ''
-  );
+  //
+  // ERRORS-1: reading window.location.search inside the useState initializer caused a real
+  // hydration mismatch -- the static-built shell always sees typeof window === 'undefined' (so
+  // it bakes in ''), but the first real client render already has a window, so it immediately
+  // returns a non-empty value whenever a ?q= param is present. Starting at '' unconditionally
+  // matches the static shell exactly, then a post-hydration effect applies the real query --
+  // an update after mount, not a mismatch during it.
+  const [searchQuery, setSearchQuery] = useState('');
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearchQuery(q);
+  }, []);
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('All');
   const [view, setView] = useViewMode('admin-businesses', 'table');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');

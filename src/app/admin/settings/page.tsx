@@ -46,9 +46,10 @@ interface PlatformSettingsDoc {
   // outside this one file ever read any of them (the real district list is the separate, static
   // `TN_DISTRICTS` constant baked into deploy-time `jobs-in-<district>` routes; no AI-feature gate,
   // marketplace-commission calculation, or lead-write path exists anywhere to wire them to). A
-  // write that says "saved" but changes nothing is worse than no control at all. `maintenance` is
-  // deliberately left exactly as it was — untouched, still not wired to anything — split into its
-  // own future phase given it can gate the entire site for every visitor if built with any bug.
+  // write that says "saved" but changes nothing is worse than no control at all.
+  // DOC2-2: `maintenance` is now real — gates every page via `MaintenanceGate`
+  // (src/components/system/MaintenanceGate.tsx), exempting /admin/** and /login so an admin can
+  // always turn it back off.
   maintenance?: boolean;
   features?: PlatformFeatures;
 }
@@ -94,21 +95,35 @@ export default function SettingsPage() {
     }
   };
 
-  // DOC2-1: `platformSettings/global` stays admin-only-readable (unchanged), but `/register`,
-  // `/register-business`, and a public company page's review section are all reachable by
-  // unauthenticated visitors who cannot read it. Mirror `features` into a separate, narrowly
-  // public-readable doc whenever it changes, so these killswitches have somewhere to actually be
-  // read from. `setDoc(..., {merge:true})` rather than `updateDocument` since this doc may not
-  // exist yet on the very first save.
-  const syncPublicFeatures = async (next: PlatformFeatures) => {
-    await setDoc(doc(db, 'platformSettings', 'public'), { features: next, updatedAt: serverTimestamp() }, { merge: true });
+  // DOC2-1/DOC2-2: `platformSettings/global` stays admin-only-readable (unchanged), but
+  // `/register`, `/register-business`, a public company page's review section, and (DOC2-2) every
+  // other public page's `MaintenanceGate` check are all reachable by visitors who cannot read it.
+  // Mirror the public-relevant fields into a separate, narrowly public-readable doc whenever they
+  // change. `setDoc(..., {merge:true})` rather than `updateDocument` since this doc may not exist
+  // yet on the very first save.
+  const syncPublicSettings = async (patch: { features?: PlatformFeatures; maintenance?: boolean }) => {
+    await setDoc(doc(db, 'platformSettings', 'public'), { ...patch, updatedAt: serverTimestamp() }, { merge: true });
   };
 
   const toggleFeature = (key: keyof PlatformFeatures) => {
     const next = { ...features, [key]: !features[key] };
     setFeatures(next);
     handleSave({ features: next });
-    syncPublicFeatures(next).catch(err => console.error('[admin/settings] public features sync failed:', err));
+    syncPublicSettings({ features: next }).catch(err => console.error('[admin/settings] public features sync failed:', err));
+  };
+
+  // DOC2-2: this is the single highest-blast-radius toggle on this page — it can gate the entire
+  // site for every visitor. Turning it OFF is always safe and needs no confirmation; turning it ON
+  // gets one extra confirm() step, matching the confirm() pattern this codebase already uses for
+  // other hard-to-undo admin actions (e.g. SEEKER-7's section removal), so a single accidental
+  // click can't take the whole site down.
+  const toggleMaintenance = (next: boolean) => {
+    if (next && !window.confirm('Turn ON maintenance mode? This will show a "site under maintenance" page to every visitor except admins until you turn it off again.')) {
+      return;
+    }
+    setMaintenance(next);
+    handleSave({ maintenance: next });
+    syncPublicSettings({ maintenance: next }).catch(err => console.error('[admin/settings] public maintenance sync failed:', err));
   };
 
   const franchiseColumns = useMemo<Column<FranchiseRow>[]>(() => [
@@ -182,10 +197,7 @@ export default function SettingsPage() {
                     <Switch
                       checked={maintenance}
                       label="Maintenance mode"
-                      onChange={(next) => {
-                        setMaintenance(next);
-                        handleSave({ maintenance: next });
-                      }}
+                      onChange={toggleMaintenance}
                     />
                   }
                 />

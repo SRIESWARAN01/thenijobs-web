@@ -6,6 +6,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { GlobalErrorTracker } from "@/lib/firebase/errorTracker";
+import MaintenanceGate from "@/components/system/MaintenanceGate";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -97,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <NotificationProvider>
               <ToastProvider>
-                {children}
+                <MaintenanceGate>{children}</MaintenanceGate>
               </ToastProvider>
             </NotificationProvider>
           </AuthProvider>

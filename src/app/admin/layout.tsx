@@ -12,6 +12,7 @@ import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
+import AdminQuickSearch from '@/components/admin/AdminQuickSearch';
 
 const ADMIN_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
@@ -103,10 +104,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Search (expanded only) */}
         {!collapsed && (
           <div className="px-3 py-2.5 border-b border-gray-50">
-            <div className="relative">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input aria-label="Quick search" placeholder="Quick search..." className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-base sm:text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-all" />
-            </div>
+            <AdminQuickSearch />
           </div>
         )}
 

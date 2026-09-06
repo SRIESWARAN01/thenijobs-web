@@ -133,6 +133,12 @@ const STANDARD_SECTION_DEFAULTS: Record<string, any> = {
   certifications: { certifications: [] },
 };
 
+// SEEKER-9 — the 7 sections reorderable relative to each other (the removable standard set minus
+// nothing; `custom` keeps its own separate, un-reordered-by-this-panel management surface). Every
+// seeker template already renders exactly this set, plus custom, via one ordered `.map()` over
+// `order` (SEEKER-8) — reordering here has real, immediate effect on the published portfolio.
+const ORDERABLE_STANDARD_TYPES = new Set(['about', 'skills', 'experience', 'education', 'projects', 'certifications', 'achievements']);
+
 // SEEKER-2 — portfolioSlugs reservation (mirrors RULES-1's companySlugs, adapted for a slug
 // that changes over time instead of being fixed at registration). `seeker` collides with the
 // existing static route /portfolio/seeker/[id]; the rest guard against confusion with app routes
@@ -577,6 +583,33 @@ export default function SeekerSiteEditor() {
     setIsDirty(true);
   }, []);
 
+  // SEEKER-9 — the 7 standard sections' order relative to EACH OTHER only. SEEKER-8 already made
+  // every seeker template render sections by `order`; nothing wrote to it until now. Swaps `order`
+  // values with the nearest standard-type neighbor (by current order, not array position) so no
+  // other section (including any custom one, which keeps its own separate management surface) is
+  // touched. A no-op at either end of the standard list.
+  const moveStandardSection = useCallback((type: string, direction: 'up' | 'down') => {
+    setSite(prev => {
+      if (!prev) return prev;
+      const present = prev.sections
+        .filter(sec => ORDERABLE_STANDARD_TYPES.has(sec.type))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const idx = present.findIndex(sec => sec.type === type);
+      if (idx === -1) return prev;
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= present.length) return prev;
+      const a = present[idx];
+      const b = present[swapIdx];
+      const sections = prev.sections.map(sec => {
+        if (sec.id === a.id) return { ...sec, order: b.order };
+        if (sec.id === b.id) return { ...sec, order: a.order };
+        return sec;
+      });
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
   // Save changes to Firestore
   const handleSave = async () => {
     if (!site?.id || !user?.uid) return;
@@ -960,6 +993,13 @@ export default function SeekerSiteEditor() {
                   </p>
                   <p className="text-[10px] text-slate-400 text-right">Header &amp; Contact always show</p>
                 </div>
+                {(() => {
+                  // SEEKER-9: present standard sections sorted by their own order, so each row
+                  // knows whether it's first/last for disabling the boundary arrow.
+                  const presentStandard = site.sections
+                    .filter(s => ORDERABLE_STANDARD_TYPES.has(s.type))
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                  return (
                 <div className="space-y-1.5">
                   {SEEKER_STANDARD_SECTIONS.map(def => {
                     const sec = site.sections.find(s => s.type === def.type);
@@ -997,39 +1037,70 @@ export default function SeekerSiteEditor() {
                       );
                     }
 
+                    const posIdx = presentStandard.findIndex(s => s.id === sec.id);
+                    const isFirst = posIdx <= 0;
+                    const isLast = posIdx === presentStandard.length - 1;
+
                     return (
-                      <div key={def.type} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-slate-100">
-                        <span className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                          <Icon size={13} /> {def.label}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSectionVisibleById(sec.id, !sec.visible)}
-                            className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
-                              sec.visible ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 bg-slate-100 hover:bg-slate-200'
-                            }`}
-                            title={sec.visible ? 'Hide this section from your public portfolio' : 'Show this section on your public portfolio'}
-                          >
-                            {sec.visible ? <Eye size={12} /> : <EyeOff size={12} />} {sec.visible ? 'Visible' : 'Hidden'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`Remove the "${def.label}" section from your portfolio? You can add it back anytime.`)) {
-                                removeSectionById(sec.id);
-                              }
-                            }}
-                            className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                            title="Remove this section"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                      <div key={def.type}>
+                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-slate-100">
+                          <span className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                            <Icon size={13} /> {def.label}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => moveStandardSection(def.type, 'up')}
+                              disabled={isFirst}
+                              className="p-1 rounded-lg text-slate-400 enabled:hover:text-slate-700 enabled:hover:bg-slate-100 disabled:opacity-30 transition-all"
+                              title="Move up"
+                            >
+                              <ChevronUp size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveStandardSection(def.type, 'down')}
+                              disabled={isLast}
+                              className="p-1 rounded-lg text-slate-400 enabled:hover:text-slate-700 enabled:hover:bg-slate-100 disabled:opacity-30 transition-all"
+                              title="Move down"
+                            >
+                              <ChevronDown size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSectionVisibleById(sec.id, !sec.visible)}
+                              className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${
+                                sec.visible ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100' : 'text-slate-400 bg-slate-100 hover:bg-slate-200'
+                              }`}
+                              title={sec.visible ? 'Hide this section from your public portfolio' : 'Show this section on your public portfolio'}
+                            >
+                              {sec.visible ? <Eye size={12} /> : <EyeOff size={12} />} {sec.visible ? 'Visible' : 'Hidden'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Remove the "${def.label}" section from your portfolio? You can add it back anytime.`)) {
+                                  removeSectionById(sec.id);
+                                }
+                              }}
+                              className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                              title="Remove this section"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         </div>
+                        {def.type === 'skills' && (
+                          <p className="text-[10px] text-slate-400 mt-1 px-1">
+                            Note: the Executive theme always shows Skills in its sidebar, so moving it here will not visibly change that theme.
+                          </p>
+                        )}
                       </div>
                     );
                   })}
                 </div>
+                  );
+                })()}
               </div>
 
               {/* Block Selector Pills */}

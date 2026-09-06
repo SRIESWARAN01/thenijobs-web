@@ -12,6 +12,7 @@ import JobPreviewModal from '@/components/employer/JobPreviewModal';
 import JobPostSuccessModal from '@/components/employer/JobPostSuccessModal';
 import { TN_DISTRICTS } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
+import { useDocument } from '@/hooks/useFirestore';
 import { useCollection } from '@/hooks/useFirestore';
 import { createDocument, logActivity } from '@/lib/firebase/firestoreService';
 import { notifyAllAdmins } from '@/lib/firebase/adminNotify';
@@ -67,6 +68,10 @@ export default function PostJobPage() {
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
     where('ownerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
+
+  // DOC2-1: fail-open (jobPostingEnabled defaults to true) when the doc/field doesn't exist yet.
+  const { data: platformPublic } = useDocument<{ features?: { jobPostingEnabled?: boolean } }>('platformSettings', 'public');
+  const jobPostingEnabled = platformPublic?.features?.jobPostingEnabled !== false;
 
   const company = companies?.[0];
   const companyId = company?.id;
@@ -281,6 +286,23 @@ export default function PostJobPage() {
         </div>
         <Link href="/employer/company-profile" className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
           View Company Verification Details
+        </Link>
+      </div>
+    );
+  }
+
+  if (!jobPostingEnabled) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-96 py-20 text-center px-4 font-outfit">
+        <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-200 shadow-xs">
+          <ShieldAlert size={32} />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Job posting is temporarily paused</h2>
+        <p className="text-xs sm:text-sm text-gray-600 max-w-md mb-6 leading-relaxed">
+          New job openings can&apos;t be submitted right now. Please check back soon.
+        </p>
+        <Link href="/employer/dashboard" className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
+          Back to Dashboard
         </Link>
       </div>
     );

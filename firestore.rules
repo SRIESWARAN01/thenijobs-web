@@ -402,6 +402,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // DOC2-1: a narrow public-read mirror of just the feature killswitches
+    // (registrationEnabled/jobPostingEnabled/reviewsEnabled) from platformSettings/global, since
+    // /register, /register-business, and a public company page's review section are all reachable
+    // by signed-out visitors who cannot read the admin-only doc above. Rules are additive (OR): this
+    // adds read access for this one specific document id only, on top of (not instead of) the
+    // isAdmin()-only rule above; every other platformSettings document stays admin-only. Write stays
+    // admin-only -- only the admin settings page's own save flow may write it.
+    match /platformSettings/public {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
     // ===== JOB CHANGE HISTORY =====
     match /jobs/{jobId}/history/{historyId} {
       allow read:  if isAuthenticated() && (

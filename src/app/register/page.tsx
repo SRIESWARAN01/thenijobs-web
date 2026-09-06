@@ -13,6 +13,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import type { UserRole } from '@/lib/types';
 import AuthShell from '@/components/auth/AuthShell';
+import { useDocument } from '@/hooks/useFirestore';
 
 const ROLES = [
   {
@@ -45,6 +46,11 @@ const ROLES = [
 export default function RegisterPage() {
   const router = useRouter();
   const { user, createAccount, signInWithGoogle, error: authError, clearError } = useAuth() as any;
+
+  // DOC2-1: registrationEnabled defaults to true (fail-open) when the doc/field doesn't exist yet,
+  // so a missing platformSettings/public document never accidentally blocks every visitor.
+  const { data: platformPublic } = useDocument<{ features?: { registrationEnabled?: boolean } }>('platformSettings', 'public');
+  const registrationEnabled = platformPublic?.features?.registrationEnabled !== false;
 
   const [step, setStep] = useState(1);
   const [role, setRole] = useState('');
@@ -108,6 +114,24 @@ export default function RegisterPage() {
   };
 
   const activeError = localError || authError;
+
+  if (!registrationEnabled) {
+    return (
+      <AuthShell
+        eyebrow="Registration Paused"
+        heading="New sign-ups are temporarily paused"
+        subheading="We're not accepting new account registrations right now. Please check back soon."
+        maxWidthClassName="max-w-lg"
+      >
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-slate-200/60 p-8 text-center">
+          <p className="text-sm text-gray-600">
+            If you already have an account, you can still{' '}
+            <Link href="/login" className="font-semibold text-blue-600 hover:underline">sign in</Link>.
+          </p>
+        </div>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell

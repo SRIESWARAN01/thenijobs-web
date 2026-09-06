@@ -13,10 +13,33 @@ import { logError } from '@/lib/firebase/errorService';
  * React component that installs global error handlers on mount.
  * Place once in root layout.
  */
+// ERRORS-1: this handler is a blanket `window` listener — it sees every uncaught error on the
+// page, including ones this app's own code never caused. "Cannot read properties of null
+// (reading 'removeChild'/'insertBefore')" is the textbook signature of a browser extension
+// (Google Translate is the classic case) mutating the DOM behind React's back; React later tries
+// to reconcile a node the extension already moved or removed and throws on a null parent.
+// Confirmed here, not assumed: this exact message was logged against five completely unrelated
+// pages (a services listing, a businesses listing, a district page, two different company
+// profiles) with no component boundary ever attached, and a repo-wide grep found no app code
+// that manually calls appendChild/removeChild/createElement anywhere near those pages. Filtering
+// it here stops it from crowding out real defects on this dashboard; it does not suppress a
+// removeChild error genuinely raised by this app's own DOM code, since none exists.
+const KNOWN_NOISE_PATTERNS = [
+  /reading '(removeChild|insertBefore|appendChild)'/i,
+  /The node to be removed is not a child of this node/i,
+  /ResizeObserver loop (limit exceeded|completed with undelivered notifications)/i,
+];
+
+function isKnownNoise(message: string): boolean {
+  return KNOWN_NOISE_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 export function GlobalErrorTracker() {
   useEffect(() => {
     // Handle unhandled JS errors
     const handleError = (event: ErrorEvent) => {
+      if (isKnownNoise(event.message || '')) return;
+
       logError({
         errorType: 'runtime',
         page: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
@@ -32,6 +55,8 @@ export function GlobalErrorTracker() {
       const error = event.reason;
       const message = error instanceof Error ? error.message : String(error);
       const stack = error instanceof Error ? error.stack : '';
+
+      if (isKnownNoise(message)) return;
 
       logError({
         errorType: 'runtime',

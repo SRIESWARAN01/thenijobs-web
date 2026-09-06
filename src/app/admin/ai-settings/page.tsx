@@ -122,6 +122,21 @@ export default function AdminAISettingsPage() {
         }),
       });
 
+      // ERRORS-1: this route doesn't exist in the static-export production build (all
+      // src/app/api/** handlers only run under `next dev`), so the fetch above resolves with
+      // Vercel's generic 404 HTML page there, not JSON. response.json() used to be called
+      // unconditionally and threw a raw SyntaxError ("Unexpected token '<'") straight into the
+      // catch block below -- technically accurate, useless to whoever clicked the button.
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const message = response.status === 404
+          ? "AI testing isn't available on this deployment — the API route this button calls doesn't exist in the static export used by production. It only works when running the app locally with `next dev`."
+          : `Unexpected response from the server (status ${response.status}).`;
+        setTestResults(prev => ({ ...prev, [providerName]: { success: false, error: message } }));
+        updateProvider(providerName, { status: 'error', lastTested: new Date(), lastError: message });
+        return;
+      }
+
       const result = await response.json();
       setTestResults(prev => ({ ...prev, [providerName]: result }));
 

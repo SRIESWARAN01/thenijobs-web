@@ -82,7 +82,6 @@ export default function AdminErrorsPage() {
       const endPing = Date.now();
       setDbLatency(Math.max(12, endPing - startPing));
       setStorageStatus('healthy');
-      setAiApiStatus('connected');
       setErrors(errorsData);
       setStats(statsData);
     } catch (err) {
@@ -94,6 +93,18 @@ export default function AdminErrorsPage() {
   }
 
   useEffect(() => { loadData(); }, [filterStatus, filterSeverity, filterType]);
+
+  // ERRORS-1: this used to be a hardcoded 'connected' set unconditionally in loadData()'s success
+  // path, and the AI Engine card below didn't even read it -- it always showed "Connected • High
+  // Speed" in the JSX. /api/ai/** doesn't exist in the static-export production build (it only
+  // runs under `next dev`), so any request to it there resolves 404 regardless of method or
+  // auth; anywhere the route does exist, it responds with something other than 404. Checking once
+  // on mount rather than on every filter change, since it doesn't depend on the error filters.
+  useEffect(() => {
+    fetch('/api/ai/test', { method: 'HEAD' })
+      .then((res) => setAiApiStatus(res.status === 404 ? 'degraded' : 'connected'))
+      .catch(() => setAiApiStatus('degraded'));
+  }, []);
 
   const handleStatusUpdate = async (errorId: string, newStatus: ErrorStatus) => {
     setUpdatingId(errorId);
@@ -264,7 +275,7 @@ export default function AdminErrorsPage() {
           </div>
           <div>
             <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">AI Engine (Groq / Gemini)</span>
-            <span className="font-extrabold text-purple-800">Connected • High Speed</span>
+            <span className="font-extrabold text-purple-800">{aiApiStatus === 'connected' ? 'Connected • High Speed' : 'Not available (static export)'}</span>
           </div>
         </div>
 

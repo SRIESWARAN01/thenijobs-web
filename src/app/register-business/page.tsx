@@ -14,6 +14,7 @@ import { db } from '@/lib/firebase/config';
 import { collection, addDoc, doc, setDoc, getDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { SITE_CONTACT } from '@/lib/constants';
+import { useDocument } from '@/hooks/useFirestore';
 
 const BUSINESS_CATEGORIES = [
   'Agriculture & Farming', 'Automobile & Transport', 'Banking & Finance',
@@ -41,6 +42,10 @@ export default function RegisterBusinessPage() {
   const [submitting, setSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [registeredCompanyId, setRegisteredCompanyId] = useState<string | null>(null);
+
+  // DOC2-1: fail-open (registrationEnabled defaults to true) when the doc/field doesn't exist yet.
+  const { data: platformPublic } = useDocument<{ features?: { registrationEnabled?: boolean } }>('platformSettings', 'public');
+  const registrationEnabled = platformPublic?.features?.registrationEnabled !== false;
 
   const [form, setForm] = useState({
     name: '',
@@ -185,6 +190,20 @@ export default function RegisterBusinessPage() {
       setSubmitting(false);
     }
   };
+
+  if (!registrationEnabled) {
+    return (
+      <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 font-outfit flex items-center justify-center">
+        <div className="max-w-xl w-full bg-white rounded-3xl p-8 border border-gray-200 shadow-xl text-center space-y-4">
+          <h1 className="text-xl font-black text-gray-900">Business registration is temporarily paused</h1>
+          <p className="text-sm text-gray-600">We are not accepting new business registrations right now. Please check back soon.</p>
+          <Link href="/" className="inline-block py-3 px-6 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-md">
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isSubmitted) {
     return (

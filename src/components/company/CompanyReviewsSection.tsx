@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { useDocument } from '@/hooks/useFirestore';
 
 interface CompanyReviewsSectionProps {
   companyId: string;
@@ -28,6 +29,10 @@ export default function CompanyReviewsSection({
 }: CompanyReviewsSectionProps) {
   const { user } = useAuth();
   const toast = useToast();
+
+  // DOC2-1: fail-open (reviewsEnabled defaults to true) when the doc/field doesn't exist yet.
+  const { data: platformPublic } = useDocument<{ features?: { reviewsEnabled?: boolean } }>('platformSettings', 'public');
+  const reviewsEnabled = platformPublic?.features?.reviewsEnabled !== false;
 
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [filterSort, setFilterSort] = useState<'recent' | 'highest' | 'lowest'>('recent');
@@ -140,7 +145,11 @@ export default function CompanyReviewsSection({
               </select>
             </div>
 
-            {user ? (
+            {!reviewsEnabled ? (
+              <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-500">
+                Reviews are temporarily paused
+              </span>
+            ) : user ? (
               <button
                 type="button"
                 onClick={() => setShowWriteModal(true)}

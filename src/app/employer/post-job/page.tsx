@@ -113,7 +113,7 @@ export default function PostJobPage() {
     openings: '1', experience: '', education: '',
     salaryMin: '', salaryMax: '', salaryType: 'monthly',
     isNegotiable: false, deadline: '',
-    isPremium: false, isUrgent: false, isFeatured: false,
+    isPremium: false, isUrgent: false,
     isWalkIn: false, walkInDate: '', walkInTime: '10:00 AM', walkInVenue: '', walkInContactPhone: ''
   });
 
@@ -134,7 +134,7 @@ export default function PostJobPage() {
       openings: '1', experience: '', education: '',
       salaryMin: '', salaryMax: '', salaryType: 'monthly',
       isNegotiable: false, deadline: '',
-      isPremium: false, isUrgent: false, isFeatured: false,
+      isPremium: false, isUrgent: false,
       isWalkIn: false, walkInDate: '', walkInTime: '10:00 AM', walkInVenue: '', walkInContactPhone: ''
     });
     setSkills([]);
@@ -198,7 +198,6 @@ export default function PostJobPage() {
         benefits,
         isPremium: form.isPremium,
         isUrgent: form.isUrgent,
-        isFeatured: form.isFeatured,
         isWalkIn: form.isWalkIn,
         walkInDate: form.walkInDate,
         walkInTime: form.walkInTime,
@@ -609,7 +608,6 @@ export default function PostJobPage() {
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Promotion Badges (Optional)</p>
               {[
                 { key: 'isUrgent', label: '⚡ Mark as Urgent Hiring', desc: 'Highlight vacancy on landing page and daily jobs', bg: '#FFFBEB', color: '#D97706' },
-                { key: 'isFeatured', label: '⭐ Featured Job Opportunity', desc: 'Pin to top of search results in Theni', bg: '#F5F3FF', color: '#7C3AED' },
                 { key: 'isPremium', label: '👑 Premium Company Post', desc: 'Distinguished styling with gold verified border', bg: '#EFF6FF', color: '#2563EB' },
               ].map(({ key, label, desc, bg, color }) => {
                 const isChecked = (form as any)[key];
@@ -697,13 +695,13 @@ export default function PostJobPage() {
             </h2>
 
             {/* Realistic preview card */}
-            <div className="rounded-3xl border-2 overflow-hidden bg-white shadow-xs" style={{ borderColor: form.isFeatured ? '#FDE68A' : form.isPremium ? '#BFDBFE' : '#E5E7EB' }}>
-              {(form.isFeatured || form.isPremium) && (
+            <div className="rounded-3xl border-2 overflow-hidden bg-white shadow-xs" style={{ borderColor: form.isPremium ? '#BFDBFE' : '#E5E7EB' }}>
+              {form.isPremium && (
                 <div
                   className="px-4 py-1.5 text-[10px] font-black text-center tracking-wider"
-                  style={{ background: form.isFeatured ? '#FEF3C7' : '#DBEAFE', color: form.isFeatured ? '#92400E' : '#1E40AF' }}
+                  style={{ background: '#DBEAFE', color: '#1E40AF' }}
                 >
-                  {form.isFeatured ? '⭐ FEATURED JOB VACANCY' : '👑 PREMIUM JOB OPPORTUNITY'}
+                  👑 PREMIUM JOB OPPORTUNITY
                 </div>
               )}
 

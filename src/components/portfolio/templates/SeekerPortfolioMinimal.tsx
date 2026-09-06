@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import {
   MapPin, Mail, Phone, ExternalLink, Download, Check,
   Share2, Calendar, ArrowUpRight,
@@ -92,6 +92,180 @@ export default function SeekerPortfolioMinimal({ site }: Props) {
     </section>
   );
 
+  // SEEKER-8 — same byte-identical blocks this file always rendered in a fixed sequence; only the
+  // SEQUENCE is now data-driven by each section's `order`. Hero and Contact stay fixed in their
+  // own structural positions (they render unconditionally as page chrome, not as one of these
+  // gated content blocks — see the SEEKER-7 claim row for why they were excluded from show/hide).
+  const aboutBlock = aboutSection && aboutData.content && (
+    <Section id="about" title="About">
+      <p className="text-sm leading-relaxed" style={{ color: text }}>{aboutData.content}</p>
+    </Section>
+  );
+
+  const experienceBlock = experienceSection && experienceList.length > 0 && (
+    <Section id="experience" title="Experience">
+      <div className="space-y-6">
+        {experienceList.map((exp, i) => (
+          <div key={exp.id} className="relative pl-5" style={{ borderLeft: i === experienceList.length - 1 ? 'none' : `1px solid ${muted}25` }}>
+            <span className="absolute -left-[3.5px] top-1.5 w-[7px] h-[7px] rounded-full" style={{ background: primary }} />
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+              <h3 className="text-sm font-bold">{exp.role}</h3>
+              <span className="text-[11px]" style={{ color: muted }}>
+                {exp.startDate} — {exp.isCurrent ? 'Present' : exp.endDate}
+              </span>
+            </div>
+            <p className="text-xs font-medium mt-0.5" style={{ color: primary }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</p>
+            {exp.description && <p className="text-xs mt-1.5 leading-relaxed" style={{ color: muted }}>{exp.description}</p>}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+
+  const educationBlock = educationSection && educationList.length > 0 && (
+    <Section id="education" title="Education">
+      <div className="space-y-4">
+        {educationList.map(edu => (
+          <div key={edu.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+            <div>
+              <h3 className="text-sm font-bold">{edu.degree}{edu.field ? `, ${edu.field}` : ''}</h3>
+              <p className="text-xs" style={{ color: muted }}>{edu.institution}</p>
+            </div>
+            <span className="text-[11px] shrink-0" style={{ color: muted }}>{edu.year}{edu.score ? ` · ${edu.score}` : ''}</span>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+
+  const skillsBlock = skillsSection && skillsList.length > 0 && (
+    <Section id="skills" title="Skills">
+      <div className="space-y-3">
+        {Object.entries(skillsByCategory).map(([cat, items]) => (
+          <div key={cat} className="flex flex-wrap gap-1.5">
+            {items.map(s => (
+              <span
+                key={s.id}
+                className="text-xs px-2.5 py-1 rounded-md border"
+                style={{ borderColor: `${muted}25`, color: text }}
+              >
+                {s.name}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+
+  const projectsBlock = projectsSection && projectsList.length > 0 && (
+    <Section id="projects" title="Projects">
+      <div className="space-y-5">
+        {projectsList.map(p => (
+          <div key={p.id}>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-bold">{p.title}</h3>
+              {p.liveUrl && (
+                <a href={safeExternalUrl(p.liveUrl)} target="_blank" rel="noopener noreferrer" style={{ color: primary }}>
+                  <ArrowUpRight size={13} />
+                </a>
+              )}
+            </div>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{p.description}</p>
+            {p.techStack?.length > 0 && (
+              <p className="text-[11px] mt-1.5" style={{ color: primary }}>{p.techStack.join(' · ')}</p>
+            )}
+            <div className="flex gap-3 mt-1.5">
+              {p.liveUrl && <a href={safeExternalUrl(p.liveUrl)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold underline" style={{ color: text }}>Live</a>}
+              {p.githubUrl && <a href={safeExternalUrl(p.githubUrl)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold underline" style={{ color: text }}>Code</a>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+
+  const certificationsBlock = certsSection && certsList.length > 0 && (
+    <Section id="certifications" title="Certifications">
+      <div className="space-y-2.5">
+        {certsList.map(c => (
+          <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <a
+              href={safeExternalUrl(c.credentialUrl)}
+              target={c.credentialUrl ? '_blank' : undefined}
+              rel="noopener noreferrer"
+              className="text-sm font-semibold flex items-center gap-1"
+              style={{ color: c.credentialUrl ? primary : text }}
+            >
+              {c.name}
+              {c.credentialUrl && <ExternalLink size={11} />}
+            </a>
+            <span className="text-[11px]" style={{ color: muted }}>{c.issuer} · {c.issueDate}</span>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+
+  const achievementsBlock = achievementsSection && achievementsList.length > 0 && (
+    <Section id="achievements" title="Achievements">
+      <div className="space-y-3">
+        {achievementsList.map(ach => (
+          <div key={ach.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <div>
+              <h3 className="text-sm font-bold">{ach.title}</h3>
+              {ach.organization && <p className="text-xs" style={{ color: muted }}>{ach.organization}</p>}
+              {ach.description && <p className="text-xs mt-0.5" style={{ color: muted }}>{ach.description}</p>}
+            </div>
+            {ach.date && <span className="text-[11px] shrink-0" style={{ color: muted }}>{ach.date}</span>}
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+
+  const renderCustomSectionBlock = (section: typeof customSections[number]) => {
+    const entries: CustomSectionEntry[] = section.data?.entries || [];
+    if (entries.length === 0) return null;
+    return (
+      <Section id={`custom-${section.id}`} title={section.title || 'More'}>
+        <div className="space-y-3">
+          {entries.map(entry => (
+            <div key={entry.id}>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <h3 className="text-sm font-bold">{entry.title}</h3>
+                {entry.date && <span className="text-[11px] shrink-0" style={{ color: muted }}>{entry.date}</span>}
+              </div>
+              {entry.description && <p className="text-xs mt-0.5" style={{ color: muted }}>{entry.description}</p>}
+              {entry.link && (
+                <a href={safeExternalUrl(entry.link)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold underline" style={{ color: primary }}>
+                  Learn more
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </Section>
+    );
+  };
+
+  const ORDERABLE_STANDARD_BLOCKS: Record<string, React.ReactNode> = {
+    about: aboutBlock,
+    experience: experienceBlock,
+    education: educationBlock,
+    skills: skillsBlock,
+    projects: projectsBlock,
+    certifications: certificationsBlock,
+    achievements: achievementsBlock,
+  };
+  const ORDERABLE_TYPES = new Set(Object.keys(ORDERABLE_STANDARD_BLOCKS));
+  const orderedMiddleSections = [
+    ...sections
+      .filter(s => s.visible && ORDERABLE_TYPES.has(s.type))
+      .map(s => ({ key: s.id, order: s.order ?? 0, node: ORDERABLE_STANDARD_BLOCKS[s.type] })),
+    ...customSections.map(s => ({ key: s.id, order: s.order ?? 0, node: renderCustomSectionBlock(s) })),
+  ].sort((a, b) => a.order - b.order);
+
   return (
     <div style={{ fontFamily: `'${font}', sans-serif`, background: bg, color: text }} className="min-h-screen">
       <div className="max-w-2xl mx-auto px-6 sm:px-8">
@@ -156,166 +330,10 @@ export default function SeekerPortfolioMinimal({ site }: Props) {
           )}
         </div>
 
-        {/* ── About ── */}
-        {aboutSection && aboutData.content && (
-          <Section id="about" title="About">
-            <p className="text-sm leading-relaxed" style={{ color: text }}>{aboutData.content}</p>
-          </Section>
-        )}
-
-        {/* ── Experience (vertical timeline) ── */}
-        {experienceSection && experienceList.length > 0 && (
-          <Section id="experience" title="Experience">
-            <div className="space-y-6">
-              {experienceList.map((exp, i) => (
-                <div key={exp.id} className="relative pl-5" style={{ borderLeft: i === experienceList.length - 1 ? 'none' : `1px solid ${muted}25` }}>
-                  <span className="absolute -left-[3.5px] top-1.5 w-[7px] h-[7px] rounded-full" style={{ background: primary }} />
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                    <h3 className="text-sm font-bold">{exp.role}</h3>
-                    <span className="text-[11px]" style={{ color: muted }}>
-                      {exp.startDate} — {exp.isCurrent ? 'Present' : exp.endDate}
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium mt-0.5" style={{ color: primary }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</p>
-                  {exp.description && <p className="text-xs mt-1.5 leading-relaxed" style={{ color: muted }}>{exp.description}</p>}
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* ── Education ── */}
-        {educationSection && educationList.length > 0 && (
-          <Section id="education" title="Education">
-            <div className="space-y-4">
-              {educationList.map(edu => (
-                <div key={edu.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                  <div>
-                    <h3 className="text-sm font-bold">{edu.degree}{edu.field ? `, ${edu.field}` : ''}</h3>
-                    <p className="text-xs" style={{ color: muted }}>{edu.institution}</p>
-                  </div>
-                  <span className="text-[11px] shrink-0" style={{ color: muted }}>{edu.year}{edu.score ? ` · ${edu.score}` : ''}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* ── Skills (pills, grouped) ── */}
-        {skillsSection && skillsList.length > 0 && (
-          <Section id="skills" title="Skills">
-            <div className="space-y-3">
-              {Object.entries(skillsByCategory).map(([cat, items]) => (
-                <div key={cat} className="flex flex-wrap gap-1.5">
-                  {items.map(s => (
-                    <span
-                      key={s.id}
-                      className="text-xs px-2.5 py-1 rounded-md border"
-                      style={{ borderColor: `${muted}25`, color: text }}
-                    >
-                      {s.name}
-                    </span>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* ── Projects ── */}
-        {projectsSection && projectsList.length > 0 && (
-          <Section id="projects" title="Projects">
-            <div className="space-y-5">
-              {projectsList.map(p => (
-                <div key={p.id}>
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm font-bold">{p.title}</h3>
-                    {p.liveUrl && (
-                      <a href={safeExternalUrl(p.liveUrl)} target="_blank" rel="noopener noreferrer" style={{ color: primary }}>
-                        <ArrowUpRight size={13} />
-                      </a>
-                    )}
-                  </div>
-                  <p className="text-xs mt-1 leading-relaxed" style={{ color: muted }}>{p.description}</p>
-                  {p.techStack?.length > 0 && (
-                    <p className="text-[11px] mt-1.5" style={{ color: primary }}>{p.techStack.join(' · ')}</p>
-                  )}
-                  <div className="flex gap-3 mt-1.5">
-                    {p.liveUrl && <a href={safeExternalUrl(p.liveUrl)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold underline" style={{ color: text }}>Live</a>}
-                    {p.githubUrl && <a href={safeExternalUrl(p.githubUrl)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold underline" style={{ color: text }}>Code</a>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* ── Certifications ── */}
-        {certsSection && certsList.length > 0 && (
-          <Section id="certifications" title="Certifications">
-            <div className="space-y-2.5">
-              {certsList.map(c => (
-                <div key={c.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <a
-                    href={safeExternalUrl(c.credentialUrl)}
-                    target={c.credentialUrl ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold flex items-center gap-1"
-                    style={{ color: c.credentialUrl ? primary : text }}
-                  >
-                    {c.name}
-                    {c.credentialUrl && <ExternalLink size={11} />}
-                  </a>
-                  <span className="text-[11px]" style={{ color: muted }}>{c.issuer} · {c.issueDate}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* ── Achievements ── */}
-        {achievementsSection && achievementsList.length > 0 && (
-          <Section id="achievements" title="Achievements">
-            <div className="space-y-3">
-              {achievementsList.map(ach => (
-                <div key={ach.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
-                  <div>
-                    <h3 className="text-sm font-bold">{ach.title}</h3>
-                    {ach.organization && <p className="text-xs" style={{ color: muted }}>{ach.organization}</p>}
-                    {ach.description && <p className="text-xs mt-0.5" style={{ color: muted }}>{ach.description}</p>}
-                  </div>
-                  {ach.date && <span className="text-[11px] shrink-0" style={{ color: muted }}>{ach.date}</span>}
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* ── Custom sections ── */}
-        {customSections.map(section => {
-          const entries: CustomSectionEntry[] = section.data?.entries || [];
-          if (entries.length === 0) return null;
-          return (
-            <Section key={section.id} id={`custom-${section.id}`} title={section.title || 'More'}>
-              <div className="space-y-3">
-                {entries.map(entry => (
-                  <div key={entry.id}>
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-                      <h3 className="text-sm font-bold">{entry.title}</h3>
-                      {entry.date && <span className="text-[11px] shrink-0" style={{ color: muted }}>{entry.date}</span>}
-                    </div>
-                    {entry.description && <p className="text-xs mt-0.5" style={{ color: muted }}>{entry.description}</p>}
-                    {entry.link && (
-                      <a href={safeExternalUrl(entry.link)} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold underline" style={{ color: primary }}>
-                        Learn more
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Section>
-          );
-        })}
+        {/* ── SEEKER-8: ORDERED STANDARD + CUSTOM SECTIONS ── */}
+        {orderedMiddleSections.map(item => (
+          <Fragment key={item.key}>{item.node}</Fragment>
+        ))}
 
         {/* ── Contact footer ── */}
         <footer className="py-10 border-t mt-2" style={{ borderColor: `${muted}20` }}>

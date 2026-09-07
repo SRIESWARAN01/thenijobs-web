@@ -12,6 +12,7 @@ import {
 import { TN_DISTRICTS, FounderProfile } from '@/lib/types';
 import { hasFeaturePermission } from '@/lib/plans';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
 import { useCollection } from '@/hooks/useFirestore';
 import { useUploadFile } from '@/hooks/useStorage';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
@@ -73,6 +74,7 @@ function calcCompletion(data: typeof DEFAULT_COMPANY): number {
 
 export default function CompanyProfilePage() {
   const { user } = useAuth();
+  const toast = useToast();
 
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
@@ -151,7 +153,7 @@ export default function CompanyProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!resolvedCompany?.id) {
-      alert('Please save your company profile first, then add a cover banner.');
+      toast.error('Please save your company profile first, then add a cover banner.');
       return;
     }
     try {
@@ -160,7 +162,7 @@ export default function CompanyProfilePage() {
       update('coverUrl', url);
     } catch (err) {
       console.error(err);
-      alert('Upload failed: ' + (err as Error).message);
+      toast.error('Upload failed: ' + (err as Error).message);
     }
   };
 
@@ -168,7 +170,7 @@ export default function CompanyProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!resolvedCompany?.id) {
-      alert('Please save your company profile first, then add a logo.');
+      toast.error('Please save your company profile first, then add a logo.');
       return;
     }
     try {
@@ -177,7 +179,7 @@ export default function CompanyProfilePage() {
       update('logoUrl', url);
     } catch (err) {
       console.error(err);
-      alert('Upload failed: ' + (err as Error).message);
+      toast.error('Upload failed: ' + (err as Error).message);
     }
   };
 
@@ -185,7 +187,7 @@ export default function CompanyProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!resolvedCompany?.id) {
-      alert('Please save your company profile first, then add gallery photos.');
+      toast.error('Please save your company profile first, then add gallery photos.');
       return;
     }
     try {
@@ -196,7 +198,7 @@ export default function CompanyProfilePage() {
       setCompany(prev => ({ ...prev, gallery: newGallery }));
     } catch (err) {
       console.error(err);
-      alert('Upload failed: ' + (err as Error).message);
+      toast.error('Upload failed: ' + (err as Error).message);
     }
   };
 

@@ -50,7 +50,16 @@ export default function CompanyIDCard({ company }: CompanyIDCardProps) {
   const contactName = company.contactPerson || company.ownerName || 'Representative';
   const cleanPhone = (company.phone || '').replace(/[^0-9+]/g, '');
   const cleanWa = (company.whatsapp || company.phone || '').replace(/[^0-9]/g, '');
-  const topServices = (company.services || []).slice(0, 3);
+  // IDCARD-1: Company.services (src/lib/types/index.ts) is typed (ServiceItem | string)[] --
+  // rendering an entry directly crashed with "Objects are not valid as a React child" the first
+  // time this card was shown on a company whose services are the object shape, caught live on
+  // the newly-added public /company/[slug] render. Normalize to strings here so both callers
+  // (this public page and the pre-existing /employer/id-card page) are safe, matching the same
+  // typeof-guard CompanyProfileClient.tsx's own "Category & Service Pills" already uses.
+  const topServices = (company.services || [])
+    .map((s: any) => (typeof s === 'string' ? s : s?.name))
+    .filter(Boolean)
+    .slice(0, 3);
 
   const handleDownload = useCallback(async () => {
     if (!cardRef.current || downloading) return;

@@ -146,9 +146,13 @@ export default function CompanyProfilePage() {
 
   const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
+    if (!file) return;
+    if (!resolvedCompany?.id) {
+      alert('Please save your company profile first, then add a cover banner.');
+      return;
+    }
     try {
-      const url = await uploadFile(file, `companies/${user.uid}/cover_${Date.now()}`);
+      const url = await uploadFile(file, `companies/${resolvedCompany.id}/cover/cover_${Date.now()}`);
       update('coverUrl', url);
     } catch (err) {
       console.error(err);
@@ -158,9 +162,13 @@ export default function CompanyProfilePage() {
 
   const handleUploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
+    if (!file) return;
+    if (!resolvedCompany?.id) {
+      alert('Please save your company profile first, then add a logo.');
+      return;
+    }
     try {
-      const url = await uploadFile(file, `companies/${user.uid}/logo_${Date.now()}`);
+      const url = await uploadFile(file, `companies/${resolvedCompany.id}/logo/logo_${Date.now()}`);
       update('logoUrl', url);
     } catch (err) {
       console.error(err);
@@ -170,9 +178,13 @@ export default function CompanyProfilePage() {
 
   const handleUploadGallery = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.uid) return;
+    if (!file) return;
+    if (!resolvedCompany?.id) {
+      alert('Please save your company profile first, then add gallery photos.');
+      return;
+    }
     try {
-      const url = await uploadFile(file, `companies/${user.uid}/gallery_${index}_${Date.now()}`);
+      const url = await uploadFile(file, `companies/${resolvedCompany.id}/gallery/gallery_${index}_${Date.now()}`);
       const newGallery = [...company.gallery];
       newGallery[index] = url;
       setCompany(prev => ({ ...prev, gallery: newGallery }));

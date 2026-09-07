@@ -88,6 +88,9 @@ export default function CompanyProfilePage() {
   const [saving, setSaving] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'products' | 'services' | 'portfolio' | 'founder' | 'reviews' | 'sections'>('basic');
+  const [coverBroken, setCoverBroken] = useState(false);
+  const [logoBroken, setLogoBroken] = useState(false);
+  const [galleryBroken, setGalleryBroken] = useState<Record<number, boolean>>({});
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -153,6 +156,7 @@ export default function CompanyProfilePage() {
     }
     try {
       const url = await uploadFile(file, `companies/${resolvedCompany.id}/cover/cover_${Date.now()}`);
+      setCoverBroken(false);
       update('coverUrl', url);
     } catch (err) {
       console.error(err);
@@ -169,6 +173,7 @@ export default function CompanyProfilePage() {
     }
     try {
       const url = await uploadFile(file, `companies/${resolvedCompany.id}/logo/logo_${Date.now()}`);
+      setLogoBroken(false);
       update('logoUrl', url);
     } catch (err) {
       console.error(err);
@@ -185,6 +190,7 @@ export default function CompanyProfilePage() {
     }
     try {
       const url = await uploadFile(file, `companies/${resolvedCompany.id}/gallery/gallery_${index}_${Date.now()}`);
+      setGalleryBroken(prev => ({ ...prev, [index]: false }));
       const newGallery = [...company.gallery];
       newGallery[index] = url;
       setCompany(prev => ({ ...prev, gallery: newGallery }));
@@ -499,7 +505,7 @@ export default function CompanyProfilePage() {
                   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); coverInputRef.current?.click(); }
                 }}
               >
-                {company.coverUrl ? (
+                {company.coverUrl && !coverBroken ? (
                   <>
                     <div
                       className="absolute inset-0 bg-cover bg-center blur-xs opacity-25 scale-105"
@@ -509,6 +515,7 @@ export default function CompanyProfilePage() {
                       src={company.coverUrl}
                       alt="Cover Banner"
                       className="relative z-10 w-full h-full object-contain object-center"
+                      onError={() => setCoverBroken(true)}
                     />
                   </>
                 ) : (
@@ -553,8 +560,8 @@ export default function CompanyProfilePage() {
                       onChange={handleUploadLogo}
                     />
                     <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 border-4 border-white shadow-md flex items-center justify-center overflow-hidden">
-                      {company.logoUrl ? (
-                        <img src={company.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                      {company.logoUrl && !logoBroken ? (
+                        <img src={company.logoUrl} alt="Logo" className="w-full h-full object-cover" onError={() => setLogoBroken(true)} />
                       ) : (
                         <Building2 size={32} className="text-blue-600" />
                       )}
@@ -786,9 +793,14 @@ export default function CompanyProfilePage() {
                       className="hidden"
                       onChange={(e) => handleUploadGallery(e, i)}
                     />
-                    {imgUrl ? (
+                    {imgUrl && !galleryBroken[i] ? (
                       <>
-                        <img src={imgUrl} alt={`Gallery ${i}`} className="w-full h-full object-cover" />
+                        <img
+                          src={imgUrl}
+                          alt={`Gallery ${i}`}
+                          className="w-full h-full object-cover"
+                          onError={() => setGalleryBroken(prev => ({ ...prev, [i]: true }))}
+                        />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Upload size={18} className="text-white" />
                         </div>

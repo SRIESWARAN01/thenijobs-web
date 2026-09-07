@@ -69,11 +69,6 @@ export default function PricingPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const handleSelectPlan = (plan: (typeof SUBSCRIPTION_PLANS)[number]) => {
-    if (plan.price === 0) {
-      router.push('/company/register');
-      return;
-    }
-
     if (!user) {
       router.push('/login?redirect=/pricing');
       return;
@@ -207,7 +202,7 @@ export default function PricingPage() {
                         : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
                   >
-                    {plan.price === 0 ? 'Start Free' : `Select ${plan.name}`}
+                    {`Select ${plan.name}`}
                     <ArrowRight size={13} />
                   </button>
                 </div>
@@ -303,17 +298,17 @@ export default function PricingPage() {
         <div className="mt-12 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center text-white relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}>
           <h2 className="text-lg sm:text-xl font-extrabold" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Still deciding? Start free, upgrade whenever you&apos;re ready.
+            Still deciding? Start with Basic, upgrade whenever you&apos;re ready.
           </h2>
           <p className="text-blue-100 text-xs sm:text-sm mt-1.5 max-w-md mx-auto">
-            No credit card required for the Free plan. Upgrade in a few clicks from your dashboard.
+            Get verified for ₹999/yr. Upgrade in a few clicks from your dashboard.
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
             <Link
               href="/company/register"
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-blue-700 bg-white hover:bg-blue-50 transition-all shadow-sm"
             >
-              Start Free <ArrowRight size={14} />
+              Get Started <ArrowRight size={14} />
             </Link>
             <a
               href="#top"

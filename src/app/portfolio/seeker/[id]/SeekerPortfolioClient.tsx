@@ -123,26 +123,136 @@ export default function SeekerPortfolioClient({ seekerId, initialData }: { seeke
   }, [seekerId]);
 
   // Google Search Indexing Matrix: Premium/Enterprise = INDEX; Free/Basic/Standard = NOINDEX
+  //
+  // SEO-GAP-1: this always called document.createElement('meta') + appendChild, so it never
+  // found the root layout's own server-rendered `<meta name="robots" content="index, follow">`
+  // (src/app/layout.tsx's default `robots` metadata) -- it just appended a SECOND, conflicting
+  // tag after it. A page could end up with two robots meta tags disagreeing with each other,
+  // which crawlers explicitly document as undefined/unreliable behavior. Fixed to find and
+  // update the existing tag in place, and to restore whatever value it found on cleanup
+  // instead of deleting the tag outright.
   useEffect(() => {
     const plan = ((seeker as any)?.subscriptionPlan || 'free').toLowerCase();
     const allowSEO = ['premium', 'enterprise'].includes(plan);
+    const content = allowSEO ? 'index, follow' : 'noindex, nofollow';
 
-    const meta = document.createElement('meta');
-    meta.name = 'robots';
-    meta.content = allowSEO ? 'index, follow' : 'noindex, nofollow';
-    document.head.appendChild(meta);
+    const existing = [...document.querySelectorAll('meta[name="robots"]')] as HTMLMetaElement[];
+    let meta = existing[0] || null;
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'robots');
+      document.head.appendChild(meta);
+    }
+    const previousContent = meta.getAttribute('content');
+    meta.setAttribute('content', content);
+    // Next's own metadata layer can re-insert its static default robots tag independently of
+    // this effect's timing (observed live: a second tag reappearing after this one already ran)
+    // -- two disagreeing robots tags is worse than one, so any extra tag past the first is
+    // dropped rather than left to coexist.
+    existing.slice(1).forEach((tag) => tag.remove());
 
     return () => {
-      meta.remove();
+      if (meta && previousContent !== null) meta.setAttribute('content', previousContent);
     };
   }, [seeker]);
 
-  // Update page title
+  // SEO-GAP-1: this used to be title-only -- no meta description, no canonical, no Open
+  // Graph/Twitter cards (so sharing a seeker's portfolio link on WhatsApp showed a blank
+  // preview), and no structured data. Mirrors the setMeta/setLink helper pattern already
+  // established for CompanyProfilePageClient.tsx and MarketplaceItemPageClient.tsx. Emitted
+  // regardless of the robots index/noindex gate above -- canonical/JSON-LD are simply unused
+  // by crawlers on a noindex page (not a policy issue), and OG/Twitter tags still matter for
+  // a shared link's social preview even when the page isn't search-indexed.
   useEffect(() => {
-    if (!seeker) return;
+    if (!seeker || !seekerId) return;
+
     const name = seeker.name || userName || 'Job Seeker';
-    document.title = `${name} — Candidate Digital Portfolio | THENIJOBS`;
-  }, [seeker, userName]);
+    const role = seeker.currentRole || '';
+    const district = seeker.district || '';
+    const title = `${name} — Candidate Digital Portfolio | THENIJOBS`;
+    document.title = title;
+
+    const skillNames = (seeker.skills || [])
+      .map((s) => (typeof s === 'string' ? s : s?.name))
+      .filter(Boolean)
+      .slice(0, 5);
+    const description = (
+      seeker.careerObjective || seeker.aboutMe ||
+      `${name}${role ? `, ${role}` : ''}${district ? ` in ${district}, Tamil Nadu` : ''}.${skillNames.length ? ` Skills: ${skillNames.join(', ')}.` : ''} View this candidate's digital portfolio on THENIJOBS.`
+    ).slice(0, 160);
+    const canonicalUrl = `https://www.thenijobs.com/portfolio/seeker/${seekerId}`;
+    const photoUrl = seeker.photoUrl || seeker.profilePhotoUrl || '';
+
+    const setMeta = (metaName: string, content: string, property?: boolean) => {
+      if (!content) return;
+      const attr = property ? 'property' : 'name';
+      let tag = document.querySelector(`meta[${attr}="${metaName}"]`) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute(attr, metaName);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    const setLink = (rel: string, href: string) => {
+      if (!href) return;
+      let link = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.setAttribute('rel', rel);
+        document.head.appendChild(link);
+      }
+      link.setAttribute('href', href);
+    };
+
+    setMeta('description', description);
+    setLink('canonical', canonicalUrl);
+
+    setMeta('og:title', title, true);
+    setMeta('og:description', description, true);
+    setMeta('og:type', 'profile', true);
+    setMeta('og:url', canonicalUrl, true);
+    setMeta('og:site_name', 'THENIJOBS', true);
+    if (photoUrl) setMeta('og:image', photoUrl, true);
+
+    setMeta('twitter:card', photoUrl ? 'summary_large_image' : 'summary');
+    setMeta('twitter:title', title);
+    setMeta('twitter:description', description);
+    if (photoUrl) setMeta('twitter:image', photoUrl);
+
+    const jsonLd: Record<string, any> = {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name,
+      description: description || undefined,
+      image: photoUrl || undefined,
+      jobTitle: role || undefined,
+      address: district ? {
+        '@type': 'PostalAddress',
+        addressLocality: district,
+        addressRegion: 'Tamil Nadu',
+        addressCountry: 'IN',
+      } : undefined,
+      knowsAbout: skillNames.length ? skillNames : undefined,
+      url: canonicalUrl,
+    };
+    const cleanJsonLd = JSON.parse(JSON.stringify(jsonLd));
+
+    let scriptTag = document.getElementById('seeker-portfolio-jsonld') as HTMLScriptElement | null;
+    if (!scriptTag) {
+      scriptTag = document.createElement('script');
+      scriptTag.id = 'seeker-portfolio-jsonld';
+      scriptTag.type = 'application/ld+json';
+      document.head.appendChild(scriptTag);
+    }
+    scriptTag.textContent = JSON.stringify(cleanJsonLd);
+
+    return () => {
+      document.getElementById('seeker-portfolio-jsonld')?.remove();
+      document.querySelector('link[rel="canonical"]')?.remove();
+    };
+  }, [seeker, userName, seekerId]);
 
   if (loading) {
     return (

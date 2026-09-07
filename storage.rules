@@ -51,23 +51,25 @@ service firebase.storage {
 
     // ===== COMPANY LOGOS =====
     // P0 FIX: Only the company owner (not any authenticated user) can upload
+    // STORAGE-1: admin manages a company's website without employer login (ADMINWEB-1) — the
+    // owner-or-admin write still enforces type/size, same as every owner upload.
     match /companies/{companyId}/logo/{fileName} {
       allow read:  if true;
-      allow write: if isCompanyOwner(companyId) && isImage() && isUnder5MB();
+      allow write: if (isCompanyOwner(companyId) || isAdmin()) && isImage() && isUnder5MB();
       allow delete: if isCompanyOwner(companyId) || isAdmin();
     }
 
     // ===== COMPANY COVER PHOTOS =====
     match /companies/{companyId}/cover/{fileName} {
       allow read:  if true;
-      allow write: if isCompanyOwner(companyId) && isImage() && isUnder10MB();
+      allow write: if (isCompanyOwner(companyId) || isAdmin()) && isImage() && isUnder10MB();
       allow delete: if isCompanyOwner(companyId) || isAdmin();
     }
 
     // ===== COMPANY GALLERY =====
     match /companies/{companyId}/gallery/{fileName} {
       allow read:  if true;
-      allow write: if isCompanyOwner(companyId) &&
+      allow write: if (isCompanyOwner(companyId) || isAdmin()) &&
         (isImage() || request.resource.contentType.matches('video/.*')) &&
         isUnder10MB();
       allow delete: if isCompanyOwner(companyId) || isAdmin();

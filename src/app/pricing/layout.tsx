@@ -1,17 +1,16 @@
 import type { Metadata } from 'next';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 
-// TRUST-5: the description below used to hard-code "₹2.74/day (₹999/yr) for 15 job postings".
-// Every number in it was wrong — the real entry paid plan is ₹480/yr at ₹1.31/day for 10 job
-// postings — and ₹999 is not a typo, it is the same stale 'basic' price PAY-1 found and removed
-// from the payment route's dead price table, still alive here in the one place it reaches
-// search results before a visitor opens the page at all.
+// TRUST-5: the description below used to hard-code "₹2.74/day (₹999/yr) for 15 job postings",
+// which was wrong at the time — the entry paid plan was 'standard' at ₹480/yr. PRICING-1
+// (2026-09-07) reconciled the plan table to the owner's final numbers and reintroduced a real
+// 'basic' tier at ₹999/yr as the new entry paid plan, so this now reads correctly from
+// SUBSCRIPTION_PLANS again rather than by coincidence.
 //
-// Rather than replace one hard-coded number with another that can go stale the same way,
-// this reads the 'standard' plan directly from SUBSCRIPTION_PLANS — the source PAY-1 already
-// made every other price in the app derive from — so a future price change updates this
-// sentence instead of leaving a sixth stale copy for someone else to find.
-const entryPaidPlan = SUBSCRIPTION_PLANS.find((p) => p.slug === 'standard');
+// Reads the entry paid plan directly from SUBSCRIPTION_PLANS — the source PAY-1 already made
+// every other price in the app derive from — so a future price change updates this sentence
+// instead of leaving a stale copy for someone else to find.
+const entryPaidPlan = SUBSCRIPTION_PLANS.find((p) => p.slug === 'basic');
 const postingsFeature = entryPaidPlan?.features.find((f) => /Active Job Postings?/i.test(f));
 const postingsCount = postingsFeature?.match(/\d+/)?.[0] ?? '10';
 const priceLine = entryPaidPlan

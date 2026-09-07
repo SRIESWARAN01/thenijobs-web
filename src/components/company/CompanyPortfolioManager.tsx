@@ -105,7 +105,7 @@ export default function CompanyPortfolioManager({
         </span>
         <h3 className="mt-3 text-xl font-bold text-slate-900">Portfolio & Projects Showcase Disabled</h3>
         <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-          Upgrade to our <strong className="text-slate-900 font-semibold">Standard Package (₹480/yr)</strong> or higher to highlight completed works, achievements, photos, client projects, and case studies.
+          Upgrade to our <strong className="text-slate-900 font-semibold">Standard Package (₹1,800/yr)</strong> or higher to highlight completed works, achievements, photos, client projects, and case studies.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Link

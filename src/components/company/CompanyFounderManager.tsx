@@ -37,7 +37,7 @@ export default function CompanyFounderManager({
         </span>
         <h3 className="mt-3 text-xl font-bold text-slate-900">Founder & Leadership Profile Disabled</h3>
         <p className="mx-auto mt-2 max-w-md text-sm text-slate-600">
-          Upgrade to our <strong className="text-slate-900 font-semibold">Standard Package (₹480/yr)</strong> or higher to feature Founder details, leadership messages, native location, experience, and LinkedIn links.
+          Upgrade to our <strong className="text-slate-900 font-semibold">Standard Package (₹1,800/yr)</strong> or higher to feature Founder details, leadership messages, native location, experience, and LinkedIn links.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Link

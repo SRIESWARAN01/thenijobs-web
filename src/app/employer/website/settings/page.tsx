@@ -184,8 +184,14 @@ export default function WebsiteSettingsPage() {
             </h3>
             <TheniJobsIdCard
               name={company?.name || site.branding.companyName || 'Company Name'}
-              theniJobsId={site.theniJobsId || 'TJ-C-00001'}
-              registrationNumber="TNJ-2026-00001"
+              // IDCARD-1: these were a hardcoded 'TJ-C-00001' and 'TNJ-2026-00001' -- every
+              // company saw the identical fake ID/registration number. company.id is real and
+              // unique (same TNJ-C-<id> convention CompanyIDCard.tsx already uses);
+              // registrationNumber is a real, optional Company field with no fabricated
+              // fallback -- it stays undefined (hidden by TheniJobsIdCard's own conditional)
+              // until an owner has a real one on file, never invented.
+              theniJobsId={company?.id ? `TNJ-C-${company.id.slice(0, 8).toUpperCase()}` : (site.theniJobsId || '')}
+              registrationNumber={company?.registrationNumber}
               roleOrTagline={company?.tagline || site.branding.tagline || 'Company'}
               logoUrl={company?.logoUrl || site.branding.logo}
               plan={company?.subscriptionPlan || 'free'}
@@ -201,7 +207,7 @@ export default function WebsiteSettingsPage() {
             url={siteUrl}
             title="Portfolio QR Code"
             subtitle="Scan with smartphone to open public website"
-            theniJobsId={site.theniJobsId || 'TJ-C-00001'}
+            theniJobsId={company?.id ? `TNJ-C-${company.id.slice(0, 8).toUpperCase()}` : (site.theniJobsId || '')}
           />
         </div>
       </div>

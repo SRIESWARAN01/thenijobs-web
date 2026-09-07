@@ -37,7 +37,6 @@ export default function MarketplacePage() {
 
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItemModal, setSelectedItemModal] = useState<any | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,13 +76,18 @@ export default function MarketplacePage() {
       if (company.products && Array.isArray(company.products)) {
         company.products.forEach((prod: any, idx: number) => {
           list.push({
-            id: prod.id || `${company.id}-prod-${idx}`,
+            // Only a genuinely stored id resolves on the detail page (getAllMarketplaceItemParamsServer
+            // and MarketplaceItemPageClient both match on the item's own `id` field) — a synthetic
+            // fallback here would link every legacy, id-less entry to a page that can never find it.
+            id: typeof prod === 'object' && prod.id ? prod.id : null,
+            key: (typeof prod === 'object' && prod.id) || `${company.id}-prod-${idx}`,
             name: typeof prod === 'string' ? prod : prod.name || prod.title,
             description: typeof prod === 'object' ? prod.description : '',
             price: typeof prod === 'object' ? prod.price : null,
             priceRange: typeof prod === 'object' ? prod.priceRange : null,
             category: typeof prod === 'object' ? prod.category || company.category : company.category,
             imageUrl: typeof prod === 'object' ? prod.imageUrl : null,
+            featured: typeof prod === 'object' && prod.featured === true,
             type: 'product' as const,
             company: {
               id: company.id,
@@ -109,12 +113,15 @@ export default function MarketplacePage() {
       if (company.services && Array.isArray(company.services)) {
         company.services.forEach((srv: any, idx: number) => {
           list.push({
-            id: srv.id || `${company.id}-srv-${idx}`,
+            // See allProducts above: only a genuinely stored id resolves on the detail page.
+            id: typeof srv === 'object' && srv.id ? srv.id : null,
+            key: (typeof srv === 'object' && srv.id) || `${company.id}-srv-${idx}`,
             name: typeof srv === 'string' ? srv : srv.title || srv.name,
             description: typeof srv === 'object' ? srv.description || srv.desc : '',
             price: typeof srv === 'object' ? srv.startingPrice || srv.price : null,
             category: typeof srv === 'object' ? srv.category || company.category : company.category,
             imageUrl: typeof srv === 'object' ? srv.imageUrl : null,
+            featured: typeof srv === 'object' && srv.featured === true,
             type: 'service' as const,
             company: {
               id: company.id,
@@ -133,6 +140,14 @@ export default function MarketplacePage() {
     return list;
   }, [companies]);
 
+  // Default sort: employer-declared Featured items first, then newest first. `id` is a real
+  // Date.now() creation timestamp (CompanyProductsManager.tsx / CompanyServicesManager.tsx),
+  // never a fabricated popularity signal — there is no view/order count tracked to sort by.
+  const byFeaturedThenNewest = (a: { featured?: boolean; id: string }, b: { featured?: boolean; id: string }) => {
+    if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1;
+    return (Number(b.id) || 0) - (Number(a.id) || 0);
+  };
+
   // Filtered lists
   const filteredProducts = useMemo(() => {
     return allProducts.filter(item => {
@@ -146,7 +161,7 @@ export default function MarketplacePage() {
       const matchVer = !verifiedOnly || item.company.isVerified;
 
       return matchSearch && matchLoc && matchCat && matchVer;
-    });
+    }).sort(byFeaturedThenNewest);
   }, [allProducts, searchQuery, selectedLocation, selectedCategory, verifiedOnly]);
 
   const filteredServices = useMemo(() => {
@@ -161,7 +176,7 @@ export default function MarketplacePage() {
       const matchVer = !verifiedOnly || item.company.isVerified;
 
       return matchSearch && matchLoc && matchCat && matchVer;
-    });
+    }).sort(byFeaturedThenNewest);
   }, [allServices, searchQuery, selectedLocation, selectedCategory, verifiedOnly]);
 
   const filteredCompanies = useMemo(() => {
@@ -311,28 +326,61 @@ export default function MarketplacePage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {filteredProducts.slice(0, activeTab === 'all' ? 8 : 50).map(prod => (
+                {filteredProducts.slice(0, activeTab === 'all' ? 8 : 50).map(prod => {
+                  const detailHref = prod.id ? `/marketplace/product/${prod.company.slug}/${prod.id}` : null;
+                  return (
                   <div
-                    key={prod.id}
+                    key={prod.key}
                     className="bg-white rounded-3xl border border-slate-200 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
                   >
-                    <div className="h-40 bg-slate-100 relative flex items-center justify-center overflow-hidden">
-                      {prod.imageUrl ? (
-                        <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-blue-50/50 flex items-center justify-center text-blue-400">
-                          <Package size={32} />
-                        </div>
-                      )}
-                      <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-white/90 backdrop-blur-md text-slate-900 shadow-xs">
-                        {prod.category || 'Product'}
-                      </span>
-                    </div>
+                    {detailHref ? (
+                      <Link href={detailHref} className="h-40 bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                        {prod.imageUrl ? (
+                          <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-blue-50/50 flex items-center justify-center text-blue-400">
+                            <Package size={32} />
+                          </div>
+                        )}
+                        {prod.featured && (
+                          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 shadow-xs flex items-center gap-0.5">
+                            <Sparkles size={10} /> Featured
+                          </span>
+                        )}
+                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-white/90 backdrop-blur-md text-slate-900 shadow-xs">
+                          {prod.category || 'Product'}
+                        </span>
+                      </Link>
+                    ) : (
+                      <div className="h-40 bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                        {prod.imageUrl ? (
+                          <img src={prod.imageUrl} alt={prod.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-blue-50/50 flex items-center justify-center text-blue-400">
+                            <Package size={32} />
+                          </div>
+                        )}
+                        {prod.featured && (
+                          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 shadow-xs flex items-center gap-0.5">
+                            <Sparkles size={10} /> Featured
+                          </span>
+                        )}
+                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-white/90 backdrop-blur-md text-slate-900 shadow-xs">
+                          {prod.category || 'Product'}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
                       <div className="space-y-1">
                         <div className="flex items-start justify-between gap-1">
-                          <h3 className="text-sm font-bold text-slate-900 line-clamp-1">{prod.name}</h3>
+                          {detailHref ? (
+                            <Link href={detailHref}>
+                              <h3 className="text-sm font-bold text-slate-900 line-clamp-1 hover:text-blue-600">{prod.name}</h3>
+                            </Link>
+                          ) : (
+                            <h3 className="text-sm font-bold text-slate-900 line-clamp-1">{prod.name}</h3>
+                          )}
                         </div>
 
                         <Link
@@ -377,7 +425,8 @@ export default function MarketplacePage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -407,27 +456,60 @@ export default function MarketplacePage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {filteredServices.slice(0, activeTab === 'all' ? 8 : 50).map(srv => (
+                {filteredServices.slice(0, activeTab === 'all' ? 8 : 50).map(srv => {
+                  const detailHref = srv.id ? `/marketplace/service/${srv.company.slug}/${srv.id}` : null;
+                  return (
                   <div
-                    key={srv.id}
+                    key={srv.key}
                     className="bg-white rounded-3xl border border-slate-200 shadow-2xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between"
                   >
-                    <div className="h-36 bg-slate-100 relative flex items-center justify-center overflow-hidden">
-                      {srv.imageUrl ? (
-                        <img src={srv.imageUrl} alt={srv.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-teal-50/50 flex items-center justify-center text-teal-500">
-                          <Wrench size={32} />
-                        </div>
-                      )}
-                      <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-white/90 backdrop-blur-md text-slate-900 shadow-xs">
-                        {srv.category || 'Service'}
-                      </span>
-                    </div>
+                    {detailHref ? (
+                      <Link href={detailHref} className="h-36 bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                        {srv.imageUrl ? (
+                          <img src={srv.imageUrl} alt={srv.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-teal-50/50 flex items-center justify-center text-teal-500">
+                            <Wrench size={32} />
+                          </div>
+                        )}
+                        {srv.featured && (
+                          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 shadow-xs flex items-center gap-0.5">
+                            <Sparkles size={10} /> Featured
+                          </span>
+                        )}
+                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-white/90 backdrop-blur-md text-slate-900 shadow-xs">
+                          {srv.category || 'Service'}
+                        </span>
+                      </Link>
+                    ) : (
+                      <div className="h-36 bg-slate-100 relative flex items-center justify-center overflow-hidden">
+                        {srv.imageUrl ? (
+                          <img src={srv.imageUrl} alt={srv.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-teal-50/50 flex items-center justify-center text-teal-500">
+                            <Wrench size={32} />
+                          </div>
+                        )}
+                        {srv.featured && (
+                          <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-amber-950 shadow-xs flex items-center gap-0.5">
+                            <Sparkles size={10} /> Featured
+                          </span>
+                        )}
+                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-white/90 backdrop-blur-md text-slate-900 shadow-xs">
+                          {srv.category || 'Service'}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
                       <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-slate-900 line-clamp-1">{srv.name}</h3>
+                        {detailHref ? (
+                          <Link href={detailHref}>
+                            <h3 className="text-sm font-bold text-slate-900 line-clamp-1 hover:text-blue-600">{srv.name}</h3>
+                          </Link>
+                        ) : (
+                          <h3 className="text-sm font-bold text-slate-900 line-clamp-1">{srv.name}</h3>
+                        )}
 
                         <Link
                           href={`/${srv.company.slug}`}
@@ -470,7 +552,8 @@ export default function MarketplacePage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

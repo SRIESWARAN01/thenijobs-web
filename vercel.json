@@ -177,6 +177,14 @@
     {
       "source": "/admin/businesses/:id/jobs",
       "destination": "/admin/businesses/_fallback/jobs"
+    },
+    {
+      "source": "/marketplace/product/:path+",
+      "destination": "/marketplace/product/_fallback/_fallback"
+    },
+    {
+      "source": "/marketplace/service/:path+",
+      "destination": "/marketplace/service/_fallback/_fallback"
     }
   ]
 }

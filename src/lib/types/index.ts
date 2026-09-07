@@ -111,6 +111,10 @@ export interface ProductItem {
   websiteUrl?: string;
   whatsappEnquiry?: boolean;
   callNumber?: string;
+  /** MARKETPLACE-1: self-declared by the employer, same pattern as jobs' own isFeatured --
+   *  never computed/fabricated. Drives the marketplace's Featured sort, alongside id (a real
+   *  creation timestamp) for New. */
+  featured?: boolean;
 }
 
 export interface ServiceItem {
@@ -126,6 +130,10 @@ export interface ServiceItem {
   websiteUrl?: string;
   whatsappEnquiry?: boolean;
   callNumber?: string;
+  /** MARKETPLACE-1: self-declared by the employer, same pattern as jobs' own isFeatured --
+   *  never computed/fabricated. Drives the marketplace's Featured sort, alongside id (a real
+   *  creation timestamp) for New. */
+  featured?: boolean;
 }
 
 export interface FounderProfile {

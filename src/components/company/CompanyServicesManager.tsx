@@ -66,6 +66,7 @@ export default function CompanyServicesManager({
     keywords: [],
     websiteUrl: '',
     whatsappEnquiry: true,
+    featured: false,
   });
 
   const handleSaveService = () => {
@@ -101,6 +102,7 @@ export default function CompanyServicesManager({
         details: cleanDetails,
         websiteUrl: form.websiteUrl || '',
         whatsappEnquiry: form.whatsappEnquiry !== false,
+        featured: form.featured === true,
       };
       onChange([...normalizedServices, newItem]);
       toast.success('New service added to your directory!');
@@ -137,6 +139,7 @@ export default function CompanyServicesManager({
       keywords: [],
       websiteUrl: '',
       whatsappEnquiry: true,
+      featured: false,
     });
     setEditingId(null);
     setShowAddForm(false);
@@ -321,6 +324,18 @@ export default function CompanyServicesManager({
               >
                 <Plus size={13} /> Add Another Inclusion Point
               </button>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.featured === true}
+                  onChange={e => setForm({ ...form, featured: e.target.checked })}
+                  className="rounded text-blue-600 focus:ring-0"
+                />
+                <Sparkles size={14} className="text-amber-500" />
+                <span>Mark as Featured (shown first in the Marketplace)</span>
+              </label>
             </div>
           </div>
 

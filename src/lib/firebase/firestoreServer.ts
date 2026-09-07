@@ -490,4 +490,35 @@ export async function getAllCompanySlugsServer(): Promise<string[]> {
   }
 }
 
+/**
+ * MARKETPLACE-1 — every (type, companySlug, itemId) combination for generateStaticParams on the
+ * product/service detail route. products/services are embedded arrays on each company doc (no
+ * separate collection), so this reads verified companies the same way getAllCompanySlugsServer
+ * does and walks each one's own products[]/services[] to build the full param list.
+ */
+export async function getAllMarketplaceItemParamsServer(): Promise<
+  Array<{ type: string; companySlug: string; itemId: string }>
+> {
+  try {
+    const companies = await runQueryREST<any>('companies', [
+      { field: 'verificationStatus', op: 'EQUAL', value: { stringValue: 'verified' } },
+    ]);
+    const params: Array<{ type: string; companySlug: string; itemId: string }> = [];
+    for (const c of companies) {
+      const companySlug = c.slug || (c.name ? slugifyCompany(c.name) : c.id);
+      if (!companySlug) continue;
+      for (const p of Array.isArray(c.products) ? c.products : []) {
+        if (p && typeof p === 'object' && p.id) params.push({ type: 'product', companySlug, itemId: p.id });
+      }
+      for (const s of Array.isArray(c.services) ? c.services : []) {
+        if (s && typeof s === 'object' && s.id) params.push({ type: 'service', companySlug, itemId: s.id });
+      }
+    }
+    return params;
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to query marketplace item params:', err);
+    return [];
+  }
+}
+
 

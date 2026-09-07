@@ -207,7 +207,7 @@ export default function WebsiteSettingsPage() {
             url={siteUrl}
             title="Portfolio QR Code"
             subtitle="Scan with smartphone to open public website"
-            theniJobsId={site.theniJobsId || 'TJ-C-00001'}
+            theniJobsId={company?.id ? `TNJ-C-${company.id.slice(0, 8).toUpperCase()}` : (site.theniJobsId || '')}
           />
         </div>
       </div>

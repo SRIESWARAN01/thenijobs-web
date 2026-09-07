@@ -165,6 +165,10 @@
     {
       "source": "/admin/businesses/:id/website",
       "destination": "/admin/businesses/_fallback/website"
+    },
+    {
+      "source": "/admin/businesses/:id/profile",
+      "destination": "/admin/businesses/_fallback/profile"
     }
   ]
 }

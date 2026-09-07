@@ -6,6 +6,7 @@ import { where } from 'firebase/firestore';
 import { updateDocument, logActivity } from '@/lib/firebase/firestoreService';
 import type { PortfolioSite } from '@/lib/types/portfolio';
 import PortfolioSiteEditor from '@/components/portfolio/editor/PortfolioSiteEditor';
+import AdminContextBanner from '@/components/admin/AdminContextBanner';
 import { Loader2, Globe } from 'lucide-react';
 import { EmptyState, PageShell, PageHeader } from '@/components/dashboard';
 
@@ -70,38 +71,43 @@ export default function AdminWebsiteManagerClient({ companyId }: { companyId: st
   }
 
   return (
-    <PortfolioSiteEditor
-      initialSite={site}
-      planSlug={company.subscriptionPlan || 'free'}
-      backHref="/admin/businesses"
-      onSave={async (fields) => {
-        await updateDocument('portfolioSites', site.id, { ...fields, updatedAt: new Date() });
-        logWebsiteAction('Updated company website', 'Sections, theme, branding, or SEO changed by admin');
-      }}
-      onPublishToggle={async (newStatus) => {
-        await updateDocument('portfolioSites', site.id, {
-          status: newStatus,
-          visibility: newStatus === 'published' ? 'public' : 'private',
-          publishedAt: newStatus === 'published' ? new Date() : null,
-          updatedAt: new Date(),
-        });
-        const actionLabel = newStatus === 'published'
-          ? 'Published company website'
-          : newStatus === 'pending_review'
-            ? 'Submitted company website for review'
-            : 'Unpublished company website';
-        logWebsiteAction(actionLabel, `Status changed to ${newStatus} by admin`);
-      }}
-      onApprove={async () => {
-        await updateDocument('portfolioSites', site.id, {
-          status: 'published',
-          visibility: 'public',
-          publishedAt: new Date(),
-          firstApprovedAt: new Date(),
-          updatedAt: new Date(),
-        });
-        logWebsiteAction('Approved and published company website', 'First-time publish approval by admin');
-      }}
-    />
+    <div className="flex flex-col">
+      <div className="px-4 pt-3">
+        <AdminContextBanner companyName={company.name} />
+      </div>
+      <PortfolioSiteEditor
+        initialSite={site}
+        planSlug={company.subscriptionPlan || 'free'}
+        backHref="/admin/businesses"
+        onSave={async (fields) => {
+          await updateDocument('portfolioSites', site.id, { ...fields, updatedAt: new Date() });
+          logWebsiteAction('Updated company website', 'Sections, theme, branding, or SEO changed by admin');
+        }}
+        onPublishToggle={async (newStatus) => {
+          await updateDocument('portfolioSites', site.id, {
+            status: newStatus,
+            visibility: newStatus === 'published' ? 'public' : 'private',
+            publishedAt: newStatus === 'published' ? new Date() : null,
+            updatedAt: new Date(),
+          });
+          const actionLabel = newStatus === 'published'
+            ? 'Published company website'
+            : newStatus === 'pending_review'
+              ? 'Submitted company website for review'
+              : 'Unpublished company website';
+          logWebsiteAction(actionLabel, `Status changed to ${newStatus} by admin`);
+        }}
+        onApprove={async () => {
+          await updateDocument('portfolioSites', site.id, {
+            status: 'published',
+            visibility: 'public',
+            publishedAt: new Date(),
+            firstApprovedAt: new Date(),
+            updatedAt: new Date(),
+          });
+          logWebsiteAction('Approved and published company website', 'First-time publish approval by admin');
+        }}
+      />
+    </div>
   );
 }

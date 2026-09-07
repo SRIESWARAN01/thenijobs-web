@@ -23,6 +23,9 @@ const templates: Record<string, React.ComponentType<{ site: PortfolioSite }>> = 
   'service-marketplace': dynamic(() => import('./templates/ServiceMarketplace')),
   'executive-company': dynamic(() => import('./templates/ExecutiveCompany')),
   'creative-business': dynamic(() => import('./templates/CreativeBusiness')),
+  // THEMES-1: closes the owner's 4th named premium theme ('Modern Business') -- the other 3
+  // ('Corporate Premium', 'Luxury Brand', 'Creative Business') already existed near-verbatim.
+  'modern-business': dynamic(() => import('./templates/ModernBusiness')),
   'enterprise-corporate': dynamic(() => import('./templates/EnterpriseCorporate')),
   'luxury-brand': dynamic(() => import('./templates/LuxuryBrand')),
   'business-careers': dynamic(() => import('./templates/BusinessCareers')),

@@ -553,6 +553,14 @@ export default function BusinessesPage() {
           </button>
           
           <Link
+            href="/admin/businesses/website-health"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors shadow-2xs"
+          >
+            <Globe size={14} className="text-gray-500" />
+            Website Health
+          </Link>
+
+          <Link
             href="/admin/businesses/import"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-xs"
           >

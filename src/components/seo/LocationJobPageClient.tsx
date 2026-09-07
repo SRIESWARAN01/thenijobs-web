@@ -7,10 +7,12 @@ import HomeFooter from '@/components/home/HomeFooter';
 import BottomNav from '@/components/navigation/BottomNav';
 import {
   MapPin, Briefcase, ChevronRight, Search, Building2,
-  BadgeCheck, Banknote, ArrowRight, Zap, CheckCircle2
+  BadgeCheck, Banknote, ArrowRight, Zap, CheckCircle2, Bookmark, BookmarkPlus
 } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit as fbLimit } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, limit as fbLimit } from 'firebase/firestore';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
 
 const PUBLIC_LIST_LIMIT = 500;
 import { LOCATIONS_DATA, CATEGORIES_LIST } from './locationData';
@@ -26,6 +28,54 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
 
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const toast = useToast();
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user?.uid) { setSavedJobIds([]); return; }
+    const userId = user.uid;
+    (async () => {
+      try {
+        const savedQuery = query(collection(db, 'savedJobs'), where('userId', '==', userId));
+        const snap = await getDocs(savedQuery);
+        setSavedJobIds(snap.docs.map((d) => d.data().jobId).filter(Boolean));
+      } catch (err) {
+        console.error('Unable to load saved jobs:', err);
+      }
+    })();
+  }, [user?.uid]);
+
+  const handleToggleSave = async (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.warning('Please login to save jobs.');
+      return;
+    }
+    const userId = user.uid;
+    if (savedJobIds.includes(jobId)) {
+      try {
+        const q = query(collection(db, 'savedJobs'), where('userId', '==', userId), where('jobId', '==', jobId));
+        const snap = await getDocs(q);
+        const batch = writeBatch(db);
+        snap.docs.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+        setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
+        toast.info('Job removed from saved');
+      } catch (err) {
+        console.error('Unable to remove saved job:', err);
+      }
+    } else {
+      setSavedJobIds((prev) => [...prev, jobId]);
+      try {
+        await addDoc(collection(db, 'savedJobs'), { userId, jobId, createdAt: serverTimestamp() });
+        toast.success('Job saved to your profile!');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   useEffect(() => {
     async function loadJobs() {
@@ -187,8 +237,19 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                         </div>
                       </div>
 
-                      <div className="hidden sm:flex items-center gap-1 text-sm font-semibold text-blue-600 group-hover:translate-x-1 transition-transform whitespace-nowrap">
-                        View Job <ArrowRight size={15} />
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={(e) => handleToggleSave(e, job.id)}
+                          className={`p-2 rounded-xl transition-all ${
+                            savedJobIds.includes(job.id) ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                          }`}
+                          title="Save Job"
+                        >
+                          {savedJobIds.includes(job.id) ? <Bookmark size={16} className="fill-current" /> : <BookmarkPlus size={16} />}
+                        </button>
+                        <div className="hidden sm:flex items-center gap-1 text-sm font-semibold text-blue-600 group-hover:translate-x-1 transition-transform whitespace-nowrap">
+                          View Job <ArrowRight size={15} />
+                        </div>
                       </div>
                     </div>
                   </Link>

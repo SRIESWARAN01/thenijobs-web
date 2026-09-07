@@ -5,6 +5,7 @@ import { useDocument } from '@/hooks/useFirestore';
 import { useToast } from '@/contexts/ToastContext';
 import { updateDocument, logActivity } from '@/lib/firebase/firestoreService';
 import CompanyProfileEditor, { type CompanyProfileEditorSaveFields } from '@/components/company/editor/CompanyProfileEditor';
+import AdminContextBanner from '@/components/admin/AdminContextBanner';
 import { Loader2, Building2 } from 'lucide-react';
 import { EmptyState, PageShell, PageHeader } from '@/components/dashboard';
 
@@ -56,13 +57,16 @@ export default function AdminProfileManagerClient({ companyId }: { companyId: st
   };
 
   return (
-    <CompanyProfileEditor
-      initialCompany={company}
-      title={`${company.name} — Profile`}
-      description="Manage this company's branding, products, services and branches on their behalf."
-      breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Businesses', href: '/admin/businesses' }, { label: 'Profile' }]}
-      viewerIsAdmin
-      onSave={handleSave}
-    />
+    <PageShell>
+      <AdminContextBanner companyName={company.name} />
+      <CompanyProfileEditor
+        initialCompany={company}
+        title={`${company.name} — Profile`}
+        description="Manage this company's branding, products, services and branches on their behalf."
+        breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Businesses', href: '/admin/businesses' }, { label: 'Profile' }]}
+        viewerIsAdmin
+        onSave={handleSave}
+      />
+    </PageShell>
   );
 }

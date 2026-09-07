@@ -21,15 +21,15 @@ const stripBadgeEmoji = (badge?: string) => badge?.replace(/^\S+\s*/, '').trim()
 
 const COMPARISON_MATRIX = [
   { feature: 'Basic Company Profile', free: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
-  { feature: 'Active Job Postings Limit', free: '1 Job', standard: '15 Jobs', premium: 'High Limit', enterprise: 'High Limit' },
-  { feature: 'Company Portfolio Website', free: '❌', standard: 'Full', premium: 'Premium', enterprise: 'Custom' },
-  { feature: 'Digital ID Card & QR Code', free: 'Basic', standard: '✅', premium: '✅', enterprise: '✅' },
-  { feature: 'Reviews & Ratings', free: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
-  { feature: 'Services & Products Listing', free: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Active Job Postings Limit', free: '5 Jobs', standard: '15 Jobs', premium: 'High Limit', enterprise: 'High Limit' },
+  { feature: 'Company Portfolio Website', free: 'Basic', standard: 'Full', premium: 'Premium', enterprise: 'Custom' },
+  { feature: 'Digital ID Card & QR Code', free: '✅', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Reviews & Ratings', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Services & Products Listing', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
   { feature: 'Featured Company Placement', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
   { feature: 'Candidate Search & Filtering', free: '❌', standard: 'Basic', premium: 'Advanced', enterprise: 'Advanced' },
-  { feature: 'Interview Scheduling & Leads', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
-  { feature: 'Premium SEO Enhancement', free: '❌', standard: 'Basic', premium: 'Advanced', enterprise: 'Advanced' },
+  { feature: 'Interview Scheduling & Leads', free: 'Leads Only', standard: '✅', premium: '✅', enterprise: '✅' },
+  { feature: 'Premium SEO Enhancement', free: 'Basic', standard: 'Basic', premium: 'Advanced', enterprise: 'Advanced' },
   { feature: 'Branch / Franchise Mgmt', free: '❌', standard: '✅', premium: '✅', enterprise: '✅' },
 ];
 
@@ -49,7 +49,7 @@ const TRUST_CHIPS = [
 const FAQS = [
   {
     q: 'Which plan should I choose?',
-    a: 'Standard (₹480/yr) is a great start for local shops that need a full portfolio and reviews. Premium (₹1,200/yr) is our most popular plan — it adds higher job-posting limits, a video banner, more branches, and a Gold Verified badge for growing companies. Enterprise (₹5,000/yr) is built for large businesses with unlimited postings, a dedicated careers portal, and our top Platinum badge.',
+    a: 'Basic (₹999/yr) is a great start for new businesses that just need a verified profile and digital ID card. Standard (₹1,800/yr) adds a full portfolio website, product/service listings, and reviews for local shops. Premium (₹3,500/yr) is our most popular plan — it adds higher job-posting limits, a video banner, more branches, and a Gold Verified badge for growing companies. Enterprise (₹5,000/yr) is built for large businesses with unlimited postings, a dedicated careers portal, and our top Platinum badge.',
   },
   {
     q: 'Can I upgrade or downgrade anytime?',
@@ -69,11 +69,6 @@ export default function PricingPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const handleSelectPlan = (plan: (typeof SUBSCRIPTION_PLANS)[number]) => {
-    if (plan.price === 0) {
-      router.push('/company/register');
-      return;
-    }
-
     if (!user) {
       router.push('/login?redirect=/pricing');
       return;
@@ -207,7 +202,7 @@ export default function PricingPage() {
                         : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
                   >
-                    {plan.price === 0 ? 'Start Free' : `Select ${plan.name}`}
+                    {`Select ${plan.name}`}
                     <ArrowRight size={13} />
                   </button>
                 </div>
@@ -228,11 +223,11 @@ export default function PricingPage() {
               <thead>
                 <tr className="bg-gray-50 text-gray-700">
                   <th className="sticky left-0 z-10 bg-gray-50 p-3 font-bold border-b border-gray-100">Feature</th>
-                  <th className="p-3 font-bold text-center border-b border-gray-100">Free<br /><span className="font-normal text-gray-400">₹0</span></th>
-                  <th className="p-3 font-bold text-center border-b border-gray-100">Standard<br /><span className="font-normal text-gray-400">₹480/yr</span></th>
+                  <th className="p-3 font-bold text-center border-b border-gray-100">Basic<br /><span className="font-normal text-gray-400">₹999/yr</span></th>
+                  <th className="p-3 font-bold text-center border-b border-gray-100">Standard<br /><span className="font-normal text-gray-400">₹1,800/yr</span></th>
                   <th className="p-3 font-bold text-center bg-blue-50 text-blue-700 border-b border-blue-100 rounded-t-lg">
                     <span className="inline-flex items-center gap-1"><Star size={11} fill="currentColor" fillOpacity={0.3} />Premium</span>
-                    <br /><span className="font-normal text-blue-400">₹1,200/yr</span>
+                    <br /><span className="font-normal text-blue-400">₹3,500/yr</span>
                   </th>
                   <th className="p-3 font-bold text-center border-b border-gray-100">Enterprise<br /><span className="font-normal text-gray-400">₹5,000/yr</span></th>
                 </tr>
@@ -303,17 +298,17 @@ export default function PricingPage() {
         <div className="mt-12 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center text-white relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}>
           <h2 className="text-lg sm:text-xl font-extrabold" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Still deciding? Start free, upgrade whenever you&apos;re ready.
+            Still deciding? Start with Basic, upgrade whenever you&apos;re ready.
           </h2>
           <p className="text-blue-100 text-xs sm:text-sm mt-1.5 max-w-md mx-auto">
-            No credit card required for the Free plan. Upgrade in a few clicks from your dashboard.
+            Get verified for ₹999/yr. Upgrade in a few clicks from your dashboard.
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
             <Link
               href="/company/register"
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-blue-700 bg-white hover:bg-blue-50 transition-all shadow-sm"
             >
-              Start Free <ArrowRight size={14} />
+              Get Started <ArrowRight size={14} />
             </Link>
             <a
               href="#top"

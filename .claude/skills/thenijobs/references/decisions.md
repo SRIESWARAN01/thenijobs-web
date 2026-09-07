@@ -110,6 +110,8 @@ finding depends on. Flipping any gate is a phase with Playground/emulator eviden
 | D-DOCS | retire or rewrite `full.mf`, `admin-portal.md`, `walkthrough.md`, `README.md` | never edit them inside a feature phase |
 | D-CI | add a read-only CI workflow (`ci.md` §2) once the owner's token can push workflows | none |
 | D-PROTECT | enable branch protection (linear history) on `staging`/`main` | this skill is the only guard |
+| D-PUBLISH-APPROVAL | **ANSWERED 2026-09-07 (owner, via AskUserQuestion)** — once a company's `portfolioSites` site has been approved for its first-ever publish, every later republish is self-service by the employer; only the first publish needs admin review. Phase `ADMINWEB-2` builds this: a `pending_review` status plus a permanent `firstApprovedAt` field, gated in `firestore.rules` (non-admin may set `status:'published'` only when `firstApprovedAt` is already truthy; `firstApprovedAt` itself is admin-write-only) | — |
+| D-IMPERSONATION | **ANSWERED 2026-09-07 (owner, via AskUserQuestion)** — admin's "Manage / Enter Company Dashboard" means a client-side admin-context view (an admin-owned parallel route reading/writing the target company's own data, the same pattern `ADMINWEB-1` already built for the website), never a real session/identity swap. The rejected alternative — a Firebase custom token minted server-side so admin's browser actually becomes signed in as the employer — stays blocked on `D-HOSTING` (no server exists in the production static export to mint one). Phase `ADMINIMP-1` extends the `ADMINWEB-1` pattern to the company's core profile (`company-profile/page.tsx`) | admin-context routes only; no session-swap work without `D-HOSTING` first |
 
 ## 8. Superseded assumptions — must not return
 

@@ -161,6 +161,10 @@
     {
       "source": "/portfolio/:path+",
       "destination": "/portfolio/_fallback"
+    },
+    {
+      "source": "/admin/businesses/:id/website",
+      "destination": "/admin/businesses/_fallback/website"
     }
   ]
 }

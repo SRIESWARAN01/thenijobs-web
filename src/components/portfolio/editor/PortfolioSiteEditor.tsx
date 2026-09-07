@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   ArrowLeft, Save, Eye, EyeOff, Monitor, Laptop, Tablet, Smartphone,
   Loader2, ChevronDown, ChevronUp, GripVertical, Trash2, Edit3,
-  Palette, Image as ImageIcon, Layout, Settings2, Send
+  Palette, Image as ImageIcon, Layout, Settings2, Send, Clock
 } from 'lucide-react';
 import { PORTFOLIO_SECTION_DEFS } from '@/lib/constants';
 import { getPortfolioSectionsForPlan } from '@/lib/plans';
@@ -35,6 +35,10 @@ export interface PortfolioSiteEditorProps {
   onSave: (fields: PortfolioSiteEditorSaveFields) => Promise<void>;
   /** Called with the new status this component has already computed. */
   onPublishToggle: (newStatus: PortfolioSite['status']) => Promise<void>;
+  /** Only provided by the admin caller. When set, a site awaiting its first-ever approval shows
+   *  an "Approve & Publish" action instead of the normal toggle; the employer caller omits this,
+   *  so the same pending state shows a read-only "Pending admin review" indicator instead. */
+  onApprove?: () => Promise<void>;
 }
 
 /**
@@ -43,7 +47,7 @@ export interface PortfolioSiteEditorProps {
  * (src/app/admin/businesses/[id]/website/page.tsx). Persistence is delegated via onSave/
  * onPublishToggle so each caller controls its own write path (and, for admin, its own audit log).
  */
-export default function PortfolioSiteEditor({ initialSite, planSlug, backHref, onSave, onPublishToggle }: PortfolioSiteEditorProps) {
+export default function PortfolioSiteEditor({ initialSite, planSlug, backHref, onSave, onPublishToggle, onApprove }: PortfolioSiteEditorProps) {
   const [site, setSite] = useState<PortfolioSite>(initialSite);
   const [editor, setEditor] = useState<EditorState>(DEFAULT_EDITOR_STATE);
   const [activeTab, setActiveTab] = useState<EditorTab>('sections');
@@ -123,9 +127,26 @@ export default function PortfolioSiteEditor({ initialSite, planSlug, backHref, o
   const handlePublish = async () => {
     setPublishing(true);
     try {
-      const newStatus = site.status === 'published' ? 'unpublished' : 'published';
+      // A site that has never been approved goes to pending_review instead of straight to
+      // published, no matter who clicks Publish -- the employer caller never passes onApprove,
+      // so this is the only path it can take; the admin caller uses handleApprove instead.
+      const newStatus: PortfolioSite['status'] = site.status === 'published'
+        ? 'unpublished'
+        : site.firstApprovedAt
+          ? 'published'
+          : 'pending_review';
       await onPublishToggle(newStatus);
-      setSite(prev => ({ ...prev, status: newStatus as any, visibility: newStatus === 'published' ? 'public' : 'private' }));
+      setSite(prev => ({ ...prev, status: newStatus, visibility: newStatus === 'published' ? 'public' : 'private' }));
+    } catch (err) { console.error(err); }
+    finally { setPublishing(false); }
+  };
+
+  const handleApprove = async () => {
+    if (!onApprove) return;
+    setPublishing(true);
+    try {
+      await onApprove();
+      setSite(prev => ({ ...prev, status: 'published', visibility: 'public', firstApprovedAt: new Date() }));
     } catch (err) { console.error(err); }
     finally { setPublishing(false); }
   };
@@ -171,12 +192,29 @@ export default function PortfolioSiteEditor({ initialSite, planSlug, backHref, o
             className="px-4 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-40 flex items-center gap-1.5 transition-all">
             {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
           </button>
-          <button onClick={handlePublish} disabled={publishing}
-            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-              site.status === 'published' ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' : 'bg-emerald-600 text-white hover:bg-emerald-700'
-            }`}>
-            {publishing ? <Loader2 size={13} className="animate-spin" /> : site.status === 'published' ? <><EyeOff size={13} /> Unpublish</> : <><Send size={13} /> Publish</>}
-          </button>
+          {site.status === 'pending_review' && onApprove ? (
+            <button onClick={handleApprove} disabled={publishing}
+              className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all bg-emerald-600 text-white hover:bg-emerald-700">
+              {publishing ? <Loader2 size={13} className="animate-spin" /> : <><Send size={13} /> Approve &amp; Publish</>}
+            </button>
+          ) : site.status === 'pending_review' ? (
+            <span className="px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200">
+              <Clock size={13} /> Pending admin review
+            </span>
+          ) : (
+            <button onClick={handlePublish} disabled={publishing}
+              className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                site.status === 'published' ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+              }`}>
+              {publishing
+                ? <Loader2 size={13} className="animate-spin" />
+                : site.status === 'published'
+                  ? <><EyeOff size={13} /> Unpublish</>
+                  : site.firstApprovedAt
+                    ? <><Send size={13} /> Publish</>
+                    : <><Send size={13} /> Submit for Review</>}
+            </button>
+          )}
         </div>
       </div>
 

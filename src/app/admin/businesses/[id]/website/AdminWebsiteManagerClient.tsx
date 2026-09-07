@@ -85,10 +85,22 @@ export default function AdminWebsiteManagerClient({ companyId }: { companyId: st
           publishedAt: newStatus === 'published' ? new Date() : null,
           updatedAt: new Date(),
         });
-        logWebsiteAction(
-          newStatus === 'published' ? 'Published company website' : 'Unpublished company website',
-          `Status changed to ${newStatus} by admin`
-        );
+        const actionLabel = newStatus === 'published'
+          ? 'Published company website'
+          : newStatus === 'pending_review'
+            ? 'Submitted company website for review'
+            : 'Unpublished company website';
+        logWebsiteAction(actionLabel, `Status changed to ${newStatus} by admin`);
+      }}
+      onApprove={async () => {
+        await updateDocument('portfolioSites', site.id, {
+          status: 'published',
+          visibility: 'public',
+          publishedAt: new Date(),
+          firstApprovedAt: new Date(),
+          updatedAt: new Date(),
+        });
+        logWebsiteAction('Approved and published company website', 'First-time publish approval by admin');
       }}
     />
   );

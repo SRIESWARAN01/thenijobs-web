@@ -88,6 +88,7 @@ export default function AdminWebsiteHealthPage() {
       render: row => {
         if (!row.hasSite) return <Pill tone="neutral">—</Pill>;
         if (row.status === 'published') return <Pill tone="success" dot>Published</Pill>;
+        if (row.status === 'pending_review') return <Pill tone="info" dot>Pending Review</Pill>;
         if (row.status === 'unpublished') return <Pill tone="warning" dot>Unpublished</Pill>;
         return <Pill tone="neutral" dot>Draft</Pill>;
       },

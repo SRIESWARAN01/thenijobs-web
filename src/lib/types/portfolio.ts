@@ -374,7 +374,7 @@ export interface PortfolioAnalytics {
 
 // ===== PORTFOLIO SITE (Main Document) =====
 
-export type PortfolioStatus = 'draft' | 'published' | 'unpublished';
+export type PortfolioStatus = 'draft' | 'pending_review' | 'published' | 'unpublished';
 export type PortfolioVisibility = 'public' | 'private';
 export type PortfolioOwnerType = 'company' | 'seeker';
 
@@ -410,6 +410,9 @@ export interface PortfolioSite {
   createdAt: any;
   updatedAt: any;
   publishedAt: any | null;
+  /** Set once, by an admin, the first time this site is approved for publishing. Never cleared
+   *  after that — later publish/unpublish cycles are self-service once this is truthy. */
+  firstApprovedAt: any | null;
 }
 
 // ===== VERSION HISTORY =====

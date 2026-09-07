@@ -108,6 +108,7 @@ export default function TemplateGalleryPage() {
           createdAt: new Date(),
           updatedAt: new Date(),
           publishedAt: null,
+          firstApprovedAt: null,
         });
       }
       setPreviewTemplate(null);
@@ -152,6 +153,7 @@ export default function TemplateGalleryPage() {
     createdAt: new Date(),
     updatedAt: new Date(),
     publishedAt: null,
+    firstApprovedAt: null,
   });
 
   return (

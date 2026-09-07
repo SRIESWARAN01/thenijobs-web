@@ -500,13 +500,30 @@ service cloud.firestore {
       // — a free-tier company could write any premium/enterprise templateId directly via the SDK.
       // isAdmin() and no-op templateId changes bypass the check, matching every other admin
       // override in this ruleset.
+      // ADMINWEB-2: a non-admin create must not start life already 'published' or already
+      // carrying a truthy firstApprovedAt — either would let the update-time approval gate below
+      // be satisfied by a document that was never actually approved (create a fake-approved
+      // draft, then update it to published, reading its own fabricated firstApprovedAt back).
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid &&
         (isAdmin() || portfolioTemplateAllowedForOwner(
-          request.resource.data.ownerType, request.resource.data.companyId, request.resource.data.templateId));
+          request.resource.data.ownerType, request.resource.data.companyId, request.resource.data.templateId)) &&
+        (isAdmin() || request.resource.data.status != 'published') &&
+        (isAdmin() || !request.resource.data.keys().hasAny(['firstApprovedAt']) || request.resource.data.firstApprovedAt == null);
+      // ADMINWEB-2: only a company's first-ever publish needs admin approval (owner decision,
+      // 2026-09-07) — every later republish is self-service. Before this, `status` had no guard
+      // at all: an owner could write `status: 'published'` directly via the SDK with no admin
+      // ever having approved anything, same class of gap RULES-4/companyModerationUnchanged()
+      // already closed for other moderated fields. `firstApprovedAt` is set once by an admin
+      // (AdminWebsiteManagerClient.tsx's onApprove) and never cleared; a non-admin may move
+      // `status` to `'published'` only when it is already truthy, and may never change
+      // `firstApprovedAt` itself — both bypassed for isAdmin(), matching every other override
+      // in this file.
       allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin()) &&
         (isAdmin() || request.resource.data.templateId == resource.data.templateId ||
          portfolioTemplateAllowedForOwner(
-           resource.data.ownerType, resource.data.companyId, request.resource.data.templateId));
+           resource.data.ownerType, resource.data.companyId, request.resource.data.templateId)) &&
+        (isAdmin() || request.resource.data.status != 'published' || resource.data.firstApprovedAt != null) &&
+        (isAdmin() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['firstApprovedAt']));
       allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 

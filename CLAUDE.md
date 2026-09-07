@@ -35,6 +35,11 @@ the skill needs a fix.
 8. **Real checks only:** `npx tsc --noEmit` · `npm run lint` · `npm run build`. There is no test
    suite; never claim one passed. State whether real `NEXT_PUBLIC_FIREBASE_*` values were used for
    any local run.
-9. **Open P0s outrank feature work** — the catch-all rules at the end of `firestore.rules` and
-   `storage.rules`, the static-export hosting truth, and the secret literal in
-   `src/app/api/otp/call/route.ts`. See `.claude/skills/thenijobs/references/security.md` §9.
+9. **Open P0s outrank feature work.** `RULES-1` closed the `firestore.rules`/`storage.rules`
+   catch-all and the `otp/call/route.ts` secret literal; both are confirmed deployed to production
+   (`firebase deploy --only firestore:rules,storage`, 2026-09-06, verified by a post-deploy probe —
+   see `docs/active/BRANCH_DISPOSITIONS.md`'s `## Promotions` table). Re-verified in tree
+   2026-09-07 (`STORAGE-CATCHALL-1`): neither file has a catch-all block. Check
+   `.claude/skills/thenijobs/references/security.md` §9 for the current register before assuming
+   either is still open — it tracks `FIXED IN TREE` vs. deployed separately and stays current; this
+   line does not.

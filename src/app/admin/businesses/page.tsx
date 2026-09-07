@@ -694,6 +694,7 @@ export default function BusinessesPage() {
           const items: ActionItem[] = [
             { label: 'View details', icon: Eye, onClick: () => setPreviewBiz(biz) },
             { label: 'Edit business', icon: Edit3, onClick: () => openEditBizModal(biz) },
+            { label: 'Manage website', icon: Globe, href: `/admin/businesses/${biz.id}/website` },
           ];
           if (cleanPhone) {
             items.push({ label: `Call ${biz.phone}`, icon: Phone, href: `tel:${cleanPhone}` });
@@ -756,6 +757,12 @@ export default function BusinessesPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <Link
+                  href={`/admin/businesses/${previewBiz.id}/website`}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Globe size={13} /> Website
+                </Link>
                 <button
                   type="button"
                   onClick={() => {

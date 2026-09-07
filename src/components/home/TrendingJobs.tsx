@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import {
   Briefcase, BadgeCheck, MapPin, Clock,
-  ArrowRight, ChevronRight, Zap, Flame, Sparkles
+  ArrowRight, ChevronRight, Zap, Flame, Sparkles, Bookmark, BookmarkPlus
 } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, limit } from 'firebase/firestore';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/contexts/ToastContext';
 
 interface Job {
   id: string;
@@ -38,7 +40,7 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   'Contract':    { bg: '#F0F9FF', text: '#0284C7' }
 };
 
-function JobCard({ job, rank }: { job: Job; rank: number }) {
+function JobCard({ job, rank, saved, onSave }: { job: Job; rank: number; saved: boolean; onSave: (e: React.MouseEvent) => void }) {
   const typeStyle = TYPE_COLORS[job.type] || TYPE_COLORS['Full Time'];
 
   return (
@@ -68,11 +70,18 @@ function JobCard({ job, rank }: { job: Job; rank: number }) {
               <p className="text-xs text-gray-500 font-medium mt-0.5 truncate">{job.company}</p>
             </div>
 
-            {/* Trending rank badge */}
+            {/* Trending rank badge + save */}
             <div className="flex items-center gap-1 flex-shrink-0">
               <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-xs flex items-center gap-1">
                 <Flame size={11} className="fill-white" /> #{rank}
               </span>
+              <button
+                onClick={onSave}
+                className={`p-1.5 rounded-lg transition-all ${saved ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}
+                title="Save Job"
+              >
+                {saved ? <Bookmark size={14} className="fill-current" /> : <BookmarkPlus size={14} />}
+              </button>
             </div>
           </div>
 
@@ -145,6 +154,54 @@ export default function TrendingJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { user } = useAuth();
+  const toast = useToast();
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user?.uid) { setSavedJobIds([]); return; }
+    const userId = user.uid;
+    (async () => {
+      try {
+        const savedQuery = query(collection(db, 'savedJobs'), where('userId', '==', userId));
+        const snap = await getDocs(savedQuery);
+        setSavedJobIds(snap.docs.map((d) => d.data().jobId).filter(Boolean));
+      } catch (err) {
+        console.error('Unable to load saved jobs:', err);
+      }
+    })();
+  }, [user?.uid]);
+
+  const handleToggleSave = async (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.warning('Please login to save jobs.');
+      return;
+    }
+    const userId = user.uid;
+    if (savedJobIds.includes(jobId)) {
+      try {
+        const q = query(collection(db, 'savedJobs'), where('userId', '==', userId), where('jobId', '==', jobId));
+        const snap = await getDocs(q);
+        const batch = writeBatch(db);
+        snap.docs.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+        setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
+        toast.info('Job removed from saved');
+      } catch (err) {
+        console.error('Unable to remove saved job:', err);
+      }
+    } else {
+      setSavedJobIds((prev) => [...prev, jobId]);
+      try {
+        await addDoc(collection(db, 'savedJobs'), { userId, jobId, createdAt: serverTimestamp() });
+        toast.success('Job saved to your profile!');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -285,7 +342,13 @@ export default function TrendingJobs() {
             </div>
           ) : (
             jobs.map((job, idx) => (
-              <JobCard key={job.id} job={job} rank={idx + 1} />
+              <JobCard
+                key={job.id}
+                job={job}
+                rank={idx + 1}
+                saved={savedJobIds.includes(job.id)}
+                onSave={(e) => handleToggleSave(e, job.id)}
+              />
             ))
           )}
         </div>

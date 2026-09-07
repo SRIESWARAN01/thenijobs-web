@@ -397,7 +397,9 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
             type: TYPE_MAP[d.jobType] || d.type || 'Full Time',
             posted: formatTime(d.createdAt),
             postedAt: millis,
-            logo: d.logoUrl || d.companyLogo || d.logo || d.companyName?.[0]?.toUpperCase() || 'C',
+            // companyLogoUrl is the field src/app/employer/post-job/page.tsx actually writes;
+            // logoUrl/companyLogo/logo are kept as fallbacks for a differently-shaped job doc.
+            logo: d.companyLogoUrl || d.logoUrl || d.companyLogo || d.logo || d.companyName?.[0]?.toUpperCase() || 'C',
             isUrgent: d.isUrgent || false,
             isPremium: d.isPremium || false,
             isFeatured: d.isFeatured || false,

@@ -11,14 +11,14 @@ import {
   Briefcase, Navigation, ShieldCheck, Smartphone, FileCheck, Award, ExternalLink,
   BellRing, Send, Quote, Newspaper, PackagePlus, Crown, UserCheck, Calendar,
   Building2, CheckCircle2, MessageSquare, Wrench, Package, FolderGit2, User,
-  Navigation2, Compass, X, Tag, ArrowLeft, ArrowRight
+  Navigation2, Compass, X, Tag, ArrowLeft, ArrowRight, Bookmark, BookmarkPlus
 } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, LinkedinIcon } from '@/components/ui/BrandIcons';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { safeExternalUrl } from '@/lib/safeUrl';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
-import { followCompany, unfollowCompany, isFollowingCompany, createDocument } from '@/lib/firebase/firestoreService';
+import { followCompany, unfollowCompany, isFollowingCompany, createDocument, saveJob, unsaveJob, getSavedJobs } from '@/lib/firebase/firestoreService';
 
 export default function CompanyProfileClient({ company, jobs = [], reviews = [] }: {
   company: any; jobs: any[]; reviews: any[];
@@ -43,11 +43,48 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [selectedItemType, setSelectedItemType] = useState<'product'|'service'>('product');
   const [showFullDesc, setShowFullDesc] = useState(false);
+  // Job favouriting -- distinct from `saved`/handleToggleSave above, which follows the
+  // COMPANY (companyFollows). This reuses the same savedJobs mechanism every other job card
+  // in the app uses (src/lib/firebase/firestoreService.ts's saveJob/unsaveJob/getSavedJobs).
+  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!uid || !company?.id) return;
     isFollowingCompany(uid, company.id).then(setSaved).catch(() => {});
   }, [uid, company?.id]);
+
+  useEffect(() => {
+    if (!uid) { setSavedJobIds([]); return; }
+    getSavedJobs(uid)
+      .then((docs) => setSavedJobIds(docs.map((d: any) => d.jobId).filter(Boolean)))
+      .catch((err) => console.error('Unable to load saved jobs:', err));
+  }, [uid]);
+
+  const handleToggleSaveJob = async (e: React.MouseEvent, jobId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!uid) {
+      toast.warning('Please login to save jobs.');
+      return;
+    }
+    if (savedJobIds.includes(jobId)) {
+      try {
+        await unsaveJob(uid, jobId);
+        setSavedJobIds((prev) => prev.filter((id) => id !== jobId));
+        toast.info('Job removed from saved');
+      } catch (err) {
+        console.error('Unable to remove saved job:', err);
+      }
+    } else {
+      setSavedJobIds((prev) => [...prev, jobId]);
+      try {
+        await saveJob(uid, jobId);
+        toast.success('Job saved to your profile!');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
 
   const handleToggleSave = async () => {
     if (!uid || !company?.id) {
@@ -668,12 +705,23 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                           </div>
                         </div>
 
-                        <Link
-                          href={`/jobs/${job.id}`}
-                          className="mt-4 w-full py-2 rounded-xl bg-blue-600 text-white text-xs font-bold text-center hover:bg-blue-700 transition-colors block"
-                        >
-                          Apply
-                        </Link>
+                        <div className="mt-4 flex items-center gap-2">
+                          <Link
+                            href={`/jobs/${job.id}`}
+                            className="flex-1 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold text-center hover:bg-blue-700 transition-colors block"
+                          >
+                            Apply
+                          </Link>
+                          <button
+                            onClick={(e) => handleToggleSaveJob(e, job.id)}
+                            className={`p-2 rounded-xl transition-all flex-shrink-0 ${
+                              savedJobIds.includes(job.id) ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                            }`}
+                            title="Save Job"
+                          >
+                            {savedJobIds.includes(job.id) ? <Bookmark size={16} className="fill-current" /> : <BookmarkPlus size={16} />}
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -975,9 +1023,20 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                         <span>{job.type}</span>
                       </div>
                     </div>
-                    <Link href={`/jobs/${job.id}`} className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors">
-                      Apply
-                    </Link>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={(e) => handleToggleSaveJob(e, job.id)}
+                        className={`p-2 rounded-xl transition-all ${
+                          savedJobIds.includes(job.id) ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
+                        }`}
+                        title="Save Job"
+                      >
+                        {savedJobIds.includes(job.id) ? <Bookmark size={16} className="fill-current" /> : <BookmarkPlus size={16} />}
+                      </button>
+                      <Link href={`/jobs/${job.id}`} className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-colors">
+                        Apply
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>

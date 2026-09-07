@@ -131,6 +131,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
   const [following, setFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [companyResponseTime, setCompanyResponseTime] = useState<string | null>(null);
+  const [logoBroken, setLogoBroken] = useState(false);
   const { addToRecentlyViewed } = useRecentlyViewed();
   const toast = useToast();
 
@@ -170,7 +171,11 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
             jobType: d.jobType || 'full_time',
             posted: d.createdAt ? new Date(d.createdAt.seconds * 1000).toLocaleDateString('en-IN') : 'Recently',
             openings: d.openings ? Number(d.openings) : 1,
-            logo: d.logo || '',
+            // companyLogoUrl is the field src/app/employer/post-job/page.tsx actually writes
+            // onto a job document; logoUrl/companyLogo/logo are kept as fallbacks for any
+            // differently-shaped job doc (duplicated/legacy), never observed to be the primary
+            // source in this repo's own job-creation code.
+            logo: d.companyLogoUrl || d.logoUrl || d.companyLogo || d.logo || '',
             isUrgent: d.isUrgent || false,
             isVerified: d.isVerified || false,
             whatsapp: d.whatsapp || d.phone || '919360519460',
@@ -469,8 +474,17 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
             {/* Header Card */}
             <div className="glass-card rounded-2xl p-6">
               <div className="flex gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-white/5 border border-gray-200 flex items-center justify-center text-3xl font-bold shrink-0">
-                  {job.logo || (job.companyName ? job.companyName.substring(0, 2).toUpperCase() : '💼')}
+                <div className="w-16 h-16 rounded-2xl bg-white/5 border border-gray-200 flex items-center justify-center text-3xl font-bold shrink-0 overflow-hidden">
+                  {job.logo && !logoBroken ? (
+                    <img
+                      src={job.logo}
+                      alt={job.companyName}
+                      className="w-full h-full object-cover"
+                      onError={() => setLogoBroken(true)}
+                    />
+                  ) : (
+                    job.companyName ? job.companyName.substring(0, 2).toUpperCase() : '💼'
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 flex-wrap">

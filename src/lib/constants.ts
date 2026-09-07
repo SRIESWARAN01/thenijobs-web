@@ -543,6 +543,14 @@ export const PORTFOLIO_TEMPLATES: PortfolioTemplate[] = [
     sections: ['hero', 'about', 'portfolio-grid', 'services', 'case-studies', 'gallery', 'team', 'testimonials', 'video', 'contact', 'social-links'],
     features: ['Modern visual hero', 'Portfolio grid', 'Case studies', 'Video section', 'Dynamic animations', 'Custom branding'],
   },
+  {
+    id: 'modern-business', name: 'Modern Business', plan: 'premium',
+    description: 'Split hero with quick-stats, bento-grid services, and a working-hours schedule for a contemporary, SaaS-style feel.',
+    bestFor: 'Modern/Growing Companies', thumbnail: '/templates/modern-business.jpg',
+    category: 'business',
+    sections: ['hero', 'about', 'services', 'products', 'team', 'testimonials', 'working-hours', 'gallery', 'contact'],
+    features: ['Split hero + quick stats', 'Bento-grid services', 'Team avatars', 'Working hours schedule', 'Sticky mobile CTA'],
+  },
 
   // ── ENTERPRISE (4) ──────────────────────────────────
   {
@@ -624,7 +632,7 @@ export const PORTFOLIO_SECTION_DEFS: PortfolioSectionDef[] = [
 export const TEMPLATE_PLAN_ACCESS: Record<PlanTier, string[]> = {
   free: ['classic-business', 'clean-corporate', 'modern-services'],
   standard: ['classic-business', 'clean-corporate', 'modern-services', 'professional-company', 'business-showcase', 'local-business-pro'],
-  premium: ['classic-business', 'clean-corporate', 'modern-services', 'professional-company', 'business-showcase', 'local-business-pro', 'corporate-premium', 'product-marketplace', 'service-marketplace', 'executive-company', 'creative-business'],
+  premium: ['classic-business', 'clean-corporate', 'modern-services', 'professional-company', 'business-showcase', 'local-business-pro', 'corporate-premium', 'product-marketplace', 'service-marketplace', 'executive-company', 'creative-business', 'modern-business'],
   enterprise: PORTFOLIO_TEMPLATES.map(t => t.id), // all 15
 };
 

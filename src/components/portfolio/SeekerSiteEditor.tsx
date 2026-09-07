@@ -437,6 +437,7 @@ export default function SeekerSiteEditor() {
             createdAt: new Date(),
             updatedAt: new Date(),
             publishedAt: null,
+            firstApprovedAt: null,
           };
 
           setSite(newSite);

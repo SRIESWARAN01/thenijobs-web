@@ -176,7 +176,11 @@ export default async function JobDetailPage({ params }: PageProps) {
     benefits: job.benefits,
     posted: job.postedDate || '',
     deadline: job.expiryDate || '',
-    logo: job.companyLogo || '',
+    // companyData.logoUrl is the live company record, the same source the JobPosting JSON-LD
+    // schema above already prefers; job.companyLogo is a possibly-stale copy on the job doc
+    // itself (getJobByIdServer never reads companyLogoUrl, the field actually written at
+    // post-job time — kept only as a fallback for a job whose company fetch failed).
+    logo: companyData?.logoUrl || job.companyLogo || '',
     isExpired: expiry.isExpired,
     expiredMessage: expiry.message,
   };

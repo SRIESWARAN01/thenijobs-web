@@ -81,6 +81,10 @@ export default function SeekerProfilePage() {
   const [languages, setLanguages] = useState<string[]>([]);
   const [certifications, setCertifications] = useState<CertificationEntry[]>([]);
   const [portfolio, setPortfolio] = useState<string[]>([]);
+  // SEEKERREDESIGN-1: resumes live on this same seekerProfiles document (managed by the
+  // separate /seeker/resume page), read here only to complete this page's own profile-strength
+  // picture -- matches the same fix applied to the dashboard's completeness widget.
+  const [hasResume, setHasResume] = useState(false);
 
   const [newSkill, setNewSkill] = useState('');
   const [newPortfolioLink, setNewPortfolioLink] = useState('');
@@ -114,6 +118,7 @@ export default function SeekerProfilePage() {
       setLanguages(remoteProfile.languages || []);
       setCertifications(remoteProfile.certifications || []);
       setPortfolio(remoteProfile.portfolio || []);
+      setHasResume((remoteProfile.resumes || []).length > 0);
     } else if (user) {
       setProfile(p => ({
         ...p,
@@ -125,15 +130,22 @@ export default function SeekerProfilePage() {
   }, [remoteProfile, user]);
 
   // ── Profile Strength ──
+  // SEEKERREDESIGN-1: added Name/Address/Career details/Resume so this matches the dashboard's
+  // own completeness widget field-for-field -- a seeker used to see two different percentages
+  // for the same profile depending which screen they were on.
   const strengthItems = [
+    { label: 'Name added', done: !!profile.name },
     { label: 'Photo uploaded', done: !!profile.photoUrl },
+    { label: 'Address added', done: !!profile.address && !!profile.district },
     { label: 'Contact details', done: !!profile.phone && !!profile.email },
+    { label: 'Career details added', done: !!profile.currentRole },
     { label: 'Education added', done: education.length > 0 },
     { label: 'Experience added', done: experience.length > 0 },
     { label: 'Skills added', done: skills.length >= 3 },
     { label: 'Languages selected', done: languages.length > 0 },
     { label: 'Certifications', done: certifications.length > 0 },
     { label: 'Portfolio links', done: portfolio.length > 0 },
+    { label: 'Resume uploaded', done: hasResume },
   ];
   const profileStrength = Math.round((strengthItems.filter(i => i.done).length / strengthItems.length) * 100);
 

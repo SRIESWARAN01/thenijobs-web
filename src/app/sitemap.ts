@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap, getPublishedPortfolioSitesForSitemap } from '@/lib/firebase/firestoreServer';
+import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap, getPublishedPortfolioSitesForSitemap, getPublicSeekerPortfoliosForSitemap, getAllMarketplaceItemParamsServer } from '@/lib/firebase/firestoreServer';
 import { LOCATIONS_DATA, CATEGORIES_LIST } from '@/components/seo/locationData';
 import { BUSINESS_CATEGORY_SITEMAP_SLUGS } from '@/lib/seo/businessCategories';
 
@@ -167,6 +167,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[Sitemap] Error fetching portfolio sites:', error);
   }
 
+  // ── DYNAMIC: Public seeker portfolios (SEO-GAP-1 — these existed and rendered, but no
+  // crawler was ever told they exist; see getPublicSeekerPortfoliosForSitemap for why this
+  // filters on the same plan-based index eligibility the page itself uses) ──
+  let seekerPortfolioPages: MetadataRoute.Sitemap = [];
+  try {
+    const seekerPortfolios = await getPublicSeekerPortfoliosForSitemap();
+    seekerPortfolioPages = seekerPortfolios.map(p => ({
+      url: `${BASE}/portfolio/seeker/${p.id}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+      ...withLastModified(p.updatedAt),
+    }));
+  } catch (error) {
+    console.error('[Sitemap] Error fetching seeker portfolios:', error);
+  }
+
+  // ── DYNAMIC: Marketplace product/service detail pages (SEO-GAP-1 — MARKETPLACE-1 built
+  // these as real, indexable, canonical-URL pages, but never wired them into the sitemap) ──
+  let marketplaceItemPages: MetadataRoute.Sitemap = [];
+  try {
+    const items = await getAllMarketplaceItemParamsServer();
+    marketplaceItemPages = items.map(item => ({
+      url: `${BASE}/marketplace/${item.type}/${item.companySlug}/${item.itemId}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+      // No genuine updatedAt exists on a product/service array entry — SEO-4's own rule
+      // applies here too: no date beats a fake one.
+    }));
+  } catch (error) {
+    console.error('[Sitemap] Error fetching marketplace items:', error);
+  }
+
   return [
     ...staticPages,
     ...locationPages,
@@ -175,6 +207,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...jobPages,
     ...companyPages,
     ...portfolioPages,
+    ...seekerPortfolioPages,
+    ...marketplaceItemPages,
   ];
 }
 

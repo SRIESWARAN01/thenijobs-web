@@ -470,6 +470,31 @@ export async function getAllPublicSeekerPortfolioIdsServer(): Promise<string[]> 
 }
 
 /**
+ * SEO-GAP-1: sitemap.ts never listed a single /portfolio/seeker/[id] URL -- these public
+ * portfolio pages existed and rendered, but no crawler was ever told they exist. Filters on
+ * the SAME plan check SeekerPortfolioClient.tsx itself uses to set robots index/noindex
+ * (`['premium', 'enterprise'].includes(plan)`) -- advertising a URL in the sitemap while the
+ * page's own robots meta tag says noindex is a real, documented anti-pattern search engines
+ * flag, not a harmless extra.
+ */
+export async function getPublicSeekerPortfoliosForSitemap(): Promise<
+  Array<{ id: string; updatedAt?: string }>
+> {
+  try {
+    const profiles = await runQueryREST<any>(
+      'seekerProfiles',
+      [{ field: 'isPortfolioPublic', op: 'EQUAL', value: { booleanValue: true } }],
+    );
+    return profiles
+      .filter((p) => ['premium', 'enterprise'].includes((p.subscriptionPlan || 'free').toLowerCase()))
+      .map((p) => ({ id: p.id, updatedAt: p.updatedAt || p.createdAt || '' }));
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to query public seeker portfolios for sitemap:', err);
+    return [];
+  }
+}
+
+/**
  * Fetch all VERIFIED company slugs for generateStaticParams.
  * RULES-1: this runs unauthenticated over REST at build time; under default-deny rules an
  * unfiltered list is denied, so the query carries the same constraint as the public read rule.

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { FacebookIcon, InstagramIcon, LinkedinIcon } from '@/components/ui/BrandIcons';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import CompanyIDCard from '@/components/id-card/CompanyIDCard';
 import { safeExternalUrl } from '@/lib/safeUrl';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
@@ -727,6 +728,15 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                   </div>
                 </div>
               )}
+
+              {/* Digital Visiting Card — IDCARD-1: this same flip card already existed on the
+                  employer's own private /employer/id-card dashboard screen but was never shown
+                  to a public visitor. Placed below the sticky Contact cell in the same column
+                  (order-4) so a visitor can view, download, or WhatsApp-share it directly. */}
+              <div className="lg:col-span-1 lg:order-4 bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Digital Visiting Card</h2>
+                <CompanyIDCard company={company} />
+              </div>
 
               {/* Contact & Location Details — the tall right-hand bento cell on desktop,
                   sticky so the enquiry form follows the reader down the page. */}

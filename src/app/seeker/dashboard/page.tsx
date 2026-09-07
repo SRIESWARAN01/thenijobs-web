@@ -8,7 +8,7 @@ import {
   Sparkles, TrendingUp, User,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection } from '@/hooks/useFirestore';
+import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { useSeekerStats } from '@/hooks/useRealtimeStats';
 import { where, orderBy, limit } from 'firebase/firestore';
 import { formatDate, type FirestoreTime } from '@/lib/firestoreTime';
@@ -45,13 +45,25 @@ interface SeekerProfile {
   photoURL?: string;
   phone?: string;
   phoneNumber?: string;
+}
+
+// SEEKERREDESIGN-1: the fields a seeker actually fills in on /seeker/profile (name, photo,
+// address, education, experience, skills, current role) and uploads on /seeker/resume all
+// live on the `seekerProfiles/{uid}` document -- the profile page's own save handler only
+// ever syncs displayName/email/phone/district back to `users/{uid}`. Reading photo/skills/
+// education/experience/resume off the `users`-backed `useAuth()` object (as this widget used
+// to) meant those checks could never turn done, no matter how complete a seeker's real
+// profile was -- this widget was quietly lying about what "complete" meant.
+interface SeekerProfileDoc {
+  name?: string;
+  photoUrl?: string;
+  address?: string;
+  district?: string;
+  currentRole?: string;
   skills?: unknown[];
   education?: unknown[];
   experience?: unknown[];
-  resumeUrl?: string;
-  resumeURL?: string;
-  bio?: string;
-  about?: string;
+  resumes?: { isDefault?: boolean }[];
 }
 
 interface ProfileCheck { key: string; label: string; done: boolean; href: string; icon: LucideIcon }
@@ -63,6 +75,7 @@ export default function SeekerDashboard() {
   const uid = user?.uid;
 
   const { stats, loading: statsLoading } = useSeekerStats(uid);
+  const { data: seekerProfile } = useDocument<SeekerProfileDoc>('seekerProfiles', uid);
   const { data: applications, loading: appsLoading } = useCollection<ApplicationDoc>('applications', [
     where('seekerId', '==', uid || ''), orderBy('createdAt', 'desc'), limit(5)
   ], { skip: !uid });
@@ -92,15 +105,18 @@ export default function SeekerDashboard() {
   const loading = statsLoading || appsLoading || jobsLoading;
 
   // ─── Profile completion ───
+  // Sourced from the real seekerProfiles/{uid} document -- see the SeekerProfileDoc comment
+  // above for why `useAuth()`'s `user` (backed by `users/{uid}`) can't answer these.
   const profileChecks: ProfileCheck[] = [
-    { key: 'name', label: 'Add your name', done: !!(user?.displayName), href: '/seeker/profile', icon: User },
+    { key: 'name', label: 'Add your name', done: !!(seekerProfile?.name || user?.displayName), href: '/seeker/profile', icon: User },
+    { key: 'photo', label: 'Upload profile photo', done: !!(seekerProfile?.photoUrl || firebaseUser?.photoURL), href: '/seeker/profile', icon: User },
+    { key: 'address', label: 'Add your address', done: !!(seekerProfile?.address && seekerProfile?.district), href: '/seeker/profile', icon: MapPin },
     { key: 'phone', label: 'Add phone number', done: !!(user?.phone || user?.phoneNumber), href: '/seeker/profile', icon: User },
-    { key: 'photo', label: 'Upload profile photo', done: !!(user?.photoURL || firebaseUser?.photoURL), href: '/seeker/profile', icon: User },
-    { key: 'skills', label: 'Add your skills', done: !!(user?.skills?.length), href: '/seeker/skills', icon: Sparkles },
-    { key: 'education', label: 'Add education', done: !!(user?.education?.length), href: '/seeker/profile', icon: Award },
-    { key: 'experience', label: 'Add work experience', done: !!(user?.experience?.length), href: '/seeker/profile', icon: Briefcase },
-    { key: 'resume', label: 'Upload resume', done: !!(user?.resumeUrl || user?.resumeURL), href: '/seeker/resume', icon: FileText },
-    { key: 'bio', label: 'Write a short bio', done: !!(user?.bio || user?.about), href: '/seeker/profile', icon: FileText },
+    { key: 'role', label: 'Add your current role', done: !!(seekerProfile?.currentRole), href: '/seeker/profile', icon: Briefcase },
+    { key: 'education', label: 'Add education', done: !!(seekerProfile?.education?.length), href: '/seeker/profile', icon: Award },
+    { key: 'experience', label: 'Add work experience', done: !!(seekerProfile?.experience?.length), href: '/seeker/profile', icon: Briefcase },
+    { key: 'skills', label: 'Add your skills', done: !!(seekerProfile?.skills?.length), href: '/seeker/skills', icon: Sparkles },
+    { key: 'resume', label: 'Upload resume', done: !!(seekerProfile?.resumes?.length), href: '/seeker/resume', icon: FileText },
   ];
   const completedCount = profileChecks.filter(c => c.done).length;
   const profileStrength = Math.round((completedCount / profileChecks.length) * 100);

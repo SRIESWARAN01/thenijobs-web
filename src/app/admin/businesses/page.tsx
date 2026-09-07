@@ -7,7 +7,7 @@ import {
   Star, Crown, MapPin, BadgeCheck, Clock, Loader2, Download,
   Phone, MessageCircle, AlertCircle, X, Send, Eye, RefreshCw,
   Globe, Mail, ShieldCheck, User, ExternalLink, FileText, Check,
-  FileSpreadsheet, Upload, Edit3, Save, Trash2, Copy
+  FileSpreadsheet, Upload, Edit3, Save, Trash2, Copy, Briefcase
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -704,6 +704,7 @@ export default function BusinessesPage() {
             { label: 'Edit business', icon: Edit3, onClick: () => openEditBizModal(biz) },
             { label: 'Manage website', icon: Globe, href: `/admin/businesses/${biz.id}/website` },
             { label: 'Manage profile', icon: User, href: `/admin/businesses/${biz.id}/profile` },
+            { label: 'Manage jobs', icon: Briefcase, href: `/admin/businesses/${biz.id}/jobs` },
           ];
           if (cleanPhone) {
             items.push({ label: `Call ${biz.phone}`, icon: Phone, href: `tel:${cleanPhone}` });
@@ -777,6 +778,12 @@ export default function BusinessesPage() {
                   className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                 >
                   <Globe size={13} /> Website
+                </Link>
+                <Link
+                  href={`/admin/businesses/${previewBiz.id}/jobs`}
+                  className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Briefcase size={13} /> Jobs
                 </Link>
                 <button
                   type="button"

@@ -169,6 +169,14 @@
     {
       "source": "/admin/businesses/:id/profile",
       "destination": "/admin/businesses/_fallback/profile"
+    },
+    {
+      "source": "/admin/businesses/:id/jobs/:jobId",
+      "destination": "/admin/businesses/_fallback/jobs/_fallback"
+    },
+    {
+      "source": "/admin/businesses/:id/jobs",
+      "destination": "/admin/businesses/_fallback/jobs"
     }
   ]
 }

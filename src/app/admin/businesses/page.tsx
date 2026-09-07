@@ -703,6 +703,7 @@ export default function BusinessesPage() {
             { label: 'View details', icon: Eye, onClick: () => setPreviewBiz(biz) },
             { label: 'Edit business', icon: Edit3, onClick: () => openEditBizModal(biz) },
             { label: 'Manage website', icon: Globe, href: `/admin/businesses/${biz.id}/website` },
+            { label: 'Manage profile', icon: User, href: `/admin/businesses/${biz.id}/profile` },
           ];
           if (cleanPhone) {
             items.push({ label: `Call ${biz.phone}`, icon: Phone, href: `tel:${cleanPhone}` });
@@ -765,6 +766,12 @@ export default function BusinessesPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <Link
+                  href={`/admin/businesses/${previewBiz.id}/profile`}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <User size={13} /> Profile
+                </Link>
                 <Link
                   href={`/admin/businesses/${previewBiz.id}/website`}
                   className="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"

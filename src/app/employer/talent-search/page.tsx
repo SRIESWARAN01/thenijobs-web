@@ -273,7 +273,11 @@ export default function TalentSearchPage() {
                     <MapPin size={13} className="text-blue-600" />
                     <span>Resident of {selectedCandidate.district || 'Theni'}</span>
                   </div>
-                  {selectedCandidate.address && (
+                  {/* PRIV-3: this used to show the raw address unconditionally, ignoring the same
+                      privacySettings.hideAddress toggle SeekerPortfolioClient.tsx already respects
+                      (per PRIV-2). Fail-closed like every other field here: hidden unless the
+                      seeker explicitly opted in. */}
+                  {selectedCandidate.address && selectedCandidate.privacySettings?.hideAddress === false && (
                     <p className="text-xs text-gray-500 pl-5">{selectedCandidate.address}</p>
                   )}
                 </div>
@@ -283,13 +287,27 @@ export default function TalentSearchPage() {
                   <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contact Information</h4>
                   {isPremiumCompany ? (
                     <div className="space-y-2 text-xs">
+                      {/* PRIV-3: isPremiumCompany is a monetization gate, not a privacy one -- a
+                          premium employer could still see a seeker's phone/email even after that
+                          seeker explicitly opted out via privacySettings.hidePhone/hideEmail
+                          (seeker/profile/page.tsx's Contact Visibility toggles). Mirrors
+                          SeekerPortfolioClient.tsx's own PRIV-2 fix: fail-closed, hidden unless
+                          the field is explicitly `=== false`. */}
                       <div className="flex items-center gap-2">
                         <Phone size={13} className="text-blue-600" />
-                        <span className="text-white font-medium">{selectedCandidate.phone || 'N/A'}</span>
+                        {selectedCandidate.phone && selectedCandidate.privacySettings?.hidePhone === false ? (
+                          <span className="text-white font-medium">{selectedCandidate.phone}</span>
+                        ) : (
+                          <span className="text-gray-500 font-medium flex items-center gap-1"><Lock size={11} /> Hidden by candidate</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Mail size={13} className="text-blue-600" />
-                        <span className="text-white font-medium truncate block max-w-[180px]">{selectedCandidate.email || 'N/A'}</span>
+                        {selectedCandidate.email && selectedCandidate.privacySettings?.hideEmail === false ? (
+                          <span className="text-white font-medium truncate block max-w-[180px]">{selectedCandidate.email}</span>
+                        ) : (
+                          <span className="text-gray-500 font-medium flex items-center gap-1"><Lock size={11} /> Hidden by candidate</span>
+                        )}
                       </div>
                     </div>
                   ) : (

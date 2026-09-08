@@ -8,7 +8,7 @@ import {
   Bell, Calendar, Building2, Settings, LogOut,
   ChevronLeft, ChevronRight, Menu, X, Sparkles,
   Send, GraduationCap, Loader2, CreditCard, Briefcase,
-  ArrowRight, ShieldCheck, Globe
+  ArrowRight, ShieldCheck, Globe, Key
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -28,6 +28,11 @@ const SEEKER_NAV = [
   { label: 'Interviews', icon: Calendar, href: '/seeker/interviews' },
   { label: 'Companies', icon: Building2, href: '/seeker/companies' },
   { label: 'AI Coach', icon: Sparkles, href: '/seeker/ai-coach', accent: true },
+  // AI-CONNECT-1: unlisted in this phase's own may_write, but a justified cascade -- without a
+  // nav entry the new /seeker/ai settings page would be built but unreachable by any real user,
+  // defeating the point of building it (same reasoning SEEKERPRIVACY-1/PRICING-1 already used
+  // for their own small, necessary cascades).
+  { label: 'AI Key Connection', icon: Key, href: '/seeker/ai' },
   { label: 'Skills', icon: GraduationCap, href: '/seeker/skills' },
   { label: 'Digital ID Card', icon: CreditCard, href: '/seeker/id-card' },
   { label: 'Notifications', icon: Bell, href: '/seeker/notifications' },

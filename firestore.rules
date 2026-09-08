@@ -760,6 +760,18 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // ===== AI CONNECTIONS (AI-CONNECT-1) =====
+    // A user's own encrypted provider API key (see src/lib/ai/keyEncryption.ts). Deliberately
+    // stricter than platformSettings/aiConfig's admin-only-readable plaintext key: no client,
+    // not even the owning user or an admin, may ever read or write this document directly.
+    // Only the Admin SDK (the connect/test/disconnect/status routes under
+    // src/app/api/ai/connections/**) touches it -- the first fully server-only collection in
+    // this codebase. Explicit rather than relying on the default-deny fallthrough below, so the
+    // next person reading this file sees the intent stated, not inferred.
+    match /aiConnections/{userId} {
+      allow read, write: if false;
+    }
+
     // ===== ADMIN BROADCASTS (RULES-1) =====
     match /broadcasts/{broadcastId} {
       allow read: if isAuthenticated();

@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { PROVIDER_MODELS, DEFAULT_AI_CONFIG } from '@/lib/ai/providers/index';
+import { AI_CONNECTION_FEE_INR } from '@/lib/constants';
 import type { AIProviderConfig, ProviderEntry } from '@/lib/ai/providers/index';
 import { Button, Card, CardBody, PageHeader, PageShell, Switch } from '@/components/dashboard';
 
@@ -38,7 +39,13 @@ export default function AdminAISettingsPage() {
       try {
         const snap = await getDoc(doc(db, 'platformSettings', 'aiConfig'));
         if (snap.exists()) {
-          setConfig(snap.data() as AIProviderConfig);
+          // AI-CONNECT-1: merge over DEFAULT_AI_CONFIG rather than replacing it outright -- an
+          // existing document predates byokEnabled (and any future new field), so reading it
+          // verbatim would leave that field undefined in state. handleSave below writes the
+          // whole object back with a plain setDoc (no merge), and the Firestore SDK rejects an
+          // undefined field value outright -- this would break saving for every admin who loads
+          // this page before ever touching the new toggle.
+          setConfig({ ...DEFAULT_AI_CONFIG, ...(snap.data() as Partial<AIProviderConfig>) });
         }
       } catch (err) {
         console.error('Failed to load AI config:', err);
@@ -240,6 +247,27 @@ export default function AdminAISettingsPage() {
             </span>
           </div>
         )}
+      </Card>
+
+      {/* AI-CONNECT-1: platform kill-switch for bring-your-own-key, independent of "AI features"
+          above (which governs THENIJOBS's own platform-funded AI, a separate product). Off by
+          default -- src/lib/ai/aiConnectionAccess.ts refuses every connect attempt while this is
+          false, regardless of role, plan, or fee. */}
+      <Card>
+        <CardBody className="flex items-center justify-between gap-4 rounded-xl bg-slate-50 p-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Key size={16} className="text-indigo-600 shrink-0" aria-hidden />
+            <div className="min-w-0">
+              <span className="text-sm font-semibold text-slate-700 block">Bring your own AI key (BYOK)</span>
+              <span className="text-xs text-slate-500">Lets seekers (₹{AI_CONNECTION_FEE_INR} one-time fee) and Enterprise-plan companies connect their own OpenAI/Gemini key instead of using THENIJOBS AI credits.</span>
+            </div>
+          </div>
+          <Switch
+            checked={config.byokEnabled === true}
+            onChange={(next) => setConfig(prev => ({ ...prev, byokEnabled: next }))}
+            label="Enable bring-your-own-key"
+          />
+        </CardBody>
       </Card>
 
       {/* Provider Cards */}

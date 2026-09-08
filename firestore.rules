@@ -283,15 +283,50 @@ service cloud.firestore {
     // ===== SEEKER PROFILES =====
     match /seekerProfiles/{userId} {
       // Employers/admins can read profiles (for talent search / candidate review).
-      // A seeker who explicitly opted in (isPortfolioPublic == true) is also publicly
-      // readable, which is what makes /portfolio/seeker/{id} work for a signed-out
+      // A seeker who explicitly opted in AND whose ₹50/year payment is still valid is also
+      // publicly readable, which is what makes /portfolio/seeker/{id} work for a signed-out
       // visitor and for the unauthenticated build-time generateStaticParams query.
       // Rules are document-level: opting in exposes the WHOLE profile document, so the
       // client-side `privacySettings` toggles are presentation only, not access control.
+      //
+      // SEEKERPRIVACY-1: this used to check ONLY isPortfolioPublic == true, with no expiry
+      // check at all -- caught while reasoning through the emulator probe's own results. Once a
+      // seeker paid once and isPortfolioPublic was set true, the profile stayed publicly
+      // readable FOREVER, whether or not publicProfilePaidUntil ever lapsed -- there was no
+      // recurring fee, only a one-time unlock, defeating the owner's "₹50/year" ask entirely.
+      // Requiring a still-valid publicProfilePaidUntil at READ time makes the year genuinely
+      // expire on its own, with no scheduled job needed to flip isPortfolioPublic back to false.
       allow read: if isOwner(userId) || isAdmin() || isEmployerOrOwner()
-                  || resource.data.isPortfolioPublic == true;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+                  || (resource.data.isPortfolioPublic == true &&
+                      resource.data.publicProfilePaidUntil is timestamp &&
+                      resource.data.publicProfilePaidUntil > request.time);
+      // SEEKERPRIVACY-1: before this, `allow update: if isOwner(userId) || isAdmin();` let a
+      // seeker flip isPortfolioPublic to true with a bare, unrestricted client write -- the
+      // owner's Rs50/year charge for public visibility had no enforcement at all. Same shape
+      // as ADMINWEB-2's firstApprovedAt gate above (portfolioSites): a non-admin write may only
+      // set isPortfolioPublic true when publicProfilePaidUntil is already a still-valid
+      // timestamp -- set once, server-side, by the Firebase Admin SDK after a verified Razorpay
+      // webhook (never by the client) -- and may never touch publicProfilePaidUntil itself.
+      allow create: if isOwner(userId) &&
+        (isAdmin() || request.resource.data.isPortfolioPublic != true) &&
+        (isAdmin() || !request.resource.data.keys().hasAny(['publicProfilePaidUntil']) ||
+          request.resource.data.publicProfilePaidUntil == null);
+      // Live-tested against the Firestore emulator (SEEKERPRIVACY-1): an earlier version of
+      // this gate re-evaluated isPortfolioPublic's CURRENT value on every update, so once a
+      // seeker's paid window lapsed, ANY unrelated field edit (skills, address, anything) that
+      // left isPortfolioPublic unchanged still failed -- the gate does not know a value was
+      // merely inherited rather than freshly asserted unless told so explicitly. Fixed by only
+      // applying the payment check when this update actually CHANGES isPortfolioPublic
+      // (`.diff().affectedKeys()`, same idiom as the publicProfilePaidUntil anti-tamper clause
+      // below) -- a write that never touches the field at all, or explicitly re-sends its
+      // current value unchanged, bypasses the gate entirely, matching normal user expectation.
+      allow update: if (isOwner(userId) || isAdmin()) &&
+        (isAdmin() ||
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPortfolioPublic']) ||
+          request.resource.data.isPortfolioPublic != true ||
+          (resource.data.publicProfilePaidUntil is timestamp &&
+           resource.data.publicProfilePaidUntil > request.time)) &&
+        (isAdmin() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['publicProfilePaidUntil']));
       allow delete: if isAdmin();
     }
 

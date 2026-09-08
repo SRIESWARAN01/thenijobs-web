@@ -13,6 +13,7 @@ import type { PortfolioSite, PortfolioSection, PortfolioTheme, EditorState } fro
 import { DEFAULT_EDITOR_STATE, DEVICE_SIZES, FONT_OPTIONS } from '@/lib/types/portfolio';
 import TemplateRenderer from '@/components/portfolio/TemplateRenderer';
 import { Switch } from '@/components/dashboard';
+import AIContentAssistant from '@/components/portfolio/editor/AIContentAssistant';
 
 type EditorTab = 'sections' | 'theme' | 'branding' | 'seo';
 
@@ -369,15 +370,25 @@ export default function PortfolioSiteEditor({ initialSite, planSlug, backHref, o
             {/* SEO TAB */}
             {activeTab === 'seo' && (
               <div className="space-y-4">
-                <div>
+                <div className="space-y-2">
                   <label htmlFor="portfolio-site-editor-seo-title" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">SEO Title</label>
                   <input id="portfolio-site-editor-seo-title" type="text" value={site.seo.title} onChange={e => updateSiteField('seo.title', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs" />
+                  <AIContentAssistant
+                    companyName={site.branding.companyName}
+                    contentType="seo_title"
+                    onGenerated={text => updateSiteField('seo.title', text)}
+                  />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <label htmlFor="portfolio-site-editor-meta-description" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Meta Description</label>
                   <textarea id="portfolio-site-editor-meta-description" value={site.seo.description} onChange={e => updateSiteField('seo.description', e.target.value)}
                     rows={3} className="w-full px-3 py-2 border border-gray-200 rounded-xl text-base sm:text-xs resize-none" />
+                  <AIContentAssistant
+                    companyName={site.branding.companyName}
+                    contentType="seo_description"
+                    onGenerated={text => updateSiteField('seo.description', text)}
+                  />
                 </div>
                 <div>
                   <label htmlFor="portfolio-site-editor-keywords-comma-separated" className="text-[10px] font-semibold text-gray-500 uppercase block mb-1">Keywords (comma-separated)</label>

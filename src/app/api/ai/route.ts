@@ -10,6 +10,7 @@ import { JOB_SEARCH_SYSTEM_PROMPT, buildJobSearchPrompt } from '@/lib/ai/prompts
 import { JOB_RECOMMENDATION_SYSTEM_PROMPT, buildJobRecommendationPrompt } from '@/lib/ai/prompts/jobRecommendationPrompt';
 import { CAREER_ASSISTANT_SYSTEM_PROMPT, buildCareerAssistantPrompt } from '@/lib/ai/prompts/careerAssistantPrompt';
 import { RESUME_IMPROVEMENT_SYSTEM_PROMPT, FULL_RESUME_GEN_SYSTEM_PROMPT, buildResumeImprovementPrompt, buildFullResumeGenPrompt } from '@/lib/ai/prompts/resumePrompt';
+import { RESUME_ANALYSIS_SYSTEM_PROMPT, buildResumeAnalysisPrompt } from '@/lib/ai/prompts/resumeAnalysisPrompt';
 import { COVER_LETTER_SYSTEM_PROMPT, buildCoverLetterPrompt } from '@/lib/ai/prompts/coverLetterPrompt';
 import { INTERVIEW_PREP_SYSTEM_PROMPT, buildInterviewPrepPrompt, buildAnswerFeedbackPrompt } from '@/lib/ai/prompts/interviewPrompt';
 import { COMPANY_CONTENT_SYSTEM_PROMPT, buildCompanyContentPrompt } from '@/lib/ai/prompts/companyPrompt';
@@ -170,6 +171,12 @@ export async function POST(req: NextRequest) {
       case 'full_resume_generation': {
         systemPrompt = FULL_RESUME_GEN_SYSTEM_PROMPT;
         userPrompt = buildFullResumeGenPrompt(payload);
+        break;
+      }
+
+      case 'resume_analysis': {
+        systemPrompt = RESUME_ANALYSIS_SYSTEM_PROMPT;
+        userPrompt = buildResumeAnalysisPrompt(payload.resumeData || {});
         break;
       }
 

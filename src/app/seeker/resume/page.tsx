@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Upload, FileText, Download, Trash2, Star, CheckCircle,
   File, Clock, Zap, ChevronRight, Lightbulb, Shield,
-  HardDrive, Eye, Loader2
+  HardDrive, Eye, Loader2, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
@@ -319,6 +319,25 @@ export default function ResumeManagementPage() {
               </div>
             </div>
             <ChevronRight size={18} className="text-gray-600 group-hover:text-emerald-600 transition-colors shrink-0" />
+          </Link>
+
+          {/* AI Resume Analysis CTA */}
+          <Link
+            href="/seeker/resume/analyze"
+            className="glass-card rounded-2xl p-5 flex items-center gap-4 hover:border-blue-200 transition-all group block"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Sparkles size={24} className="text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                AI Resume Analysis
+              </h3>
+              <p className="text-xs text-gray-450 mt-0.5">
+                Get a real score, strengths, gaps, and role suggestions based on your own profile data.
+              </p>
+            </div>
+            <ChevronRight size={18} className="text-gray-600 group-hover:text-blue-600 transition-colors shrink-0" />
           </Link>
         </div>
 

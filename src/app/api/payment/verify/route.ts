@@ -41,6 +41,22 @@ async function writeOrThrow(op: () => Promise<unknown>, what: string): Promise<v
   }
 }
 
+/**
+ * HOSTING-1: an audit-log write that must never turn "log rather than throw" into "throw
+ * instead" — getAdminFirestore() itself throws synchronously when no credential is configured,
+ * which a bare `.catch()` on the write promise does not catch (the throw happens before any
+ * promise exists). Caught here at the call site instead, exactly matching this route's own
+ * pre-existing swallow-and-log convention for its audit writes, so an uncredentialed Admin SDK
+ * still returns the request's real (400/403) response instead of an unrelated 500.
+ */
+function bestEffortWrite(op: () => Promise<unknown>, what: string): void {
+  try {
+    op()?.catch?.((err: any) => console.error(`[Payment Verify] ${what} threw:`, err?.message || err));
+  } catch (err: any) {
+    console.error(`[Payment Verify] ${what} threw:`, err?.message || err);
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const {
@@ -62,12 +78,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Order ID and User ID are required' }, { status: 400 });
     }
 
-    const db = getAdminFirestore();
+    // HOSTING-1: getAdminFirestore() is only ever called inside a write site below (via
+    // writeOrThrow/bestEffortWrite) — never hoisted here. A request that never reaches a write
+    // at all (unknown plan, wrong amount, no signature) must still get its specific 400/403,
+    // not a generic 500 from an Admin SDK credential this particular request didn't need yet.
 
     // If explicit failure passed from frontend gateway
     if (status === 'failed') {
       // Audit only, on a path that has already failed — log rather than throw.
-      db.collection('payments').add({
+      bestEffortWrite(() => getAdminFirestore().collection('payments').add({
         orderId,
         paymentId: paymentId || `failed_${Date.now()}`,
         userId,
@@ -78,7 +97,7 @@ export async function POST(request: Request) {
         status: 'failed',
         paymentMethod: paymentMethod || 'RAZORPAY',
         createdAt: new Date(),
-      }).catch((err) => console.error('[Payment Verify] failed-payment audit write threw:', err?.message || err));
+      }), 'failed-payment audit write');
 
       return NextResponse.json({
         success: false,
@@ -116,14 +135,14 @@ export async function POST(request: Request) {
         console.error('[Payment Verify] INVALID SIGNATURE. Expected:', expectedSignature, 'Got:', signature);
 
         // Log tampered payment attempt
-        db.collection('payments').add({
+        bestEffortWrite(() => getAdminFirestore().collection('payments').add({
           orderId,
           paymentId,
           userId,
           status: 'signature_mismatch',
           paymentMethod: paymentMethod || 'RAZORPAY',
           createdAt: new Date(),
-        }).catch(() => {});
+        }), 'signature-mismatch audit write');
 
         return NextResponse.json({
           success: false,
@@ -161,7 +180,11 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Verified / Captured payment handling
+    // Verified / Captured payment handling. Only reached once every check above has passed,
+    // so a missing Admin SDK credential from here on is a genuine write failure — the outer
+    // catch below turns it into the "could not be recorded" 500, which is the correct, honest
+    // response for a payment that passed verification but couldn't be persisted.
+    const db = getAdminFirestore();
     const now = new Date();
     const expiryDate = new Date();
     expiryDate.setFullYear(now.getFullYear() + 1); // 1 year annual subscription
@@ -225,7 +248,7 @@ export async function POST(request: Request) {
     // Deliberately not writeOrThrow: the subscription is already active by this point, and
     // failing the whole payment because a courtesy notification did not write would be worse
     // than the missing notification. It is logged instead of swallowed.
-    db.collection('notifications').add({
+    bestEffortWrite(() => db.collection('notifications').add({
       userId,
       type: 'system',
       title: 'Payment Successful! 🎉',
@@ -233,7 +256,7 @@ export async function POST(request: Request) {
       read: false,
       actionUrl: companyId ? '/employer/subscription' : '/seeker/subscription',
       createdAt: now,
-    }).catch((err) => console.error('[Payment Verify] notification write threw:', err?.message || err));
+    }), 'notification write');
 
     return NextResponse.json({
       success: true,

@@ -9,6 +9,7 @@ export type AIFeatureKey =
   | 'career_assistant'
   | 'profile_improvement'
   | 'resume_improvement'
+  | 'resume_analysis'
   | 'cover_letter'
   | 'interview_prep'
   | 'full_resume_generation'
@@ -26,6 +27,7 @@ export const AI_CREDIT_COSTS: Record<AIFeatureKey, number> = {
   career_assistant: 1,
   profile_improvement: 1,
   resume_improvement: 2,
+  resume_analysis: 2,
   cover_letter: 2,
   interview_prep: 2,
   full_resume_generation: 3,

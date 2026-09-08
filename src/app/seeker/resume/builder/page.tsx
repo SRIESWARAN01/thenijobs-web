@@ -14,6 +14,7 @@ import { db } from '@/lib/firebase/config';
 import { setDoc, doc, arrayUnion } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/contexts/ToastContext';
+import { requestAIService } from '@/lib/ai/aiClient';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -85,6 +86,20 @@ export default function ResumeBuilderPage() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [targetRole, setTargetRole] = useState('');
   const [autoFilled, setAutoFilled] = useState(false);
+
+  // AI-SEEKER-1: the AI's suggestions sit here, unapplied, until the seeker reviews each one --
+  // never written into personal/experience/skills state directly. See handleApplyImprovements.
+  const [improveSuggestions, setImproveSuggestions] = useState<{
+    improvedSummary?: string;
+    careerObjective?: string;
+    optimizedSkills?: string[];
+    experienceSuggestions?: { original: string; improved: string }[];
+    atsTips?: string[];
+  } | null>(null);
+  const [applySummary, setApplySummary] = useState(true);
+  const [applySkills, setApplySkills] = useState(true);
+  const [applyExperienceFlags, setApplyExperienceFlags] = useState<boolean[]>([]);
+  const [improveError, setImproveError] = useState<string | null>(null);
 
   const [personal, setPersonal] = useState<PersonalInfo>({
     name: '',
@@ -207,87 +222,94 @@ export default function ResumeBuilderPage() {
     if (idx > 0) setCurrentStep(STEPS[idx - 1].key);
   };
 
-  /** AI ATS Resume Optimization (Google Gemini via /api/ai) */
-  const handleAIFullGeneration = async () => {
-    if (!targetRole.trim() && !personal.summary) {
-      toast.warning('Please enter a Target Job Role or Subject (e.g. Accountant, Digital Marketer, Civil Engineer).');
+  /**
+   * AI-SEEKER-1: rewords the candidate's OWN existing data via the real resume_improvement
+   * gateway. This never auto-applies anything -- it only populates `improveSuggestions`, which
+   * the review panel below renders as original-vs-improved pairs the seeker approves individually
+   * (see handleApplyImprovements). Replaces the previous handleAIFullGeneration, which called an
+   * invalid feature key (always 400, silently falling back to hardcoded template text) and whose
+   * dead success-path would have invented a fake employer and fabricated metrics -- see this
+   * phase's own ledger row for the full finding.
+   */
+  const handleAIImprove = async () => {
+    const hasRealData = !!personal.summary?.trim() || skills.length > 0 || experience.some(e => e.company || e.role);
+    if (!hasRealData) {
+      toast.warning('Add some resume details first (summary, skills, or experience) -- AI improves what you\'ve already entered, it never invents content.');
       return;
     }
 
     setAiGenerating(true);
-    const target = targetRole.trim() || 'Professional';
-    toast.info('✨ Google Gemini AI is crafting your ATS-optimized resume content...');
+    setImproveError(null);
+    setImproveSuggestions(null);
 
     try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          feature: 'resume_optimize',
-          prompt: `Create complete, highly quantifiable, ATS-friendly resume content in JSON for a "${target}" located in ${personal.district || 'Theni'}, Tamil Nadu.
-Current Skills: ${skills.join(', ')}
-Current Experience: ${experience.map(e => `${e.role} at ${e.company}`).join('; ')}
-
-Return strictly valid JSON with format:
-{
-  "summary": "2-3 concise ATS power sentences with action verbs and quantifiable impact",
-  "careerObjective": "Strong forward-looking objective aligned to ${target}",
-  "skills": ["Skill1", "Skill2", "Skill3", "Skill4", "Skill5", "Skill6"],
-  "experience": [
-    {
-      "role": "${target}",
-      "company": "Enterprise / Organization",
-      "duration": "2023 – Present",
-      "description": "• Implemented process improvements increasing efficiency by 25%\\n• Managed client communications and delivery with 98% satisfaction\\n• Coordinated cross-functional workflows adhering to quality standards"
-    }
-  ]
-}`,
-          userPrompt: `Generate complete professional ATS resume content for ${target}.`,
-        }),
+      const res = await requestAIService<{
+        improvedSummary?: string;
+        careerObjective?: string;
+        optimizedSkills?: string[];
+        experienceSuggestions?: { original: string; improved: string }[];
+        atsTips?: string[];
+      }>({
+        feature: 'resume_improvement',
+        userId: user?.uid,
+        payload: {
+          resumeData: {
+            targetRole: targetRole.trim() || undefined,
+            personal: { summary: personal.summary, careerObjective: personal.careerObjective },
+            education: education.filter(e => e.institution || e.degree),
+            experience: experience.filter(e => e.company || e.role),
+            skills,
+            certifications: certifications.filter(c => c.name),
+          },
+        },
       });
 
-      const json = await res.json();
-
-      if (json.success && json.data) {
-        const aiData = json.data;
-        if (aiData.summary) {
-          setPersonal(p => ({
-            ...p,
-            summary: aiData.summary,
-            careerObjective: aiData.careerObjective || p.careerObjective,
-          }));
-        }
-        if (aiData.skills && Array.isArray(aiData.skills) && aiData.skills.length > 0) {
-          setSkills(aiData.skills);
-        }
-        if (aiData.experience && Array.isArray(aiData.experience) && aiData.experience.length > 0) {
-          setExperience(aiData.experience.map((exp: any, i: number) => ({
-            id: `${Date.now()}_${i}`,
-            company: exp.company || 'Organization',
-            role: exp.role || target,
-            duration: exp.duration || 'Recent',
-            description: exp.description || '',
-          })));
-        }
-        toast.success('✨ Resume successfully optimized with Google Gemini AI!');
+      if (res.success && res.data) {
+        setImproveSuggestions(res.data);
+        setApplySummary(true);
+        setApplySkills(true);
+        setApplyExperienceFlags((res.data.experienceSuggestions || []).map(() => false));
+        toast.success('Suggestions ready -- review each one before applying.');
       } else {
-        // Fallback local enhancement if API error
-        setPersonal(p => ({
-          ...p,
-          summary: `Results-driven ${target} based in ${p.district || 'Theni'}, Tamil Nadu. Proven track record of operational excellence, team collaboration, and achieving performance milestones.`,
-          careerObjective: `To leverage my domain expertise in ${target} to deliver high-quality outcomes and support organizational growth.`
-        }));
-        if (skills.length === 0) {
-          setSkills([target, 'Problem Solving', 'Team Leadership', 'Communication', 'Time Management', 'Process Optimization']);
-        }
-        toast.success('Resume enhanced with standard ATS phrasing!');
+        setImproveError(res.error || 'Could not generate suggestions right now.');
       }
     } catch (err) {
-      console.error(err);
-      toast.warning('AI service error. Applied local ATS template phrasing.');
+      console.error('[AI Improve] failed:', err);
+      setImproveError('Could not generate suggestions right now.');
     } finally {
       setAiGenerating(false);
     }
+  };
+
+  /** Applies ONLY the suggestions the seeker checked. Experience company/role/duration are never
+      touched here -- only the description text of the matching existing entry, by index. */
+  const handleApplyImprovements = () => {
+    if (!improveSuggestions) return;
+
+    if (applySummary && (improveSuggestions.improvedSummary || improveSuggestions.careerObjective)) {
+      setPersonal(p => ({
+        ...p,
+        summary: improveSuggestions.improvedSummary || p.summary,
+        careerObjective: improveSuggestions.careerObjective || p.careerObjective,
+      }));
+    }
+
+    if (applySkills && improveSuggestions.optimizedSkills && improveSuggestions.optimizedSkills.length > 0) {
+      setSkills(improveSuggestions.optimizedSkills);
+    }
+
+    if (improveSuggestions.experienceSuggestions) {
+      setExperience(exp => exp.map((entry, i) => {
+        const suggestion = improveSuggestions.experienceSuggestions?.[i];
+        if (suggestion && applyExperienceFlags[i]) {
+          return { ...entry, description: suggestion.improved };
+        }
+        return entry;
+      }));
+    }
+
+    toast.success('Applied selected changes to your resume.');
+    setImproveSuggestions(null);
   };
 
   const addSkill = () => {
@@ -569,7 +591,7 @@ Return strictly valid JSON with format:
         <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4 flex items-center justify-between flex-wrap gap-2 text-xs shadow-xs">
           <div className="flex items-center gap-2.5 text-emerald-900 font-semibold">
             <BookmarkCheck size={18} className="text-emerald-600 shrink-0" />
-            <span>Profile details auto-loaded! You can edit any field manually or click <strong>AI Optimize Resume</strong>.</span>
+            <span>Profile details auto-loaded! You can edit any field manually or click <strong>AI Improve</strong>.</span>
           </div>
           <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
             ✅ Synced from My Profile
@@ -587,8 +609,8 @@ Return strictly valid JSON with format:
               </span>
               <span className="text-xs text-blue-200 font-medium">ATS High Match Engine</span>
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-white">AI Optimize Resume for Target Role</h2>
-            <p className="text-xs text-blue-200/80">Enter your target designation to automatically generate quantified bullet points, ATS keywords &amp; summary.</p>
+            <h2 className="text-base sm:text-lg font-bold text-white">AI Improve Resume for Target Role</h2>
+            <p className="text-xs text-blue-200/80">Rewords and sharpens the summary, skills and experience you&apos;ve already entered for your target role &mdash; you review every change before anything is applied.</p>
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
             <input
@@ -599,16 +621,82 @@ Return strictly valid JSON with format:
               className="px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-base sm:text-xs text-white placeholder-blue-200/60 focus:outline-none focus:bg-white/20 w-full sm:w-64 font-medium"
             />
             <button
-              onClick={handleAIFullGeneration}
+              onClick={handleAIImprove}
               disabled={aiGenerating}
               className="px-5 py-3 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer disabled:opacity-50"
             >
               {aiGenerating ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-              {aiGenerating ? 'Optimizing...' : 'AI Optimize'}
+              {aiGenerating ? 'Generating suggestions...' : 'AI Improve'}
             </button>
           </div>
         </div>
+        {improveError && (
+          <p className="text-xs text-red-300 mt-3">{improveError}</p>
+        )}
       </div>
+
+      {/* AI-SEEKER-1: review panel -- nothing above is applied to the resume until the seeker
+          checks a suggestion and clicks Apply. Each experience suggestion maps 1:1 to an existing
+          entry by index; company/role/duration are never touched, only the description text. */}
+      {improveSuggestions && (
+        <div className="bg-white rounded-3xl p-5 border-2 border-blue-200 shadow-lg space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><Sparkles size={16} className="text-blue-600" /> Review AI Suggestions</h3>
+            <button onClick={() => setImproveSuggestions(null)} className="text-xs text-slate-500 hover:text-slate-700">Discard all</button>
+          </div>
+
+          {(improveSuggestions.improvedSummary || improveSuggestions.careerObjective) && (
+            <label className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 cursor-pointer">
+              <input type="checkbox" checked={applySummary} onChange={e => setApplySummary(e.target.checked)} className="mt-1" />
+              <div className="flex-1 text-xs">
+                <p className="font-semibold text-slate-700 mb-1">Summary &amp; Career Objective</p>
+                <p className="text-slate-400 line-through">{personal.summary || '(empty)'}</p>
+                <p className="text-emerald-700 font-medium mt-1">{improveSuggestions.improvedSummary}</p>
+              </div>
+            </label>
+          )}
+
+          {improveSuggestions.optimizedSkills && improveSuggestions.optimizedSkills.length > 0 && (
+            <label className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 cursor-pointer">
+              <input type="checkbox" checked={applySkills} onChange={e => setApplySkills(e.target.checked)} className="mt-1" />
+              <div className="flex-1 text-xs">
+                <p className="font-semibold text-slate-700 mb-1">Skills (reworded from your own list)</p>
+                <p className="text-slate-400 line-through">{skills.join(', ') || '(empty)'}</p>
+                <p className="text-emerald-700 font-medium mt-1">{improveSuggestions.optimizedSkills.join(', ')}</p>
+              </div>
+            </label>
+          )}
+
+          {(improveSuggestions.experienceSuggestions || []).map((s, i) => (
+            <label key={i} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!applyExperienceFlags[i]}
+                onChange={e => setApplyExperienceFlags(flags => flags.map((f, idx) => idx === i ? e.target.checked : f))}
+                className="mt-1"
+              />
+              <div className="flex-1 text-xs">
+                <p className="font-semibold text-slate-700 mb-1">{experience[i]?.role} at {experience[i]?.company}</p>
+                <p className="text-slate-400 line-through whitespace-pre-line">{s.original}</p>
+                <p className="text-emerald-700 font-medium mt-1 whitespace-pre-line">{s.improved}</p>
+              </div>
+            </label>
+          ))}
+
+          {improveSuggestions.atsTips && improveSuggestions.atsTips.length > 0 && (
+            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-100">
+              <p className="text-[11px] font-semibold text-amber-800 mb-1">ATS Tips</p>
+              {improveSuggestions.atsTips.map((tip, i) => (
+                <p key={i} className="text-[11px] text-amber-700">&bull; {tip}</p>
+              ))}
+            </div>
+          )}
+
+          <Button variant="primary" onClick={handleApplyImprovements} block>
+            <Check size={14} /> Apply Selected Changes
+          </Button>
+        </div>
+      )}
 
       {/* Progress Steps Bar */}
       <div className="bg-white rounded-3xl p-4 border border-gray-200 shadow-xs">

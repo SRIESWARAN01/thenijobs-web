@@ -27,6 +27,15 @@ export const SITE_CONTACT = {
 // connection fee (two separate ₹50 products, per the owner's 2026-09-07 decision).
 export const SEEKER_PUBLIC_PROFILE_FEE_INR = 50;
 
+// AI-CONNECT-1: a ONE-TIME THENIJOBS connection fee for a job seeker to connect their own
+// OpenAI/Gemini API key (D-AI-ACCESS, owner, 2026-09-07) -- distinct from
+// SEEKER_PUBLIC_PROFILE_FEE_INR above (a recurring yearly charge for a different product) despite
+// sharing the same ₹50 amount, and distinct from actual provider usage cost (billed by
+// OpenAI/Gemini directly to the seeker's own account, never THENIJOBS). Paying once grants the
+// connection right permanently -- src/app/api/ai/connections/disconnect/route.ts deliberately
+// preserves this entitlement, so reconnecting a replacement key later never re-bills.
+export const AI_CONNECTION_FEE_INR = 50;
+
 // ===== SUBSCRIPTION PLANS (ANNUAL PRICING STRATEGY — 4 TIERS) =====
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {

@@ -59,7 +59,6 @@ interface SeekerData {
   verificationBadges?: { mobileVerified?: boolean; emailVerified?: boolean; identityVerified?: boolean; educationVerified?: boolean; skillVerified?: boolean };
   resumeUrl?: string;
   resumeUpdatedDate?: string;
-  aiScore?: number;
   profileViewsCount?: number;
   savedCount?: number;
   interviewRequestsCount?: number;
@@ -366,8 +365,6 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
     }
   };
 
-  const aiScore = seeker.aiScore || 85;
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-gray-900 font-sans pb-24">
 
@@ -605,26 +602,6 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
                   <span className="text-[10px] text-gray-500">Interviews Requested</span>
                 </div>
               </div>
-            </div>
-
-            {/* AI Job Match Score Gauge */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="relative w-14 h-14 rounded-full border-4 border-emerald-500 flex items-center justify-center bg-emerald-50 shrink-0">
-                  <span className="font-extrabold text-emerald-700 text-sm">{aiScore}<span className="text-[10px] text-gray-400">%</span></span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                    <Sparkles size={15} className="text-amber-500" /> AI Job Match Score
-                  </h3>
-                  <div className="flex items-center gap-2 text-[11px] text-gray-500 mt-0.5">
-                    <span>Skills: 95%</span> • <span>Location: 100%</span> • <span>Salary: 85%</span>
-                  </div>
-                </div>
-              </div>
-              <span className="px-3 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-extrabold shrink-0">
-                Top Match
-              </span>
             </div>
 
             {/* Summary Section */}

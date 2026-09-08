@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   User, MapPin, Briefcase, GraduationCap, Award,
@@ -63,7 +64,20 @@ interface SeekerData {
   interviewRequestsCount?: number;
 }
 
-export default function SeekerPortfolioClient({ seekerId, initialData }: { seekerId?: string; initialData?: SeekerData }) {
+export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialData }: { seekerId?: string; initialData?: SeekerData }) {
+  // CRITICAL: read the real id from the URL, not the server prop. vercel.json rewrites any
+  // seeker id unknown at the last build (page.tsx's generateStaticParams only pre-builds ids
+  // returned by getAllPublicSeekerPortfolioIdsServer() at build time) to the `_fallback` shell,
+  // so the prop can be `_fallback` while the browser's own URL carries the real id -- mirrors
+  // CompanyProfilePageClient.tsx's exact pattern. Without this, a seeker who makes their
+  // portfolio public after the last build gets served "not found" until the next rebuild.
+  // Skipped when this component is an embedded live-preview (initialData present, from
+  // /seeker/profile's "Live Preview" modal) -- there the URL is the profile editor's own page,
+  // not a portfolio URL, and would resolve to the wrong id.
+  const pathname = usePathname();
+  const urlId = pathname?.split('/').filter(Boolean).pop() || '';
+  const seekerId = (!initialData && urlId && urlId !== '_fallback') ? urlId : seekerIdProp;
+
   const [seeker, setSeeker] = useState<SeekerData | null>(initialData || null);
   const [userName, setUserName] = useState(initialData?.name || '');
   const [loading, setLoading] = useState(!initialData);

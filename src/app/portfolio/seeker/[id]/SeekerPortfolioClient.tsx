@@ -18,6 +18,7 @@ import SeekerIDCard from '@/components/id-card/SeekerIDCard';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { getSeekerGrowthSlogan } from '@/lib/branding/slogans';
 import { safeExternalUrl } from '@/lib/safeUrl';
+import { generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
 
 interface SeekerData {
   name: string;
@@ -262,8 +263,32 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
     }
     scriptTag.textContent = JSON.stringify(cleanJsonLd);
 
+    // SEEKERSITE-1: generateBreadcrumbSchema (src/lib/seo/jobSchema.ts) already exists and is
+    // used across every jobs-in-<location> page and the job-detail page, but SEO-GAP-1's own
+    // audit found it unused here and on company profiles -- a real, cheap, in-scope SEO gap to
+    // close (breadcrumbs are one of the objective's own named SEO elements).
+    // Just Home > {Name} -- there is no real /portfolio index page to link a middle
+    // "Portfolios" level to (only the dynamic [username]/seeker/[id] routes exist), and a
+    // breadcrumb pointing at a URL that doesn't resolve to a real page would be exactly the
+    // kind of fabricated navigation this repo's own non-fabrication discipline (TRUST-1) warns
+    // against.
+    const breadcrumbJsonLd = generateBreadcrumbSchema([
+      { name: 'Home', url: 'https://www.thenijobs.com/' },
+      { name, url: canonicalUrl },
+    ]);
+
+    let breadcrumbScriptTag = document.getElementById('seeker-portfolio-breadcrumb-jsonld') as HTMLScriptElement | null;
+    if (!breadcrumbScriptTag) {
+      breadcrumbScriptTag = document.createElement('script');
+      breadcrumbScriptTag.id = 'seeker-portfolio-breadcrumb-jsonld';
+      breadcrumbScriptTag.type = 'application/ld+json';
+      document.head.appendChild(breadcrumbScriptTag);
+    }
+    breadcrumbScriptTag.textContent = JSON.stringify(breadcrumbJsonLd);
+
     return () => {
       document.getElementById('seeker-portfolio-jsonld')?.remove();
+      document.getElementById('seeker-portfolio-breadcrumb-jsonld')?.remove();
       document.querySelector('link[rel="canonical"]')?.remove();
     };
   }, [seeker, userName, seekerId]);

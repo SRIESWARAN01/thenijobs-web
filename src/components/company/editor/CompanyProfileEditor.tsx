@@ -19,7 +19,7 @@ import CompanyPortfolioManager from '@/components/company/CompanyPortfolioManage
 import CompanyFounderManager from '@/components/company/CompanyFounderManager';
 import CompanySectionToggler from '@/components/company/CompanySectionToggler';
 import CompanyReviewsManager from '@/components/company/CompanyReviewsManager';
-import { useUploadFile } from '@/hooks/useStorage';
+import { useUploadFile, useDeleteFile } from '@/hooks/useStorage';
 import { Button, PageHeader, PageShell, type Crumb } from '@/components/dashboard';
 
 const DEFAULT_COMPANY = {
@@ -147,6 +147,7 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
   ];
 
   const { uploadFile, progress: uploadProgress, loading: uploading } = useUploadFile();
+  const { deleteFile } = useDeleteFile();
 
   useEffect(() => {
     if (initialCompany) {
@@ -199,10 +200,17 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
       toast.error('Please save your company profile first, then add a cover banner.');
       return;
     }
+    const previousUrl = company.coverUrl;
     try {
       const url = await uploadFile(file, `companies/${initialCompany.id}/cover/cover_${Date.now()}`);
       setCoverBroken(false);
       update('coverUrl', url);
+      // STORAGE-LEAK-1: every re-upload used to leave the previous blob orphaned in Storage
+      // forever -- nothing ever referenced it again once coverUrl was overwritten above. Delete
+      // it, best-effort: a delete failure must never undo a successful upload.
+      if (previousUrl) {
+        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous cover banner:', err));
+      }
     } catch (err) {
       console.error(err);
       toast.error('Upload failed: ' + (err as Error).message);
@@ -216,10 +224,15 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
       toast.error('Please save your company profile first, then add a logo.');
       return;
     }
+    const previousUrl = company.logoUrl;
     try {
       const url = await uploadFile(file, `companies/${initialCompany.id}/logo/logo_${Date.now()}`);
       setLogoBroken(false);
       update('logoUrl', url);
+      // STORAGE-LEAK-1: same orphaned-blob leak as the cover banner above.
+      if (previousUrl) {
+        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous logo:', err));
+      }
     } catch (err) {
       console.error(err);
       toast.error('Upload failed: ' + (err as Error).message);
@@ -233,12 +246,17 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
       toast.error('Please save your company profile first, then add gallery photos.');
       return;
     }
+    const previousUrl = company.gallery[index];
     try {
       const url = await uploadFile(file, `companies/${initialCompany.id}/gallery/gallery_${index}_${Date.now()}`);
       setGalleryBroken(prev => ({ ...prev, [index]: false }));
       const newGallery = [...company.gallery];
       newGallery[index] = url;
       setCompany(prev => ({ ...prev, gallery: newGallery }));
+      // STORAGE-LEAK-1: same orphaned-blob leak as cover/logo above.
+      if (previousUrl) {
+        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous gallery photo:', err));
+      }
     } catch (err) {
       console.error(err);
       toast.error('Upload failed: ' + (err as Error).message);

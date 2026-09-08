@@ -7,6 +7,7 @@ import {
   CheckCircle, Circle, Languages, ExternalLink, Loader2, Eye
 } from 'lucide-react';
 import { TN_DISTRICTS } from '@/lib/types';
+import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { useUploadFile } from '@/hooks/useStorage';
@@ -14,6 +15,7 @@ import { db } from '@/lib/firebase/config';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
 import SeekerPortfolioClient from '@/app/portfolio/seeker/[id]/SeekerPortfolioClient';
+import SeekerPublicProfileModal from '@/components/payment/SeekerPublicProfileModal';
 import { useToast } from '@/contexts/ToastContext';
 import { Switch } from '@/components/dashboard';
 
@@ -85,6 +87,10 @@ export default function SeekerProfilePage() {
   // separate /seeker/resume page), read here only to complete this page's own profile-strength
   // picture -- matches the same fix applied to the dashboard's completeness widget.
   const [hasResume, setHasResume] = useState(false);
+  // SEEKERPRIVACY-1: read-only mirror of the server-set (Admin SDK / webhook only) field that
+  // firestore.rules gates isPortfolioPublic on -- never written by this page directly.
+  const [publicProfilePaidUntil, setPublicProfilePaidUntil] = useState<number | null>(null);
+  const [showPublicProfileModal, setShowPublicProfileModal] = useState(false);
 
   const [newSkill, setNewSkill] = useState('');
   const [newPortfolioLink, setNewPortfolioLink] = useState('');
@@ -119,6 +125,7 @@ export default function SeekerProfilePage() {
       setCertifications(remoteProfile.certifications || []);
       setPortfolio(remoteProfile.portfolio || []);
       setHasResume((remoteProfile.resumes || []).length > 0);
+      setPublicProfilePaidUntil(remoteProfile.publicProfilePaidUntil?.toMillis?.() ?? null);
     } else if (user) {
       setProfile(p => ({
         ...p,
@@ -221,8 +228,18 @@ export default function SeekerProfilePage() {
 
     setSaving(true);
     try {
+      // SEEKERPRIVACY-1: isPortfolioPublic is deliberately excluded from this general save.
+      // firestore.rules only allows setting it true when publicProfilePaidUntil is already a
+      // still-valid timestamp; if a seeker's paid year lapses while isPortfolioPublic is still
+      // true in local state, resending it unchanged on every unrelated field edit (skills,
+      // address, anything) would make THIS save fail with a permission error that has nothing
+      // to do with what they were actually trying to change. It's written only by
+      // handleTogglePublicProfile below (turning off, or turning on when already paid) and by
+      // the payment webhook (turning on after a fresh payment).
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { isPortfolioPublic: _isPortfolioPublic, ...profileWithoutPublicFlag } = profile;
       const profileData = {
-        ...profile,
+        ...profileWithoutPublicFlag,
         education,
         experience,
         skills,
@@ -252,6 +269,42 @@ export default function SeekerProfilePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // SEEKERPRIVACY-1: turning the public-profile switch OFF is always free and immediate (the
+  // rules gate only guards the transition TO true). Turning it ON is free only when a still-
+  // valid publicProfilePaidUntil already exists on the document (paid this year, toggled off,
+  // toggling back on) -- otherwise this opens the ₹50/year payment flow instead of writing
+  // anything; a bare client write asserting isPortfolioPublic:true without a valid payment is
+  // rejected by firestore.rules regardless, so attempting it here would just fail silently.
+  const hasValidPublicPayment = !!publicProfilePaidUntil && publicProfilePaidUntil > Date.now();
+
+  const handleTogglePublicProfile = async (next: boolean) => {
+    if (!user?.uid) return;
+
+    if (!next) {
+      setProfile(p => ({ ...p, isPortfolioPublic: false }));
+      try {
+        await setDoc(doc(db, 'seekerProfiles', user.uid), { isPortfolioPublic: false }, { merge: true });
+      } catch (err) {
+        console.error('Error turning off public profile:', err);
+        toast.error('Failed to update your profile visibility.');
+      }
+      return;
+    }
+
+    if (hasValidPublicPayment) {
+      setProfile(p => ({ ...p, isPortfolioPublic: true }));
+      try {
+        await setDoc(doc(db, 'seekerProfiles', user.uid), { isPortfolioPublic: true }, { merge: true });
+      } catch (err) {
+        console.error('Error turning on public profile:', err);
+        toast.error('Failed to update your profile visibility.');
+      }
+      return;
+    }
+
+    setShowPublicProfileModal(true);
   };
 
   const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
@@ -339,10 +392,10 @@ export default function SeekerProfilePage() {
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold border" style={{ background: '#ECFDF5', color: '#059669', borderColor: '#A7F3D0' }}>● Open to Work</span>
                 )}
                 <span className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-500">Public Portfolio Page</span>
+                  <span className="text-xs font-medium text-gray-500">Public Portfolio Page (₹{SEEKER_PUBLIC_PROFILE_FEE_INR}/year)</span>
                   <Switch
                     checked={profile.isPortfolioPublic}
-                    onChange={(next) => setProfile(p => ({ ...p, isPortfolioPublic: next }))}
+                    onChange={handleTogglePublicProfile}
                     label="Public portfolio page"
                   />
                 </span>
@@ -350,8 +403,8 @@ export default function SeekerProfilePage() {
             </div>
             <p className="text-[11px] text-slate-500 mt-1.5 max-w-md">
               {profile.isPortfolioPublic
-                ? 'Your portfolio is public — anyone with the link can view it at thenijobs.com/portfolio/seeker/…'
-                : 'Your portfolio is private by default. Turn this on to make it viewable by anyone with the link.'}
+                ? `Your portfolio is public — anyone with the link can view it at thenijobs.com/portfolio/seeker/…${hasValidPublicPayment ? ` Active until ${new Date(publicProfilePaidUntil as number).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.` : ''}`
+                : 'Your portfolio is private by default. Going public costs ₹50/year and shows anyone with the link.'}
             </p>
             <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
               <span className="flex items-center gap-1"><Phone size={11} /> {profile.phone || 'No phone'}</span>
@@ -636,6 +689,20 @@ export default function SeekerProfilePage() {
           }}
         />
       </DeviceLivePreviewModal>
+
+      <SeekerPublicProfileModal
+        isOpen={showPublicProfileModal}
+        onClose={() => setShowPublicProfileModal(false)}
+        userId={user?.uid || ''}
+        userName={profile.name}
+        userEmail={profile.email}
+        onActivated={() => {
+          setProfile(p => ({ ...p, isPortfolioPublic: true }));
+          const oneYearFromNow = new Date();
+          oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+          setPublicProfilePaidUntil(oneYearFromNow.getTime());
+        }}
+      />
     </div>
   );
 }

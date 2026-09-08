@@ -20,6 +20,13 @@ export const SITE_CONTACT = {
   location: 'Theni, Tamil Nadu, India',
 };
 
+// ===== SEEKER PUBLIC PROFILE FEE (SEEKERPRIVACY-1) =====
+// A one-year fee to make a job seeker's portfolio publicly viewable at
+// /portfolio/seeker/[id] -- distinct from SUBSCRIPTION_PLANS (those are
+// employer/company plans) and distinct from AI-CONNECT-1's own ₹50 AI-key
+// connection fee (two separate ₹50 products, per the owner's 2026-09-07 decision).
+export const SEEKER_PUBLIC_PROFILE_FEE_INR = 50;
+
 // ===== SUBSCRIPTION PLANS (ANNUAL PRICING STRATEGY — 4 TIERS) =====
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {

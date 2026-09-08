@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Building2, Briefcase, Users2, Calendar,
   Search, MessageSquare, BarChart3, CreditCard, Star,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Bell,
-  Plus, TrendingUp, Settings, ChevronRight as CR
+  Plus, TrendingUp, Settings, ChevronRight as CR, Key
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -29,6 +29,9 @@ const EMPLOYER_NAV = [
   { label: 'Reports', icon: BarChart3, href: '/employer/reports' },
   { label: 'Billing', icon: CreditCard, href: '/employer/billing' },
   { label: 'Reviews', icon: Star, href: '/employer/reviews' },
+  // AI-CONNECT-1: justified cascade, same reasoning as the seeker layout's own entry above --
+  // without a nav link the new /employer/ai page would be unreachable by any real user.
+  { label: 'AI Key Connection', icon: Key, href: '/employer/ai' },
   { label: 'Digital ID Card', icon: CreditCard, href: '/employer/id-card' },
   { label: 'Settings', icon: Settings, href: '/employer/settings' },
 ];

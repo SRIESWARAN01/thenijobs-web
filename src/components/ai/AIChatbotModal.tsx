@@ -15,9 +15,20 @@ interface ChatMessage {
 export default function AIChatbotModal({
   isOpen,
   onClose,
+  context,
+  embedded = false,
 }: {
   isOpen: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  /**
+   * AI-CHAT-1: real, already-fetched data to ground the assistant's answers -- e.g. the
+   * requesting seeker's own profile fields. Never another user's data. Passed through verbatim to
+   * the existing `contextData` parameter `buildChatbotPrompt` (src/lib/ai/prompts/chatbotPrompt.ts)
+   * already accepted but no caller ever supplied.
+   */
+  context?: unknown;
+  /** AI-CHAT-1: render inline inside a page instead of as a floating modal overlay. */
+  embedded?: boolean;
 }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -86,7 +97,7 @@ export default function AIChatbotModal({
         feature: 'chatbot',
         userId: user?.uid,
         userRole: role,
-        payload: { message: userText },
+        payload: context ? { message: userText, context } : { message: userText },
       });
 
       const replyText = res.success && res.rawContent
@@ -117,10 +128,11 @@ export default function AIChatbotModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
+  const card = (
       <div
-        className="bg-white rounded-3xl w-full max-w-lg h-[560px] max-h-[90vh] flex flex-col shadow-2xl overflow-hidden font-outfit border border-gray-200 animate-fade-in-up"
+        className={`bg-white rounded-3xl w-full flex flex-col shadow-2xl overflow-hidden font-outfit border border-gray-200 ${
+          embedded ? 'h-[70vh] min-h-[420px]' : 'max-w-lg h-[560px] max-h-[90vh] animate-fade-in-up'
+        }`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -138,9 +150,11 @@ export default function AIChatbotModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-white/10 text-white/80 hover:text-white transition-colors">
-            <X size={18} />
-          </button>
+          {onClose && (
+            <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-xl hover:bg-white/10 text-white/80 hover:text-white transition-colors">
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         {/* Messages Body */}
@@ -194,12 +208,20 @@ export default function AIChatbotModal({
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
+            aria-label="Send message"
             className="p-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs disabled:opacity-50"
           >
             <Send size={16} />
           </button>
         </div>
       </div>
+  );
+
+  if (embedded) return card;
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
+      {card}
     </div>
   );
 }

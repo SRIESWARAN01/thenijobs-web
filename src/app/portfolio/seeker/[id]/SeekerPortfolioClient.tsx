@@ -8,7 +8,7 @@ import {
   Globe, Mail, Phone, ExternalLink, Loader2,
   CheckCircle, Star, Languages, Calendar, ChevronRight,
   Share2, Download, Sparkles, Code2, FolderGit2, CheckCircle2,
-  Clock, Shield, Eye, FileText, Send, Lock, Video, Play,
+  Clock, Shield, FileText, Send, Lock, Video, Play,
   Bookmark, Heart, CheckSquare, Layers, FileCode, Sliders,
   ShieldCheck, Smartphone, AlertCircle, QrCode, FileCheck
 } from 'lucide-react';
@@ -59,9 +59,6 @@ interface SeekerData {
   verificationBadges?: { mobileVerified?: boolean; emailVerified?: boolean; identityVerified?: boolean; educationVerified?: boolean; skillVerified?: boolean };
   resumeUrl?: string;
   resumeUpdatedDate?: string;
-  profileViewsCount?: number;
-  savedCount?: number;
-  interviewRequestsCount?: number;
 }
 
 export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialData }: { seekerId?: string; initialData?: SeekerData }) {
@@ -556,7 +553,7 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
           {/* Main Content Area */}
           <div className="max-w-2xl mx-auto px-4 sm:px-6 -mt-6 space-y-5">
 
-            {/* Profile Strength Meter & Employer Views Stats */}
+            {/* Profile Strength Meter */}
             <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -576,31 +573,6 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
               {/* Progress Bar */}
               <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
                 <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500" style={{ width: `${profileStrength}%` }} />
-              </div>
-
-              {/* Employer Analytics Bar */}
-              <div className="grid grid-cols-3 gap-2 pt-2 text-center text-xs">
-                <div className="p-2.5 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div className="font-extrabold text-gray-900 flex items-center justify-center gap-1">
-                    <Eye size={13} className="text-blue-600" />
-                    <span>{seeker.profileViewsCount || 128}</span>
-                  </div>
-                  <span className="text-[10px] text-gray-500">Employer Views</span>
-                </div>
-                <div className="p-2.5 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div className="font-extrabold text-gray-900 flex items-center justify-center gap-1">
-                    <Bookmark size={13} className="text-amber-500" />
-                    <span>{seeker.savedCount || 12}</span>
-                  </div>
-                  <span className="text-[10px] text-gray-500">Times Saved</span>
-                </div>
-                <div className="p-2.5 bg-gray-50 rounded-2xl border border-gray-100">
-                  <div className="font-extrabold text-gray-900 flex items-center justify-center gap-1">
-                    <Send size={13} className="text-emerald-600" />
-                    <span>{seeker.interviewRequestsCount || 4}</span>
-                  </div>
-                  <span className="text-[10px] text-gray-500">Interviews Requested</span>
-                </div>
               </div>
             </div>
 

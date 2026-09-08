@@ -850,19 +850,40 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-w-md mx-auto pt-2">
-                {/* PRIV-1: `privacySettings.hidePhone/hideEmail` used to gate these, but nothing
-                    in the app ever writes that field — there is no real opt-in, so it always
-                    evaluated to "not hidden" and every public portfolio showed a working
-                    tel:/mailto: link regardless of what the seeker intended. Until a real,
-                    rule-enforced share flag exists (PRIV-1 workstreams 2-3), contact info is
-                    never shown here. */}
-                <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
-                  <Lock size={12} /> Phone Hidden
-                </div>
+                {/* PRIV-2: privacySettings.hidePhone/hideEmail now has a real writer
+                    (seeker/profile/page.tsx's Contact Visibility toggles, default hidden). This
+                    stays presentation-level, same as every other field on this document -- the
+                    firestore.rules seekerProfiles read rule is document-level (see its own
+                    comment there), so a raw query against an already-public+paid profile can
+                    still read these fields directly regardless of this flag. What changes here is
+                    the normal app UI: a seeker who never opts in still shows exactly today's
+                    "Hidden" state; one who does gets a real, working tel:/mailto: link instead of
+                    a permanently disabled placeholder. */}
+                {seeker.phone && seeker.privacySettings?.hidePhone === false ? (
+                  <a
+                    href={`tel:${seeker.phone}`}
+                    className="py-3 px-3 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold flex items-center justify-center gap-1 hover:bg-emerald-100 transition-colors"
+                  >
+                    <Phone size={12} /> Call
+                  </a>
+                ) : (
+                  <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
+                    <Lock size={12} /> Phone Hidden
+                  </div>
+                )}
 
-                <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
-                  <Lock size={12} /> Email Hidden
-                </div>
+                {seeker.email && seeker.privacySettings?.hideEmail === false ? (
+                  <a
+                    href={`mailto:${seeker.email}`}
+                    className="py-3 px-3 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold flex items-center justify-center gap-1 hover:bg-emerald-100 transition-colors"
+                  >
+                    <Mail size={12} /> Email
+                  </a>
+                ) : (
+                  <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
+                    <Lock size={12} /> Email Hidden
+                  </div>
+                )}
 
                 <button
                   onClick={() => {

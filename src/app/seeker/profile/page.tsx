@@ -67,6 +67,11 @@ const DEFAULT_PROFILE = {
   currentRole: '',
   isOpenToWork: true,
   isPortfolioPublic: false,
+  // PRIV-2: defaults to hidden -- a seeker's phone/email only render on their public portfolio
+  // once they explicitly opt in. Matches privacySettings.hidePhone/hideEmail, the field
+  // SeekerPortfolioClient.tsx already reads (PRIV-1 workstream 1 removed the dead-field render,
+  // this phase gives the field a real writer).
+  privacySettings: { hidePhone: true, hideEmail: true },
   photoUrl: ''
 };
 
@@ -116,6 +121,13 @@ export default function SeekerProfilePage() {
         currentRole: remoteProfile.currentRole || '',
         isOpenToWork: remoteProfile.isOpenToWork !== false,
         isPortfolioPublic: remoteProfile.isPortfolioPublic === true,
+        // PRIV-2: absent/undefined means hidden -- only an explicit `false` (the seeker's own
+        // opt-in) reveals it. A legacy document with no privacySettings field at all stays in
+        // today's safe "always hidden" state, never flips to visible by default.
+        privacySettings: {
+          hidePhone: remoteProfile.privacySettings?.hidePhone !== false,
+          hideEmail: remoteProfile.privacySettings?.hideEmail !== false,
+        },
         photoUrl: remoteProfile.photoUrl || ''
       });
       setEducation(remoteProfile.education || []);
@@ -406,6 +418,30 @@ export default function SeekerProfilePage() {
                 ? `Your portfolio is public — anyone with the link can view it at thenijobs.com/portfolio/seeker/…${hasValidPublicPayment ? ` Active until ${new Date(publicProfilePaidUntil as number).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.` : ''}`
                 : 'Your portfolio is private by default. Going public costs ₹50/year and shows anyone with the link.'}
             </p>
+            {/* PRIV-2: only meaningful once the portfolio is actually public -- these decide
+                whether that public page also shows a working tel:/mailto: link. Default hidden;
+                saved with the rest of the profile via the Save Profile button below. */}
+            {profile.isPortfolioPublic && (
+              <div className="flex flex-wrap items-center gap-4 mt-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Contact Visibility</span>
+                <span className="flex items-center gap-2">
+                  <Switch
+                    checked={!profile.privacySettings.hidePhone}
+                    onChange={(next) => setProfile(p => ({ ...p, privacySettings: { ...p.privacySettings, hidePhone: !next } }))}
+                    label="Show phone on public profile"
+                  />
+                  <span className="text-xs text-gray-600">Show phone</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <Switch
+                    checked={!profile.privacySettings.hideEmail}
+                    onChange={(next) => setProfile(p => ({ ...p, privacySettings: { ...p.privacySettings, hideEmail: !next } }))}
+                    label="Show email on public profile"
+                  />
+                  <span className="text-xs text-gray-600">Show email</span>
+                </span>
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
               <span className="flex items-center gap-1"><Phone size={11} /> {profile.phone || 'No phone'}</span>
               <span className="flex items-center gap-1"><Mail size={11} /> {profile.email}</span>
@@ -676,6 +712,7 @@ export default function SeekerProfilePage() {
             currentRole: profile.currentRole,
             isOpenToWork: profile.isOpenToWork,
             isPortfolioPublic: profile.isPortfolioPublic,
+            privacySettings: profile.privacySettings,
             photoUrl: profile.photoUrl,
             profilePhotoUrl: profile.photoUrl,
             gender: profile.gender,

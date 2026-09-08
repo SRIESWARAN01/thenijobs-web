@@ -10,7 +10,7 @@ import { TN_DISTRICTS } from '@/lib/types';
 import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
-import { useUploadFile } from '@/hooks/useStorage';
+import { useUploadFile, useDeleteFile } from '@/hooks/useStorage';
 import { db } from '@/lib/firebase/config';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
@@ -106,6 +106,7 @@ export default function SeekerProfilePage() {
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, progress: uploadProgress, loading: uploading } = useUploadFile();
+  const { deleteFile } = useDeleteFile();
 
   // Populate data when fetched
   useEffect(() => {
@@ -222,9 +223,19 @@ export default function SeekerProfilePage() {
   const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user?.uid) return;
+    const previousUrl = profile.photoUrl;
     try {
-      const url = await uploadFile(file, `seekers/${user.uid}/avatar_${Date.now()}`);
+      // STORAGE-LEAK-1: this used to upload to `seekers/${uid}/...`, a path with no matching
+      // block anywhere in storage.rules -- every avatar upload was failing outright with
+      // storage/unauthorized. `users/{userId}/profile/{fileName}` is the block that already
+      // exists for exactly this ("Profile photos are public"); this just targets it.
+      const url = await uploadFile(file, `users/${user.uid}/profile/avatar_${Date.now()}`);
       setProfile(p => ({ ...p, photoUrl: url }));
+      // Same orphaned-blob leak as the company cover/logo/gallery uploads: best-effort delete of
+      // the previous avatar, never blocking on failure.
+      if (previousUrl) {
+        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous avatar:', err));
+      }
     } catch (err) {
       console.error(err);
       toast.error('Upload failed', (err as Error).message);

@@ -765,7 +765,10 @@ const JOB_TYPE_CANONICAL: Record<string, string> = {
   walk_in: 'walk-in', 'walk-in': 'walk-in',
 };
 
-function canonicalJobType(value?: string): string {
+// Exported for AI-MATCH-1's deterministic job-scoring function (src/lib/ai/jobMatching.ts), which
+// needs the exact same job-type normalization as this alert matcher rather than a second copy of
+// the lookup table above that could drift out of sync.
+export function canonicalJobType(value?: string): string {
   if (!value) return '';
   const key = value.toLowerCase().trim();
   return JOB_TYPE_CANONICAL[key] || key.replace(/[\s_]+/g, '-');

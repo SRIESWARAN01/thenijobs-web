@@ -20,6 +20,7 @@ import { where, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { canPostNewJob, getPlan } from '@/lib/plans';
 import { Switch } from '@/components/dashboard';
+import { requestAIService } from '@/lib/ai/aiClient';
 
 const STEPS = [
   { id: 1, label: 'Job Details' },
@@ -92,6 +93,7 @@ export default function PostJobPage() {
   const [newSkill, setNewSkill] = useState('');
   const [benefits, setBenefits] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   // Success Modal State
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -127,6 +129,59 @@ export default function PostJobPage() {
   };
   
   const toggleBenefit = (b: string) => setBenefits(p => p.includes(b) ? p.filter(x => x !== b) : [...p, b]);
+
+  const handleGenerateWithAI = async () => {
+    if (!form.title.trim() || aiGenerating) return;
+    setAiGenerating(true);
+    try {
+      const res = await requestAIService<{
+        summary?: string;
+        responsibilities?: string[];
+        requirements?: string[];
+        preferredSkills?: string[];
+      }>({
+        feature: 'job_description',
+        userId: user?.uid,
+        userRole: 'COMPANY',
+        payload: {
+          title: form.title,
+          category: company?.category,
+          skills,
+          experienceLevel: form.experience,
+          location: form.location,
+          district: form.district,
+        },
+      });
+
+      if (!res.success || !res.data) {
+        toast.error(res.error || 'AI is temporarily unavailable. Please try again.');
+        return;
+      }
+
+      const { summary, responsibilities, requirements, preferredSkills } = res.data;
+      const parts: string[] = [];
+      if (summary) parts.push(summary);
+      if (responsibilities?.length) parts.push('Responsibilities:\n' + responsibilities.map(r => `• ${r}`).join('\n'));
+      if (requirements?.length) parts.push('Requirements:\n' + requirements.map(r => `• ${r}`).join('\n'));
+      if (parts.length) update('description', parts.join('\n\n'));
+
+      if (preferredSkills?.length) {
+        setSkills(prev => {
+          const merged = [...prev];
+          for (const s of preferredSkills) {
+            if (s && !merged.includes(s)) merged.push(s);
+          }
+          return merged;
+        });
+      }
+
+      toast.success('AI draft generated. Review and edit before posting.');
+    } catch {
+      toast.error('AI is temporarily unavailable. Please try again.');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const resetForm = () => {
     setForm({
@@ -412,7 +467,20 @@ export default function PostJobPage() {
             </div>
 
             <div>
-              <label className={labelCls}>Job Description &amp; Responsibilities <span className="text-red-500">*</span></label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-gray-700">Job Description &amp; Responsibilities <span className="text-red-500">*</span></label>
+                <button
+                  type="button"
+                  onClick={handleGenerateWithAI}
+                  disabled={!form.title.trim() || aiGenerating}
+                  aria-label="Generate job description with AI"
+                  title={!form.title.trim() ? 'Add a job title first' : 'Generate a draft description with AI'}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  {aiGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  {aiGenerating ? 'Generating...' : 'Generate with AI'}
+                </button>
+              </div>
               <textarea id="employer-post-job-employment-type-classname-px-3-5-py-2-ro"
                 rows={6}
                 value={form.description}
@@ -420,6 +488,7 @@ export default function PostJobPage() {
                 placeholder="Describe day-to-day duties, working hours, team culture, and expectations..."
                 className={inputCls + " resize-none leading-relaxed"}
               />
+              <p className="text-[10px] text-gray-400 mt-1">AI drafts are a starting point -- review and edit before posting.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

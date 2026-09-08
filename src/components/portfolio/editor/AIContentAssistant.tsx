@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Sparkles, Loader2, Check, RefreshCw, Zap } from 'lucide-react';
 import { requestAIService } from '@/lib/ai/aiClient';
 import type { AIFeatureKey } from '@/lib/ai/config';
+import { useToast } from '@/contexts/ToastContext';
 
 interface AIContentAssistantProps {
   companyName: string;
@@ -20,6 +21,24 @@ const CONTENT_FEATURE_MAP: Record<AIContentAssistantProps['contentType'], AIFeat
   seo_description: 'company_description',
 };
 
+// api/ai/route.ts's company_description/service_product_description case always returns a JSON
+// object shaped like companyPrompt.ts's schema (description/tagline/services/products/
+// marketingCopy/metaTitle/metaDescription), never a plain string -- this picks the one field each
+// contentType actually wants out of that object.
+interface CompanyContentResponse {
+  description?: string;
+  tagline?: string;
+  marketingCopy?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+}
+
+function pickGeneratedField(contentType: AIContentAssistantProps['contentType'], data: CompanyContentResponse): string {
+  if (contentType === 'seo_title') return data.metaTitle || '';
+  if (contentType === 'seo_description') return data.metaDescription || '';
+  return data.description || data.marketingCopy || '';
+}
+
 export default function AIContentAssistant({
   companyName,
   industry = 'Business',
@@ -27,35 +46,32 @@ export default function AIContentAssistant({
   contentType,
   onGenerated,
 }: AIContentAssistantProps) {
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [generatedText, setGeneratedText] = useState<string>('');
 
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      let prompt = '';
-      if (contentType === 'about') {
-        prompt = `Write a professional 3-paragraph "About Us" section for a company named "${companyName}" in the ${industry} industry located in ${district}, Tamil Nadu. Highlight trust, quality, and community commitment. Keep tone professional yet approachable.`;
-      } else if (contentType === 'service') {
-        prompt = `Generate a compelling service description (2-3 sentences) for "${companyName}" operating in ${industry} in ${district}.`;
-      } else if (contentType === 'seo_title') {
-        prompt = `Generate a catchy SEO title tag (under 60 characters) for "${companyName}" in ${district}, Tamil Nadu. Include primary category keywords.`;
-      } else if (contentType === 'seo_description') {
-        prompt = `Generate a high-converting meta description (under 155 characters) for "${companyName}" in ${district}, Tamil Nadu. Include a clear call to action.`;
-      }
-
-      const result = await requestAIService<string>({
+      const result = await requestAIService<CompanyContentResponse>({
         feature: CONTENT_FEATURE_MAP[contentType],
-        payload: { prompt, companyName, industry, district, contentType },
+        userRole: 'COMPANY',
+        payload: {
+          companyName,
+          category: industry,
+          district,
+          contentType: CONTENT_FEATURE_MAP[contentType],
+        },
       });
 
-      if (result.success && (result.data || result.rawContent)) {
-        const text = (result.data || result.rawContent || '').toString();
-        const cleaned = text.trim().replace(/^["']|["']$/g, '');
-        setGeneratedText(cleaned);
+      const text = result.success && result.data ? pickGeneratedField(contentType, result.data) : '';
+      if (text) {
+        setGeneratedText(text.trim().replace(/^["']|["']$/g, ''));
+      } else {
+        toast.error(result.error || 'AI is temporarily unavailable. Please try again.');
       }
-    } catch (err) {
-      console.error('AI content generation failed:', err);
+    } catch {
+      toast.error('AI is temporarily unavailable. Please try again.');
     } finally {
       setLoading(false);
     }

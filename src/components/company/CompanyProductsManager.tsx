@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/contexts/ToastContext';
+import { useAuth } from '@/hooks/useAuth';
+import { requestAIService } from '@/lib/ai/aiClient';
 
 interface CompanyProductsManagerProps {
   products: ProductItem[];
@@ -40,11 +42,13 @@ export default function CompanyProductsManager({
   onChange,
 }: CompanyProductsManagerProps) {
   const toast = useToast();
+  const { user } = useAuth();
   const maxLimit = PLAN_PRODUCT_LIMITS[planSlug.toLowerCase()] || 3;
   const isLimitReached = products.length >= maxLimit;
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   const [form, setForm] = useState<Partial<ProductItem>>({
     name: '',
@@ -134,6 +138,37 @@ export default function CompanyProductsManager({
     });
     setEditingId(null);
     setShowAddForm(false);
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!form.name?.trim() || aiGenerating) return;
+    setAiGenerating(true);
+    try {
+      const res = await requestAIService<{ description?: string }>({
+        feature: 'service_product_description',
+        userId: user?.uid,
+        userRole: 'COMPANY',
+        payload: {
+          companyName,
+          category: form.category || 'General',
+          district,
+          keyDetails: `${form.name}${form.priceRange ? ` -- ${form.priceRange}` : ''}`,
+          contentType: 'service_product_description',
+        },
+      });
+
+      if (!res.success || !res.data?.description) {
+        toast.error(res.error || 'AI is temporarily unavailable. Please try again.');
+        return;
+      }
+
+      setForm(f => ({ ...f, description: res.data!.description! }));
+      toast.success('AI draft generated. Review and edit before saving.');
+    } catch {
+      toast.error('AI is temporarily unavailable. Please try again.');
+    } finally {
+      setAiGenerating(false);
+    }
   };
 
   const testWhatsAppOrder = (item: ProductItem) => {
@@ -273,7 +308,19 @@ export default function CompanyProductsManager({
               />
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="company-companyproductsmanager-product-description" className="text-xs font-bold text-gray-700 block mb-1">Product Description</label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="company-companyproductsmanager-product-description" className="text-xs font-bold text-gray-700">Product Description</label>
+                <button
+                  type="button"
+                  onClick={handleGenerateDescription}
+                  disabled={!form.name?.trim() || aiGenerating}
+                  aria-label="Generate product description with AI"
+                  title={!form.name?.trim() ? 'Add a product name first' : 'Generate a draft description with AI'}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  <Sparkles size={12} /> {aiGenerating ? 'Generating...' : 'Generate with AI'}
+                </button>
+              </div>
               <textarea id="company-companyproductsmanager-product-description"
                 rows={3}
                 value={form.description || ''}

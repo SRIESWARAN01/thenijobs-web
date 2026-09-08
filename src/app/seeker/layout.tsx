@@ -8,7 +8,7 @@ import {
   Bell, Calendar, Building2, Settings, LogOut,
   ChevronLeft, ChevronRight, Menu, X, Sparkles,
   Send, GraduationCap, Loader2, CreditCard, Briefcase,
-  ArrowRight, ShieldCheck, Globe, Key
+  ArrowRight, ShieldCheck, Globe, Key, Target
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -21,6 +21,10 @@ const SEEKER_NAV = [
   { label: 'Portfolio Website', icon: Globe, href: '/seeker/website', highlight: true },
   { label: 'Resume', icon: FileText, href: '/seeker/resume' },
   { label: 'Browse Jobs', icon: Search, href: '/seeker/jobs' },
+  // AI-MATCH-1: unlisted in this phase's own may_write, but a justified cascade -- same reasoning
+  // as AI-CONNECT-1's "AI Key Connection" entry above: without a nav entry the new recommended-jobs
+  // page would be built but unreachable by any real user.
+  { label: 'Recommended Jobs', icon: Target, href: '/seeker/jobs/recommended', accent: true },
   { label: 'Post Job / Employer', icon: Briefcase, href: '/seeker/become-employer' },
   { label: 'Applications', icon: Send, href: '/seeker/applications' },
   { label: 'Saved Jobs', icon: Bookmark, href: '/seeker/saved-jobs' },

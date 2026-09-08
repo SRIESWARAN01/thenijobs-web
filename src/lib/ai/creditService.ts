@@ -1,5 +1,5 @@
-import { db } from '@/lib/firebase/config';
-import { doc, getDoc, updateDoc, increment, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { AI_CREDIT_COSTS, AIFeatureKey } from './config';
 
 export interface AIUsageLog {
@@ -28,14 +28,13 @@ export async function checkUserCredits(userId: string, feature: AIFeatureKey): P
   }
 
   try {
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    const userSnap = await getAdminFirestore().collection('users').doc(userId).get();
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       return { allowed: false, requiredCredits, currentBalance: 0, message: 'User record not found' };
     }
 
-    const userData = userSnap.data();
+    const userData = userSnap.data() || {};
     const aiCredits = userData.aiCredits || 0;
     const aiCreditsUsed = userData.aiCreditsUsed || 0;
     const currentBalance = Math.max(0, aiCredits - aiCreditsUsed);
@@ -51,11 +50,14 @@ export async function checkUserCredits(userId: string, feature: AIFeatureKey): P
 
     return { allowed: true, requiredCredits, currentBalance };
   } catch (err: any) {
-    console.error('[Credit Check Error]:', err);
-    // A balance that can't be verified is not evidence of one to spend. This route reads
-    // through the unauthenticated client SDK (no signed-in session server-side), so this
-    // branch is not a rare failure -- it is the path every call takes until a privileged
-    // backend identity exists to read/write these fields for real.
+    // HOSTING-1: this used to read through the unauthenticated client SDK (no signed-in
+    // session server-side), so this branch was not a rare failure -- it was the path every
+    // call took, always, regardless of the user's real balance. It now reads through a real
+    // server identity (see firebaseAdmin.ts); this branch is a genuine failure again --
+    // either no FIREBASE_SERVICE_ACCOUNT_KEY is configured yet, or a real Firestore error.
+    // The specific reason is logged for the owner; the caller sees a generic message, same
+    // as before, since a balance that can't be verified is still not evidence of one to spend.
+    console.error('[Credit Check Error]:', err?.message || err);
     return {
       allowed: false,
       requiredCredits,
@@ -75,13 +77,12 @@ export async function deductUserCredits(
   if (!userId) return false;
 
   try {
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      aiCreditsUsed: increment(creditsToDeduct),
+    await getAdminFirestore().collection('users').doc(userId).update({
+      aiCreditsUsed: FieldValue.increment(creditsToDeduct),
     });
     return true;
-  } catch (err) {
-    console.error('[Credit Deduction Error]:', err);
+  } catch (err: any) {
+    console.error('[Credit Deduction Error]:', err?.message || err);
     return false;
   }
 }
@@ -98,13 +99,12 @@ export async function logAIUsage(log: {
   errorCode?: string;
 }) {
   try {
-    const logsRef = collection(db, 'aiUsageLogs');
-    await addDoc(logsRef, {
+    await getAdminFirestore().collection('aiUsageLogs').add({
       ...log,
-      timestamp: serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
       createdAt: new Date().toISOString(),
     });
-  } catch (err) {
-    console.error('[Log AI Usage Error]:', err);
+  } catch (err: any) {
+    console.error('[Log AI Usage Error]:', err?.message || err);
   }
 }

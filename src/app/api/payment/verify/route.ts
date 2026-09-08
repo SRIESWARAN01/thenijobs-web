@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
-
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
-if (!PROJECT_ID || !API_KEY) {
-  console.warn('[Payment Verify] Missing FIREBASE_PROJECT_ID or FIREBASE_API_KEY environment variables.');
-}
-
-const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 
 // ─── Plan price validation ───────────────────────────────────────────────────
 // PAY-1: this was a hard-coded table — free 0, basic 999, standard 2999, premium 7999,
@@ -30,71 +22,82 @@ const PLAN_PRICES: Record<string, number> = Object.fromEntries(
  * discarded, so the route returned `success: true` and told the user their subscription was
  * active whether or not a single document had been written.
  *
- * That is not hypothetical. These writes go to the Firestore REST API carrying
- * NEXT_PUBLIC_FIREBASE_API_KEY, which is an API key and not an authorization credential — the
- * request is UNAUTHENTICATED as far as security rules are concerned. Under the default-deny
- * rules from RULES-1 every one of them is denied. Without this check, the failure mode is a
- * customer who has paid, been congratulated, and has nothing.
+ * That is not hypothetical. HOSTING-1: these writes used to go to the Firestore REST API
+ * carrying NEXT_PUBLIC_FIREBASE_API_KEY, which is an API key and not an authorization
+ * credential — the request was UNAUTHENTICATED as far as security rules are concerned, and
+ * under the default-deny rules from RULES-1 every one of them was denied. They now go through
+ * the Firebase Admin SDK (see firebaseAdmin.ts) with a real server identity. Without this
+ * check, the failure mode is a customer who has paid, been congratulated, and has nothing.
  *
  * Throwing here is deliberate: the caller turns it into a 500 that says the payment needs
  * manual reconciliation, which is the truth, rather than a cheerful success.
  */
-async function writeOrThrow(url: string, init: RequestInit, what: string): Promise<void> {
-  const res = await fetch(url, init);
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    console.error(`[Payment Verify] ${what} FAILED ${res.status}: ${body.slice(0, 500)}`);
-    throw new Error(`${what} failed with ${res.status}`);
+async function writeOrThrow(op: () => Promise<unknown>, what: string): Promise<void> {
+  try {
+    await op();
+  } catch (err: any) {
+    console.error(`[Payment Verify] ${what} FAILED: ${err?.message || err}`);
+    throw new Error(`${what} failed`);
+  }
+}
+
+/**
+ * HOSTING-1: an audit-log write that must never turn "log rather than throw" into "throw
+ * instead" — getAdminFirestore() itself throws synchronously when no credential is configured,
+ * which a bare `.catch()` on the write promise does not catch (the throw happens before any
+ * promise exists). Caught here at the call site instead, exactly matching this route's own
+ * pre-existing swallow-and-log convention for its audit writes, so an uncredentialed Admin SDK
+ * still returns the request's real (400/403) response instead of an unrelated 500.
+ */
+function bestEffortWrite(op: () => Promise<unknown>, what: string): void {
+  try {
+    op()?.catch?.((err: any) => console.error(`[Payment Verify] ${what} threw:`, err?.message || err));
+  } catch (err: any) {
+    console.error(`[Payment Verify] ${what} threw:`, err?.message || err);
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const { 
-      orderId, 
-      paymentId, 
-      signature, 
-      planSlug, 
-      planName, 
-      amount, 
-      companyId, 
+    const {
+      orderId,
+      paymentId,
+      signature,
+      planSlug,
+      planName,
+      amount,
+      companyId,
       companyName,
-      userId, 
+      userId,
       userName,
-      paymentMethod, 
-      status 
+      paymentMethod,
+      status
     } = await request.json();
 
     if (!orderId || !userId) {
       return NextResponse.json({ error: 'Order ID and User ID are required' }, { status: 400 });
     }
 
+    // HOSTING-1: getAdminFirestore() is only ever called inside a write site below (via
+    // writeOrThrow/bestEffortWrite) — never hoisted here. A request that never reaches a write
+    // at all (unknown plan, wrong amount, no signature) must still get its specific 400/403,
+    // not a generic 500 from an Admin SDK credential this particular request didn't need yet.
+
     // If explicit failure passed from frontend gateway
     if (status === 'failed') {
-      // Record failed payment in database for audit
-      const paymentDoc = {
-        fields: {
-          orderId: { stringValue: orderId },
-          paymentId: { stringValue: paymentId || `failed_${Date.now()}` },
-          userId: { stringValue: userId },
-          companyId: { stringValue: companyId || '' },
-          companyName: { stringValue: companyName || '' },
-          amount: { integerValue: String(amount || 0) },
-          plan: { stringValue: planSlug || 'standard' },
-          status: { stringValue: 'failed' },
-          paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
-          createdAt: { timestampValue: new Date().toISOString() },
-        }
-      };
-
       // Audit only, on a path that has already failed — log rather than throw.
-      await fetch(`${FIRESTORE_BASE}/payments?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentDoc),
-      }).then((res) => {
-        if (!res.ok) console.error('[Payment Verify] failed-payment audit write failed:', res.status);
-      }).catch((err) => console.error('[Payment Verify] failed-payment audit write threw:', err));
+      bestEffortWrite(() => getAdminFirestore().collection('payments').add({
+        orderId,
+        paymentId: paymentId || `failed_${Date.now()}`,
+        userId,
+        companyId: companyId || '',
+        companyName: companyName || '',
+        amount: amount || 0,
+        plan: planSlug || 'standard',
+        status: 'failed',
+        paymentMethod: paymentMethod || 'RAZORPAY',
+        createdAt: new Date(),
+      }), 'failed-payment audit write');
 
       return NextResponse.json({
         success: false,
@@ -132,21 +135,14 @@ export async function POST(request: Request) {
         console.error('[Payment Verify] INVALID SIGNATURE. Expected:', expectedSignature, 'Got:', signature);
 
         // Log tampered payment attempt
-        const tamperDoc = {
-          fields: {
-            orderId: { stringValue: orderId },
-            paymentId: { stringValue: paymentId },
-            userId: { stringValue: userId },
-            status: { stringValue: 'signature_mismatch' },
-            paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
-            createdAt: { timestampValue: new Date().toISOString() },
-          }
-        };
-        await fetch(`${FIRESTORE_BASE}/payments?key=${API_KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(tamperDoc),
-        }).catch(() => {});
+        bestEffortWrite(() => getAdminFirestore().collection('payments').add({
+          orderId,
+          paymentId,
+          userId,
+          status: 'signature_mismatch',
+          paymentMethod: paymentMethod || 'RAZORPAY',
+          createdAt: new Date(),
+        }), 'signature-mismatch audit write');
 
         return NextResponse.json({
           success: false,
@@ -184,7 +180,11 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Verified / Captured payment handling
+    // Verified / Captured payment handling. Only reached once every check above has passed,
+    // so a missing Admin SDK credential from here on is a genuine write failure — the outer
+    // catch below turns it into the "could not be recorded" 500, which is the correct, honest
+    // response for a payment that passed verification but couldn't be persisted.
+    const db = getAdminFirestore();
     const now = new Date();
     const expiryDate = new Date();
     expiryDate.setFullYear(now.getFullYear() + 1); // 1 year annual subscription
@@ -192,113 +192,71 @@ export async function POST(request: Request) {
     const verifiedPaymentId = paymentId || `pay_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     // 1. Create record in 'payments' collection
-    const paymentDoc = {
-      fields: {
-        orderId: { stringValue: orderId },
-        paymentId: { stringValue: verifiedPaymentId },
-        userId: { stringValue: userId },
-        userName: { stringValue: userName || 'Customer' },
-        companyId: { stringValue: companyId || '' },
-        companyName: { stringValue: companyName || 'Business' },
-        amount: { integerValue: String(amount || 0) },
-        plan: { stringValue: planSlug || 'standard' },
-        planName: { stringValue: planName || 'Standard Plan' },
-        status: { stringValue: 'captured' },
-        signatureVerified: { booleanValue: !!(razorpaySecret && signature) },
-        paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
-        createdAt: { timestampValue: now.toISOString() },
-      }
-    };
-
-    await writeOrThrow(`${FIRESTORE_BASE}/payments?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(paymentDoc),
-    }, 'payments record');
+    await writeOrThrow(() => db.collection('payments').add({
+      orderId,
+      paymentId: verifiedPaymentId,
+      userId,
+      userName: userName || 'Customer',
+      companyId: companyId || '',
+      companyName: companyName || 'Business',
+      amount: amount || 0,
+      plan: planSlug || 'standard',
+      planName: planName || 'Standard Plan',
+      status: 'captured',
+      signatureVerified: !!(razorpaySecret && signature),
+      paymentMethod: paymentMethod || 'RAZORPAY',
+      createdAt: now,
+    }), 'payments record');
 
     // 2. Create/Update record in 'subscriptions' collection
-    const subscriptionDoc = {
-      fields: {
-        userId: { stringValue: userId },
-        companyId: { stringValue: companyId || '' },
-        plan: { stringValue: planSlug || 'standard' },
-        planName: { stringValue: planName || 'Standard Plan' },
-        status: { stringValue: 'active' },
-        amount: { integerValue: String(amount || 0) },
-        startDate: { timestampValue: now.toISOString() },
-        endDate: { timestampValue: expiryDate.toISOString() },
-        autoRenew: { booleanValue: true },
-        paymentMethod: { stringValue: paymentMethod || 'RAZORPAY' },
-        createdAt: { timestampValue: now.toISOString() },
-        updatedAt: { timestampValue: now.toISOString() },
-      }
-    };
-
-    await writeOrThrow(`${FIRESTORE_BASE}/subscriptions?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(subscriptionDoc),
-    }, 'subscription record');
+    await writeOrThrow(() => db.collection('subscriptions').add({
+      userId,
+      companyId: companyId || '',
+      plan: planSlug || 'standard',
+      planName: planName || 'Standard Plan',
+      status: 'active',
+      amount: amount || 0,
+      startDate: now,
+      endDate: expiryDate,
+      autoRenew: true,
+      paymentMethod: paymentMethod || 'RAZORPAY',
+      createdAt: now,
+      updatedAt: now,
+    }), 'subscription record');
 
     // 3. Update company record if companyId is present
     if (companyId) {
-      const companyPatch = {
-        fields: {
-          subscriptionPlan: { stringValue: planSlug || 'standard' },
-          isPremium: { booleanValue: true },
-          planStartDate: { timestampValue: now.toISOString() },
-          planEndDate: { timestampValue: expiryDate.toISOString() },
-          updatedAt: { timestampValue: now.toISOString() },
-        }
-      };
-
-      await writeOrThrow(`${FIRESTORE_BASE}/companies/${companyId}?updateMask.fieldPaths=subscriptionPlan&updateMask.fieldPaths=isPremium&updateMask.fieldPaths=planStartDate&updateMask.fieldPaths=planEndDate&updateMask.fieldPaths=updatedAt&key=${API_KEY}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(companyPatch),
-      }, 'company plan update');
+      await writeOrThrow(() => db.collection('companies').doc(companyId).update({
+        subscriptionPlan: planSlug || 'standard',
+        isPremium: true,
+        planStartDate: now,
+        planEndDate: expiryDate,
+        updatedAt: now,
+      }), 'company plan update');
     }
 
     // 4. Update user record
     if (userId) {
-      const userPatch = {
-        fields: {
-          subscriptionPlan: { stringValue: planSlug || 'standard' },
-          isPremium: { booleanValue: true },
-          updatedAt: { timestampValue: now.toISOString() },
-        }
-      };
-
-      await writeOrThrow(`${FIRESTORE_BASE}/users/${userId}?updateMask.fieldPaths=subscriptionPlan&updateMask.fieldPaths=isPremium&updateMask.fieldPaths=updatedAt&key=${API_KEY}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userPatch),
-      }, 'user plan update');
+      await writeOrThrow(() => db.collection('users').doc(userId).update({
+        subscriptionPlan: planSlug || 'standard',
+        isPremium: true,
+        updatedAt: now,
+      }), 'user plan update');
     }
 
     // 5. Create user notification
-    const notificationDoc = {
-      fields: {
-        userId: { stringValue: userId },
-        type: { stringValue: 'system' },
-        title: { stringValue: `Payment Successful! 🎉` },
-        message: { stringValue: `Your ${planName || 'Annual'} subscription (₹${amount?.toLocaleString('en-IN')}) is now active.` },
-        read: { booleanValue: false },
-        actionUrl: { stringValue: companyId ? '/employer/subscription' : '/seeker/subscription' },
-        createdAt: { timestampValue: now.toISOString() },
-      }
-    };
-
     // Deliberately not writeOrThrow: the subscription is already active by this point, and
     // failing the whole payment because a courtesy notification did not write would be worse
     // than the missing notification. It is logged instead of swallowed.
-    await fetch(`${FIRESTORE_BASE}/notifications?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(notificationDoc),
-    }).then((res) => {
-      if (!res.ok) console.error('[Payment Verify] notification write failed:', res.status);
-    }).catch((err) => console.error('[Payment Verify] notification write threw:', err));
+    bestEffortWrite(() => db.collection('notifications').add({
+      userId,
+      type: 'system',
+      title: 'Payment Successful! 🎉',
+      message: `Your ${planName || 'Annual'} subscription (₹${amount?.toLocaleString('en-IN')}) is now active.`,
+      read: false,
+      actionUrl: companyId ? '/employer/subscription' : '/seeker/subscription',
+      createdAt: now,
+    }), 'notification write');
 
     return NextResponse.json({
       success: true,
@@ -309,9 +267,9 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     // PAY-1: this used to say "Database state was protected", which was not something the code
-    // knew. The writes are five separate REST calls with no transaction between them, so a
+    // knew. The writes are five separate Admin SDK calls with no transaction between them, so a
     // failure part-way through leaves exactly the partial state the old message denied.
-    console.error('[Payment Verification Error]:', error);
+    console.error('[Payment Verification Error]:', error?.message || error);
     return NextResponse.json({
       success: false,
       error: 'The payment could not be recorded. If money was debited, quote your order id to support and it will be reconciled manually — do not pay again.',

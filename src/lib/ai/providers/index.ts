@@ -38,6 +38,10 @@ export interface AIProviderConfig {
   activeProvider: 'gemini' | 'groq' | 'openai';
   fallbackProvider: 'gemini' | 'groq' | 'openai' | 'none';
   aiEnabled: boolean;
+  /** AI-CONNECT-1: admin kill-switch for the whole bring-your-own-key feature, independent of
+      aiEnabled (which governs THENIJOBS's own platform-funded AI, a separate product). Defaults
+      false -- BYOK stays off until an admin explicitly turns it on. */
+  byokEnabled?: boolean;
   providers: {
     gemini: ProviderEntry;
     groq: ProviderEntry;
@@ -69,6 +73,7 @@ export const DEFAULT_AI_CONFIG: AIProviderConfig = {
   activeProvider: 'groq',
   fallbackProvider: 'gemini',
   aiEnabled: true,
+  byokEnabled: false,
   providers: {
     groq: {
       apiKey: '', apiKeyMasked: '', model: 'openai/gpt-oss-120b',

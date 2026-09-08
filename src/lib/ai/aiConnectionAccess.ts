@@ -18,6 +18,13 @@ export type ConnectionAccessResult =
 export async function checkConnectionAccess(uid: string): Promise<ConnectionAccessResult> {
   const db = getAdminFirestore();
 
+  // Platform kill-switch (admin/ai-settings page) -- off by default. Checked before role/plan/
+  // fee so a disabled feature never leaks which of those a given caller would otherwise satisfy.
+  const configSnap = await db.collection('platformSettings').doc('aiConfig').get();
+  if (configSnap.data()?.byokEnabled !== true) {
+    return { allowed: false, status: 503, error: 'Connecting your own AI key is not available right now.' };
+  }
+
   const userSnap = await db.collection('users').doc(uid).get();
   if (!userSnap.exists) {
     return { allowed: false, status: 404, error: 'User record not found.' };

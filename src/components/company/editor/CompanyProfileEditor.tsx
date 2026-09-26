@@ -6,7 +6,8 @@ import {
   Link2, Heart, Briefcase as LinkedinIcon, Play, Plus, Save,
   CheckCircle, AlertCircle, Shield, Smartphone, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2, Clock, XCircle, Eye,
-  Package, Wrench, FolderGit2, User, LayoutGrid, MessageSquare, Lock
+  Package, Wrench, FolderGit2, User, LayoutGrid, MessageSquare, Lock,
+  FileCheck2, BadgeCheck, ShieldCheck
 } from 'lucide-react';
 import { TN_DISTRICTS, FounderProfile } from '@/lib/types';
 import { hasFeaturePermission } from '@/lib/plans';
@@ -20,6 +21,8 @@ import CompanyFounderManager from '@/components/company/CompanyFounderManager';
 import CompanySectionToggler from '@/components/company/CompanySectionToggler';
 import CompanyReviewsManager from '@/components/company/CompanyReviewsManager';
 import { useUploadFile, useDeleteFile } from '@/hooks/useStorage';
+import { updateDocument } from '@/lib/firebase/firestoreService';
+import { optimizeImageForUpload } from '@/lib/storage/imageOptimizer';
 import { Button, PageHeader, PageShell, type Crumb } from '@/components/dashboard';
 
 const DEFAULT_COMPANY = {
@@ -67,11 +70,34 @@ function calcCompletion(data: typeof DEFAULT_COMPANY): number {
   return Math.round((filled / fields.length) * 100);
 }
 
+export function calcTrustScore(
+  companyData: { verificationStatus?: string; trustScore?: number; [key: string]: any },
+  verification: { mobile: boolean; email: boolean; gst: boolean; business: boolean }
+): number {
+  if (typeof companyData.trustScore === 'number' && companyData.trustScore > 0) {
+    return companyData.trustScore;
+  }
+  let score = 25; // Base score for a registered business profile
+  if (verification.mobile) score += 20;
+  if (verification.email) score += 15;
+  if (verification.gst) score += 25;
+  if (verification.business) score += 15;
+
+  // Verified companies get a minimum trust score of 85%
+  if (companyData.verificationStatus === 'verified') {
+    score = Math.max(score, 85);
+  }
+  return Math.min(score, 100);
+}
+
 export interface CompanyProfileEditorSaveFields {
   name: string;
   tagline: string;
   logoUrl: string;
+  companyLogo?: string;
   coverUrl: string;
+  bannerUrl?: string;
+  coverImageUrl?: string;
   description: string;
   establishedYear: string;
   phone: string;
@@ -87,6 +113,7 @@ export interface CompanyProfileEditorSaveFields {
   linkedin: string;
   youtube: string;
   gallery: string[];
+  galleryImages?: string[];
   products: any[];
   services: any[];
   portfolioProjects: any[];
@@ -94,6 +121,12 @@ export interface CompanyProfileEditorSaveFields {
   enabledSections: Record<string, boolean>;
   branches: any[];
   verification: { mobile: boolean; email: boolean; gst: boolean; business: boolean };
+  verificationBadges?: { mobileVerified: boolean; emailVerified: boolean; gstVerified: boolean; businessVerified: boolean };
+  gstVerified?: boolean;
+  businessVerified?: boolean;
+  isVerified?: boolean;
+  trustScore?: number;
+  verificationStatus?: string;
 }
 
 export interface CompanyProfileEditorProps {
@@ -105,6 +138,7 @@ export interface CompanyProfileEditorProps {
     subscriptionPlan?: string;
     verificationStatus?: string;
     rejectionReason?: string;
+    trustScore?: number;
   }) | undefined;
   title: string;
   description: string;
@@ -151,12 +185,39 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
 
   useEffect(() => {
     if (initialCompany) {
+      const initialVer = {
+        mobile: Boolean(
+          initialCompany.verification?.mobile ??
+          (initialCompany as any).verificationBadges?.mobileVerified ??
+          Boolean(initialCompany.phone)
+        ),
+        email: Boolean(
+          initialCompany.verification?.email ??
+          (initialCompany as any).verificationBadges?.emailVerified ??
+          Boolean(initialCompany.email)
+        ),
+        gst: Boolean(
+          initialCompany.verification?.gst ??
+          (initialCompany as any).verificationBadges?.gstVerified ??
+          (initialCompany as any).gstVerified ??
+          Boolean((initialCompany as any).gstNumber)
+        ),
+        business: Boolean(
+          initialCompany.verification?.business ??
+          (initialCompany as any).verificationBadges?.businessVerified ??
+          (initialCompany as any).businessVerified ??
+          (initialCompany.verificationStatus === 'verified')
+        ),
+      };
+
       setCompany({
         ...DEFAULT_COMPANY,
         ...initialCompany,
-        gallery: initialCompany.gallery || DEFAULT_COMPANY.gallery,
+        logoUrl: initialCompany.logoUrl || (initialCompany as any).companyLogo || '',
+        coverUrl: initialCompany.coverUrl || (initialCompany as any).bannerUrl || (initialCompany as any).coverImageUrl || '',
+        gallery: initialCompany.gallery || (initialCompany as any).galleryImages || DEFAULT_COMPANY.gallery,
         branches: initialCompany.branches || DEFAULT_COMPANY.branches,
-        verification: initialCompany.verification || DEFAULT_COMPANY.verification
+        verification: initialVer
       });
       setCharCount(initialCompany.description?.length || 0);
     }
@@ -202,18 +263,38 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
     }
     const previousUrl = company.coverUrl;
     try {
-      const url = await uploadFile(file, `companies/${initialCompany.id}/cover/cover_${Date.now()}`);
+      // 1. Optimize image client-side to WebP (max 1920x1080, quality 0.85, limit 10MB)
+      const optimizedFile = await optimizeImageForUpload(file, {
+        maxWidth: 1920,
+        maxHeight: 1080,
+        quality: 0.85,
+        maxInputBytes: 10 * 1024 * 1024,
+        label: 'Cover banner'
+      });
+
+      // 2. Upload to Firebase Storage
+      const url = await uploadFile(optimizedFile, `companies/${initialCompany.id}/cover/cover_${Date.now()}.webp`);
       setCoverBroken(false);
       update('coverUrl', url);
-      // STORAGE-LEAK-1: every re-upload used to leave the previous blob orphaned in Storage
-      // forever -- nothing ever referenced it again once coverUrl was overwritten above. Delete
-      // it, best-effort: a delete failure must never undo a successful upload.
-      if (previousUrl) {
-        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous cover banner:', err));
+
+      // 3. Immediately persist URL in company Firestore document so branding persists across refreshes!
+      await updateDocument('companies', initialCompany.id, {
+        coverUrl: url,
+        bannerUrl: url,
+        coverImageUrl: url,
+        updatedAt: new Date()
+      });
+      toast.success('Cover banner updated and saved!');
+
+      // 4. Safely clean up previous storage asset
+      if (previousUrl && previousUrl !== url) {
+        deleteFile(previousUrl).catch(err => console.warn('Previous cover cleanup note:', err));
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Upload failed: ' + (err as Error).message);
+    } catch (err: any) {
+      console.error('Cover banner upload error:', err);
+      toast.error(err?.message || 'Failed to upload cover banner.');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -226,16 +307,37 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
     }
     const previousUrl = company.logoUrl;
     try {
-      const url = await uploadFile(file, `companies/${initialCompany.id}/logo/logo_${Date.now()}`);
+      // 1. Optimize image client-side to WebP (max 800x800, quality 0.85, limit 5MB)
+      const optimizedFile = await optimizeImageForUpload(file, {
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 0.85,
+        maxInputBytes: 5 * 1024 * 1024,
+        label: 'Company logo'
+      });
+
+      // 2. Upload to Firebase Storage
+      const url = await uploadFile(optimizedFile, `companies/${initialCompany.id}/logo/logo_${Date.now()}.webp`);
       setLogoBroken(false);
       update('logoUrl', url);
-      // STORAGE-LEAK-1: same orphaned-blob leak as the cover banner above.
-      if (previousUrl) {
-        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous logo:', err));
+
+      // 3. Immediately persist URL in company Firestore document so branding persists across refreshes!
+      await updateDocument('companies', initialCompany.id, {
+        logoUrl: url,
+        companyLogo: url,
+        updatedAt: new Date()
+      });
+      toast.success('Company logo updated and saved!');
+
+      // 4. Safely clean up previous storage asset
+      if (previousUrl && previousUrl !== url) {
+        deleteFile(previousUrl).catch(err => console.warn('Previous logo cleanup note:', err));
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Upload failed: ' + (err as Error).message);
+    } catch (err: any) {
+      console.error('Logo upload error:', err);
+      toast.error(err?.message || 'Failed to upload company logo.');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -248,18 +350,39 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
     }
     const previousUrl = company.gallery[index];
     try {
-      const url = await uploadFile(file, `companies/${initialCompany.id}/gallery/gallery_${index}_${Date.now()}`);
+      // 1. Optimize image client-side to WebP (max 1200x1200, quality 0.82, limit 10MB)
+      const optimizedFile = await optimizeImageForUpload(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.82,
+        maxInputBytes: 10 * 1024 * 1024,
+        label: `Gallery photo ${index + 1}`
+      });
+
+      // 2. Upload to Firebase Storage
+      const url = await uploadFile(optimizedFile, `companies/${initialCompany.id}/gallery/gallery_${index}_${Date.now()}.webp`);
       setGalleryBroken(prev => ({ ...prev, [index]: false }));
       const newGallery = [...company.gallery];
       newGallery[index] = url;
       setCompany(prev => ({ ...prev, gallery: newGallery }));
-      // STORAGE-LEAK-1: same orphaned-blob leak as cover/logo above.
-      if (previousUrl) {
-        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous gallery photo:', err));
+
+      // 3. Immediately persist gallery in Firestore
+      await updateDocument('companies', initialCompany.id, {
+        gallery: newGallery,
+        galleryImages: newGallery,
+        updatedAt: new Date()
+      });
+      toast.success(`Gallery photo ${index + 1} updated and saved!`);
+
+      // 4. Safely clean up previous photo
+      if (previousUrl && previousUrl !== url) {
+        deleteFile(previousUrl).catch(err => console.warn('Previous gallery cleanup note:', err));
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Upload failed: ' + (err as Error).message);
+    } catch (err: any) {
+      console.error('Gallery upload error:', err);
+      toast.error(err?.message || 'Failed to upload gallery photo.');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -278,11 +401,19 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
     }
     setSaving(true);
     try {
+      const computedTrustScore = calcTrustScore(
+        { ...company, verificationStatus: initialCompany?.verificationStatus },
+        company.verification
+      );
+
       const docData: CompanyProfileEditorSaveFields = {
         name: company.name,
         tagline: company.tagline,
         logoUrl: company.logoUrl,
+        companyLogo: company.logoUrl,
         coverUrl: company.coverUrl,
+        bannerUrl: company.coverUrl,
+        coverImageUrl: company.coverUrl,
         description: company.description,
         establishedYear: company.establishedYear,
         phone: company.phone,
@@ -298,13 +429,25 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         linkedin: company.linkedin,
         youtube: company.youtube,
         gallery: company.gallery,
+        galleryImages: company.gallery,
         products: company.products,
         services: company.services,
         portfolioProjects: company.portfolioProjects,
         founder: company.founder,
         enabledSections: company.enabledSections,
         branches: company.branches,
-        verification: company.verification
+        verification: company.verification,
+        verificationBadges: {
+          mobileVerified: company.verification.mobile,
+          emailVerified: company.verification.email,
+          gstVerified: company.verification.gst,
+          businessVerified: company.verification.business
+        },
+        gstVerified: company.verification.gst,
+        businessVerified: company.verification.business,
+        isVerified: company.verification.business || initialCompany?.verificationStatus === 'verified',
+        trustScore: computedTrustScore,
+        verificationStatus: initialCompany?.verificationStatus
       };
       await onSave(docData);
     } catch (err) {
@@ -946,71 +1089,129 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
             </div>
           </div>
 
-          {/* Sidebar — Verification Status */}
+          {/* Sidebar — Verification Status & Trust Score */}
           <div className="xl:col-span-1">
             <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-xs sticky top-24 space-y-4">
-              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <Shield size={16} className="text-blue-600" /> Verification Status
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-blue-600" /> Verification Status
+                </h3>
+                {viewerIsAdmin && (
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md">
+                    Admin Mode
+                  </span>
+                )}
+              </div>
+
               <div className="space-y-2.5">
                 {[
-                  { label: 'Mobile Verified', icon: Smartphone, verified: company.verification.mobile },
-                  { label: 'Email Verified', icon: Mail, verified: company.verification.email },
-                  { label: 'GST Verified', icon: FileText, verified: company.verification.gst },
-                  { label: 'Business Verified', icon: Building2, verified: company.verification.business },
+                  { key: 'mobile' as const, label: 'Mobile Verified', icon: Smartphone, verified: company.verification.mobile },
+                  { key: 'email' as const, label: 'Email Verified', icon: Mail, verified: company.verification.email },
+                  { key: 'gst' as const, label: 'GST / MSME Verified', icon: FileCheck2, verified: company.verification.gst },
+                  { key: 'business' as const, label: 'Business Entity Verified', icon: BadgeCheck, verified: company.verification.business },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
                     <div
                       key={item.label}
-                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${item.verified
+                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                        item.verified
                           ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                          : 'bg-gray-50 border-gray-200 text-gray-600'
-                        }`}
+                          : 'bg-slate-50/80 border-slate-200 text-slate-700'
+                      }`}
                     >
                       <div
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${item.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-500'
-                          }`}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          item.verified ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-400 border border-slate-200'
+                        }`}
                       >
-                        <Icon size={14} />
+                        <Icon size={16} />
                       </div>
-                      <span className="text-xs font-bold flex-1">
-                        {item.label}
-                      </span>
-                      {item.verified && (
-                        <CheckCircle size={15} className="text-emerald-600" />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold block truncate">
+                          {item.label}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block">
+                          {item.verified ? 'Approved & active' : 'Pending admin review'}
+                        </span>
+                      </div>
+                      {viewerIsAdmin ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedVer = {
+                              ...company.verification,
+                              [item.key]: !company.verification[item.key]
+                            };
+                            setCompany(prev => ({ ...prev, verification: updatedVer }));
+                          }}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-xl transition-all cursor-pointer ${
+                            item.verified
+                              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                              : 'bg-slate-200 text-slate-700 hover:bg-blue-600 hover:text-white'
+                          }`}
+                        >
+                          {item.verified ? 'Verified' : 'Verify'}
+                        </button>
+                      ) : (
+                        item.verified ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1 shrink-0">
+                            <CheckCircle size={12} className="text-emerald-600" /> Verified
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-600 flex items-center gap-1 shrink-0">
+                            <Clock size={12} className="text-slate-500" /> Pending
+                          </span>
+                        )
                       )}
                     </div>
                   );
                 })}
               </div>
 
-              {/* Trust Score */}
+              {/* Dynamic Trust Score */}
               <div className="pt-3 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-gray-600">Trust Score</span>
-                  <span className="text-xs font-black text-blue-700">
-                    {Math.round(
-                      ((Object.values(company.verification).filter(Boolean).length) /
-                        Object.keys(company.verification).length) *
-                      100
-                    )}%
-                  </span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full"
-                    style={{
-                      width: `${((Object.values(company.verification).filter(Boolean).length) /
-                          Object.keys(company.verification).length) *
-                        100
-                        }%`
-                    }}
-                  />
-                </div>
-                <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-                  Verification status is managed by administrators to ensure platform safety and genuine employer trust.
-                </p>
+                {(() => {
+                  const trustScore = calcTrustScore(
+                    { ...company, verificationStatus: initialCompany?.verificationStatus },
+                    company.verification
+                  );
+                  const isHighTrust = trustScore >= 80;
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <ShieldCheck size={14} className={isHighTrust ? 'text-emerald-600' : 'text-blue-600'} />
+                          <span className="text-xs font-bold text-gray-700">Platform Trust Score</span>
+                        </div>
+                        <span className={`text-xs font-black ${isHighTrust ? 'text-emerald-700' : 'text-blue-700'}`}>
+                          {trustScore}%
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isHighTrust
+                              ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                              : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                          }`}
+                          style={{ width: `${trustScore}%` }}
+                        />
+                      </div>
+                      <div className="mt-2.5 flex items-center justify-between text-[10px]">
+                        <span className="text-slate-500 font-medium">Authenticity rating:</span>
+                        <span className={`font-bold px-2 py-0.5 rounded-full ${
+                          isHighTrust ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                        }`}>
+                          {isHighTrust ? 'Verified Trust Tier' : 'Standard Trust Tier'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                        Verification status is verified by THENIJOBS administrators through phone checks, business proof, and GST records to ensure candidate trust.
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>

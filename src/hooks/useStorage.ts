@@ -8,6 +8,7 @@ import {
   deleteObject,
 } from 'firebase/storage';
 import { storage } from '@/lib/firebase/config';
+import { extractStoragePath } from '@/lib/storage/imageOptimizer';
 
 // ───────────────────────────── Types ─────────────────────────────
 
@@ -30,8 +31,8 @@ export interface UseUploadFileReturn {
 }
 
 export interface UseDeleteFileReturn {
-  /** Delete a file at the given storage path */
-  deleteFile: (path: string) => Promise<void>;
+  /** Delete a file at the given storage path or download URL */
+  deleteFile: (pathOrUrl: string) => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -40,20 +41,78 @@ export interface UseDeleteFileReturn {
 
 const DEFAULT_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
+// ──────────────────── Error Diagnostic Tracking ──────────────────
+
+export interface StorageErrorRecord {
+  timestamp: number;
+  code: string;
+  userMessage: string;
+  adminDiagnostic: string;
+  isQuotaExceeded: boolean;
+}
+
+// Global in-memory diagnostic state shared across the client session
+let lastStorageDiagnostic: StorageErrorRecord | null = null;
+const diagnosticListeners: Set<(record: StorageErrorRecord | null) => void> = new Set();
+
+export function getLastStorageDiagnostic(): StorageErrorRecord | null {
+  return lastStorageDiagnostic;
+}
+
+export function subscribeStorageDiagnostic(callback: (record: StorageErrorRecord | null) => void): () => void {
+  diagnosticListeners.add(callback);
+  return () => diagnosticListeners.delete(callback);
+}
+
+/**
+ * Format raw Firebase Storage errors into secure user-friendly messages and admin diagnostics.
+ */
+export function formatStorageError(err: any): { userMessage: string; isQuota: boolean; adminDiagnostic: string } {
+  const code = err?.code || '';
+  const rawMsg = err?.message || '';
+  const isQuota =
+    code === 'storage/quota-exceeded' ||
+    code === 'storage/retry-limit-exceeded' ||
+    rawMsg.toLowerCase().includes('quota') ||
+    rawMsg.toLowerCase().includes('quota-exceeded');
+
+  let userMessage = 'Upload failed: An unexpected error occurred. Please try again.';
+  let adminDiagnostic = rawMsg || 'Unknown storage error';
+
+  if (isQuota) {
+    userMessage = 'Image upload is temporarily unavailable because storage capacity has been reached. Please try again later or contact support.';
+    adminDiagnostic = 'Firebase Storage quota exceeded. Bucket: thenijobs-9f01d.firebasestorage.app';
+  } else if (code === 'storage/unauthorized') {
+    userMessage = 'You do not have permission to upload to this location. Please check your login status.';
+    adminDiagnostic = 'Firebase Storage unauthorized write attempt (storage/unauthorized).';
+  } else if (code === 'storage/canceled') {
+    userMessage = 'Upload was canceled.';
+    adminDiagnostic = 'Upload operation canceled by client.';
+  } else if (code === 'storage/invalid-format') {
+    userMessage = 'File format is not accepted. Please upload a standard PNG, JPG, or WebP image.';
+    adminDiagnostic = `Invalid file format rejected by storage rules: ${rawMsg}`;
+  } else if (rawMsg) {
+    userMessage = rawMsg;
+  }
+
+  // Record for admin security monitor
+  lastStorageDiagnostic = {
+    timestamp: Date.now(),
+    code,
+    userMessage,
+    adminDiagnostic,
+    isQuotaExceeded: isQuota
+  };
+  diagnosticListeners.forEach(listener => listener(lastStorageDiagnostic));
+
+  return { userMessage, isQuota, adminDiagnostic };
+}
+
 // ───────────────────────────── useUploadFile ─────────────────────
 
 /**
- * Upload a file to Firebase Cloud Storage with progress tracking.
- *
- * @example
- * ```tsx
- * const { uploadFile, progress, url, loading } = useUploadFile();
- *
- * const handleUpload = async (file: File) => {
- *   const downloadUrl = await uploadFile(file, `resumes/${userId}/${file.name}`);
- *   console.log('Uploaded to', downloadUrl);
- * };
- * ```
+ * Upload a file to Firebase Cloud Storage with progress tracking,
+ * graceful quota-exceeded handling, and user-friendly error formatting.
  */
 export function useUploadFile(): UseUploadFileReturn {
   const [progress, setProgress] = useState(0);
@@ -88,7 +147,9 @@ export function useUploadFile(): UseUploadFileReturn {
 
       return new Promise<string>((resolve, reject) => {
         const storageRef = ref(storage, path);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+        const uploadTask = uploadBytesResumable(storageRef, file, {
+          contentType: file.type || 'application/octet-stream'
+        });
 
         uploadTask.on(
           'state_changed',
@@ -99,10 +160,13 @@ export function useUploadFile(): UseUploadFileReturn {
             setProgress(pct);
           },
           (err) => {
-            const message = err.message || 'Upload failed';
-            setError(message);
+            const formatted = formatStorageError(err);
+            setError(formatted.userMessage);
             setLoading(false);
-            reject(err);
+            const userError = new Error(formatted.userMessage);
+            (userError as any).code = err.code;
+            (userError as any).isQuota = formatted.isQuota;
+            reject(userError);
           },
           async () => {
             try {
@@ -111,11 +175,10 @@ export function useUploadFile(): UseUploadFileReturn {
               setLoading(false);
               resolve(downloadURL);
             } catch (err) {
-              const message =
-                err instanceof Error ? err.message : 'Failed to get download URL';
-              setError(message);
+              const formatted = formatStorageError(err);
+              setError(formatted.userMessage);
               setLoading(false);
-              reject(err);
+              reject(new Error(formatted.userMessage));
             }
           },
         );
@@ -130,28 +193,37 @@ export function useUploadFile(): UseUploadFileReturn {
 // ───────────────────────────── useDeleteFile ─────────────────────
 
 /**
- * Delete a file from Firebase Cloud Storage.
- *
- * @example
- * ```tsx
- * const { deleteFile, loading } = useDeleteFile();
- * await deleteFile(`resumes/${userId}/old_resume.pdf`);
- * ```
+ * Delete a file from Firebase Cloud Storage by path or full download URL.
+ * Automatically resolves relative storage paths from HTTPS URLs and suppresses
+ * 'object-not-found' errors to ensure idempotent cleanup.
  */
 export function useDeleteFile(): UseDeleteFileReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const deleteFile = useCallback(async (path: string): Promise<void> => {
+  const deleteFile = useCallback(async (pathOrUrl: string): Promise<void> => {
+    if (!pathOrUrl) return;
+
+    // Resolve relative path from download URL or pass-through path
+    const resolvedPath = extractStoragePath(pathOrUrl);
+    if (!resolvedPath) {
+      // If it's an external URL (e.g. Unsplash, placeholder), do not attempt deletion
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const storageRef = ref(storage, path);
+      const storageRef = ref(storage, resolvedPath);
       await deleteObject(storageRef);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete file';
-      setError(message);
-      throw err;
+    } catch (err: any) {
+      // If object already deleted or never existed, do not treat as fatal error
+      if (err?.code === 'storage/object-not-found') {
+        return;
+      }
+      const formatted = formatStorageError(err);
+      setError(formatted.userMessage);
+      console.warn('Firebase Storage delete warning:', err);
     } finally {
       setLoading(false);
     }

@@ -6,7 +6,7 @@ const footerLinks = {
   'For Job Seekers': [
     { label: 'Browse Jobs', href: '/jobs' },
     { label: 'Companies', href: '/businesses' },
-    { label: 'Services', href: '/services' },
+    { label: 'Services', href: '/marketplace?type=services' },
     { label: 'Create Profile', href: '/register?role=seeker' },
     { label: 'Saved Jobs', href: '/seeker/saved-jobs' },
   ],

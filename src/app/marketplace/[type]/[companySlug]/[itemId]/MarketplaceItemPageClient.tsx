@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Loader2, Package, Wrench, MessageCircle, BadgeCheck, ArrowLeft,
-  ExternalLink, MapPin, Sparkles, ShoppingBag,
+  ExternalLink, MapPin, Sparkles, ShoppingBag, ChevronRight,
 } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
@@ -90,7 +90,7 @@ export default function MarketplaceItemPageClient({
     const district = company.district || '';
     const description = item.description || item.desc || '';
     const imageUrl = item.imageUrl || company.logoUrl || '';
-    const canonicalUrl = `https://www.thenijobs.com/marketplace/${type}/${companySlug}/${itemId}`;
+    const canonicalUrl = `https://thenijobs.com/marketplace/${type}/${companySlug}/${itemId}`;
 
     const title = `${itemName} — ${companyName} | THENIJOBS Marketplace`;
     document.title = title;
@@ -220,14 +220,28 @@ export default function MarketplaceItemPageClient({
     ? (item.startingPrice || item.price ? `Starts ₹${Number(item.startingPrice || item.price).toLocaleString('en-IN')}` : 'Rate on inquiry')
     : (item.price ? `₹${Number(item.price).toLocaleString('en-IN')}` : item.priceRange || 'Price on request');
 
+  const otherItems: any[] = (Array.isArray(company[type === 'service' ? 'services' : 'products'])
+    ? company[type === 'service' ? 'services' : 'products']
+    : []
+  ).filter((entry: any) => entry && typeof entry === 'object' && entry.id !== itemId).slice(0, 4);
+
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-[#111827] pb-24" style={{ fontFamily: "'Inter', sans-serif" }}>
       <Header />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
-        <Link href="/marketplace" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 mb-5">
-          <ArrowLeft size={14} /> Back to Marketplace
-        </Link>
+        {/* Breadcrumbs for SEO & UX */}
+        <nav className="flex items-center gap-1.5 text-xs text-slate-500 mb-5 flex-wrap" aria-label="Breadcrumbs">
+          <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
+          <ChevronRight size={11} className="text-slate-400" />
+          <Link href="/marketplace" className="hover:text-blue-600 transition-colors">Marketplace</Link>
+          <ChevronRight size={11} className="text-slate-400" />
+          <Link href={`/company/${company.slug || companySlug}`} className="hover:text-blue-600 transition-colors font-medium">
+            {company.name}
+          </Link>
+          <ChevronRight size={11} className="text-slate-400" />
+          <span className="text-slate-900 font-bold truncate max-w-[200px]">{itemName}</span>
+        </nav>
 
         <div className="bg-white rounded-3xl border border-slate-200 shadow-2xs overflow-hidden">
           <div className="h-64 sm:h-80 bg-slate-100 relative flex items-center justify-center overflow-hidden">
@@ -294,6 +308,60 @@ export default function MarketplaceItemPageClient({
             </div>
           </div>
         </div>
+
+        {/* More from this Company section */}
+        {otherItems.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                More {type === 'service' ? 'Services' : 'Products'} from {company.name}
+              </h2>
+              <Link
+                href={`/company/${company.slug || companySlug}`}
+                className="text-xs text-blue-600 hover:underline font-semibold"
+              >
+                View Company Profile →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {otherItems.map((other: any) => {
+                const otherPrice = other.priceRange || (other.price ? `₹${Number(other.price).toLocaleString('en-IN')}` : (other.startingPrice ? `Starts ₹${Number(other.startingPrice).toLocaleString('en-IN')}` : ''));
+                return (
+                  <Link
+                    key={other.id || other.name}
+                    href={`/marketplace/${type}/${company.slug || companySlug}/${other.id}`}
+                    className="flex items-center gap-3 p-3.5 bg-white rounded-2xl border border-slate-200 hover:border-blue-400 hover:shadow-xs transition-all group"
+                  >
+                    <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                      {other.imageUrl ? (
+                        <img
+                          src={other.imageUrl}
+                          alt={other.name || 'Item'}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        type === 'service' ? <Wrench size={24} className="text-slate-400" /> : <Package size={24} className="text-slate-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                        {other.name}
+                      </h3>
+                      {otherPrice && (
+                        <p className={`text-xs font-bold mt-0.5 ${type === 'service' ? 'text-blue-600' : 'text-emerald-600'}`}>
+                          {otherPrice}
+                        </p>
+                      )}
+                      {other.category && (
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider">{other.category}</span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 text-center">
           <Link href="/marketplace" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800">

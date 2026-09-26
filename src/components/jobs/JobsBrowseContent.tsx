@@ -27,6 +27,7 @@ import { useToast } from '@/contexts/ToastContext';
 /* ─── Types ─── */
 interface Job {
   id: string;
+  slug?: string;
   title: string;
   company: string;
   companyId?: string;
@@ -301,7 +302,7 @@ function JobCard({ job, selected, onSelect, onSave, saved }: {
             {saved ? <Bookmark size={14} className="fill-current" /> : <BookmarkPlus size={14} />}
           </button>
           <Link
-            href={`/jobs/${job.id}`}
+            href={`/jobs/${job.slug || job.id}`}
             className="px-3.5 py-1.5 text-xs font-bold text-white rounded-xl transition-all hover:opacity-90 shadow-xs"
             style={{ background: '#2563EB' }}
           >
@@ -387,6 +388,7 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
 
           return {
             id: doc.id,
+            slug: d.slug || '',
             title: d.title || '',
             company: d.companyName || d.company || 'Company',
             companyId: d.companyId || '',
@@ -707,7 +709,7 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
 
                 <div className="pt-2">
                   <Link
-                    href={`/jobs/${selectedJob.id}`}
+                    href={`/jobs/${selectedJob.slug || selectedJob.id}`}
                     className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
                   >
                     View Details &amp; Apply <ArrowRight size={14} />

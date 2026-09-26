@@ -20,6 +20,15 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'storage.googleapis.com' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/services',
+        destination: '/marketplace?type=services',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

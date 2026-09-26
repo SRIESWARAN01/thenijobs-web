@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
-const faqs = [
+export const HOMEPAGE_FAQS = [
   {
     q: 'Is THENIJOBS free for job seekers?',
     a: 'Yes. Job seekers can create a profile, search jobs, and apply to any listing on THENIJOBS completely free of charge.',
@@ -36,11 +36,13 @@ const faqs = [
   },
 ];
 
+export const faqs = HOMEPAGE_FAQS;
+
 export default function FAQSection() {
   const faqStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: faqs.map((faq) => ({
+    mainEntity: HOMEPAGE_FAQS.map((faq) => ({
       '@type': 'Question',
       name: faq.q,
       acceptedAnswer: { '@type': 'Answer', text: faq.a },

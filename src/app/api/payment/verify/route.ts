@@ -228,9 +228,14 @@ export async function POST(request: Request) {
     if (companyId) {
       await writeOrThrow(() => db.collection('companies').doc(companyId).update({
         subscriptionPlan: planSlug || 'standard',
+        subscriptionStatus: 'active',
+        accountStatus: 'active',
+        websiteStatus: 'active',
+        paymentStatus: 'paid',
         isPremium: true,
-        planStartDate: now,
-        planEndDate: expiryDate,
+        isActive: true,
+        subscriptionStartDate: now,
+        subscriptionEndDate: expiryDate,
         updatedAt: now,
       }), 'company plan update');
     }
@@ -239,6 +244,9 @@ export async function POST(request: Request) {
     if (userId) {
       await writeOrThrow(() => db.collection('users').doc(userId).update({
         subscriptionPlan: planSlug || 'standard',
+        subscriptionStatus: 'active',
+        accountStatus: 'active',
+        paymentStatus: 'paid',
         isPremium: true,
         updatedAt: now,
       }), 'user plan update');

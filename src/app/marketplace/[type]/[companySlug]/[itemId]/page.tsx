@@ -1,5 +1,13 @@
 import MarketplaceItemPageClient from './MarketplaceItemPageClient';
-import { getAllMarketplaceItemParamsServer } from '@/lib/firebase/firestoreServer';
+import { getAllMarketplaceItemParamsServer, getMarketplaceItemServer } from '@/lib/firebase/firestoreServer';
+import { generateBreadcrumbSchema } from '@/lib/seo/schemas';
+import {
+  generateProductSEO, generateServiceSEO,
+  generateProductSchemaLD, generateServiceSchemaLD,
+  canonicalProductUrl, canonicalServiceUrl,
+} from '@/lib/seo/seoEngine';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
+import type { Metadata } from 'next';
 
 // vercel.json rewrites any unknown /marketplace/product/* or /marketplace/service/*
 // URL to the matching _fallback pair below; the client component then resolves the
@@ -22,11 +30,15 @@ export async function generateStaticParams() {
   return merged;
 }
 
+/**
+ * SEO-CRITICAL: Server-side metadata generation using REAL Firebase data.
+ * Google crawlers receive actual product/service names, descriptions, and images.
+ */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ type: string; companySlug: string; itemId: string }>;
-}) {
+}): Promise<Metadata> {
   const { type, companySlug, itemId } = await params;
   const kind = type === 'service' ? 'Service' : 'Product';
 
@@ -34,25 +46,48 @@ export async function generateMetadata({
     return {
       title: `${kind} Details | THENIJOBS Marketplace`,
       description: 'Browse products and services from verified local businesses on THENIJOBS Marketplace.',
+      robots: { index: false, follow: true },
     };
   }
 
-  // Same crude, no-fetch slug-to-title guess used by company/[slug]/page.tsx — the real
-  // name is set client-side once MarketplaceItemPageClient resolves the actual item.
+  // Fetch real item data from Firebase
+  const itemType = type === 'service' ? 'service' : 'product';
+  const result = await getMarketplaceItemServer(itemType, companySlug, itemId).catch(() => null);
+
+  if (result) {
+    const { company, item } = result;
+    if (type === 'service') {
+      return generateServiceSEO(item, company);
+    }
+    return generateProductSEO(item, company);
+  }
+
+  // Fallback: item not found server-side (may resolve client-side)
   const displayCompany = companySlug
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
+  const canonical = type === 'service'
+    ? canonicalServiceUrl(companySlug, itemId)
+    : canonicalProductUrl(companySlug, itemId);
+
   return {
     title: `${kind} from ${displayCompany} | THENIJOBS Marketplace`,
     description: `View this ${kind.toLowerCase()} offered by ${displayCompany} on THENIJOBS Marketplace. Contact directly via WhatsApp or call to order or enquire.`,
-    alternates: {
-      canonical: `https://thenijobs.com/marketplace/${type}/${companySlug}/${itemId}`,
+    openGraph: {
+      title: `${kind} from ${displayCompany} | THENIJOBS Marketplace`,
+      description: `View this ${kind.toLowerCase()} offered by ${displayCompany} on THENIJOBS Marketplace.`,
+      url: canonical,
+      type: 'website',
+      siteName: 'THENIJOBS',
     },
-    robots: {
-      index: true,
-      follow: true,
+    twitter: {
+      card: 'summary_large_image',
+      title: `${kind} from ${displayCompany} | THENIJOBS`,
+      description: `View this ${kind.toLowerCase()} on THENIJOBS Marketplace.`,
     },
+    alternates: { canonical },
+    robots: { index: true, follow: true },
   };
 }
 
@@ -62,5 +97,50 @@ export default async function MarketplaceItemPage({
   params: Promise<{ type: string; companySlug: string; itemId: string }>;
 }) {
   const { type, companySlug, itemId } = await params;
-  return <MarketplaceItemPageClient type={type} companySlug={companySlug} itemId={itemId} />;
+  const kind = type === 'service' ? 'Service' : 'Product';
+
+  // Fetch real data for server-side structured data
+  const itemType = type === 'service' ? 'service' : 'product';
+  const result = await getMarketplaceItemServer(itemType, companySlug, itemId).catch(() => null);
+
+  const displayCompany = result?.company?.name || companySlug
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+  const itemName = result?.item?.name || `${kind} Details`;
+
+  // Breadcrumb with real names
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: 'https://thenijobs.com' },
+    { name: 'Marketplace', url: 'https://thenijobs.com/marketplace' },
+    { name: displayCompany, url: `https://thenijobs.com/company/${companySlug}` },
+    { name: itemName, url: `https://thenijobs.com/marketplace/${type}/${companySlug}/${itemId}` },
+  ]);
+
+  // Product or Service JSON-LD — only when real data exists
+  let entitySchema = null;
+  if (result) {
+    const { company, item } = result;
+    entitySchema = type === 'service'
+      ? generateServiceSchemaLD(item, company)
+      : generateProductSchemaLD(item, company);
+  }
+
+  return (
+    <>
+      {/* BreadcrumbList JSON-LD — always rendered server-side */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(breadcrumbSchema) }}
+      />
+      {/* Product/Service JSON-LD — server-side for Google */}
+      {entitySchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: toJsonLdScript(entitySchema) }}
+        />
+      )}
+      <MarketplaceItemPageClient type={type} companySlug={companySlug} itemId={itemId} />
+    </>
+  );
 }

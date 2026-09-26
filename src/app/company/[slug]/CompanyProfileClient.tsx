@@ -20,6 +20,7 @@ import { safeExternalUrl } from '@/lib/safeUrl';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import { followCompany, unfollowCompany, isFollowingCompany, createDocument, saveJob, unsaveJob, getSavedJobs } from '@/lib/firebase/firestoreService';
+import { slugify } from '@/lib/seo/jobSlug';
 
 export default function CompanyProfileClient({ company, jobs = [], reviews = [] }: {
   company: any; jobs: any[]; reviews: any[];
@@ -195,8 +196,18 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
           page also has the sticky action bar above it — hence the extra room on mobile. */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-36 lg:pb-10">
 
+        <div className="pt-3 pb-1">
+          <Link
+            href="/marketplace"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to Marketplace
+          </Link>
+        </div>
+
         {/* Card Wrapper for Header + Profile Info */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-6 mt-4">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-6 mt-2">
           
           {/* Cover Image / Gradient Banner */}
           <div className="w-full h-48 sm:h-64 md:h-72 relative bg-slate-950 flex items-center justify-center overflow-hidden">
@@ -324,10 +335,22 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                   <span className="text-gray-400">No reviews yet</span>
                 )}
 
-                <span className="flex items-center gap-1 text-gray-600 min-w-0">
+                {company.category && (
+                  <Link
+                    href={`/businesses/${slugify(company.category)}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors text-xs font-semibold"
+                  >
+                    <Tag size={11} /> {company.category}
+                  </Link>
+                )}
+
+                <Link
+                  href={`/jobs-in-${(company.district || 'theni').toLowerCase().replace(/\s+/g, '-')}`}
+                  className="flex items-center gap-1 text-gray-600 hover:text-blue-700 transition-colors min-w-0"
+                >
                   <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                   <span className="truncate">{company.district ? `${company.district}, Tamil Nadu` : 'Theni, Tamil Nadu'}</span>
-                </span>
+                </Link>
               </div>
             </div>
 
@@ -916,6 +939,18 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                             </a>
                           )}
                         </div>
+                        {p.id && (
+                          <div className="pt-1 text-right">
+                            <Link
+                              href={`/marketplace/product/${company.slug}/${p.id}`}
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <span>View Product Page</span>
+                              <ChevronRight size={11} />
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -987,6 +1022,18 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                             </a>
                           )}
                         </div>
+                        {typeof s === 'object' && s.id && (
+                          <div className="pt-1 text-right">
+                            <Link
+                              href={`/marketplace/service/${company.slug}/${s.id}`}
+                              onClick={e => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              <span>View Service Page</span>
+                              <ChevronRight size={11} />
+                            </Link>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

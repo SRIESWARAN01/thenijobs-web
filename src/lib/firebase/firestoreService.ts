@@ -21,6 +21,7 @@ import {
   type QueryConstraint,
 } from 'firebase/firestore';
 import { db } from './config';
+import { generateJobSlug } from '@/lib/seo/jobSlug';
 
 // ============================================================
 // HELPERS
@@ -641,13 +642,26 @@ export async function markAllNotificationsRead(userId: string) {
 // ============================================================
 
 export async function approveCompany(companyId: string, adminId: string) {
+  const now = new Date();
+  const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // exactly 15-day free trial
+
   await updateDoc(doc(db, 'companies', companyId), {
     verificationStatus: 'verified',
     isVerified: true,
     isActive: true,
-    updatedAt: serverTimestamp() });
+    accountStatus: 'trial_active',
+    subscriptionStatus: 'trial_active',
+    subscriptionPlan: 'standard', // 15-day free trial applies ONLY to Standard plan
+    websiteStatus: 'active',
+    paymentStatus: 'unpaid',
+    trialStartDate: now,
+    trialEndDate: trialEndDate,
+    adminApprovedAt: now,
+    approvedBy: adminId,
+    updatedAt: serverTimestamp(),
+  });
 
-  const company = await fetchDocument<{ ownerId?: string; name?: string }>(
+  const company = await fetchDocument<{ ownerId?: string; name?: string; phone?: string; district?: string }>(
     'companies',
     companyId,
   );
@@ -659,25 +673,62 @@ export async function approveCompany(companyId: string, adminId: string) {
         isEmployer: true,
         companyId: companyId,
         canPostJobs: true,
+        accountStatus: 'trial_active',
+        subscriptionStatus: 'trial_active',
+        subscriptionPlan: 'standard',
+        paymentStatus: 'unpaid',
+        trialStartDate: now,
+        trialEndDate: trialEndDate,
+        adminApprovedAt: now,
+        approvedBy: adminId,
         'employerApplication.status': 'verified',
         updatedAt: serverTimestamp(),
       });
     } catch { /* ignore if user doc does not exist yet */ }
 
+    // Create official trial record in subscriptions collection
+    try {
+      await addDoc(collection(db, 'subscriptions'), {
+        userId: company.ownerId,
+        companyId,
+        businessName: company.name || '',
+        companyName: company.name || '',
+        plan: 'standard',
+        status: 'trial',
+        amount: 0,
+        paymentStatus: 'unpaid',
+        startDate: now,
+        endDate: trialEndDate,
+        trialStartDate: now,
+        trialEndDate: trialEndDate,
+        autoRenew: false,
+        paymentMethod: 'FREE_TRIAL_15_DAYS',
+        adminApprovedAt: now,
+        approvedBy: adminId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (subErr) {
+      console.warn('[approveCompany] Failed to add subscription trial record:', subErr);
+    }
+
     await createNotification({
       userId: company.ownerId,
       type: 'system',
-      title: 'Business & Employer Access Approved! 🎉',
-      message: `Your company "${company.name}" has been approved. You can now post jobs and access the Employer Dashboard.`,
-      actionUrl: `/employer/dashboard` });
+      title: 'Business Approved & 15-Day Free Trial Started! 🎉',
+      message: `Your business "${company.name}" is approved! Your 15-day Standard free trial has started. Build your company website, post jobs, and manage candidates.`,
+      actionUrl: `/employer/dashboard`,
+    });
   }
 
   await logActivity({
     userId: adminId,
     userName: 'Admin',
-    action: 'Business approved',
+    action: 'Business approved & 15-day trial started',
     target: company?.name || companyId,
-    targetId: companyId });
+    targetId: companyId,
+    details: `Trial valid until ${trialEndDate.toLocaleDateString('en-IN')}`,
+  });
 }
 
 export async function rejectCompany(
@@ -689,8 +740,12 @@ export async function rejectCompany(
     verificationStatus: 'rejected',
     isVerified: false,
     isActive: false,
+    accountStatus: 'suspended',
+    websiteStatus: 'suspended',
+    subscriptionStatus: 'suspended',
     rejectionReason: reason || '',
-    updatedAt: serverTimestamp() });
+    updatedAt: serverTimestamp(),
+  });
 
   const company = await fetchDocument<{ ownerId?: string; name?: string }>(
     'companies',
@@ -702,6 +757,7 @@ export async function rejectCompany(
       await updateDoc(doc(db, 'users', company.ownerId), {
         'employerApplication.status': 'rejected',
         'employerApplication.rejectionReason': reason || '',
+        accountStatus: 'suspended',
         updatedAt: serverTimestamp(),
       });
     } catch { /* ignore */ }
@@ -709,9 +765,10 @@ export async function rejectCompany(
     await createNotification({
       userId: company.ownerId,
       type: 'system',
-      title: 'Employer Application Requires Update',
-      message: `Your business application "${company.name}" was not approved: ${reason || 'Please update your business details.'}`,
-      actionUrl: `/seeker/become-employer` });
+      title: 'Business Registration Review Update',
+      message: `Your business registration for "${company.name}" could not be approved. Reason: ${reason || 'Incomplete details'}. Please contact support.`,
+      actionUrl: `/contact`,
+    });
   }
 
   await logActivity({
@@ -829,7 +886,7 @@ async function notifyMatchingJobAlerts(
         type: 'job_match',
         title: 'New Job Match 🎯',
         message: `"${job.title}" at ${job.companyName || 'a company'} matches your "${alert.title}" alert.`,
-        actionUrl: `/jobs/${jobId}`,
+        actionUrl: `/jobs/${(job as any)?.slug || jobId}`,
         jobId,
       });
     }
@@ -851,18 +908,20 @@ export async function approveJob(jobId: string, adminId: string) {
     if (snap.exists() && (snap.data() as any).status === 'active') {
       return true;
     }
-    tx.update(jobRef, {
+    const d = snap.data() as any;
+    const updates: Record<string, any> = {
       isActive: true,
       status: 'active',
-      // The admin list reads `approvalStatus` first (admin/jobs/page.tsx getStatus/isActive),
-      // so leaving it at 'pending' kept every approved job showing as "Pending Review" with
-      // "Active & Live: 0" forever — even though the job was already live on the public site.
       approvalStatus: 'approved',
       approvedBy: adminId,
       approvedAt: serverTimestamp(),
       rejectionReason: '',
       updatedAt: serverTimestamp(),
-    });
+    };
+    if (!d?.slug && d?.title) {
+      updates.slug = generateJobSlug(d.title, d.companyName || 'Company', d.district || d.location || 'Theni');
+    }
+    tx.update(jobRef, updates);
     return false;
   });
 

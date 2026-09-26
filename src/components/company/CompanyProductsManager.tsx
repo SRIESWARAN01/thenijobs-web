@@ -173,7 +173,7 @@ export default function CompanyProductsManager({
 
   const testWhatsAppOrder = (item: ProductItem) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com';
-    const pageUrl = companySlug ? `${origin}/company/${companySlug}` : `${origin}/services`;
+    const pageUrl = companySlug ? `${origin}/company/${companySlug}` : `${origin}/marketplace`;
     const priceDisplay = item.price ? `₹${item.price.toLocaleString('en-IN')}` : item.priceRange || 'Contact for Price';
 
     let msg = `🛍️ *NEW PRODUCT ORDER / ENQUIRY*\n`;

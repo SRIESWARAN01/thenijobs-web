@@ -29,6 +29,24 @@ export type EmployerRole =
   | 'branch_manager'
   | 'staff_user';
 
+export type AccountStatus =
+  | 'pending_admin_approval'
+  | 'trial_active'
+  | 'active'
+  | 'suspended'
+  | 'trial_expired';
+
+export type WebsiteStatus =
+  | 'active'
+  | 'suspended'
+  | 'pending_approval';
+
+export type PaymentStatus =
+  | 'unpaid'
+  | 'paid'
+  | 'pending'
+  | 'failed';
+
 export interface User {
   uid: string;
   email: string;
@@ -41,6 +59,14 @@ export interface User {
   companyId?: string;
   district?: string;
   isVerified: boolean;
+  accountStatus?: AccountStatus;
+  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'active' | 'trial_expired' | 'suspended';
+  subscriptionPlan?: string;
+  trialStartDate?: any;
+  trialEndDate?: any;
+  paymentStatus?: PaymentStatus;
+  adminApprovedAt?: any;
+  approvedBy?: string;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -121,6 +147,7 @@ export interface ServiceItem {
   id: string;
   name: string;
   imageUrl?: string;
+  bannerImageUrl?: string;
   description?: string;
   category?: string;
   startingPrice?: number;
@@ -245,6 +272,18 @@ export interface Company {
   isFeatured: boolean;
   isPremium: boolean;
   subscriptionPlan?: string;
+  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'active' | 'trial_expired' | 'suspended';
+  accountStatus?: AccountStatus;
+  websiteStatus?: WebsiteStatus;
+  paymentStatus?: PaymentStatus;
+  trialStartDate?: any;
+  trialEndDate?: any;
+  subscriptionStartDate?: any;
+  subscriptionEndDate?: any;
+  adminApprovedAt?: any;
+  approvedBy?: string;
+  trialExtendedDays?: number;
+  trialExtendedAt?: any;
   // Analytics
   viewCount: number;
   enquiryCount: number;
@@ -414,14 +453,22 @@ export interface Subscription {
   id: string;
   userId: string;
   companyId?: string;
+  businessName?: string;
+  companyName?: string;
   plan: SubscriptionPlanSlug;
-  status: 'active' | 'expired' | 'cancelled' | 'trial';
+  status: 'active' | 'expired' | 'cancelled' | 'trial' | 'trial_active' | 'trial_expired' | 'suspended' | 'pending_admin_approval';
+  paymentStatus?: PaymentStatus;
   amount: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | any;
+  endDate: Date | any;
+  trialStartDate?: any;
+  trialEndDate?: any;
   autoRenew: boolean;
   paymentMethod?: string;
-  createdAt: Date;
+  adminApprovedAt?: any;
+  approvedBy?: string;
+  createdAt: Date | any;
+  updatedAt?: Date | any;
 }
 
 export interface SubscriptionPlan {
@@ -578,3 +625,6 @@ export const TN_DISTRICTS = [
 ] as const;
 
 export type District = typeof TN_DISTRICTS[number];
+
+// ===== AMBASSADOR & REFERRALS =====
+export * from './ambassador';

@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     'Agriculture services Theni',
     'Textile suppliers Theni',
   ],
-  alternates: { canonical: 'https://thenijobs.com/services' },
+  alternates: { canonical: 'https://thenijobs.com/marketplace' },
   openGraph: {
     title: 'Local Products & Services Marketplace in Theni | THENIJOBS',
     description:
       'Browse verified products, business catalogs, and professional services in Theni district with 1-click WhatsApp order inquiries.',
-    url: 'https://thenijobs.com/services',
+    url: 'https://thenijobs.com/marketplace',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',

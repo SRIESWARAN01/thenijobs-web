@@ -986,7 +986,7 @@ export default function CompanyLandingWebsite({
                   </div>
 
                   <Link
-                    href={`/jobs/${job.id}`}
+                    href={`/jobs/${job.slug || job.id}`}
                     className="w-full py-2.5 px-4 rounded-xl text-center text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-all flex items-center justify-center gap-1.5"
                   >
                     <span>View &amp; Apply</span> <ArrowRight size={13} />

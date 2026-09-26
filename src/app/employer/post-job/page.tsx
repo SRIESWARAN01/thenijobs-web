@@ -21,6 +21,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { canPostNewJob, getPlan } from '@/lib/plans';
 import { Switch } from '@/components/dashboard';
 import { requestAIService } from '@/lib/ai/aiClient';
+import { generateJobSlug } from '@/lib/seo/jobSlug';
 
 const STEPS = [
   { id: 1, label: 'Job Details' },
@@ -234,9 +235,15 @@ export default function PostJobPage() {
 
       const nextJobNum = activeJobsCount + 1;
       const ordinalName = getJobOrdinalName(nextJobNum);
+      const jobSlug = generateJobSlug(
+        form.title.trim(),
+        company.name || 'Company',
+        form.district || form.location.trim() || 'Theni'
+      );
 
       const jobPayload: any = {
         title: form.title.trim(),
+        slug: jobSlug,
         description: form.description.trim(),
         jobType: form.jobType,
         location: form.location.trim() || form.district || 'Theni',

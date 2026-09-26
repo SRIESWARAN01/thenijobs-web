@@ -36,7 +36,7 @@ const QUICK_ACTIONS = [
 
 interface ApplicationDoc { id: string; jobTitle?: string; companyName?: string; status?: string; createdAt?: FirestoreTime }
 interface InterviewDoc { id: string; companyName?: string; jobTitle?: string; date?: string; time?: string; mode?: string }
-interface JobDoc { id: string; title?: string; category?: string; companyName?: string; district?: string; jobType?: string; salaryMin?: number | string; isUrgent?: boolean; createdAt?: { toMillis?: () => number } }
+interface JobDoc { id: string; slug?: string; title?: string; category?: string; companyName?: string; district?: string; jobType?: string; salaryMin?: number | string; isUrgent?: boolean; createdAt?: { toMillis?: () => number } }
 interface JobAlertDoc { id: string; userId?: string; title?: string; category?: string; district?: string; jobType?: string; status?: string }
 
 interface SeekerProfile {
@@ -225,7 +225,7 @@ export default function SeekerDashboard() {
                       </span>
                     </span>
                   </div>
-                  <Link href={`/jobs/${job.id}`} className="shrink-0">
+                  <Link href={`/jobs/${job.slug || job.id}`} className="shrink-0">
                     <Button size="sm" className="w-full border-0 bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
                       Apply
                     </Button>

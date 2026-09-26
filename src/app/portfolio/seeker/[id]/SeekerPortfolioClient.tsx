@@ -191,7 +191,7 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
       seeker.careerObjective || seeker.aboutMe ||
       `${name}${role ? `, ${role}` : ''}${district ? ` in ${district}, Tamil Nadu` : ''}.${skillNames.length ? ` Skills: ${skillNames.join(', ')}.` : ''} View this candidate's digital portfolio on THENIJOBS.`
     ).slice(0, 160);
-    const canonicalUrl = `https://www.thenijobs.com/portfolio/seeker/${seekerId}`;
+    const canonicalUrl = `https://thenijobs.com/portfolio/seeker/${seekerId}`;
     const photoUrl = seeker.photoUrl || seeker.profilePhotoUrl || '';
 
     const setMeta = (metaName: string, content: string, property?: boolean) => {
@@ -269,7 +269,7 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
     // kind of fabricated navigation this repo's own non-fabrication discipline (TRUST-1) warns
     // against.
     const breadcrumbJsonLd = generateBreadcrumbSchema([
-      { name: 'Home', url: 'https://www.thenijobs.com/' },
+      { name: 'Home', url: 'https://thenijobs.com/' },
       { name, url: canonicalUrl },
     ]);
 

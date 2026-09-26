@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Briefcase, Building2, Check, Copy, ExternalLink, Globe, RefreshCw, Search, Sparkles, TrendingUp,
+  Briefcase, Building2, Check, Copy, ExternalLink, Globe, Package, RefreshCw, Search, Sparkles, TrendingUp,
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useToast } from '@/contexts/ToastContext';
@@ -20,7 +20,7 @@ interface PortfolioRow {
   seo?: { keywords?: string[] };
 }
 interface CompanyRow { id: string; name?: string; district?: string; category?: string; verificationStatus?: string }
-interface JobRow { id: string; title?: string; companyName?: string; district?: string; isActive?: boolean; status?: string }
+interface JobRow { id: string; title?: string; companyName?: string; district?: string; isActive?: boolean; status?: string; slug?: string }
 
 function ScoreBar({ score }: { score: number }) {
   return (
@@ -70,7 +70,7 @@ const HIGH_IMPACT_KEYWORDS = {
 
 export default function AdminSeoManagementPage() {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<'portfolios' | 'companies' | 'jobs' | 'trends'>('portfolios');
+  const [activeTab, setActiveTab] = useState<'portfolios' | 'companies' | 'jobs' | 'marketplace' | 'trends'>('portfolios');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterIndexed, setFilterIndexed] = useState<'all' | 'indexed' | 'noindex'>('all');
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
@@ -83,6 +83,43 @@ export default function AdminSeoManagementPage() {
   const { data: companies, loading: compLoading, refresh: refreshCompanies } = useCollection<any>('companies');
   const { data: jobs, loading: jobsLoading, refresh: refreshJobs } = useCollection<any>('jobs');
 
+  // Derive marketplace items from company products and services
+  const marketplaceItems = useMemo(() => {
+    const items: Array<{ id: string; name: string; type: 'product' | 'service'; companyName: string; companySlug: string; hasImage: boolean; hasDescription: boolean; hasPrice: boolean; category?: string }> = [];
+    for (const c of companies) {
+      const companySlug = c.slug || slugifyCompany(c.name || c.id);
+      for (const p of (c.products || [])) {
+        if (!p || typeof p !== 'object' || !p.id) continue;
+        items.push({
+          id: `product-${companySlug}-${p.id}`,
+          name: p.name || 'Unnamed Product',
+          type: 'product',
+          companyName: c.name || 'Unknown',
+          companySlug,
+          hasImage: !!p.imageUrl,
+          hasDescription: !!(p.description && p.description.length > 20),
+          hasPrice: !!(p.price && Number(p.price) > 0),
+          category: p.category,
+        });
+      }
+      for (const s of (c.services || [])) {
+        if (!s || typeof s !== 'object' || !s.id) continue;
+        items.push({
+          id: `service-${companySlug}-${s.id}`,
+          name: s.name || s.title || 'Unnamed Service',
+          type: 'service',
+          companyName: c.name || 'Unknown',
+          companySlug,
+          hasImage: !!(s.imageUrl || s.bannerImageUrl),
+          hasDescription: !!(s.description && s.description.length > 20),
+          hasPrice: !!(s.startingPrice && Number(s.startingPrice) > 0),
+          category: s.category,
+        });
+      }
+    }
+    return items;
+  }, [companies]);
+
   // Calculate SEO Health Metrics
   const stats = useMemo(() => {
     const totalPort = portfolios.length || 0;
@@ -94,13 +131,17 @@ export default function AdminSeoManagementPage() {
     const totalJobs = jobs.length || 0;
     const activeJobs = jobs.filter(j => j.isActive || j.status === 'active').length;
 
+    const totalMarketplace = marketplaceItems.length;
+    const marketplaceWithImages = marketplaceItems.filter(m => m.hasImage).length;
+    const marketplaceWithDesc = marketplaceItems.filter(m => m.hasDescription).length;
+
     const healthScore = totalPort > 0 ? Math.round((indexedPort / totalPort) * 100) : 0;
 
-    return { totalPort, indexedPort, totalComp, verifiedComp, totalJobs, activeJobs, healthScore };
-  }, [portfolios, companies, jobs]);
+    return { totalPort, indexedPort, totalComp, verifiedComp, totalJobs, activeJobs, totalMarketplace, marketplaceWithImages, marketplaceWithDesc, healthScore };
+  }, [portfolios, companies, jobs, marketplaceItems]);
 
   // SEO Score calculation helper for individual entity
-  const getSeoScore = (item: any, type: 'portfolio' | 'company' | 'job') => {
+  const getSeoScore = (item: any, type: 'portfolio' | 'company' | 'job' | 'marketplace') => {
     let score = 0;
     if (type === 'portfolio') {
       if (item.customUrl) score += 20;
@@ -114,6 +155,11 @@ export default function AdminSeoManagementPage() {
       if (item.category) score += 20;
       if (item.description && item.description.length > 40) score += 20;
       if (item.verificationStatus === 'verified') score += 20;
+    } else if (type === 'marketplace') {
+      if (item.name && item.name !== 'Unnamed Product' && item.name !== 'Unnamed Service') score += 25;
+      if (item.hasImage) score += 30;
+      if (item.hasDescription) score += 25;
+      if (item.hasPrice) score += 20;
     } else {
       if (item.title) score += 25;
       if (item.district) score += 25;
@@ -201,6 +247,14 @@ export default function AdminSeoManagementPage() {
   const filteredJobs = useMemo(
     () => (jobs as JobRow[]).filter(j => (j.title || '').toLowerCase().includes(searchQuery.toLowerCase())),
     [jobs, searchQuery],
+  );
+
+  const filteredMarketplace = useMemo(
+    () => marketplaceItems.filter(m =>
+      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.companyName.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+    [marketplaceItems, searchQuery],
   );
 
   const portfolioColumns: Column<PortfolioRow>[] = [
@@ -371,7 +425,7 @@ export default function AdminSeoManagementPage() {
       </div>
 
       {/* ── STATS CARDS ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500">Google SEO Index Score</span>
@@ -417,6 +471,19 @@ export default function AdminSeoManagementPage() {
           <p className="text-2xl font-extrabold text-slate-900 mt-2">{stats.activeJobs}</p>
           <span className="text-[10px] font-medium text-slate-500">JobPosting Schema LD+JSON</span>
         </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500">Marketplace Items</span>
+            <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-bold">
+              <Package size={16} />
+            </div>
+          </div>
+          <p className="text-2xl font-extrabold text-slate-900 mt-2">{stats.totalMarketplace}</p>
+          <span className="text-[10px] font-medium text-slate-500">
+            {stats.marketplaceWithImages}/{stats.totalMarketplace} with images
+          </span>
+        </div>
       </div>
 
       {/* ── TABS NAVIGATION & SEARCH ── */}
@@ -426,6 +493,7 @@ export default function AdminSeoManagementPage() {
             { id: 'portfolios', label: 'Seeker & Company Portfolios', icon: Globe, count: portfolios.length },
             { id: 'companies', label: 'Company Directories', icon: Building2, count: companies.length },
             { id: 'jobs', label: 'Job Openings', icon: Briefcase, count: jobs.length },
+            { id: 'marketplace', label: 'Products & Services', icon: Package, count: marketplaceItems.length },
             { id: 'trends', label: 'High-Ranking Keyword Bank', icon: Sparkles },
           ] as const).map(tab => {
             const Icon = tab.icon;
@@ -544,7 +612,52 @@ export default function AdminSeoManagementPage() {
           emptyTitle="No job openings match that search"
           rowActions={item => (
             <a
-              href={`/jobs/${item.id}`}
+              href={`/jobs/${item.slug || item.id}`}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-300 px-3 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100"
+            >
+              <ExternalLink size={12} /> View
+            </a>
+          )}
+        />
+      )}
+
+      {/* ── TAB 5: MARKETPLACE PRODUCTS & SERVICES SEO ── */}
+      {activeTab === 'marketplace' && (
+        <DataTable
+          label="Marketplace item SEO audit"
+          loading={compLoading}
+          columns={[
+            { key: 'name', header: 'Item', card: 'title', sortValue: (m: any) => m.name ?? '', render: (m: any) => (
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex h-5 items-center rounded px-1.5 text-[10px] font-bold ${m.type === 'product' ? 'bg-blue-50 text-blue-700' : 'bg-violet-50 text-violet-700'}`}>
+                  {m.type === 'product' ? 'PRODUCT' : 'SERVICE'}
+                </span>
+                <span className="font-semibold text-slate-900 truncate max-w-[200px]">{m.name}</span>
+              </div>
+            ) },
+            { key: 'company', header: 'Company', sortValue: (m: any) => m.companyName ?? '', render: (m: any) => m.companyName },
+            { key: 'image', header: 'Image', align: 'center' as const, sortValue: (m: any) => m.hasImage ? 1 : 0, render: (m: any) => (
+              <Pill tone={m.hasImage ? 'success' : 'warning'} dot>
+                {m.hasImage ? 'Has Image' : 'No Image'}
+              </Pill>
+            ) },
+            { key: 'description', header: 'Description', align: 'center' as const, hideBelow: 'lg' as const, sortValue: (m: any) => m.hasDescription ? 1 : 0, render: (m: any) => (
+              <Pill tone={m.hasDescription ? 'success' : 'warning'} dot>
+                {m.hasDescription ? 'Good' : 'Short/Missing'}
+              </Pill>
+            ) },
+            { key: 'score', header: 'SEO score', sortValue: (m: any) => getSeoScore(m, 'marketplace'), render: (m: any) => <ScoreBar score={getSeoScore(m, 'marketplace')} /> },
+          ]}
+          rows={filteredMarketplace}
+          getRowId={(item: any) => item.id}
+          emptyIcon={Package}
+          emptyTitle="No marketplace items found"
+          emptyDescription="Products and services from verified companies will appear here."
+          rowActions={(item: any) => (
+            <a
+              href={`/marketplace/${item.type}/${item.companySlug}/${item.id.split('-').pop()}`}
               target="_blank"
               rel="noopener"
               className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-300 px-3 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100"

@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Check, X, Zap, ArrowRight, ChevronDown, ChevronUp,
-  Shield, Star, Crown, Building2, Lock, PhoneCall, BadgeCheck, CreditCard,
+  Shield, Star, Crown, Building2, Lock, PhoneCall, BadgeCheck, CreditCard, Sparkles,
 } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
+import { useReferral } from '@/hooks/useReferral';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 
 const PLAN_ICONS: Record<string, typeof Shield> = { Shield, Star, Crown, Building2 };
@@ -64,6 +65,7 @@ const FAQS = [
 export default function PricingPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { referralCode } = useReferral();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -120,6 +122,17 @@ export default function PricingPage() {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 -mt-8 sm:-mt-10 relative z-10">
+        {referralCode && (
+          <div className="max-w-xl mx-auto mb-6 p-3 rounded-2xl bg-white/90 backdrop-blur-md border border-emerald-300 shadow-md text-emerald-900 text-xs font-semibold flex items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Partner Onboarding Referral Active: <strong className="font-mono text-emerald-950 font-bold">{referralCode}</strong></span>
+            </div>
+            <span className="bg-emerald-100 text-emerald-800 text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full">
+              Partner Benefits Applied
+            </span>
+          </div>
+        )}
 
         {/* Pricing cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

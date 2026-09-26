@@ -19,12 +19,15 @@ import { db } from '@/lib/firebase/config';
 import { doc, getDoc, addDoc, collection, query, where, getDocs, writeBatch, serverTimestamp, limit as fbLimit } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import JobApplySuccessModal from '@/components/ui/JobApplySuccessModal';
+import { slugify } from '@/lib/seo/jobSlug';
 
 interface JobRecord {
   id: string;
+  slug?: string;
   title: string;
   companyName: string;
   companyId: string;
+  companySlug?: string;
   location: string;
   district: string;
   state: string;
@@ -50,9 +53,11 @@ interface JobRecord {
 
 interface InitialJobData {
   id: string;
+  slug?: string;
   title: string;
   companyName: string;
   companyId: string;
+  companySlug?: string;
   location: string;
   district: string;
   state: string;
@@ -86,14 +91,21 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
   const { user } = useAuth();
   const uid = user?.uid;
 
-  // Use initialJob from server for instant hydration if it matches the current id
-  const hasValidInitialJob = initialJob && initialJob.id === id && id !== '_fallback' && id !== 'demo';
+  // Use initialJob from server for instant hydration if it matches current id (by docId or slug)
+  const hasValidInitialJob = Boolean(
+    initialJob &&
+    (initialJob.id === id || initialJob.slug === id) &&
+    id !== '_fallback' &&
+    id !== 'demo'
+  );
   const [job, setJob] = useState<JobRecord | null>(
-    hasValidInitialJob ? {
+    hasValidInitialJob && initialJob ? {
       id: initialJob.id,
+      slug: initialJob.slug || '',
       title: initialJob.title,
       companyName: initialJob.companyName,
       companyId: initialJob.companyId,
+      companySlug: initialJob.companySlug || (initialJob.companyName ? slugify(initialJob.companyName) : ''),
       location: initialJob.location,
       district: initialJob.district,
       state: initialJob.state,
@@ -147,10 +159,58 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
     async function loadJob() {
       try {
         setLoading(true);
-        const docSnap = await getDoc(doc(db, 'jobs', id));
+        let d: any = null;
+        let docId = id;
 
-        if (docSnap.exists()) {
-          const d = docSnap.data();
+        // 1. Direct document lookup if id is not a hyphenated slug
+        if (!id.includes('-')) {
+          const docSnap = await getDoc(doc(db, 'jobs', id));
+          if (docSnap.exists()) {
+            d = docSnap.data();
+            docId = docSnap.id;
+          }
+        }
+
+        // 2. Query by slug
+        if (!d) {
+          const qSlug = query(
+            collection(db, 'jobs'),
+            where('slug', '==', id),
+            where('status', '==', 'active'),
+            fbLimit(1)
+          );
+          const snapSlug = await getDocs(qSlug);
+          if (!snapSlug.empty) {
+            d = snapSlug.docs[0].data();
+            docId = snapSlug.docs[0].id;
+          }
+        }
+
+        // 3. Query by aliases
+        if (!d) {
+          const qAlias = query(
+            collection(db, 'jobs'),
+            where('aliases', 'array-contains', id),
+            where('status', '==', 'active'),
+            fbLimit(1)
+          );
+          const snapAlias = await getDocs(qAlias);
+          if (!snapAlias.empty) {
+            d = snapAlias.docs[0].data();
+            docId = snapAlias.docs[0].id;
+          }
+        }
+
+        // 4. Direct doc get fallback
+        if (!d && id.includes('-')) {
+          const docSnap = await getDoc(doc(db, 'jobs', id));
+          if (docSnap.exists()) {
+            d = docSnap.data();
+            docId = docSnap.id;
+          }
+        }
+
+        if (d) {
           // Guard: only show publicly visible (active + approved) jobs
           if (d.isActive !== true || d.status !== 'active') {
             // Job exists but is pending/rejected — don't show details
@@ -158,11 +218,19 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
             setLoading(false);
             return;
           }
+
+          // If accessed by legacy docId and a slug exists, replace URL
+          if (d.slug && id === docId && id !== d.slug) {
+            router.replace(`/jobs/${d.slug}`);
+          }
+
           setJob({
-            id: docSnap.id,
+            id: docId,
+            slug: d.slug || '',
             title: d.title || '',
             companyName: d.companyName || 'Verified Employer',
             companyId: d.companyId || '',
+            companySlug: d.companySlug || (d.companyName ? slugify(d.companyName) : ''),
             location: d.location || d.district || 'Theni',
             district: d.district || 'Theni',
             state: d.state || 'Tamil Nadu',
@@ -197,19 +265,21 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
       }
     }
     loadJob();
-  }, [id]);
+  }, [id, hasValidInitialJob, router]);
 
   // Track recently viewed + fetch company response time
   useEffect(() => {
     if (!job) return;
     addToRecentlyViewed({
       id: job.id,
+      slug: job.slug,
       title: job.title,
       companyName: job.companyName,
       district: job.district,
       jobType: job.jobType,
       salaryMin: job.salaryMin,
       salaryMax: job.salaryMax,
+      logo: job.logo,
     });
     // Fetch company responseTime
     if (job.companyId) {
@@ -235,10 +305,12 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
           fbLimit(5)
         );
         const snap = await getDocs(q);
+        const targetId = job?.id || id;
+        const targetSlug = job?.slug || id;
         const results = snap.docs
-          .filter(d => d.id !== id)
+          .filter(d => d.id !== targetId && d.data().slug !== targetSlug)
           .slice(0, 4)
-          .map(d => ({ id: d.id, ...d.data() }));
+          .map(d => ({ id: d.id, slug: d.data().slug || '', ...d.data() }));
         setSimilarJobs(results);
       } catch { /* ignore */ }
     }
@@ -247,16 +319,19 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
 
   // 2. Check if job is saved & if already applied & following
   useEffect(() => {
-    if (!uid || !id) return;
+    if (!uid) return;
+    const targetJobId = job?.id || id;
+    if (!targetJobId || targetJobId === '_fallback' || targetJobId === 'demo') return;
+
     async function checkSavedAndApplied() {
       try {
         // Check saved
-        const qSaved = query(collection(db, 'savedJobs'), where('userId', '==', uid), where('jobId', '==', id));
+        const qSaved = query(collection(db, 'savedJobs'), where('userId', '==', uid), where('jobId', '==', targetJobId));
         const snapSaved = await getDocs(qSaved);
         setSaved(!snapSaved.empty);
 
         // Check applied
-        const qApplied = query(collection(db, 'applications'), where('seekerId', '==', uid), where('jobId', '==', id));
+        const qApplied = query(collection(db, 'applications'), where('seekerId', '==', uid), where('jobId', '==', targetJobId));
         const snapApplied = await getDocs(qApplied);
         setHasApplied(!snapApplied.empty);
       } catch (err) {
@@ -264,7 +339,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
       }
     }
     checkSavedAndApplied();
-  }, [uid, id]);
+  }, [uid, id, job?.id]);
 
   // Check company follow status
   useEffect(() => {
@@ -296,18 +371,20 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
   };
 
   const handleShare = (method: 'whatsapp' | 'copy' | 'native') => {
-    const url = typeof window !== 'undefined' ? window.location.href : '';
-    const text = `Check out this job: ${job?.title} at ${job?.companyName} - ${url}`;
+    const canonicalUrl = typeof window !== 'undefined'
+      ? (job?.slug ? `${window.location.origin}/jobs/${job.slug}` : window.location.href)
+      : '';
+    const text = `Check out this job: ${job?.title} at ${job?.companyName} - ${canonicalUrl}`;
     if (method === 'whatsapp') {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     } else if (method === 'copy') {
-      navigator.clipboard.writeText(url).then(() => {
+      navigator.clipboard.writeText(canonicalUrl).then(() => {
         toast.success('Link copied to clipboard!');
       }).catch(() => {
         toast.error('Failed to copy link');
       });
     } else if (method === 'native' && navigator.share) {
-      navigator.share({ title: job?.title, text: text, url }).catch(() => {});
+      navigator.share({ title: job?.title, text: text, url: canonicalUrl }).catch(() => {});
     }
     setShowShareMenu(false);
   };
@@ -327,7 +404,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
     }
     try {
       if (saved) {
-        const q = query(collection(db, 'savedJobs'), where('userId', '==', uid), where('jobId', '==', id));
+        const q = query(collection(db, 'savedJobs'), where('userId', '==', uid), where('jobId', '==', job.id));
         const snap = await getDocs(q);
         const batch = writeBatch(db);
         snap.docs.forEach(doc => batch.delete(doc.ref));
@@ -337,6 +414,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
         await addDoc(collection(db, 'savedJobs'), {
           userId: uid,
           jobId: job.id,
+          jobSlug: job.slug || '',
           jobTitle: job.title,
           companyName: job.companyName,
           description: job.description,
@@ -356,7 +434,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
   const handleApply = async () => {
     if (!uid || !job) {
       toast.warning('Please login as a job seeker to apply.');
-      router.push(`/login?redirect=/jobs/${id}`);
+      router.push(`/login?redirect=/jobs/${job?.slug || id}`);
       return;
     }
 
@@ -497,9 +575,14 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5 text-violet-400 hover:text-violet-300 transition-colors font-medium text-sm">
-                        <Building2 size={14} /> {job.companyName}
-                        {job.isVerified && <BadgeCheck size={13} className="text-emerald-400" />}
+                      <div className="flex items-center gap-1.5 text-sm font-medium">
+                        <Link
+                          href={`/company/${job.companySlug || (job.companyName ? slugify(job.companyName) : '')}`}
+                          className="text-violet-600 hover:text-violet-800 hover:underline flex items-center gap-1 transition-colors"
+                        >
+                          <Building2 size={14} /> {job.companyName}
+                        </Link>
+                        {job.isVerified && <BadgeCheck size={13} className="text-emerald-500 shrink-0" />}
                         {isQuickResponder && (
                           <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                             ⚡ Quick Responder
@@ -716,18 +799,26 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                   <p className="text-xs text-gray-400 leading-relaxed">
                     Get notified when they post new jobs
                   </p>
-                  <button
-                    onClick={handleToggleFollow}
-                    disabled={followLoading}
-                    className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-                      following
-                        ? 'bg-violet-100 text-violet-700 border border-violet-200'
-                        : 'bg-violet-600 text-white hover:bg-violet-700'
-                    }`}
-                  >
-                    {followLoading ? <Loader2 size={12} className="animate-spin" /> : null}
-                    {following ? 'Following ✓' : 'Follow Company'}
-                  </button>
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    <button
+                      onClick={handleToggleFollow}
+                      disabled={followLoading}
+                      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
+                        following
+                          ? 'bg-violet-100 text-violet-700 border border-violet-200'
+                          : 'bg-violet-600 text-white hover:bg-violet-700'
+                      }`}
+                    >
+                      {followLoading ? <Loader2 size={12} className="animate-spin" /> : null}
+                      {following ? 'Following ✓' : 'Follow Company'}
+                    </button>
+                    <Link
+                      href={`/company/${job.companySlug || (job.companyName ? slugify(job.companyName) : '')}`}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 hover:text-violet-900 hover:underline"
+                    >
+                      View Profile <ChevronRight size={12} />
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -771,7 +862,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                 return (
                   <Link
                     key={sj.id}
-                    href={`/jobs/${sj.id}`}
+                    href={`/jobs/${sj.slug || sj.id}`}
                     className="glass-card rounded-2xl p-4 hover:border-blue-200 hover:shadow-sm transition-all group"
                   >
                     <div className="flex items-start gap-3">

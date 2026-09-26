@@ -3,6 +3,12 @@
   "buildCommand": "next build",
   "cleanUrls": true,
   "trailingSlash": false,
+  "crons": [
+    {
+      "path": "/api/cron/expire-trials",
+      "schedule": "0 0,12 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

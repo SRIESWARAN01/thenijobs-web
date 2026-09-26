@@ -74,6 +74,14 @@
       "collectionGroup": "companies",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "paymentStatus", "order": "ASCENDING" },
+        { "fieldPath": "trialEndDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "companies",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "ownerId", "order": "ASCENDING" },
         { "fieldPath": "verificationStatus", "order": "ASCENDING" }
       ]

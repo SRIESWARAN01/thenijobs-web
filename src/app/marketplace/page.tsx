@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import Header from '@/components/navigation/Header';
@@ -28,7 +29,8 @@ const CATEGORIES = [
 
 type TabType = 'all' | 'products' | 'services' | 'companies';
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
@@ -37,6 +39,44 @@ export default function MarketplacePage() {
 
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Sync URL query parameters (?type=services|products|companies, ?category=..., ?q=...)
+  useEffect(() => {
+    const typeParam = searchParams.get('type') || searchParams.get('tab');
+    if (typeParam === 'services') setActiveTab('services');
+    else if (typeParam === 'products') setActiveTab('products');
+    else if (typeParam === 'companies') setActiveTab('companies');
+    else if (typeParam === 'all') setActiveTab('all');
+
+    const catParam = searchParams.get('category');
+    if (catParam) {
+      const matched = CATEGORIES.find(c => c.toLowerCase() === catParam.toLowerCase() || c.toLowerCase().includes(catParam.toLowerCase()));
+      setSelectedCategory(matched || catParam);
+    }
+
+    const locParam = searchParams.get('location') || searchParams.get('district');
+    if (locParam) {
+      const matched = LOCATIONS.find(l => l.toLowerCase() === locParam.toLowerCase());
+      if (matched) setSelectedLocation(matched);
+    }
+
+    const qParam = searchParams.get('q') || searchParams.get('search');
+    if (qParam) setSearchQuery(qParam);
+  }, [searchParams]);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (tab === 'all') {
+        url.searchParams.delete('type');
+        url.searchParams.delete('tab');
+      } else {
+        url.searchParams.set('type', tab);
+      }
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -76,9 +116,6 @@ export default function MarketplacePage() {
       if (company.products && Array.isArray(company.products)) {
         company.products.forEach((prod: any, idx: number) => {
           list.push({
-            // Only a genuinely stored id resolves on the detail page (getAllMarketplaceItemParamsServer
-            // and MarketplaceItemPageClient both match on the item's own `id` field) — a synthetic
-            // fallback here would link every legacy, id-less entry to a page that can never find it.
             id: typeof prod === 'object' && prod.id ? prod.id : null,
             key: (typeof prod === 'object' && prod.id) || `${company.id}-prod-${idx}`,
             name: typeof prod === 'string' ? prod : prod.name || prod.title,
@@ -106,21 +143,20 @@ export default function MarketplacePage() {
     return list;
   }, [companies]);
 
-  // Aggregate all services with company metadata
+  // Aggregate all services with company metadata (supporting bannerImageUrl)
   const allServices = useMemo(() => {
     const list: any[] = [];
     companies.forEach(company => {
       if (company.services && Array.isArray(company.services)) {
         company.services.forEach((srv: any, idx: number) => {
           list.push({
-            // See allProducts above: only a genuinely stored id resolves on the detail page.
             id: typeof srv === 'object' && srv.id ? srv.id : null,
             key: (typeof srv === 'object' && srv.id) || `${company.id}-srv-${idx}`,
             name: typeof srv === 'string' ? srv : srv.title || srv.name,
             description: typeof srv === 'object' ? srv.description || srv.desc : '',
             price: typeof srv === 'object' ? srv.startingPrice || srv.price : null,
             category: typeof srv === 'object' ? srv.category || company.category : company.category,
-            imageUrl: typeof srv === 'object' ? srv.imageUrl : null,
+            imageUrl: typeof srv === 'object' ? (srv.bannerImageUrl || srv.imageUrl) : null,
             featured: typeof srv === 'object' && srv.featured === true,
             type: 'service' as const,
             company: {
@@ -140,9 +176,6 @@ export default function MarketplacePage() {
     return list;
   }, [companies]);
 
-  // Default sort: employer-declared Featured items first, then newest first. `id` is a real
-  // Date.now() creation timestamp (CompanyProductsManager.tsx / CompanyServicesManager.tsx),
-  // never a fabricated popularity signal — there is no view/order count tracked to sort by.
   const byFeaturedThenNewest = (a: { featured?: boolean; id: string }, b: { featured?: boolean; id: string }) => {
     if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1;
     return (Number(b.id) || 0) - (Number(a.id) || 0);
@@ -205,7 +238,7 @@ export default function MarketplacePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-5">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-bold text-white shadow-xs">
             <ShoppingBag size={14} className="text-amber-300" />
-            <span>Local Business Marketplace • Theni &amp; Tamil Nadu</span>
+            <span>Local Business Marketplace &amp; Services • Theni &amp; Tamil Nadu</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
@@ -213,7 +246,7 @@ export default function MarketplacePage() {
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
-            Order products directly, schedule professional services, and connect with trusted local companies across Theni district.
+            Order products directly, book professional local services, and connect with trusted companies across Theni district.
           </p>
 
           {/* Unified Search Bar */}
@@ -223,7 +256,8 @@ export default function MarketplacePage() {
                 <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  aria-label="Search products, AC repair, hospitals, groceries, businesses" placeholder="Search products, AC repair, hospitals, groceries, businesses..."
+                  aria-label="Search products, AC repair, hospitals, groceries, businesses"
+                  placeholder="Search products, AC repair, hospitals, groceries, businesses..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-base sm:text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium"
@@ -257,7 +291,7 @@ export default function MarketplacePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div className="flex gap-1.5 p-1 rounded-2xl bg-slate-200/80 overflow-x-auto no-scrollbar w-fit max-w-full">
             <button
-              onClick={() => setActiveTab('all')}
+              onClick={() => handleTabChange('all')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -265,7 +299,7 @@ export default function MarketplacePage() {
               All Items ({filteredProducts.length + filteredServices.length + filteredCompanies.length})
             </button>
             <button
-              onClick={() => setActiveTab('products')}
+              onClick={() => handleTabChange('products')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'products' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -273,7 +307,7 @@ export default function MarketplacePage() {
               🛒 Products ({filteredProducts.length})
             </button>
             <button
-              onClick={() => setActiveTab('services')}
+              onClick={() => handleTabChange('services')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'services' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -281,7 +315,7 @@ export default function MarketplacePage() {
               🔧 Services ({filteredServices.length})
             </button>
             <button
-              onClick={() => setActiveTab('companies')}
+              onClick={() => handleTabChange('companies')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'companies' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
@@ -312,8 +346,8 @@ export default function MarketplacePage() {
               </h2>
               {activeTab === 'all' && (
                 <button
-                  onClick={() => setActiveTab('products')}
-                  className="text-xs font-bold text-blue-600 hover:underline"
+                  onClick={() => handleTabChange('products')}
+                  className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
                 >
                   View all products ({filteredProducts.length}) →
                 </button>
@@ -408,11 +442,20 @@ export default function MarketplacePage() {
                               href={`https://wa.me/${prod.company.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${prod.company.name}, I am interested in ordering your product "${prod.name}" listed on THENIJOBS Marketplace.`)}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="flex-1 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 shadow-2xs"
+                              className="flex-1 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 shadow-2xs hover:opacity-95 transition-opacity"
                               style={{ background: '#25D366' }}
                             >
                               <MessageCircle size={12} /> WhatsApp
                             </a>
+                          )}
+                          {detailHref && (
+                            <Link
+                              href={detailHref}
+                              className="px-2.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold"
+                              title="View Details"
+                            >
+                              Details
+                            </Link>
                           )}
                           <Link
                             href={`/${prod.company.slug}`}
@@ -442,8 +485,8 @@ export default function MarketplacePage() {
               </h2>
               {activeTab === 'all' && (
                 <button
-                  onClick={() => setActiveTab('services')}
-                  className="text-xs font-bold text-blue-600 hover:underline"
+                  onClick={() => handleTabChange('services')}
+                  className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
                 >
                   View all services ({filteredServices.length}) →
                 </button>
@@ -531,15 +574,31 @@ export default function MarketplacePage() {
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                          {srv.company.whatsapp && (
+                          {srv.company.whatsapp ? (
                             <a
                               href={`https://wa.me/${srv.company.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${srv.company.name}, I would like to book your service "${srv.name}" listed on THENIJOBS Marketplace.`)}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="flex-1 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 shadow-2xs bg-blue-600 hover:bg-blue-700"
+                              className="flex-1 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 shadow-2xs bg-blue-600 hover:bg-blue-700 transition-colors"
                             >
-                              <Wrench size={12} /> Book Service
+                              <Wrench size={12} /> Book Now
                             </a>
+                          ) : srv.company.phone ? (
+                            <a
+                              href={`tel:${srv.company.phone}`}
+                              className="flex-1 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 shadow-2xs bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                            >
+                              <Phone size={12} /> Call
+                            </a>
+                          ) : null}
+                          {detailHref && (
+                            <Link
+                              href={detailHref}
+                              className="px-2.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold"
+                              title="View Details"
+                            >
+                              Details
+                            </Link>
                           )}
                           <Link
                             href={`/${srv.company.slug}`}
@@ -569,8 +628,8 @@ export default function MarketplacePage() {
               </h2>
               {activeTab === 'all' && (
                 <button
-                  onClick={() => setActiveTab('companies')}
-                  className="text-xs font-bold text-blue-600 hover:underline"
+                  onClick={() => handleTabChange('companies')}
+                  className="text-xs font-bold text-blue-600 hover:underline cursor-pointer"
                 >
                   View all companies ({filteredCompanies.length}) →
                 </button>
@@ -634,5 +693,17 @@ export default function MarketplacePage() {
 
       <BottomNav />
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-slate-400 text-sm font-medium animate-pulse">Loading Marketplace...</div>
+      </div>
+    }>
+      <MarketplaceContent />
+    </Suspense>
   );
 }

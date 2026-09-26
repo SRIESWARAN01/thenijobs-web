@@ -15,6 +15,8 @@ import { toISODateString, toISOExpiryString } from './expiredJobUtils';
 
 export interface JobSchemaInput {
   id: string;
+  slug?: string;
+  url?: string;
   title: string;
   description: string;
   companyName: string;
@@ -106,9 +108,11 @@ export function generateJobPostingSchema(job: JobSchemaInput) {
   const streetAddress = job.streetAddress || `${district}, ${state}`;
 
   // Build the core schema object
+  const canonicalUrl = job.url || (job.slug ? `https://thenijobs.com/jobs/${job.slug}` : `https://thenijobs.com/jobs/${job.id}`);
   const schema: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
+    url: canonicalUrl,
     title: job.title,
     description: buildHtmlDescription(job),
     identifier: {
@@ -212,18 +216,6 @@ export function generateJobPostingSchema(job: JobSchemaInput) {
   return schema;
 }
 
-/**
- * Creates Schema.org BreadcrumbList JSON-LD object
- */
-export function generateBreadcrumbSchema(items: { name: string; url: string }[]) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.name,
-      item: item.url,
-    })),
-  };
-}
+// SEO-DEDUP: Single source of truth for breadcrumbs in schemas.ts
+export { generateBreadcrumbSchema } from './schemas';
+

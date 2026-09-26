@@ -3,7 +3,10 @@ import { getActiveJobsForSitemap, getVerifiedCompanySlugsForSitemap, getPublishe
 import { LOCATIONS_DATA, CATEGORIES_LIST } from '@/components/seo/locationData';
 import { BUSINESS_CATEGORY_SITEMAP_SLUGS } from '@/lib/seo/businessCategories';
 
-export const dynamic = 'force-static';
+// SEO-ENGINE: Revalidate sitemap every hour so new jobs/companies/products appear
+// without requiring a redeploy. Previously force-static meant new content was invisible
+// to search engines until the next deployment.
+export const revalidate = 3600; // 1 hour
 
 /**
  * THENIJOBS Dynamic Sitemap
@@ -73,7 +76,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/jobs`, changeFrequency: 'hourly', priority: 0.95 },
     { url: `${BASE}/marketplace`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.85 },
-    { url: `${BASE}/services`, changeFrequency: 'daily', priority: 0.85 },
     { url: `${BASE}/daily-jobs`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/about`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.6 },
@@ -114,12 +116,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const activeJobs = await getActiveJobsForSitemap();
     jobPages = activeJobs.map(job => ({
-      url: `${BASE}/jobs/${job.id}`,
+      url: `${BASE}/jobs/${job.slug || job.id}`,
       changeFrequency: 'daily' as const,
       priority: 0.85,
-      // SEO-4: this used to default to the build time and only overwrite it when updatedAt
-      // parsed, so a job with a missing or malformed updatedAt quietly claimed to have changed
-      // at deploy. Now it either says when it changed or says nothing.
+      ...(job.imageUrl ? { images: [job.imageUrl] } : {}),
       ...withLastModified(job.updatedAt),
     }));
   } catch (error) {
@@ -136,6 +136,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${BASE}/company/${c.slug}`,
         changeFrequency: 'weekly' as const,
         priority: 0.85,
+        ...(c.logoUrl ? { images: [c.logoUrl] } : {}),
         ...withLastModified(c.updatedAt),
       });
 
@@ -144,6 +145,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${BASE}/${c.slug}`,
         changeFrequency: 'weekly' as const,
         priority: 0.9,
+        ...(c.logoUrl ? { images: [c.logoUrl] } : {}),
         ...withLastModified(c.updatedAt),
       });
     });
@@ -192,8 +194,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${BASE}/marketplace/${item.type}/${item.companySlug}/${item.itemId}`,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
-      // No genuine updatedAt exists on a product/service array entry — SEO-4's own rule
-      // applies here too: no date beats a fake one.
+      ...(item.imageUrl ? { images: [item.imageUrl] } : {}),
     }));
   } catch (error) {
     console.error('[Sitemap] Error fetching marketplace items:', error);

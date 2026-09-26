@@ -27,6 +27,7 @@ import { useToast } from '@/contexts/ToastContext';
 
 interface DailyJob {
   id: string;
+  slug?: string;
   title: string;
   company: string;
   location: string;
@@ -113,6 +114,7 @@ export default function DailyJobsPage() {
 
           return {
             id: doc.id,
+            slug: d.slug || '',
             title: d.title || 'Job Opening',
             company: d.companyName || d.company || 'Direct Employer',
             location: d.district ? `${d.district}, Theni` : d.location || 'Theni',
@@ -369,7 +371,7 @@ export default function DailyJobsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
                       <span className="text-gray-400">{job.category}</span>
                       <Link
-                        href={`/jobs/${job.id}`}
+                        href={`/jobs/${job.slug || job.id}`}
                         onClick={e => e.stopPropagation()}
                         className="font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
                       >
@@ -422,7 +424,7 @@ export default function DailyJobsPage() {
 
                   <div className="pt-3 space-y-2">
                     <Link
-                      href={`/jobs/${selectedJob.id}`}
+                      href={`/jobs/${selectedJob.slug || selectedJob.id}`}
                       className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
                     >
                       Apply Now <ArrowRight size={14} />

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import BusinessCategoryPageClient from './BusinessCategoryPageClient';
 import { BUSINESS_CATEGORY_ROUTE_SLUGS } from '@/lib/seo/businessCategories';
+import { generateBreadcrumbSchema } from '@/lib/seo/schemas';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
 // SEO-3: this list now lives in src/lib/seo/businessCategories.ts so the sitemap reads the
 // same one. It used to be private here while sitemap.ts kept its own copy of ten of these,
@@ -64,5 +66,20 @@ export default async function BusinessCategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
-  return <BusinessCategoryPageClient category={category} />;
+  const displayName = formatCategoryName(category);
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: 'https://thenijobs.com' },
+    { name: 'Businesses', url: 'https://thenijobs.com/businesses' },
+    { name: displayName, url: `https://thenijobs.com/businesses/${category}` },
+  ]);
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(breadcrumbSchema) }}
+      />
+      <BusinessCategoryPageClient category={category} />
+    </>
+  );
 }

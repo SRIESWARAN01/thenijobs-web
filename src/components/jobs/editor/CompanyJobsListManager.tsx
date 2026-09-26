@@ -16,12 +16,14 @@ import { updateDocument, deleteDocument, createDocument } from '@/lib/firebase/f
 import { where, orderBy } from 'firebase/firestore';
 import JobShareModal from '@/components/employer/JobShareModal';
 import { useToast } from '@/contexts/ToastContext';
+import { generateJobSlug } from '@/lib/seo/jobSlug';
 
 type JobStatus = 'active' | 'pending' | 'rejected' | 'paused' | 'draft' | 'closed' | 'expired';
 type TabFilter = 'all' | JobStatus;
 
 interface JobDoc {
   id: string;
+  slug?: string;
   title: string;
   jobType: string;
   location?: string;
@@ -166,9 +168,12 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
     setActionLoading(job.id);
     try {
       const { id: _id, createdAt: _ca, viewCount: _vc, applicationsCount: _ac, status: _s, isActive: _ia, ...rest } = job as any;
+      const newTitle = `${job.title} (Copy)`;
+      const newSlug = generateJobSlug(newTitle, rest.companyName || 'Company', rest.district || rest.location || 'Theni');
       await createDocument('jobs', {
         ...rest,
-        title: `${job.title} (Copy)`,
+        title: newTitle,
+        slug: newSlug,
         status: 'draft',
         isActive: false,
         viewCount: 0,

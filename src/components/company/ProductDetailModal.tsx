@@ -47,7 +47,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com';
     const pageUrl = product.companySlug
       ? `${origin}/company/${product.companySlug}`
-      : `${origin}/services`;
+      : `${origin}/marketplace`;
     
     let msg = `🛍️ *NEW PRODUCT / SERVICE ORDER*\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;

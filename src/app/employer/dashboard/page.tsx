@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   BarChart2, Briefcase, Building2, Calendar, CheckCircle, ChevronRight, Clock,
-  Eye, Loader2, Plus, Star, UserCheck, Users, XCircle,
+  Eye, Loader2, Plus, Star, UserCheck, Users, XCircle, ShieldCheck, BadgeCheck, Camera, ImagePlus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -25,7 +25,24 @@ const STATUS_LABEL: Record<string, { tone: PillTone; label: string }> = {
   rejected:            { tone: 'danger', label: 'Rejected' },
 };
 
-interface CompanyDoc { id: string; name?: string; viewCount?: number; verificationStatus?: string; rejectionReason?: string }
+interface CompanyDoc {
+  id: string;
+  name?: string;
+  tagline?: string;
+  logoUrl?: string;
+  companyLogo?: string;
+  coverUrl?: string;
+  bannerUrl?: string;
+  coverImageUrl?: string;
+  district?: string;
+  category?: string;
+  viewCount?: number;
+  verificationStatus?: string;
+  rejectionReason?: string;
+  trustScore?: number;
+  verification?: { mobile?: boolean; email?: boolean; gst?: boolean; business?: boolean };
+  verificationBadges?: { mobileVerified?: boolean; emailVerified?: boolean; gstVerified?: boolean; businessVerified?: boolean };
+}
 interface ApplicationDoc { id: string; seekerName?: string; status?: string; createdAt?: FirestoreTime }
 interface JobDoc { id: string; title?: string; jobType?: string; isUrgent?: boolean; applicationsCount?: number; viewCount?: number; createdAt?: FirestoreTime }
 interface InterviewDoc { id: string; seekerName?: string; mode?: string; date?: string; time?: string }
@@ -155,6 +172,82 @@ export default function EmployerDashboard() {
           </Link>
         }
       />
+
+      {/* ── Company Branding Header Banner ── */}
+      {company && (
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xs">
+          {/* Cover background */}
+          <div className="h-28 sm:h-36 w-full relative overflow-hidden bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950">
+            {company.coverUrl || company.coverImageUrl || company.bannerUrl ? (
+              <img
+                src={company.coverUrl || company.coverImageUrl || company.bannerUrl}
+                alt={company.name || 'Company Banner'}
+                className="w-full h-full object-cover opacity-80"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-700/30 via-transparent to-transparent" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <Link
+              href="/employer/company-profile"
+              className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 hover:bg-black/75 backdrop-blur-sm text-white text-xs font-bold transition-all shadow-sm"
+            >
+              <Camera size={13} /> Change Branding
+            </Link>
+          </div>
+
+          {/* Logo & Identity Row */}
+          <div className="px-5 sm:px-6 pb-5 pt-0 -mt-10 sm:-mt-12 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-3.5 sm:gap-4 text-center sm:text-left">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white p-1 border-4 border-white shadow-md flex items-center justify-center shrink-0 overflow-hidden">
+                {company.logoUrl || company.companyLogo ? (
+                  <img
+                    src={company.logoUrl || company.companyLogo}
+                    alt={company.name || 'Company Logo'}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl">
+                    {company.name?.[0]?.toUpperCase() || 'C'}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <h2 className="text-base sm:text-xl font-black text-slate-900 truncate">
+                    {company.name || 'Your Company'}
+                  </h2>
+                  {company.verificationStatus === 'verified' ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <BadgeCheck size={13} className="text-emerald-600" /> Verified Partner
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                      <Clock size={13} className="text-amber-600" /> Pending Verification
+                    </span>
+                  )}
+                </div>
+                {company.tagline && (
+                  <p className="text-xs text-slate-600 mt-0.5 font-medium line-clamp-1">{company.tagline}</p>
+                )}
+                <div className="flex items-center justify-center sm:justify-start gap-2 mt-1.5 text-[11px] text-slate-500 font-medium">
+                  {company.district && <span>📍 {company.district}, Tamil Nadu</span>}
+                  {company.category && <span>• {company.category}</span>}
+                  <span>• Trust Score: <strong className="text-blue-700">{company.trustScore || (company.verificationStatus === 'verified' ? 90 : 70)}%</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href="/employer/company-profile">
+                <Button variant="secondary" size="sm" className="gap-1.5">
+                  <ImagePlus size={14} /> Edit Profile &amp; Branding
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {company && company.verificationStatus !== 'verified' && (
         <div

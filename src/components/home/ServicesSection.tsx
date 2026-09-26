@@ -2,14 +2,14 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 const services = [
-  { label: 'Electrician', icon: '⚡', href: '/services?category=Electrician' },
-  { label: 'Plumber', icon: '🔧', href: '/services?category=Plumber' },
-  { label: 'AC Technician', icon: '❄️', href: '/services?category=AC+Technician' },
-  { label: 'Digital Marketing', icon: '📣', href: '/services?category=Digital+Marketing' },
-  { label: 'Web Development', icon: '💻', href: '/services?category=Web+Development' },
-  { label: 'Graphic Design', icon: '🎨', href: '/services?category=Graphic+Design' },
-  { label: 'Mobile Repair', icon: '📱', href: '/services?category=Mobile+Repair' },
-  { label: 'Photography', icon: '📷', href: '/services?category=Photography' },
+  { label: 'Electrician', icon: '⚡', href: '/marketplace?type=services&category=Electrician' },
+  { label: 'Plumber', icon: '🔧', href: '/marketplace?type=services&category=Plumber' },
+  { label: 'AC Technician', icon: '❄️', href: '/marketplace?type=services&category=AC+Technician' },
+  { label: 'Digital Marketing', icon: '📣', href: '/marketplace?type=services&category=Digital+Marketing' },
+  { label: 'Web Development', icon: '💻', href: '/marketplace?type=services&category=Web+Development' },
+  { label: 'Graphic Design', icon: '🎨', href: '/marketplace?type=services&category=Graphic+Design' },
+  { label: 'Mobile Repair', icon: '📱', href: '/marketplace?type=services&category=Mobile+Repair' },
+  { label: 'Photography', icon: '📷', href: '/marketplace?type=services&category=Photography' },
 ];
 
 export default function ServicesSection() {
@@ -46,7 +46,7 @@ export default function ServicesSection() {
 
         <div className="mt-8 text-center">
           <Link
-            href="/services"
+            href="/marketplace?type=services"
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border-2 border-amber-600 text-amber-700 hover:bg-amber-50 transition-all"
           >
             Explore Local Services <ArrowRight size={16} />

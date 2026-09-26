@@ -28,7 +28,7 @@ const quickActions = [
   { label: 'Work From Home', href: '/jobs?type=remote', icon: Home },
   { label: 'Walk-in Jobs', href: '/jobs?type=walkin', icon: ClipboardList },
   { label: 'Internships', href: '/jobs?type=internship', icon: GraduationCap },
-  { label: 'Services', href: '/services', icon: Wrench },
+  { label: 'Services', href: '/marketplace?type=services', icon: Wrench },
 ];
 
 // TRUST-2: the 'Job Seekers' card was removed rather than made accurate. Counting `users`

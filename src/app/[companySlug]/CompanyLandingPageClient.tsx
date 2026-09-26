@@ -180,6 +180,54 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
 
   const isVerified = company.verificationStatus === 'verified' || company.isVerified === true;
 
+  // ── Website Suspension Notice ─────────────────────────────────────────────
+  const isSuspended =
+    company.websiteStatus === 'suspended' ||
+    company.accountStatus === 'suspended' ||
+    company.subscriptionStatus === 'trial_expired' ||
+    company.subscriptionStatus === 'suspended';
+
+  if (isSuspended) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200 shadow-xl p-8 space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mx-auto">
+              <ShieldAlert size={28} />
+            </div>
+            <div>
+              <span className="px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-extrabold uppercase tracking-wider">
+                Subscription Suspended
+              </span>
+              <h1 className="text-2xl font-black text-slate-900 mt-3">{company.name}</h1>
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                This business website is temporarily unavailable. The subscription for this business has expired.
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left">
+              <p className="text-xs font-bold text-slate-700 mb-2">Business Details</p>
+              {company.phone && <p className="text-xs text-slate-600">📞 {company.phone}</p>}
+              {company.district && <p className="text-xs text-slate-600 mt-1">📍 {company.district}, Tamil Nadu</p>}
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Are you the business owner?{' '}
+              <a href="/login" className="text-blue-600 font-semibold hover:underline">
+                Login to reactivate your subscription
+              </a>
+            </p>
+            <a
+              href="/businesses"
+              className="block w-full py-2.5 rounded-2xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
+            >
+              Browse Other Businesses
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Schema generation
   const schemaType = company.category?.includes('Healthcare') ? 'MedicalBusiness'
     : company.category?.includes('Education') ? 'EducationalOrganization'

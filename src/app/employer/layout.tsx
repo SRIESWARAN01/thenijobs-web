@@ -7,7 +7,8 @@ import {
   LayoutDashboard, Building2, Briefcase, Users2, Calendar,
   Search, MessageSquare, BarChart3, CreditCard, Star,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Bell,
-  Plus, TrendingUp, Settings, ChevronRight as CR, Key
+  Plus, TrendingUp, Settings, Key, BadgeCheck,
+  Clock, AlertTriangle, CheckCircle, ShieldAlert,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -15,6 +16,7 @@ import { where } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 
 const EMPLOYER_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/employer/dashboard' },
@@ -41,14 +43,16 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   const { unreadCount } = useNotifications();
   const { data: companies } = useCollection<any>('companies', [where('ownerId', '==', user?.uid || '')], { skip: !user?.uid });
   const company = companies?.[0];
+  const subState = useSubscriptionStatus(company, user);
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  if (authLoading) {
+  if (authLoading || (user && companies === undefined)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8FAFC' }}>
         <div className="flex flex-col items-center gap-3">
@@ -59,6 +63,86 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
     );
   }
   if (!user) return null;
+
+  // ── Pending Admin Approval Screen ─────────────────────────────────────────
+  if (company && subState.isPendingApproval) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-amber-200 shadow-xl p-8 text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mx-auto">
+            <Clock size={32} className="text-amber-600" />
+          </div>
+          <div>
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold uppercase tracking-wider">
+              ⏳ Pending Admin Approval
+            </span>
+            <h1 className="text-2xl font-black text-gray-900 mt-3">Registration Under Review</h1>
+            <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+              Your business registration for <strong>&quot;{company.name}&quot;</strong> is being reviewed by THENIJOBS admin.
+              Once approved, your 15-day Standard free trial will begin automatically.
+            </p>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left space-y-2">
+            <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">What happens next?</p>
+            <ul className="text-xs text-amber-700 space-y-1">
+              <li>✓ Admin verifies your business details</li>
+              <li>✓ 15-day Standard free trial starts from approval</li>
+              <li>✓ Company website goes live immediately</li>
+              <li>✓ You can post jobs and manage candidates</li>
+            </ul>
+          </div>
+          <p className="text-xs text-gray-500">Typically approved within 2–4 hours on working days.</p>
+          <button onClick={() => { signOut(auth); router.push('/'); }}
+            className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all">
+            <LogOut size={14} /> Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Suspended / Trial Expired Screen ──────────────────────────────────────
+  if (company && (subState.isSuspended || subState.isTrialExpired) && !subState.isPaidActive) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-rose-50 p-4">
+        <div className="max-w-lg w-full bg-white rounded-3xl border border-red-200 shadow-xl p-8 text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto">
+            <ShieldAlert size={32} className="text-red-600" />
+          </div>
+          <div>
+            <span className="px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-extrabold uppercase tracking-wider">
+              🚫 Trial Expired — Upgrade Required
+            </span>
+            <h1 className="text-2xl font-black text-gray-900 mt-3">Your 15-Day Free Trial Has Ended</h1>
+            <p className="text-sm text-gray-600 mt-2 leading-relaxed">
+              Your employer dashboard and company website have been temporarily suspended.
+              All your data is safe. Activate a paid plan to restore access instantly.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-left">
+            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
+              <p className="text-xs font-bold text-slate-600 mb-1">Standard Plan</p>
+              <p className="text-xl font-black text-gray-900">₹1,800<span className="text-xs font-normal text-gray-500">/year</span></p>
+              <p className="text-[10px] text-gray-500 mt-1">10 jobs · 20 products · Full website</p>
+            </div>
+            <div className="bg-blue-50 rounded-2xl p-3 border border-blue-200">
+              <p className="text-xs font-bold text-blue-600 mb-1">Premium Plan ⭐</p>
+              <p className="text-xl font-black text-gray-900">₹3,500<span className="text-xs font-normal text-gray-500">/year</span></p>
+              <p className="text-[10px] text-gray-500 mt-1">50 jobs · 100 products · All features</p>
+            </div>
+          </div>
+          <Link href="/employer/billing"
+            className="block w-full py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-all shadow-sm">
+            💳 Activate Paid Plan Now
+          </Link>
+          <button onClick={() => { signOut(auth); router.push('/'); }}
+            className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all">
+            <LogOut size={14} /> Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -107,16 +191,42 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
 
         {/* Company info */}
         {!collapsed && company && (
-          <div className="px-3 py-3 border-b border-gray-50">
-            <div className="flex items-center gap-2.5 p-2.5 bg-blue-50 rounded-xl">
-              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm flex-shrink-0">
-                {company.name?.[0]?.toUpperCase() || 'C'}
+          <div className="px-3 py-3 border-b border-gray-100">
+            <Link
+              href="/employer/company-profile"
+              className="flex items-center gap-2.5 p-2 bg-slate-50/80 hover:bg-blue-50/80 rounded-2xl transition-all border border-slate-100 group"
+              title="Manage Company Branding"
+            >
+              <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-blue-600 font-bold text-sm shrink-0 overflow-hidden shadow-xs">
+                {company.logoUrl || (company as any).companyLogo ? (
+                  <img
+                    src={company.logoUrl || (company as any).companyLogo}
+                    alt={company.name || 'Company Logo'}
+                    className="w-full h-full object-contain p-0.5"
+                  />
+                ) : (
+                  <span>{company.name?.[0]?.toUpperCase() || 'C'}</span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-900 truncate">{company.name}</p>
-                <p className="text-[10px] text-gray-500 truncate capitalize">{company.verificationStatus || 'Pending'}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                    {company.name}
+                  </p>
+                  {(company.verificationStatus === 'verified' || (company as any).isVerified) && (
+                    <BadgeCheck size={13} className="text-blue-600 shrink-0" />
+                  )}
+                </div>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${
+                    company.verificationStatus === 'verified' ? 'bg-emerald-500' : 'bg-amber-400'
+                  }`} />
+                  <p className="text-[10px] text-gray-500 truncate capitalize font-medium">
+                    {company.verificationStatus === 'verified' ? 'Verified Business' : 'Pending Review'}
+                  </p>
+                </div>
               </div>
-            </div>
+            </Link>
           </div>
         )}
 
@@ -172,12 +282,42 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
 
       {/* Main */}
       <div className={`flex min-w-0 flex-1 flex-col transition-all duration-300 ${collapsed ? 'lg:ml-[68px]' : 'lg:ml-[240px]'}`}>
+        {/* Trial Countdown Banner */}
+        {subState.isTrialActive && !subState.isPaidActive && (
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="shrink-0" />
+              <p className="text-xs font-bold">
+                🎉 Free Trial Active — <strong>{subState.trialDaysRemaining} day{subState.trialDaysRemaining !== 1 ? 's' : ''}</strong> remaining
+                {subState.trialEndDate && (
+                  <span className="font-normal opacity-90"> (expires {subState.trialEndDate.toLocaleDateString('en-IN')})</span>
+                )}
+              </p>
+            </div>
+            <Link href="/employer/billing"
+              className="shrink-0 px-3 py-1 rounded-lg bg-white text-orange-600 text-[11px] font-bold hover:bg-orange-50 transition-all">
+              💳 Pay Now — ₹1,800/year
+            </Link>
+          </div>
+        )}
+
         {/* Top bar */}
         <header className="sticky top-0 z-30 h-14 bg-white border-b border-gray-100 flex items-center px-4 gap-3">
           <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-600">
             <Menu size={17} />
           </button>
           <div className="flex-1" />
+          {/* Subscription status pill */}
+          {subState.isPaidActive && (
+            <span className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold">
+              <CheckCircle size={10} /> Active
+            </span>
+          )}
+          {subState.isTrialActive && !subState.isPaidActive && (
+            <span className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold">
+              <Clock size={10} /> Trial · {subState.trialDaysRemaining}d left
+            </span>
+          )}
           <Link href="/employer/messages" className="relative p-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-800 hover:border-gray-300 transition-all">
             <Bell size={16} />
             {unreadCount > 0 && (

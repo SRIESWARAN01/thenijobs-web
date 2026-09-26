@@ -4,12 +4,14 @@ import { useState, useCallback, useEffect } from 'react';
 
 export interface RecentlyViewedJob {
   id: string;
+  slug?: string;
   title: string;
   companyName: string;
   district: string;
   jobType: string;
   salaryMin?: number;
   salaryMax?: number;
+  logo?: string;
   viewedAt: number; // timestamp
 }
 

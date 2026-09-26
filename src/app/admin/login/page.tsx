@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Mail, Shield } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { Button, Card } from '@/components/dashboard';
@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
       }
 
       // Not an admin → log out and show error
-      await auth.signOut();
+      await signOut(auth);
       setError('Access Denied. You do not have administrative permissions.');
     } catch (err) {
       console.error('Admin login error:', err);

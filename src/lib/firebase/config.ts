@@ -27,8 +27,20 @@ const firebaseConfig = {
 
 // ─── Real Firebase Singleton Instances ─────────────────────────────────────────
 
+function createAuth(): Auth {
+  try {
+    return getAuth(app);
+  } catch (err) {
+    if (typeof window === 'undefined') {
+      return {} as Auth;
+    }
+    console.warn('[firebase] Auth initialization failed:', err);
+    return {} as Auth;
+  }
+}
+
 export const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const auth: Auth = getAuth(app);
+export const auth: Auth = createAuth();
 /**
  * PERF-4 — keep what we have already fetched.
  *
@@ -71,8 +83,20 @@ function createFirestore(): Firestore {
   }
 }
 
+function createStorage(): FirebaseStorage {
+  try {
+    return getStorage(app);
+  } catch (err) {
+    if (typeof window === 'undefined') {
+      return {} as FirebaseStorage;
+    }
+    console.warn('[firebase] Storage initialization failed:', err);
+    return {} as FirebaseStorage;
+  }
+}
+
 export const db: Firestore = createFirestore();
-export const storage: FirebaseStorage = getStorage(app);
+export const storage: FirebaseStorage = createStorage();
 // SEC-3: the Realtime Database client was constructed here on every page load and exported
 // through getFirebaseRtdb(), and nothing in src/ ever used either. Its SDK was shipping in
 // the shared chunk that every page downloads. NEXT_PUBLIC_FIREBASE_DATABASE_URL is left in
@@ -86,7 +110,14 @@ export function getFirebaseApp(): FirebaseApp {
 }
 
 export function getFirebaseAuth(): Auth {
-  return auth;
+  if (auth && (auth as any).app) {
+    return auth;
+  }
+  try {
+    return getAuth(app);
+  } catch {
+    return auth;
+  }
 }
 
 export function getFirebaseDb(): Firestore {
@@ -94,7 +125,14 @@ export function getFirebaseDb(): Firestore {
 }
 
 export function getFirebaseStorage(): FirebaseStorage {
-  return storage;
+  if (storage && (storage as any).app) {
+    return storage;
+  }
+  try {
+    return getStorage(app);
+  } catch {
+    return storage;
+  }
 }
 
 /**

@@ -1,22 +1,22 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import JobDetailPageClient from './JobDetailPageClient';
 import { getJobByIdServer, getCompanyByIdServer, getActiveJobsForSitemap } from '@/lib/firebase/firestoreServer';
 import { generateJobPostingSchema, generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
 import { isJobExpired, formatSalaryDisplay } from '@/lib/seo/expiredJobUtils';
 import { toJsonLdScript } from '@/lib/seo/jsonLd';
+import { slugify } from '@/lib/seo/jobSlug';
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
-// Every real job ID must be listed here at build time — dynamicParams is false, so a
-// static export can only ever serve the IDs returned below, nothing else. This used to
-// return only the two demo IDs, which 404'd every real job's detail/apply page in
-// production. Falls back to the demo IDs alone if the build-time Firestore query fails,
-// so a bad env var degrades to "demo jobs only" rather than breaking the build.
 export async function generateStaticParams() {
   const jobs = await getActiveJobsForSitemap().catch(() => []);
-  const ids = Array.from(new Set(['_fallback', 'demo', ...jobs.map((j) => j.id)]));
-  return ids.map((id) => ({ id }));
+  const ids = new Set<string>(['_fallback', 'demo']);
+  for (const j of jobs) {
+    if (j.slug) ids.add(j.slug);
+    if (j.id) ids.add(j.id);
+  }
+  return Array.from(ids).map((id) => ({ id }));
 }
 
 interface PageProps {
@@ -48,7 +48,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const canonicalUrl = `https://thenijobs.com/jobs/${id}`;
+  const canonicalSlug = job.slug || id;
+  const canonicalUrl = `https://thenijobs.com/jobs/${canonicalSlug}`;
   const salary = formatSalaryDisplay(job.salaryMin, job.salaryMax);
   const locationText = `${job.district || job.location}, ${job.state || 'Tamil Nadu'}`;
   const pageTitle = `${job.title} in ${job.district || job.location} | ${job.companyName} | THENIJOBS`;
@@ -95,11 +96,17 @@ export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
   const job = await getJobByIdServer(id);
 
+  // If accessed by legacy document ID or old slug alias, permanently redirect (308) to canonical slug
+  if (job && job.slug && id !== job.slug) {
+    permanentRedirect(`/jobs/${job.slug}`);
+  }
+
   // If job doesn't exist at build time, render client component for runtime resolution
   if (!job) {
     return <JobDetailPageClient id={id} />;
   }
 
+  const canonicalSlug = job.slug || id;
 
   // Fetch company data for enhanced schema
   let companyData = null;
@@ -115,7 +122,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     { name: 'Home', url: 'https://thenijobs.com' },
     { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
     { name: `Jobs in ${job.district || 'Theni'}`, url: `https://thenijobs.com/jobs-in-${(job.district || 'theni').toLowerCase().replace(/\s+/g, '-')}` },
-    { name: job.title, url: `https://thenijobs.com/jobs/${id}` },
+    { name: job.title, url: `https://thenijobs.com/jobs/${canonicalSlug}` },
   ]);
 
   // Generate JobPosting JSON-LD (server-side) — ONLY for active, non-expired jobs
@@ -123,6 +130,8 @@ export default async function JobDetailPage({ params }: PageProps) {
   if (!expiry.isExpired) {
     jobPostingSchema = generateJobPostingSchema({
       id: job.id,
+      slug: job.slug,
+      url: `https://thenijobs.com/jobs/${canonicalSlug}`,
       title: job.title,
       description: job.description || `${job.title} at ${job.companyName}`,
       companyName: job.companyName,
@@ -153,9 +162,11 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Serialize initial job data for client component hydration
   const initialJobData = {
     id: job.id,
+    slug: job.slug || '',
     title: job.title,
     companyName: job.companyName,
     companyId: job.companyId,
+    companySlug: companyData?.slug || (job.companyName ? slugify(job.companyName) : ''),
     location: job.location,
     district: job.district,
     state: job.state,

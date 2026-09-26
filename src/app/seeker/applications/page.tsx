@@ -122,7 +122,7 @@ export default function SeekerApplicationsPage() {
       tags: app.skills || [],
       timeline: getTimeline(),
       actions: [
-        { label: 'View Job', icon: Eye, href: `/jobs/${app.jobId}`, tone: 'primary' },
+        { label: 'View Job', icon: Eye, href: `/jobs/${app.jobSlug || app.jobId}`, tone: 'primary' },
         { label: 'Message Employer', icon: MessageSquare, href: `/seeker/messages?convId=conv_${app.id}`, tone: 'neutral' },
       ]
     };

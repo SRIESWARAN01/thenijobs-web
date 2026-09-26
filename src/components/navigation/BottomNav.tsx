@@ -8,7 +8,7 @@ const navItems = [
   { href: '/', label: 'Home', tamil: 'முகப்பு', icon: Home },
   { href: '/jobs', label: 'Jobs', tamil: 'வேலை', icon: Briefcase },
   { href: '/businesses', label: 'Business', tamil: 'நிறுவனம்', icon: Building2 },
-  { href: '/services', label: 'Services', tamil: 'சேவை', icon: Store },
+  { href: '/marketplace?type=services', label: 'Services', tamil: 'சேவை', icon: Store },
   { href: '/profile', label: 'Profile', tamil: 'சுயவிவரம்', icon: User },
 ];
 
@@ -19,7 +19,8 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-blue-100 bg-white px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.06)] lg:hidden">
       <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
+          const basePath = href.split('?')[0];
+          const isActive = pathname === basePath || (basePath !== '/' && pathname.startsWith(basePath));
           return (
             <Link
               key={href}

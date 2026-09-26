@@ -17,6 +17,7 @@ export const SITE_CONTACT = {
   addressLine1: 'North Street, A.M. Patty',
   addressLine2: 'Uthamapalayam, Theni District, Tamil Nadu - 625533, India',
   fullAddress: 'North Street, A.M. Patty, Uthamapalayam, Theni District, Tamil Nadu, India.',
+  address: 'North Street, A.M. Patty, Uthamapalayam, Theni District, Tamil Nadu, India.',
   location: 'Theni, Tamil Nadu, India',
 };
 
@@ -35,6 +36,19 @@ export const SEEKER_PUBLIC_PROFILE_FEE_INR = 50;
 // connection right permanently -- src/app/api/ai/connections/disconnect/route.ts deliberately
 // preserves this entitlement, so reconnecting a replacement key later never re-bills.
 export const AI_CONNECTION_FEE_INR = 50;
+
+// ===== VILLAGE AMBASSADOR & REFERRAL COMMISSIONS =====
+export const AMBASSADOR_COMMISSIONS: Record<string, number> = {
+  basic: 150,       // ₹150 for ₹999 Basic plan
+  standard: 350,    // ₹350 for ₹1,800 Standard plan
+  premium: 700,     // ₹700 for ₹3,500 Premium plan
+  enterprise: 1000, // ₹1,000 for ₹5,000 Enterprise plan
+};
+
+export const getAmbassadorCommission = (planSlug: string | undefined): number => {
+  if (!planSlug) return 0;
+  return AMBASSADOR_COMMISSIONS[planSlug.toLowerCase()] || 0;
+};
 
 // ===== SUBSCRIPTION PLANS (ANNUAL PRICING STRATEGY — 4 TIERS) =====
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
@@ -423,6 +437,7 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   { label: 'Subscriptions', tamilLabel: 'சந்தாக்கள்', icon: 'CreditCard', href: '/admin/subscriptions' },
   { label: 'Advertisements', tamilLabel: 'விளம்பரங்கள்', icon: 'Megaphone', href: '/admin/advertisements' },
   { label: 'Franchises', tamilLabel: 'பிராஞ்சைஸ்', icon: 'MapPin', href: '/admin/franchises' },
+  { label: 'Ambassadors', tamilLabel: 'அம்பாசிடர்கள்', icon: 'Award', href: '/admin/ambassadors' },
   { label: 'Support Tickets', tamilLabel: 'ஆதரவு டிக்கெட்', icon: 'LifeBuoy', href: '/admin/support' },
   { label: 'Analytics', tamilLabel: 'பகுப்பாய்வு', icon: 'BarChart3', href: '/admin/analytics' },
   { label: 'Activity Log', tamilLabel: 'செயல்பாடு பதிவு', icon: 'ScrollText', href: '/admin/activity' },

@@ -93,7 +93,7 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
           fbLimit(PUBLIC_LIST_LIMIT)
         );
         const snap = await getDocs(q);
-        const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const fetched = snap.docs.map(d => ({ id: d.id, slug: d.data().slug || '', ...d.data() }));
         // SEO-5: the third clause was `|| j.district === 'theni'`, which matched every Theni
         // job on every location page, and the line below fell back to eight unrelated jobs
         // when nothing matched. Between them, all nine location pages showed the same list.
@@ -206,7 +206,7 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                 {jobs.map((job) => (
                   <Link
                     key={job.id}
-                    href={`/jobs/${job.id}`}
+                    href={`/jobs/${job.slug || job.id}`}
                     className="block bg-white border border-gray-200 hover:border-blue-300 rounded-2xl p-5 transition-all hover:shadow-md group"
                   >
                     <div className="flex items-start justify-between gap-4">

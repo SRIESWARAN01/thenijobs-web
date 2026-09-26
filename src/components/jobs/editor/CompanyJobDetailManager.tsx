@@ -17,6 +17,7 @@ import JobShareModal from '@/components/employer/JobShareModal';
 import JobPreviewModal from '@/components/employer/JobPreviewModal';
 import JobPerformanceDashboard from '@/components/employer/JobPerformanceDashboard';
 import JobQuickUpdateModals from '@/components/employer/JobQuickUpdateModals';
+import { generateJobSlug } from '@/lib/seo/jobSlug';
 import {
   ActionMenu, Button, PageHeader, PageShell, Pill, Stat, StatGrid, Tabs,
   type ActionItem, type Crumb,
@@ -128,9 +129,12 @@ export default function CompanyJobDetailManager({ jobId, companyId, basePath, br
     setActionLoading('duplicate');
     try {
       const { id: _id, createdAt: _ca, viewCount: _vc, applicationsCount: _ac, status: _s, isActive: _ia, ...rest } = job;
+      const newTitle = `${job.title} (Copy)`;
+      const newSlug = generateJobSlug(newTitle, rest.companyName || 'Company', rest.district || rest.location || 'Theni');
       const newId = await createDocument('jobs', {
         ...rest,
-        title: `${job.title} (Copy)`,
+        title: newTitle,
+        slug: newSlug,
         status: 'draft',
         isActive: false,
         viewCount: 0,

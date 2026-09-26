@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -62,12 +63,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
   icons: {
     icon: [
-      { url: "/logo-sm.webp", type: "image/webp", sizes: "96x96" },
       { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "64x64" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/logo-sm.webp", type: "image/webp", sizes: "96x96" },
     ],
-    shortcut: "/logo-sm.webp",
+    shortcut: "/favicon.ico",
     apple: [
-      { url: "/logo-sm.webp", sizes: "180x180", type: "image/webp" },
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
   manifest: "/manifest.json",
@@ -85,6 +88,8 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
@@ -93,6 +98,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/logo-sm.webp" />
       </head>
       <body className="font-sans antialiased bg-[#F8FAFC] text-[#111827]">
+        {GA_ID && (
+          <>
+            <Script
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+            />
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${GA_ID}', {
+                    page_path: window.location.pathname,
+                  });
+                `,
+              }}
+            />
+          </>
+        )}
         <GlobalErrorTracker />
         <ErrorBoundary>
           <AuthProvider>

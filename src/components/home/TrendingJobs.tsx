@@ -13,6 +13,7 @@ import { useToast } from '@/contexts/ToastContext';
 
 interface Job {
   id: string;
+  slug?: string;
   title: string;
   company: string;
   location: string;
@@ -44,7 +45,7 @@ function JobCard({ job, rank, saved, onSave }: { job: Job; rank: number; saved: 
   const typeStyle = TYPE_COLORS[job.type] || TYPE_COLORS['Full Time'];
 
   return (
-    <Link href={`/jobs/${job.id}`} className="block group">
+    <Link href={`/jobs/${job.slug || job.id}`} className="block group">
       <div className="bg-white border-2 border-gray-100 rounded-3xl p-5 hover:border-blue-300 hover:shadow-lg transition-all duration-200 group-hover:-translate-y-1 relative flex flex-col justify-between h-full">
         <div>
           {/* Header */}
@@ -253,6 +254,7 @@ export default function TrendingJobs() {
 
           return {
             id: doc.id,
+            slug: d.slug || '',
             title: d.title || 'Untitled Job',
             company: d.companyName || d.company || 'Direct Employer',
             location: d.district ? `${d.district}, Theni` : d.location || 'Theni',

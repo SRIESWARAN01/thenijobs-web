@@ -6,7 +6,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, Building2, Briefcase, BarChart3, CreditCard, Shield, Settings, Bell,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Star,
-  TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet
+  TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet, Award
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -25,6 +25,7 @@ const ADMIN_NAV = [
   { label: 'Leads', icon: TrendingUp, href: '/admin/leads' },
   { label: 'Services', icon: Globe, href: '/admin/services' },
   { label: 'Subscriptions', icon: CreditCard, href: '/admin/subscriptions' },
+  { label: 'Ambassadors', icon: Award, href: '/admin/ambassadors' },
   { label: 'Reviews', icon: Star, href: '/admin/reviews' },
   { label: 'Reports', icon: BarChart3, href: '/admin/reports' },
   { label: 'Error Monitoring', icon: AlertTriangle, href: '/admin/errors' },

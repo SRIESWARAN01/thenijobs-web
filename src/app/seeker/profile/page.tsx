@@ -11,6 +11,7 @@ import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { useUploadFile, useDeleteFile } from '@/hooks/useStorage';
+import { optimizeImageForUpload } from '@/lib/storage/imageOptimizer';
 import { db } from '@/lib/firebase/config';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
@@ -225,20 +226,27 @@ export default function SeekerProfilePage() {
     if (!file || !user?.uid) return;
     const previousUrl = profile.photoUrl;
     try {
-      // STORAGE-LEAK-1: this used to upload to `seekers/${uid}/...`, a path with no matching
-      // block anywhere in storage.rules -- every avatar upload was failing outright with
-      // storage/unauthorized. `users/{userId}/profile/{fileName}` is the block that already
-      // exists for exactly this ("Profile photos are public"); this just targets it.
-      const url = await uploadFile(file, `users/${user.uid}/profile/avatar_${Date.now()}`);
+      // Optimize image client-side to WebP (max 600x600, quality 0.85, max 5MB)
+      const optimizedFile = await optimizeImageForUpload(file, {
+        maxWidth: 600,
+        maxHeight: 600,
+        quality: 0.85,
+        maxInputBytes: 5 * 1024 * 1024,
+        label: 'Profile photo'
+      });
+
+      const url = await uploadFile(optimizedFile, `users/${user.uid}/profile/avatar_${Date.now()}.webp`);
       setProfile(p => ({ ...p, photoUrl: url }));
-      // Same orphaned-blob leak as the company cover/logo/gallery uploads: best-effort delete of
-      // the previous avatar, never blocking on failure.
-      if (previousUrl) {
-        deleteFile(previousUrl).catch(err => console.error('Failed to delete previous avatar:', err));
+      toast.success('Profile photo updated successfully!');
+
+      if (previousUrl && previousUrl !== url) {
+        deleteFile(previousUrl).catch(err => console.warn('Failed to delete previous avatar:', err));
       }
     } catch (err) {
       console.error(err);
       toast.error('Upload failed', (err as Error).message);
+    } finally {
+      e.target.value = '';
     }
   };
 

@@ -1,5 +1,10 @@
 import CompanyProfilePageClient from './CompanyProfilePageClient';
-import { getAllCompanySlugsServer } from '@/lib/firebase/firestoreServer';
+import { getAllCompanySlugsServer, getCompanyBySlugServer } from '@/lib/firebase/firestoreServer';
+import { generateBreadcrumbSchema } from '@/lib/seo/schemas';
+import { generateCompanySEO, generateCompanySchema, canonicalCompanyUrl } from '@/lib/seo/seoEngine';
+import { toJsonLdScript } from '@/lib/seo/jsonLd';
+import { slugify } from '@/lib/seo/jobSlug';
+import type { Metadata } from 'next';
 
 const STATIC_COMPANY_SLUGS = [
   // TRUST-1: the showcase slugs were removed. A read-only query on 2026-09-05 confirmed none
@@ -16,12 +21,16 @@ export async function generateStaticParams() {
   return allSlugs.map((slug) => ({ slug }));
 }
 
-// SEO: generateMetadata for server-side title/meta on pre-built pages
+/**
+ * SEO-CRITICAL: Server-side metadata generation using REAL Firebase company data.
+ * Google crawlers receive the actual company name, description, category, and logo
+ * in the HTML <head>, not a slug-to-title guess.
+ */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
-}) {
+}): Promise<Metadata> {
   const { slug } = await params;
 
   // For the fallback shell, use generic metadata
@@ -29,9 +38,19 @@ export async function generateMetadata({
     return {
       title: 'Company Profile | THENIJOBS',
       description: "View verified company profiles, job openings, reviews, and services on THENIJOBS — Tamil Nadu's leading local job platform.",
+      robots: { index: false, follow: true },
     };
   }
 
+  // Fetch real company data from Firebase
+  const company = await getCompanyBySlugServer(slug);
+
+  if (company) {
+    // Use the centralized SEO engine with real data
+    return generateCompanySEO(company);
+  }
+
+  // Fallback: company not found in server-side fetch (may resolve client-side)
   const displayName = slug
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (c: string) => c.toUpperCase());
@@ -43,7 +62,7 @@ export async function generateMetadata({
       title: `${displayName} — Company Profile | THENIJOBS`,
       description: `Explore verified company profile, jobs, and reviews for ${displayName} on THENIJOBS.`,
       type: 'website',
-      url: `https://thenijobs.com/company/${slug}`,
+      url: canonicalCompanyUrl(slug),
       siteName: 'THENIJOBS',
     },
     twitter: {
@@ -52,7 +71,7 @@ export async function generateMetadata({
       description: `View ${displayName}'s company profile, open jobs, and reviews.`,
     },
     alternates: {
-      canonical: `https://thenijobs.com/company/${slug}`,
+      canonical: canonicalCompanyUrl(slug),
     },
     robots: {
       index: true,
@@ -67,5 +86,40 @@ export default async function CompanyProfilePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  return <CompanyProfilePageClient slug={slug} />;
+
+  // Fetch real company data for server-side structured data
+  const company = await getCompanyBySlugServer(slug).catch(() => null);
+
+  const displayName = company?.name || slug
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
+  // Breadcrumb with real company name and correct link to /businesses
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: 'https://thenijobs.com' },
+    { name: 'Businesses', url: 'https://thenijobs.com/businesses' },
+    ...(company?.category ? [{ name: company.category, url: `https://thenijobs.com/businesses/${slugify(company.category)}` }] : []),
+    { name: displayName, url: canonicalCompanyUrl(slug) },
+  ]);
+
+  // Organization/LocalBusiness JSON-LD — only for verified companies with real data
+  const companySchema = company ? generateCompanySchema(company) : null;
+
+  return (
+    <>
+      {/* BreadcrumbList JSON-LD — always rendered server-side */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: toJsonLdScript(breadcrumbSchema) }}
+      />
+      {/* Organization/LocalBusiness JSON-LD — server-side for Google */}
+      {companySchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: toJsonLdScript(companySchema) }}
+        />
+      )}
+      <CompanyProfilePageClient slug={slug} />
+    </>
+  );
 }

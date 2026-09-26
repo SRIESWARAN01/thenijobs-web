@@ -88,7 +88,7 @@ export default function WalkInDriveBanner() {
 
           {/* Action Link */}
           <Link
-            href={`/jobs/${current.id}`}
+            href={`/jobs/${current.slug || current.id}`}
             className="px-3.5 py-1 rounded-xl bg-white text-red-700 font-bold hover:bg-white/90 transition-all flex items-center gap-1 shrink-0 shadow-xs"
           >
             <span>Venue Details</span>

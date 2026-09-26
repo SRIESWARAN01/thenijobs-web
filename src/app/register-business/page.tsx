@@ -10,8 +10,9 @@ import {
   BadgePercent, Eye, ExternalLink, HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useReferral } from '@/hooks/useReferral';
 import { db } from '@/lib/firebase/config';
-import { collection, addDoc, doc, setDoc, getDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, getDoc, serverTimestamp, query, where, getDocs, increment, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { SITE_CONTACT } from '@/lib/constants';
 import { useDocument } from '@/hooks/useFirestore';
@@ -36,6 +37,7 @@ const PROOF_TYPES = [
 
 export default function RegisterBusinessPage() {
   const { user } = useAuth();
+  const { referralCode } = useReferral();
   const router = useRouter();
   const toast = useToast();
 
@@ -131,11 +133,16 @@ export default function RegisterBusinessPage() {
         ownerId: user?.uid || '',
         ownerEmail: user?.email || form.email.trim().toLowerCase(),
         verificationStatus: 'pending',
+        accountStatus: 'pending_admin_approval',    // SUB-1: explicit lifecycle state from day 0
+        subscriptionStatus: 'pending_admin_approval',
+        websiteStatus: 'pending_approval',
+        paymentStatus: 'unpaid',
         isActive: false,   // RULES-1: activation is an admin decision (safeCompanyCreate); was `true`
         isVerified: false,
         jobCount: 0,
         rating: 0,
         reviewCount: 0,
+        referredByCode: referralCode || '',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -143,6 +150,35 @@ export default function RegisterBusinessPage() {
       const newDoc = await addDoc(collection(db, 'companies'), companyPayload);
       const companyDocId = newDoc.id;
       setRegisteredCompanyId(companyDocId);
+
+      // Link Ambassador Referral if referralCode exists
+      if (referralCode) {
+        try {
+          const ambQ = query(collection(db, 'ambassadors'), where('referralCode', '==', referralCode));
+          const ambSnap = await getDocs(ambQ);
+          if (!ambSnap.empty) {
+            const ambDoc = ambSnap.docs[0];
+            await addDoc(collection(db, 'referrals'), {
+              ambassadorUid: ambDoc.id,
+              ambassadorCode: referralCode,
+              companyId: companyDocId,
+              companyName: form.name.trim(),
+              shopOwnerPhone: form.phone.trim(),
+              subscribedPlan: 'basic',
+              amountPaidINR: 0,
+              commissionAmountINR: 0,
+              status: 'credited',
+              createdAt: serverTimestamp(),
+            });
+            await updateDoc(doc(db, 'ambassadors', ambDoc.id), {
+              referredShopsCount: increment(1),
+              updatedAt: serverTimestamp(),
+            });
+          }
+        } catch (refErr) {
+          console.warn('[register-business] failed to record ambassador referral:', refErr);
+        }
+      }
 
       // RULES-1 (D-SLUG): reserve the slug publicly so later registrations can detect duplicates
       try {
@@ -311,6 +347,18 @@ export default function RegisterBusinessPage() {
 
         {/* Form Container */}
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
+          {referralCode && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between animate-fade-in">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Ambassador Partner Referral Applied: <strong className="font-mono text-emerald-950">{referralCode}</strong></span>
+              </div>
+              <span className="bg-emerald-200/70 text-emerald-900 text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-full">
+                Partner Benefits Active
+              </span>
+            </div>
+          )}
+
           {/* Section 1: Business Identity */}
           <div className="space-y-4">
             <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2 border-b border-gray-100 pb-2">

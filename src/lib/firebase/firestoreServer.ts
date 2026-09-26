@@ -5,6 +5,7 @@
  */
 
 import { slugifyCompany } from '@/lib/companySlug';
+import { generateJobSlug } from '@/lib/seo/jobSlug';
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -62,6 +63,7 @@ function extractDocId(name: string): string {
 export interface ServerJobData {
   id: string;
   slug?: string;
+  aliases?: string[];
   title: string;
   description: string;
   companyId: string;
@@ -103,6 +105,7 @@ export interface ServerCompanyData {
   name: string;
   website?: string;
   logoUrl?: string;
+  coverUrl?: string;
   description?: string;
   category?: string;
   district?: string;
@@ -110,6 +113,15 @@ export interface ServerCompanyData {
   address?: string;
   phone?: string;
   email?: string;
+  whatsapp?: string;
+  facebook?: string;
+  instagram?: string;
+  linkedin?: string;
+  youtube?: string;
+  foundedYear?: number;
+  verificationStatus?: string;
+  products?: Array<{ id: string; name: string; imageUrl?: string; description?: string; price?: number; category?: string }>;
+  services?: Array<{ id: string; name: string; imageUrl?: string; bannerImageUrl?: string; description?: string; startingPrice?: number; category?: string }>;
 }
 
 // ─── Firestore REST API Calls ─────────────────────────────────────────────────
@@ -150,7 +162,7 @@ async function runQueryREST<T>(
   collectionId: string,
   filters: Array<{
     field: string;
-    op: 'EQUAL' | 'LESS_THAN' | 'GREATER_THAN' | 'LESS_THAN_OR_EQUAL' | 'GREATER_THAN_OR_EQUAL';
+    op: 'EQUAL' | 'LESS_THAN' | 'GREATER_THAN' | 'LESS_THAN_OR_EQUAL' | 'GREATER_THAN_OR_EQUAL' | 'ARRAY_CONTAINS';
     value: FirestoreValue;
   }>,
   orderByField?: string,
@@ -229,15 +241,63 @@ async function runQueryREST<T>(
 // ─── Public Server Functions ──────────────────────────────────────────────────
 
 /**
- * Fetch a single job by Firestore document ID (for SSR job detail pages)
+ * Fetch a single job by Firestore document ID or SEO slug (for SSR job detail pages)
  */
-export async function getJobByIdServer(jobId: string): Promise<ServerJobData | null> {
-  const raw = await fetchDocumentREST<any>('jobs', jobId);
+export async function getJobByIdServer(identifier: string): Promise<ServerJobData | null> {
+  if (!identifier || identifier === '_fallback' || identifier === 'demo') return null;
+
+  let raw: any = null;
+
+  // 1. If identifier doesn't contain a hyphen, it's likely a 20-character Firestore ID: try direct doc fetch first
+  if (!identifier.includes('-')) {
+    raw = await fetchDocumentREST<any>('jobs', identifier);
+  }
+
+  // 2. If not found by direct ID (or if identifier is a slug with hyphens), query by slug
+  if (!raw) {
+    const bySlug = await runQueryREST<any>(
+      'jobs',
+      [{ field: 'slug', op: 'EQUAL', value: { stringValue: identifier } }],
+      undefined,
+      undefined,
+      1,
+    );
+    if (bySlug && bySlug.length > 0) {
+      raw = bySlug[0];
+    }
+  }
+
+  // 3. If still not found, check aliases array for renamed/updated job slugs
+  if (!raw) {
+    const byAlias = await runQueryREST<any>(
+      'jobs',
+      [{ field: 'aliases', op: 'ARRAY_CONTAINS', value: { stringValue: identifier } }],
+      undefined,
+      undefined,
+      1,
+    );
+    if (byAlias && byAlias.length > 0) {
+      raw = byAlias[0];
+    }
+  }
+
+  // 4. Fallback: if identifier contains hyphens but happened to be a custom docId, try direct fetch
+  if (!raw && identifier.includes('-')) {
+    raw = await fetchDocumentREST<any>('jobs', identifier);
+  }
+
   if (!raw) return null;
+
+  const rawSlug = raw.slug || generateJobSlug(
+    raw.title || '',
+    raw.companyName || 'employer',
+    raw.district || raw.location || 'theni',
+  );
 
   return {
     id: raw.id,
-    slug: raw.slug || '',
+    slug: rawSlug,
+    aliases: Array.isArray(raw.aliases) ? raw.aliases : [],
     title: raw.title || '',
     description: raw.description || '',
     companyId: raw.companyId || '',
@@ -275,10 +335,10 @@ export async function getJobByIdServer(jobId: string): Promise<ServerJobData | n
 }
 
 /**
- * Fetch all active job IDs + metadata for dynamic sitemap generation
+ * Fetch all active job IDs + SEO slugs + metadata for dynamic sitemap generation
  */
 export async function getActiveJobsForSitemap(): Promise<
-  Array<{ id: string; slug?: string; title?: string; updatedAt?: string }>
+  Array<{ id: string; slug: string; title: string; updatedAt?: string; imageUrl?: string }>
 > {
   const jobs = await runQueryREST<any>(
     'jobs',
@@ -288,42 +348,143 @@ export async function getActiveJobsForSitemap(): Promise<
     ],
   );
 
-  return jobs.map((j) => ({
-    id: j.id,
-    slug: j.slug || '',
-    title: j.title || '',
-    updatedAt: j.updatedAt || j.createdAt || '',
-  }));
+  return jobs.map((j) => {
+    const slug = j.slug || generateJobSlug(
+      j.title || '',
+      j.companyName || 'employer',
+      j.district || j.location || 'theni',
+    );
+    const img = j.companyLogoUrl || j.logoUrl || j.companyLogo || j.logo || '';
+    return {
+      id: j.id,
+      slug,
+      title: j.title || '',
+      updatedAt: j.updatedAt || j.createdAt || '',
+      imageUrl: img.startsWith('http') ? img : undefined,
+    };
+  });
 }
 
 /**
- * Fetch company data for a job's hiringOrganization schema
+ * Parse a raw Firestore company document into ServerCompanyData
  */
-export async function getCompanyByIdServer(companyId: string): Promise<ServerCompanyData | null> {
-  const raw = await fetchDocumentREST<any>('companies', companyId);
-  if (!raw) return null;
+function parseServerCompanyData(raw: any): ServerCompanyData {
+  const parseItems = (arr: any[]): any[] =>
+    (arr || []).filter((item: any) => item && typeof item === 'object' && item.id);
 
   return {
     id: raw.id,
     slug: raw.slug || '',
     name: raw.name || '',
     website: raw.website || '',
-    logoUrl: raw.logoUrl || raw.coverUrl || '',
+    logoUrl: raw.logoUrl || '',
+    coverUrl: raw.coverUrl || raw.coverImageUrl || '',
     description: raw.description || '',
     category: raw.category || '',
     district: raw.district || '',
-    state: raw.state || '',
+    state: raw.state || 'Tamil Nadu',
     address: raw.address || '',
     phone: raw.phone || '',
     email: raw.email || '',
+    whatsapp: raw.whatsapp || '',
+    facebook: raw.facebook || '',
+    instagram: raw.instagram || '',
+    linkedin: raw.linkedin || '',
+    youtube: raw.youtube || '',
+    foundedYear: raw.foundedYear || raw.establishedYear || undefined,
+    verificationStatus: raw.verificationStatus || '',
+    products: parseItems(raw.products).map((p: any) => ({
+      id: p.id,
+      name: p.name || '',
+      imageUrl: p.imageUrl || '',
+      description: p.description || '',
+      price: Number(p.price) || undefined,
+      category: p.category || '',
+    })),
+    services: parseItems(raw.services).map((s: any) => ({
+      id: s.id,
+      name: s.name || s.title || '',
+      imageUrl: s.imageUrl || s.bannerImageUrl || '',
+      bannerImageUrl: s.bannerImageUrl || '',
+      description: s.description || '',
+      startingPrice: Number(s.startingPrice) || undefined,
+      category: s.category || '',
+    })),
   };
+}
+
+/**
+ * Fetch company data by Firestore document ID (server-safe)
+ */
+export async function getCompanyByIdServer(companyId: string): Promise<ServerCompanyData | null> {
+  const raw = await fetchDocumentREST<any>('companies', companyId);
+  if (!raw) return null;
+  return parseServerCompanyData(raw);
+}
+
+/**
+ * Fetch company data by slug for server-side metadata generation.
+ * Tries: slug field → direct doc ID → slugLower field
+ */
+export async function getCompanyBySlugServer(slug: string): Promise<ServerCompanyData | null> {
+  if (!slug || slug === '_fallback') return null;
+
+  // 1. Query by slug field (most common)
+  const bySlug = await runQueryREST<any>(
+    'companies',
+    [
+      { field: 'slug', op: 'EQUAL', value: { stringValue: slug } },
+      { field: 'verificationStatus', op: 'EQUAL', value: { stringValue: 'verified' } },
+    ],
+    undefined, undefined, 1,
+  );
+  if (bySlug.length > 0) return parseServerCompanyData(bySlug[0]);
+
+  // 2. Try direct doc ID lookup
+  const byId = await fetchDocumentREST<any>('companies', slug);
+  if (byId) return parseServerCompanyData(byId);
+
+  // 3. Query by slugLower
+  const byLower = await runQueryREST<any>(
+    'companies',
+    [
+      { field: 'slugLower', op: 'EQUAL', value: { stringValue: slug.toLowerCase() } },
+      { field: 'verificationStatus', op: 'EQUAL', value: { stringValue: 'verified' } },
+    ],
+    undefined, undefined, 1,
+  );
+  if (byLower.length > 0) return parseServerCompanyData(byLower[0]);
+
+  return null;
+}
+
+/**
+ * Fetch a single marketplace item (product or service) by company slug and item ID.
+ * Products/services are embedded arrays on company documents, so this reads the
+ * company and extracts the matching item.
+ */
+export async function getMarketplaceItemServer(
+  type: 'product' | 'service',
+  companySlug: string,
+  itemId: string,
+): Promise<{ company: ServerCompanyData; item: any } | null> {
+  if (!companySlug || companySlug === '_fallback' || !itemId || itemId === '_fallback') return null;
+
+  const company = await getCompanyBySlugServer(companySlug);
+  if (!company) return null;
+
+  const list = type === 'service' ? (company.services || []) : (company.products || []);
+  const item = list.find((entry) => entry.id === itemId);
+  if (!item) return null;
+
+  return { company, item };
 }
 
 /**
  * Fetch all verified company slugs for sitemap
  */
 export async function getVerifiedCompanySlugsForSitemap(): Promise<
-  Array<{ slug: string; updatedAt?: string }>
+  Array<{ slug: string; updatedAt?: string; logoUrl?: string }>
 > {
   const companies = await runQueryREST<any>(
     'companies',
@@ -334,10 +495,14 @@ export async function getVerifiedCompanySlugsForSitemap(): Promise<
 
   return companies
     .filter((c) => c.slug || c.name)
-    .map((c) => ({
-      slug: c.slug || slugifyCompany(c.name || c.id),
-      updatedAt: c.updatedAt || c.createdAt || '',
-    }));
+    .map((c) => {
+      const logo = c.logoUrl || c.logo || c.coverUrl || '';
+      return {
+        slug: c.slug || slugifyCompany(c.name || c.id),
+        updatedAt: c.updatedAt || c.createdAt || '',
+        logoUrl: logo.startsWith('http') ? logo : undefined,
+      };
+    });
 }
 
 export interface ServerPortfolioSeoData {
@@ -522,21 +687,37 @@ export async function getAllCompanySlugsServer(): Promise<string[]> {
  * does and walks each one's own products[]/services[] to build the full param list.
  */
 export async function getAllMarketplaceItemParamsServer(): Promise<
-  Array<{ type: string; companySlug: string; itemId: string }>
+  Array<{ type: string; companySlug: string; itemId: string; imageUrl?: string }>
 > {
   try {
     const companies = await runQueryREST<any>('companies', [
       { field: 'verificationStatus', op: 'EQUAL', value: { stringValue: 'verified' } },
     ]);
-    const params: Array<{ type: string; companySlug: string; itemId: string }> = [];
+    const params: Array<{ type: string; companySlug: string; itemId: string; imageUrl?: string }> = [];
     for (const c of companies) {
       const companySlug = c.slug || (c.name ? slugifyCompany(c.name) : c.id);
       if (!companySlug) continue;
       for (const p of Array.isArray(c.products) ? c.products : []) {
-        if (p && typeof p === 'object' && p.id) params.push({ type: 'product', companySlug, itemId: p.id });
+        if (p && typeof p === 'object' && p.id) {
+          const img = p.imageUrl || c.logoUrl || '';
+          params.push({
+            type: 'product',
+            companySlug,
+            itemId: p.id,
+            imageUrl: img.startsWith('http') ? img : undefined,
+          });
+        }
       }
       for (const s of Array.isArray(c.services) ? c.services : []) {
-        if (s && typeof s === 'object' && s.id) params.push({ type: 'service', companySlug, itemId: s.id });
+        if (s && typeof s === 'object' && s.id) {
+          const img = s.bannerImageUrl || s.imageUrl || c.logoUrl || '';
+          params.push({
+            type: 'service',
+            companySlug,
+            itemId: s.id,
+            imageUrl: img.startsWith('http') ? img : undefined,
+          });
+        }
       }
     }
     return params;

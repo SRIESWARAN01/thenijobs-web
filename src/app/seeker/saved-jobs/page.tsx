@@ -27,6 +27,7 @@ import {
 interface SavedJobDoc {
   id: string;
   jobId: string;
+  jobSlug?: string;
   jobTitle?: string;
   companyName?: string;
   description?: string;
@@ -179,7 +180,7 @@ export default function SavedJobsPage() {
         }
         rowActions={item => {
           const items: ActionItem[] = [
-            { label: 'Apply for this job', icon: Send, tone: 'success', href: `/jobs/${item.jobId}` },
+            { label: 'Apply for this job', icon: Send, tone: 'success', href: `/jobs/${item.jobSlug || item.jobId}` },
             { label: 'Remove from saved', icon: Trash2, tone: 'danger', separatorBefore: true, onClick: () => handleDelete(item.id) },
           ];
           return <ActionMenu label={`Actions for ${item.jobTitle ?? 'saved job'}`} items={items} />;

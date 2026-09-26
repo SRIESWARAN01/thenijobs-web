@@ -152,7 +152,7 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
     const rating = reviewCount > 0
       ? reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviewCount
       : (company.rating || 0);
-    const canonicalUrl = `https://www.thenijobs.com/company/${slug}`;
+    const canonicalUrl = `https://thenijobs.com/company/${slug}`;
     const logoUrl = company.logoUrl || company.logo || '';
 
     // 1. Document title

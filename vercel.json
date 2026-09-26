@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/expire-trials",
-      "schedule": "0 0,12 * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "headers": [

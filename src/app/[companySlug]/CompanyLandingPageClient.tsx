@@ -212,16 +212,16 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
             </div>
             <p className="text-[11px] text-slate-500">
               Are you the business owner?{' '}
-              <a href="/login" className="text-blue-600 font-semibold hover:underline">
+              <Link href="/login" className="text-blue-600 font-semibold hover:underline">
                 Login to reactivate your subscription
-              </a>
+              </Link>
             </p>
-            <a
+            <Link
               href="/businesses"
               className="block w-full py-2.5 rounded-2xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
             >
               Browse Other Businesses
-            </a>
+            </Link>
           </div>
         </div>
       </div>

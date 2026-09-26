@@ -502,7 +502,7 @@ export default function AmbassadorLandingPage() {
                 1. How do I get paid? (எனக்கு கமிஷன் பணம் எப்படி கிடைக்கும்?)
               </h4>
               <p className="text-slate-600 text-sm mt-2">
-                When a shop owner registers using your referral link or code and subscribes to any paid plan, the commission is credited instantly to your Ambassador Dashboard. You can click <strong>"Request Payout"</strong> anytime to receive it via GPay, PhonePe, or Bank UPI.
+                When a shop owner registers using your referral link or code and subscribes to any paid plan, the commission is credited instantly to your Ambassador Dashboard. You can click <strong>&quot;Request Payout&quot;</strong> anytime to receive it via GPay, PhonePe, or Bank UPI.
               </p>
             </div>
 

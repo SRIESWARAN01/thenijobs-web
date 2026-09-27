@@ -269,6 +269,35 @@ export default function EmployerBillingPage() {
             </div>
           )}
 
+          {/* Subscription Expiring Soon Banner — shows when < 30 days left on paid plan */}
+          {subState.isPaidActive && subState.subscriptionEndDate && (() => {
+            const daysLeft = Math.ceil((subState.subscriptionEndDate.getTime() - Date.now()) / 86400000);
+            return daysLeft > 0 && daysLeft <= 30 ? (
+              <div className="rounded-3xl p-5 bg-amber-50 border border-amber-300 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Calendar size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-amber-950 text-sm">⏰ Subscription Expiring in {daysLeft} day{daysLeft !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-amber-800 mt-0.5">
+                      Renew before {subState.subscriptionEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} to avoid service interruption. Contact admin on WhatsApp for instant renewal.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`🔄 *THENIJOBS Subscription Renewal Request*\n\nHello THENIJOBS Admin,\n\nI would like to *renew my subscription* for *"${company?.name || 'my business'}"* before it expires in ${daysLeft} days (${subState.subscriptionEndDate.toLocaleDateString('en-IN')}).\n\nPlease assist me with renewal options and payment.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition-all whitespace-nowrap"
+                >
+                  <MessageCircle size={15} />
+                  Renew Now — WhatsApp Admin
+                </a>
+              </div>
+            ) : null;
+          })()}
+
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {SUBSCRIPTION_PLANS.map((plan) => {
@@ -317,7 +346,22 @@ export default function EmployerBillingPage() {
                   </div>
 
                   <div className="pt-4 mt-4 border-t border-gray-100">
-                    {isCurrent ? (
+                    {isCurrent && subState.isPaidActive ? (
+                      <div className="space-y-2">
+                        <button disabled className="w-full py-2.5 rounded-xl bg-gray-100 text-slate-500 text-xs font-bold cursor-default">
+                          ✅ Plan Active
+                        </button>
+                        {/* Quick Renew button visible on active plan card */}
+                        <a
+                          href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`🔄 *Renewal Request — ${plan.name} Plan*\n\nHello THENIJOBS Admin,\n\nI want to renew my *${plan.name}* subscription for *"${company?.name || 'my business'}"*.\n\nPlease help me with renewal and payment.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <MessageCircle size={12} /> Contact Admin to Renew
+                        </a>
+                      </div>
+                    ) : isCurrent ? (
                       <button disabled className="w-full py-2.5 rounded-xl bg-gray-100 text-slate-500 text-xs font-bold cursor-default">
                         Plan Active
                       </button>
@@ -326,7 +370,7 @@ export default function EmployerBillingPage() {
                         onClick={() => handleOpenCheckout(plan)}
                         className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
                       >
-                        Upgrade to {plan.name}
+                        {subState.isTrialExpired && !subState.isPaidActive ? `Reactivate with ${plan.name}` : `Upgrade to ${plan.name}`}
                       </button>
                     )}
                   </div>
@@ -460,13 +504,17 @@ export default function EmployerBillingPage() {
 
             <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
               <a
-                href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`Hello THENIJOBS Support, I have a question regarding employer subscription plans for "${company?.name || 'my business'}".`)}`}
+                href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(
+                  subState.isTrialExpired && !subState.isPaidActive
+                    ? `🔄 *THENIJOBS Renewal Request*\n\nHello Admin,\n\nMy subscription for *"${company?.name || 'my business'}"* has expired. I want to *renew / reactivate* my plan.\n\nPlease help me with payment and instant activation.`
+                    : `Hello THENIJOBS Support, I have a question regarding employer subscription plans for "${company?.name || 'my business'}".`
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all"
               >
                 <MessageCircle size={16} />
-                <span>Chat on WhatsApp</span>
+                <span>{subState.isTrialExpired && !subState.isPaidActive ? 'Request Renewal via Admin' : 'Chat on WhatsApp'}</span>
               </a>
               <a
                 href={`tel:${SITE_CONTACT.phone1Raw}`}

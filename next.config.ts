@@ -12,9 +12,6 @@ const nextConfig: NextConfig = {
   // viewport. Dev-only — has no effect on the production build.
   allowedDevOrigins: ['192.168.1.2', '10.77.10.141'],
   devIndicators: false,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
     remotePatterns: [

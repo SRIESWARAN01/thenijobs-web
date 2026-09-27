@@ -178,6 +178,21 @@ export default function AdminJobsPage() {
     setActionLoading(job.id);
     try {
       await approveJob(job.id, currentUser?.uid || 'admin');
+
+      // If job was expired, automatically extend deadline by 30 days
+      const status = getStatus(job);
+      if (status === 'expired' || job.status === 'expired') {
+        const newDeadline = new Date();
+        newDeadline.setDate(newDeadline.getDate() + 30);
+        const deadlineStr = newDeadline.toISOString().split('T')[0];
+        await updateDocument('jobs', job.id, {
+          deadline: deadlineStr,
+          expiryDate: deadlineStr,
+          isActive: true,
+          status: 'active',
+        });
+      }
+
       toast.success('Job Approved & Activated! 🚀', `"${job.title}" is now live on THENIJOBS.`);
 
       const { whatsapp } = getCompanyContact(job);
@@ -188,6 +203,35 @@ export default function AdminJobsPage() {
     } catch (e: any) {
       console.error(e);
       toast.error('Approval failed', e.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const doRenewJob = async (job: JobDoc, days = 30) => {
+    setActionLoading(job.id);
+    try {
+      const newDeadline = new Date();
+      newDeadline.setDate(newDeadline.getDate() + days);
+      const deadlineStr = newDeadline.toISOString().split('T')[0];
+      await updateDocument('jobs', job.id, {
+        status: 'active',
+        isActive: true,
+        approvalStatus: 'approved',
+        deadline: deadlineStr,
+        expiryDate: deadlineStr,
+        updatedAt: new Date(),
+      });
+      toast.success(`Job Renewed for ${days} Days! 🚀`, `"${job.title}" is now active and live on THENIJOBS.`);
+
+      const { whatsapp } = getCompanyContact(job);
+      if (whatsapp) {
+        const msg = `🎉 *THENIJOBS Listing Renewed!*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job opening *"${job.title}"* has been renewed by Admin and is now LIVE on THENIJOBS until *${newDeadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}*.\n\nManage applicants: https://thenijobs.com/employer/jobs`;
+        window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Renewal failed', e.message);
     } finally {
       setActionLoading(null);
     }
@@ -585,14 +629,14 @@ export default function AdminJobsPage() {
                 href: `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi ${job.companyName || 'Employer'}, this is THENIJOBS Admin regarding your job posting "${job.title}".`)}`,
               });
             }
-            if (jobStatus === 'pending' || job.isActive === false) {
-              items.push({ label: 'Approve & make live', icon: CheckCircle, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
-              items.push({ label: 'Reject with reason', icon: XCircle, tone: 'danger', onClick: () => openRejectModal(job) });
-            } else if (jobStatus === 'active') {
-              items.push({ label: 'Request revisions', icon: XCircle, separatorBefore: true, onClick: () => openRejectModal(job) });
-            } else {
-              items.push({ label: 'Re-approve & reactivate job', icon: RefreshCw, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
-              // Expired job: offer employer renewal contact via WhatsApp
+            if (jobStatus === 'expired') {
+              items.push({
+                label: 'Renew & Extend (+30 Days)',
+                icon: RefreshCw,
+                tone: 'success',
+                separatorBefore: true,
+                onClick: () => doRenewJob(job, 30),
+              });
               if (whatsapp) {
                 const renewMsg = `📢 *THENIJOBS Admin — Subscription Renewal*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job listing *"${job.title}"* has expired because your subscription plan has ended.\n\n✅ To *repost this job and continue hiring*, please renew your THENIJOBS subscription.\n\n💬 Reply to this message to choose a plan and get reactivated instantly!\n\n🔗 https://thenijobs.com/employer/billing`;
                 items.push({
@@ -603,6 +647,13 @@ export default function AdminJobsPage() {
                   href: `https://wa.me/${whatsapp}?text=${encodeURIComponent(renewMsg)}`,
                 });
               }
+            } else if (jobStatus === 'pending' || job.isActive === false) {
+              items.push({ label: 'Approve & make live', icon: CheckCircle, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
+              items.push({ label: 'Reject with reason', icon: XCircle, tone: 'danger', onClick: () => openRejectModal(job) });
+            } else if (jobStatus === 'active') {
+              items.push({ label: 'Request revisions', icon: XCircle, separatorBefore: true, onClick: () => openRejectModal(job) });
+            } else {
+              items.push({ label: 'Approve & make live', icon: CheckCircle, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
             }
             items.push({
               label: job.isFeatured ? 'Remove from homepage' : 'Feature on homepage',

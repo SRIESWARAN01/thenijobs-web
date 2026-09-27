@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Bell, CheckCircle, Mail, MessageCircle, Save, Shield, Smartphone, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, CheckCircle, Loader2, Mail, MessageCircle, Save, Shield, Smartphone, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useDocument } from '@/hooks/useFirestore';
+import { db } from '@/lib/firebase/config';
+import { doc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import {
-  Button, Card, CardHeader, PageHeader, PageShell, Stat, StatGrid, Switch,
+  Button, Card, CardHeader, PageHeader, PageShell, Pill, Stat, StatGrid, Switch,
 } from '@/components/dashboard';
 
 type Channel = 'push' | 'sms' | 'email' | 'whatsapp';
@@ -39,9 +43,19 @@ function Toggle({ checked, onClick, label }: { checked: boolean; onClick: () => 
 }
 
 export default function SeekerSettingsPage() {
+  const { user } = useAuth();
+  const { data: profile, loading: profileLoading } = useDocument<any>('seekerProfiles', user?.uid);
   const [prefs, setPrefs] = useState(initialPrefs);
-  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(true);
   const toast = useToast();
+
+  useEffect(() => {
+    if (profile?.notificationPreferences) {
+      setPrefs(profile.notificationPreferences);
+      setSaved(true);
+    }
+  }, [profile]);
 
   const toggle = (event: EventKey, channel: Channel) => {
     setSaved(false);
@@ -54,9 +68,26 @@ export default function SeekerSettingsPage() {
     }));
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    toast.success('Notification preferences saved!');
+  const handleSave = async () => {
+    if (!user?.uid) {
+      toast.error('Please sign in to save preferences.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await setDoc(
+        doc(db, 'seekerProfiles', user.uid),
+        { notificationPreferences: prefs, updatedAt: new Date() },
+        { merge: true }
+      );
+      setSaved(true);
+      toast.success('Notification preferences saved successfully!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save preferences.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const enabledCount = Object.values(prefs).reduce(
@@ -72,10 +103,11 @@ export default function SeekerSettingsPage() {
         actions={
           <Button
             onClick={handleSave}
+            disabled={saving || profileLoading}
             className="border-0 bg-emerald-600 text-white hover:bg-emerald-700"
           >
-            {saved ? <CheckCircle size={15} /> : <Save size={15} />}
-            {saved ? 'Changes saved' : 'Save preferences'}
+            {saving ? <Loader2 size={15} className="animate-spin" /> : saved ? <CheckCircle size={15} /> : <Save size={15} />}
+            {saving ? 'Saving...' : saved ? 'Preferences saved' : 'Save preferences'}
           </Button>
         }
       />
@@ -91,7 +123,7 @@ export default function SeekerSettingsPage() {
         <CardHeader
           title="Communication & alert matrix"
           description="Choose how you receive application updates and interview calls"
-          action={<Bell size={16} className="text-slate-400" aria-hidden />}
+          action={<Pill tone={saved ? 'success' : 'warning'}>{saved ? 'Saved' : 'Unsaved changes'}</Pill>}
         />
 
         {/* Mobile View: Event Cards (sm:hidden) */}

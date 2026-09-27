@@ -1,17 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
+import { updateDocument } from '@/lib/firebase/firestoreService';
+import { useToast } from '@/contexts/ToastContext';
 import { where } from 'firebase/firestore';
-import { Bell, CheckCircle, Loader2, Settings, Shield } from 'lucide-react';
+import { Bell, CheckCircle, Loader2, Save, Settings, Shield } from 'lucide-react';
 import Link from 'next/link';
 import {
   Button, Card, CardBody, CardHeader, EmptyState, PageHeader, PageShell, Pill,
   SettingRow, Switch,
 } from '@/components/dashboard';
 
-interface CompanyDoc { id: string; name?: string }
+interface CompanyDoc {
+  id: string;
+  name?: string;
+  notificationPreferences?: Record<string, boolean>;
+}
 
 const NOTIF_ITEMS = [
   { key: 'applications', label: 'New job applications', desc: 'When a candidate submits their resume to your job' },
@@ -23,6 +29,7 @@ const NOTIF_ITEMS = [
 
 export default function EmployerSettingsPage() {
   const { user } = useAuth();
+  const toast = useToast();
 
   // 1. Fetch employer's company
   const { data: companies, loading: companyLoading } = useCollection<CompanyDoc>('companies', [
@@ -39,9 +46,40 @@ export default function EmployerSettingsPage() {
     interviews: true,
     system: true
   });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(true);
+
+  // Sync saved preferences from Firestore
+  useEffect(() => {
+    if (company?.notificationPreferences) {
+      setNotifs(prev => ({
+        ...prev,
+        ...company.notificationPreferences,
+      }));
+      setSaved(true);
+    }
+  }, [company]);
 
   const toggleNotif = (key: keyof typeof notifs) => {
+    setSaved(false);
     setNotifs(p => ({ ...p, [key]: !p[key] }));
+  };
+
+  const handleSave = async () => {
+    if (!companyId) return;
+    setSaving(true);
+    try {
+      await updateDocument('companies', companyId, {
+        notificationPreferences: notifs,
+      });
+      setSaved(true);
+      toast.success('Notification preferences saved successfully!');
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Failed to save preferences.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!companyId && !companyLoading) {
@@ -67,6 +105,16 @@ export default function EmployerSettingsPage() {
         title="Settings"
         description="Employer portal preferences."
         breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Settings' }]}
+        actions={
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="border-0 bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            {saving ? <Loader2 size={15} className="animate-spin" /> : saved ? <CheckCircle size={15} /> : <Save size={15} />}
+            {saving ? 'Saving...' : saved ? 'Preferences saved' : 'Save preferences'}
+          </Button>
+        }
       />
 
       {companyLoading ? (
@@ -80,21 +128,12 @@ export default function EmployerSettingsPage() {
             <CardHeader
               title="Notification preferences"
               description="Choose when you are notified about recruitment activity"
-              action={<Pill tone="warning">Not saved yet</Pill>}
+              action={<Pill tone={saved ? 'success' : 'warning'}>{saved ? 'Saved' : 'Unsaved changes'}</Pill>}
             />
             <CardBody className="space-y-3">
-              {/*
-                These switches are session-only. There is no persistence behind
-                this page: the previous Save button ran `await new
-                Promise(r => setTimeout(r, 800))` and then raised the toast
-                "Settings updated successfully!" without writing anything, so
-                every preference silently reset on the next page load while the
-                employer had been told it was stored. The banner below says so
-                plainly rather than repeating the claim.
-              */}
-              <p className="rounded-xl border border-amber-200 bg-[#FFFBEB] p-3 text-xs leading-relaxed text-[#92400E]">
-                These preferences are not stored yet — they apply to this browser session only and
-                reset when you reload. Notification delivery is unaffected.
+              <p className="rounded-xl border border-emerald-200 bg-[#ECFDF5] p-3 text-xs leading-relaxed text-[#065F46] flex items-center gap-2">
+                <CheckCircle size={14} className="text-emerald-600 shrink-0" />
+                These preferences are synced with your company profile and control real-time alerts.
               </p>
               {NOTIF_ITEMS.map(item => (
                 <SettingRow
@@ -127,11 +166,6 @@ export default function EmployerSettingsPage() {
               </div>
             </CardBody>
           </Card>
-
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
-            <Bell size={12} aria-hidden />
-            Wiring these preferences to the company record is still to do.
-          </p>
         </>
       )}
     </PageShell>

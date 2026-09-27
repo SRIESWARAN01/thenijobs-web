@@ -49,6 +49,8 @@ interface JobDoc {
   description?: string;
   jobOrdinal?: string;
   createdAt?: any;
+  deadline?: any;
+  expiryDate?: any;
   rejectionReason?: string;
   reportReason?: string;
 }
@@ -124,6 +126,19 @@ export default function AdminJobsPage() {
     job.isActive === true && job.status === 'active' && job.approvalStatus !== 'pending' && job.approvalStatus !== 'rejected';
   
   const getStatus = (job: JobDoc) => {
+    if (job.status === 'expired') return 'expired';
+    if (job.deadline) {
+      try {
+        let d: Date | null = null;
+        if (typeof job.deadline === 'string' && job.deadline.includes('/')) {
+          const parts = job.deadline.split('/');
+          d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+        } else {
+          d = typeof job.deadline === 'string' ? new Date(job.deadline) : (job.deadline?.toDate ? job.deadline.toDate() : new Date(job.deadline));
+        }
+        if (d && !isNaN(d.getTime()) && d < new Date()) return 'expired';
+      } catch {}
+    }
     if (job.status === 'rejected' || job.approvalStatus === 'rejected') return 'rejected';
     if (job.status === 'pending' || job.approvalStatus === 'pending' || job.isActive === false) return 'pending';
     if (job.status === 'active' || job.isActive === true) return 'active';
@@ -144,7 +159,7 @@ export default function AdminJobsPage() {
     const company = job.companyName || job.company || '';
     const matchSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || company.toLowerCase().includes(searchQuery.toLowerCase());
     const status = getStatus(job);
-    const isExpiredJob = job.status === 'expired' || (!job.isActive && status !== 'pending' && status !== 'rejected');
+    const isExpiredJob = status === 'expired' || job.status === 'expired' || (!job.isActive && status !== 'pending' && status !== 'rejected');
     let matchTab = activeTab === 'All';
     if (activeTab === 'Featured') matchTab = !!job.isFeatured;
     else if (activeTab === 'Active') matchTab = status === 'active';
@@ -243,7 +258,7 @@ export default function AdminJobsPage() {
   const pendingCount = jobs.filter(j => getStatus(j) === 'pending').length;
   const rejectedCount = jobs.filter(j => getStatus(j) === 'rejected').length;
   const featuredCount = jobs.filter(j => j.isFeatured).length;
-  const expiredCount = jobs.filter(j => j.status === 'expired' || (!j.isActive && getStatus(j) !== 'pending' && getStatus(j) !== 'rejected')).length;
+  const expiredCount = jobs.filter(j => j.status === 'expired' || getStatus(j) === 'expired' || (!j.isActive && getStatus(j) !== 'pending' && getStatus(j) !== 'rejected')).length;
 
   const overdueApplications = applications.filter((a: any) => {
     const isPending = a.status === 'applied' || a.status === 'under_review' || !a.status;

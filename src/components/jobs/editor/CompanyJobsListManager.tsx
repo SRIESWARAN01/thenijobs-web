@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Briefcase, Plus, Search, Eye, Users2,
   Pause, Play, Trash2, Clock, Loader2, AlertTriangle,
-  Share2, Copy, Archive,
+  Share2, Copy, Archive, MessageCircle, CreditCard,
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import {
@@ -53,6 +53,7 @@ const TABS: { label: string; value: TabFilter }[] = [
   { label: 'Pending Review', value: 'pending' },
   { label: 'Needs Revision', value: 'rejected' },
   { label: 'Paused', value: 'paused' },
+  { label: 'Expired', value: 'expired' },
   { label: 'Closed', value: 'closed' },
 ];
 
@@ -63,16 +64,31 @@ const STATUS_STYLES: Record<JobStatus, { bg: string; text: string; dot: string; 
   paused:   { bg: '#F5F3FF', text: '#7C3AED', dot: '#7C3AED', label: 'Paused' },
   draft:    { bg: '#F9FAFB', text: '#6B7280', dot: '#9CA3AF', label: 'Draft' },
   closed:   { bg: '#FEF2F2', text: '#DC2626', dot: '#DC2626', label: 'Closed' },
-  expired:  { bg: '#F9FAFB', text: '#9CA3AF', dot: '#9CA3AF', label: 'Expired' },
+  expired:  { bg: '#FFFBEB', text: '#D97706', dot: '#D97706', label: 'Expired' },
 };
 
 function resolveStatus(j: JobDoc): JobStatus {
+  if (j.status === 'expired') return 'expired';
+  // Check if deadline has passed
+  if (j.deadline) {
+    try {
+      let d: Date | null = null;
+      if (typeof j.deadline === 'string' && j.deadline.includes('/')) {
+        const parts = j.deadline.split('/');
+        d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+      } else {
+        d = typeof j.deadline === 'string' ? new Date(j.deadline) : (j.deadline?.toDate ? j.deadline.toDate() : new Date(j.deadline));
+      }
+      if (d && !isNaN(d.getTime()) && d < new Date()) return 'expired';
+    } catch {
+      // ignore
+    }
+  }
   if (j.status === 'rejected' || j.approvalStatus === 'rejected') return 'rejected';
-  if (j.status === 'pending' || j.approvalStatus === 'pending' || j.isActive === false) return 'pending';
-  if (j.status === 'active' || (j.isActive === true && !j.status)) return 'active';
   if (j.status === 'paused') return 'paused';
   if (j.status === 'closed') return 'closed';
-  if (j.status === 'expired') return 'expired';
+  if (j.status === 'pending' || j.approvalStatus === 'pending' || j.isActive === false) return 'pending';
+  if (j.status === 'active' || (j.isActive === true && !j.status)) return 'active';
   return 'draft';
 }
 
@@ -195,6 +211,7 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
   const activeCount = jobs.filter(j => resolveStatus(j) === 'active').length;
   const pendingCount = jobs.filter(j => resolveStatus(j) === 'pending').length;
   const rejectedCount = jobs.filter(j => resolveStatus(j) === 'rejected').length;
+  const expiredCount = jobs.filter(j => resolveStatus(j) === 'expired').length;
   const totalApps = jobs.reduce((s, j) => s + (j.applicationsCount || 0), 0);
 
   const jobColumns: Column<JobDoc>[] = [
@@ -303,10 +320,11 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
       ) : (
         <>
           {/* KPI stats grid matching Dashboard standard */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
             {[
               { label: 'Active & Live', count: activeCount, icon: Briefcase, bg: '#EFF6FF', color: '#2563EB' },
               { label: 'Pending Review', count: pendingCount, icon: Clock, bg: '#FFFBEB', color: '#D97706' },
+              { label: 'Expired', count: expiredCount, icon: Clock, bg: '#FFFBEB', color: '#D97706' },
               { label: 'Needs Revision', count: rejectedCount, icon: AlertTriangle, bg: '#FEF2F2', color: '#DC2626' },
               { label: 'Total Applications', count: totalApps, icon: Users2, bg: '#F5F3FF', color: '#7C3AED' },
             ].map(s => {
@@ -326,6 +344,41 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
               );
             })}
           </div>
+
+          {/* Expired Jobs Alert Banner for Employer */}
+          {expiredCount > 0 && (
+            <div className="p-4 rounded-2xl border-2 border-amber-200 bg-amber-50/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                  <AlertTriangle size={18} />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-bold text-gray-900">
+                    You have {expiredCount} expired job {expiredCount === 1 ? 'posting' : 'postings'}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-amber-800 mt-0.5">
+                    Expired jobs are hidden from job seekers on the public website. Contact admin to renew or reactivate.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={`https://wa.me/919360519460?text=${encodeURIComponent(`Hi THENIJOBS Admin, I want to renew my expired job postings for ${companyName || 'my company'}. Please help.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
+                >
+                  <MessageCircle size={13} /> Contact Admin to Renew
+                </a>
+                <Link
+                  href="/employer/billing"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:border-blue-300 hover:text-blue-700 transition-all"
+                >
+                  Renew Plan
+                </Link>
+              </div>
+            </div>
+          )}
 
           {/* Filter Bar & Tabs (Touch Scrollable) */}
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
@@ -394,7 +447,20 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
               if (jobStatus === 'active') {
                 items.push({ label: 'Share job', icon: Share2, onClick: () => setShareJob(job) });
               }
-              items.push({ label: 'Duplicate job', icon: Copy, separatorBefore: true, onClick: () => handleDuplicate(job) });
+              if (jobStatus === 'expired') {
+                items.push({
+                  label: 'Contact Admin to Renew',
+                  icon: MessageCircle,
+                  onClick: () => {
+                    window.open(`https://wa.me/919360519460?text=${encodeURIComponent(`Hi THENIJOBS Admin, I want to renew my expired job posting "${job.title}" (${companyName || 'Company'}). Please help.`)}`, '_blank');
+                  },
+                });
+                items.push({
+                  label: 'Renew Subscription',
+                  icon: CreditCard,
+                  href: '/employer/billing',
+                });
+              }
               if (jobStatus !== 'closed') {
                 items.push({ label: 'Close posting', icon: Archive, onClick: () => handleCloseJob(job.id) });
               }

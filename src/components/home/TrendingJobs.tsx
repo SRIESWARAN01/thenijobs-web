@@ -237,42 +237,62 @@ export default function TrendingJobs() {
           return `${Math.floor(days / 7)}w ago`;
         };
 
-        const calculatedJobs: Job[] = snap.docs.map(doc => {
-          const d = doc.data();
-          const salaryStr = d.salaryMin && d.salaryMax
-            ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}/mo`
-            : d.salary || 'Salary Negotiable';
+        const now = Date.now();
+        const calculatedJobs: Job[] = snap.docs
+          .map(doc => {
+            const d = doc.data();
+            if (d.status === 'expired' || d.isActive === false) return null;
+            if (d.expiryDate) {
+              const exp = new Date(d.expiryDate).getTime();
+              if (!isNaN(exp) && exp < now) return null;
+            } else if (d.deadline) {
+              try {
+                let dl: number | null = null;
+                if (typeof d.deadline === 'string' && d.deadline.includes('/')) {
+                  const parts = d.deadline.split('/');
+                  dl = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])).getTime();
+                } else {
+                  dl = new Date(d.deadline).getTime();
+                }
+                if (dl && !isNaN(dl) && dl < now) return null;
+              } catch {}
+            }
 
-          const views = d.viewCount || d.views || 0;
-          const applications = d.applicationCount || d.applications || 0;
-          const saves = d.saveCount || d.savedCount || 0;
-          const recencyDays = Math.max(0, (Date.now() - (d.createdAt?.toMillis?.() || Date.now())) / 86400000);
-          const recencyBoost = Math.max(0, 50 - recencyDays * 4);
+            const salaryStr = d.salaryMin && d.salaryMax
+              ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}/mo`
+              : d.salary || 'Salary Negotiable';
 
-          // Real dynamic trending activity formula
-          const trendingScore = (views * 1.5) + (applications * 10) + (saves * 4) + recencyBoost + (d.isUrgent ? 25 : 0) + (d.isFeatured ? 20 : 0);
+            const views = d.viewCount || d.views || 0;
+            const applications = d.applicationCount || d.applications || 0;
+            const saves = d.saveCount || d.savedCount || 0;
+            const recencyDays = Math.max(0, (Date.now() - (d.createdAt?.toMillis?.() || Date.now())) / 86400000);
+            const recencyBoost = Math.max(0, 50 - recencyDays * 4);
 
-          return {
-            id: doc.id,
-            slug: d.slug || '',
-            title: d.title || 'Untitled Job',
-            company: d.companyName || d.company || 'Direct Employer',
-            location: d.district ? `${d.district}, Theni` : d.location || 'Theni',
-            salary: salaryStr,
-            type: typeMap[d.jobType] || d.type || 'Full Time',
-            experience: d.experience || '',
-            education: d.education || '',
-            posted: formatTime(d.createdAt),
-            logo: d.logoUrl || d.logo || '',
-            isUrgent: !!d.isUrgent,
-            isFeatured: !!d.isFeatured,
-            isVerified: d.isVerified || false,
-            category: d.category || 'General',
-            trendingScore,
-            viewCount: views,
-            applicationCount: applications,
-          };
-        });
+            // Real dynamic trending activity formula
+            const trendingScore = (views * 1.5) + (applications * 10) + (saves * 4) + recencyBoost + (d.isUrgent ? 25 : 0) + (d.isFeatured ? 20 : 0);
+
+            return {
+              id: doc.id,
+              slug: d.slug || '',
+              title: d.title || 'Untitled Job',
+              company: d.companyName || d.company || 'Direct Employer',
+              location: d.district ? `${d.district}, Theni` : d.location || 'Theni',
+              salary: salaryStr,
+              type: typeMap[d.jobType] || d.type || 'Full Time',
+              experience: d.experience || '',
+              education: d.education || '',
+              posted: formatTime(d.createdAt),
+              logo: d.logoUrl || d.logo || '',
+              isUrgent: !!d.isUrgent,
+              isFeatured: !!d.isFeatured,
+              isVerified: d.isVerified || false,
+              category: d.category || 'General',
+              trendingScore,
+              viewCount: views,
+              applicationCount: applications,
+            };
+          })
+          .filter(Boolean) as Job[];
 
         // Sort descending by calculated dynamic trending score
         calculatedJobs.sort((a, b) => b.trendingScore - a.trendingScore);

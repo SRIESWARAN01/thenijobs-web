@@ -379,44 +379,64 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
         };
 
         const now = Date.now();
-        const data = snap.docs.map(doc => {
-          const d = doc.data();
-          const millis = d.createdAt?.toMillis ? d.createdAt.toMillis() : (d.createdAt ? new Date(d.createdAt).getTime() : now);
-          const salaryStr = d.salaryMin && d.salaryMax
-            ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}/mo`
-            : d.salary || 'Salary Negotiable';
+        const data = snap.docs
+          .map(doc => {
+            const d = doc.data();
+            // Filter expired jobs from public browse — expired jobs must not show on website
+            if (d.status === 'expired' || d.isActive === false) return null;
+            if (d.expiryDate) {
+              const exp = new Date(d.expiryDate).getTime();
+              if (!isNaN(exp) && exp < now) return null;
+            } else if (d.deadline) {
+              try {
+                let dl: number | null = null;
+                if (typeof d.deadline === 'string' && d.deadline.includes('/')) {
+                  const parts = d.deadline.split('/');
+                  dl = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])).getTime();
+                } else {
+                  dl = new Date(d.deadline).getTime();
+                }
+                if (dl && !isNaN(dl) && dl < now) return null;
+              } catch {}
+            }
 
-          return {
-            id: doc.id,
-            slug: d.slug || '',
-            title: d.title || '',
-            company: d.companyName || d.company || 'Company',
-            companyId: d.companyId || '',
-            location: d.district ? `${d.district}, Theni` : d.location || 'Theni',
-            salary: salaryStr,
-            salaryMin: d.salaryMin || 0,
-            salaryMax: d.salaryMax || 0,
-            type: TYPE_MAP[d.jobType] || d.type || 'Full Time',
-            posted: formatTime(d.createdAt),
-            postedAt: millis,
-            // companyLogoUrl is the field src/app/employer/post-job/page.tsx actually writes;
-            // logoUrl/companyLogo/logo are kept as fallbacks for a differently-shaped job doc.
-            logo: d.companyLogoUrl || d.logoUrl || d.companyLogo || d.logo || d.companyName?.[0]?.toUpperCase() || 'C',
-            isUrgent: d.isUrgent || false,
-            isPremium: d.isPremium || false,
-            isFeatured: d.isFeatured || false,
-            isVerified: d.isVerified || false,
-            category: d.category || '',
-            skills: d.skills || [],
-            openings: d.openings ? Number(d.openings) : 1,
-            experience: d.experience || '',
-            education: d.education || '',
-            description: d.description || '',
-            benefits: d.benefits || [],
-            requirements: d.requirements || [],
-            whatsapp: d.whatsapp || d.phone || ''
-          } as Job;
-        });
+            const millis = d.createdAt?.toMillis ? d.createdAt.toMillis() : (d.createdAt ? new Date(d.createdAt).getTime() : now);
+            const salaryStr = d.salaryMin && d.salaryMax
+              ? `₹${Number(d.salaryMin).toLocaleString('en-IN')} - ₹${Number(d.salaryMax).toLocaleString('en-IN')}/mo`
+              : d.salary || 'Salary Negotiable';
+
+            return {
+              id: doc.id,
+              slug: d.slug || '',
+              title: d.title || '',
+              company: d.companyName || d.company || 'Company',
+              companyId: d.companyId || '',
+              location: d.district ? `${d.district}, Theni` : d.location || 'Theni',
+              salary: salaryStr,
+              salaryMin: d.salaryMin || 0,
+              salaryMax: d.salaryMax || 0,
+              type: TYPE_MAP[d.jobType] || d.type || 'Full Time',
+              posted: formatTime(d.createdAt),
+              postedAt: millis,
+              // companyLogoUrl is the field src/app/employer/post-job/page.tsx actually writes;
+              // logoUrl/companyLogo/logo are kept as fallbacks for a differently-shaped job doc.
+              logo: d.companyLogoUrl || d.logoUrl || d.companyLogo || d.logo || d.companyName?.[0]?.toUpperCase() || 'C',
+              isUrgent: d.isUrgent || false,
+              isPremium: d.isPremium || false,
+              isFeatured: d.isFeatured || false,
+              isVerified: d.isVerified || false,
+              category: d.category || '',
+              skills: d.skills || [],
+              openings: d.openings ? Number(d.openings) : 1,
+              experience: d.experience || '',
+              education: d.education || '',
+              description: d.description || '',
+              benefits: d.benefits || [],
+              requirements: d.requirements || [],
+              whatsapp: d.whatsapp || d.phone || ''
+            } as Job;
+          })
+          .filter(Boolean) as Job[];
 
         // Sort latest first
         data.sort((a, b) => (b.postedAt || 0) - (a.postedAt || 0));

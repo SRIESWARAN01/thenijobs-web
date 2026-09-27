@@ -12,7 +12,7 @@ import {
   Copy, Heart, AlertTriangle, X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useDocument } from '@/hooks/useFirestore';
+import { useDocument, useCollection } from '@/hooks/useFirestore';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { followCompany, unfollowCompany, isFollowingCompany, applyToJob } from '@/lib/firebase/firestoreService';
 import { db } from '@/lib/firebase/config';
@@ -88,8 +88,14 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
   const pathname = usePathname();
   const urlId = pathname?.split('/').filter(Boolean).pop() || '';
   const id = (urlId && urlId !== '_fallback' && urlId !== 'demo') ? urlId : idProp;
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const uid = user?.uid;
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isEmployerRole = user?.role === 'employer' || user?.role === 'business_owner';
+  const { data: userCompanies } = useCollection<any>('companies', [
+    where('ownerId', '==', uid || '')
+  ], { skip: !uid || !isEmployerRole });
+  const userCompanyId = userCompanies?.[0]?.id || user?.companyId;
 
   // Use initialJob from server for instant hydration if it matches current id (by docId or slug)
   const hasValidInitialJob = Boolean(
@@ -211,13 +217,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
         }
 
         if (d) {
-          // Guard: only show publicly visible (active + approved) jobs
-          if (d.isActive !== true || d.status !== 'active') {
-            // Job exists but is pending/rejected — don't show details
-            setJob(null);
-            setLoading(false);
-            return;
-          }
+          // Note: If inactive/expired, render checks (isJobActuallyExpired & isPrivileged) will guard access.
 
           // If accessed by legacy docId and a slug exists, replace URL
           if (d.slug && id === docId && id !== d.slug) {
@@ -469,83 +469,18 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] text-[#111827]">
-        <Loader2 size={36} className="text-[#2563EB] animate-spin mb-4" />
-        <p className="text-sm text-slate-500">Loading job details...</p>
-      </div>
-    );
-  }
-
-  if (!job) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full bg-white rounded-3xl border border-gray-100 shadow-lg p-8 space-y-5">
-          {/* Icon */}
-          <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto">
-            <AlertTriangle size={32} className="text-amber-500" />
-          </div>
-
-          {/* Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold uppercase tracking-wider">
-            Job Posting Expired
-          </div>
-
-          <div>
-            <h2 className="text-xl font-black text-gray-900">This Job Has Expired</h2>
-            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-              This job posting is no longer active or may have been removed by the employer.
-              All candidate applications have been preserved.
-            </p>
-          </div>
-
-          {/* Admin Contact for Renewal */}
-          <div className="rounded-2xl p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-left space-y-2">
-            <p className="text-xs font-bold text-emerald-900">📢 Employer? Repost or Renew via Admin</p>
-            <p className="text-xs text-emerald-800 leading-relaxed">
-              Contact THENIJOBS Admin on WhatsApp to reactivate this job listing or upgrade your subscription plan.
-            </p>
-            <a
-              href="https://wa.me/919360519460?text=Hi%20THENIJOBS%20Admin%2C%20I%20want%20to%20renew%20my%20expired%20job%20posting.%20Please%20help."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-1 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
-            >
-              <MessageCircle size={13} />
-              Chat Admin: +91 93605 19460
-            </a>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2 justify-center pt-1">
-            <Link
-              href="/jobs"
-              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm"
-            >
-              Browse Active Jobs
-            </Link>
-            <Link
-              href="/employer/billing"
-              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:border-blue-300 hover:text-blue-700 transition-all"
-            >
-              Activate / Renew Plan
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const salaryStr = job.salaryMin && job.salaryMax
-    ? `₹${job.salaryMin.toLocaleString('en-IN')} - ₹${job.salaryMax.toLocaleString('en-IN')}`
-    : 'Salary Negotiable';
-
   // Calculate deadline urgency
   const getDeadlineInfo = () => {
-    if (!job.deadline || job.deadline === 'N/A') return { text: 'N/A', urgent: false, daysLeft: null };
+    if (!job?.deadline || job.deadline === 'N/A') return { text: 'N/A', urgent: false, daysLeft: null };
     try {
-      const parts = job.deadline.split('/');
-      const deadlineDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+      let deadlineDate: Date | null = null;
+      if (typeof job.deadline === 'string' && job.deadline.includes('/')) {
+        const parts = job.deadline.split('/');
+        deadlineDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+      } else {
+        deadlineDate = new Date(job.deadline);
+      }
+      if (!deadlineDate || isNaN(deadlineDate.getTime())) return { text: job.deadline, urgent: false, daysLeft: null };
       const now = new Date();
       const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       if (diffDays < 0) return { text: 'Expired', urgent: true, daysLeft: 0 };
@@ -559,6 +494,100 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
     }
   };
   const deadlineInfo = getDeadlineInfo();
+
+  const isJobActuallyExpired = Boolean(
+    initialJob?.isExpired ||
+    deadlineInfo.text === 'Expired' ||
+    (job && (job as any).status === 'expired') ||
+    (job && (job as any).isActive === false)
+  );
+
+  const isPostingEmployer = Boolean(
+    user &&
+    isEmployerRole &&
+    (
+      (userCompanyId && (userCompanyId === job?.companyId || userCompanyId === initialJob?.companyId)) ||
+      ((job as any)?.postedBy && (job as any)?.postedBy === uid)
+    )
+  );
+  const isPrivileged = isAdmin || isPostingEmployer;
+
+  if (loading || (isJobActuallyExpired && authLoading)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] text-[#111827]">
+        <Loader2 size={36} className="text-[#2563EB] animate-spin mb-4" />
+        <p className="text-sm text-slate-500">Loading job details...</p>
+      </div>
+    );
+  }
+
+  // Not found or removed — clean public page with no admin/renewal exposure
+  if (!job) {
+    return (
+      <main className="min-h-screen bg-[#F8FAFC] flex flex-col font-outfit text-[#111827]">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center my-auto py-20">
+          <div className="max-w-md w-full bg-white rounded-3xl border border-gray-100 shadow-sm p-8 space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto text-blue-600">
+              <Briefcase size={32} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-gray-900">Job Not Available</h1>
+              <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                This job posting is no longer available or may have been removed.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/jobs"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all shadow-sm w-full"
+              >
+                Browse All Active Jobs
+              </Link>
+            </div>
+          </div>
+        </div>
+        <BottomNav />
+      </main>
+    );
+  }
+
+  // Expired jobs are hidden from public website.
+  // ONLY Admin Portal / Admins and the posting Company (employer) can view this expired job.
+  if (isJobActuallyExpired && !isPrivileged) {
+    return (
+      <main className="min-h-screen bg-[#F8FAFC] flex flex-col font-outfit text-[#111827]">
+        <Header />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center my-auto py-20">
+          <div className="max-w-md w-full bg-white rounded-3xl border border-gray-100 shadow-sm p-8 space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto text-blue-600">
+              <Briefcase size={32} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-gray-900">Job Not Available</h1>
+              <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                This job posting is no longer active or is no longer accepting applications.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/jobs"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all shadow-sm w-full"
+              >
+                Browse All Active Jobs
+              </Link>
+            </div>
+          </div>
+        </div>
+        <BottomNav />
+      </main>
+    );
+  }
+
+  const salaryStr = job.salaryMin && job.salaryMax
+    ? `₹${job.salaryMin.toLocaleString('en-IN')} - ₹${job.salaryMax.toLocaleString('en-IN')}`
+    : 'Salary Negotiable';
+
   const isQuickResponder = companyResponseTime && ['< 24 hours', 'Within 24 hours', 'Same day', '< 1 day'].some(t => companyResponseTime.toLowerCase().includes(t.toLowerCase()));
 
   return (
@@ -566,16 +595,86 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
       <Header />
       {/* JSON-LD is now injected server-side in page.tsx for Google visibility */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-28 md:pb-12">
-        {/* Expired Job Banner */}
-        {initialJob?.isExpired && (
-          <div className="mt-4 mb-4 p-4 rounded-xl border-2 border-amber-200 bg-amber-50 flex items-start gap-3">
-            <AlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-amber-800">This job is no longer accepting applications</p>
-              <p className="text-xs text-amber-700 mt-1">{initialJob.expiredMessage || 'This job posting has expired or been closed.'}</p>
-              <Link href="/jobs" className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-blue-700 hover:text-blue-800">
-                Browse Active Jobs <ChevronRight size={12} />
-              </Link>
+        {/* Expired Job Banner for Admins */}
+        {isJobActuallyExpired && isAdmin && (
+          <div className="mt-4 mb-6 p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 bg-indigo-50/80 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-700">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                    Admin Preview · Expired Job
+                  </div>
+                  <h2 className="text-base font-bold text-gray-900">This Job Has Expired (Hidden from Public Website)</h2>
+                  <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                    This job is hidden from candidate search and public visitors. Only Admins and the posting company ({job.companyName}) can view it.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Link
+                  href="/admin/jobs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-sm"
+                >
+                  Manage in Admin Portal
+                </Link>
+                {job.whatsapp && (
+                  <a
+                    href={`https://wa.me/${job.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${job.companyName}, your job listing "${job.title}" on THENIJOBS has expired. Would you like to renew it? Contact us to reactivate.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
+                  >
+                    <MessageCircle size={14} /> WhatsApp Employer
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Expired Job Banner for Posting Employer */}
+        {isJobActuallyExpired && isPostingEmployer && (
+          <div className="mt-4 mb-6 p-4 sm:p-5 rounded-2xl border-2 border-amber-200 bg-amber-50/80 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-extrabold uppercase tracking-wider mb-1">
+                    Your Job Posting · Expired
+                  </div>
+                  <h2 className="text-base font-bold text-gray-900">This Job Has Expired</h2>
+                  <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                    This job is no longer visible to candidates on the public website. To reactivate it and resume receiving applications, renew your subscription or contact the THENIJOBS Admin.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Link
+                  href="/employer/billing"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm"
+                >
+                  Renew Plan
+                </Link>
+                <a
+                  href={`https://wa.me/919360519460?text=${encodeURIComponent(`Hi THENIJOBS Admin, I want to renew my expired job posting "${job.title}" (${job.companyName}). Please help.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
+                >
+                  <MessageCircle size={14} /> Contact Admin via WhatsApp
+                </a>
+                <Link
+                  href="/employer/jobs"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:border-gray-300 transition-all"
+                >
+                  My Jobs
+                </Link>
+              </div>
             </div>
           </div>
         )}
@@ -696,7 +795,11 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
 
               {/* Application CTA Row */}
               <div className="flex gap-3 mt-5 pt-5 border-t border-white/5">
-                {hasApplied ? (
+                {isJobActuallyExpired ? (
+                  <button disabled className="flex-1 py-3.5 rounded-xl bg-gray-100 border border-gray-200 text-gray-500 font-semibold text-sm cursor-not-allowed">
+                    Posting Expired (Applications Closed)
+                  </button>
+                ) : hasApplied ? (
                   <button disabled className="flex-1 py-3.5 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-400 font-semibold text-sm cursor-not-allowed">
                     Applied ✓
                   </button>
@@ -708,7 +811,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                     Apply Now
                   </button>
                 )}
-                {job.whatsapp && (
+                {!isJobActuallyExpired && job.whatsapp && (
                   <a
                     href={`https://wa.me/${job.whatsapp}?text=Hi, I am interested in the ${job.title} position at ${job.companyName}`}
                     target="_blank" rel="noopener noreferrer"
@@ -812,7 +915,11 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                 <div className="text-2xl font-bold text-gray-900">{salaryStr}</div>
                 <div className="text-xs text-gray-500">per month</div>
               </div>
-              {hasApplied ? (
+              {isJobActuallyExpired ? (
+                <button disabled className="w-full py-3.5 rounded-xl bg-gray-100 border border-gray-200 text-gray-500 font-semibold text-sm cursor-not-allowed mb-3">
+                  Posting Expired
+                </button>
+              ) : hasApplied ? (
                 <button disabled className="w-full py-3.5 rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-400 font-semibold text-sm cursor-not-allowed mb-3">
                   Applied ✓
                 </button>
@@ -821,7 +928,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                   Apply Now
                 </button>
               )}
-              {job.phone && (
+              {!isJobActuallyExpired && job.phone && (
                 <a
                   href={`tel:${job.phone}`}
                   className="w-full btn-outline-glass py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 mb-2"

@@ -276,6 +276,10 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
             plan={checkoutPlan}
             companyId={company.id}
             companyName={company.name}
+            companyAddress={company.address || (company.district ? `${company.district}, Tamil Nadu` : undefined)}
+            companyPhone={company.phone}
+            companyGst={company.gstNumber}
+            company={company}
             onSuccess={() => {
               setIsCheckoutOpen(false);
               window.location.reload();

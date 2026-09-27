@@ -13,6 +13,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { SITE_CONTACT } from '@/lib/constants';
 import { getReceiptGrowthSlogan } from '@/lib/branding/slogans';
+import { generatePaymentReceiptPDF, ReceiptData } from '@/lib/pdf/receiptGenerator';
 
 export interface PlanDetails {
   name: string;
@@ -31,6 +32,10 @@ interface PaymentCheckoutModalProps {
   plan: PlanDetails;
   companyId?: string;
   companyName?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyGst?: string;
+  company?: any;
   onSuccess?: () => void;
 }
 
@@ -55,6 +60,10 @@ export default function PaymentCheckoutModal({
   plan,
   companyId,
   companyName,
+  companyAddress,
+  companyPhone,
+  companyGst,
+  company,
   onSuccess,
 }: PaymentCheckoutModalProps) {
   const { user } = useAuth();
@@ -64,17 +73,7 @@ export default function PaymentCheckoutModal({
   const [loading, setLoading] = useState(false);
   const [paymentState, setPaymentState] = useState<'ready' | 'processing' | 'success' | 'failed'>('ready');
   const [errorMessage, setErrorMessage] = useState('');
-  const [transactionDetails, setTransactionDetails] = useState<{
-    receiptNo: string;
-    paymentId: string;
-    orderId: string;
-    amount: number;
-    planName: string;
-    date: string;
-    expiryDate: string;
-    billedTo: string;
-    email: string;
-  } | null>(null);
+  const [transactionDetails, setTransactionDetails] = useState<ReceiptData | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -229,17 +228,34 @@ export default function PaymentCheckoutModal({
       const exp = new Date();
       exp.setFullYear(now.getFullYear() + 1);
 
-      setTransactionDetails({
+      const formattedStartDate = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const formattedEndDate = exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const formattedDateTime = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      const resolvedAddress = companyAddress || company?.address 
+        ? `${company?.address || companyAddress}${company?.district ? ', ' + company.district : ''}, Tamil Nadu`
+        : (company?.district ? `${company.district}, Tamil Nadu` : 'Theni District, Tamil Nadu');
+
+      const receiptObj: ReceiptData = {
         receiptNo: `THENI-REC-${Date.now().toString().slice(-6)}`,
         paymentId: verifyData.paymentId || paymentId,
         orderId,
         amount: plan.price,
         planName: plan.name,
-        date: now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-        expiryDate: exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-        billedTo: companyName || user?.displayName || 'Customer',
-        email: user?.email || '',
-      });
+        planSlug: plan.slug,
+        date: formattedDateTime,
+        startDate: formattedStartDate,
+        expiryDate: formattedEndDate,
+        billedTo: companyName || company?.name || user?.displayName || 'Business Owner',
+        address: resolvedAddress,
+        phone: companyPhone || company?.phone || (user as any)?.phone || '',
+        gst: companyGst || company?.gstNumber || '',
+        email: user?.email || company?.email || '',
+        paymentMethod: 'Razorpay (UPI / NetBanking / Cards)',
+        status: 'PAID / ACTIVE',
+      };
+
+      setTransactionDetails(receiptObj);
 
       setPaymentState('success');
       toast.success('🎉 Subscription Activated!', `${plan.name} plan is now active for 1 full year.`);
@@ -256,156 +272,14 @@ export default function PaymentCheckoutModal({
   /** Direct Vector jsPDF Invoice Generator (100% Reliable across all mobile & desktop browsers) */
   const generateVectorReceiptPDF = () => {
     if (!transactionDetails) return;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    let y = 22;
-    const margin = 20;
-    const pageWidth = 210;
-
-    // Header Logo & Title
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(20);
-    pdf.setTextColor(37, 99, 235);
-    pdf.text('THENIJOBS', margin, y);
-    pdf.setFontSize(9);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('Official Platform Invoice & Payment Receipt', margin, y + 6);
-
-    // Paid Stamp
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.setTextColor(16, 185, 129);
-    pdf.text('✓ PAID / ACTIVE', pageWidth - margin, y, { align: 'right' });
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text(`Receipt: ${transactionDetails.receiptNo}`, pageWidth - margin, y + 6, { align: 'right' });
-    y += 18;
-
-    // Divider Line
-    pdf.setDrawColor(220, 220, 220);
-    pdf.line(margin, y, pageWidth - margin, y);
-    y += 10;
-
-    // Billed To & Dates
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.setTextColor(17, 24, 39);
-    pdf.text('Billed To:', margin, y);
-    pdf.text('Payment Information:', pageWidth / 2 + 10, y);
-    y += 5;
-
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
-    pdf.setTextColor(60, 60, 60);
-    pdf.text(transactionDetails.billedTo, margin, y);
-    pdf.text(`Date: ${transactionDetails.date}`, pageWidth / 2 + 10, y);
-    y += 5;
-    pdf.text(transactionDetails.email, margin, y);
-    pdf.text(`Payment Ref: ${transactionDetails.paymentId}`, pageWidth / 2 + 10, y);
-    y += 5;
-    pdf.text('Location: Theni District, Tamil Nadu', margin, y);
-    pdf.text(`Gateway: Razorpay 256-Bit SSL`, pageWidth / 2 + 10, y);
-    y += 12;
-
-    // Table Header
-    pdf.setFillColor(245, 247, 250);
-    pdf.rect(margin, y, pageWidth - margin * 2, 8, 'F');
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
-    pdf.setTextColor(17, 24, 39);
-    pdf.text('Description / Subscription Plan', margin + 4, y + 5.5);
-    pdf.text('Duration', pageWidth / 2 + 10, y + 5.5);
-    pdf.text('Amount', pageWidth - margin - 4, y + 5.5, { align: 'right' });
-    y += 14;
-
-    // Table Row
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9.5);
-    pdf.setTextColor(30, 30, 30);
-    pdf.text(`${transactionDetails.planName} Annual Subscription`, margin + 4, y);
-    pdf.text('1 Year Access', pageWidth / 2 + 10, y);
-    pdf.text(`₹${transactionDetails.amount.toLocaleString('en-IN')}`, pageWidth - margin - 4, y, { align: 'right' });
-    y += 5;
-    pdf.setFontSize(8);
-    pdf.setTextColor(120, 120, 120);
-    pdf.text(`Active until: ${transactionDetails.expiryDate}`, margin + 4, y);
-    y += 10;
-
-    // Total Line
-    pdf.setDrawColor(220, 220, 220);
-    pdf.line(margin, y, pageWidth - margin, y);
-    y += 6;
-
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.setTextColor(17, 24, 39);
-    pdf.text('Total Paid (INR):', pageWidth / 2 + 10, y);
-    pdf.setTextColor(16, 185, 129);
-    pdf.text(`₹${transactionDetails.amount.toLocaleString('en-IN')}`, pageWidth - margin - 4, y, { align: 'right' });
-    y += 16;
-
-    // Dynamic Enterprise Slogan
-    const slogan = getReceiptGrowthSlogan(plan.slug, transactionDetails.receiptNo);
-    pdf.setFont('helvetica', 'italic');
-    pdf.setFontSize(8.5);
-    pdf.setTextColor(37, 99, 235);
-    pdf.text(`"${slogan}"`, pageWidth / 2, y, { align: 'center' });
-    y += 10;
-
-    // Official Footer Notice
-    pdf.setDrawColor(240, 240, 240);
-    pdf.setFillColor(248, 250, 252);
-    pdf.rect(margin, y, pageWidth - margin * 2, 28, 'FD');
-
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8.5);
-    pdf.setTextColor(50, 50, 50);
-    pdf.text('THENIJOBS Official Customer Support', margin + 4, y + 6);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text(`Candidate & Employer Support: ${SITE_CONTACT.phone1}  |  WhatsApp: ${SITE_CONTACT.whatsapp}`, margin + 4, y + 12);
-    pdf.text(`Email: ${SITE_CONTACT.email}  |  Official Portal: https://thenijobs.com`, margin + 4, y + 17);
-    pdf.text('Address: North Street, A.M. Patty, Uthamapalayam, Theni District, Tamil Nadu - 625533', margin + 4, y + 22);
-
+    const pdf = generatePaymentReceiptPDF(transactionDetails);
     pdf.save(`THENIJOBS_Receipt_${transactionDetails.receiptNo}.pdf`);
     toast.success('🎉 Official Receipt PDF Downloaded Successfully!');
   };
 
   /** Multi-Layer PDF Download */
   const handleDownloadReceiptPDF = async () => {
-    toast.info('Generating official payment receipt PDF...');
-    try {
-      if (!receiptRef.current) {
-        generateVectorReceiptPDF();
-        return;
-      }
-      const element = receiptRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#FFFFFF',
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pageWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.addImage(imgData, 'JPEG', 10, 15, imgWidth, imgHeight, '', 'FAST');
-      pdf.save(`THENIJOBS_Receipt_${transactionDetails?.receiptNo || 'Payment'}.pdf`);
-      toast.success('🎉 Receipt PDF Downloaded!');
-    } catch (err) {
-      console.warn('Canvas PDF fallback to Vector PDF engine:', err);
-      generateVectorReceiptPDF();
-    }
+    generateVectorReceiptPDF();
   };
 
   return (
@@ -546,54 +420,81 @@ export default function PaymentCheckoutModal({
               {/* Printable Slip Container */}
               <div
                 ref={receiptRef}
-                className="bg-white border-2 border-emerald-300 rounded-3xl p-5 text-gray-900 space-y-4 font-outfit shadow-sm"
+                className="bg-white border-2 border-emerald-300 rounded-3xl p-5 text-gray-900 space-y-4 font-outfit shadow-sm text-xs"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between border-b border-gray-200 pb-3">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-black text-base text-slate-900">THENI<span className="text-blue-600">JOBS</span></span>
-                      <CheckCircle2 size={16} className="text-emerald-600" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 font-black text-sm flex items-center justify-center border border-blue-200 shrink-0">
+                      TJ
                     </div>
-                    <p className="text-[10px] text-gray-500">Official Subscription Invoice &amp; Payment Receipt</p>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-black text-base text-slate-900">THENI<span className="text-blue-600">JOBS</span></span>
+                        <CheckCircle2 size={16} className="text-emerald-600" />
+                      </div>
+                      <p className="text-[10px] text-gray-500">Official Tax Invoice &amp; Payment Receipt</p>
+                      <p className="text-[9px] text-gray-400 mt-0.5">North Street, A.M. Patty, Uthamapalayam, Theni District, Tamil Nadu - 625533</p>
+                    </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                      PAID / ACTIVE
+                      ✓ PAID / ACTIVE
                     </span>
-                    <p className="text-[10px] text-gray-500 font-mono mt-0.5 font-bold">{transactionDetails.receiptNo}</p>
+                    <p className="text-[10px] text-gray-600 font-mono mt-1 font-bold">{transactionDetails.receiptNo}</p>
+                    <p className="text-[9px] text-gray-400 mt-0.5">{transactionDetails.date}</p>
                   </div>
                 </div>
 
-                {/* Details Grid */}
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                {/* Details Grid: Billed To vs Dates */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-200 text-xs">
                   <div>
-                    <span className="text-[10px] text-gray-400 block font-bold uppercase">Billed To:</span>
-                    <p className="font-bold text-gray-900">{transactionDetails.billedTo}</p>
-                    <p className="text-[11px] text-gray-500">{transactionDetails.email}</p>
+                    <span className="text-[10px] text-gray-500 block font-bold uppercase tracking-wider">Billed To (Employer):</span>
+                    <p className="font-bold text-gray-900 text-sm mt-0.5">{transactionDetails.billedTo}</p>
+                    <p className="text-[11px] text-gray-600 mt-0.5">{transactionDetails.address}</p>
+                    {transactionDetails.email && <p className="text-[10px] text-gray-500 mt-0.5">Email: {transactionDetails.email}</p>}
+                    {transactionDetails.phone && <p className="text-[10px] text-gray-500">Phone: {transactionDetails.phone}</p>}
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-gray-400 block font-bold uppercase">Payment Date:</span>
-                    <p className="font-semibold text-gray-800 text-[11px]">{transactionDetails.date}</p>
+
+                  <div className="space-y-1 sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-gray-200">
+                    <div>
+                      <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Subscription Validity:</span>
+                      <p className="font-bold text-blue-700 text-xs mt-0.5">{transactionDetails.planName} (1 Year)</p>
+                    </div>
+                    <div className="flex sm:justify-end gap-2 text-[11px]">
+                      <span className="text-gray-500">Start Date:</span>
+                      <strong className="text-gray-900">{transactionDetails.startDate}</strong>
+                    </div>
+                    <div className="flex sm:justify-end gap-2 text-[11px]">
+                      <span className="text-gray-500">Ending Date:</span>
+                      <strong className="text-red-600">{transactionDetails.expiryDate}</strong>
+                    </div>
+                    <p className="text-[10px] text-emerald-700 font-semibold">365 Days Active Access</p>
                   </div>
                 </div>
 
                 {/* Plan Line Items Table */}
-                <div className="rounded-2xl bg-gray-50 border border-gray-200 p-3.5 space-y-2 text-xs">
-                  <div className="flex justify-between font-bold text-gray-700 border-b border-gray-200 pb-1.5">
-                    <span>Description</span>
+                <div className="rounded-2xl bg-white border border-gray-200 p-3.5 space-y-2 text-xs">
+                  <div className="flex justify-between font-bold text-gray-700 border-b border-gray-200 pb-1.5 text-[11px]">
+                    <span>Item &amp; Description</span>
                     <span>Amount</span>
                   </div>
                   <div className="flex justify-between font-semibold text-gray-900">
                     <div>
-                      <p>{transactionDetails.planName} (1 Year Annual Access)</p>
-                      <p className="text-[10px] font-normal text-gray-500">Valid until: {transactionDetails.expiryDate}</p>
+                      <p>{transactionDetails.planName} Annual Subscription</p>
+                      <p className="text-[10px] font-normal text-gray-500">
+                        Validity: {transactionDetails.startDate} to {transactionDetails.expiryDate} (1 Year)
+                      </p>
                     </div>
                     <span>₹{transactionDetails.amount.toLocaleString('en-IN')}</span>
                   </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-200 text-xs text-gray-500">
+                    <span>GST &amp; Platform Charges</span>
+                    <span className="text-emerald-600 font-semibold">Included</span>
+                  </div>
                   <div className="flex justify-between pt-2 border-t border-gray-200 font-black text-sm text-slate-900">
-                    <span>Total Paid</span>
-                    <span className="text-emerald-700 font-black">₹{transactionDetails.amount.toLocaleString('en-IN')}</span>
+                    <span>Total Amount Paid</span>
+                    <span className="text-emerald-700 font-black text-base">₹{transactionDetails.amount.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
 
@@ -607,7 +508,7 @@ export default function PaymentCheckoutModal({
                 {/* Payment Reference & Support */}
                 <div className="text-[10px] text-gray-500 pt-1 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
                   <span>Payment Ref: <strong className="font-mono text-gray-800">{transactionDetails.paymentId}</strong></span>
-                  <span>Official Support: <strong>{SITE_CONTACT.phone1}</strong></span>
+                  <span>Support: <strong>{SITE_CONTACT.phone1}</strong></span>
                 </div>
               </div>
 

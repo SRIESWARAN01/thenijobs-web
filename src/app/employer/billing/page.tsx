@@ -4,15 +4,37 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
-import { CreditCard, Check, ShieldCheck, Zap, Shield, Crown, Building2, Loader2, Star, Sparkles, ArrowRight, MessageCircle, PhoneCall, ShieldAlert } from 'lucide-react';
+import { 
+  CreditCard, 
+  Check, 
+  ShieldCheck, 
+  Zap, 
+  Shield, 
+  Crown, 
+  Building2, 
+  Loader2, 
+  Star, 
+  Sparkles, 
+  ArrowRight, 
+  MessageCircle, 
+  PhoneCall, 
+  ShieldAlert,
+  Download,
+  FileText,
+  Calendar
+} from 'lucide-react';
 import Link from 'next/link';
 import { SUBSCRIPTION_PLANS, SITE_CONTACT } from '@/lib/constants';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 import { PageHeader } from '@/components/dashboard';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
+import { generatePaymentReceiptPDF, ReceiptData } from '@/lib/pdf/receiptGenerator';
+import { toDate } from '@/lib/firestoreTime';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function EmployerBillingPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [selectedPlan, setSelectedPlan] = useState<PlanDetails | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -36,6 +58,12 @@ export default function EmployerBillingPage() {
     where('isActive', '==', true)
   ], { skip: !companyId });
 
+  // 4. Fetch payment history records
+  const { data: payments } = useCollection<any>('payments', [
+    where('companyId', '==', companyId || ''),
+    where('status', '==', 'captured')
+  ], { skip: !companyId });
+
   const activeSub = subscriptions[0];
   const currentPlanSlug = activeSub ? activeSub.plan : (company?.subscriptionPlan || 'free');
   const currentPlan = SUBSCRIPTION_PLANS.find(p => p.slug === currentPlanSlug) || SUBSCRIPTION_PLANS[0];
@@ -52,6 +80,61 @@ export default function EmployerBillingPage() {
       features: plan.features,
     });
     setIsCheckoutOpen(true);
+  };
+
+  /**
+   * Generates and downloads official publication-quality A4 Tax Invoice / Payment Receipt PDF
+   * including Logo, Platform & Company Address, Amount, Start Date, Ending Date, and verification details.
+   */
+  const handleDownloadReceipt = (paymentItem?: any) => {
+    try {
+      const pay = paymentItem || payments?.[0];
+      const targetPlanSlug = pay?.plan || company?.subscriptionPlan || (subState.isPaidActive ? subState.plan : 'standard');
+      const targetPlan = SUBSCRIPTION_PLANS.find(p => p.slug === targetPlanSlug) || currentPlan;
+      const amount = pay?.amount || (targetPlan ? targetPlan.price : 1800);
+
+      const now = new Date();
+      const startDateObj = pay?.createdAt ? (toDate(pay.createdAt) || now) : (subState.subscriptionStartDate || now);
+      const endDateObj = subState.subscriptionEndDate || new Date(startDateObj.getTime() + 365 * 24 * 60 * 60 * 1000);
+
+      const formattedStartDate = startDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const formattedEndDate = endDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const formattedDateTime = startDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+      const resolvedAddress = company?.address
+        ? `${company.address}${company.district ? ', ' + company.district : ''}, Tamil Nadu`
+        : (company?.district ? `${company.district}, Tamil Nadu` : 'Theni District, Tamil Nadu');
+
+      const receiptNo = pay?.orderId
+        ? `THENI-REC-${pay.orderId.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase()}`
+        : `THENI-REC-${(companyId || 'BILL').slice(-6).toUpperCase()}`;
+
+      const receiptData: ReceiptData = {
+        receiptNo,
+        paymentId: pay?.paymentId || 'pay_online_verified',
+        orderId: pay?.orderId || `order_${companyId || 'SUB'}`,
+        amount,
+        planName: targetPlan.name,
+        planSlug: targetPlan.slug,
+        date: formattedDateTime,
+        startDate: formattedStartDate,
+        expiryDate: formattedEndDate,
+        billedTo: company?.name || user?.displayName || 'Business Owner',
+        address: resolvedAddress,
+        phone: company?.phone || (user as any)?.phone || '',
+        gst: company?.gstNumber || '',
+        email: user?.email || company?.email || '',
+        paymentMethod: pay?.paymentMethod || 'Razorpay 256-Bit SSL (UPI / Cards)',
+        status: 'PAID / ACTIVE',
+      };
+
+      const doc = generatePaymentReceiptPDF(receiptData);
+      doc.save(`THENIJOBS_Receipt_${receiptData.receiptNo}.pdf`);
+      toast.success('🎉 Official Receipt Downloaded!', `${targetPlan.name} PDF invoice saved.`);
+    } catch (err: any) {
+      console.error('Receipt download error:', err);
+      toast.error('Download Failed', 'Could not generate receipt PDF. Please try again.');
+    }
   };
 
   if (!companyId && !companyLoading) {
@@ -101,10 +184,16 @@ export default function EmployerBillingPage() {
                   <p className="text-xs text-gray-500 mt-0.5">
                     {currentPlan.price === 0 ? 'Free tier account' : `₹${currentPlan.price.toLocaleString('en-IN')}/year (~₹${currentPlan.dailyEquivalent}/day)`}
                   </p>
+                  {subState.isPaidActive && subState.subscriptionEndDate && (
+                    <p className="text-[11px] text-emerald-700 font-semibold mt-1 flex items-center gap-1.5">
+                      <Calendar size={13} />
+                      <span>Valid until {subState.subscriptionEndDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
                   <p className="text-[10px] text-slate-500 font-bold uppercase">Active Jobs</p>
                   <p className="text-base font-extrabold text-gray-900">{jobs.length}</p>
@@ -115,6 +204,16 @@ export default function EmployerBillingPage() {
                     {subState.isPaidActive ? 'Active' : subState.isTrialActive ? `Trial (${subState.trialDaysRemaining}d)` : 'Trial Expired'}
                   </p>
                 </div>
+                {(subState.isPaidActive || (payments && payments.length > 0)) && (
+                  <button
+                    onClick={() => handleDownloadReceipt()}
+                    className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-sm cursor-pointer"
+                    title="Download Official Tax Invoice / Payment Receipt (PDF)"
+                  >
+                    <Download size={14} />
+                    <span>Download Receipt (PDF)</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -200,7 +299,7 @@ export default function EmployerBillingPage() {
                     ) : (
                       <button
                         onClick={() => handleOpenCheckout(plan)}
-                        className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm"
+                        className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
                       >
                         Upgrade to {plan.name}
                       </button>
@@ -209,6 +308,112 @@ export default function EmployerBillingPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Payment Receipts & Tax Invoices Section */}
+          <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <FileText size={18} className="text-blue-600" />
+                  <span>Payment Receipts &amp; Tax Invoices</span>
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Official GST-compliant tax invoices with logo, registered address, start date, ending date, and payment confirmation.
+                </p>
+              </div>
+              {(subState.isPaidActive || (payments && payments.length > 0)) && (
+                <button
+                  onClick={() => handleDownloadReceipt()}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-all cursor-pointer shrink-0"
+                >
+                  <Download size={14} />
+                  <span>Download Latest Receipt (PDF)</span>
+                </button>
+              )}
+            </div>
+
+            {payments && payments.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                      <th className="py-2.5 px-3">Receipt / Order ID</th>
+                      <th className="py-2.5 px-3">Plan</th>
+                      <th className="py-2.5 px-3">Amount</th>
+                      <th className="py-2.5 px-3">Start Date</th>
+                      <th className="py-2.5 px-3">Ending Date</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {payments.map((pay: any) => {
+                      const payPlan = SUBSCRIPTION_PLANS.find(p => p.slug === pay.plan) || currentPlan;
+                      const payDate = pay.createdAt ? (toDate(pay.createdAt) || new Date()) : new Date();
+                      const payEnd = subState.subscriptionEndDate || new Date(payDate.getTime() + 365 * 24 * 60 * 60 * 1000);
+                      return (
+                        <tr key={pay.id || pay.orderId} className="hover:bg-gray-50/70 transition-colors">
+                          <td className="py-3 px-3 font-mono font-bold text-gray-900">
+                            {pay.orderId || pay.paymentId || 'PAY-REF'}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-gray-900">
+                            {pay.planName || payPlan.name}
+                          </td>
+                          <td className="py-3 px-3 font-bold text-gray-900">
+                            ₹{(pay.amount || payPlan.price).toLocaleString('en-IN')}
+                          </td>
+                          <td className="py-3 px-3 text-gray-600">
+                            {payDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="py-3 px-3 text-gray-600">
+                            {payEnd.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
+                              PAID
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              onClick={() => handleDownloadReceipt(pay)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold transition-all shadow-xs cursor-pointer"
+                            >
+                              <Download size={12} />
+                              <span>Download PDF</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : subState.isPaidActive ? (
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div>
+                  <p className="font-bold text-gray-900">{currentPlan.name} Annual Subscription Active</p>
+                  <p className="text-gray-500 text-[11px] mt-0.5">
+                    Valid from {subState.subscriptionStartDate?.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) || 'Activation'} until {subState.subscriptionEndDate?.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) || '1 Year'}.
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDownloadReceipt()}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold transition-all shadow-xs cursor-pointer"
+                >
+                  <Download size={13} />
+                  <span>Download Official Receipt (PDF)</span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-gray-50/70 border border-dashed border-gray-200 text-center">
+                <FileText size={28} className="mx-auto text-gray-400 mb-2" />
+                <p className="text-xs font-semibold text-gray-700">No Payment Invoices Yet</p>
+                <p className="text-[11px] text-gray-500 mt-1 max-w-sm mx-auto">
+                  When you activate any paid plan, your official GST-compliant tax invoices with logo, registered address, start date &amp; ending date will be available here for instant download anytime.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* WhatsApp Support & Offline Payment Assistance Card */}
@@ -257,6 +462,10 @@ export default function EmployerBillingPage() {
           plan={selectedPlan}
           companyId={companyId}
           companyName={company?.name}
+          companyAddress={company?.address || (company?.district ? `${company.district}, Tamil Nadu` : undefined)}
+          companyPhone={company?.phone}
+          companyGst={company?.gstNumber}
+          company={company || undefined}
           onSuccess={() => {
             refresh?.();
           }}
@@ -265,3 +474,4 @@ export default function EmployerBillingPage() {
     </div>
   );
 }
+

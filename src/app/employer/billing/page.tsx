@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
-import { CreditCard, Check, ShieldCheck, Zap, Shield, Crown, Building2, Loader2, Star, Sparkles, ArrowRight } from 'lucide-react';
+import { CreditCard, Check, ShieldCheck, Zap, Shield, Crown, Building2, Loader2, Star, Sparkles, ArrowRight, MessageCircle, PhoneCall, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
-import { SUBSCRIPTION_PLANS } from '@/lib/constants';
+import { SUBSCRIPTION_PLANS, SITE_CONTACT } from '@/lib/constants';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 import { PageHeader } from '@/components/dashboard';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 
 export default function EmployerBillingPage() {
   const { user } = useAuth();
@@ -38,6 +39,7 @@ export default function EmployerBillingPage() {
   const activeSub = subscriptions[0];
   const currentPlanSlug = activeSub ? activeSub.plan : (company?.subscriptionPlan || 'free');
   const currentPlan = SUBSCRIPTION_PLANS.find(p => p.slug === currentPlanSlug) || SUBSCRIPTION_PLANS[0];
+  const subState = useSubscriptionStatus(company, user);
 
   const loading = companyLoading || subLoading;
 
@@ -109,11 +111,39 @@ export default function EmployerBillingPage() {
                 </div>
                 <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-center min-w-[100px]">
                   <p className="text-[10px] text-slate-500 font-bold uppercase">Status</p>
-                  <p className="text-base font-extrabold text-emerald-600">Active</p>
+                  <p className={`text-base font-extrabold ${subState.isPaidActive ? 'text-emerald-600' : subState.isTrialActive ? 'text-amber-600' : 'text-red-600'}`}>
+                    {subState.isPaidActive ? 'Active' : subState.isTrialActive ? `Trial (${subState.trialDaysRemaining}d)` : 'Trial Expired'}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Trial Expired Alert Banner */}
+          {subState.isTrialExpired && !subState.isPaidActive && (
+            <div className="rounded-3xl p-6 bg-red-50 border border-red-200 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <ShieldAlert size={28} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-red-950">Your 15-Day Free Trial Has Ended</h3>
+                  <p className="text-xs text-red-700 mt-0.5">
+                    Select any plan below to reactivate your employer services, post jobs, and bring your company website back online.
+                  </p>
+                </div>
+              </div>
+              <a
+                href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`Hi THENIJOBS Support, my company "${company?.name || 'Company'}" 15-day free trial has ended. I need assistance with plan activation.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                <MessageCircle size={15} />
+                <span>WhatsApp Support</span>
+              </a>
+            </div>
+          )}
 
           {/* Pricing Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -179,6 +209,42 @@ export default function EmployerBillingPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* WhatsApp Support & Offline Payment Assistance Card */}
+          <div className="rounded-3xl p-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <MessageCircle size={26} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-emerald-950">
+                  Need Help Choosing a Plan or Prefer Direct UPI / Bank Transfer?
+                </h3>
+                <p className="text-xs text-emerald-800 mt-1 max-w-xl leading-relaxed">
+                  Our local Theni support team is available on WhatsApp to assist with instant manual activations, corporate invoices, GST billing, and plan recommendations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+              <a
+                href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`Hello THENIJOBS Support, I have a question regarding employer subscription plans for "${company?.name || 'my business'}".`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                <MessageCircle size={16} />
+                <span>Chat on WhatsApp</span>
+              </a>
+              <a
+                href={`tel:${SITE_CONTACT.phone1Raw}`}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 font-bold text-xs transition-all"
+              >
+                <PhoneCall size={15} />
+                <span>Call Support</span>
+              </a>
+            </div>
           </div>
         </>
       )}

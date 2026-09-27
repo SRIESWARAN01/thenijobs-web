@@ -401,11 +401,13 @@ To continue using THENIJOBS services including:
 • Business Profile
 • Employer Dashboard
 
-please complete your Standard Plan payment.
+please choose and activate any paid plan (Basic ₹999/yr, Standard ₹1,800/yr, Premium ₹3,500/yr, or Enterprise ₹5,000/yr).
 
 Payment Link: ${payLink}
 
-After successful payment, your account and services can be reactivated.
+Need help or want to pay via UPI / Bank transfer? Reply directly to this WhatsApp message or call +91 93605 19460.
+
+After successful payment, your account and services can be reactivated immediately.
 
 Thank you,
 THENIJOBS Team`;

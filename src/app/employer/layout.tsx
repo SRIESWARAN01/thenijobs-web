@@ -9,6 +9,7 @@ import {
   LogOut, ChevronLeft, ChevronRight, Menu, X, Bell,
   Plus, TrendingUp, Settings, Key, BadgeCheck,
   Clock, AlertTriangle, CheckCircle, ShieldAlert,
+  PhoneCall, Check, Zap, ArrowRight, MessageCircle,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -17,6 +18,8 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
+import { SUBSCRIPTION_PLANS, SITE_CONTACT } from '@/lib/constants';
+import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 
 const EMPLOYER_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/employer/dashboard' },
@@ -49,6 +52,20 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<PlanDetails | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  const handleOpenCheckout = (plan: (typeof SUBSCRIPTION_PLANS)[number]) => {
+    setCheckoutPlan({
+      name: plan.name,
+      slug: plan.slug,
+      price: plan.price,
+      dailyEquivalent: plan.dailyEquivalent,
+      features: plan.features,
+      badge: plan.badge,
+    });
+    setIsCheckoutOpen(true);
+  };
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
@@ -102,44 +119,169 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   }
 
   // ── Suspended / Trial Expired Screen ──────────────────────────────────────
-  if (company && (subState.isSuspended || subState.isTrialExpired) && !subState.isPaidActive) {
+  if (company && (subState.isSuspended || subState.isTrialExpired) && !subState.isPaidActive && pathname !== '/employer/billing') {
+    const whatsappSupportUrl = `https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(
+      `Hello THENIJOBS Support, my business "${company.name || 'Company'}" 15-day free trial has ended. I would like to activate a paid subscription plan.`
+    )}`;
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-rose-50 p-4">
-        <div className="max-w-lg w-full bg-white rounded-3xl border border-red-200 shadow-xl p-8 text-center space-y-5">
-          <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto">
-            <ShieldAlert size={32} className="text-red-600" />
-          </div>
-          <div>
-            <span className="px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-extrabold uppercase tracking-wider">
-              🚫 Trial Expired — Upgrade Required
-            </span>
-            <h1 className="text-2xl font-black text-gray-900 mt-3">Your 15-Day Free Trial Has Ended</h1>
-            <p className="text-sm text-gray-600 mt-2 leading-relaxed">
-              Your employer dashboard and company website have been temporarily suspended.
-              All your data is safe. Activate a paid plan to restore access instantly.
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-red-50/25 to-slate-100 py-10 px-4 flex items-center justify-center">
+        <div className="max-w-5xl w-full bg-white rounded-3xl border border-red-200 shadow-2xl p-6 sm:p-10 space-y-8">
+          {/* Header */}
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto text-red-600 shadow-inner">
+              <ShieldAlert size={34} />
+            </div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-extrabold uppercase tracking-wider">
+              <span>🚫</span> 15-Day Free Trial Has Ended
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Your 15-Day Free Trial Has Ended
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              Your employer dashboard and company website for <strong>&quot;{company.name}&quot;</strong> are temporarily suspended.
+              All your data, jobs, and candidate records are safe.
+              <strong> Choose any one plan below</strong> to reactivate instantly.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-left">
-            <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
-              <p className="text-xs font-bold text-slate-600 mb-1">Standard Plan</p>
-              <p className="text-xl font-black text-gray-900">₹1,800<span className="text-xs font-normal text-gray-500">/year</span></p>
-              <p className="text-[10px] text-gray-500 mt-1">10 jobs · 20 products · Full website</p>
+
+          {/* All 4 Plans Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {SUBSCRIPTION_PLANS.map((plan) => {
+              const isPopular = plan.recommended;
+              return (
+                <div
+                  key={plan.slug}
+                  className={`rounded-2xl p-4 sm:p-5 border transition-all flex flex-col justify-between relative bg-white ${
+                    isPopular
+                      ? 'border-blue-600 ring-2 ring-blue-600/30 shadow-lg -translate-y-1'
+                      : 'border-gray-200 shadow-sm hover:border-gray-300 hover:shadow-md'
+                  }`}
+                >
+                  {plan.badge && (
+                    <span className={`absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold shadow-xs whitespace-nowrap ${
+                      isPopular ? 'bg-blue-600 text-white' : 'bg-slate-800 text-white'
+                    }`}>
+                      {plan.badge}
+                    </span>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="text-center pt-1">
+                      <h3 className="text-base font-bold text-gray-900">{plan.name}</h3>
+                      <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{plan.bestFor}</p>
+                    </div>
+
+                    <div className={`text-center py-2.5 rounded-xl border ${isPopular ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}>
+                      <div className="text-2xl font-black text-gray-900">
+                        ₹{plan.price.toLocaleString('en-IN')}
+                        <span className="text-xs text-gray-500 font-normal"> /yr</span>
+                      </div>
+                      <div className="text-[11px] font-semibold text-emerald-600 mt-0.5">
+                        ~₹{plan.dailyEquivalent}/day <span className="text-gray-400 font-normal">(₹{plan.monthlyEquivalent}/mo)</span>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-1.5 text-xs text-gray-600 pt-1">
+                      {plan.features.slice(0, 4).map((feat, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5 text-[11px]">
+                          <Check size={13} className="text-emerald-600 shrink-0 mt-0.5" strokeWidth={2.5} />
+                          <span className="line-clamp-2">{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="pt-4 mt-3 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCheckout(plan)}
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
+                        isPopular
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-slate-900 text-white hover:bg-slate-800'
+                      }`}
+                    >
+                      <span>Pay ₹{plan.price.toLocaleString('en-IN')}</span>
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* WhatsApp & Support Contact Banner */}
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 text-left">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <MessageCircle size={26} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-emerald-950">
+                  Need Help or Prefer Direct WhatsApp / UPI Activation?
+                </h4>
+                <p className="text-xs text-emerald-800 mt-0.5">
+                  Chat directly with our Theni support team on WhatsApp for manual activation, UPI payment guidance, or questions.
+                </p>
+              </div>
             </div>
-            <div className="bg-blue-50 rounded-2xl p-3 border border-blue-200">
-              <p className="text-xs font-bold text-blue-600 mb-1">Premium Plan ⭐</p>
-              <p className="text-xl font-black text-gray-900">₹3,500<span className="text-xs font-normal text-gray-500">/year</span></p>
-              <p className="text-[10px] text-gray-500 mt-1">50 jobs · 100 products · All features</p>
+
+            <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
+              <a
+                href={whatsappSupportUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                <MessageCircle size={15} />
+                <span>Chat on WhatsApp</span>
+              </a>
+              <a
+                href={`tel:${SITE_CONTACT.phone1Raw}`}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 font-bold text-xs transition-all"
+                title="Call Support"
+              >
+                <PhoneCall size={14} />
+                <span className="hidden sm:inline">Call Support</span>
+              </a>
             </div>
           </div>
-          <Link href="/employer/billing"
-            className="block w-full py-3 rounded-2xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-all shadow-sm">
-            💳 Activate Paid Plan Now
-          </Link>
-          <button onClick={() => { signOut(auth); router.push('/'); }}
-            className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all">
-            <LogOut size={14} /> Sign Out
-          </button>
+
+          {/* Secondary Footer actions */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-gray-500 border-t border-gray-100">
+            <Link
+              href="/employer/billing"
+              className="font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              <span>View Full Feature Comparison Table &amp; Billing History</span>
+              <ArrowRight size={13} />
+            </Link>
+
+            <button
+              onClick={() => { signOut(auth); router.push('/'); }}
+              className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 font-semibold"
+            >
+              <LogOut size={13} />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
+
+        {/* Embedded Checkout Modal */}
+        {checkoutPlan && (
+          <PaymentCheckoutModal
+            isOpen={isCheckoutOpen}
+            onClose={() => setIsCheckoutOpen(false)}
+            plan={checkoutPlan}
+            companyId={company.id}
+            companyName={company.name}
+            onSuccess={() => {
+              setIsCheckoutOpen(false);
+              window.location.reload();
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -294,10 +436,21 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
                 )}
               </p>
             </div>
-            <Link href="/employer/billing"
-              className="shrink-0 px-3 py-1 rounded-lg bg-white text-orange-600 text-[11px] font-bold hover:bg-orange-50 transition-all">
-              💳 Pay Now — ₹1,800/year
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/employer/billing"
+                className="shrink-0 px-3 py-1 rounded-lg bg-white text-orange-600 text-[11px] font-bold hover:bg-orange-50 transition-all">
+                💳 Choose a Plan (from ₹999/yr)
+              </Link>
+              <a
+                href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`Hi THENIJOBS Support, I have questions regarding plans for my business "${company?.name || 'Company'}".`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition-all flex items-center gap-1 shadow-xs"
+              >
+                <MessageCircle size={12} />
+                <span>WhatsApp</span>
+              </a>
+            </div>
           </div>
         )}
 
@@ -334,6 +487,20 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
         {/* Content */}
         <main className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8">{children}</main>
       </div>
+
+      {checkoutPlan && (
+        <PaymentCheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          plan={checkoutPlan}
+          companyId={company?.id}
+          companyName={company?.name}
+          onSuccess={() => {
+            setIsCheckoutOpen(false);
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

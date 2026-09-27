@@ -77,11 +77,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/marketplace`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE}/businesses`, changeFrequency: 'daily', priority: 0.85 },
     { url: `${BASE}/daily-jobs`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${BASE}/ambassador`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/about`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/pricing`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE}/terms`, changeFrequency: 'monthly', priority: 0.4 },
+    { url: `${BASE}/cookies`, changeFrequency: 'monthly', priority: 0.3 },
   ];
 
   // Location landing pages (/jobs-in-theni, /jobs-in-cumbum, etc.)

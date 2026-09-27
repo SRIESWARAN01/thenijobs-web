@@ -748,10 +748,43 @@ service cloud.firestore {
         request.resource.data.errorMessage.size() <= 2000;
     }
 
-    // ===== PAYMENTS (RULES-1) — written only by a server identity; none exists today (D-HOSTING) =====
+    // ===== PAYMENTS (RULES-1) =====
+    // Written only by server identity (Razorpay verify/webhook) or admin.
+    // Read allowed for admin or the user/company who made the payment.
     match /payments/{paymentId} {
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          (resource.data.companyId != '' && isCompanyOwner(resource.data.companyId))
+        )
+      );
+      allow update, delete: if isAdmin();
       allow create: if false;
+    }
+
+    // ===== AMBASSADORS & REFERRAL NETWORK =====
+    match /ambassadors/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin() ||
+        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'totalReferrals', 'businessesReferred', 'pendingPayoutINR', 'totalEarnedINR', 'updatedAt'
+        ]));
+      allow delete: if isAdmin();
+    }
+
+    // ===== AMBASSADOR REFERRALS =====
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && (resource.data.ambassadorUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['ambassadorUid', 'ambassadorCode', 'companyId']);
+      allow update, delete: if isAdmin();
+    }
+
+    // ===== AMBASSADOR PAYOUT REQUESTS =====
+    match /payoutRequests/{payoutId} {
+      allow read: if isAuthenticated() && (resource.data.ambassadorUid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.ambassadorUid == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
 
     // ===== AI USAGE LOGS (RULES-1) — written only by a server identity; none exists today (D-HOSTING) =====

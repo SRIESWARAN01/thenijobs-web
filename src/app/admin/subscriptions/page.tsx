@@ -218,6 +218,20 @@ export default function SubscriptionsPage() {
     window.open(url, '_blank');
   }, []);
 
+  const handleRenewSubscription = useCallback(async (sub: SubscriptionDoc) => {
+    const cId = sub.companyId || sub.userId || sub.id;
+    if (!cId) { toast.error('Cannot renew', 'No company ID found on this subscription.'); return; }
+    setActionLoading(`renew_${sub.id}`);
+    try {
+      await manualActivateSubscription(cId, (sub.plan as any) || 'standard', currentUser?.uid || 'admin', 'Admin renewal via subscriptions panel');
+      toast.success('Subscription Renewed! 🌟', `${sub.businessName || sub.companyName || 'Company'} renewed for 1 year on ${sub.plan || 'standard'} plan.`);
+    } catch (err: any) {
+      toast.error('Renewal failed', err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  }, [currentUser, toast]);
+
   const subColumns = useMemo<Column<SubscriptionDoc>[]>(() => [
     {
       key: 'business',
@@ -369,14 +383,25 @@ export default function SubscriptionsPage() {
             emptyTitle="No subscriptions match this filter"
             emptyDescription="Clear the plan or status filter to see the full subscriber base."
             rowActions={sub => (
-              <Button
-                size="sm"
-                variant="subtle"
-                onClick={() => handleDownloadReceipt(sub)}
-                title="Download payment receipt PDF"
-              >
-                <Download size={13} /> Receipt
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="subtle"
+                  onClick={() => handleRenewSubscription(sub)}
+                  title="Renew / Reactivate this subscription for 1 year"
+                  disabled={actionLoading === `renew_${sub.id}`}
+                >
+                  <RefreshCcw size={13} /> {actionLoading === `renew_${sub.id}` ? 'Renewing…' : 'Renew'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="subtle"
+                  onClick={() => handleDownloadReceipt(sub)}
+                  title="Download payment receipt PDF"
+                >
+                  <Download size={13} /> Receipt
+                </Button>
+              </div>
             )}
           />
         </>

@@ -2,6 +2,49 @@ import jsPDF from 'jspdf';
 import { SITE_CONTACT } from '@/lib/constants';
 import { getReceiptGrowthSlogan } from '@/lib/branding/slogans';
 
+/**
+ * Loads the THENIJOBS logo (/logo.png) and returns a base64 data-URL.
+ * Works only in the browser. Returns null in SSR or on load failure.
+ */
+function loadLogoAsBase64(): Promise<string | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); return; }
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } catch { resolve(null); }
+      };
+      img.onerror = () => {
+        const fallback = new Image();
+        fallback.crossOrigin = 'anonymous';
+        fallback.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = fallback.naturalWidth;
+            canvas.height = fallback.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { resolve(null); return; }
+            ctx.drawImage(fallback, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch { resolve(null); }
+        };
+        fallback.onerror = () => resolve(null);
+        fallback.src = '/logo.png';
+      };
+      img.src = '/icon-512.png';
+    } catch { resolve(null); }
+  });
+}
+
 export interface ReceiptData {
   receiptNo: string;
   paymentId?: string;
@@ -99,12 +142,15 @@ function numberToIndianWords(num: number): string {
  * Generates an official, publication-quality A4 PDF invoice and payment receipt for THENIJOBS subscriptions.
  * Fully compatible with all desktop and mobile browsers.
  */
-export function generatePaymentReceiptPDF(data: ReceiptData): jsPDF {
+export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPDF> {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const margin = 15;
   const pageWidth = 210;
   const contentWidth = pageWidth - margin * 2; // 180mm
   let y = 16;
+
+  // Load THENIJOBS logo
+  const logoBase64 = await loadLogoAsBase64();
 
   // ── 1. Top Decorative Brand Bar ──────────────────────────────────────────
   pdf.setFillColor(37, 99, 235); // Primary Blue
@@ -112,21 +158,36 @@ export function generatePaymentReceiptPDF(data: ReceiptData): jsPDF {
   y += 7;
 
   // ── 2. Header: Logo & Company / Platform Details ──────────────────────────
-  // Brand Logo Box
-  pdf.setFillColor(239, 246, 255); // Blue-50
-  pdf.roundedRect(margin, y, 14, 14, 2, 2, 'F');
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  pdf.setTextColor(37, 99, 235);
-  pdf.text('TJ', margin + 7, y + 9, { align: 'center' });
+  if (logoBase64) {
+    // Real THENIJOBS Logo (16×16 mm square)
+    try {
+      pdf.addImage(logoBase64, 'PNG', margin, y, 16, 16);
+    } catch {
+      // Fallback if addImage fails
+      pdf.setFillColor(239, 246, 255);
+      pdf.roundedRect(margin, y, 16, 16, 2, 2, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10);
+      pdf.setTextColor(37, 99, 235);
+      pdf.text('TJ', margin + 8, y + 10, { align: 'center' });
+    }
+  } else {
+    // Fallback: Styled text box when logo can't load
+    pdf.setFillColor(239, 246, 255); // Blue-50
+    pdf.roundedRect(margin, y, 16, 16, 2, 2, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(37, 99, 235);
+    pdf.text('TJ', margin + 8, y + 10, { align: 'center' });
+  }
 
   // Brand Name
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(18);
   pdf.setTextColor(15, 23, 42); // Slate-900
-  pdf.text('THENI', margin + 18, y + 7);
+  pdf.text('THENI', margin + 20, y + 7);
   pdf.setTextColor(37, 99, 235); // Blue-600
-  pdf.text('JOBS', margin + 41, y + 7);
+  pdf.text('JOBS', margin + 43, y + 7);
 
   // Platform Subtitle & Official Address
   pdf.setFont('helvetica', 'normal');

@@ -88,7 +88,7 @@ export default function EmployerBillingPage() {
    * Generates and downloads official publication-quality A4 Tax Invoice / Payment Receipt PDF
    * including Logo, Platform & Company Address, Amount, Start Date, Ending Date, and verification details.
    */
-  const handleDownloadReceipt = (paymentItem?: any) => {
+  const handleDownloadReceipt = async (paymentItem?: any) => {
     try {
       const pay = paymentItem || payments?.[0];
       const targetPlanSlug = pay?.plan || company?.subscriptionPlan || (subState.isPaidActive ? subState.plan : 'standard');
@@ -150,7 +150,7 @@ export default function EmployerBillingPage() {
         sloganCycle,
       };
 
-      const doc = generatePaymentReceiptPDF(receiptData);
+      const doc = await generatePaymentReceiptPDF(receiptData);
       doc.save(`THENIJOBS_Receipt_${receiptData.receiptNo}.pdf`);
       toast.success('🎉 Official Receipt Downloaded!', `${targetPlan.name} PDF invoice saved.`);
     } catch (err: any) {

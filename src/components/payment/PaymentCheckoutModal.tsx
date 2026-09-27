@@ -278,9 +278,9 @@ export default function PaymentCheckoutModal({
   };
 
   /** Direct Vector jsPDF Invoice Generator (100% Reliable across all mobile & desktop browsers) */
-  const generateVectorReceiptPDF = () => {
+  const generateVectorReceiptPDF = async () => {
     if (!transactionDetails) return;
-    const pdf = generatePaymentReceiptPDF(transactionDetails);
+    const pdf = await generatePaymentReceiptPDF(transactionDetails);
     pdf.save(`THENIJOBS_Receipt_${transactionDetails.receiptNo}.pdf`);
     toast.success('🎉 Official Receipt PDF Downloaded Successfully!');
   };

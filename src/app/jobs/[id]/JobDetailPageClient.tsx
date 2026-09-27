@@ -480,12 +480,58 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
 
   if (!job) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] text-[#111827] p-6 text-center">
-        <h2 className="text-lg font-bold">Job Not Found</h2>
-        <p className="text-slate-500 text-sm mt-1">This job posting may have expired or been deleted.</p>
-        <Link href="/jobs" className="mt-4 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700">
-          Back to Jobs List
-        </Link>
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-gray-100 shadow-lg p-8 space-y-5">
+          {/* Icon */}
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto">
+            <AlertTriangle size={32} className="text-amber-500" />
+          </div>
+
+          {/* Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold uppercase tracking-wider">
+            Job Posting Expired
+          </div>
+
+          <div>
+            <h2 className="text-xl font-black text-gray-900">This Job Has Expired</h2>
+            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+              This job posting is no longer active or may have been removed by the employer.
+              All candidate applications have been preserved.
+            </p>
+          </div>
+
+          {/* Admin Contact for Renewal */}
+          <div className="rounded-2xl p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 text-left space-y-2">
+            <p className="text-xs font-bold text-emerald-900">📢 Employer? Repost or Renew via Admin</p>
+            <p className="text-xs text-emerald-800 leading-relaxed">
+              Contact THENIJOBS Admin on WhatsApp to reactivate this job listing or upgrade your subscription plan.
+            </p>
+            <a
+              href="https://wa.me/919360519460?text=Hi%20THENIJOBS%20Admin%2C%20I%20want%20to%20renew%20my%20expired%20job%20posting.%20Please%20help."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-1 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-sm"
+            >
+              <MessageCircle size={13} />
+              Chat Admin: +91 93605 19460
+            </a>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 justify-center pt-1">
+            <Link
+              href="/jobs"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-all shadow-sm"
+            >
+              Browse Active Jobs
+            </Link>
+            <Link
+              href="/employer/billing"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:border-blue-300 hover:text-blue-700 transition-all"
+            >
+              Activate / Renew Plan
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

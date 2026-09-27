@@ -78,7 +78,7 @@ const QUICK_REJECTION_REASONS = [
   'Post contains promotional or advertising content unrelated to job duties.',
 ];
 
-const TABS = ['All', 'Pending', 'Active', 'Overdue Apps', 'Rejected', 'Featured'] as const;
+const TABS = ['All', 'Pending', 'Active', 'Expired', 'Overdue Apps', 'Rejected', 'Featured'] as const;
 const JOB_TYPES = ['All Types', 'Full Time', 'Part Time', 'Internship', 'Remote', 'Fresher', 'Contract'];
 const CATEGORIES = ['All Categories', 'IT & Software', 'Marketing', 'Sales', 'Healthcare', 'Education', 'Engineering', 'Retail', 'Agriculture', 'Construction', 'General'];
 const DISTRICTS = ['All Districts', 'Theni', 'Madurai', 'Dindigul', 'Chennai', 'Coimbatore', 'Trichy', 'Salem'];
@@ -144,11 +144,13 @@ export default function AdminJobsPage() {
     const company = job.companyName || job.company || '';
     const matchSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || company.toLowerCase().includes(searchQuery.toLowerCase());
     const status = getStatus(job);
+    const isExpiredJob = job.status === 'expired' || (!job.isActive && status !== 'pending' && status !== 'rejected');
     let matchTab = activeTab === 'All';
     if (activeTab === 'Featured') matchTab = !!job.isFeatured;
     else if (activeTab === 'Active') matchTab = status === 'active';
     else if (activeTab === 'Pending') matchTab = status === 'pending';
     else if (activeTab === 'Rejected') matchTab = status === 'rejected';
+    else if (activeTab === 'Expired') matchTab = isExpiredJob;
 
     const typeLabel = JOB_TYPE_STYLES[job.jobType]?.label || job.jobType;
     const matchType = typeFilter === 'All Types' || typeLabel === typeFilter;
@@ -241,6 +243,7 @@ export default function AdminJobsPage() {
   const pendingCount = jobs.filter(j => getStatus(j) === 'pending').length;
   const rejectedCount = jobs.filter(j => getStatus(j) === 'rejected').length;
   const featuredCount = jobs.filter(j => j.isFeatured).length;
+  const expiredCount = jobs.filter(j => j.status === 'expired' || (!j.isActive && getStatus(j) !== 'pending' && getStatus(j) !== 'rejected')).length;
 
   const overdueApplications = applications.filter((a: any) => {
     const isPending = a.status === 'applied' || a.status === 'under_review' || !a.status;
@@ -344,11 +347,12 @@ export default function AdminJobsPage() {
       </div>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {[
           { label: 'Total Postings', value: totalCount, icon: Briefcase, bg: '#EFF6FF', color: '#2563EB' },
           { label: 'Pending Review', value: pendingCount, icon: Clock, bg: '#FFFBEB', color: '#D97706' },
           { label: 'Active & Live', value: activeCount, icon: Zap, bg: '#ECFDF5', color: '#059669' },
+          { label: 'Expired', value: expiredCount, icon: AlertTriangle, bg: '#F3F4F6', color: '#6B7280' },
           { label: 'Overdue Apps', value: overdueApplications.length, icon: AlertTriangle, bg: '#FEF3C7', color: '#B45309' },
           { label: 'Requires Revision', value: rejectedCount, icon: XCircle, bg: '#FEF2F2', color: '#DC2626' },
         ].map(s => {
@@ -383,6 +387,11 @@ export default function AdminJobsPage() {
             {tab === 'Pending' && pendingCount > 0 && (
               <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] text-white font-extrabold bg-amber-600">
                 {pendingCount}
+              </span>
+            )}
+            {tab === 'Expired' && expiredCount > 0 && (
+              <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] text-white font-extrabold bg-gray-500">
+                {expiredCount}
               </span>
             )}
             {tab === 'Overdue Apps' && overdueApplications.length > 0 && (
@@ -424,6 +433,21 @@ export default function AdminJobsPage() {
           <ViewToggle value={view} onChange={setView} />
         </div>
       </div>
+
+      {/* Expired Jobs Banner */}
+      {activeTab === 'Expired' && (
+        <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 text-gray-700 text-xs leading-relaxed flex items-start gap-3">
+          <AlertTriangle size={18} className="text-gray-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-bold text-gray-900">Expired Job Listings — Admin Renewal Portal</p>
+            <p className="mt-0.5">
+              These job postings are no longer visible on the public portal. Employers must renew their subscription to repost.
+              Use the <strong>Actions → WhatsApp: Ask Employer to Renew</strong> to send them a renewal link, or go to{' '}
+              <a href="/admin/subscriptions" className="text-blue-600 underline font-bold">Subscriptions</a> to manually activate their plan instantly.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Overdue Applications Tab View */}
       {activeTab === 'Overdue Apps' ? (
@@ -552,7 +576,18 @@ export default function AdminJobsPage() {
             } else if (jobStatus === 'active') {
               items.push({ label: 'Request revisions', icon: XCircle, separatorBefore: true, onClick: () => openRejectModal(job) });
             } else {
-              items.push({ label: 'Re-approve job', icon: RefreshCw, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
+              items.push({ label: 'Re-approve & reactivate job', icon: RefreshCw, tone: 'success', separatorBefore: true, onClick: () => doApprove(job) });
+              // Expired job: offer employer renewal contact via WhatsApp
+              if (whatsapp) {
+                const renewMsg = `📢 *THENIJOBS Admin — Subscription Renewal*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job listing *"${job.title}"* has expired because your subscription plan has ended.\n\n✅ To *repost this job and continue hiring*, please renew your THENIJOBS subscription.\n\n💬 Reply to this message to choose a plan and get reactivated instantly!\n\n🔗 https://thenijobs.com/employer/billing`;
+                items.push({
+                  label: 'WhatsApp: Ask Employer to Renew',
+                  icon: MessageCircle,
+                  tone: 'warning' as any,
+                  external: true,
+                  href: `https://wa.me/${whatsapp}?text=${encodeURIComponent(renewMsg)}`,
+                });
+              }
             }
             items.push({
               label: job.isFeatured ? 'Remove from homepage' : 'Feature on homepage',

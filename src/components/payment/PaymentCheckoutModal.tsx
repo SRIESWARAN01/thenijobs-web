@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import { SITE_CONTACT } from '@/lib/constants';
 import { getReceiptGrowthSlogan } from '@/lib/branding/slogans';
 import { generatePaymentReceiptPDF, ReceiptData } from '@/lib/pdf/receiptGenerator';
+import { getDeterministicBillingSlogan } from '@/lib/billing/sloganLibrary';
 
 export interface PlanDetails {
   name: string;
@@ -118,7 +119,7 @@ export default function PaymentCheckoutModal({
 
       // Check if Razorpay script is loaded
       const isScriptLoaded = await loadRazorpayScript();
-      const razorpayKey = orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_THENIJOBS_GATEWAY';
+      const razorpayKey = orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TgUM5D1RgEJVkG';
 
       // 2. Initialize Direct Razorpay Checkout Modal
       if (isScriptLoaded && (window as any).Razorpay) {
@@ -129,7 +130,7 @@ export default function PaymentCheckoutModal({
           name: 'THENIJOBS',
           description: `${plan.name} Annual Subscription (1 Year)`,
           image: '/logo.png',
-          order_id: orderData.isRazorpay ? orderData.orderId : undefined,
+          order_id: orderData.orderId,
           prefill: {
             name: user.displayName || companyName || 'THENIJOBS Customer',
             email: user.email || '',
@@ -236,6 +237,8 @@ export default function PaymentCheckoutModal({
         ? `${company?.address || companyAddress}${company?.district ? ', ' + company.district : ''}, Tamil Nadu`
         : (company?.district ? `${company.district}, Tamil Nadu` : 'Theni District, Tamil Nadu');
 
+      const assignedSlogan = verifyData?.slogan || getDeterministicBillingSlogan(orderId);
+
       const receiptObj: ReceiptData = {
         receiptNo: `THENI-REC-${Date.now().toString().slice(-6)}`,
         paymentId: verifyData.paymentId || paymentId,
@@ -253,6 +256,11 @@ export default function PaymentCheckoutModal({
         email: user?.email || company?.email || '',
         paymentMethod: 'Razorpay (UPI / NetBanking / Cards)',
         status: 'PAID / ACTIVE',
+        // Dynamic Unique Slogan
+        sloganId: assignedSlogan?.sloganId || assignedSlogan?.id,
+        sloganText: assignedSlogan?.sloganText || assignedSlogan?.text,
+        sloganLanguage: assignedSlogan?.sloganLanguage || assignedSlogan?.language,
+        sloganCycle: assignedSlogan?.sloganCycle || assignedSlogan?.cycle || 1,
       };
 
       setTransactionDetails(receiptObj);
@@ -498,10 +506,13 @@ export default function PaymentCheckoutModal({
                   </div>
                 </div>
 
-                {/* Dynamic Enterprise Growth Slogan */}
-                <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 text-center">
-                  <p className="text-[11px] font-semibold text-blue-900 italic">
-                    &ldquo;{getReceiptGrowthSlogan(plan.slug, transactionDetails.receiptNo)}&rdquo;
+                {/* Dynamic Unique Slogan */}
+                <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-200 text-center space-y-1">
+                  <p className="text-xs sm:text-sm font-bold text-blue-900 italic font-sans leading-relaxed">
+                    &ldquo;{transactionDetails.sloganText || getReceiptGrowthSlogan(plan.slug, transactionDetails.receiptNo)}&rdquo;
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Thank you for choosing THENIJOBS.
                   </p>
                 </div>
 

@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     const amount = SEEKER_PUBLIC_PROFILE_FEE_INR;
     const orderId = `spp_order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    const razorpayKey = process.env.RAZORPAY_KEY_ID;
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    const razorpayKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TgUM5D1RgEJVkG';
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET || 'gY9pVg42b9AwqvxfdRysBIvC';
 
     if (razorpayKey && razorpaySecret) {
       try {

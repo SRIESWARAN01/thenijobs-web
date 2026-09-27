@@ -10,7 +10,7 @@ import {
   Award, TrendingUp, Wallet, CheckCircle2, Share2, Building2,
   Users, ArrowRight, QrCode, Phone, ShieldCheck, HelpCircle,
   Sparkles, DollarSign, Calculator, ChevronRight, Loader2,
-  ExternalLink, Gift, Smartphone
+  ExternalLink, Gift, Smartphone, Copy, Check, X, CheckCircle, Clock
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase/config';
@@ -30,6 +30,12 @@ export default function AmbassadorLandingPage() {
 
   const [loadingCheck, setLoadingCheck] = useState(false);
   const [existingAmbassador, setExistingAmbassador] = useState<Ambassador | null>(null);
+
+  // Success Pop Animation Modal State
+  const [createdAmbassador, setCreatedAmbassador] = useState<Ambassador | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [copiedModalCode, setCopiedModalCode] = useState(false);
+  const [copiedModalLink, setCopiedModalLink] = useState(false);
 
   // Calculator State
   const [standardCount, setStandardCount] = useState(6);
@@ -118,7 +124,9 @@ export default function AmbassadorLandingPage() {
       };
 
       await setDoc(doc(db, 'ambassadors', user.uid), ambassadorData, { merge: true });
-      router.push('/ambassador/dashboard');
+      setExistingAmbassador(ambassadorData);
+      setCreatedAmbassador(ambassadorData);
+      setShowSuccessModal(true);
     } catch (err: any) {
       console.error('Failed to create ambassador profile:', err);
       setFormError(err.message || 'Failed to create ambassador profile. Please try again.');
@@ -526,6 +534,146 @@ export default function AmbassadorLandingPage() {
           </div>
         </div>
       </main>
+
+      {/* ANIMATION POP MODAL — REFERRAL CODE CREATED & WALLET INITIALIZED */}
+      {showSuccessModal && createdAmbassador && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-indigo-100 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Top decorative gradient bar */}
+            <div className="absolute top-0 left-0 right-0 h-2.5 bg-gradient-to-r from-amber-400 via-pink-500 to-indigo-600" />
+            
+            {/* Close button */}
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                router.push('/ambassador/dashboard');
+              }}
+              className="absolute top-5 right-5 p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
+              title="Close and go to dashboard"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Animation Icon / Badge */}
+            <div className="text-center pt-2 pb-4">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-400 via-orange-500 to-pink-500 flex items-center justify-center mx-auto text-white shadow-xl shadow-orange-500/25 animate-bounce mb-3">
+                <Gift className="w-10 h-10" />
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-wider mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Partner Account Successfully Created</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                🎉 Congratulations!
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-sm mx-auto">
+                உங்கள் பரிந்துரை குறியீடு வெற்றிகரமாக உருவாக்கப்பட்டது! நீங்கள் இப்போது THENIJOBS அதிகாரப்பூர்வ கிராம தூதர்.
+              </p>
+            </div>
+
+            {/* Referral Code Showcase Box */}
+            <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-2xl p-4 text-white text-center shadow-lg relative border border-indigo-700/50 mb-4">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300/90 block mb-1">
+                Your Unique Referral Code / உங்கள் பரிந்துரை குறியீடு
+              </span>
+              <div className="text-3xl sm:text-4xl font-mono font-black text-amber-300 tracking-widest my-1 select-all">
+                {createdAmbassador.referralCode}
+              </div>
+              <p className="text-[11px] text-slate-300 mt-1">
+                Share this code with local shops to get commission credited to your wallet.
+              </p>
+
+              <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(createdAmbassador.referralCode);
+                    setCopiedModalCode(true);
+                    setTimeout(() => setCopiedModalCode(false), 2000);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition-all flex items-center gap-1.5"
+                >
+                  {copiedModalCode ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedModalCode ? 'Code Copied!' : 'Copy Code'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const link = typeof window !== 'undefined'
+                      ? `${window.location.origin}/register-business?ref=${createdAmbassador.referralCode}`
+                      : `https://www.thenijobs.com/register-business?ref=${createdAmbassador.referralCode}`;
+                    navigator.clipboard.writeText(link);
+                    setCopiedModalLink(true);
+                    setTimeout(() => setCopiedModalLink(false), 2000);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow"
+                >
+                  {copiedModalLink ? <Check className="w-3.5 h-3.5 text-emerald-200" /> : <ExternalLink className="w-3.5 h-3.5" />}
+                  <span>{copiedModalLink ? 'Link Copied!' : 'Copy Link'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 3 Value Badges */}
+            <div className="grid grid-cols-3 gap-2 text-center mb-5">
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                <Wallet className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+                <div className="text-[10px] font-bold text-emerald-900">Wallet Active</div>
+                <div className="text-[10px] text-emerald-700">₹0 Balance</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-100">
+                <DollarSign className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                <div className="text-[10px] font-bold text-blue-900">₹150 - ₹500</div>
+                <div className="text-[10px] text-blue-700">Per Shop Sub</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                <Clock className="w-4 h-4 text-amber-600 mx-auto mb-1" />
+                <div className="text-[10px] font-bold text-amber-900">⚡ 8-Hour</div>
+                <div className="text-[10px] text-amber-700">Express Payout</div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const link = typeof window !== 'undefined'
+                    ? `${window.location.origin}/register-business?ref=${createdAmbassador.referralCode}`
+                    : `https://www.thenijobs.com/register-business?ref=${createdAmbassador.referralCode}`;
+                  const text = `வணக்கம்! உங்கள் கடையை THENIJOBS இணையதளத்தில் பதிவு செய்து சொந்த இணையதளம் மற்றும் டிஜிட்டல் விசிட்டிங் கார்டு பெறுங்கள்!\n\n` +
+                    `✅ 15 நிமிடத்தில் கடையின் இணையதளம்\n` +
+                    `✅ கூகுள் மேப் & வாட்ஸ்அப் ஆர்டர் வசதி\n` +
+                    `✅ வேலை ஆட்கள் சேர்க்கும் வசதி\n` +
+                    `✅ 1 வருடத்திற்கு முழு சேவை\n\n` +
+                    `என் மூலமாக பதிவு செய்ய சிறப்பு தள்ளுபடி உண்டு:\n` +
+                    `👉 ${link}\n\n` +
+                    `பரிந்துரை குறியீடு: ${createdAmbassador.referralCode}`;
+                  const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                  window.open(url, '_blank');
+                }}
+                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Share Referral on WhatsApp / வாட்ஸ்அப்பில் பகிருங்கள்</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  router.push('/ambassador/dashboard');
+                }}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <span>Go to Ambassador Dashboard &amp; Wallet</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <FloatingWhatsApp />
       <BottomNav />

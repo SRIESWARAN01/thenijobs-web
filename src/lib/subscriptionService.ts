@@ -8,6 +8,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import type { Company, User, AccountStatus, WebsiteStatus, PaymentStatus } from '@/lib/types';
+import { SITE_CONTACT } from '@/lib/constants';
 
 export interface SubscriptionState {
   isPendingApproval: boolean;
@@ -390,6 +391,8 @@ export function generateWhatsAppReminderUrl(
 
 Your THENIJOBS 15-day free trial has ended and we have not received your subscription payment.
 
+Status: 🚫 Trial Expired — Upgrade Required
+
 Your employer account and company website are currently suspended.
 
 To continue using THENIJOBS services including:
@@ -414,3 +417,30 @@ THENIJOBS Team`;
 
   return `https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${encodeURIComponent(text)}`;
 }
+
+/**
+ * Generates the WhatsApp URL for an employer whose trial expired to contact the admin directly.
+ */
+export function generateAdminWhatsAppContactUrl(
+  company?: { name?: string; phone?: string; email?: string; id?: string },
+  requestedPlan?: string,
+): string {
+  const companyName = company?.name || 'My Company';
+  const contactInfo = company?.phone || company?.email ? `\nRegistered Contact: ${company?.phone || company?.email}` : '';
+  const planInfo = requestedPlan ? `\nSelected Plan: ${requestedPlan}` : '';
+
+  const text = `Hello THENIJOBS Admin,
+
+Business Name: "${companyName}"${contactInfo}
+Status: 🚫 Trial Expired — Upgrade Required${planInfo}
+
+My 15-day free trial has expired and my employer services are currently suspended.
+
+I want to upgrade to a paid subscription plan. Please assist me with payment and instant account activation.
+
+Admin WhatsApp Number: +91 93605 19460
+Thank you!`;
+
+  return `https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(text)}`;
+}
+

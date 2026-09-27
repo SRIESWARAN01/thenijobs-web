@@ -35,57 +35,64 @@ export async function POST(request: Request) {
     // Generate unique order ID
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // If Razorpay credentials are set in environment, initiate with Razorpay API
-    const razorpayKey = process.env.RAZORPAY_KEY_ID;
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    // Razorpay Gateway Credentials (Strict Live Mode)
+    const razorpayKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TgUM5D1RgEJVkG';
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET || 'gY9pVg42b9AwqvxfdRysBIvC';
 
-    if (razorpayKey && razorpaySecret) {
-      try {
-        const authHeader = `Basic ${Buffer.from(`${razorpayKey}:${razorpaySecret}`).toString('base64')}`;
-        const rpResponse = await fetch('https://api.razorpay.com/v1/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: JSON.stringify({
-            amount: Math.round(amount * 100), // paise
-            currency: 'INR',
-            receipt: orderId,
-            notes: {
-              planSlug: planSlug || 'standard',
-              companyId: companyId || '',
-              userId: userId || '',
-            },
-          }),
-        });
-
-        if (rpResponse.ok) {
-          const rpOrder = await rpResponse.json();
-          return NextResponse.json({
-            success: true,
-            orderId: rpOrder.id,
-            amount: amount,
-            currency: 'INR',
-            key: razorpayKey,
-            isRazorpay: true,
-          });
-        }
-      } catch (rpErr) {
-        console.warn('[Payment API] Razorpay order initiation fallback to secure gateway:', rpErr);
-      }
+    if (!razorpayKey || !razorpaySecret) {
+      return NextResponse.json({
+        success: false,
+        error: 'Razorpay Live Gateway credentials are not configured.',
+      }, { status: 503 });
     }
 
-    // Secure fallback / direct order response
-    return NextResponse.json({
-      success: true,
-      orderId,
-      amount,
-      currency: 'INR',
-      planSlug,
-      planName,
-      isRazorpay: false,
-    });
+    try {
+      const authHeader = `Basic ${Buffer.from(`${razorpayKey}:${razorpaySecret}`).toString('base64')}`;
+      const rpResponse = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader,
+        },
+        body: JSON.stringify({
+          amount: Math.round(amount * 100), // paise
+          currency: 'INR',
+          receipt: orderId,
+          notes: {
+            planSlug: planSlug || 'standard',
+            companyId: companyId || '',
+            userId: userId || '',
+            mode: 'live',
+          },
+        }),
+      });
+
+      if (rpResponse.ok) {
+        const rpOrder = await rpResponse.json();
+        return NextResponse.json({
+          success: true,
+          orderId: rpOrder.id,
+          amount: amount,
+          currency: 'INR',
+          key: razorpayKey,
+          isRazorpay: true,
+          mode: 'live',
+        });
+      }
+
+      const errorData = await rpResponse.text();
+      console.error('[Payment API] Razorpay Live order creation failed:', rpResponse.status, errorData);
+      return NextResponse.json({
+        success: false,
+        error: `Razorpay Live Gateway rejected order creation (${rpResponse.status}). Please try again.`,
+      }, { status: 502 });
+    } catch (rpErr: any) {
+      console.error('[Payment API] Razorpay Live order network error:', rpErr);
+      return NextResponse.json({
+        success: false,
+        error: 'Unable to connect to Razorpay Live Gateway. Please check your internet connection.',
+      }, { status: 502 });
+    }
   } catch (error: any) {
     console.error('[Payment Create Order Error]:', error);
     return NextResponse.json({ error: 'Failed to create payment order' }, { status: 500 });

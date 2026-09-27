@@ -19,6 +19,7 @@ import { auth } from '@/lib/firebase/config';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import { SUBSCRIPTION_PLANS, SITE_CONTACT } from '@/lib/constants';
+import { generateAdminWhatsAppContactUrl } from '@/lib/subscriptionService';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 
 const EMPLOYER_NAV = [
@@ -120,9 +121,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
 
   // ── Suspended / Trial Expired Screen ──────────────────────────────────────
   if (company && (subState.isSuspended || subState.isTrialExpired) && !subState.isPaidActive && pathname !== '/employer/billing') {
-    const whatsappSupportUrl = `https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(
-      `Hello THENIJOBS Support, my business "${company.name || 'Company'}" 15-day free trial has ended. I would like to activate a paid subscription plan.`
-    )}`;
+    const adminWhatsAppUrl = generateAdminWhatsAppContactUrl(company);
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 via-red-50/25 to-slate-100 py-10 px-4 flex items-center justify-center">
@@ -133,15 +132,15 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
               <ShieldAlert size={34} />
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-extrabold uppercase tracking-wider">
-              <span>🚫</span> 15-Day Free Trial Has Ended
+              <span>🚫</span> Trial Expired — Upgrade Required
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Your 15-Day Free Trial Has Ended
+              🚫 Trial Expired — Upgrade Required
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Your employer dashboard and company website for <strong>&quot;{company.name}&quot;</strong> are temporarily suspended.
-              All your data, jobs, and candidate records are safe.
-              <strong> Choose any one plan below</strong> to reactivate instantly.
+              Your employer dashboard and company website for <strong>&quot;{company.name}&quot;</strong> are temporarily suspended because your 15-day free trial has expired.
+              All your data, jobs, and candidate records are securely preserved.
+              <strong> Choose any one plan below</strong> or contact admin directly on WhatsApp (<strong>+91 93605 19460</strong>) to reactivate instantly.
             </p>
           </div>
 
@@ -212,38 +211,41 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
           </div>
 
           {/* WhatsApp & Support Contact Banner */}
-          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/60 border border-emerald-300 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-3.5 text-left">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md">
                 <MessageCircle size={26} />
               </div>
               <div>
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold mb-1">
+                  <span>🚫</span> Direct Admin Support: +91 93605 19460
+                </div>
                 <h4 className="text-sm font-bold text-emerald-950">
-                  Need Help or Prefer Direct WhatsApp / UPI Activation?
+                  🚫 Trial Expired — Upgrade Required: Contact Admin Directly
                 </h4>
                 <p className="text-xs text-emerald-800 mt-0.5">
-                  Chat directly with our Theni support team on WhatsApp for manual activation, UPI payment guidance, or questions.
+                  Chat directly with THENIJOBS Admin on WhatsApp (<strong>+91 93605 19460</strong>) for instant plan activation, UPI QR code, or any questions.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5 shrink-0 w-full md:w-auto">
               <a
-                href={whatsappSupportUrl}
+                href={adminWhatsAppUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all"
+                className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all hover:scale-[1.02]"
               >
                 <MessageCircle size={15} />
-                <span>Chat on WhatsApp</span>
+                <span>Chat Admin on WhatsApp (+91 93605 19460)</span>
               </a>
               <a
                 href={`tel:${SITE_CONTACT.phone1Raw}`}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 font-bold text-xs transition-all"
-                title="Call Support"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50 font-bold text-xs transition-all shadow-xs"
+                title="Call Admin Directly"
               >
                 <PhoneCall size={14} />
-                <span className="hidden sm:inline">Call Support</span>
+                <span className="hidden sm:inline">Call Admin</span>
               </a>
             </div>
           </div>

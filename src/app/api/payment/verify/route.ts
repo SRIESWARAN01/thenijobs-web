@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { assignNextBillingSlogan } from '@/lib/billing/sloganService';
 
 // ─── Plan price validation ───────────────────────────────────────────────────
 // PAY-1: this was a hard-coded table — free 0, basic 999, standard 2999, premium 7999,
@@ -105,8 +106,8 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // ─── C2 FIX: Razorpay Signature Verification ────────────────────────────
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    // ─── C2 FIX: Razorpay Signature Verification (Live Mode) ────────────────
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET || 'gY9pVg42b9AwqvxfdRysBIvC';
 
     // PAY-1: this used to read `if (razorpaySecret && paymentId && signature)`, so a missing
     // secret or a missing signature skipped verification and fell through to granting the
@@ -191,6 +192,14 @@ export async function POST(request: Request) {
 
     const verifiedPaymentId = paymentId || `pay_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
+    // Assign next dynamic slogan from the approved 100-slogan library
+    let assignedSlogan: any = null;
+    try {
+      assignedSlogan = await assignNextBillingSlogan({ seedFallback: orderId });
+    } catch (sErr) {
+      console.warn('[Payment Verify] Non-blocking slogan assignment error:', sErr);
+    }
+
     // 1. Create record in 'payments' collection
     await writeOrThrow(() => db.collection('payments').add({
       orderId,
@@ -206,6 +215,12 @@ export async function POST(request: Request) {
       signatureVerified: !!(razorpaySecret && signature),
       paymentMethod: paymentMethod || 'RAZORPAY',
       createdAt: now,
+      // Slogan metadata stored with invoice
+      sloganId: assignedSlogan?.sloganId || null,
+      sloganText: assignedSlogan?.sloganText || null,
+      sloganLanguage: assignedSlogan?.sloganLanguage || null,
+      sloganCycle: assignedSlogan?.sloganCycle || 1,
+      sloganAssignedAt: assignedSlogan?.sloganAssignedAt || now.toISOString(),
     }), 'payments record');
 
     // 2. Create/Update record in 'subscriptions' collection
@@ -222,6 +237,12 @@ export async function POST(request: Request) {
       paymentMethod: paymentMethod || 'RAZORPAY',
       createdAt: now,
       updatedAt: now,
+      // Slogan metadata stored with subscription
+      sloganId: assignedSlogan?.sloganId || null,
+      sloganText: assignedSlogan?.sloganText || null,
+      sloganLanguage: assignedSlogan?.sloganLanguage || null,
+      sloganCycle: assignedSlogan?.sloganCycle || 1,
+      sloganAssignedAt: assignedSlogan?.sloganAssignedAt || now.toISOString(),
     }), 'subscription record');
 
     // 3. Update company record if companyId is present
@@ -272,6 +293,7 @@ export async function POST(request: Request) {
       orderId,
       status: 'captured',
       message: 'Payment verified and subscription activated successfully!',
+      slogan: assignedSlogan,
     });
   } catch (error: any) {
     // PAY-1: this used to say "Database state was protected", which was not something the code

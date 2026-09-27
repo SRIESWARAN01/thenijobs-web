@@ -127,7 +127,7 @@ export default function SeekerPublicProfileModal({
       }
 
       const options = {
-        key: orderData.key,
+        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TgUM5D1RgEJVkG',
         amount: Math.round(SEEKER_PUBLIC_PROFILE_FEE_INR * 100),
         currency: 'INR',
         name: 'THENIJOBS',

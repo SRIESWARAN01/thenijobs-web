@@ -19,6 +19,63 @@ export interface ReceiptData {
   gst?: string;
   paymentMethod?: string;
   status?: string;
+  // Dynamic Unique Slogan fields
+  sloganText?: string;
+  sloganLanguage?: 'ta' | 'en';
+  sloganId?: string;
+  sloganCycle?: number;
+}
+
+/**
+ * Ultra-crisp Canvas rasterizer for rendering Tamil and English slogans cleanly in PDF.
+ * Ensures complex Tamil glyphs and typography render perfectly without missing characters.
+ */
+function renderSloganBadgeCanvas(
+  slogan: string,
+  widthMm: number,
+  heightMm: number,
+): string | null {
+  if (typeof document === 'undefined') return null;
+  try {
+    const canvas = document.createElement('canvas');
+    const scale = 3; // 3x ultra-sharp rendering
+    const widthPx = Math.round(widthMm * 3.7795); // 1mm ~= 3.7795px
+    const heightPx = Math.round(heightMm * 3.7795);
+
+    canvas.width = widthPx * scale;
+    canvas.height = heightPx * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.scale(scale, scale);
+
+    // Draw background rounded box
+    ctx.fillStyle = '#EFF6FF'; // Blue-50
+    ctx.strokeStyle = '#BFDBFE'; // Blue-200
+    ctx.lineWidth = 1;
+    const r = 6;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, widthPx, heightPx, r);
+    ctx.fill();
+    ctx.stroke();
+
+    // Slogan Text (Supports Tamil & English)
+    ctx.font = "italic 600 13px 'Mukta Malar', 'Noto Sans Tamil', 'Latha', 'Nirmala UI', system-ui, -apple-system, sans-serif";
+    ctx.fillStyle = '#1D4ED8'; // Blue-700
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`“${slogan}”`, widthPx / 2, heightPx / 2 - 7);
+
+    // Subtext
+    ctx.font = "500 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.fillStyle = '#475569'; // Slate-600
+    ctx.fillText('Thank you for choosing THENIJOBS.', widthPx / 2, heightPx / 2 + 8);
+
+    return canvas.toDataURL('image/png');
+  } catch (err) {
+    console.warn('[renderSloganBadgeCanvas] Canvas render error:', err);
+    return null;
+  }
 }
 
 function numberToIndianWords(num: number): string {
@@ -275,16 +332,29 @@ export function generatePaymentReceiptPDF(data: ReceiptData): jsPDF {
   y += 26;
 
   // ── 5. Enterprise Growth Slogan & Plan Highlights ──────────────────────────
-  const slogan = getReceiptGrowthSlogan(data.planSlug || 'standard', data.receiptNo);
-  pdf.setFillColor(239, 246, 255);
-  pdf.setDrawColor(191, 219, 254);
-  pdf.roundedRect(margin, y, contentWidth, 12, 2, 2, 'FD');
+  const slogan = data.sloganText || getReceiptGrowthSlogan(data.planSlug || 'standard', data.receiptNo);
+  const sloganBoxHeight = 15;
 
-  pdf.setFont('helvetica', 'italic');
-  pdf.setFontSize(8.5);
-  pdf.setTextColor(29, 78, 216);
-  pdf.text(`"${slogan}"`, pageWidth / 2, y + 7.5, { align: 'center' });
-  y += 16;
+  const canvasImg = renderSloganBadgeCanvas(slogan, contentWidth, sloganBoxHeight);
+  if (canvasImg) {
+    pdf.addImage(canvasImg, 'PNG', margin, y, contentWidth, sloganBoxHeight);
+  } else {
+    // Vector fallback
+    pdf.setFillColor(239, 246, 255);
+    pdf.setDrawColor(191, 219, 254);
+    pdf.roundedRect(margin, y, contentWidth, sloganBoxHeight, 2, 2, 'FD');
+
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(29, 78, 216);
+    pdf.text(`"${slogan}"`, pageWidth / 2, y + 6.5, { align: 'center' });
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.setTextColor(71, 85, 105);
+    pdf.text('Thank you for choosing THENIJOBS.', pageWidth / 2, y + 11.5, { align: 'center' });
+  }
+  y += sloganBoxHeight + 4;
 
   // Key Features Unlocked Box
   pdf.setFillColor(255, 255, 255);

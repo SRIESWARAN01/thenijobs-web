@@ -25,6 +25,7 @@ const ADMIN_NAV = [
   { label: 'Leads', icon: TrendingUp, href: '/admin/leads' },
   { label: 'Services', icon: Globe, href: '/admin/services' },
   { label: 'Subscriptions', icon: CreditCard, href: '/admin/subscriptions' },
+  { label: 'Billing Slogans', icon: Sparkles, href: '/admin/slogans' },
   { label: 'Ambassadors', icon: Award, href: '/admin/ambassadors' },
   { label: 'Reviews', icon: Star, href: '/admin/reviews' },
   { label: 'Reports', icon: BarChart3, href: '/admin/reports' },

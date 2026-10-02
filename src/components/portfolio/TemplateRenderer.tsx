@@ -6,10 +6,7 @@ import type { PortfolioSite } from '@/lib/types/portfolio';
 // Dynamic imports for all templates
 const templates: Record<string, React.ComponentType<{ site: PortfolioSite }>> = {
   'seeker-modern-pro': dynamic(() => import('./templates/SeekerPortfolioRenderer')),
-  'seeker-creative': dynamic(() => import('./templates/SeekerPortfolioRenderer')),
-  // SEEKER-3: these two used to alias SeekerPortfolioRenderer like 'seeker-creative' still does —
-  // now genuinely distinct layouts (single-column resume-style / dark two-column corporate),
-  // not the same component under a different label.
+  'seeker-creative': dynamic(() => import('./templates/SeekerPortfolioCreative')),
   'seeker-executive': dynamic(() => import('./templates/SeekerPortfolioExecutive')),
   'seeker-minimal': dynamic(() => import('./templates/SeekerPortfolioMinimal')),
   'classic-business': dynamic(() => import('./templates/ClassicBusiness')),

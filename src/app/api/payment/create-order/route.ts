@@ -36,8 +36,8 @@ export async function POST(request: Request) {
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     // Razorpay Gateway Credentials (Strict Live Mode)
-    const razorpayKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TgUM5D1RgEJVkG';
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET || 'gY9pVg42b9AwqvxfdRysBIvC';
+    const razorpayKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!razorpayKey || !razorpaySecret) {
       return NextResponse.json({

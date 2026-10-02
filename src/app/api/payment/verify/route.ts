@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     }
 
     // ─── C2 FIX: Razorpay Signature Verification (Live Mode) ────────────────
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET || 'gY9pVg42b9AwqvxfdRysBIvC';
+    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
 
     // PAY-1: this used to read `if (razorpaySecret && paymentId && signature)`, so a missing
     // secret or a missing signature skipped verification and fell through to granting the

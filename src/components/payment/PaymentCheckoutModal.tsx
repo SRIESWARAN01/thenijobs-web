@@ -119,7 +119,7 @@ export default function PaymentCheckoutModal({
 
       // Check if Razorpay script is loaded
       const isScriptLoaded = await loadRazorpayScript();
-      const razorpayKey = orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TgUM5D1RgEJVkG';
+      const razorpayKey = orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
 
       // 2. Initialize Direct Razorpay Checkout Modal
       if (isScriptLoaded && (window as any).Razorpay) {

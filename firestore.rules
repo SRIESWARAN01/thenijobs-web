@@ -766,10 +766,14 @@ service cloud.firestore {
     match /ambassadors/{userId} {
       allow read: if true;
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin() ||
-        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'totalReferrals', 'businessesReferred', 'pendingPayoutINR', 'totalEarnedINR', 'updatedAt'
-        ]));
+      // SEC-3: the third branch previously allowed ANY authenticated user to rewrite financial
+      // aggregates (pendingPayoutINR, totalEarnedINR, totalReferrals, businessesReferred).
+      // These are server-computed values — only the owner may update their own non-financial
+      // profile fields, and only an admin may touch financial/referral counters.
+      allow update: if isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'totalReferrals', 'businessesReferred', 'pendingPayoutINR', 'totalEarnedINR',
+          'status', 'isApproved', 'commissionRate'
+        ]) || isAdmin();
       allow delete: if isAdmin();
     }
 

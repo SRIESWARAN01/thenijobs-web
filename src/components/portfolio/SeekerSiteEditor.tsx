@@ -24,6 +24,39 @@ import type {
 } from '@/lib/types/portfolio';
 import { DEFAULT_THEME, FONT_OPTIONS, DEVICE_SIZES } from '@/lib/types/portfolio';
 import SeekerPortfolioRenderer from './templates/SeekerPortfolioRenderer';
+import TemplateRenderer from './TemplateRenderer';
+
+// 4 distinct seeker portfolio layouts
+const SEEKER_LAYOUT_TEMPLATES = [
+  {
+    id: 'seeker-modern-pro',
+    name: 'Modern Pro',
+    tag: 'Popular',
+    desc: 'Interactive card grid layout with quick-action contact banner, skill badges & project showcases.',
+    badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  },
+  {
+    id: 'seeker-minimal',
+    name: 'Minimal Resume',
+    tag: 'ATS Clean',
+    desc: 'Clean single-column chronological resume format. Distraction-free, fast, recruiter-focused.',
+    badgeClass: 'bg-blue-100 text-blue-800 border-blue-200',
+  },
+  {
+    id: 'seeker-executive',
+    name: 'Executive Dark',
+    tag: 'Corporate',
+    desc: 'Corporate two-column layout with dark header, sticky career snapshot, and executive bio.',
+    badgeClass: 'bg-purple-100 text-purple-800 border-purple-200',
+  },
+  {
+    id: 'seeker-creative',
+    name: 'Creative Bento',
+    tag: 'Creative & Tech',
+    desc: 'Vibrant gradient hero, bento skill categories, masonry project cards with interactive reveals.',
+    badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
+  },
+];
 
 // Preset Google Sites-style color themes
 const THEME_PRESETS = [
@@ -641,6 +674,7 @@ export default function SeekerSiteEditor() {
       }
 
       await updateDoc(doc(db, 'portfolioSites', site.id), {
+        templateId: site.templateId || 'seeker-modern-pro',
         sections: site.sections,
         theme: site.theme,
         branding: site.branding,
@@ -2024,7 +2058,49 @@ export default function SeekerSiteEditor() {
           {/* ════ TAB 2: THEMES & DESIGN ════ */}
           {activeTab === 'design' && (
             <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-6">
+              {/* Portfolio Template Selection */}
               <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                    Portfolio Layout & Template
+                  </h3>
+                  <span className="text-[11px] font-semibold text-emerald-600">
+                    4 Distinct Designs
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {SEEKER_LAYOUT_TEMPLATES.map(tpl => {
+                    const isSelected = (site.templateId || 'seeker-modern-pro') === tpl.id;
+                    return (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => updateField('templateId', tpl.id)}
+                        className={`p-3.5 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-2 cursor-pointer ${
+                          isSelected
+                            ? 'border-emerald-600 bg-emerald-50/30 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                            {isSelected && <Check size={14} className="text-emerald-600 shrink-0" />}
+                            {tpl.name}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${tpl.badgeClass}`}>
+                            {tpl.tag}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                          {tpl.desc}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">
                   Preset Color Themes
                 </h3>
@@ -2417,7 +2493,7 @@ export default function SeekerSiteEditor() {
                   minHeight: '550px',
                 }}
               >
-                <SeekerPortfolioRenderer site={site} isPreview={true} />
+                <TemplateRenderer site={site} isPreview={true} />
               </div>
             </div>
           </div>

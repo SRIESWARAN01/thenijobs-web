@@ -9,13 +9,17 @@ import { collection, query, where, getDocs, limit as firestoreLimit } from 'fire
 import { JOB_SEARCH_SYSTEM_PROMPT, buildJobSearchPrompt } from '@/lib/ai/prompts/jobSearchPrompt';
 import { JOB_RECOMMENDATION_SYSTEM_PROMPT, buildJobRecommendationPrompt } from '@/lib/ai/prompts/jobRecommendationPrompt';
 import { CAREER_ASSISTANT_SYSTEM_PROMPT, buildCareerAssistantPrompt } from '@/lib/ai/prompts/careerAssistantPrompt';
-import { RESUME_IMPROVEMENT_SYSTEM_PROMPT, FULL_RESUME_GEN_SYSTEM_PROMPT, buildResumeImprovementPrompt, buildFullResumeGenPrompt } from '@/lib/ai/prompts/resumePrompt';
+import { RESUME_IMPROVEMENT_SYSTEM_PROMPT, buildResumeImprovementPrompt } from '@/lib/ai/prompts/resumePrompt';
+import { FULL_RESUME_GEN_SYSTEM_PROMPT, buildFullResumeGenPrompt } from '@/lib/ai/prompts/fullResumeGenerationPrompt';
+import { PROFILE_IMPROVEMENT_SYSTEM_PROMPT, buildProfileImprovementPrompt } from '@/lib/ai/prompts/profileImprovementPrompt';
 import { RESUME_ANALYSIS_SYSTEM_PROMPT, buildResumeAnalysisPrompt } from '@/lib/ai/prompts/resumeAnalysisPrompt';
 import { COVER_LETTER_SYSTEM_PROMPT, buildCoverLetterPrompt } from '@/lib/ai/prompts/coverLetterPrompt';
 import { INTERVIEW_PREP_SYSTEM_PROMPT, buildInterviewPrepPrompt, buildAnswerFeedbackPrompt } from '@/lib/ai/prompts/interviewPrompt';
 import { COMPANY_CONTENT_SYSTEM_PROMPT, buildCompanyContentPrompt } from '@/lib/ai/prompts/companyPrompt';
+import { SERVICE_PRODUCT_DESCRIPTION_SYSTEM_PROMPT, buildServiceProductDescriptionPrompt } from '@/lib/ai/prompts/serviceProductDescriptionPrompt';
 import { JOB_DESCRIPTION_SYSTEM_PROMPT, buildJobDescriptionPrompt } from '@/lib/ai/prompts/jobDescriptionPrompt';
 import { CANDIDATE_MATCHING_SYSTEM_PROMPT, buildCandidateMatchingPrompt } from '@/lib/ai/prompts/candidateMatchingPrompt';
+import { CANDIDATE_RANKING_SYSTEM_PROMPT, buildCandidateRankingPrompt } from '@/lib/ai/prompts/candidateRankingPrompt';
 import { CANDIDATE_SEARCH_SYSTEM_PROMPT, buildCandidateSearchPrompt } from '@/lib/ai/prompts/candidateSearchPrompt';
 import { CHATBOT_SYSTEM_PROMPT, buildChatbotPrompt } from '@/lib/ai/prompts/chatbotPrompt';
 
@@ -161,7 +165,12 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case 'profile_improvement':
+      case 'profile_improvement': {
+        systemPrompt = PROFILE_IMPROVEMENT_SYSTEM_PROMPT;
+        userPrompt = buildProfileImprovementPrompt(payload.profile || payload);
+        break;
+      }
+
       case 'resume_improvement': {
         systemPrompt = RESUME_IMPROVEMENT_SYSTEM_PROMPT;
         userPrompt = buildResumeImprovementPrompt(payload.resumeData || payload.profile || {});
@@ -196,15 +205,29 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case 'company_description':
       case 'service_product_description': {
+        systemPrompt = SERVICE_PRODUCT_DESCRIPTION_SYSTEM_PROMPT;
+        userPrompt = buildServiceProductDescriptionPrompt({
+          itemName: payload.itemName || payload.name || 'Product / Service',
+          itemType: payload.itemType || 'service',
+          businessName: payload.companyName || payload.businessName,
+          category: payload.category,
+          price: payload.price,
+          keyFeatures: payload.keyDetails || payload.keyFeatures,
+          district: payload.district,
+          targetAudience: payload.targetAudience,
+        });
+        break;
+      }
+
+      case 'company_description': {
         systemPrompt = COMPANY_CONTENT_SYSTEM_PROMPT;
         userPrompt = buildCompanyContentPrompt({
           companyName: payload.companyName || 'Company',
           category: payload.category || 'Business',
           district: payload.district || 'Theni',
           keyDetails: payload.keyDetails,
-          contentType: feature === 'service_product_description' ? 'service_product_description' : 'company_description',
+          contentType: 'company_description',
         });
         break;
       }
@@ -215,8 +238,16 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case 'candidate_matching':
       case 'candidate_ranking': {
+        systemPrompt = CANDIDATE_RANKING_SYSTEM_PROMPT;
+        userPrompt = buildCandidateRankingPrompt(
+          payload.job || {},
+          Array.isArray(payload.candidates) ? payload.candidates : (payload.candidate ? [payload.candidate] : [])
+        );
+        break;
+      }
+
+      case 'candidate_matching': {
         systemPrompt = CANDIDATE_MATCHING_SYSTEM_PROMPT;
         userPrompt = buildCandidateMatchingPrompt(payload.job || {}, payload.candidate || {});
         break;

@@ -13,11 +13,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+import crypto from 'crypto';
+
 const CRON_SECRET = process.env.CRON_SECRET;
 
 function verifyAuth(req: NextRequest): boolean {
   const auth = req.headers.get('authorization') || '';
-  if (CRON_SECRET && auth === `Bearer ${CRON_SECRET}`) return true;
+  if (CRON_SECRET && auth.startsWith('Bearer ')) {
+    const supplied = Buffer.from(auth.slice(7));
+    const expected = Buffer.from(CRON_SECRET);
+    if (supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected)) return true;
+  }
   // Allow Vercel internal cron calls
   const cronHeader = req.headers.get('x-vercel-cron');
   if (cronHeader === '1') return true;

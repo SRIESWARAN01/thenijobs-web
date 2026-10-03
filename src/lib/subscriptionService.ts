@@ -198,8 +198,9 @@ export function computeSubscriptionState(
 }
 
 /**
- * Reconciles trial expiration in Firestore if current date has passed trialEndDate
- * and paymentStatus != 'paid'.
+ * Reconciles trial or subscription expiration via the server-side API endpoint
+ * (`/api/subscription/reconcile`) which uses Admin SDK credentials, avoiding
+ * client-side Firestore security rule blocks.
  */
 export async function reconcileCompanySubscription(
   companyId: string,
@@ -208,43 +209,23 @@ export async function reconcileCompanySubscription(
 ): Promise<SubscriptionState> {
   const state = computeSubscriptionState(companyData);
 
-  // If trial has expired and payment not made, transition in Firestore
-  if (state.isTrialExpired && !state.isPaidActive && (companyData.subscriptionStatus !== 'trial_expired' || companyData.accountStatus !== 'suspended')) {
-    try {
-      const updates: Record<string, any> = {
-        subscriptionStatus: 'trial_expired',
-        accountStatus: 'suspended',
-        websiteStatus: 'suspended',
-        updatedAt: serverTimestamp(),
-      };
-
-      await updateDoc(doc(db, 'companies', companyId), updates);
-
-      const targetOwnerUid = ownerUid || companyData.ownerId;
-      if (targetOwnerUid) {
-        try {
-          await updateDoc(doc(db, 'users', targetOwnerUid), {
-            subscriptionStatus: 'trial_expired',
-            accountStatus: 'suspended',
-            updatedAt: serverTimestamp(),
-          });
-
-          // Create notification for expired trial
-          await addDoc(collection(db, 'notifications'), {
-            userId: targetOwnerUid,
-            type: 'system',
-            title: 'Free Trial Expired ⏳',
-            message: 'Your THENIJOBS 15-day Standard free trial has ended. Please complete payment to reactivate your employer services and company website.',
-            actionUrl: '/employer/billing',
-            read: false,
-            createdAt: serverTimestamp(),
-          });
-        } catch (uErr) {
-          console.warn('[reconcileCompanySubscription] user doc update skipped:', uErr);
-        }
+  if (
+    (state.isTrialExpired && !state.isPaidActive) ||
+    state.isPaidExpired
+  ) {
+    if (typeof window !== 'undefined') {
+      try {
+        await fetch('/api/subscription/reconcile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyId,
+            ownerUid: ownerUid || companyData.ownerId,
+          }),
+        });
+      } catch (err) {
+        console.warn('[reconcileCompanySubscription] server reconciliation failed:', err);
       }
-    } catch (err) {
-      console.error('[reconcileCompanySubscription] error updating Firestore:', err);
     }
   }
 

@@ -16,12 +16,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+const reconcileRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS = 10; // max 10 requests per minute per IP/company
+
+function isReconcileRateLimited(identifier: string): boolean {
+  const now = Date.now();
+  const entry = reconcileRateLimitMap.get(identifier);
+  if (!entry || now > entry.resetTime) {
+    reconcileRateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  entry.count++;
+  return entry.count > MAX_REQUESTS;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { companyId, ownerUid } = await req.json();
 
     if (!companyId || typeof companyId !== 'string') {
       return NextResponse.json({ error: 'companyId is required' }, { status: 400 });
+    }
+
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+    const rateLimitKey = `${ip}:${companyId}`;
+    if (isReconcileRateLimited(rateLimitKey)) {
+      return NextResponse.json({ error: 'Too many reconciliation requests. Please wait a minute.' }, { status: 429 });
     }
 
     const db = getAdminFirestore();

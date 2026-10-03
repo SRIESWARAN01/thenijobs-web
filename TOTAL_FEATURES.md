@@ -105,10 +105,12 @@ graph TD
 * Marks them `status: 'expired'`, `isActive: false`, and logs the operation to `activityLogs`.
 * Authenticated using `CRON_SECRET` timing-safe bearer token check and `x-vercel-cron` header verification.
 
-### 3.3 Automated Trial Expiry Cron Job (`/api/cron/expire-trials`)
+### 3.3 Automated Trial & Subscription Expiry Cron Job (`/api/cron/expire-trials`)
 * Configured in `vercel.json` to execute daily at `00:00 UTC` (`schedule: "0 0 * * *"`).
-* Scans company profiles whose trial period (`trialEndDate`) has lapsed without an active paid subscription (`paymentStatus != 'paid'`).
-* Automatically flags account status as `trial_expired` / `suspended` to maintain directory integrity.
+* **Batch 1 (15-Day Free Trial Expiry):** Scans company profiles whose trial period (`trialEndDate`) has lapsed without an active paid subscription (`paymentStatus != 'paid'`), transitioning them to `subscriptionStatus: 'trial_expired'` and `accountStatus: 'suspended'`.
+* **Batch 2 (Paid Annual Subscription Expiry):** Scans paid company subscriptions (`paymentStatus: 'paid'`) whose 1-year period (`subscriptionEndDate`) has passed, transitioning them to `subscriptionStatus: 'subscription_expired'` and `accountStatus: 'suspended'`.
+* Automatically suspends public directory profiles & connected websites (`websiteStatus: 'suspended'`), updates associated employer user accounts, creates actionable notifications, and logs audit entries in `activityLogs`.
+* Authenticated using `CRON_SECRET` timing-safe bearer token check and `x-vercel-cron` header verification.
 
 ### 3.4 7-Day Employer Response SLA System
 * On `/admin/jobs`, a dedicated **"Overdue Apps"** tab monitors candidate applications that have remained unreviewed by employers for more than 7 days.
@@ -243,6 +245,15 @@ A full-fledged personal career hub with AI tools, ATS resume builder, applicatio
 ## 7. Employer & Business Owner Portal (`/employer/*`)
 
 A complete recruitment CRM, business directory management suite, and digital presence manager:
+
+### 7.0 Golden Access Control Rule & 15-Day Free Trial Guard
+* **Trial Access Boundary:** Employers on the 15-day Standard free trial have targeted access strictly limited to:
+  1. `/employer/post-job` — Multi-Step Job Posting Engine (allowing post creation under Standard plan quota).
+  2. `/employer/company-profile` — Company Profile, Logo, Media & Contact Details.
+  3. `/employer/billing` — Subscription Tiers, Plan Checkout & Invoice History.
+* **Paid Plan Gate:** Advanced ATS candidate pipelines (`/employer/candidates`), resume search (`/employer/talent-search`), interview scheduling (`/employer/interviews`), CRM leads (`/employer/leads`), and website builders (`/employer/website/*`) require an active paid subscription (`paymentStatus === 'paid'`).
+* **Client Guard (`/employer/layout.tsx`):** If a trial employer navigates to restricted routes, an inline alert banner appears with quick-action links to Post Job, Update Profile, or Upgrade to a Paid Plan.
+* **Server-Side Authority:** API routes and server reconciliation independently enforce access permissions; client UI parameters are never trusted.
 
 ### 7.1 Employer Dashboard (`/employer/dashboard`)
 * High-level metrics: Active Job Posts, Total Applicants Received, New Inquiries/Leads, Company Profile Views.
@@ -711,10 +722,11 @@ Engineered for local Tamil Nadu demographics with high usability and aesthetics:
   * `POST /api/payment/verify` — Verify Razorpay payment signature & issue receipt
   * `POST /api/payment/seeker-public-profile/create-order` — Create Razorpay order for ₹50/yr seeker public profile fee
   * `POST /api/payment/seeker-public-profile/webhook` — Razorpay webhook activating seeker public profile
+  * `POST /api/subscription/reconcile` — Server-side reconciliation (Admin SDK) for expired trial/subscription with rate limiting
 * **Admin Management:**
-  * `GET, POST /api/admin/slogans` — List and create custom slogans
-  * `POST /api/admin/slogans/reset` — Reset slogans to default dictionary
-  * `PUT, DELETE /api/admin/slogans/[id]` — Update or remove individual slogan
+  * `GET, POST /api/admin/slogans` — List and create custom slogans (Admin Bearer token auth required)
+  * `POST /api/admin/slogans/reset` — Reset slogans to default dictionary (Admin Bearer token auth required)
+  * `PUT, DELETE /api/admin/slogans/[id]` — Update or remove individual slogan (Admin Bearer token auth required)
 
 ---
 *Document officially updated and verified for the THENIJOBS Project (`d:\project\thenijobs-web-main\thenijobs-web-main`).*

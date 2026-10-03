@@ -7,6 +7,7 @@ import {
   Eye, Edit3, Trash2, Power, Layers, ArrowUpRight
 } from 'lucide-react';
 import type { BillingSlogan, SloganRotationState } from '@/lib/billing/sloganLibrary';
+import { auth } from '@/lib/firebase/config';
 
 export default function AdminSlogansPage() {
   const [loading, setLoading] = useState(true);
@@ -27,14 +28,29 @@ export default function AdminSlogansPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
+  const getAuthHeaders = async (): Promise<HeadersInit> => {
+    let currentUser = auth.currentUser;
+    if (!currentUser) {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      currentUser = auth.currentUser;
+    }
+    const token = await currentUser?.getIdToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const fetchSlogans = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/slogans');
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch('/api/admin/slogans', {
+        headers: authHeaders,
+      });
       const data = await res.json();
       if (data.success) {
         setSlogans(data.slogans || []);
         setRotationState(data.rotationState || null);
+      } else if (data.error) {
+        console.error('Failed to load slogans:', data.error);
       }
     } catch (err) {
       console.error('Failed to load slogans:', err);
@@ -56,9 +72,13 @@ export default function AdminSlogansPage() {
     if (!confirm('Sync/Seed all 100 approved THENIJOBS master slogans into library? Existing custom slogans will be preserved.')) return;
     try {
       setActionLoading(true);
+      const authHeaders = await getAuthHeaders();
       const res = await fetch('/api/admin/slogans', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
         body: JSON.stringify({ action: 'seed' }),
       });
       const data = await res.json();
@@ -80,9 +100,13 @@ export default function AdminSlogansPage() {
     if (!confirm(`Reset slogan rotation and advance to Cycle ${nextCycle}? All 100 slogans will be available again.`)) return;
     try {
       setActionLoading(true);
+      const authHeaders = await getAuthHeaders();
       const res = await fetch('/api/admin/slogans/reset', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
         body: JSON.stringify({ cycle: nextCycle }),
       });
       const data = await res.json();
@@ -101,9 +125,13 @@ export default function AdminSlogansPage() {
 
   const handleToggleStatus = async (slogan: BillingSlogan) => {
     try {
+      const authHeaders = await getAuthHeaders();
       const res = await fetch(`/api/admin/slogans/${slogan.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
         body: JSON.stringify({ isActive: !slogan.isActive }),
       });
       const data = await res.json();
@@ -124,11 +152,15 @@ export default function AdminSlogansPage() {
 
     try {
       setActionLoading(true);
+      const authHeaders = await getAuthHeaders();
       if (editingSlogan) {
         // Update
         const res = await fetch(`/api/admin/slogans/${editingSlogan.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
           body: JSON.stringify({
             text: formText.trim(),
             language: formLang,
@@ -148,7 +180,10 @@ export default function AdminSlogansPage() {
         // Create
         const res = await fetch('/api/admin/slogans', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
           body: JSON.stringify({
             text: formText.trim(),
             language: formLang,
@@ -175,7 +210,11 @@ export default function AdminSlogansPage() {
   const handleDelete = async (slogan: BillingSlogan) => {
     if (!confirm(`Delete Slogan #${slogan.sloganNumber}: "${slogan.text.substring(0, 30)}..."?`)) return;
     try {
-      const res = await fetch(`/api/admin/slogans/${slogan.id}`, { method: 'DELETE' });
+      const authHeaders = await getAuthHeaders();
+      const res = await fetch(`/api/admin/slogans/${slogan.id}`, {
+        method: 'DELETE',
+        headers: authHeaders,
+      });
       const data = await res.json();
       if (data.success) {
         setSlogans((prev) => prev.filter((s) => s.id !== slogan.id));

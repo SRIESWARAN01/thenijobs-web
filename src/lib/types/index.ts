@@ -60,7 +60,7 @@ export interface User {
   district?: string;
   isVerified: boolean;
   accountStatus?: AccountStatus;
-  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'active' | 'trial_expired' | 'suspended';
+  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'active' | 'trial_expired' | 'subscription_expired' | 'suspended';
   subscriptionPlan?: string;
   trialStartDate?: any;
   trialEndDate?: any;
@@ -272,7 +272,7 @@ export interface Company {
   isFeatured: boolean;
   isPremium: boolean;
   subscriptionPlan?: string;
-  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'active' | 'trial_expired' | 'suspended';
+  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'active' | 'trial_expired' | 'subscription_expired' | 'suspended';
   accountStatus?: AccountStatus;
   websiteStatus?: WebsiteStatus;
   paymentStatus?: PaymentStatus;

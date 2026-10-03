@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { verifyAdminAuth } from '@/lib/api/adminAuth';
 
 /**
  * PUT /api/admin/slogans/[id]
  * Updates slogan fields: text, language, category, isActive.
+ * SECURITY: Requires admin authentication.
  */
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await verifyAdminAuth(req);
+  if (!authResult.authorized) return authResult.response;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -46,11 +51,15 @@ export async function PUT(
 /**
  * DELETE /api/admin/slogans/[id]
  * Deletes or disables a slogan.
+ * SECURITY: Requires admin authentication.
  */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authResult = await verifyAdminAuth(req);
+  if (!authResult.authorized) return authResult.response;
+
   try {
     const { id } = await params;
     const db = getAdminFirestore();

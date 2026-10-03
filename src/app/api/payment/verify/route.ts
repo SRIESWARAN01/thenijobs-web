@@ -186,6 +186,29 @@ export async function POST(request: Request) {
     // catch below turns it into the "could not be recorded" 500, which is the correct, honest
     // response for a payment that passed verification but couldn't be persisted.
     const db = getAdminFirestore();
+
+    // C3 FIX: Idempotency guard — if this orderId was already processed, return
+    // the existing result instead of creating duplicate records. This protects against
+    // Razorpay callback retries, user double-clicks, or network-level retransmissions.
+    const existingPayment = await db.collection('payments')
+      .where('orderId', '==', orderId)
+      .where('status', '==', 'captured')
+      .limit(1)
+      .get();
+
+    if (!existingPayment.empty) {
+      const existing = existingPayment.docs[0].data();
+      console.log(`[Payment Verify] Idempotency: orderId "${orderId}" already processed as "${existing.paymentId}".`);
+      return NextResponse.json({
+        success: true,
+        paymentId: existing.paymentId,
+        orderId,
+        status: 'captured',
+        message: 'Payment was already verified and subscription is active.',
+        idempotent: true,
+      });
+    }
+
     const now = new Date();
     const expiryDate = new Date();
     expiryDate.setFullYear(now.getFullYear() + 1); // 1 year annual subscription

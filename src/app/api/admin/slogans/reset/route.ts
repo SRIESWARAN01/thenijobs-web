@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resetSloganRotation } from '@/lib/billing/sloganService';
+import { verifyAdminAuth } from '@/lib/api/adminAuth';
 
 /**
  * POST /api/admin/slogans/reset
  * Resets the dynamic slogan rotation cycle back to cycle 1 (or specified cycle)
  * and clears used IDs so the cycle starts fresh.
+ * SECURITY: Requires admin authentication.
  */
 export async function POST(req: NextRequest) {
+  const authResult = await verifyAdminAuth(req);
+  if (!authResult.authorized) return authResult.response;
+
   try {
     const body = await req.json().catch(() => ({}));
     const cycle = typeof body.cycle === 'number' && body.cycle > 0 ? body.cycle : 1;

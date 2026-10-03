@@ -119,10 +119,93 @@ export async function GET(req: NextRequest) {
     await batch.commit();
     await Promise.allSettled([...userUpdates, ...notificationInserts]);
 
-    console.log(`[CRON expire-trials] Suspended ${activeTrialDocs.length} companies at ${now.toISOString()}`);
+    console.log(`[CRON expire-trials] Suspended ${activeTrialDocs.length} trial companies at ${now.toISOString()}`);
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // C4 FIX: Also handle PAID subscription expiry (subscriptionEndDate passed)
+    // ═══════════════════════════════════════════════════════════════════════════
+    let paidExpiredCount = 0;
+    try {
+      const paidSnapshot = await db
+        .collection('companies')
+        .where('subscriptionEndDate', '<=', nowTs)
+        .where('paymentStatus', '==', 'paid')
+        .get();
+
+      const expiredPaidDocs = paidSnapshot.docs.filter((d: FirebaseFirestore.QueryDocumentSnapshot) => {
+        const data = d.data();
+        return (
+          data.accountStatus !== 'suspended' &&
+          data.subscriptionStatus !== 'subscription_expired' &&
+          data.subscriptionStatus !== 'suspended'
+        );
+      });
+
+      if (expiredPaidDocs.length > 0) {
+        const paidBatch = db.batch();
+        const paidUserUpdates: Promise<any>[] = [];
+        const paidNotifications: Promise<any>[] = [];
+
+        for (const companyDoc of expiredPaidDocs) {
+          const company = companyDoc.data();
+
+          paidBatch.update(companyDoc.ref, {
+            subscriptionStatus: 'subscription_expired',
+            accountStatus: 'suspended',
+            websiteStatus: 'suspended',
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+
+          if (company.ownerId) {
+            paidUserUpdates.push(
+              db.collection('users').doc(company.ownerId).update({
+                subscriptionStatus: 'subscription_expired',
+                accountStatus: 'suspended',
+                updatedAt: FieldValue.serverTimestamp(),
+              }).catch(() => {})
+            );
+
+            paidNotifications.push(
+              db.collection('notifications').add({
+                userId: company.ownerId,
+                type: 'system',
+                title: 'Subscription Expired 📋',
+                message: `Your THENIJOBS annual subscription for "${company.name || 'your business'}" has expired. Please renew to continue using employer services and your company website.`,
+                actionUrl: '/employer/billing',
+                read: false,
+                createdAt: FieldValue.serverTimestamp(),
+              }).catch(() => {})
+            );
+
+            paidNotifications.push(
+              db.collection('activityLogs').add({
+                userId: 'system_cron',
+                userName: 'System (CRON)',
+                action: 'Paid subscription auto-expired',
+                target: company.name || companyDoc.id,
+                targetId: companyDoc.id,
+                details: `Paid subscription ended at ${now.toISOString()}. Account suspended automatically.`,
+                timestamp: FieldValue.serverTimestamp(),
+              }).catch(() => {})
+            );
+          }
+        }
+
+        await paidBatch.commit();
+        await Promise.allSettled([...paidUserUpdates, ...paidNotifications]);
+        paidExpiredCount = expiredPaidDocs.length;
+        console.log(`[CRON expire-trials] Suspended ${paidExpiredCount} paid-expired companies at ${now.toISOString()}`);
+      }
+    } catch (paidErr: any) {
+      console.error('[CRON expire-trials] Paid subscription expiry error:', paidErr);
+      // Non-fatal: trial expiry already committed, don't fail the whole response
+    }
+
     return NextResponse.json({
-      message: `Processed ${activeTrialDocs.length} expired trial(s)`,
-      count: activeTrialDocs.length,
+      message: `Processed ${activeTrialDocs.length} expired trial(s) and ${paidExpiredCount} expired paid subscription(s)`,
+      trialExpired: activeTrialDocs.length,
+      paidExpired: paidExpiredCount,
+      count: activeTrialDocs.length + paidExpiredCount,
       companies: activeTrialDocs.map((d: FirebaseFirestore.QueryDocumentSnapshot) => ({ id: d.id, name: d.data().name })),
     });
   } catch (err: any) {

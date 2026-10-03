@@ -292,6 +292,114 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
     );
   }
 
+  // ── GOLDEN ACCESS CONTROL RULE: Trial Portal Restriction ───────────────────
+  // Trial employers can ONLY access: post-job, billing, company-profile.
+  // Full Employer Portal (Dashboard, Candidates, Interviews, Talent Search,
+  // Leads, Messages, Reports, Reviews, AI, Settings, ID Card) requires a paid plan.
+  const TRIAL_ALLOWED_ROUTES = [
+    '/employer/post-job',
+    '/employer/billing',
+    '/employer/company-profile',
+  ];
+  const isTrialRestricted = subState.isTrialActive && !subState.isPaidActive;
+  const isRouteAllowedDuringTrial = TRIAL_ALLOWED_ROUTES.some(r => pathname.startsWith(r));
+
+  if (company && isTrialRestricted && !isRouteAllowedDuringTrial) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50/30 to-slate-100 py-10 px-4 flex items-center justify-center">
+        <div className="max-w-2xl w-full bg-white rounded-3xl border border-blue-200 shadow-2xl p-6 sm:p-10 space-y-6">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto text-blue-600 shadow-inner">
+              <Clock size={32} />
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold uppercase tracking-wider">
+              🎉 Free Trial — {subState.trialDaysRemaining} day{subState.trialDaysRemaining !== 1 ? 's' : ''} remaining
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              Upgrade to Unlock Full Employer Portal
+            </h1>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              During your free trial, you can <strong>post jobs</strong>, manage your <strong>company profile</strong>, and view <strong>billing</strong>.
+              To access the full Employer Portal — including Dashboard, Candidates, Interviews, Talent Search, Messages, Reports, and more — upgrade to a paid plan.
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3">
+            <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">During Trial You Can:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Link href="/employer/post-job" className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-blue-200 hover:bg-blue-50 transition-all group">
+                <Plus size={16} className="text-emerald-600 shrink-0" />
+                <span className="text-xs font-semibold text-gray-800 group-hover:text-blue-600">Post a Job</span>
+              </Link>
+              <Link href="/employer/company-profile" className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-blue-200 hover:bg-blue-50 transition-all group">
+                <Building2 size={16} className="text-blue-600 shrink-0" />
+                <span className="text-xs font-semibold text-gray-800 group-hover:text-blue-600">Company Profile</span>
+              </Link>
+              <Link href="/employer/billing" className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-blue-200 hover:bg-blue-50 transition-all group">
+                <CreditCard size={16} className="text-violet-600 shrink-0" />
+                <span className="text-xs font-semibold text-gray-800 group-hover:text-blue-600">Billing & Plans</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Plan CTA */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {SUBSCRIPTION_PLANS.filter(p => p.recommended || p.slug === 'basic').map(plan => (
+              <button
+                key={plan.slug}
+                onClick={() => handleOpenCheckout(plan)}
+                className={`p-4 rounded-2xl border text-left transition-all hover:shadow-md ${
+                  plan.recommended
+                    ? 'border-blue-600 ring-2 ring-blue-600/20 bg-blue-50/50'
+                    : 'border-gray-200 bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-bold text-gray-900">{plan.name}</span>
+                  {plan.badge && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      plan.recommended ? 'bg-blue-600 text-white' : 'bg-slate-800 text-white'
+                    }`}>{plan.badge}</span>
+                  )}
+                </div>
+                <div className="text-lg font-black text-gray-900">₹{plan.price.toLocaleString('en-IN')}<span className="text-xs text-gray-500 font-normal"> /yr</span></div>
+                <p className="text-[11px] text-gray-500 mt-1">{plan.bestFor}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100">
+            <Link href="/employer/billing" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              View All Plans & Features <ArrowRight size={13} />
+            </Link>
+            <button onClick={() => { signOut(auth); router.push('/'); }}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 font-semibold">
+              <LogOut size={13} /> Sign Out
+            </button>
+          </div>
+        </div>
+
+        {checkoutPlan && (
+          <PaymentCheckoutModal
+            isOpen={isCheckoutOpen}
+            onClose={() => setIsCheckoutOpen(false)}
+            plan={checkoutPlan}
+            companyId={company.id}
+            companyName={company.name}
+            companyAddress={company.address || (company.district ? `${company.district}, Tamil Nadu` : undefined)}
+            companyPhone={company.phone}
+            companyGst={company.gstNumber}
+            company={company}
+            onSuccess={() => {
+              setIsCheckoutOpen(false);
+              window.location.reload();
+            }}
+          />
+        )}
+      </div>
+    );
+  }
+
   const handleLogout = async () => {
     await signOut(auth);
     router.push('/login');

@@ -15,7 +15,10 @@ export interface SubscriptionState {
   isTrialActive: boolean;
   isPaidActive: boolean;
   isTrialExpired: boolean;
+  isPaidExpired: boolean;
   isSuspended: boolean;
+  /** Convenience: true when the employer has portal access (trial active OR paid active) */
+  isAccessAllowed: boolean;
   trialDaysRemaining: number;
   trialHoursRemaining: number;
   plan: string;
@@ -57,7 +60,9 @@ export function computeSubscriptionState(
       isTrialActive: false,
       isPaidActive: false,
       isTrialExpired: false,
+      isPaidExpired: false,
       isSuspended: false,
+      isAccessAllowed: false,
       trialDaysRemaining: 0,
       trialHoursRemaining: 0,
       plan: 'free',
@@ -92,6 +97,14 @@ export function computeSubscriptionState(
     (!subEndDate || subEndDate > now) &&
     rawSubscriptionStatus !== 'suspended';
 
+  // 2b. Paid Subscription Expired Check (C7 fix)
+  // Detects when a paid subscription's endDate has passed but Firestore still says 'paid'.
+  const isPaidExpired =
+    rawPaymentStatus === 'paid' &&
+    !!subEndDate &&
+    subEndDate <= now &&
+    rawSubscriptionStatus !== 'suspended';
+
   // 3. Trial calculations
   let trialDaysRemaining = 0;
   let trialHoursRemaining = 0;
@@ -102,6 +115,10 @@ export function computeSubscriptionState(
     isTrialActive = false;
     isTrialExpired = false;
   } else if (isPaidActive) {
+    isTrialActive = false;
+    isTrialExpired = false;
+  } else if (isPaidExpired) {
+    // Paid subscription expired — don't fall through to trial checks
     isTrialActive = false;
     isTrialExpired = false;
   } else if (trialEndDate) {
@@ -120,11 +137,12 @@ export function computeSubscriptionState(
     isTrialExpired = true;
   }
 
-  // 4. Suspension
+  // 4. Suspension — now also catches expired paid subscriptions
   const isSuspended =
     rawAccountStatus === 'suspended' ||
     rawWebsiteStatus === 'suspended' ||
     (isTrialExpired && !isPaidActive) ||
+    isPaidExpired ||
     rawSubscriptionStatus === 'trial_expired' ||
     rawSubscriptionStatus === 'suspended';
 
@@ -134,6 +152,8 @@ export function computeSubscriptionState(
     plan = company.subscriptionPlan || 'standard';
   } else if (isTrialActive) {
     plan = 'standard'; // 15-day free trial is STANDARD plan only
+  } else {
+    plan = 'free'; // Expired or suspended — no plan features
   }
 
   // Resolved statuses
@@ -159,7 +179,9 @@ export function computeSubscriptionState(
     isTrialActive,
     isPaidActive,
     isTrialExpired,
+    isPaidExpired,
     isSuspended,
+    isAccessAllowed: (isTrialActive || isPaidActive) && !isSuspended && !isPendingApproval,
     trialDaysRemaining,
     trialHoursRemaining,
     plan,

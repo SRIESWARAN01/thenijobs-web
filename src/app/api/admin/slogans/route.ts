@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { getAdminSloganLibrary, seedMasterSlogansIfNeeded } from '@/lib/billing/sloganService';
 import { BillingSlogan } from '@/lib/billing/sloganLibrary';
+import { verifyAdminAuth } from '@/lib/api/adminAuth';
 
 /**
  * GET /api/admin/slogans
  * Fetches all approved billing slogans along with the current rotation cycle status.
+ * SECURITY: Requires admin authentication.
  */
 export async function GET(req: NextRequest) {
+  const authResult = await verifyAdminAuth(req);
+  if (!authResult.authorized) return authResult.response;
+
   try {
     const data = await getAdminSloganLibrary();
     return NextResponse.json({
@@ -29,8 +34,12 @@ export async function GET(req: NextRequest) {
  * POST /api/admin/slogans
  * - If body contains { action: 'seed' } or { action: 'reseed' }, populates/syncs the 100 master slogans.
  * - Otherwise creates a new custom billing slogan.
+ * SECURITY: Requires admin authentication.
  */
 export async function POST(req: NextRequest) {
+  const authResult = await verifyAdminAuth(req);
+  if (!authResult.authorized) return authResult.response;
+
   try {
     const body = await req.json();
 

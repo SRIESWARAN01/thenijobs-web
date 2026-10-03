@@ -19,6 +19,7 @@ import { notifyAllAdmins } from '@/lib/firebase/adminNotify';
 import { where, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { canPostNewJob, getPlan } from '@/lib/plans';
+import { computeSubscriptionState } from '@/lib/subscriptionService';
 import { Switch } from '@/components/dashboard';
 import { requestAIService } from '@/lib/ai/aiClient';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
@@ -84,7 +85,12 @@ export default function PostJobPage() {
   ], { skip: !companyId });
 
   const activeJobsCount = existingJobs?.length || 0;
-  const planSlug = company?.subscriptionPlan || 'free';
+
+  // C2 FIX: Derive the effective plan from the centralized subscription state,
+  // not from the raw company doc. If trial is expired but cron hasn't run yet,
+  // computeSubscriptionState correctly returns 'free' instead of 'standard'.
+  const subState = computeSubscriptionState(company, user);
+  const planSlug = subState.plan;
   const planInfo = getPlan(planSlug);
   const planCheck = canPostNewJob(planSlug, activeJobsCount);
 
@@ -202,6 +208,15 @@ export default function PostJobPage() {
   const handlePost = async () => {
     if (!companyId) {
       toast.warning('You must have a registered company profile to post a job.');
+      return;
+    }
+
+    // C1 FIX: Block submission if the employer's subscription is not active.
+    // The layout guard catches this in most cases, but a direct navigation or
+    // race condition could bypass it. This is the definitive client-side check.
+    if (!subState.isAccessAllowed) {
+      toast.error('Your subscription is not active. Please upgrade or renew your plan to post jobs.');
+      router.push('/employer/billing');
       return;
     }
 

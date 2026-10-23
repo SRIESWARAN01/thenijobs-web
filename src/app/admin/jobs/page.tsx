@@ -177,6 +177,21 @@ export default function AdminJobsPage() {
   const doApprove = async (job: JobDoc) => {
     setActionLoading(job.id);
     try {
+      const comp = companies?.find(c => c.id === job.companyId || c.name === job.companyName);
+      const isSubExpired = comp && (
+        comp.subscriptionStatus === 'trial_expired' ||
+        comp.subscriptionStatus === 'subscription_expired' ||
+        comp.accountStatus === 'suspended'
+      );
+
+      if (isSubExpired) {
+        toast.warning(
+          'Employer Subscription Expired',
+          `Cannot activate job for "${comp.name || job.companyName}". Their subscription has expired or is suspended.`
+        );
+        return;
+      }
+
       await approveJob(job.id, currentUser?.uid || 'admin');
 
       // If job was expired, automatically extend deadline by 30 days
@@ -211,6 +226,26 @@ export default function AdminJobsPage() {
   const doRenewJob = async (job: JobDoc, days = 30) => {
     setActionLoading(job.id);
     try {
+      const comp = companies?.find(c => c.id === job.companyId || c.name === job.companyName);
+      const isSubExpired = comp && (
+        comp.subscriptionStatus === 'trial_expired' ||
+        comp.subscriptionStatus === 'subscription_expired' ||
+        comp.accountStatus === 'suspended'
+      );
+
+      if (isSubExpired) {
+        toast.warning(
+          'Employer Subscription Expired',
+          `"${comp.name || job.companyName}" subscription is expired. Please ask the employer to renew their plan before reactivating their job openings.`
+        );
+        const { whatsapp } = getCompanyContact(job);
+        if (whatsapp) {
+          const renewMsg = `📢 *THENIJOBS Admin — Subscription Renewal Needed*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job opening *"${job.title}"* cannot be reactivated because your company subscription has expired.\n\n🔗 Please renew your subscription to reactivate your listings: https://thenijobs.com/employer/billing`;
+          window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(renewMsg)}`, '_blank');
+        }
+        return;
+      }
+
       const newDeadline = new Date();
       newDeadline.setDate(newDeadline.getDate() + days);
       const deadlineStr = newDeadline.toISOString().split('T')[0];

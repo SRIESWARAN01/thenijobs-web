@@ -67,7 +67,7 @@ export default function ResumeManagementPage() {
       const timestamp = Date.now();
       const storagePath = `resumes/${uid}/${timestamp}_${file.name}`;
       const downloadUrl = await uploadFile(file, storagePath, {
-        allowedTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        allowedTypes: ['application/pdf'],
         maxSizeBytes: 5 * 1024 * 1024
       });
 
@@ -178,13 +178,13 @@ export default function ResumeManagementPage() {
                   {isDragging ? 'Drop your resume here' : 'Drag & drop your resume here'}
                 </p>
                 <p className="text-xs text-gray-505 mt-1">
-                  or <span className="text-emerald-600 font-medium">browse files</span> — PDF, DOC (max 5MB)
+                  or <span className="text-emerald-600 font-medium">browse files</span> — PDF only (max 5MB)
                 </p>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,application/pdf"
                 className="hidden"
                 onChange={handleFileSelect}
               />

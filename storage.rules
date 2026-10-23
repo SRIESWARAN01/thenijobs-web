@@ -79,7 +79,7 @@ service firebase.storage {
     // P0 FIX: Only the owner OR employer/admin can read; only owner can write
     match /resumes/{userId}/{fileName} {
       allow read:  if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId) && (isPDF() || isImage()) && isUnder5MB();
+      allow write: if isOwner(userId) && isPDF() && isUnder5MB();
       allow delete: if isOwner(userId) || isAdmin();
     }
 

@@ -502,7 +502,7 @@ export default function AdminJobsPage() {
             <p className="mt-0.5">
               These job postings are no longer visible on the public portal. Employers must renew their subscription to repost.
               Use the <strong>Actions → WhatsApp: Ask Employer to Renew</strong> to send them a renewal link, or go to{' '}
-              <a href="/admin/subscriptions" className="text-blue-600 underline font-bold">Subscriptions</a> to manually activate their plan instantly.
+              <Link href="/admin/subscriptions" className="text-blue-600 underline font-bold">Subscriptions</Link> to manually activate their plan instantly.
             </p>
           </div>
         </div>

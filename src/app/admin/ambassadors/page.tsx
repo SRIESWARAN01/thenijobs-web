@@ -451,7 +451,7 @@ export default function AdminAmbassadorsPage() {
                 Referral Verification & Wallet Credit Queue
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Verify newly subscribed shops onboarded via ambassador referral codes. Approving credits the commission to the ambassador's withdrawable wallet.
+                Verify newly subscribed shops onboarded via ambassador referral codes. Approving credits the commission to the ambassador&apos;s withdrawable wallet.
               </p>
             </div>
             <span className="text-xs font-mono font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">

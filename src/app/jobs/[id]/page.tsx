@@ -42,9 +42,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // Fallback metadata if job not found
   if (!job) {
     return {
-      title: 'Job Opportunities | THENIJOBS',
-      description: 'Find top job openings across Theni and Tamil Nadu on THENIJOBS.',
-      robots: { index: false, follow: true },
+      title: 'Job Not Found | THENIJOBS',
+      description: 'The requested job posting was not found or has been removed from THENIJOBS.',
+      robots: { index: false, follow: false },
     };
   }
 
@@ -101,9 +101,12 @@ export default async function JobDetailPage({ params }: PageProps) {
     permanentRedirect(`/jobs/${job.slug}`);
   }
 
-  // If job doesn't exist at build time, render client component for runtime resolution
+  // If job doesn't exist, return genuine 404 response
   if (!job) {
-    return <JobDetailPageClient id={id} />;
+    if (id === '_fallback') {
+      return <JobDetailPageClient id={id} />;
+    }
+    notFound();
   }
 
   const canonicalSlug = job.slug || id;

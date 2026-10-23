@@ -60,6 +60,9 @@ export const metadata: Metadata = {
     description: "Find jobs, businesses, leads and services in Theni and Tamil Nadu",
     images: ["/og-image.jpg"],
   },
+  alternates: {
+    canonical: "https://thenijobs.com",
+  },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
   icons: {
     icon: [

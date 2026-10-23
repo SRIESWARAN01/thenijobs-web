@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import CompanyProfilePageClient from './CompanyProfilePageClient';
 import { getAllCompanySlugsServer, getCompanyBySlugServer } from '@/lib/firebase/firestoreServer';
 import { generateBreadcrumbSchema } from '@/lib/seo/schemas';
@@ -50,32 +51,13 @@ export async function generateMetadata({
     return generateCompanySEO(company);
   }
 
-  // Fallback: company not found in server-side fetch (may resolve client-side)
-  const displayName = slug
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c: string) => c.toUpperCase());
-
+  // Return non-indexed 404 metadata for missing companies
   return {
-    title: `${displayName} — Company Profile, Jobs & Reviews | THENIJOBS`,
-    description: `View ${displayName}'s verified company profile on THENIJOBS. See open job vacancies, reviews, products, services, and contact information. Apply for jobs at ${displayName} in Tamil Nadu.`,
-    openGraph: {
-      title: `${displayName} — Company Profile | THENIJOBS`,
-      description: `Explore verified company profile, jobs, and reviews for ${displayName} on THENIJOBS.`,
-      type: 'website',
-      url: canonicalCompanyUrl(slug),
-      siteName: 'THENIJOBS',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${displayName} — THENIJOBS`,
-      description: `View ${displayName}'s company profile, open jobs, and reviews.`,
-    },
-    alternates: {
-      canonical: canonicalCompanyUrl(slug),
-    },
+    title: 'Company Not Found | THENIJOBS',
+    description: 'The requested company profile was not found on THENIJOBS.',
     robots: {
-      index: true,
-      follow: true,
+      index: false,
+      follow: false,
     },
   };
 }
@@ -90,7 +72,14 @@ export default async function CompanyProfilePage({
   // Fetch real company data for server-side structured data
   const company = await getCompanyBySlugServer(slug).catch(() => null);
 
-  const displayName = company?.name || slug
+  if (!company) {
+    if (slug === '_fallback') {
+      return <CompanyProfilePageClient slug={slug} />;
+    }
+    notFound();
+  }
+
+  const displayName = company.name || slug
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (c: string) => c.toUpperCase());
 

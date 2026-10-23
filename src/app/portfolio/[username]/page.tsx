@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import PublicPortfolioPageClient from './PublicPortfolioPageClient';
 import { getAllPublishedPortfolioUsernamesServer, getPortfolioSiteSeoByUsernameServer } from '@/lib/firebase/firestoreServer';
 
@@ -76,5 +77,13 @@ export default async function PublicPortfolioPage({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
+
+  if (username !== '_fallback' && username !== 'demo') {
+    const site = await getPortfolioSiteSeoByUsernameServer(username).catch(() => null);
+    if (!site || site.status !== 'published') {
+      notFound();
+    }
+  }
+
   return <PublicPortfolioPageClient username={username} />;
 }

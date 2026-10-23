@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import BusinessCategoryPageClient from './BusinessCategoryPageClient';
 import { BUSINESS_CATEGORY_ROUTE_SLUGS } from '@/lib/seo/businessCategories';
 import { generateBreadcrumbSchema } from '@/lib/seo/schemas';
@@ -35,6 +36,14 @@ export async function generateMetadata({
     };
   }
 
+  if (!(CATEGORIES as readonly string[]).includes(category)) {
+    return {
+      title: 'Category Not Found | THENIJOBS',
+      description: 'The requested business category does not exist on THENIJOBS.',
+      robots: { index: false, follow: false },
+    };
+  }
+
   const displayName = formatCategoryName(category);
   const canonicalUrl = `https://thenijobs.com/businesses/${category}`;
 
@@ -66,6 +75,10 @@ export default async function BusinessCategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const { category } = await params;
+
+  if (category !== '_fallback' && category !== 'all' && !(CATEGORIES as readonly string[]).includes(category)) {
+    notFound();
+  }
   const displayName = formatCategoryName(category);
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Home', url: 'https://thenijobs.com' },

@@ -467,21 +467,32 @@ export async function getActiveJobsForSitemap(): Promise<
     ],
   );
 
-  return jobs.map((j) => {
-    const slug = j.slug || generateJobSlug(
-      j.title || '',
-      j.companyName || 'employer',
-      j.district || j.location || 'theni',
-    );
-    const img = j.companyLogoUrl || j.logoUrl || j.companyLogo || j.logo || '';
-    return {
-      id: j.id,
-      slug,
-      title: j.title || '',
-      updatedAt: j.updatedAt || j.createdAt || '',
-      imageUrl: img.startsWith('http') ? img : undefined,
-    };
-  });
+  const now = Date.now();
+  return jobs
+    .filter((j) => {
+      if (j.isDeleted === true || j.isArchived === true) return false;
+      const rawExp = j.expiryDate || j.deadline || j.expiresAt;
+      if (rawExp) {
+        const expTime = new Date(rawExp).getTime();
+        if (!isNaN(expTime) && expTime < now) return false;
+      }
+      return true;
+    })
+    .map((j) => {
+      const slug = j.slug || generateJobSlug(
+        j.title || '',
+        j.companyName || 'employer',
+        j.district || j.location || 'theni',
+      );
+      const img = j.companyLogoUrl || j.logoUrl || j.companyLogo || j.logo || '';
+      return {
+        id: j.id,
+        slug,
+        title: j.title || '',
+        updatedAt: j.updatedAt || j.createdAt || '',
+        imageUrl: img.startsWith('http') ? img : undefined,
+      };
+    });
 }
 
 /**
@@ -750,6 +761,38 @@ export async function getAllPublicSeekerPortfolioIdsServer(): Promise<string[]> 
   } catch (err) {
     console.warn('[firestoreServer] Failed to query public seeker portfolio ids:', err);
     return [];
+  }
+}
+
+/**
+ * Fetch a single seeker's public portfolio data for generateMetadata (server-safe)
+ */
+export async function getPublicSeekerProfileServer(seekerId: string): Promise<{
+  id: string;
+  name: string;
+  currentRole?: string;
+  district?: string;
+  isPortfolioPublic?: boolean;
+  subscriptionPlan?: string;
+  photoUrl?: string;
+} | null> {
+  if (!seekerId || seekerId === '_fallback' || seekerId === 'demo' || seekerId === 'demo-seeker') return null;
+
+  try {
+    const raw = await fetchDocumentREST<any>('seekerProfiles', seekerId);
+    if (!raw) return null;
+    return {
+      id: raw.id,
+      name: raw.name || 'Job Seeker',
+      currentRole: raw.currentRole || '',
+      district: raw.district || 'Theni',
+      isPortfolioPublic: raw.isPortfolioPublic === true,
+      subscriptionPlan: raw.subscriptionPlan || 'free',
+      photoUrl: raw.profilePhotoUrl || raw.photoUrl || '',
+    };
+  } catch (err) {
+    console.warn('[firestoreServer] Failed to fetch public seeker profile:', err);
+    return null;
   }
 }
 

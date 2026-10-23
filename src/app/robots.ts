@@ -7,8 +7,11 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        // Disallow auth-only and private routes from being indexed
+        allow: [
+          '/',
+          '/_next/static/',
+        ],
+        // Disallow auth-only, dashboard, and private routes from being indexed
         disallow: [
           '/admin/',
           '/seeker/',
@@ -16,13 +19,11 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/login',
           '/register',
+          '/register-business',
           '/forgot-password',
           '/profile',
-          // Prevent indexing of dynamic query-string filters and search variations
-          '/jobs?*',
-          '/jobs/*?*',
+          // Prevent crawling of internal search queries
           '/*?search=*',
-          '/*?category=*',
         ],
       },
     ],

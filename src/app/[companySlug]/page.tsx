@@ -1,5 +1,6 @@
+import { notFound } from 'next/navigation';
 import CompanyLandingPageClient from './CompanyLandingPageClient';
-import { getAllCompanySlugsServer } from '@/lib/firebase/firestoreServer';
+import { getAllCompanySlugsServer, getCompanyBySlugServer } from '@/lib/firebase/firestoreServer';
 
 // Static fallback slugs for Next.js build-time export.
 const STATIC_LANDING_SLUGS = [
@@ -29,15 +30,27 @@ export async function generateMetadata({
     return {
       title: 'Company Official Website | THENIJOBS',
       description: 'Official verified company landing websites and careers on THENIJOBS.',
+      robots: { index: false, follow: false },
     };
   }
 
-  const displayName = companySlug
+  const company = await getCompanyBySlugServer(companySlug).catch(() => null);
+  if (!company) {
+    return {
+      title: 'Company Not Found | THENIJOBS',
+      description: 'The requested official company website does not exist on THENIJOBS.',
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const displayName = company.name || companySlug
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
   const pageTitle = `${displayName} — Official Website, Services & Careers | THENIJOBS`;
-  const pageDesc = `Welcome to the official website of ${displayName}. Discover services, products, contact details, and apply for open career opportunities in Tamil Nadu on THENIJOBS.`;
+  const pageDesc = company.description
+    ? company.description.substring(0, 155)
+    : `Welcome to the official website of ${displayName}. Discover services, products, contact details, and apply for open career opportunities in Tamil Nadu on THENIJOBS.`;
 
   return {
     title: pageTitle,
@@ -48,11 +61,13 @@ export async function generateMetadata({
       type: 'website',
       url: `https://thenijobs.com/${companySlug}`,
       siteName: 'THENIJOBS',
+      images: company.logoUrl ? [{ url: company.logoUrl }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: pageTitle,
       description: pageDesc,
+      images: company.logoUrl ? [company.logoUrl] : undefined,
     },
     alternates: {
       canonical: `https://thenijobs.com/${companySlug}`,
@@ -70,5 +85,14 @@ export default async function CompanyLandingPage({
   params: Promise<{ companySlug: string }>;
 }) {
   const { companySlug } = await params;
+
+  if (companySlug !== '_fallback') {
+    const company = await getCompanyBySlugServer(companySlug).catch(() => null);
+    if (!company) {
+      notFound();
+    }
+  }
+
   return <CompanyLandingPageClient slug={companySlug} />;
 }
+

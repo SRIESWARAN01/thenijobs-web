@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
         destination: '/marketplace?type=services',
         permanent: true,
       },
+      {
+        source: '/companies',
+        destination: '/businesses',
+        permanent: true,
+      },
+      {
+        source: '/companies/:slug+',
+        destination: '/company/:slug+',
+        permanent: true,
+      },
     ];
   },
 };

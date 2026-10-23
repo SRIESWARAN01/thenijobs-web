@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import MarketplaceItemPageClient from './MarketplaceItemPageClient';
 import { getAllMarketplaceItemParamsServer, getMarketplaceItemServer } from '@/lib/firebase/firestoreServer';
 import { generateBreadcrumbSchema } from '@/lib/seo/schemas';
@@ -42,11 +43,11 @@ export async function generateMetadata({
   const { type, companySlug, itemId } = await params;
   const kind = type === 'service' ? 'Service' : 'Product';
 
-  if (companySlug === '_fallback') {
+  if (companySlug === '_fallback' || itemId === '_fallback') {
     return {
       title: `${kind} Details | THENIJOBS Marketplace`,
       description: 'Browse products and services from verified local businesses on THENIJOBS Marketplace.',
-      robots: { index: false, follow: true },
+      robots: { index: false, follow: false },
     };
   }
 
@@ -62,32 +63,11 @@ export async function generateMetadata({
     return generateProductSEO(item, company);
   }
 
-  // Fallback: item not found server-side (may resolve client-side)
-  const displayCompany = companySlug
-    .replace(/-/g, ' ')
-    .replace(/\b\w/g, (c: string) => c.toUpperCase());
-
-  const canonical = type === 'service'
-    ? canonicalServiceUrl(companySlug, itemId)
-    : canonicalProductUrl(companySlug, itemId);
-
+  // Item not found: return non-indexed 404 metadata
   return {
-    title: `${kind} from ${displayCompany} | THENIJOBS Marketplace`,
-    description: `View this ${kind.toLowerCase()} offered by ${displayCompany} on THENIJOBS Marketplace. Contact directly via WhatsApp or call to order or enquire.`,
-    openGraph: {
-      title: `${kind} from ${displayCompany} | THENIJOBS Marketplace`,
-      description: `View this ${kind.toLowerCase()} offered by ${displayCompany} on THENIJOBS Marketplace.`,
-      url: canonical,
-      type: 'website',
-      siteName: 'THENIJOBS',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${kind} from ${displayCompany} | THENIJOBS`,
-      description: `View this ${kind.toLowerCase()} on THENIJOBS Marketplace.`,
-    },
-    alternates: { canonical },
-    robots: { index: true, follow: true },
+    title: `${kind} Not Found | THENIJOBS Marketplace`,
+    description: `The requested ${kind.toLowerCase()} was not found on THENIJOBS Marketplace.`,
+    robots: { index: false, follow: false },
   };
 }
 
@@ -103,11 +83,18 @@ export default async function MarketplaceItemPage({
   const itemType = type === 'service' ? 'service' : 'product';
   const result = await getMarketplaceItemServer(itemType, companySlug, itemId).catch(() => null);
 
-  const displayCompany = result?.company?.name || companySlug
+  if (!result) {
+    if (companySlug === '_fallback' || itemId === '_fallback') {
+      return <MarketplaceItemPageClient type={type} companySlug={companySlug} itemId={itemId} />;
+    }
+    notFound();
+  }
+
+  const displayCompany = result.company?.name || companySlug
     .replace(/-/g, ' ')
     .replace(/\b\w/g, (c: string) => c.toUpperCase());
 
-  const itemName = result?.item?.name || `${kind} Details`;
+  const itemName = result.item?.name || `${kind} Details`;
 
   // Breadcrumb with real names
   const breadcrumbSchema = generateBreadcrumbSchema([

@@ -49,3 +49,7 @@ src/app/uiux-preview/
 
 # Local database backups
 backups/
+
+# Firebase Service Account keys & secrets
+serviceAccountKey*.json
+*serviceAccount*.json

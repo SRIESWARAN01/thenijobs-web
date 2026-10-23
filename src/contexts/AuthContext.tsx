@@ -344,7 +344,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // ── Role helpers ──────────────────────────────────────────────
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
-  const isEmployer = user?.role === 'employer' || user?.role === 'business_owner';
+  const isEmployer = user?.role === 'employer' || user?.role === 'business_owner' || user?.role === 'supplier' || user?.role === 'service_provider';
   const isSeeker = user?.role === 'job_seeker';
 
   // ── Memoised context value ────────────────────────────────────

@@ -13,24 +13,52 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Check if authenticated user is suspended or banned in users/{uid}
+    function isUserSuspendedOrBanned() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          (
+            'accountStatus' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus in ['suspended', 'banned']
+          ) || (
+            'status' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status in ['suspended', 'banned']
+          )
+        );
+    }
+
+    function isNotSuspended() {
+      return !isUserSuspendedOrBanned();
+    }
+
+    // Active authenticated user: signed in and neither suspended nor banned
+    function isActiveUser() {
+      return isAuthenticated() && isNotSuspended();
+    }
+
     function isAdmin() {
-      return isAuthenticated() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'
-      );
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'
+        );
     }
 
     function isCompanyOwner(companyId) {
       return isAuthenticated() &&
+        exists(/databases/$(database)/documents/companies/$(companyId)) &&
         get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
     }
 
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        'role' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data ?
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : '';
     }
 
     function isEmployerOrOwner() {
-      return isAuthenticated() && getUserRole() in ['employer', 'business_owner'];
+      return isAuthenticated() &&
+        getUserRole() in ['employer', 'business_owner', 'supplier', 'service_provider'];
     }
 
     // EMPLOYER-1: portfolioSites.templateId carries a plan tier (src/lib/constants.ts's
@@ -65,7 +93,8 @@ service cloud.firestore {
         (!d.keys().hasAny(['isActive'])           || d.isActive == false) &&
         (!d.keys().hasAny(['isVerified'])          || d.isVerified == false) &&
         (!d.keys().hasAny(['isFeatured'])          || d.isFeatured == false) &&
-        (!d.keys().hasAny(['rejectionReason'])     || d.rejectionReason == '');
+        (!d.keys().hasAny(['rejectionReason'])     || d.rejectionReason == '') &&
+        (!d.keys().hasAny(['accountStatus'])       || d.accountStatus in ['pending_admin_approval', 'trial_active']);
     }
 
     function safeJobCreate() {
@@ -82,6 +111,7 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
         'verificationStatus', 'isActive', 'isVerified', 'isFeatured',
         'isPremium', 'rejectionReason',
+        'accountStatus', 'subscriptionStatus',
         // RULES-1: plan and ownership fields are admin/server-owned (security.md S-3)
         'subscriptionPlan', 'planStartDate', 'planEndDate', 'ownerId'
       ]);
@@ -97,6 +127,7 @@ service cloud.firestore {
         (!d.keys().hasAny(['isVerified']) || d.isVerified == false) &&
         !d.diff(resource.data).affectedKeys().hasAny([
           'isFeatured', 'isPremium', 'rejectionReason',
+          'accountStatus', 'subscriptionStatus',
           'subscriptionPlan', 'planStartDate', 'planEndDate', 'ownerId'
         ]);
     }
@@ -110,6 +141,7 @@ service cloud.firestore {
     function userModerationUnchanged() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
         'role', 'isVerified', 'adminRole', 'employerRole',
+        'accountStatus', 'status', 'subscriptionStatus',
         // RULES-1: credits, plan and employer-grant fields are admin/server-owned (security.md S-3)
         'aiCredits', 'aiCreditsUsed', 'companyId', 'isEmployer', 'canPostJobs',
         'subscriptionPlan', 'isPremium'
@@ -175,10 +207,13 @@ service cloud.firestore {
     // ===== USERS =====
     match /users/{userId} {
       allow read:   if isOwner(userId) || isAdmin();
-      allow create: if (isOwner(userId) &&
-        request.resource.data.role in ['job_seeker', 'employer', 'business_owner', 'supplier', 'service_provider']) || isAdmin();
-      allow update: if (isOwner(userId) && userModerationUnchanged()) || isAdmin();
-      allow delete: if isAdmin();
+      allow create: if (isOwner(userId) && isNotSuspended() &&
+        request.resource.data.role in ['job_seeker', 'employer', 'business_owner', 'supplier', 'service_provider'] &&
+        (!request.resource.data.keys().hasAny(['accountStatus']) || !(request.resource.data.accountStatus in ['suspended', 'banned'])) &&
+        (!request.resource.data.keys().hasAny(['status']) || !(request.resource.data.status in ['suspended', 'banned']))) ||
+        (isAdmin() && isNotSuspended());
+      allow update: if (isOwner(userId) && isNotSuspended() && userModerationUnchanged()) || (isAdmin() && isNotSuspended());
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== COMPANIES =====
@@ -187,13 +222,13 @@ service cloud.firestore {
       allow read: if resource.data.verificationStatus == 'verified' ||
         resource.data.isActive == true ||
         (isAuthenticated() && resource.data.ownerId == request.auth.uid) || isAdmin();
-      allow create: if (isAuthenticated() && safeCompanyCreate() &&
-        request.resource.data.ownerId == request.auth.uid) || isAdmin();
+      allow create: if (isActiveUser() && safeCompanyCreate() &&
+        request.resource.data.ownerId == request.auth.uid) || (isAdmin() && isNotSuspended());
       allow update: if
-        (isAuthenticated() && resource.data.ownerId == request.auth.uid &&
+        (isActiveUser() && resource.data.ownerId == request.auth.uid &&
           (companyModerationUnchanged() || companyOwnerResubmission())) ||
-        isAdmin();
-      allow delete: if isAdmin();
+        (isAdmin() && isNotSuspended());
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== JOBS =====
@@ -219,15 +254,15 @@ service cloud.firestore {
       allow read: if resource.data.status in ['active', 'APPROVED', 'LIVE'] ||
         (isAuthenticated() && resource.data.postedBy == request.auth.uid) ||
         isCompanyOwner(resource.data.companyId) || isAdmin();
-      allow create: if (isAuthenticated() && safeJobCreate() &&
-        request.resource.data.postedBy == request.auth.uid) || isAdmin();
+      allow create: if (isActiveUser() && safeJobCreate() &&
+        request.resource.data.postedBy == request.auth.uid) || (isAdmin() && isNotSuspended());
       allow update: if
-        (isAuthenticated() && resource.data.postedBy == request.auth.uid &&
+        (isActiveUser() && resource.data.postedBy == request.auth.uid &&
           (jobModerationUnchanged() || jobPosterDeactivation())) ||
-        isAdmin();
+        (isAdmin() && isNotSuspended());
       allow delete: if
-        (isAuthenticated() && resource.data.postedBy == request.auth.uid) ||
-        isAdmin();
+        (isActiveUser() && resource.data.postedBy == request.auth.uid) ||
+        (isAdmin() && isNotSuspended());
     }
 
     // ===== JOB APPLICATIONS =====
@@ -238,19 +273,19 @@ service cloud.firestore {
         isAdmin()
       );
       // P0 FIX: seekerId must match the authenticated user — prevents impersonation
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         request.resource.data.seekerId == request.auth.uid &&
         request.resource.data.keys().hasAll(['seekerId', 'jobId', 'companyId']);
       // Seeker can withdraw; employer (company owner) can update status
-      allow update: if isAuthenticated() && (
+      allow update: if isActiveUser() && (
         resource.data.seekerId == request.auth.uid ||
         isCompanyOwner(resource.data.companyId) ||
         isAdmin()
       ) &&
       // Seeker cannot change companyId/jobId/seekerId after submission
       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['seekerId', 'jobId', 'companyId']);
-      allow delete: if isAdmin() ||
-        (isAuthenticated() && resource.data.seekerId == request.auth.uid);
+      allow delete: if (isAdmin() && isNotSuspended()) ||
+        (isActiveUser() && resource.data.seekerId == request.auth.uid);
     }
 
     // ===== REVIEWS =====
@@ -261,7 +296,7 @@ service cloud.firestore {
       // CompanyReviewsSection.tsx's handleSubmitReview(), uses `userId` — the actively-used
       // `CompanyReview` type's own field — so every submission was denied by
       // hasAll(['reviewerId', ...]) failing on a key that was never present.
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         request.resource.data.userId == request.auth.uid &&
         request.resource.data.keys().hasAll(['userId', 'companyId', 'rating']);
       // RULES-7: same field-name fix, plus a real second gap — CompanyReviewsManager.tsx
@@ -270,14 +305,14 @@ service cloud.firestore {
       // or an admin, denying that reply feature for the identical reason as the badge
       // toggles this ruleset already grants the employer side elsewhere (RULES-4). Scoped
       // narrowly: a company owner may change only companyReply/adminNote, nothing else.
-      allow update: if isAuthenticated() && (
+      allow update: if isActiveUser() && (
         (resource.data.userId == request.auth.uid &&
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'companyId'])) ||
         (isCompanyOwner(resource.data.companyId) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['companyReply', 'adminNote'])) ||
         isAdmin()
       );
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ===== SEEKER PROFILES =====
@@ -307,7 +342,7 @@ service cloud.firestore {
       // set isPortfolioPublic true when publicProfilePaidUntil is already a still-valid
       // timestamp -- set once, server-side, by the Firebase Admin SDK after a verified Razorpay
       // webhook (never by the client) -- and may never touch publicProfilePaidUntil itself.
-      allow create: if isOwner(userId) &&
+      allow create: if isOwner(userId) && isNotSuspended() &&
         (isAdmin() || request.resource.data.isPortfolioPublic != true) &&
         (isAdmin() || !request.resource.data.keys().hasAny(['publicProfilePaidUntil']) ||
           request.resource.data.publicProfilePaidUntil == null);
@@ -320,22 +355,22 @@ service cloud.firestore {
       // (`.diff().affectedKeys()`, same idiom as the publicProfilePaidUntil anti-tamper clause
       // below) -- a write that never touches the field at all, or explicitly re-sends its
       // current value unchanged, bypasses the gate entirely, matching normal user expectation.
-      allow update: if (isOwner(userId) || isAdmin()) &&
+      allow update: if (isOwner(userId) || isAdmin()) && isNotSuspended() &&
         (isAdmin() ||
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPortfolioPublic']) ||
           request.resource.data.isPortfolioPublic != true ||
           (resource.data.publicProfilePaidUntil is timestamp &&
            resource.data.publicProfilePaidUntil > request.time)) &&
         (isAdmin() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['publicProfilePaidUntil']));
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== SAVED JOBS =====
     match /savedJobs/{docId} {
       allow read:   if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update: if isAdmin();
+      allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isActiveUser() && resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() && isNotSuspended();
     }
 
     // ===== NOTIFICATIONS =====
@@ -344,30 +379,32 @@ service cloud.firestore {
       // P0 FIX: Only admins or the notification recipient's own system events
       // Regular clients: can only create notifications FOR OTHER users if they are an employer/admin
       // (company event notifications created server-side via firestoreService are OK)
-      allow create: if isAdmin() ||
-        // Employer-triggered events (interview scheduled, status update) — userId must be a valid seeker
-        (isAuthenticated() && isEmployerOrOwner() &&
-          request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message'])) ||
-        // System self-notifications (e.g. welcome) — user can only create for themselves
-        (isAuthenticated() && request.resource.data.userId == request.auth.uid) ||
-        // RULES-1: admin-addressed alerts (business registration, new job) from any signed-in user;
-        // the admin inbox reads userId == 'admin'
-        (isAuthenticated() && request.resource.data.userId == 'admin' &&
-          request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message'])) ||
-        // FIX-2: the "you have a new applicant" alert. applyToJob runs as the SEEKER and
-        // addresses the employer's uid, which none of the branches above permit, so this
-        // alert was denied outright. Kept last: the branches above are pure field checks,
-        // and || short-circuits, so an ordinary notification never triggers the reads below.
-        (isAuthenticated() && seekerAlertingOwnApplicationsCompany());
+      allow create: if (isAdmin() && isNotSuspended()) ||
+        (isActiveUser() && (
+          // Employer-triggered events (interview scheduled, status update) — userId must be a valid seeker
+          (isEmployerOrOwner() &&
+            request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message'])) ||
+          // System self-notifications (e.g. welcome) — user can only create for themselves
+          (request.resource.data.userId == request.auth.uid) ||
+          // RULES-1: admin-addressed alerts (business registration, new job) from any signed-in user;
+          // the admin inbox reads userId == 'admin'
+          (request.resource.data.userId == 'admin' &&
+            request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message'])) ||
+          // FIX-2: the "you have a new applicant" alert. applyToJob runs as the SEEKER and
+          // addresses the employer's uid, which none of the branches above permit, so this
+          // alert was denied outright. Kept last: the branches above are pure field checks,
+          // and || short-circuits, so an ordinary notification never triggers the reads below.
+          (seekerAlertingOwnApplicationsCompany())
+        ));
       // Only the recipient marks their own notifications as read.
       // FIX-2: the allowed key was 'isRead', but nothing in the tree writes that field —
       // createNotification writes `read: false`, markNotificationRead writes `{ read: true }`,
       // markAllNotificationsRead queries `where('read','==',false)`, NotificationContext counts
       // `!n.read`, and payment/verify writes `read`. Every mark-as-read was therefore denied and
       // the unread badge could never clear. 'isRead' is kept for any document already using it.
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid &&
+      allow update: if isActiveUser() && resource.data.userId == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'isRead', 'readAt']);
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== LEADS =====
@@ -393,8 +430,8 @@ service cloud.firestore {
         request.resource.data.message.size() > 0 &&
         request.resource.data.message.size() <= 2000 &&
         exists(/databases/$(database)/documents/companies/$(request.resource.data.companyId));
-      allow update: if isAuthenticated() && (isCompanyOwner(resource.data.companyId) || isAdmin());
-      allow delete: if isAdmin();
+      allow update: if isActiveUser() && (isCompanyOwner(resource.data.companyId) || isAdmin());
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== INTERVIEWS =====
@@ -405,42 +442,42 @@ service cloud.firestore {
         isAdmin()
       );
       // P0 FIX: Only company owners can schedule interviews; companyId ownership enforced
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         isCompanyOwner(request.resource.data.companyId) &&
         request.resource.data.keys().hasAll(['seekerId', 'companyId', 'jobId', 'date', 'time']);
-      allow update: if isAuthenticated() && (
+      allow update: if isActiveUser() && (
         resource.data.seekerId == request.auth.uid ||
         isCompanyOwner(resource.data.companyId) ||
         isAdmin()
       );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== SUBSCRIPTIONS =====
     match /subscriptions/{subId} {
       allow read:   if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create: if isAdmin() && isNotSuspended();
+      allow update: if isAdmin() && isNotSuspended();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== SERVICES =====
     match /services/{serviceId} {
       allow read: if true;
-      allow create: if isAuthenticated() && safeJobCreate() &&
+      allow create: if isActiveUser() && safeJobCreate() &&
         request.resource.data.providerId == request.auth.uid;
       allow update: if
-        (isAuthenticated() && resource.data.providerId == request.auth.uid && jobModerationUnchanged()) ||
-        isAdmin();
-      allow delete: if isAdmin();
+        (isActiveUser() && resource.data.providerId == request.auth.uid && jobModerationUnchanged()) ||
+        (isAdmin() && isNotSuspended());
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== ADVERTISEMENTS =====
     match /advertisements/{adId} {
       allow read:   if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create: if isAdmin() && isNotSuspended();
+      allow update: if isAdmin() && isNotSuspended();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== ACTIVITY LOGS =====
@@ -449,16 +486,16 @@ service cloud.firestore {
     // either the acting user's own uid or an admin's uid, so an entry must now name its author.
     match /activityLogs/{logId} {
       allow read:   if isAdmin();
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         (request.resource.data.userId == request.auth.uid || isAdmin());
       allow update: if false;
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== PLATFORM SETTINGS (AI Config, etc.) =====
     match /platformSettings/{docId} {
       allow read:  if isAdmin();
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isNotSuspended();
     }
 
     // DOC2-1: a narrow public-read mirror of just the feature killswitches
@@ -470,7 +507,7 @@ service cloud.firestore {
     // admin-only -- only the admin settings page's own save flow may write it.
     match /platformSettings/public {
       allow read:  if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isNotSuspended();
     }
 
     // ===== JOB CHANGE HISTORY =====
@@ -479,11 +516,11 @@ service cloud.firestore {
         get(/databases/$(database)/documents/jobs/$(jobId)).data.postedBy == request.auth.uid ||
         isAdmin()
       );
-      allow create: if isAuthenticated() && (
+      allow create: if isActiveUser() && (
         get(/databases/$(database)/documents/jobs/$(jobId)).data.postedBy == request.auth.uid ||
         isAdmin()
       );
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== PENDING PRODUCTS (Approval Workflow) =====
@@ -491,10 +528,10 @@ service cloud.firestore {
       allow read:   if isAuthenticated() && (
         resource.data.submittedBy == request.auth.uid || isAdmin()
       );
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         request.resource.data.submittedBy == request.auth.uid;
-      allow update: if isAdmin();
-      allow delete: if isAdmin() || (isAuthenticated() && resource.data.submittedBy == request.auth.uid);
+      allow update: if isAdmin() && isNotSuspended();
+      allow delete: if (isAdmin() && isNotSuspended()) || (isActiveUser() && resource.data.submittedBy == request.auth.uid);
     }
 
     // ===== PENDING SERVICES (Approval Workflow) =====
@@ -502,10 +539,10 @@ service cloud.firestore {
       allow read:   if isAuthenticated() && (
         resource.data.submittedBy == request.auth.uid || isAdmin()
       );
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         request.resource.data.submittedBy == request.auth.uid;
-      allow update: if isAdmin();
-      allow delete: if isAdmin() || (isAuthenticated() && resource.data.submittedBy == request.auth.uid);
+      allow update: if isAdmin() && isNotSuspended();
+      allow delete: if (isAdmin() && isNotSuspended()) || (isActiveUser() && resource.data.submittedBy == request.auth.uid);
     }
 
     // ===== PORTFOLIO SITES =====
@@ -539,7 +576,7 @@ service cloud.firestore {
       // carrying a truthy firstApprovedAt — either would let the update-time approval gate below
       // be satisfied by a document that was never actually approved (create a fake-approved
       // draft, then update it to published, reading its own fabricated firstApprovedAt back).
-      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid &&
+      allow create: if isActiveUser() && request.resource.data.ownerId == request.auth.uid &&
         (isAdmin() || portfolioTemplateAllowedForOwner(
           request.resource.data.ownerType, request.resource.data.companyId, request.resource.data.templateId)) &&
         (isAdmin() || request.resource.data.status != 'published') &&
@@ -553,23 +590,23 @@ service cloud.firestore {
       // `status` to `'published'` only when it is already truthy, and may never change
       // `firstApprovedAt` itself — both bypassed for isAdmin(), matching every other override
       // in this file.
-      allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin()) &&
+      allow update: if isActiveUser() && (resource.data.ownerId == request.auth.uid || isAdmin()) &&
         (isAdmin() || request.resource.data.templateId == resource.data.templateId ||
          portfolioTemplateAllowedForOwner(
            resource.data.ownerType, resource.data.companyId, request.resource.data.templateId)) &&
         (isAdmin() || request.resource.data.status != 'published' || resource.data.firstApprovedAt != null) &&
         (isAdmin() || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['firstApprovedAt']));
-      allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow delete: if isActiveUser() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
     match /portfolioSites/{siteId}/versions/{versionId} {
       allow read: if isAuthenticated() && (
         get(/databases/$(database)/documents/portfolioSites/$(siteId)).data.ownerId == request.auth.uid || isAdmin()
       );
-      allow create: if isAuthenticated() && (
+      allow create: if isActiveUser() && (
         get(/databases/$(database)/documents/portfolioSites/$(siteId)).data.ownerId == request.auth.uid || isAdmin()
       );
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== USERNAMES (Reservation) =====
@@ -593,13 +630,13 @@ service cloud.firestore {
     // does not exist yet. The rule now permits that shape and nothing else.
     match /counters/{counterId} {
       allow read:   if isAuthenticated();
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         request.resource.data.keys().hasOnly(['count', 'updatedAt']) &&
         request.resource.data.count == 1;
-      allow update: if isAuthenticated() &&
+      allow update: if isActiveUser() &&
         request.resource.data.keys().hasOnly(['count', 'updatedAt']) &&
         request.resource.data.count == resource.data.count + 1;
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== CONVERSATIONS & CHAT =====
@@ -613,7 +650,7 @@ service cloud.firestore {
       // SEC-2: create was open to anyone signed in, so a thread could be opened naming other
       // people. applyToJob is the only creator and it always writes itself as the seeker and
       // includes itself in participants, so the rule asks for exactly that.
-      allow create: if isAdmin() || (isAuthenticated() &&
+      allow create: if (isAdmin() && isNotSuspended()) || (isActiveUser() &&
         request.resource.data.seekerId == request.auth.uid &&
         request.auth.uid in request.resource.data.participants);
       // The order of these terms is deliberate and matches what the rule did before: the
@@ -623,7 +660,7 @@ service cloud.firestore {
       // sending a message pay for a users/ lookup, and on an account with no users document it
       // raises a null-value evaluation error rather than short-circuiting. The emulator probe
       // caught it: the denials were arriving as evaluation errors instead of clean refusals.
-      allow update: if isAuthenticated() && (
+      allow update: if isActiveUser() && (
         (
           (
             request.auth.uid in resource.data.participants ||
@@ -632,7 +669,7 @@ service cloud.firestore {
           ) && conversationMembershipUnchanged()
         ) || isAdmin()
       );
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     match /conversations/{chatId}/messages/{messageId} {
@@ -641,18 +678,18 @@ service cloud.firestore {
       // between two other people, or attributed to them. The sender must belong to the thread
       // and must sign the message as themselves. 'system' is allowed because applyToJob writes
       // the opening line of every thread with senderId: 'system'.
-      allow create: if mayUseConversation(chatId) &&
+      allow create: if mayUseConversation(chatId) && isNotSuspended() &&
         (request.resource.data.senderId == request.auth.uid ||
          request.resource.data.senderId == 'system');
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== JOB ALERTS =====
     match /jobAlerts/{alertId} {
       allow read:   if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ===== COMPANY FOLLOWS =====
@@ -666,9 +703,9 @@ service cloud.firestore {
       // only runs when a uid is present, so this closes what a stranger could do without
       // changing what a signed-in user already does.
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update: if isAdmin();
+      allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isActiveUser() && resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() && isNotSuspended();
     }
 
     // ===== WHATSAPP APPLICATIONS =====
@@ -688,7 +725,7 @@ service cloud.firestore {
       // writer currently has no callers. The rule is written to be correct if the feature is
       // wired up rather than to bless it — an unconstrained write is not worth leaving open for
       // a feature that does not exist.
-      allow create: if isAuthenticated()
+      allow create: if isActiveUser()
         && request.resource.data.seekerId == request.auth.uid
         && request.resource.data.keys().hasAll([
              'seekerId', 'seekerName', 'jobId', 'jobTitle', 'companyId', 'appliedVia', 'createdAt'
@@ -697,7 +734,7 @@ service cloud.firestore {
              'seekerId', 'seekerName', 'jobId', 'jobTitle', 'companyId', 'phone',
              'appliedVia', 'createdAt'
            ]);
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== SEO & KEYWORD ANALYTICS =====
@@ -709,7 +746,7 @@ service cloud.firestore {
       // rule it already had: admin-only, not fully closed, since a genuine admin analytics
       // feature is a plausible future use for a name like this one, unlike usernames above.
       allow read: if isAdmin();
-      allow write: if isAdmin();
+      allow write: if isAdmin() && isNotSuspended();
     }
 
     // ===== COMPANY SLUG RESERVATIONS (RULES-1, D-SLUG) =====
@@ -717,10 +754,10 @@ service cloud.firestore {
     // owners' pending companies. Fields: slug, email, ownerId, companyId, createdAt.
     match /companySlugs/{slug} {
       allow read:   if true;
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         request.resource.data.ownerId == request.auth.uid &&
         request.resource.data.keys().hasOnly(['slug', 'email', 'ownerId', 'companyId', 'createdAt']);
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== PORTFOLIO SLUG RESERVATIONS (SEEKER-2) =====
@@ -731,17 +768,17 @@ service cloud.firestore {
     // Fields: slug, ownerId, siteId, createdAt.
     match /portfolioSlugs/{slug} {
       allow read:   if true;
-      allow create: if isAuthenticated() &&
+      allow create: if isActiveUser() &&
         request.resource.data.ownerId == request.auth.uid &&
         request.resource.data.keys().hasOnly(['slug', 'ownerId', 'siteId', 'createdAt']);
-      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
-      allow update: if isAdmin();
+      allow delete: if isActiveUser() && resource.data.ownerId == request.auth.uid;
+      allow update: if isAdmin() && isNotSuspended();
     }
 
     // ===== ERROR REPORTS (RULES-1, D-ERRORS) =====
     match /errors/{errorId} {
-      allow read, update, delete: if isAdmin();
-      allow create: if isAuthenticated() &&
+      allow read, update, delete: if isAdmin() && isNotSuspended();
+      allow create: if isActiveUser() &&
         request.resource.data.keys().hasAll(['errorType', 'page', 'errorMessage', 'severity', 'status']) &&
         request.resource.data.status == 'open' &&
         request.resource.data.errorMessage is string &&
@@ -758,37 +795,37 @@ service cloud.firestore {
           (resource.data.companyId != '' && isCompanyOwner(resource.data.companyId))
         )
       );
-      allow update, delete: if isAdmin();
+      allow update, delete: if isAdmin() && isNotSuspended();
       allow create: if false;
     }
 
     // ===== AMBASSADORS & REFERRAL NETWORK =====
     match /ambassadors/{userId} {
       allow read: if true;
-      allow create: if isOwner(userId);
+      allow create: if isOwner(userId) && isNotSuspended();
       // SEC-3: the third branch previously allowed ANY authenticated user to rewrite financial
       // aggregates (pendingPayoutINR, totalEarnedINR, totalReferrals, businessesReferred).
       // These are server-computed values — only the owner may update their own non-financial
       // profile fields, and only an admin may touch financial/referral counters.
-      allow update: if isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+      allow update: if (isOwner(userId) && isNotSuspended() && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'totalReferrals', 'businessesReferred', 'pendingPayoutINR', 'totalEarnedINR',
           'status', 'isApproved', 'commissionRate'
-        ]) || isAdmin();
-      allow delete: if isAdmin();
+        ])) || (isAdmin() && isNotSuspended());
+      allow delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== AMBASSADOR REFERRALS =====
     match /referrals/{referralId} {
       allow read: if isAuthenticated() && (resource.data.ambassadorUid == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.keys().hasAll(['ambassadorUid', 'ambassadorCode', 'companyId']);
-      allow update, delete: if isAdmin();
+      allow create: if isActiveUser() && request.resource.data.keys().hasAll(['ambassadorUid', 'ambassadorCode', 'companyId']);
+      allow update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== AMBASSADOR PAYOUT REQUESTS =====
     match /payoutRequests/{payoutId} {
       allow read: if isAuthenticated() && (resource.data.ambassadorUid == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.ambassadorUid == request.auth.uid;
-      allow update, delete: if isAdmin();
+      allow create: if isActiveUser() && request.resource.data.ambassadorUid == request.auth.uid;
+      allow update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== AI USAGE LOGS (RULES-1) — written only by a server identity; none exists today (D-HOSTING) =====
@@ -812,7 +849,7 @@ service cloud.firestore {
     // ===== ADMIN BROADCASTS (RULES-1) =====
     match /broadcasts/{broadcastId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
     }
 
     // ===== DEFAULT DENY (RULES-1, security.md S-1) =====
@@ -822,5 +859,3 @@ service cloud.firestore {
     // recursive wildcard.
   }
 }
-
-

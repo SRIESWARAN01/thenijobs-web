@@ -43,7 +43,7 @@ const EMPLOYER_NAV = [
 ];
 
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useRequireAuth(['employer', 'business_owner']);
+  const { user, loading: authLoading } = useRequireAuth(['employer', 'business_owner', 'supplier', 'service_provider']);
   const { unreadCount } = useNotifications();
   const { data: companies } = useCollection<any>('companies', [where('ownerId', '==', user?.uid || '')], { skip: !user?.uid });
   const company = companies?.[0];

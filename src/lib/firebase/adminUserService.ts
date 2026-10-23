@@ -118,13 +118,18 @@ export async function adminCreateUser(
       });
     } else if (
       params.role === 'employer' ||
-      params.role === 'business_owner'
+      params.role === 'business_owner' ||
+      params.role === 'supplier' ||
+      params.role === 'service_provider'
     ) {
       // Create skeleton company document
       const companySlug = (params.companyName || params.displayName)
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
+
+      const now = new Date();
+      const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // 15-day free trial
 
       const companyRef = doc(db, 'companies', `company_${newUser.uid}`);
       await setDoc(companyRef, {
@@ -141,14 +146,20 @@ export async function adminCreateUser(
         country: 'India',
         galleryImages: [],
         galleryVideos: [],
-        verificationStatus: 'pending',
+        verificationStatus: 'verified',
         verificationBadges: {
-          mobileVerified: false,
-          emailVerified: false,
+          mobileVerified: true,
+          emailVerified: true,
           gstVerified: false,
-          businessVerified: false,
+          businessVerified: true,
         },
-        isActive: false,
+        accountStatus: 'trial_active',
+        subscriptionStatus: 'trial_active',
+        subscriptionPlan: 'standard',
+        paymentStatus: 'unpaid',
+        trialStartDate: now,
+        trialEndDate: trialEndDate,
+        isActive: true,
         isFeatured: false,
         isPremium: false,
         viewCount: 0,
@@ -162,6 +173,12 @@ export async function adminCreateUser(
       // Link company to user
       await setDoc(doc(db, 'users', newUser.uid), {
         companyId: companyRef.id,
+        isEmployer: true,
+        accountStatus: 'trial_active',
+        subscriptionStatus: 'trial_active',
+        subscriptionPlan: 'standard',
+        trialStartDate: now,
+        trialEndDate: trialEndDate,
       }, { merge: true });
     }
 

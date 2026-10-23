@@ -57,6 +57,8 @@ export function useRequireAuth(
           break;
         case 'employer':
         case 'business_owner':
+        case 'supplier':
+        case 'service_provider':
           router.replace('/employer/dashboard');
           break;
         default:

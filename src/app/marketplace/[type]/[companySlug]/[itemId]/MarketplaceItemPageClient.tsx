@@ -10,6 +10,7 @@ import {
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
 import { resolveCompanyBySlug } from '@/lib/companySlug';
+import { createLead } from '@/lib/firebase/firestoreService';
 
 type ItemType = 'product' | 'service';
 
@@ -225,6 +226,25 @@ export default function MarketplaceItemPageClient({
     : []
   ).filter((entry: any) => entry && typeof entry === 'object' && entry.id !== itemId).slice(0, 4);
 
+  const handleWhatsAppOrder = async () => {
+    if (company?.id) {
+      try {
+        await createLead({
+          companyId: company.id,
+          name: 'WhatsApp Marketplace Customer',
+          customerName: 'WhatsApp Marketplace Customer',
+          message: waMessage,
+          service: `${type === 'service' ? 'Service' : 'Product'}: ${itemName}`,
+          source: `marketplace_${type}`,
+          itemId,
+          itemType: type,
+        });
+      } catch (e) {
+        console.warn('Inbound lead capture notice:', e);
+      }
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-[#111827] pb-24" style={{ fontFamily: "'Inter', sans-serif" }}>
       <Header />
@@ -293,6 +313,7 @@ export default function MarketplaceItemPageClient({
                   href={`https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(waMessage)}`}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={handleWhatsAppOrder}
                   className="flex-1 py-3 rounded-xl text-white text-sm font-bold flex items-center justify-center gap-2 shadow-2xs"
                   style={{ background: type === 'service' ? '#2563EB' : '#25D366' }}
                 >

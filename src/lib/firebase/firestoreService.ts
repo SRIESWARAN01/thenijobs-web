@@ -525,6 +525,41 @@ export async function getSavedJobs(userId: string) {
 // LEADS
 // ============================================================
 
+export async function createLead(data: {
+  companyId: string;
+  name?: string;
+  customerName?: string;
+  contactName?: string;
+  customerPhone?: string;
+  phone?: string;
+  service?: string;
+  message: string;
+  status?: string;
+  source?: string;
+  itemId?: string;
+  itemType?: string;
+  [key: string]: any;
+}) {
+  const resolvedName = (data.customerName || data.name || data.contactName || 'WhatsApp Visitor').trim();
+  const resolvedPhone = (data.customerPhone || data.phone || '').trim();
+
+  return addDoc(collection(db, 'leads'), {
+    companyId: data.companyId,
+    name: resolvedName,
+    customerName: resolvedName,
+    contactName: resolvedName,
+    ...(resolvedPhone ? { phone: resolvedPhone, customerPhone: resolvedPhone } : {}),
+    message: (data.message || 'Marketplace WhatsApp Inquiry').trim(),
+    service: data.service || 'Marketplace Item',
+    status: data.status || 'new',
+    source: data.source || 'marketplace',
+    ...(data.itemId ? { itemId: data.itemId } : {}),
+    ...(data.itemType ? { itemType: data.itemType } : {}),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function getLeads(filters?: {
   companyId?: string;
   status?: string;
@@ -668,8 +703,14 @@ export async function approveCompany(companyId: string, adminId: string) {
 
   if (company?.ownerId) {
     try {
+      const userDoc = await fetchDocument<{ role?: string }>('users', company.ownerId);
+      const existingRole = userDoc?.role;
+      const preservedRole = (existingRole === 'business_owner' || existingRole === 'supplier' || existingRole === 'service_provider')
+        ? existingRole
+        : 'employer';
+
       await updateDoc(doc(db, 'users', company.ownerId), {
-        role: 'employer',
+        role: preservedRole,
         isEmployer: true,
         companyId: companyId,
         canPostJobs: true,

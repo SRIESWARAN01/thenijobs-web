@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   UserPlus, Briefcase, Building2, ArrowLeft, Copy, Download,
-  Check, Loader2, Eye, EyeOff, RefreshCw, Mail, Phone, MapPin, Lock, User
+  Check, Loader2, Eye, EyeOff, RefreshCw, Mail, Phone, MapPin, Lock, User,
+  Package, Wrench, ShieldCheck
 } from 'lucide-react';
 import { adminCreateUser, generatePassword } from '@/lib/firebase/adminUserService';
 import { logActivity } from '@/lib/firebase/firestoreService';
@@ -13,12 +14,15 @@ import { TN_DISTRICTS } from '@/lib/types';
 import type { UserRole } from '@/lib/types';
 import { Button, PageHeader } from '@/components/dashboard';
 
-type CreateRole = 'job_seeker' | 'employer' | 'business_owner';
+type CreateRole = 'job_seeker' | 'employer' | 'business_owner' | 'supplier' | 'service_provider' | 'admin';
 
-const ROLE_OPTIONS: { id: CreateRole; label: string; icon: typeof Briefcase; desc: string; color: string; bg: string }[] = [
+const ROLE_OPTIONS: { id: CreateRole; label: string; icon: any; desc: string; color: string; bg: string }[] = [
   { id: 'job_seeker', label: 'Job Seeker', icon: Briefcase, desc: 'Create a job seeker account', color: '#2563EB', bg: '#EFF6FF' },
   { id: 'employer', label: 'Employer / HR', icon: Building2, desc: 'Create an employer account', color: '#059669', bg: '#ECFDF5' },
   { id: 'business_owner', label: 'Business Owner', icon: Building2, desc: 'Create a business owner account', color: '#D97706', bg: '#FFFBEB' },
+  { id: 'supplier', label: 'Supplier / B2B', icon: Package, desc: 'Create a supplier account', color: '#7C3AED', bg: '#F5F3FF' },
+  { id: 'service_provider', label: 'Service Provider', icon: Wrench, desc: 'Create a service provider account', color: '#E11D48', bg: '#FFF1F2' },
+  { id: 'admin', label: 'Admin', icon: ShieldCheck, desc: 'Create an administrator account', color: '#4B5563', bg: '#F3F4F6' },
 ];
 
 export default function AdminCreateUserPage() {

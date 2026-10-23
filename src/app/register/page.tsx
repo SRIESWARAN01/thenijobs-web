@@ -62,7 +62,7 @@ export default function RegisterPage() {
     if (user) {
       const r = user.role;
       if (r === 'admin' || r === 'super_admin') router.push('/admin/dashboard');
-      else if (r === 'employer' || r === 'business_owner') router.push('/employer/dashboard');
+      else if (r === 'employer' || r === 'business_owner' || r === 'supplier' || r === 'service_provider') router.push('/employer/dashboard');
       else router.push('/seeker/dashboard');
     }
   }, [user, router]);

@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Star, Award, Zap, Loader2, Crown, CheckCircle2 } from 'lucide-react';
+import { Check, Star, Award, Zap, Loader2, Crown, CheckCircle2, Download } from 'lucide-react';
 import { Button, Card, PageHeader, PageShell, Pill } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
+import { generatePaymentReceiptPDF, ReceiptData } from '@/lib/pdf/receiptGenerator';
+import { useToast } from '@/contexts/ToastContext';
 
 const BENEFITS = [
   'Featured candidate badge shown to recruiters first',
@@ -19,12 +21,57 @@ const BENEFITS = [
 export default function SeekerSubscriptionPage() {
   const { user } = useAuth();
   const uid = user?.uid;
+  const toast = useToast();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false);
 
   // Fetch seekerProfile to see if they have any active subscription
-  const { data: profile, loading } = useDocument<{ isPremium?: boolean }>('seekerProfiles', uid);
+  const { data: profile, loading } = useDocument<{ isPremium?: boolean; premiumStartDate?: any; premiumEndDate?: any }>('seekerProfiles', uid);
 
   const isPremium = profile?.isPremium === true;
+
+  const handleDownloadReceipt = async () => {
+    setDownloadingReceipt(true);
+    try {
+      const now = new Date();
+      const exp = new Date();
+      exp.setMonth(now.getMonth() + 3);
+
+      const startDateStr = profile?.premiumStartDate?.toDate?.()
+        ? profile.premiumStartDate.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      const endDateStr = profile?.premiumEndDate?.toDate?.()
+        ? profile.premiumEndDate.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      const receiptData: ReceiptData = {
+        receiptNo: `THENI-REC-${uid ? uid.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase() : 'SEEKER'}`,
+        planName: 'Pro Candidate',
+        planSlug: 'seeker_pro',
+        amount: 199,
+        startDate: startDateStr,
+        expiryDate: endDateStr,
+        date: now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        billedTo: user?.displayName || user?.email || 'Job Seeker',
+        phone: (user as any)?.phoneNumber || (user as any)?.phone || '',
+        email: user?.email || '',
+        paymentMethod: 'Razorpay 256-Bit SSL (UPI / Cards)',
+        status: 'PAID / ACTIVE',
+        sloganText: 'கற்றலுக்கு எல்லையில்லை, வாய்ப்புகளுக்கு பஞ்சமில்லை',
+        sloganLanguage: 'ta',
+      };
+
+      const pdf = await generatePaymentReceiptPDF(receiptData);
+      pdf.save(`THENIJOBS_Receipt_${receiptData.receiptNo}.pdf`);
+      toast.success('🎉 Official Receipt Downloaded Successfully!');
+    } catch (err: any) {
+      console.error('Receipt download error:', err);
+      toast.error('Download Failed', 'Could not generate receipt PDF. Please try again.');
+    } finally {
+      setDownloadingReceipt(false);
+    }
+  };
 
   const seekerPlan: PlanDetails = {
     name: 'Pro Candidate',
@@ -133,17 +180,33 @@ export default function SeekerSubscriptionPage() {
             </div>
           </div>
 
-          <Button
-            variant="primary"
-            size="lg"
-            block
-            onClick={() => setIsCheckoutOpen(true)}
-            disabled={isPremium}
-            className="mt-8 border-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95"
-          >
-            <Star size={14} className="fill-current" aria-hidden />
-            {isPremium ? 'Plan active' : 'Upgrade to Pro — ₹199'}
-          </Button>
+          {isPremium ? (
+            <div className="mt-8 space-y-2.5">
+              <div className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
+                <CheckCircle2 size={15} className="text-emerald-600" />
+                <span>Pro Candidate Plan Active</span>
+              </div>
+              <button
+                onClick={handleDownloadReceipt}
+                disabled={downloadingReceipt}
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {downloadingReceipt ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                <span>Download Official Receipt (PDF)</span>
+              </button>
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              block
+              onClick={() => setIsCheckoutOpen(true)}
+              className="mt-8 border-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-95"
+            >
+              <Star size={14} className="fill-current" aria-hidden />
+              Upgrade to Pro — ₹199
+            </Button>
+          )}
         </Card>
       </div>
 

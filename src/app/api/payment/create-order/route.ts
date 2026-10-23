@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
-import { SUBSCRIPTION_PLANS } from '@/lib/constants';
+import { ALL_VALID_PLAN_PRICES } from '@/lib/constants';
+import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 
-// PAY-3: this route used to take `amount` straight from the request body and hand it to
-// Razorpay unmodified -- a tampered client could request an order for any amount it liked (e.g.
-// ₹1 instead of ₹5,000 for Enterprise). verify.ts already derives its own PLAN_PRICES from
-// SUBSCRIPTION_PLANS this same way (PAY-1); create-order now does too, so the amount a client can
-// even request an order for is bounded by the real plan price before Razorpay is ever involved.
-const PLAN_PRICES: Record<string, number> = Object.fromEntries(
-  SUBSCRIPTION_PLANS.map((plan) => [plan.slug, plan.price]),
-);
+const PLAN_PRICES = ALL_VALID_PLAN_PRICES;
 
 export async function POST(request: Request) {
   try {
@@ -32,22 +26,24 @@ export async function POST(request: Request) {
     // The order is always created for the server-derived price, never whatever the client sent.
     const amount = expectedAmount;
 
-    // Generate unique order ID
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    // Generate unique internal receipt identifier
+    const receiptSeed = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Razorpay Gateway Credentials (Strict Live Mode)
+    // Razorpay Gateway Credentials
     const razorpayKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!razorpayKey || !razorpaySecret) {
       return NextResponse.json({
         success: false,
-        error: 'Razorpay Live Gateway credentials are not configured.',
+        error: 'Razorpay Gateway credentials are not configured.',
       }, { status: 503 });
     }
 
     try {
       const authHeader = `Basic ${Buffer.from(`${razorpayKey}:${razorpaySecret}`).toString('base64')}`;
+      const isTestMode = razorpayKey.startsWith('rzp_test_');
+
       const rpResponse = await fetch('https://api.razorpay.com/v1/orders', {
         method: 'POST',
         headers: {
@@ -57,18 +53,41 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           amount: Math.round(amount * 100), // paise
           currency: 'INR',
-          receipt: orderId,
+          receipt: receiptSeed,
           notes: {
             planSlug: planSlug || 'standard',
+            planName: planName || 'Subscription Plan',
             companyId: companyId || '',
             userId: userId || '',
-            mode: 'live',
+            mode: isTestMode ? 'test' : 'live',
           },
         }),
       });
 
       if (rpResponse.ok) {
         const rpOrder = await rpResponse.json();
+
+        // Securely record created order in Firestore
+        try {
+          const db = getAdminFirestore();
+          await db.collection('orders').doc(rpOrder.id).set({
+            orderId: rpOrder.id,
+            planSlug: planSlug || 'standard',
+            planName: planName || 'Subscription Plan',
+            amount,
+            currency: 'INR',
+            companyId: companyId || '',
+            userId: userId || '',
+            role: role || 'employer',
+            status: 'created',
+            mode: isTestMode ? 'test' : 'live',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }, { merge: true });
+        } catch (dbErr) {
+          console.warn('[Payment Create Order] Order tracking log skipped (non-blocking):', dbErr);
+        }
+
         return NextResponse.json({
           success: true,
           orderId: rpOrder.id,
@@ -76,21 +95,21 @@ export async function POST(request: Request) {
           currency: 'INR',
           key: razorpayKey,
           isRazorpay: true,
-          mode: 'live',
+          mode: isTestMode ? 'test' : 'live',
         });
       }
 
       const errorData = await rpResponse.text();
-      console.error('[Payment API] Razorpay Live order creation failed:', rpResponse.status, errorData);
+      console.error('[Payment API] Razorpay order creation failed:', rpResponse.status, errorData);
       return NextResponse.json({
         success: false,
-        error: `Razorpay Live Gateway rejected order creation (${rpResponse.status}). Please try again.`,
+        error: `Razorpay Gateway rejected order creation (${rpResponse.status}). Please try again.`,
       }, { status: 502 });
     } catch (rpErr: any) {
-      console.error('[Payment API] Razorpay Live order network error:', rpErr);
+      console.error('[Payment API] Razorpay order network error:', rpErr);
       return NextResponse.json({
         success: false,
-        error: 'Unable to connect to Razorpay Live Gateway. Please check your internet connection.',
+        error: 'Unable to connect to Razorpay Gateway. Please check your internet connection.',
       }, { status: 502 });
     }
   } catch (error: any) {

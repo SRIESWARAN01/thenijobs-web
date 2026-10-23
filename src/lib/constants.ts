@@ -51,6 +51,15 @@ export const getAmbassadorCommission = (planSlug: string | undefined): number =>
 };
 
 // ===== SUBSCRIPTION PLANS (ANNUAL PRICING STRATEGY — 4 TIERS) =====
+export const ALL_VALID_PLAN_PRICES: Record<string, number> = {
+  basic: 999,
+  standard: 1800,
+  premium: 3500,
+  enterprise: 5000,
+  seeker_pro: 199,
+  'seeker-premium': 199,
+};
+
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'plan_basic',

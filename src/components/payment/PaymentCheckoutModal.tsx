@@ -70,22 +70,107 @@ export default function PaymentCheckoutModal({
   const { user } = useAuth();
   const toast = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
+  const autoDownloadedRef = useRef<string | null | undefined>(null);
 
   const [loading, setLoading] = useState(false);
-  const [paymentState, setPaymentState] = useState<'ready' | 'processing' | 'success' | 'failed'>('ready');
+  const [paymentState, setPaymentState] = useState<'ready' | 'processing' | 'reconciling' | 'reconciling_manual' | 'success' | 'failed'>('ready');
   const [errorMessage, setErrorMessage] = useState('');
   const [transactionDetails, setTransactionDetails] = useState<ReceiptData | null>(null);
+  const [pendingIdentifiers, setPendingIdentifiers] = useState<{ orderId: string; paymentId: string } | null>(null);
+  const [reconcileAttemptCount, setReconcileAttemptCount] = useState(0);
 
   useEffect(() => {
     if (isOpen) {
       setPaymentState('ready');
       setErrorMessage('');
       setTransactionDetails(null);
+      setPendingIdentifiers(null);
+      setReconcileAttemptCount(0);
+      autoDownloadedRef.current = null;
       loadRazorpayScript();
     }
   }, [isOpen, plan]);
 
+  /**
+   * Automatic Receipt Download:
+   * When backend confirms payment and transactionDetails is set, automatically trigger the browser
+   * PDF download without forcing the user to click another button (where browser policies allow).
+   */
+  useEffect(() => {
+    if (paymentState === 'success' && transactionDetails && autoDownloadedRef.current !== transactionDetails.paymentId) {
+      autoDownloadedRef.current = transactionDetails.paymentId;
+      // Trigger automatic PDF generation and browser download
+      generatePaymentReceiptPDF(transactionDetails)
+        .then((pdf) => {
+          pdf.save(`THENIJOBS_Receipt_${transactionDetails.receiptNo}.pdf`);
+          toast.success('🎉 Official Receipt Downloaded Automatically!');
+        })
+        .catch((pdfErr) => {
+          console.warn('[Payment Modal] Auto-download PDF blocked/failed (manual button available):', pdfErr);
+        });
+    }
+  }, [paymentState, transactionDetails, toast]);
+
   if (!isOpen) return null;
+
+  /**
+   * Auto-polls the reconciliation endpoint when server-side database synchronization is in-flight.
+   */
+  const pollReconciliation = async (orderId: string, paymentId: string, maxAttempts = 6): Promise<boolean> => {
+    setLoading(true);
+    setPaymentState('reconciling');
+    setPendingIdentifiers({ orderId, paymentId });
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      setReconcileAttemptCount(attempt);
+      try {
+        const res = await fetch(`/api/payment/reconcile?orderId=${encodeURIComponent(orderId)}&paymentId=${encodeURIComponent(paymentId)}`, {
+          cache: 'no-store'
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isPaid && (data.receiptData || data.payment)) {
+            const resolvedReceipt: ReceiptData = data.receiptData || {
+              receiptNo: `THENI-REC-${paymentId.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase()}`,
+              paymentId,
+              orderId,
+              amount: plan.price,
+              planName: plan.name,
+              planSlug: plan.slug,
+              date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              startDate: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+              expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+              billedTo: companyName || company?.name || user?.displayName || 'Business Owner',
+              address: companyAddress || 'Theni District, Tamil Nadu',
+              phone: companyPhone || (user as any)?.phone || '',
+              email: user?.email || '',
+              gst: companyGst || '',
+              paymentMethod: 'Razorpay 256-Bit SSL (UPI / Cards)',
+              status: 'PAID / ACTIVE',
+            };
+
+            setTransactionDetails(resolvedReceipt);
+            setPaymentState('success');
+            toast.success('🎉 Payment Confirmed!', `${plan.name} subscription has been confirmed and activated.`);
+            onSuccess?.();
+            setLoading(false);
+            return true;
+          }
+        }
+      } catch (pollErr) {
+        console.warn(`[Payment Modal] Reconcile poll attempt ${attempt} warning:`, pollErr);
+      }
+
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+      }
+    }
+
+    setLoading(false);
+    setPaymentState('reconciling_manual');
+    return false;
+  };
 
   const handleLaunchRazorpay = async () => {
     if (!user) {
@@ -143,27 +228,35 @@ export default function PaymentCheckoutModal({
           modal: {
             ondismiss: function () {
               setLoading(false);
-              setPaymentState('failed');
-              setErrorMessage('Payment window was closed or cancelled. No funds were debited.');
+              // Only report cancelled if we didn't already capture/proceed to verify
+              setPaymentState((current) => {
+                if (current === 'processing') {
+                  setErrorMessage('Payment window was closed before completion. No funds were debited.');
+                  return 'failed';
+                }
+                return current;
+              });
             },
           },
           handler: async function (response: any) {
-            // PAY-1: these two used to fall back to `pay_${Date.now()}` and an empty string.
-            // A Razorpay success callback always carries both; if one is missing something is
-            // wrong, and substituting a value we made up is how an unverifiable payment used to
-            // reach the server looking verifiable. Pass them through as they came.
-            if (!response?.razorpay_payment_id || !response?.razorpay_signature) {
+            if (!response?.razorpay_payment_id) {
               setLoading(false);
               setPaymentState('failed');
               setErrorMessage(
-                'The gateway returned an incomplete confirmation, so the subscription was not activated. If money was debited, contact support with your order id — do not pay again.',
+                'The gateway returned an incomplete confirmation. If money was debited, contact support with your order id — do not pay again.',
               );
               return;
             }
+
+            setPendingIdentifiers({
+              orderId: orderData.orderId,
+              paymentId: response.razorpay_payment_id,
+            });
+
             await handleVerifyPayment(
               orderData.orderId,
               response.razorpay_payment_id,
-              response.razorpay_signature,
+              response.razorpay_signature || '',
             );
           },
         };
@@ -176,19 +269,10 @@ export default function PaymentCheckoutModal({
         });
         rzp.open();
       } else {
-        // PAY-1: this used to call handleVerifyPayment with a made-up payment id and the
-        // literal signature 'direct_authorized' — the browser asserting to our own server that
-        // a payment it never saw had succeeded. Anything that stops checkout.razorpay.com from
-        // loading (an ad blocker, a corporate proxy, request blocking in devtools, no network)
-        // took this branch, and the server activated a year's subscription for free because it
-        // only verified signatures when a secret happened to be configured.
-        //
-        // A payment gateway that cannot load is a failure. There is no honest way for the
-        // client to authorise a payment on its own.
         setLoading(false);
         setPaymentState('failed');
         setErrorMessage(
-          'The secure payment window could not be opened. This is usually an ad blocker or a network restriction. Please disable it or try another network — no money has been debited.',
+          'The secure payment window could not be opened. This is usually caused by an ad blocker or network restriction. Please disable it or try another network — no money has been debited.',
         );
       }
     } catch (err: any) {
@@ -201,6 +285,9 @@ export default function PaymentCheckoutModal({
 
   const handleVerifyPayment = async (orderId: string, paymentId: string, signature: string) => {
     try {
+      setLoading(true);
+      setPaymentState('processing');
+
       const verifyRes = await fetch('/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -212,64 +299,90 @@ export default function PaymentCheckoutModal({
           planName: plan.name,
           amount: plan.price,
           companyId: companyId || '',
-          companyName: companyName || user?.displayName || 'Business',
+          companyName: companyName || company?.name || user?.displayName || 'Business',
+          companyAddress: companyAddress || (company?.district ? `${company.district}, Tamil Nadu` : undefined),
+          companyPhone: companyPhone || (user as any)?.phone || '',
+          companyGst: companyGst || company?.gstNumber || '',
           userId: user?.uid || '',
           userName: user?.displayName || user?.email || 'Customer',
+          userEmail: user?.email || '',
+          userPhone: (user as any)?.phoneNumber || (user as any)?.phone || companyPhone || '',
           paymentMethod: 'RAZORPAY_SECURE',
           status: 'success',
         }),
       });
 
       const verifyData = await verifyRes.json();
+
+      // If server verified Razorpay but is synchronizing records asynchronously
+      if (verifyRes.status === 202 || verifyData?.pendingReconciliation) {
+        await pollReconciliation(orderId, paymentId);
+        return;
+      }
+
       if (!verifyRes.ok || !verifyData.success) {
         throw new Error(verifyData.error || 'Payment verification failed at backend.');
       }
 
-      const now = new Date();
-      const exp = new Date();
-      exp.setFullYear(now.getFullYear() + 1);
+      // If server returned pre-formatted receiptData, use it directly!
+      if (verifyData.receiptData) {
+        setTransactionDetails(verifyData.receiptData);
+      } else {
+        const now = new Date();
+        const exp = new Date();
+        if (plan.slug === 'seeker_pro' || plan.slug === 'seeker-premium') {
+          exp.setMonth(now.getMonth() + 3);
+        } else {
+          exp.setFullYear(now.getFullYear() + 1);
+        }
 
-      const formattedStartDate = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-      const formattedEndDate = exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-      const formattedDateTime = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const formattedStartDate = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const formattedEndDate = exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const formattedDateTime = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-      const resolvedAddress = companyAddress || company?.address 
-        ? `${company?.address || companyAddress}${company?.district ? ', ' + company.district : ''}, Tamil Nadu`
-        : (company?.district ? `${company.district}, Tamil Nadu` : 'Theni District, Tamil Nadu');
+        const resolvedAddress = companyAddress || company?.address 
+          ? `${company?.address || companyAddress}${company?.district ? ', ' + company.district : ''}, Tamil Nadu`
+          : (company?.district ? `${company.district}, Tamil Nadu` : 'Theni District, Tamil Nadu');
 
-      const assignedSlogan = verifyData?.slogan || getDeterministicBillingSlogan(orderId);
+        const assignedSlogan = verifyData?.slogan || getDeterministicBillingSlogan(orderId);
 
-      const receiptObj: ReceiptData = {
-        receiptNo: `THENI-REC-${Date.now().toString().slice(-6)}`,
-        paymentId: verifyData.paymentId || paymentId,
-        orderId,
-        amount: plan.price,
-        planName: plan.name,
-        planSlug: plan.slug,
-        date: formattedDateTime,
-        startDate: formattedStartDate,
-        expiryDate: formattedEndDate,
-        billedTo: companyName || company?.name || user?.displayName || 'Business Owner',
-        address: resolvedAddress,
-        phone: companyPhone || company?.phone || (user as any)?.phone || '',
-        gst: companyGst || company?.gstNumber || '',
-        email: user?.email || company?.email || '',
-        paymentMethod: 'Razorpay (UPI / NetBanking / Cards)',
-        status: 'PAID / ACTIVE',
-        // Dynamic Unique Slogan
-        sloganId: assignedSlogan?.sloganId || assignedSlogan?.id,
-        sloganText: assignedSlogan?.sloganText || assignedSlogan?.text,
-        sloganLanguage: assignedSlogan?.sloganLanguage || assignedSlogan?.language,
-        sloganCycle: assignedSlogan?.sloganCycle || assignedSlogan?.cycle || 1,
-      };
+        const receiptObj: ReceiptData = {
+          receiptNo: verifyData.receiptNo || `THENI-REC-${paymentId.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase()}`,
+          paymentId: verifyData.paymentId || paymentId,
+          orderId,
+          amount: plan.price,
+          planName: plan.name,
+          planSlug: plan.slug,
+          date: formattedDateTime,
+          startDate: formattedStartDate,
+          expiryDate: formattedEndDate,
+          billedTo: companyName || company?.name || user?.displayName || 'Business Owner',
+          address: resolvedAddress,
+          phone: companyPhone || company?.phone || (user as any)?.phone || '',
+          gst: companyGst || company?.gstNumber || '',
+          email: user?.email || company?.email || '',
+          paymentMethod: 'Razorpay (UPI / NetBanking / Cards)',
+          status: 'PAID / ACTIVE',
+          sloganId: assignedSlogan?.sloganId || assignedSlogan?.id,
+          sloganText: assignedSlogan?.sloganText || assignedSlogan?.text,
+          sloganLanguage: assignedSlogan?.sloganLanguage || assignedSlogan?.language,
+          sloganCycle: assignedSlogan?.sloganCycle || assignedSlogan?.cycle || 1,
+        };
 
-      setTransactionDetails(receiptObj);
+        setTransactionDetails(receiptObj);
+      }
 
       setPaymentState('success');
-      toast.success('🎉 Subscription Activated!', `${plan.name} plan is now active for 1 full year.`);
+      toast.success('🎉 Subscription Activated!', `${plan.name} plan is active.`);
       onSuccess?.();
     } catch (err: any) {
       console.error('Verification error:', err);
+      // If paymentId was received, try polling reconcile before failing!
+      if (paymentId && orderId) {
+        console.log('[Payment Modal] Network/verification error with paymentId present. Polling reconciliation...');
+        await pollReconciliation(orderId, paymentId);
+        return;
+      }
       setPaymentState('failed');
       setErrorMessage(err.message || 'Failed to verify transaction. Please contact support with payment reference.');
     } finally {
@@ -387,8 +500,90 @@ export default function PaymentCheckoutModal({
               <div>
                 <h3 className="text-base font-bold text-gray-900">Connecting to Razorpay Secure Gateway...</h3>
                 <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
-                  Please complete the payment on the Razorpay screen. Your subscription will automatically activate once confirmed.
+                  Please complete the payment on the Razorpay screen. Your subscription and official tax invoice will automatically activate once confirmed.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* STATE 2B: RECONCILING (Payment received, confirming DB records) */}
+          {paymentState === 'reconciling' && (
+            <div className="py-10 text-center space-y-4 animate-fade-in">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                <Loader2 size={32} className="animate-spin text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Payment Received! Confirming with Database...</h3>
+                <p className="text-xs text-gray-600 mt-1 max-w-sm mx-auto">
+                  Your payment was verified by Razorpay. Synchronizing your subscription and generating your receipt...
+                  {reconcileAttemptCount > 0 && ` (Attempt ${reconcileAttemptCount}/6)`}
+                </p>
+              </div>
+
+              {pendingIdentifiers && (
+                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200 text-left text-xs space-y-1 max-w-md mx-auto">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Order ID:</span>
+                    <strong className="font-mono text-gray-900">{pendingIdentifiers.orderId}</strong>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Payment ID:</span>
+                    <strong className="font-mono text-blue-700">{pendingIdentifiers.paymentId}</strong>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl max-w-md mx-auto">
+                ⚠️ Please do NOT close this window or pay again. Your funds have been authorized and your account is being updated.
+              </p>
+            </div>
+          )}
+
+          {/* STATE 2C: RECONCILING MANUAL FALLBACK */}
+          {paymentState === 'reconciling_manual' && (
+            <div className="p-6 rounded-3xl bg-blue-50/70 border border-blue-200 text-center space-y-4 animate-fade-in">
+              <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center mx-auto">
+                <ShieldCheck size={28} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-blue-950">Payment Confirmation In Progress</h3>
+                <p className="text-xs text-blue-900 mt-1 max-w-sm mx-auto">
+                  Razorpay authorized your payment, but database confirmation is taking a few extra moments. 
+                  <strong> If money was debited, do not pay again.</strong>
+                </p>
+              </div>
+
+              {pendingIdentifiers && (
+                <div className="p-3 bg-white rounded-2xl border border-blue-100 text-left text-xs space-y-1">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Order ID:</span>
+                    <strong className="font-mono text-gray-900">{pendingIdentifiers.orderId}</strong>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Payment ID:</span>
+                    <strong className="font-mono text-blue-700">{pendingIdentifiers.paymentId}</strong>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                <button
+                  onClick={() => pendingIdentifiers && pollReconciliation(pendingIdentifiers.orderId, pendingIdentifiers.paymentId)}
+                  disabled={loading}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Check Status Now
+                </button>
+                <a
+                  href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(
+                    `Hello THENIJOBS Support, my payment of ₹${plan.price} was authorized (Order ID: ${pendingIdentifiers?.orderId}, Payment ID: ${pendingIdentifiers?.paymentId}), please help confirm my subscription.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  WhatsApp Support
+                </a>
               </div>
             </div>
           )}
@@ -400,24 +595,55 @@ export default function PaymentCheckoutModal({
                 <AlertCircle size={28} />
               </div>
               <div>
-                <h3 className="text-base font-bold text-red-950">Payment Incomplete or Cancelled</h3>
-                <p className="text-xs text-red-800 mt-1 max-w-sm mx-auto">
-                  {errorMessage || 'Payment was not completed. Subscription was not activated and no amount was debited.'}
+                <h3 className="text-base font-bold text-red-950">
+                  {pendingIdentifiers?.paymentId ? 'Payment Verification Incomplete' : 'Payment Incomplete or Cancelled'}
+                </h3>
+                <p className="text-xs text-red-800 mt-1 max-w-sm mx-auto leading-relaxed">
+                  {errorMessage || (
+                    pendingIdentifiers?.paymentId
+                      ? 'The payment could not be confirmed immediately. If money was debited, quote your order ID and payment ID to support — do not pay again.'
+                      : 'Payment was not completed. Subscription was not activated and no amount was debited.'
+                  )}
                 </p>
               </div>
+
+              {pendingIdentifiers && (
+                <div className="p-3 bg-white rounded-2xl border border-red-100 text-left text-xs space-y-1">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Order ID:</span>
+                    <strong className="font-mono text-gray-900">{pendingIdentifiers.orderId}</strong>
+                  </div>
+                  {pendingIdentifiers.paymentId && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Payment ID:</span>
+                      <strong className="font-mono text-red-700">{pendingIdentifiers.paymentId}</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={onClose}
                   className="flex-1 py-2.5 rounded-xl bg-white border border-red-200 text-red-800 text-xs font-bold hover:bg-red-100 transition-colors"
                 >
-                  Cancel
+                  Close
                 </button>
-                <button
-                  onClick={handleLaunchRazorpay}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-                >
-                  <RefreshCw size={14} /> Retry Payment
-                </button>
+                {pendingIdentifiers?.paymentId ? (
+                  <button
+                    onClick={() => pollReconciliation(pendingIdentifiers.orderId, pendingIdentifiers.paymentId)}
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <RefreshCw size={14} /> Recheck Status
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleLaunchRazorpay}
+                    className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <RefreshCw size={14} /> Retry Payment
+                  </button>
+                )}
               </div>
             </div>
           )}

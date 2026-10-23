@@ -46,3 +46,6 @@ extract-git.js
 
 # Local-only UI preview route — must never reach the static export.
 src/app/uiux-preview/
+
+# Local database backups
+backups/

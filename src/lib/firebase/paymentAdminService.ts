@@ -108,17 +108,21 @@ async function getGoogleClockOffsetMs(): Promise<number> {
     return cachedClockOffsetMs;
   }
 
-  try {
-    const headRes = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
-    const dateHeader = headRes.headers.get('date');
-    if (dateHeader) {
-      const googleServerTime = new Date(dateHeader).getTime();
-      cachedClockOffsetMs = googleServerTime - Date.now();
-      lastOffsetFetchTime = now;
-      return cachedClockOffsetMs;
+  for (const endpoint of ['https://oauth2.googleapis.com', 'https://www.google.com']) {
+    try {
+      const headRes = await fetch(endpoint, { method: 'HEAD', cache: 'no-store' });
+      const dateHeader = headRes.headers.get('date');
+      if (dateHeader) {
+        const googleServerTime = new Date(dateHeader).getTime();
+        if (!isNaN(googleServerTime)) {
+          cachedClockOffsetMs = googleServerTime - Date.now();
+          lastOffsetFetchTime = now;
+          return cachedClockOffsetMs;
+        }
+      }
+    } catch {
+      // try next endpoint
     }
-  } catch {
-    // If network check fails, fallback to 0 offset
   }
 
   return cachedClockOffsetMs || 0;

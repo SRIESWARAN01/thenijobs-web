@@ -518,7 +518,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
                 style={{ background: '#EFF6FF' }}>{initials}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-gray-900 truncate">{user.displayName || user.email?.split('@')[0]}</p>
-                <p className="text-[10px] text-slate-500 truncate">Employer</p>
+                <p className="text-[10px] text-slate-500 truncate capitalize">{user.role ? user.role.replace('_', ' ') : 'Employer'}</p>
               </div>
             </div>
           )}

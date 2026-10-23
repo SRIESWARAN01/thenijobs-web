@@ -154,6 +154,29 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
     }
   };
 
+  const recordWhatsAppMarketplaceLead = async (itemType: 'product' | 'service', item: any) => {
+    if (!company?.id) return;
+    try {
+      const itemName = item?.name || item?.title || itemType;
+      const message = `WhatsApp inquiry for ${itemType}: "${itemName}" from ${company.name || 'this business'}.`;
+      await createDocument('leads', {
+        companyId: company.id,
+        name: 'WhatsApp Marketplace Customer',
+        customerName: 'WhatsApp Marketplace Customer',
+        contactName: 'WhatsApp Marketplace Customer',
+        message,
+        service: `${itemType === 'service' ? 'Service' : 'Product'}: ${itemName}`,
+        type: itemType,
+        source: `whatsapp_company_${itemType}`,
+        status: 'new',
+        district: company.district || '',
+        itemId: item?.id || '',
+      });
+    } catch (err) {
+      console.warn('Lead capture notice:', err);
+    }
+  };
+
   // NOTE: SEO meta tags, JSON-LD, and robots directives are now handled
   // exclusively in CompanyProfilePageClient.tsx to avoid duplicate injection.
 
@@ -925,7 +948,10 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                                 `Hello, I found your product on THENIJOBS Marketplace and would like to order / inquire about this. Please share availability and delivery options.`
                               )}`}
                               target="_blank" rel="noopener noreferrer"
-                              onClick={e => e.stopPropagation()}
+                              onClick={e => {
+                                e.stopPropagation();
+                                recordWhatsAppMarketplaceLead('product', p);
+                              }}
                               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-bold hover:opacity-90 transition-all shadow-xs"
                               style={{ background: '#25D366' }}>
                               <MessageCircle size={13} /> Order via WhatsApp
@@ -1008,7 +1034,10 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                           {cleanPhone && (
                             <a href={`https://wa.me/${waNum}?text=${encodeURIComponent(`Hi, I found your service "${serviceName}" on THENIJOBS. I would like to know more about this service.`)}`}
                               target="_blank" rel="noopener noreferrer"
-                              onClick={e => e.stopPropagation()}
+                              onClick={e => {
+                                e.stopPropagation();
+                                recordWhatsAppMarketplaceLead('service', s);
+                              }}
                               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-bold hover:opacity-90 transition-all"
                               style={{ background: '#25D366' }}>
                               <MessageCircle size={13} /> WhatsApp
@@ -1309,6 +1338,9 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                         `Hello, I found your ${isProduct ? 'product' : 'service'} on THENIJOBS Marketplace and would like to order / book this. Please share availability and payment/delivery details.`
                       )}`}
                       target="_blank" rel="noopener noreferrer"
+                      onClick={() => {
+                        recordWhatsAppMarketplaceLead(isProduct ? 'product' : 'service', selectedItem);
+                      }}
                       className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-bold hover:opacity-90 transition-all shadow-md"
                       style={{ background: '#25D366' }}>
                       <MessageCircle size={16} /> Order / Book via WhatsApp

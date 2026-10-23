@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
+import { createLead } from '@/lib/firebase/firestoreService';
 import {
   Search, MapPin, Package, Wrench, Building2, Phone, MessageCircle,
   ExternalLink, BadgeCheck, Star, Filter, ArrowRight, Sparkles,
@@ -75,6 +76,44 @@ function MarketplaceContent() {
         url.searchParams.set('type', tab);
       }
       window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  };
+
+  const handleProductWhatsApp = async (prod: any) => {
+    if (prod.company?.id) {
+      try {
+        await createLead({
+          companyId: prod.company.id,
+          name: 'WhatsApp Marketplace Customer',
+          customerName: 'WhatsApp Marketplace Customer',
+          message: `Hi ${prod.company.name}, I am interested in ordering your product "${prod.name}" listed on THENIJOBS Marketplace.`,
+          service: `Product: ${prod.name}`,
+          source: 'marketplace_product_browse',
+          itemId: prod.id,
+          itemType: 'product',
+        });
+      } catch (err) {
+        console.warn('Inbound lead capture notice:', err);
+      }
+    }
+  };
+
+  const handleServiceWhatsApp = async (srv: any) => {
+    if (srv.company?.id) {
+      try {
+        await createLead({
+          companyId: srv.company.id,
+          name: 'WhatsApp Marketplace Customer',
+          customerName: 'WhatsApp Marketplace Customer',
+          message: `Hi ${srv.company.name}, I would like to book your service "${srv.name}" listed on THENIJOBS Marketplace.`,
+          service: `Service: ${srv.name}`,
+          source: 'marketplace_service_browse',
+          itemId: srv.id,
+          itemType: 'service',
+        });
+      } catch (err) {
+        console.warn('Inbound lead capture notice:', err);
+      }
     }
   };
 
@@ -442,6 +481,7 @@ function MarketplaceContent() {
                               href={`https://wa.me/${prod.company.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${prod.company.name}, I am interested in ordering your product "${prod.name}" listed on THENIJOBS Marketplace.`)}`}
                               target="_blank"
                               rel="noreferrer"
+                              onClick={() => handleProductWhatsApp(prod)}
                               className="flex-1 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 shadow-2xs hover:opacity-95 transition-opacity"
                               style={{ background: '#25D366' }}
                             >
@@ -579,6 +619,7 @@ function MarketplaceContent() {
                               href={`https://wa.me/${srv.company.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${srv.company.name}, I would like to book your service "${srv.name}" listed on THENIJOBS Marketplace.`)}`}
                               target="_blank"
                               rel="noreferrer"
+                              onClick={() => handleServiceWhatsApp(srv)}
                               className="flex-1 py-2 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1 shadow-2xs bg-blue-600 hover:bg-blue-700 transition-colors"
                             >
                               <Wrench size={12} /> Book Now

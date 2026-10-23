@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { notifyGoogleJobPosting } from '@/lib/seo/googleIndexingApi';
 
 import crypto from 'crypto';
 
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'No active jobs found', count: 0 });
     }
 
-    const expiredJobs: { id: string; title: string; companyName?: string; deadline?: any }[] = [];
+    const expiredJobs: { id: string; slug?: string; title: string; companyName?: string; deadline?: any }[] = [];
 
     for (const doc of snapshot.docs) {
       const data = doc.data();
@@ -76,6 +77,7 @@ export async function GET(req: NextRequest) {
       if (deadlineDate && !isNaN(deadlineDate.getTime()) && deadlineDate < now) {
         expiredJobs.push({
           id: doc.id,
+          slug: data.slug || doc.id,
           title: data.title || 'Untitled Job',
           companyName: data.companyName || data.company,
           deadline: rawDeadline,
@@ -103,6 +105,16 @@ export async function GET(req: NextRequest) {
       }
 
       await batch.commit();
+    }
+
+    // Notify Google Indexing API that expired jobs have been removed
+    try {
+      for (const item of expiredJobs) {
+        const jobUrl = `https://thenijobs.com/jobs/${item.slug || item.id}`;
+        await notifyGoogleJobPosting(jobUrl, 'URL_DELETED');
+      }
+    } catch (indexingErr) {
+      console.warn('[CRON expire-jobs] Google Indexing API notification warning:', indexingErr);
     }
 
     // Log to activityLogs

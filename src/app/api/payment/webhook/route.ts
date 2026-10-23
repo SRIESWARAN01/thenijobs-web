@@ -80,9 +80,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true, ignored: 'missing_identifiers' });
     }
 
-    // Ignore events meant for other specific micro-endpoints (like seeker-public-profile)
+    // Ignore events meant for other specific micro-endpoints (like seeker-public-profile or ai-connection-fee)
     if (notes.purpose === 'seeker-public-profile') {
       return NextResponse.json({ received: true, ignored: 'handled_by_seeker_webhook' });
+    }
+    if (notes.purpose === 'ai-connection-fee') {
+      return NextResponse.json({ received: true, ignored: 'handled_by_ai_webhook' });
     }
 
     const amountInRupees = typeof paymentEntity?.amount === 'number' 

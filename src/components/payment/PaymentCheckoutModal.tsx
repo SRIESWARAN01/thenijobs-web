@@ -2,15 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  X, Check, ShieldCheck, Sparkles, Lock, Loader2, 
-  AlertCircle, CheckCircle2, ArrowRight, Download, Printer,
-  RefreshCw, Building2, Phone, Mail, HelpCircle, FileText,
-  CreditCard, Smartphone
+  X, Check, ShieldCheck, Lock, Loader2, 
+  AlertCircle, CheckCircle2, ArrowRight, Download, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { SITE_CONTACT } from '@/lib/constants';
 import { getReceiptGrowthSlogan } from '@/lib/branding/slogans';
 import { generatePaymentReceiptPDF, ReceiptData } from '@/lib/pdf/receiptGenerator';

@@ -18,6 +18,9 @@ import {
   getDeterministicBillingSlogan,
 } from './sloganLibrary';
 
+export { getDeterministicBillingSlogan };
+
+
 const ROTATION_DOC_REF = 'systemSettings/billingSloganRotation';
 const SLOGANS_COLLECTION = 'billingSlogans';
 

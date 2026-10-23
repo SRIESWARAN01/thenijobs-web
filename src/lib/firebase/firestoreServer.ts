@@ -4,17 +4,104 @@
  * This file has NO 'use client' directive and is safe for Next.js SSR/ISR.
  */
 
+import crypto from 'crypto';
 import { slugifyCompany } from '@/lib/companySlug';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
+import { getServiceAccountCredentials } from './firebaseAdmin';
 
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'thenijobs-9f01d';
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
-if (!PROJECT_ID || !API_KEY) {
-  console.error('[firestoreServer] CRITICAL: Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID or NEXT_PUBLIC_FIREBASE_API_KEY. Server-side Firestore queries will fail.');
+if (!PROJECT_ID) {
+  console.error('[firestoreServer] CRITICAL: Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID.');
 }
 
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+// ─── Server Authentication & Clock Skew Correction ─────────────────────────
+
+let cachedAccessToken: { token: string; expiresAt: number } | null = null;
+let cachedClockOffsetMs: number | null = null;
+let lastOffsetFetchTime = 0;
+
+async function getGoogleClockOffsetMs(): Promise<number> {
+  const now = Date.now();
+  if (cachedClockOffsetMs !== null && now - lastOffsetFetchTime < 15 * 60 * 1000) {
+    return cachedClockOffsetMs;
+  }
+  try {
+    const headRes = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
+    const dateHeader = headRes.headers.get('date');
+    if (dateHeader) {
+      const googleServerTime = new Date(dateHeader).getTime();
+      cachedClockOffsetMs = googleServerTime - Date.now();
+      lastOffsetFetchTime = now;
+      return cachedClockOffsetMs;
+    }
+  } catch {
+    // network check fallback
+  }
+  return cachedClockOffsetMs || 0;
+}
+
+async function getServerAuthHeader(): Promise<Record<string, string>> {
+  const now = Date.now();
+  if (cachedAccessToken && cachedAccessToken.expiresAt > now + 60000) {
+    return { Authorization: `Bearer ${cachedAccessToken.token}` };
+  }
+
+  try {
+    const sa = getServiceAccountCredentials();
+    if (sa && sa.client_email && sa.private_key) {
+      const offsetMs = await getGoogleClockOffsetMs();
+      const trueNowMs = Date.now() + offsetMs;
+      const nowSeconds = Math.floor(trueNowMs / 1000);
+      const iat = nowSeconds - 30;
+      const exp = iat + 3540; // 59 minutes total lifetime (strictly <= 3600s for Google OAuth2)
+
+      const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+      const claimSet = Buffer.from(JSON.stringify({
+        iss: sa.client_email,
+        scope: 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore',
+        aud: 'https://oauth2.googleapis.com/token',
+        exp,
+        iat,
+      })).toString('base64url');
+
+      const sign = crypto.createSign('RSA-SHA256');
+      sign.update(`${header}.${claimSet}`);
+      const signature = sign.sign(sa.private_key, 'base64url');
+      const jwt = `${header}.${claimSet}.${signature}`;
+
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion: jwt,
+        }),
+      });
+
+      if (res.ok) {
+        const d = await res.json();
+        if (d.access_token) {
+          cachedAccessToken = {
+            token: d.access_token,
+            expiresAt: now + (d.expires_in || 3600) * 1000,
+          };
+          return { Authorization: `Bearer ${d.access_token}` };
+        }
+      } else {
+        const errText = await res.text();
+        console.warn('[firestoreServer] Service account OAuth grant responded with status:', res.status, errText);
+      }
+    }
+  } catch (err) {
+    console.warn('[firestoreServer] Server auth token generation warning:', err);
+  }
+
+  return {};
+}
 
 // ─── Firestore REST Value Parsing ─────────────────────────────────────────────
 
@@ -131,8 +218,14 @@ export interface ServerCompanyData {
  */
 async function fetchDocumentREST<T>(collectionPath: string, docId: string): Promise<T | null> {
   try {
-    const url = `${FIRESTORE_BASE}/${collectionPath}/${docId}?key=${API_KEY}`;
+    const authHeaders = await getServerAuthHeader();
+    const hasAuth = !!authHeaders.Authorization;
+    const url = hasAuth
+      ? `${FIRESTORE_BASE}/${collectionPath}/${encodeURIComponent(docId)}`
+      : `${FIRESTORE_BASE}/${collectionPath}/${encodeURIComponent(docId)}${API_KEY ? `?key=${API_KEY}` : ''}`;
+
     const res = await fetch(url, {
+      headers: authHeaders,
       next: { revalidate: 60 }, // ISR: revalidate every 60 seconds
     });
 
@@ -170,7 +263,11 @@ async function runQueryREST<T>(
   limitCount?: number,
 ): Promise<T[]> {
   try {
-    const url = `${FIRESTORE_BASE}:runQuery?key=${API_KEY}`;
+    const authHeaders = await getServerAuthHeader();
+    const hasAuth = !!authHeaders.Authorization;
+    const url = hasAuth
+      ? `${FIRESTORE_BASE}:runQuery`
+      : `${FIRESTORE_BASE}:runQuery${API_KEY ? `?key=${API_KEY}` : ''}`;
 
     const structuredQuery: any = {
       from: [{ collectionId }],
@@ -214,7 +311,10 @@ async function runQueryREST<T>(
 
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
       body: JSON.stringify({ structuredQuery }),
       next: { revalidate: 60 },
     });
@@ -286,6 +386,25 @@ export async function getJobByIdServer(identifier: string): Promise<ServerJobDat
     raw = await fetchDocumentREST<any>('jobs', identifier);
   }
 
+  // 5. Fallback: search active jobs and match by computed slug
+  if (!raw) {
+    const activeJobs = await runQueryREST<any>(
+      'jobs',
+      [{ field: 'isActive', op: 'EQUAL', value: { booleanValue: true } }],
+      undefined,
+      undefined,
+      50,
+    );
+    raw = activeJobs.find((j) => {
+      const computedSlug = j.slug || generateJobSlug(
+        j.title || '',
+        j.companyName || 'employer',
+        j.district || j.location || 'theni',
+      );
+      return computedSlug === identifier;
+    }) || null;
+  }
+
   if (!raw) return null;
 
   const rawSlug = raw.slug || generateJobSlug(
@@ -303,7 +422,7 @@ export async function getJobByIdServer(identifier: string): Promise<ServerJobDat
     companyId: raw.companyId || '',
     companyName: raw.companyName || 'Verified Employer',
     companyWebsite: raw.companyWebsite || '',
-    companyLogo: raw.companyLogo || raw.logo || '',
+    companyLogo: raw.companyLogoUrl || raw.companyLogo || raw.logo || '',
     location: raw.location || raw.district || 'Theni',
     district: raw.district || 'Theni',
     state: raw.state || 'Tamil Nadu',

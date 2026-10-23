@@ -1,6 +1,4 @@
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
 import { getAdminFirestore, getServiceAccountCredentials } from './firebaseAdmin';
 import { assignNextBillingSlogan, getDeterministicBillingSlogan } from '@/lib/billing/sloganService';
 import { ALL_VALID_PLAN_PRICES, SUBSCRIPTION_PLANS } from '@/lib/constants';
@@ -111,7 +109,7 @@ async function getGoogleClockOffsetMs(): Promise<number> {
   }
 
   try {
-    const headRes = await fetch('https://oauth2.googleapis.com', { method: 'HEAD', cache: 'no-store' });
+    const headRes = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
     const dateHeader = headRes.headers.get('date');
     if (dateHeader) {
       const googleServerTime = new Date(dateHeader).getTime();
@@ -137,14 +135,16 @@ async function getFallbackBearerToken(): Promise<string | null> {
       const offsetMs = await getGoogleClockOffsetMs();
       const trueNowMs = Date.now() + offsetMs;
       const nowSeconds = Math.floor(trueNowMs / 1000);
+      const iat = nowSeconds - 30;
+      const exp = iat + 3540; // 59 minutes total lifetime (strictly <= 3600s for Google OAuth2)
 
       const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
       const claimSet = Buffer.from(JSON.stringify({
         iss: sa.client_email,
         scope: 'https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/datastore',
         aud: 'https://oauth2.googleapis.com/token',
-        exp: nowSeconds + 3600,
-        iat: nowSeconds - 30, // 30s leeway
+        exp,
+        iat,
       })).toString('base64url');
 
       const sign = crypto.createSign('RSA-SHA256');

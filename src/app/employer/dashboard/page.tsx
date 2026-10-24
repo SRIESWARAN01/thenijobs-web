@@ -4,11 +4,13 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   BarChart2, Briefcase, Building2, Calendar, CheckCircle, ChevronRight, Clock,
-  Eye, Loader2, Plus, Star, UserCheck, Users, XCircle, ShieldCheck, BadgeCheck, Camera, ImagePlus
+  Eye, Loader2, Plus, Star, UserCheck, Users, XCircle, ShieldCheck, BadgeCheck, Camera, ImagePlus,
+  Sparkles, CreditCard, Gift
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { useEmployerStats } from '@/hooks/useRealtimeStats';
+import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import { updateApplicationStatus } from '@/lib/firebase/firestoreService';
 import { where, limit, orderBy } from 'firebase/firestore';
 import { formatDate, type FirestoreTime } from '@/lib/firestoreTime';
@@ -55,6 +57,8 @@ export default function EmployerDashboard() {
   ], { skip: !user?.uid });
   const company = companies?.[0];
   const companyId = company?.id;
+
+  const subscriptionState = useSubscriptionStatus(company as any, user);
 
   const { stats, loading: statsLoading } = useEmployerStats(companyId);
 
@@ -135,13 +139,110 @@ export default function EmployerDashboard() {
     },
   ], []);
 
+  const renderSubscriptionCard = () => (
+    <div className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-black text-lg shrink-0">
+            {(user?.displayName || (user as any)?.fullName || 'B').charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base sm:text-lg font-black text-slate-900">
+                {user?.displayName || (user as any)?.fullName || 'Business Owner'}
+              </h3>
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <ShieldCheck size={13} className="text-emerald-600" /> Account Approved &amp; Active
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {user?.email} {(user as any)?.mobileNumber ? `• +91 ${(user as any).mobileNumber}` : ''}
+            </p>
+          </div>
+        </div>
+
+        {/* Plan and Status Badges */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200">
+            Plan: <span className="text-indigo-600 uppercase font-black">{subscriptionState.plan}</span>
+          </div>
+          {subscriptionState.isPaidActive ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+              <CheckCircle size={14} className="text-emerald-600" /> Annual Subscription Active
+            </span>
+          ) : subscriptionState.isTrialActive ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold">
+              <Clock size={14} className="text-blue-600" /> 15-Day Free Trial ({subscriptionState.trialDaysRemaining}d remaining)
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">
+              Account Active
+            </span>
+          )}
+          <Link href="/pricing">
+            <Button variant="secondary" size="sm" className="gap-1 text-xs">
+              Upgrade / Renew
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Trial countdown or subscription dates banner */}
+      {subscriptionState.isTrialActive && (
+        <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 font-bold text-blue-900">
+              <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-black uppercase tracking-wider">
+                15-Day Free Trial Active
+              </span>
+              <span>{subscriptionState.trialDaysRemaining} {subscriptionState.trialDaysRemaining === 1 ? 'day' : 'days'} remaining</span>
+            </div>
+            <p className="text-slate-600 text-[11px]">
+              Trial started: <strong>{subscriptionState.trialStartDate ? formatDate(subscriptionState.trialStartDate) : 'On approval'}</strong> • Ends: <strong>{subscriptionState.trialEndDate ? formatDate(subscriptionState.trialEndDate) : 'In 15 days'}</strong>. All Standard Plan features are unlocked.
+            </p>
+          </div>
+          <Link href="/pricing" className="shrink-0">
+            <Button variant="primary" size="sm" className="whitespace-nowrap">
+              Upgrade to Annual Plan
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {subscriptionState.isPaidActive && subscriptionState.subscriptionEndDate && (
+        <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs text-emerald-950">
+          <div>
+            <p className="font-bold text-emerald-900">
+              Annual Subscription Valid Until: {formatDate(subscriptionState.subscriptionEndDate)}
+            </p>
+            <p className="text-[11px] text-emerald-800 mt-0.5">
+              Full job posting, marketplace, leads, and catalog limits enabled according to your plan.
+            </p>
+          </div>
+          <Link href="/pricing">
+            <Button variant="secondary" size="sm" className="text-xs">
+              Manage Plan
+            </Button>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+
   if (!companyId && !companyLoading) {
     return (
       <PageShell>
+        <PageHeader
+          title="Employer dashboard"
+          description="Manage your business profile, hiring pipeline, and company listings."
+        />
+
+        {renderSubscriptionCard()}
+
         <EmptyState
           icon={Building2}
-          title="No company registered"
-          description="Register your company profile to access the dashboard and start posting jobs."
+          title="Create Your Company Profile"
+          description="Your business owner account and plan are active! Setup your company profile to start posting jobs and listing services."
           action={
             <Link href="/employer/company-profile">
               <Button variant="primary">Create company profile</Button>
@@ -172,6 +273,8 @@ export default function EmployerDashboard() {
           </Link>
         }
       />
+
+      {renderSubscriptionCard()}
 
       {/* ── Company Branding Header Banner ── */}
       {company && (

@@ -263,7 +263,7 @@ export default function JobAlertsPage() {
           <button
             type="button"
             onClick={() => {
-              const text = `🔔 *THENIJOBS — Daily Job Alert Preview*\n\n💼 *Role:* Accounts Assistant / Senior Billing\n🏢 *Company:* Theni Commercial Hub\n📍 *Location:* Theni Town, Tamil Nadu\n💰 *Salary:* ₹18,000 - ₹25,000 / month\n\n⚡ *1-Click Apply:* https://thenijobs.com/jobs/demo\n\n_You are subscribed to Daily Alerts on THENIJOBS._`;
+              const text = `🔔 *THENIJOBS — Daily Job Alert Preview*\n\n💼 *Role:* Accounts Assistant / Senior Billing\n🏢 *Company:* Theni Commercial Hub\n📍 *Location:* Theni Town, Tamil Nadu\n💰 *Salary:* ₹18,000 - ₹25,000 / month\n\n⚡ *1-Click Apply:* https://www.thenijobs.com/jobs/demo\n\n_You are subscribed to Daily Alerts on THENIJOBS._`;
               window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               toast.success('WhatsApp alert preview opened!');
             }}

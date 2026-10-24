@@ -460,10 +460,23 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
           {activeTab === 'about' && (
             <>
               {/* ═══ ARCHITECTS — Meet Our Leadership ═══ */}
-              {company.founder && company.founder.name && enabledSec.founder !== false && (() => {
+              {((company.founder && company.founder.name) || company.founderName) && enabledSec.founder !== false && (() => {
+                const resolvedFounder = (company.founder && company.founder.name) ? company.founder : {
+                  name: company.founderName,
+                  designation: company.founderDesignation || 'Founder',
+                  photoUrl: company.founderPhotoUrl,
+                  photoStoragePath: company.founderPhotoStoragePath,
+                  bio: company.founderBio,
+                  linkedinUrl: company.founderLinkedInUrl,
+                  since: company.founderSince,
+                  founderSince: company.founderSince,
+                  experienceYears: company.founderExperience,
+                  experience: company.founderExperience,
+                };
+
                 // Collect all leaders: founder first, then team members
                 const leaders = [
-                  { ...company.founder, isFounder: true },
+                  { ...resolvedFounder, isFounder: true },
                   ...(company.teamMembers || []).map((m: any) => ({ ...m, designation: m.role, isFounder: false })),
                 ];
 
@@ -571,6 +584,11 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
 
                               {/* Experience & Location tags */}
                               <div className="flex items-center justify-center gap-2 flex-wrap">
+                                {(leader.since || leader.founderSince) && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/20 text-amber-300 text-[10px] font-bold">
+                                    <Clock size={10} /> Since {leader.since || leader.founderSince}
+                                  </span>
+                                )}
                                 {leader.experienceYears && (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/20 text-emerald-300 text-[10px] font-bold">
                                     <Briefcase size={10} /> {leader.experienceYears}
@@ -943,7 +961,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                                 `📍 *Location:* ${company.district || 'Theni'}, Tamil Nadu\n` +
                                 (p.imageUrl ? `🖼️ *Photo:* ${p.imageUrl}\n` : '') +
                                 (p.websiteUrl ? `🌐 *Product Link:* ${p.websiteUrl}\n` : '') +
-                                `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug}\n` +
+                                `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://www.thenijobs.com'}/company/${company.slug}\n` +
                                 `━━━━━━━━━━━━━━━━━━━━\n` +
                                 `Hello, I found your product on THENIJOBS Marketplace and would like to order / inquire about this. Please share availability and delivery options.`
                               )}`}
@@ -1333,7 +1351,7 @@ export default function CompanyProfileClient({ company, jobs = [], reviews = [] 
                         `📍 *Location:* ${company.district || 'Theni'}, Tamil Nadu\n` +
                         (item.imageUrl ? `🖼️ *Photo Reference:* ${item.imageUrl}\n` : '') +
                         (item.websiteUrl ? `🌐 *Direct Link:* ${item.websiteUrl}\n` : '') +
-                        `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com'}/company/${company.slug}\n` +
+                        `🔗 *THENIJOBS Page:* ${typeof window !== 'undefined' ? window.location.origin : 'https://www.thenijobs.com'}/company/${company.slug}\n` +
                         `━━━━━━━━━━━━━━━━━━━━\n` +
                         `Hello, I found your ${isProduct ? 'product' : 'service'} on THENIJOBS Marketplace and would like to order / book this. Please share availability and payment/delivery details.`
                       )}`}

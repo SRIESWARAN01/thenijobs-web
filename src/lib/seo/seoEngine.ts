@@ -11,7 +11,7 @@ import type { Metadata } from 'next';
 import type { ServerCompanyData } from '@/lib/firebase/firestoreServer';
 import { slugify } from './jobSlug';
 
-const BASE_URL = 'https://thenijobs.com';
+const BASE_URL = 'https://www.thenijobs.com';
 const SITE_NAME = 'THENIJOBS';
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.jpg`;
 

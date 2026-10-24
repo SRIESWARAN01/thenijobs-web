@@ -170,7 +170,7 @@ export default function ProfessionalCompany({ site }: Props) {
       <footer className="py-6 border-t" style={{ borderColor: `${m}10` }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between text-xs" style={{ color: m }}>
           <span>© {new Date().getFullYear()} {b.companyName}</span>
-          <span>Powered by <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
+          <span>Powered by <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
         </div>
       </footer>
     </div>

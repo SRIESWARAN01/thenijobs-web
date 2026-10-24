@@ -5,7 +5,7 @@ import { notifyGoogleJobPosting } from '@/lib/seo/googleIndexingApi';
  * /api/seo/notify-job
  *
  * Endpoint to trigger Google Indexing API notification for eligible JobPosting URLs.
- * Strictly enforces that only https://thenijobs.com/jobs/* URLs can be notified.
+ * Strictly enforces that only https://www.thenijobs.com/jobs/* URLs can be notified.
  */
 export async function POST(req: NextRequest) {
   try {

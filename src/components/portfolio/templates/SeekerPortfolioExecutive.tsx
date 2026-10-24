@@ -373,7 +373,7 @@ export default function SeekerPortfolioExecutive({ site }: Props) {
       </div>
 
       <footer className="text-center py-6 text-[11px]" style={{ color: muted }}>
-        Built on <a href="https://thenijobs.com" className="font-semibold underline">THENIJOBS</a>
+        Built on <a href="https://www.thenijobs.com" className="font-semibold underline">THENIJOBS</a>
       </footer>
     </div>
   );

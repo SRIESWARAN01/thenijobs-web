@@ -44,7 +44,7 @@ export default function ProductDetailModal({ product, isOpen, onClose }: Product
     : product.priceRange || 'Contact for Price';
 
   const handleWhatsAppEnquire = (customNote?: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://thenijobs.com';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.thenijobs.com';
     const pageUrl = product.companySlug
       ? `${origin}/company/${product.companySlug}`
       : `${origin}/marketplace`;

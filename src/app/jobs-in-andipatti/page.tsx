@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('andipatti');
 
 export default function AndipattiJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Andipatti', url: 'https://thenijobs.com/jobs-in-andipatti' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Andipatti', url: 'https://www.thenijobs.com/jobs-in-andipatti' },
   ]);
 
   return (

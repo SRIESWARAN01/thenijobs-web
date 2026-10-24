@@ -239,7 +239,7 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
     '@type': schemaType,
     name: sanitizeForJsonLd(company.name),
     description: sanitizeForJsonLd(company.description || `${company.name} in ${company.district || 'Theni'}, Tamil Nadu`),
-    url: `https://thenijobs.com/${company.slug}`,
+    url: `https://www.thenijobs.com/${company.slug}`,
     telephone: sanitizeForJsonLd(company.phone),
     address: {
       '@type': 'PostalAddress',
@@ -248,7 +248,7 @@ export default function CompanyLandingPageClient({ slug: slugProp }: CompanyLand
       addressRegion: 'Tamil Nadu',
       addressCountry: 'IN',
     },
-    image: company.logoUrl || company.bannerUrl || 'https://thenijobs.com/icon.png',
+    image: company.logoUrl || company.bannerUrl || 'https://www.thenijobs.com/icon.png',
   };
 
   return (

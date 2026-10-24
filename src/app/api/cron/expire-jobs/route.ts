@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
     // Notify Google Indexing API that expired jobs have been removed
     try {
       for (const item of expiredJobs) {
-        const jobUrl = `https://thenijobs.com/jobs/${item.slug || item.id}`;
+        const jobUrl = `https://www.thenijobs.com/jobs/${item.slug || item.id}`;
         await notifyGoogleJobPosting(jobUrl, 'URL_DELETED');
       }
     } catch (indexingErr) {

@@ -2,23 +2,23 @@ import type { Metadata } from 'next';
 import PricingClient from './PricingClient';
 
 export const metadata: Metadata = {
-  title: 'Employer Pricing & Subscription Plans | TheniJobs',
-  description: 'Affordable annual membership plans for businesses in Theni and Tamil Nadu. Post jobs, get verified company profiles, digital ID cards, and hire top local talent.',
+  title: 'Affordable Annual Plans for Local Businesses | THENIJOBS',
+  description: 'Grow your company with local job postings, digital ID cards, verified portfolios, and recruitment tools in Theni & Tamil Nadu. Simple, honest annual pricing from ₹999/yr.',
   alternates: {
-    canonical: 'https://thenijobs.com/pricing',
+    canonical: 'https://www.thenijobs.com/pricing',
   },
   openGraph: {
-    title: 'Employer Pricing & Subscription Plans | TheniJobs',
-    description: 'Affordable annual membership plans for businesses in Theni and Tamil Nadu. Post jobs, get verified company profiles, digital ID cards, and hire top local talent.',
-    url: 'https://thenijobs.com/pricing',
-    siteName: 'TheniJobs',
+    title: 'Affordable Annual Plans for Local Businesses | THENIJOBS',
+    description: 'Grow your company with local job postings, digital ID cards, verified portfolios, and recruitment tools in Theni & Tamil Nadu. Simple, honest annual pricing from ₹999/yr.',
+    url: 'https://www.thenijobs.com/pricing',
+    siteName: 'THENIJOBS',
     locale: 'en_IN',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Employer Pricing & Subscription Plans | TheniJobs',
-    description: 'Affordable annual membership plans for businesses in Theni and Tamil Nadu. Post jobs, get verified company profiles, and hire top local talent.',
+    title: 'Affordable Annual Plans for Local Businesses | THENIJOBS',
+    description: 'Grow your company with local job postings, digital ID cards, verified portfolios, and recruitment tools in Theni & Tamil Nadu.',
   },
 };
 
@@ -31,13 +31,13 @@ export default function PricingPage() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://thenijobs.com',
+        item: 'https://www.thenijobs.com',
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Pricing',
-        item: 'https://thenijobs.com/pricing',
+        item: 'https://www.thenijobs.com/pricing',
       },
     ],
   };
@@ -51,7 +51,7 @@ export default function PricingPage() {
         name: 'Which plan should I choose on TheniJobs?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Basic (₹999/yr) is great for new businesses needing a verified profile and digital ID card. Standard (₹1,800/yr) adds a portfolio website, product/service listings, and reviews. Premium (₹3,500/yr) is our most popular plan with higher job-posting limits, video banners, and Gold badge. Enterprise (₹5,000/yr) includes unlimited postings and dedicated careers portal.',
+          text: 'Basic (₹999/yr) is ideal for startups needing 5 active jobs and a verified digital card. Standard (₹1,800/yr) is designed for growing local shops with 10 active jobs, 20 products, 10 services, and 3 branches. Premium (₹3,500/yr) is our most popular plan for established companies with 50 active jobs, 100 products, 50 services, 20 branches, and 25 staff IDs with Gold badge. Enterprise (₹5,000/yr) delivers unlimited jobs, products, services, branches, and staff IDs with Platinum Corporate badge and AI company tools.',
         },
       },
       {
@@ -59,7 +59,7 @@ export default function PricingPage() {
         name: 'Can I upgrade or downgrade my plan anytime?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. You can change your plan anytime from your Employer Billing dashboard — upgrades take effect immediately.',
+          text: 'Yes. You can change your plan anytime from your Employer Billing dashboard. Upgrades take effect immediately upon successful payment. When renewing at a lower tier, all your existing listings and company records remain safely preserved without deletion; new additions are simply bounded by the new tier limits. Subscriptions are billed annually on a manual renewal basis with no surprise auto-debits.',
         },
       },
       {
@@ -67,7 +67,7 @@ export default function PricingPage() {
         name: 'What payment options are available for TheniJobs subscriptions?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'We accept all major UPI apps (GPay, PhonePe, Paytm), Net Banking, Debit/Credit Cards, and popular wallets.',
+          text: 'We accept all major UPI apps (GPay, PhonePe, Paytm, BHIM), Net Banking across 50+ Indian banks, Debit/Credit Cards (Visa, Mastercard, RuPay), and popular wallets via Razorpay 256-bit SSL encrypted checkout. Subscriptions activate immediately upon payment verification.',
         },
       },
     ],

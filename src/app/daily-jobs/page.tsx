@@ -17,13 +17,13 @@ export const metadata: Metadata = {
     'THENIJOBS daily jobs',
   ],
   alternates: {
-    canonical: 'https://thenijobs.com/daily-jobs',
+    canonical: 'https://www.thenijobs.com/daily-jobs',
   },
   openGraph: {
     title: 'Daily Jobs in Theni | Urgent Hiring Vacancies | THENIJOBS',
     description:
       'Urgent hiring vacancies with immediate joining and daily wage opportunities across Theni district.',
-    url: 'https://thenijobs.com/daily-jobs',
+    url: 'https://www.thenijobs.com/daily-jobs',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',
@@ -43,8 +43,8 @@ export const metadata: Metadata = {
 
 export default function DailyJobsPage() {
   const breadcrumbs = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Daily Jobs', url: 'https://thenijobs.com/daily-jobs' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Daily Jobs', url: 'https://www.thenijobs.com/daily-jobs' },
   ]);
 
   return (

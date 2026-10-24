@@ -221,7 +221,7 @@ export default function ModernServices({ site }: Props) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs" style={{ color: muted }}>© {new Date().getFullYear()} {branding.companyName}</p>
           <div className="flex items-center gap-1 text-[10px]" style={{ color: muted }}>
-            Powered by <a href="https://thenijobs.com" className="font-bold ml-0.5" style={{ color: p }}>THENIJOBS</a>
+            Powered by <a href="https://www.thenijobs.com" className="font-bold ml-0.5" style={{ color: p }}>THENIJOBS</a>
           </div>
         </div>
       </footer>

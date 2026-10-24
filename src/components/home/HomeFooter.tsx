@@ -78,7 +78,7 @@ export default function HomeFooter() {
             {/* Social */}
             <div className="flex items-center gap-3">
               {[
-                { Icon: Globe2, href: 'https://thenijobs.com', label: 'Website' },
+                { Icon: Globe2, href: 'https://www.thenijobs.com', label: 'Website' },
                 { Icon: MessageCircle, href: 'https://wa.me/919360519460', label: 'WhatsApp' },
                 { Icon: Share2, href: 'https://www.linkedin.com', label: 'LinkedIn' },
                 { Icon: Play, href: 'https://www.youtube.com', label: 'YouTube' },

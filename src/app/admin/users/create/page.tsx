@@ -96,7 +96,7 @@ export default function AdminCreateUserPage() {
 
   const copyAllCredentials = () => {
     if (!result) return;
-    const text = `THENIJOBS Account Credentials\n\nName: ${form.name}\nEmail: ${result.email}\nPassword: ${result.password}\nRole: ${result.role}\nUser ID: ${result.uid}\n\nLogin: https://thenijobs.com/login`;
+    const text = `THENIJOBS Account Credentials\n\nName: ${form.name}\nEmail: ${result.email}\nPassword: ${result.password}\nRole: ${result.role}\nUser ID: ${result.uid}\n\nLogin: https://www.thenijobs.com/login`;
     navigator.clipboard.writeText(text);
     setCopied('all');
     setTimeout(() => setCopied(''), 2000);

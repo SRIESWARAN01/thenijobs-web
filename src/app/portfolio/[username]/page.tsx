@@ -44,7 +44,7 @@ export async function generateMetadata({
 
   const pageTitle = site.seoTitle || `${site.name} — Official Website | THENIJOBS`;
   const pageDesc = site.seoDescription || site.tagline || `Explore the verified professional portfolio, skills, and projects of ${site.name} on THENIJOBS.`;
-  const canonicalUrl = `https://thenijobs.com/portfolio/${site.customUrl}`;
+  const canonicalUrl = `https://www.thenijobs.com/portfolio/${site.customUrl}`;
 
   return {
     title: pageTitle,

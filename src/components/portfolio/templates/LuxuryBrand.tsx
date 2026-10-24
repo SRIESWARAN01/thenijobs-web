@@ -223,7 +223,7 @@ export default function LuxuryBrand({ site }: Props) {
         <div className="max-w-7xl mx-auto px-6 flex flex-col items-center gap-4">
           <div className="flex justify-center"><div className="w-12 h-px" style={{ background: `linear-gradient(90deg, transparent, ${gold}, transparent)` }} /></div>
           <span className="text-[10px] tracking-[5px] uppercase" style={{ color: m }}>© {new Date().getFullYear()} {b.companyName}</span>
-          <span className="text-[9px] tracking-[3px] uppercase" style={{ color: `${m}60` }}>Powered by <a href="https://thenijobs.com" style={{ color: gold }}>THENIJOBS</a></span>
+          <span className="text-[9px] tracking-[3px] uppercase" style={{ color: `${m}60` }}>Powered by <a href="https://www.thenijobs.com" style={{ color: gold }}>THENIJOBS</a></span>
         </div>
       </footer>
     </div>

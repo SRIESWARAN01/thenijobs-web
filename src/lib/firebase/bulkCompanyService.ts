@@ -155,7 +155,7 @@ export async function executeBulkCompanyImport(
               password: passwordToUse,
               phone: data.phone || '',
               district: finalDistrict,
-              loginUrl: 'https://thenijobs.com/login',
+              loginUrl: 'https://www.thenijobs.com/login',
             };
           } else {
             console.warn(`[Bulk Import] User account creation failed for ${data.name}: ${userResult.error}. Creating company with system ownerId.`);

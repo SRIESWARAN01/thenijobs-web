@@ -19,12 +19,12 @@ export const metadata: Metadata = {
     'Salary in Theni jobs',
     'THENIJOBS search',
   ],
-  alternates: { canonical: 'https://thenijobs.com/jobs' },
+  alternates: { canonical: 'https://www.thenijobs.com/jobs' },
   openGraph: {
     title: 'Jobs in Theni | Search Verified Job Vacancies | THENIJOBS',
     description:
       'Find the latest private and full-time job openings in Theni district. Filter by role, location, and apply directly to verified employers.',
-    url: 'https://thenijobs.com/jobs',
+    url: 'https://www.thenijobs.com/jobs',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',

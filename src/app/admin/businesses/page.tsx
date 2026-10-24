@@ -370,7 +370,7 @@ export default function BusinessesPage() {
       // Optional WhatsApp congratulatory trigger
       const cleanWa = (biz.whatsapp || biz.phone || '').replace(/[^0-9]/g, '');
       if (cleanWa) {
-        const msg = `🎉 *CONGRATULATIONS FROM THENIJOBS!*\n\nYour business *"${biz.name}"* has been approved and verified.\n\nYou can now post jobs and manage applicants on https://thenijobs.com/employer/dashboard`;
+        const msg = `🎉 *CONGRATULATIONS FROM THENIJOBS!*\n\nYour business *"${biz.name}"* has been approved and verified.\n\nYou can now post jobs and manage applicants on https://www.thenijobs.com/employer/dashboard`;
         window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, '_blank');
       }
 
@@ -405,7 +405,7 @@ export default function BusinessesPage() {
       if (sendOnWhatsApp) {
         const cleanWa = (rejectingBiz.whatsapp || rejectingBiz.phone || '').replace(/[^0-9]/g, '');
         if (cleanWa) {
-          const msg = `⚠️ *THENIJOBS Business Verification Update*\n\nRegarding your registration for *"${rejectingBiz.name}"*:\n\n*Status:* Requires Revision\n*Reason:* ${rejectionReason.trim()}\n\nPlease update your details and resubmit on https://thenijobs.com/seeker/become-employer`;
+          const msg = `⚠️ *THENIJOBS Business Verification Update*\n\nRegarding your registration for *"${rejectingBiz.name}"*:\n\n*Status:* Requires Revision\n*Reason:* ${rejectionReason.trim()}\n\nPlease update your details and resubmit on https://www.thenijobs.com/seeker/become-employer`;
           window.open(`https://wa.me/${cleanWa}?text=${encodeURIComponent(msg)}`, '_blank');
         }
       }

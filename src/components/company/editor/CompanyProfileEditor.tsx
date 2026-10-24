@@ -49,7 +49,30 @@ const DEFAULT_COMPANY = {
   products: [] as any[],
   services: [] as any[],
   portfolioProjects: [] as any[],
-  founder: { name: '', designation: '', bio: '', nativePlace: '', experienceYears: '', message: '', linkedinUrl: '' } as FounderProfile,
+  founder: {
+    name: '',
+    designation: '',
+    customDesignation: '',
+    photoUrl: '',
+    photoStoragePath: '',
+    bio: '',
+    linkedinUrl: '',
+    since: '',
+    founderSince: '',
+    experienceYears: '',
+    experience: '',
+    nativePlace: '',
+    message: '',
+    twitterUrl: ''
+  } as FounderProfile,
+  founderName: '',
+  founderDesignation: '',
+  founderPhotoUrl: '',
+  founderPhotoStoragePath: '',
+  founderBio: '',
+  founderLinkedInUrl: '',
+  founderSince: '',
+  founderExperience: '',
   enabledSections: {} as Record<string, boolean>,
   branches: [] as any[],
   verification: {
@@ -118,6 +141,14 @@ export interface CompanyProfileEditorSaveFields {
   services: any[];
   portfolioProjects: any[];
   founder: FounderProfile;
+  founderName?: string;
+  founderDesignation?: string;
+  founderPhotoUrl?: string;
+  founderPhotoStoragePath?: string;
+  founderBio?: string;
+  founderLinkedInUrl?: string;
+  founderSince?: string;
+  founderExperience?: string;
   enabledSections: Record<string, boolean>;
   branches: any[];
   verification: { mobile: boolean; email: boolean; gst: boolean; business: boolean };
@@ -210,9 +241,36 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         ),
       };
 
+      const resolvedFounder: FounderProfile = {
+        name: initialCompany.founder?.name || (initialCompany as any).founderName || '',
+        designation: initialCompany.founder?.designation || (initialCompany as any).founderDesignation || 'Founder',
+        customDesignation: initialCompany.founder?.customDesignation || '',
+        photoUrl: initialCompany.founder?.photoUrl || (initialCompany as any).founderPhotoUrl || '',
+        photoStoragePath: initialCompany.founder?.photoStoragePath || (initialCompany as any).founderPhotoStoragePath || '',
+        bio: initialCompany.founder?.bio || (initialCompany as any).founderBio || '',
+        linkedinUrl: initialCompany.founder?.linkedinUrl || (initialCompany as any).founderLinkedInUrl || '',
+        since: initialCompany.founder?.since || initialCompany.founder?.founderSince || (initialCompany as any).founderSince || '',
+        founderSince: initialCompany.founder?.since || initialCompany.founder?.founderSince || (initialCompany as any).founderSince || '',
+        experienceYears: initialCompany.founder?.experienceYears || initialCompany.founder?.experience || (initialCompany as any).founderExperience || '',
+        experience: initialCompany.founder?.experienceYears || initialCompany.founder?.experience || (initialCompany as any).founderExperience || '',
+        nativePlace: initialCompany.founder?.nativePlace || '',
+        message: initialCompany.founder?.message || '',
+        twitterUrl: initialCompany.founder?.twitterUrl || '',
+        facebookUrl: initialCompany.founder?.facebookUrl || ''
+      };
+
       setCompany({
         ...DEFAULT_COMPANY,
         ...initialCompany,
+        founder: resolvedFounder,
+        founderName: resolvedFounder.name || '',
+        founderDesignation: resolvedFounder.designation || '',
+        founderPhotoUrl: resolvedFounder.photoUrl || '',
+        founderPhotoStoragePath: resolvedFounder.photoStoragePath || '',
+        founderBio: resolvedFounder.bio || '',
+        founderLinkedInUrl: resolvedFounder.linkedinUrl || '',
+        founderSince: resolvedFounder.since || '',
+        founderExperience: resolvedFounder.experienceYears || '',
         logoUrl: initialCompany.logoUrl || (initialCompany as any).companyLogo || '',
         coverUrl: initialCompany.coverUrl || (initialCompany as any).bannerUrl || (initialCompany as any).coverImageUrl || '',
         gallery: initialCompany.gallery || (initialCompany as any).galleryImages || DEFAULT_COMPANY.gallery,
@@ -434,6 +492,14 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         services: company.services,
         portfolioProjects: company.portfolioProjects,
         founder: company.founder,
+        founderName: company.founder?.name || '',
+        founderDesignation: company.founder?.designation || '',
+        founderPhotoUrl: company.founder?.photoUrl || '',
+        founderPhotoStoragePath: company.founder?.photoStoragePath || '',
+        founderBio: company.founder?.bio || '',
+        founderLinkedInUrl: company.founder?.linkedinUrl || '',
+        founderSince: company.founder?.since || '',
+        founderExperience: company.founder?.experienceYears || company.founder?.experience || '',
         enabledSections: company.enabledSections,
         branches: company.branches,
         verification: company.verification,
@@ -619,6 +685,7 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
             phone={company.phone || '9360519460'}
             whatsapp={company.whatsapp || company.phone || '9360519460'}
             district={company.district || 'Theni'}
+            companyId={initialCompany?.id || ''}
             onChange={products => setCompany({ ...company, products })}
           />
         </div>
@@ -653,8 +720,37 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs">
           <CompanyFounderManager
             founder={company.founder}
+            companyId={initialCompany?.id}
             planSlug={initialCompany?.subscriptionPlan || 'free'}
-            onChange={founder => setCompany({ ...company, founder })}
+            viewerIsAdmin={viewerIsAdmin}
+            onChange={(founder) => {
+              setCompany((prev) => ({
+                ...prev,
+                founder,
+                founderName: founder.name,
+                founderDesignation: founder.designation,
+                founderPhotoUrl: founder.photoUrl || '',
+                founderPhotoStoragePath: founder.photoStoragePath || '',
+                founderBio: founder.bio || '',
+                founderLinkedInUrl: founder.linkedinUrl || '',
+                founderSince: founder.since || '',
+                founderExperience: founder.experienceYears || founder.experience || ''
+              }));
+            }}
+            onSaved={(savedFounder) => {
+              setCompany((prev) => ({
+                ...prev,
+                founder: savedFounder,
+                founderName: savedFounder.name,
+                founderDesignation: savedFounder.designation,
+                founderPhotoUrl: savedFounder.photoUrl || '',
+                founderPhotoStoragePath: savedFounder.photoStoragePath || '',
+                founderBio: savedFounder.bio || '',
+                founderLinkedInUrl: savedFounder.linkedinUrl || '',
+                founderSince: savedFounder.since || '',
+                founderExperience: savedFounder.experienceYears || savedFounder.experience || ''
+              }));
+            }}
           />
         </div>
       )}

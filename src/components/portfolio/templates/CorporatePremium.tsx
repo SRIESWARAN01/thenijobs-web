@@ -132,7 +132,7 @@ export default function CorporatePremium({ site }: Props) {
         {contact.googleMapsEmbed && <div className="overflow-hidden shadow-lg" style={{ borderRadius: r }}><iframe src={contact.googleMapsEmbed} width="100%" height="350" style={{ border: 0 }} allowFullScreen loading="lazy" /></div>}
       </div></section>)}
 
-      <footer className="py-8 border-t" style={{ borderColor: `${m}08` }}><div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" style={{ color: m }}><span>© {new Date().getFullYear()} {b.companyName}</span><span>Powered by <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span></div></footer>
+      <footer className="py-8 border-t" style={{ borderColor: `${m}08` }}><div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" style={{ color: m }}><span>© {new Date().getFullYear()} {b.companyName}</span><span>Powered by <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span></div></footer>
     </div>
   );
 }

@@ -60,6 +60,105 @@ export const ALL_VALID_PLAN_PRICES: Record<string, number> = {
   'seeker-premium': 199,
 };
 
+// Authoritative representation of unlimited quotas.
+// -1 indicates unlimited capacity (never an arbitrary numerical cap like 999 or 9999).
+export const UNLIMITED_LIMIT = -1;
+
+export function isUnlimited(val: number | undefined | null): boolean {
+  return val === UNLIMITED_LIMIT || val === Infinity;
+}
+
+export function isWithinLimit(current: number, limit: number): boolean {
+  if (isUnlimited(limit)) return true;
+  return current < limit;
+}
+
+export function getRemainingQuota(current: number, limit: number): number {
+  if (isUnlimited(limit)) return Infinity;
+  return Math.max(0, limit - current);
+}
+
+export function formatLimit(limit: number, singular = '', plural = ''): string {
+  if (isUnlimited(limit)) return 'Unlimited';
+  return `${limit}${plural ? ' ' + (limit === 1 ? singular : plural) : ''}`;
+}
+
+export interface PlanLimits {
+  activeJobs: number;
+  jobAlerts: number;
+  products: number;
+  services: number;
+  galleryImages: number;
+  videos: number;
+  templates: number;
+  themes: number;
+  branches: number;
+  staffIds: number;
+}
+
+export const PLAN_LIMITS: Record<string, PlanLimits> = {
+  free: {
+    activeJobs: 1,
+    jobAlerts: 1,
+    products: 0,
+    services: 0,
+    galleryImages: 2,
+    videos: 0,
+    templates: 1,
+    themes: 1,
+    branches: 0,
+    staffIds: 0,
+  },
+  basic: {
+    activeJobs: 5,
+    jobAlerts: 5,
+    products: 0,
+    services: 0,
+    galleryImages: 6,
+    videos: 0,
+    templates: 1,
+    themes: 1,
+    branches: 0,
+    staffIds: 0,
+  },
+  standard: {
+    activeJobs: 10, // Confirmed 10 active jobs limit
+    jobAlerts: 10,
+    products: 20,
+    services: 10,
+    galleryImages: 10,
+    videos: 2,
+    templates: 5,
+    themes: 5,
+    branches: 3,
+    staffIds: 0,
+  },
+  premium: {
+    activeJobs: 50,
+    jobAlerts: 50,
+    products: 100,
+    services: 50,
+    galleryImages: 50,
+    videos: 10,
+    templates: 15,
+    themes: 15,
+    branches: 20,
+    staffIds: 25,
+  },
+  enterprise: {
+    activeJobs: UNLIMITED_LIMIT,
+    jobAlerts: UNLIMITED_LIMIT,
+    products: UNLIMITED_LIMIT,
+    services: UNLIMITED_LIMIT,
+    galleryImages: UNLIMITED_LIMIT,
+    videos: UNLIMITED_LIMIT,
+    templates: UNLIMITED_LIMIT,
+    themes: UNLIMITED_LIMIT,
+    branches: UNLIMITED_LIMIT,
+    staffIds: UNLIMITED_LIMIT,
+  },
+};
+
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'plan_basic',
@@ -82,12 +181,13 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       'Google Maps & Contact Form',
       'Lead Management',
       'Basic SEO & Schema',
+      'Basic Verification Badge',
     ],
     notIncluded: [
       'Product & Service Catalogue',
-      'Portfolio Projects Showcase',
-      'Customer Reviews',
-      'Priority Support',
+      'Gallery Videos & Photo Albums',
+      'Customer Reviews & Ratings',
+      'Branch & Staff Management',
     ],
     recommended: false,
     bestFor: 'New Users & Startups',
@@ -104,11 +204,11 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     period: 'year',
     badge: '🥈 Silver Verified',
     features: [
-      'Everything in Basic Plan',
+      'Everything in Basic',
       '10 Active Job Postings',
       '10 Job Alerts',
-      'Product Catalogue (20 Products)',
-      'Service Listings (10 Services)',
+      'Product Catalogue: 20 Products',
+      'Service Listings: 10 Services',
       '10 Gallery Images & 2 Videos',
       '5 Templates & 5 Color Themes',
       'Custom Cover Banner',
@@ -117,13 +217,15 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       'Click-to-Call & FAQ Section',
       'Photo Albums & Review Photos',
       'Enhanced SEO & Custom Meta Tags',
-      'View Counters (Profile, Jobs, Business)',
+      'View Counters for Profile, Jobs, and Business',
       'Business Announcements & Offers',
-      'Silver Verified Badge',
+      'Silver Verification Badge',
     ],
     notIncluded: [
       'Video Banner',
       'Staff ID Cards (25+)',
+      'Dynamic QR Code',
+      'Featured Search Priority',
     ],
     recommended: false,
     bestFor: 'Local Shops & Growing Businesses',
@@ -139,24 +241,27 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     period: 'year',
     badge: '⭐ MOST POPULAR',
     features: [
-      'Everything in Standard Plan',
+      'Everything in Standard',
       '50 Active Job Postings',
       '50 Job Alerts',
-      'Product Catalogue (100 Products)',
-      'Service Listings (50 Services)',
+      'Product Catalogue: 100 Products',
+      'Service Listings: 50 Services',
       '50 Gallery Images & 10 Videos',
       '15 Premium Templates & 15 Themes',
       'Video Banner',
-      'Premium+ Digital Card & 25 Staff IDs',
+      'Premium+ Digital Card',
+      '25 Staff IDs',
       '20 Branches',
       'Awards & Certifications Showcase',
       'Dynamic QR Code',
-      'Gold Verified Badge',
+      'Gold Verification Badge',
       'Featured Search Priority',
     ],
     notIncluded: [
       'Unlimited Jobs, Products & Services',
-      'AI Company Assistant (Chatbot)',
+      'AI Company Assistant / Chatbot',
+      'AI SEO Content & AI Generated Meta Tags',
+      'Enterprise Careers Portal',
     ],
     recommended: true,
     bestFor: 'Established Companies',
@@ -172,19 +277,21 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     period: 'year',
     badge: '💎 ENTERPRISE',
     features: [
-      'Everything in Premium Plan',
+      'Everything in Premium',
       'Unlimited Jobs, Products & Services',
       'Unlimited Gallery, Videos & Albums',
       'Unlimited Templates & Themes',
       'Advanced Branding & Custom Colors/Fonts',
-      'Enterprise Digital Card & Unlimited Staff IDs',
-      'AI Company Assistant (Chatbot)',
+      'Enterprise Digital Card',
+      'Unlimited Staff IDs',
+      'AI Company Assistant / Chatbot',
       'AI SEO Content & AI Generated Meta Tags',
       'Enterprise Careers Portal',
       'CEO Message & Interactive Timeline',
       'Partner Logo Showcase',
       'Platinum Corporate Badge',
-      'Homepage Featured & Top Search Priority',
+      'Homepage Featured Placement',
+      'Top Search Priority',
     ],
     notIncluded: [],
     recommended: false,
@@ -244,7 +351,7 @@ export const PLAN_FEATURE_MATRIX = {
     prioritySupport: false,
   },
   standard: {
-    activeJobsLimit: 15,
+    activeJobsLimit: 10,
     portfolioType: 'full',
     digitalIdCard: true,
     qrCode: true,
@@ -255,20 +362,20 @@ export const PLAN_FEATURE_MATRIX = {
     founderProfile: true,
     teamShowcase: true,
     customSections: true,
-    featuredCompany: true,
+    featuredCompany: false,
     candidateSearch: 'basic',
     resumeViewing: true,
     interviewManagement: true,
     leadManagement: true,
     advancedAnalytics: false,
-    seoLevel: 'basic',
+    seoLevel: 'enhanced',
     multiUserHr: false,
-    branchManagement: false,
+    branchManagement: true,
     customBranding: false,
     prioritySupport: true,
   },
   premium: {
-    activeJobsLimit: 999,
+    activeJobsLimit: 50,
     portfolioType: 'premium',
     digitalIdCard: true,
     qrCode: true,
@@ -286,13 +393,13 @@ export const PLAN_FEATURE_MATRIX = {
     leadManagement: true,
     advancedAnalytics: true,
     seoLevel: 'advanced',
-    multiUserHr: false,
-    branchManagement: false,
+    multiUserHr: true,
+    branchManagement: true,
     customBranding: false,
     prioritySupport: true,
   },
   enterprise: {
-    activeJobsLimit: 9999,
+    activeJobsLimit: UNLIMITED_LIMIT,
     portfolioType: 'custom',
     digitalIdCard: true,
     qrCode: true,
@@ -309,7 +416,7 @@ export const PLAN_FEATURE_MATRIX = {
     interviewManagement: true,
     leadManagement: true,
     advancedAnalytics: true,
-    seoLevel: 'advanced',
+    seoLevel: 'ai',
     multiUserHr: true,
     branchManagement: true,
     customBranding: true,
@@ -670,9 +777,10 @@ export const PORTFOLIO_SECTION_DEFS: PortfolioSectionDef[] = [
 // ===== TEMPLATE-PLAN ACCESS =====
 
 export const TEMPLATE_PLAN_ACCESS: Record<PlanTier, string[]> = {
-  free: ['classic-business', 'clean-corporate', 'modern-services'],
+  free: ['classic-business'],
+  basic: ['classic-business'],
   standard: ['classic-business', 'clean-corporate', 'modern-services', 'professional-company', 'business-showcase', 'local-business-pro'],
   premium: ['classic-business', 'clean-corporate', 'modern-services', 'professional-company', 'business-showcase', 'local-business-pro', 'corporate-premium', 'product-marketplace', 'service-marketplace', 'executive-company', 'creative-business', 'modern-business'],
-  enterprise: PORTFOLIO_TEMPLATES.map(t => t.id), // all 15
+  enterprise: PORTFOLIO_TEMPLATES.map(t => t.id), // all templates
 };
 

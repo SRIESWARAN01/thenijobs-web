@@ -36,7 +36,7 @@ export interface CompanyIDCardProps {
   };
 }
 
-const BASE_URL = 'https://thenijobs.com';
+const BASE_URL = 'https://www.thenijobs.com';
 
 /**
  * Safely converts an image URL into a base64 Data URL to prevent canvas tainting.

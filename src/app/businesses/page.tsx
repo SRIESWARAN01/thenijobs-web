@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     'THENIJOBS business listings',
   ],
   alternates: {
-    canonical: 'https://thenijobs.com/businesses',
+    canonical: 'https://www.thenijobs.com/businesses',
   },
   openGraph: {
     title: 'Business Directory Theni | Verified Local Businesses | THENIJOBS',
     description:
       'Connect with verified local businesses, manufacturers, shops, and service providers in Theni district, Tamil Nadu.',
-    url: 'https://thenijobs.com/businesses',
+    url: 'https://www.thenijobs.com/businesses',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
 
 export default function BusinessesPage() {
   const breadcrumbs = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Businesses', url: 'https://thenijobs.com/businesses' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Businesses', url: 'https://www.thenijobs.com/businesses' },
   ]);
 
   return (

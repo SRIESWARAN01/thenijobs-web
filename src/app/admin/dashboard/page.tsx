@@ -5,7 +5,9 @@ import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity, AlertTriangle, Bell, Briefcase, Building2, CheckCircle,
-  ChevronRight, FileText, Loader2, TrendingUp, Users,
+  ChevronRight, FileText, Loader2, TrendingUp, Users, CreditCard,
+  Clock, ShieldCheck, DollarSign, XCircle, ShoppingBag, Globe, Zap,
+  ArrowUpRight, BadgeCheck
 } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/useRealtimeStats';
 import { useCollection } from '@/hooks/useFirestore';
@@ -42,12 +44,12 @@ interface StatConfig {
 }
 
 const STAT_CONFIG: StatConfig[] = [
-  { id: 'totalUsers', label: 'Total users', icon: Users, bg: '#EFF6FF', color: '#2563EB', href: '/admin/users' },
-  { id: 'totalCompanies', label: 'Companies', icon: Building2, bg: '#ECFDF5', color: '#059669', href: '/admin/businesses' },
-  { id: 'totalJobs', label: 'Total jobs', icon: Briefcase, bg: '#F5F3FF', color: '#7C3AED', href: '/admin/jobs' },
-  { id: 'activeJobs', label: 'Active jobs', icon: TrendingUp, bg: '#F0F9FF', color: '#0284C7', href: '/admin/jobs' },
-  { id: 'totalApplications', label: 'Applications', icon: FileText, bg: '#FFFBEB', color: '#D97706', href: '/admin/jobs' },
-  { id: 'pendingCompanies', label: 'Pending approvals', icon: AlertTriangle, bg: '#FEF2F2', color: '#DC2626', href: '/admin/businesses' },
+  { id: 'totalBusinessOwners', label: 'Business Owners', icon: Users, bg: '#EFF6FF', color: '#2563EB', href: '/admin/business-approvals' },
+  { id: 'pendingBusinessApprovals', label: 'Pending Approvals', icon: AlertTriangle, bg: '#FEF2F2', color: '#DC2626', href: '/admin/business-approvals' },
+  { id: 'activePaidSubscriptions', label: 'Paid Subscriptions', icon: CreditCard, bg: '#ECFDF5', color: '#059669', href: '/admin/subscriptions' },
+  { id: 'activeTrials', label: 'Active 15-Day Trials', icon: Clock, bg: '#FFFBEB', color: '#D97706', href: '/admin/business-approvals' },
+  { id: 'totalJobs', label: 'Total Jobs', icon: Briefcase, bg: '#F5F3FF', color: '#7C3AED', href: '/admin/jobs' },
+  { id: 'totalApplications', label: 'Job Applications', icon: FileText, bg: '#F0FDF4', color: '#16A34A', href: '/admin/applications' },
 ];
 
 function StatTile({ label, value, icon: Icon, bg, color, href }: StatConfig & { value: number }) {
@@ -232,6 +234,154 @@ export default function AdminDashboard() {
               <StatTile key={s.id} {...s} value={statsRecord[s.id] ?? 0} />
             ))}
       </StatGrid>
+
+      {/* 15-Metric Full Operations & Moderation Matrix */}
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {/* Domain 1: Business Owners & Approvals */}
+        <Card className="p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Business Governance</span>
+              <BadgeCheck size={16} className="text-blue-600" />
+            </div>
+            <div className="mt-3 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">1. Total Business Owners</span>
+                <span className="font-bold text-slate-900">{stats.totalBusinessOwners}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">2. Pending Approvals</span>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  stats.pendingBusinessApprovals > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {stats.pendingBusinessApprovals}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">3. Approved Business Owners</span>
+                <span className="font-bold text-emerald-700">{stats.approvedBusinessOwners}</span>
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/admin/business-approvals"
+            className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center justify-between"
+          >
+            <span>Review Approvals Queue</span>
+            <ArrowUpRight size={13} />
+          </Link>
+        </Card>
+
+        {/* Domain 2: Subscriptions & Trials */}
+        <Card className="p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Subscriptions &amp; Trials</span>
+              <CreditCard size={16} className="text-emerald-600" />
+            </div>
+            <div className="mt-3 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">4. Active 15-Day Trials</span>
+                <span className="font-bold text-indigo-600">{stats.activeTrials}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">5. Expired Free Trials</span>
+                <span className="font-bold text-rose-600">{stats.expiredTrials}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">6. Active Paid Plans</span>
+                <span className="font-bold text-emerald-700">{stats.activePaidSubscriptions}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">7. Pending Payments</span>
+                <span className="font-bold text-amber-600">{stats.pendingPayments}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">8. Verified Payments</span>
+                <span className="font-bold text-slate-900">{stats.verifiedPayments}</span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-slate-100">
+                <span className="text-slate-600 font-bold">15. Total Revenue</span>
+                <span className="font-extrabold text-emerald-700">₹{stats.totalRevenue.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/admin/subscriptions"
+            className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center justify-between"
+          >
+            <span>View Subscriptions &amp; Revenue</span>
+            <ArrowUpRight size={13} />
+          </Link>
+        </Card>
+
+        {/* Domain 3: Jobs & Candidates Pipeline */}
+        <Card className="p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Jobs &amp; Talent Pipeline</span>
+              <Briefcase size={16} className="text-violet-600" />
+            </div>
+            <div className="mt-3 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">9. Total Job Postings</span>
+                <span className="font-bold text-slate-900">{stats.totalJobs}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">10. Pending Job Reviews</span>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  stats.pendingJobs > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {stats.pendingJobs}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">11. Total Applications</span>
+                <span className="font-bold text-blue-600">{stats.totalApplications}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">12. Inbound Leads</span>
+                <span className="font-bold text-slate-900">{stats.totalLeads}</span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold">
+            <Link href="/admin/jobs" className="text-violet-600 hover:text-violet-700">Jobs Queue →</Link>
+            <Link href="/admin/applications" className="text-blue-600 hover:text-blue-700">Applications →</Link>
+          </div>
+        </Card>
+
+        {/* Domain 4: Marketplace & Local Services */}
+        <Card className="p-4 sm:p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Marketplace &amp; Services</span>
+              <Globe size={16} className="text-teal-600" />
+            </div>
+            <div className="mt-3 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">13. Pending Products</span>
+                <span className="font-bold text-amber-700">{stats.pendingBusinesses}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">14. Pending Services</span>
+                <span className="font-bold text-amber-700">{stats.pendingServices}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 font-medium">Verified Companies</span>
+                <span className="font-bold text-slate-900">{stats.totalBusinesses}</span>
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/admin/services"
+            className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-teal-600 hover:text-teal-700 flex items-center justify-between"
+          >
+            <span>Manage Products &amp; Services</span>
+            <ArrowUpRight size={13} />
+          </Link>
+        </Card>
+      </div>
 
       <div className="grid gap-4 sm:gap-6 xl:grid-cols-2">
         {/* Pending companies */}

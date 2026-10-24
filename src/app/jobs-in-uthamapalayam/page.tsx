@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('uthamapalayam');
 
 export default function UthamapalayamJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Uthamapalayam', url: 'https://thenijobs.com/jobs-in-uthamapalayam' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Uthamapalayam', url: 'https://www.thenijobs.com/jobs-in-uthamapalayam' },
   ]);
 
   return (

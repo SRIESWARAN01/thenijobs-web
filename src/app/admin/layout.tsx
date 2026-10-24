@@ -6,7 +6,8 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Users, Building2, Briefcase, BarChart3, CreditCard, Shield, Settings, Bell,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Star,
-  TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet, Award
+  TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet, Award,
+  BadgeCheck, FileText
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -16,11 +17,13 @@ import AdminQuickSearch from '@/components/admin/AdminQuickSearch';
 
 const ADMIN_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { label: 'Business Owner Approvals', icon: BadgeCheck, href: '/admin/business-approvals', badge: 'pending' },
   { label: 'Users', icon: Users, href: '/admin/users' },
   { label: 'Create User', icon: UserPlus, href: '/admin/users/create' },
   { label: 'Companies', icon: Building2, href: '/admin/businesses', badge: 'pending' },
   { label: 'Bulk Import', icon: FileSpreadsheet, href: '/admin/businesses/import' },
   { label: 'Jobs', icon: Briefcase, href: '/admin/jobs', badge: 'pending' },
+  { label: 'Job Applications', icon: FileText, href: '/admin/applications' },
   { label: 'SEO & Keywords', icon: Search, href: '/admin/seo' },
   { label: 'Leads', icon: TrendingUp, href: '/admin/leads' },
   { label: 'Services', icon: Globe, href: '/admin/services' },

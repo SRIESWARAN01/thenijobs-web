@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('theni');
 
 export default function TheniJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Theni', url: 'https://thenijobs.com/jobs-in-theni' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Theni', url: 'https://www.thenijobs.com/jobs-in-theni' },
   ]);
 
   return (

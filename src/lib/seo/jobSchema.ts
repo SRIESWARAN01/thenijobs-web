@@ -108,7 +108,7 @@ export function generateJobPostingSchema(job: JobSchemaInput) {
   const streetAddress = job.streetAddress || `${district}, ${state}`;
 
   // Build the core schema object
-  const canonicalUrl = job.url || (job.slug ? `https://thenijobs.com/jobs/${job.slug}` : `https://thenijobs.com/jobs/${job.id}`);
+  const canonicalUrl = job.url || (job.slug ? `https://www.thenijobs.com/jobs/${job.slug}` : `https://www.thenijobs.com/jobs/${job.id}`);
   const schema: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
@@ -126,8 +126,8 @@ export function generateJobPostingSchema(job: JobSchemaInput) {
     hiringOrganization: {
       '@type': 'Organization',
       name: job.companyName || 'Verified Theni Employer',
-      sameAs: job.companyWebsite || 'https://thenijobs.com',
-      logo: job.companyLogo || 'https://thenijobs.com/logo.png',
+      sameAs: job.companyWebsite || 'https://www.thenijobs.com',
+      logo: job.companyLogo || 'https://www.thenijobs.com/logo.png',
     },
     jobLocation: {
       '@type': 'Place',

@@ -8,10 +8,13 @@ import {
   Search, MessageSquare, BarChart3, CreditCard, Star,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Bell,
   Plus, TrendingUp, Settings, Key, BadgeCheck,
-  Clock, AlertTriangle, CheckCircle, ShieldAlert,
+  Clock, AlertTriangle, CheckCircle, CheckCircle2, ShieldAlert,
   PhoneCall, Check, Zap, ArrowRight, MessageCircle,
+  Loader2, RefreshCw, AlertCircle, XCircle,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -44,6 +47,8 @@ const EMPLOYER_NAV = [
 
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useRequireAuth(['employer', 'business_owner', 'supplier', 'service_provider']);
+  const { refreshUserProfile } = useAuth();
+  const toast = useToast();
   const { unreadCount } = useNotifications();
   const { data: companies } = useCollection<any>('companies', [where('ownerId', '==', user?.uid || '')], { skip: !user?.uid });
   const company = companies?.[0];
@@ -55,6 +60,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState<PlanDetails | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   const handleOpenCheckout = (plan: (typeof SUBSCRIPTION_PLANS)[number]) => {
     setCheckoutPlan({
@@ -82,7 +88,524 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   }
   if (!user) return null;
 
-  // ── Pending Admin Approval Screen ─────────────────────────────────────────
+  // ── MANDATORY BUSINESS OWNER ADMIN APPROVAL GATE ───────────────────────────
+  // Business Owners must NEVER access the Business Owner Dashboard until an Admin explicitly approves them.
+  if (user.role === 'business_owner') {
+    const isApproved = user.approvalStatus === 'approved' || user.accountStatus === 'active';
+    const isRejected = user.approvalStatus === 'rejected' || user.accountStatus === 'rejected';
+
+    if (isRejected) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
+          <div className="max-w-lg w-full bg-white rounded-3xl border border-red-200 shadow-xl p-6 sm:p-8 text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-red-100 text-red-600 border border-red-200 flex items-center justify-center mx-auto shadow-inner">
+              <XCircle size={32} />
+            </div>
+
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-bold uppercase tracking-wider">
+                <AlertTriangle size={12} /> Registration Requires Revision
+              </span>
+              <h1 className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
+                Registration Not Approved
+              </h1>
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                Your business owner registration was reviewed by THENIJOBS Admin and requires changes before access can be granted.
+              </p>
+            </div>
+
+            {/* Rejection Details Box */}
+            <div className="bg-red-50/70 border border-red-200 rounded-2xl p-4 text-left space-y-2">
+              <p className="text-xs font-bold text-red-900 uppercase tracking-wide flex items-center gap-1.5">
+                <AlertCircle size={14} className="text-red-600" />
+                Reason for Revision
+              </p>
+              <p className="text-xs text-red-800 font-medium bg-white p-3 rounded-xl border border-red-100 leading-relaxed whitespace-pre-wrap">
+                {user.rejectionReason || 'Registration details could not be verified. Please provide official business documentation.'}
+              </p>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-2.5 text-xs text-slate-700">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Applicant Name</span>
+                <span className="font-bold text-slate-900">{user.fullName || user.displayName || 'Business Owner'}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Registered Email</span>
+                <span className="font-bold text-slate-900">{user.email}</span>
+              </div>
+              {(user.mobileNumber || user.phone) && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Mobile</span>
+                  <span className="font-bold text-slate-900">{user.mobileNumber ? `+91 ${user.mobileNumber}` : user.phone}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3 pt-2">
+              <a
+                href={SITE_CONTACT.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <MessageCircle size={16} />
+                <span>Contact Admin on WhatsApp (+91 93605 19460)</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setCheckingStatus(true);
+                  try {
+                    await refreshUserProfile?.();
+                    toast.info('Status checked. Please contact admin if you need immediate review.');
+                  } catch (e) {
+                    toast.error('Failed to refresh status.');
+                  } finally {
+                    setCheckingStatus(false);
+                  }
+                }}
+                disabled={checkingStatus}
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                {checkingStatus ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin text-slate-500" />
+                    <span>Checking Status...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={14} className="text-slate-500" />
+                    <span>Check Approval Status</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut(auth);
+                  router.push('/login');
+                }}
+                className="flex items-center gap-1.5 mx-auto text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1"
+              >
+                <LogOut size={13} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isApproved) {
+      const rawCreated: any = user.createdAt;
+      const formattedDate = rawCreated
+        ? new Date(rawCreated?.seconds ? rawCreated.seconds * 1000 : rawCreated).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          })
+        : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      // State 1: Paid Plan Selected & Paid, but Waiting for Admin Approval
+      if (user.paymentStatus === 'paid') {
+        const planMeta = SUBSCRIPTION_PLANS.find(p => p.slug === (user.subscriptionPlan || user.selectedPlan)) || SUBSCRIPTION_PLANS[1];
+
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
+            <div className="max-w-lg w-full bg-white rounded-3xl border border-emerald-200 shadow-xl p-6 sm:p-8 text-center space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 border border-emerald-300 flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 size={34} />
+              </div>
+
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                  <span>💳</span> Payment Verified • Waiting for Admin Approval
+                </span>
+                <h1 className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
+                  Payment Successful – Waiting for Admin Approval
+                </h1>
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                  Your payment for the <strong>{planMeta.name} Plan</strong> was verified successfully. Your account is currently waiting for Admin approval before Dashboard access is unlocked.
+                </p>
+              </div>
+
+              {/* Submitted Information Card */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-2.5 text-xs text-slate-700">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Payment Status</span>
+                  <span className="font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <Check size={12} strokeWidth={3} /> Paid &amp; Verified
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Selected Plan</span>
+                  <span className="font-bold text-slate-900">{planMeta.name} (₹{planMeta.price.toLocaleString('en-IN')}/yr)</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Approval Status</span>
+                  <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                    Pending Admin Review
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Business Owner</span>
+                  <span className="font-bold text-slate-900">{user.fullName || user.displayName || 'Business Owner'}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Registered Email</span>
+                  <span className="font-bold text-slate-900">{user.email}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Submission Date</span>
+                  <span className="font-bold text-slate-900">{formattedDate}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setCheckingStatus(true);
+                    try {
+                      await refreshUserProfile?.();
+                      if (user.approvalStatus === 'approved' || user.accountStatus === 'active') {
+                        toast.success('Your account is approved! Unlocking Dashboard...');
+                        router.push('/employer/dashboard');
+                      } else {
+                        toast.info('Your registration is still under review by Admin. Please check back shortly.');
+                      }
+                    } catch (e) {
+                      toast.error('Failed to check status. Please try again.');
+                    } finally {
+                      setCheckingStatus(false);
+                    }
+                  }}
+                  disabled={checkingStatus}
+                  className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  {checkingStatus ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin text-white" />
+                      <span>Checking Status...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={16} />
+                      <span>Check Approval Status</span>
+                    </>
+                  )}
+                </button>
+
+                <a
+                  href={SITE_CONTACT.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                >
+                  <MessageCircle size={15} className="text-emerald-600" />
+                  <span>Contact Admin on WhatsApp (+91 93605 19460)</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await signOut(auth);
+                    router.push('/login');
+                  }}
+                  className="flex items-center gap-1.5 mx-auto text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1 cursor-pointer"
+                >
+                  <LogOut size={13} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // State 2: Free Trial Selected, Waiting for Admin Approval
+      if (user.selectedPlan === 'trial' || user.trialRequested) {
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
+            <div className="max-w-lg w-full bg-white rounded-3xl border border-amber-200 shadow-xl p-6 sm:p-8 text-center space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
+                <Clock size={32} />
+              </div>
+
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider">
+                  <Clock size={12} /> 15-Day Free Trial • Pending Admin Approval
+                </span>
+                <h1 className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
+                  Your 15-Day Free Trial Is Waiting for Admin Approval
+                </h1>
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                  Thank you for registering with THENIJOBS. Your 15-day free trial request has been submitted and is waiting for Admin approval. <strong>No payment is required.</strong>
+                </p>
+              </div>
+
+              {/* Submitted Information Card */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-2.5 text-xs text-slate-700">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Selected Option</span>
+                  <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                    15-Day Free Trial (Standard Plan)
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Payment Status</span>
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    No Payment Required (₹0)
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Approval Status</span>
+                  <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                    Pending Admin Review
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Business Owner</span>
+                  <span className="font-bold text-slate-900">{user.fullName || user.displayName || 'Business Owner'}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Registered Email</span>
+                  <span className="font-bold text-slate-900">{user.email}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 font-medium">Submission Date</span>
+                  <span className="font-bold text-slate-900">{formattedDate}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setCheckingStatus(true);
+                    try {
+                      await refreshUserProfile?.();
+                      if (user.approvalStatus === 'approved' || user.accountStatus === 'active') {
+                        toast.success('Your account is approved! Loading Dashboard...');
+                        router.push('/employer/dashboard');
+                      } else {
+                        toast.info('Your trial request is still under review by Admin. Please check back shortly.');
+                      }
+                    } catch (e) {
+                      toast.error('Failed to check status. Please try again.');
+                    } finally {
+                      setCheckingStatus(false);
+                    }
+                  }}
+                  disabled={checkingStatus}
+                  className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  {checkingStatus ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin text-white" />
+                      <span>Checking Status...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={16} />
+                      <span>Check Approval Status</span>
+                    </>
+                  )}
+                </button>
+
+                <Link
+                  href="/register-business?step=plan"
+                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                >
+                  <Zap size={14} className="text-indigo-600" />
+                  <span>Choose an Annual Paid Plan Instead</span>
+                </Link>
+
+                <a
+                  href={SITE_CONTACT.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2 px-4 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                >
+                  <MessageCircle size={15} className="text-emerald-600" />
+                  <span>Contact Admin on WhatsApp (+91 93605 19460)</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await signOut(auth);
+                    router.push('/login');
+                  }}
+                  className="flex items-center gap-1.5 mx-auto text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1 cursor-pointer"
+                >
+                  <LogOut size={13} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // State 3: Plan Not Selected Yet
+      if (!user.selectedPlan && !user.trialRequested) {
+        return (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
+            <div className="max-w-md w-full bg-white rounded-3xl border border-blue-200 shadow-xl p-6 sm:p-8 text-center space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
+                <CreditCard size={32} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Choose Your Plan or Start Free Trial
+                </h1>
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                  To continue, please select either the 15-day Free Trial or choose an annual subscription plan.
+                </p>
+              </div>
+              <Link
+                href="/register-business?step=plan"
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <span>Select Plan or Start Free Trial</span>
+                <ArrowRight size={15} />
+              </Link>
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut(auth);
+                  router.push('/login');
+                }}
+                className="flex items-center gap-1.5 mx-auto text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1 cursor-pointer"
+              >
+                <LogOut size={13} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // State 4: Default General Review Screen
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
+          <div className="max-w-lg w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-8 text-center space-y-6">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
+              <Clock size={32} />
+            </div>
+
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider">
+                <Clock size={12} /> Pending Admin Approval
+              </span>
+              <h1 className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
+                Your Business Account Is Under Review
+              </h1>
+              <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                Thank you for registering with THENIJOBS. Your business account has been submitted successfully and is waiting for Admin approval.
+              </p>
+            </div>
+
+            {/* Submitted Information Card */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-2.5 text-xs text-slate-700">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Status</span>
+                <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                  Pending Admin Approval
+                </span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Business Owner</span>
+                <span className="font-bold text-slate-900">{user.fullName || user.displayName || 'Business Owner'}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="text-slate-500 font-medium">Registered Email</span>
+                <span className="font-bold text-slate-900">{user.email}</span>
+              </div>
+              {(user.mobileNumber || user.phone) && (
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Mobile Number</span>
+                  <span className="font-bold text-slate-900">{user.mobileNumber ? `+91 ${user.mobileNumber}` : user.phone}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-medium">Submission Date</span>
+                <span className="font-bold text-slate-900">{formattedDate}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3 pt-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  setCheckingStatus(true);
+                  try {
+                    await refreshUserProfile?.();
+                    if (user.approvalStatus === 'approved' || user.accountStatus === 'active') {
+                      toast.success('Your account is approved! Loading Dashboard...');
+                      router.push('/employer/dashboard');
+                    } else {
+                      toast.info('Your registration is still under review by Admin. Please check back shortly.');
+                    }
+                  } catch (e) {
+                    toast.error('Failed to check status. Please try again.');
+                  } finally {
+                    setCheckingStatus(false);
+                  }
+                }}
+                disabled={checkingStatus}
+                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+              >
+                {checkingStatus ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin text-white" />
+                    <span>Checking Status...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={16} />
+                    <span>Check Approval Status</span>
+                  </>
+                )}
+              </button>
+
+              <a
+                href={SITE_CONTACT.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-4 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+              >
+                <MessageCircle size={15} className="text-emerald-600" />
+                <span>Contact Admin on WhatsApp (+91 93605 19460)</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut(auth);
+                  router.push('/login');
+                }}
+                className="flex items-center gap-1.5 mx-auto text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1 cursor-pointer"
+              >
+                <LogOut size={13} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // ── Pending Admin Approval Screen (Company-Level) ─────────────────────────
   if (company && subState.isPendingApproval) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50 p-4">
@@ -120,8 +643,8 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   }
 
   // ── Suspended / Trial Expired Screen ──────────────────────────────────────
-  if (company && (subState.isSuspended || subState.isTrialExpired) && !subState.isPaidActive && pathname !== '/employer/billing') {
-    const adminWhatsAppUrl = generateAdminWhatsAppContactUrl(company);
+  if ((subState.isSuspended || subState.isTrialExpired) && !subState.isPaidActive && pathname !== '/employer/billing') {
+    const adminWhatsAppUrl = company ? generateAdminWhatsAppContactUrl(company) : SITE_CONTACT.whatsappUrl;
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 via-red-50/25 to-slate-100 py-10 px-4 flex items-center justify-center">
@@ -132,14 +655,14 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
               <ShieldAlert size={34} />
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-800 text-xs font-extrabold uppercase tracking-wider">
-              <span>🚫</span> Trial Expired — Upgrade Required
+              <span>🚫</span> Free Trial Expired
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              🚫 Trial Expired — Upgrade Required
+              Your 15-Day Free Trial Has Expired
             </h1>
             <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-              Your employer dashboard and company website for <strong>&quot;{company.name}&quot;</strong> are temporarily suspended because your 15-day free trial has expired.
-              All your data, jobs, and candidate records are securely preserved.
+              Your free trial has ended. Choose a subscription plan to continue using THENIJOBS business features.
+              All your company data, jobs, applications, and leads are safely preserved.
               <strong> Choose any one plan below</strong> or contact admin directly on WhatsApp (<strong>+91 93605 19460</strong>) to reactivate instantly.
             </p>
           </div>
@@ -250,22 +773,30 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
             </div>
           </div>
 
-          {/* Secondary Footer actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-gray-500 border-t border-gray-100">
-            <Link
-              href="/employer/billing"
-              className="font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-            >
-              <span>View Full Feature Comparison Table &amp; Billing History</span>
-              <ArrowRight size={13} />
-            </Link>
+          {/* Action Buttons: Choose a Plan, View Payment History, Logout */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-xs border-t border-gray-100">
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/pricing"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <span>Choose a Plan</span>
+                <ArrowRight size={13} />
+              </Link>
+              <Link
+                href="/employer/billing"
+                className="px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 text-slate-700 font-bold flex items-center gap-1.5 transition-all"
+              >
+                <span>View Payment History</span>
+              </Link>
+            </div>
 
             <button
-              onClick={() => { signOut(auth); router.push('/'); }}
-              className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 font-semibold"
+              onClick={async () => { signOut(auth); router.push('/login'); }}
+              className="flex items-center gap-1.5 text-gray-500 hover:text-red-600 font-semibold px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
             >
-              <LogOut size={13} />
-              <span>Sign Out</span>
+              <LogOut size={14} />
+              <span>Logout</span>
             </button>
           </div>
         </div>
@@ -276,12 +807,12 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
             isOpen={isCheckoutOpen}
             onClose={() => setIsCheckoutOpen(false)}
             plan={checkoutPlan}
-            companyId={company.id}
-            companyName={company.name}
-            companyAddress={company.address || (company.district ? `${company.district}, Tamil Nadu` : undefined)}
-            companyPhone={company.phone}
-            companyGst={company.gstNumber}
-            company={company}
+            companyId={company?.id || ''}
+            companyName={company?.name || user.fullName || 'Business Owner'}
+            companyAddress={company?.address || (company?.district ? `${company.district}, Tamil Nadu` : undefined)}
+            companyPhone={company?.phone || user.mobileNumber || user.phone}
+            companyGst={company?.gstNumber}
+            company={company || ({} as any)}
             onSuccess={() => {
               setIsCheckoutOpen(false);
               window.location.reload();
@@ -292,14 +823,19 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
     );
   }
 
-  // ── GOLDEN ACCESS CONTROL RULE: Trial Portal Restriction ───────────────────
-  // Trial employers can ONLY access: post-job, billing, company-profile.
-  // Full Employer Portal (Dashboard, Candidates, Interviews, Talent Search,
-  // Leads, Messages, Reports, Reviews, AI, Settings, ID Card) requires a paid plan.
+  // ── ACCESS CONTROL: Trial Portal Permissions ──────────────────────────────
+  // Approved Business Owners on an active 15-day Free Trial get Standard-tier access:
+  // Dashboard, Jobs management, Posting jobs, Candidates, Leads, Profile, Billing, Settings.
+  // Advanced features (Talent Search, AI, Interviews, Reports) require an upgraded paid plan.
   const TRIAL_ALLOWED_ROUTES = [
+    '/employer/dashboard',
+    '/employer/jobs',
     '/employer/post-job',
+    '/employer/candidates',
+    '/employer/leads',
     '/employer/billing',
     '/employer/company-profile',
+    '/employer/settings',
   ];
   const isTrialRestricted = subState.isTrialActive && !subState.isPaidActive;
   const isRouteAllowedDuringTrial = TRIAL_ALLOWED_ROUTES.some(r => pathname.startsWith(r));
@@ -316,17 +852,21 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
               🎉 Free Trial — {subState.trialDaysRemaining} day{subState.trialDaysRemaining !== 1 ? 's' : ''} remaining
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Upgrade to Unlock Full Employer Portal
+              Upgrade to Unlock Advanced Employer Features
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed">
-              During your free trial, you can <strong>post jobs</strong>, manage your <strong>company profile</strong>, and view <strong>billing</strong>.
-              To access the full Employer Portal — including Dashboard, Candidates, Interviews, Talent Search, Messages, Reports, and more — upgrade to a paid plan.
+              During your 15-day free trial, you have full access to your <strong>Dashboard</strong>, <strong>Job Postings</strong>, <strong>Candidate Applications</strong>, and <strong>Company Profile</strong>.
+              To access enterprise features — including Talent Search, AI screening, and advanced analytics — upgrade to a paid annual plan.
             </p>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-3">
-            <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">During Trial You Can:</p>
+            <p className="text-xs font-bold text-blue-800 uppercase tracking-wide">Included in Your Free Trial:</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <Link href="/employer/dashboard" className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-blue-200 hover:bg-blue-50 transition-all group">
+                <LayoutDashboard size={16} className="text-blue-600 shrink-0" />
+                <span className="text-xs font-semibold text-gray-800 group-hover:text-blue-600">Dashboard</span>
+              </Link>
               <Link href="/employer/post-job" className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white border border-blue-200 hover:bg-blue-50 transition-all group">
                 <Plus size={16} className="text-emerald-600 shrink-0" />
                 <span className="text-xs font-semibold text-gray-800 group-hover:text-blue-600">Post a Job</span>

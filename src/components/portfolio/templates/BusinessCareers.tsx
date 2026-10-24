@@ -264,7 +264,7 @@ export default function BusinessCareers({ site }: Props) {
       <footer className="py-8 border-t" style={{ borderColor: `${m}08` }}>
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" style={{ color: m }}>
           <span>© {new Date().getFullYear()} {b.companyName} · Careers Portal</span>
-          <span>Powered by <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
+          <span>Powered by <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
         </div>
       </footer>
     </div>

@@ -14,7 +14,7 @@ import {
   type ActionItem, type Column,
 } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
-import { updateDocument, deleteDocument, verifyUser } from '@/lib/firebase/firestoreService';
+import { updateDocument, deleteDocument, verifyUser, rejectUser } from '@/lib/firebase/firestoreService';
 import { auth } from '@/lib/firebase/config';
 import { serverTimestamp } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -168,6 +168,21 @@ export default function UsersPage() {
       toast.success('User verified!');
     } catch (e) {
       console.error(e);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const doReject = async (id: string) => {
+    const reason = prompt('Please enter the reason for rejection / revision:') || '';
+    if (!reason.trim()) return;
+    setActionLoading(id);
+    try {
+      await rejectUser(id, currentUser?.uid || 'admin', reason.trim());
+      toast.info('Business Owner registration rejected and notified.');
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Rejection failed', e.message);
     } finally {
       setActionLoading(null);
     }
@@ -381,8 +396,21 @@ export default function UsersPage() {
           const items: ActionItem[] = [
             { label: 'Edit user & credentials', icon: Edit3, onClick: () => openEditModal(u) },
           ];
-          if (!u.isVerified) {
-            items.push({ label: 'Verify user', icon: ShieldCheck, tone: 'success', onClick: () => doVerify(u.id) });
+          if (!u.isVerified || (u as any).approvalStatus !== 'approved') {
+            items.push({
+              label: u.role === 'business_owner' ? 'Approve & Verify Business Owner' : 'Verify user',
+              icon: ShieldCheck,
+              tone: 'success',
+              onClick: () => doVerify(u.id),
+            });
+          }
+          if (u.role === 'business_owner' && (u as any).approvalStatus !== 'rejected') {
+            items.push({
+              label: 'Reject Business Owner',
+              icon: XCircle,
+              tone: 'danger',
+              onClick: () => doReject(u.id),
+            });
           }
           items.push({
             label: u.status === 'suspended' ? 'Reactivate account' : 'Suspend account',

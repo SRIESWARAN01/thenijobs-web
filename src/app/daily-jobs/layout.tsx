@@ -13,12 +13,12 @@ export const metadata: Metadata = {
     "Theni private jobs daily",
     "Walk-in jobs Theni",
   ],
-  alternates: { canonical: 'https://thenijobs.com/daily-jobs' },
+  alternates: { canonical: 'https://www.thenijobs.com/daily-jobs' },
   openGraph: {
     title: "Today's Daily Jobs & Urgent Openings in Theni | THENIJOBS",
     description:
       'Search daily job postings and immediate hiring openings in Theni district updated every 24 hours with direct WhatsApp apply.',
-    url: 'https://thenijobs.com/daily-jobs',
+    url: 'https://www.thenijobs.com/daily-jobs',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',

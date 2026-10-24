@@ -123,7 +123,7 @@ export default function PublicPortfolioPageClient({ username: usernameProp }: Pu
   const heroSection = site.sections?.find(s => s.type === 'hero');
   const heroData = heroSection?.data || {};
   const pageDesc = site.seo?.description || heroData.tagline || site.branding?.tagline || `Explore the verified professional portfolio, skills, and projects of ${heroData.name || site.branding?.companyName} on THENIJOBS.`;
-  const canonicalUrl = `https://thenijobs.com/portfolio/${site.customUrl || username}`;
+  const canonicalUrl = `https://www.thenijobs.com/portfolio/${site.customUrl || username}`;
   const isSeeker = site.ownerType === 'seeker' || site.templateId?.startsWith('seeker-');
 
   const personSchema = isSeeker ? {

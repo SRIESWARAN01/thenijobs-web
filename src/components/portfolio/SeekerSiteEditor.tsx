@@ -458,7 +458,7 @@ export default function SeekerSiteEditor() {
                 'Tamil Nadu',
               ],
               ogImage: prof.photoUrl || '/og-image.jpg',
-              canonicalUrl: `https://thenijobs.com/portfolio/${defaultSlug}`,
+              canonicalUrl: `https://www.thenijobs.com/portfolio/${defaultSlug}`,
               structuredDataType: 'Person',
             },
             analytics: {
@@ -806,7 +806,7 @@ export default function SeekerSiteEditor() {
     }
   };
 
-  const portfolioUrl = site?.customUrl ? `https://thenijobs.com/portfolio/${site.customUrl}` : '';
+  const portfolioUrl = site?.customUrl ? `https://www.thenijobs.com/portfolio/${site.customUrl}` : '';
 
   const handleCopyUrl = () => {
     if (portfolioUrl) {
@@ -2277,7 +2277,7 @@ export default function SeekerSiteEditor() {
                     onChange={e => {
                       const clean = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
                       updateField('customUrl', clean);
-                      updateField('seo.canonicalUrl', `https://thenijobs.com/portfolio/${clean}`);
+                      updateField('seo.canonicalUrl', `https://www.thenijobs.com/portfolio/${clean}`);
                     }}
                     className="flex-1 px-3 py-2 text-base sm:text-xs font-mono font-bold rounded-r-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
                     aria-label="your-name" placeholder="your-name"
@@ -2335,7 +2335,7 @@ export default function SeekerSiteEditor() {
                     <div className="leading-none truncate text-[12px]">
                       <span className="text-slate-800 font-medium">THENIJOBS</span>
                       <span className="text-slate-400 font-mono text-[11px] block truncate">
-                        https://thenijobs.com › portfolio › {site.customUrl || 'anand-kumar'}
+                        https://www.thenijobs.com › portfolio › {site.customUrl || 'anand-kumar'}
                       </span>
                     </div>
                   </div>

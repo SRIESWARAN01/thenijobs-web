@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('bodinayakanur');
 
 export default function BodinayakanurJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Bodinayakanur', url: 'https://thenijobs.com/jobs-in-bodinayakanur' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Bodinayakanur', url: 'https://www.thenijobs.com/jobs-in-bodinayakanur' },
   ]);
 
   return (

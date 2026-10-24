@@ -98,10 +98,10 @@ export default async function MarketplaceItemPage({
 
   // Breadcrumb with real names
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Marketplace', url: 'https://thenijobs.com/marketplace' },
-    { name: displayCompany, url: `https://thenijobs.com/company/${companySlug}` },
-    { name: itemName, url: `https://thenijobs.com/marketplace/${type}/${companySlug}/${itemId}` },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Marketplace', url: 'https://www.thenijobs.com/marketplace' },
+    { name: displayCompany, url: `https://www.thenijobs.com/company/${companySlug}` },
+    { name: itemName, url: `https://www.thenijobs.com/marketplace/${type}/${companySlug}/${itemId}` },
   ]);
 
   // Product or Service JSON-LD — only when real data exists

@@ -145,6 +145,31 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // ─── 2.5 Resolve Company Info if Omitted ─────────────────────────────────
+    let resolvedCompanyId = companyId || '';
+    let resolvedCompanyName = companyName || '';
+    let resolvedCompanyAddress = companyAddress || '';
+    let resolvedCompanyPhone = companyPhone || '';
+    let resolvedCompanyGst = companyGst || '';
+
+    if (!resolvedCompanyId && userId) {
+      try {
+        const db = getAdminFirestore();
+        const compSnap = await db.collection('companies').where('ownerId', '==', userId).limit(1).get();
+        if (!compSnap.empty) {
+          const compDoc = compSnap.docs[0];
+          const cData = compDoc.data();
+          resolvedCompanyId = compDoc.id;
+          resolvedCompanyName = resolvedCompanyName || cData.name || '';
+          resolvedCompanyAddress = resolvedCompanyAddress || cData.address || '';
+          resolvedCompanyPhone = resolvedCompanyPhone || cData.phone || '';
+          resolvedCompanyGst = resolvedCompanyGst || cData.gstNumber || '';
+        }
+      } catch (cErr) {
+        console.warn('[Payment Verify] Company lookup skipped:', cErr);
+      }
+    }
+
     // ─── 3. Record Verified Payment in Firestore ─────────────────────────────
     // Uses recordVerifiedPayment which is fully idempotent and updates:
     // orders, payments, subscriptions, companies, users, and seekerProfiles with { merge: true }
@@ -156,11 +181,11 @@ export async function POST(request: Request) {
         planSlug,
         planName,
         amount: paidAmount,
-        companyId,
-        companyName,
-        companyAddress,
-        companyPhone,
-        companyGst,
+        companyId: resolvedCompanyId,
+        companyName: resolvedCompanyName,
+        companyAddress: resolvedCompanyAddress,
+        companyPhone: resolvedCompanyPhone,
+        companyGst: resolvedCompanyGst,
         userId: userId || '',
         userName,
         userEmail,

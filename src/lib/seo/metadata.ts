@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const SITE_NAME = 'THENIJOBS';
-export const SITE_URL = 'https://thenijobs.com';
+export const SITE_URL = 'https://www.thenijobs.com';
 export const DEFAULT_OG_IMAGE = '/og-image.jpg';
 
 export interface PageMetadataInput {

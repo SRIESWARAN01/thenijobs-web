@@ -30,10 +30,12 @@ export type EmployerRole =
   | 'staff_user';
 
 export type AccountStatus =
+  | 'pending_approval'
   | 'pending_admin_approval'
   | 'trial_active'
   | 'active'
   | 'suspended'
+  | 'rejected'
   | 'trial_expired';
 
 export type WebsiteStatus =
@@ -45,28 +47,57 @@ export type PaymentStatus =
   | 'unpaid'
   | 'paid'
   | 'pending'
-  | 'failed';
+  | 'failed'
+  | 'not_required';
 
 export interface User {
   uid: string;
   email: string;
   displayName: string;
+  fullName?: string;
   photoURL?: string;
   phone?: string;
+  mobileNumber?: string;
+  countryCode?: string;
   role: UserRole;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
   adminRole?: AdminRole;
   employerRole?: EmployerRole;
   companyId?: string;
   district?: string;
   isVerified: boolean;
   accountStatus?: AccountStatus;
-  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'active' | 'trial_expired' | 'subscription_expired' | 'suspended';
+  subscriptionStatus?: 'pending_admin_approval' | 'trial_active' | 'trial' | 'active' | 'trial_expired' | 'subscription_expired' | 'suspended' | string;
   subscriptionPlan?: string;
+  selectedPlan?: string;
+  trialRequested?: boolean;
+  trialEligible?: boolean;
+  hasUsedFreeTrial?: boolean;
+  trialDurationDays?: number;
+  trialStartedAt?: any;
+  trialEndsAt?: any;
   trialStartDate?: any;
   trialEndDate?: any;
+  trialActivatedBy?: string;
+  trialActivatedAt?: any;
+  planStartDate?: any;
+  planEndDate?: any;
+  subscriptionStartDate?: any;
+  subscriptionEndDate?: any;
+  paymentOrderId?: string;
+  paymentId?: string;
+  paymentAmount?: number;
+  paymentReceiptNumber?: string;
   paymentStatus?: PaymentStatus;
+  isPremium?: boolean;
+  approvedAt?: any;
   adminApprovedAt?: any;
   approvedBy?: string;
+  rejectedAt?: any;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  canPostJobs?: boolean;
+  isEmployer?: boolean;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -128,9 +159,12 @@ export interface ProductItem {
   id: string;
   name: string;
   imageUrl?: string;
+  images?: string[];
   description?: string;
   price?: number;
   priceRange?: string;
+  unit?: string;
+  availability?: 'in_stock' | 'available' | 'made_to_order' | 'out_of_stock';
   category?: string;
   features?: string[];
   keywords?: string[];
@@ -148,10 +182,14 @@ export interface ServiceItem {
   name: string;
   imageUrl?: string;
   bannerImageUrl?: string;
+  images?: string[];
   description?: string;
   category?: string;
   startingPrice?: number;
   priceRange?: string;
+  pricingType?: 'fixed' | 'starting_at' | 'hourly' | 'on_request';
+  serviceArea?: string;
+  availability?: 'available' | 'busy' | 'by_appointment';
   details?: string[];
   keywords?: string[];
   websiteUrl?: string;
@@ -163,15 +201,34 @@ export interface ServiceItem {
   featured?: boolean;
 }
 
+export const FOUNDER_DESIGNATIONS = [
+  'Founder',
+  'Co-Founder',
+  'Owner',
+  'CEO',
+  'Managing Director',
+  'Chairman',
+  'Director',
+  'Proprietor',
+  'Other',
+] as const;
+
+export type FounderDesignation = (typeof FOUNDER_DESIGNATIONS)[number];
+
 export interface FounderProfile {
-  photoUrl?: string;
   name: string;
   designation: string;
-  nativePlace?: string;
+  customDesignation?: string;
+  photoUrl?: string;
+  photoStoragePath?: string;
   bio?: string;
-  experienceYears?: string;
-  message?: string;
   linkedinUrl?: string;
+  since?: string;
+  founderSince?: string;
+  experienceYears?: string;
+  experience?: string;
+  nativePlace?: string;
+  message?: string;
   twitterUrl?: string;
   facebookUrl?: string;
 }
@@ -260,6 +317,14 @@ export interface Company {
   services?: (ServiceItem | string)[];
   portfolioProjects?: PortfolioProject[];
   founder?: FounderProfile;
+  founderName?: string;
+  founderDesignation?: string;
+  founderPhotoUrl?: string;
+  founderPhotoStoragePath?: string;
+  founderBio?: string;
+  founderLinkedInUrl?: string;
+  founderSince?: string;
+  founderExperience?: string;
   teamMembers?: { id: string; name: string; role: string; photoUrl?: string }[];
   enabledSections?: Record<string, boolean>;
   branches?: { id: string; name: string; address: string; phone?: string }[];

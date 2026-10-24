@@ -3,7 +3,7 @@ import { LOCATIONS_DATA, CATEGORIES_LIST } from '@/components/seo/locationData';
 import { generateBreadcrumbSchema } from '@/lib/seo/jobSchema';
 import { toJsonLdScript } from '@/lib/seo/jsonLd';
 
-const BASE = 'https://thenijobs.com';
+const BASE = 'https://www.thenijobs.com';
 
 /**
  * SEO-3 — the body of every `/jobs-in-<location>/<category>` page.

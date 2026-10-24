@@ -32,7 +32,7 @@ export async function generateMetadata({
       title: 'All Businesses & Companies | THENIJOBS',
       description:
         'Browse verified businesses, companies, and service providers across Theni and Tamil Nadu on THENIJOBS.',
-      alternates: { canonical: 'https://thenijobs.com/businesses/all' },
+      alternates: { canonical: 'https://www.thenijobs.com/businesses/all' },
     };
   }
 
@@ -45,7 +45,7 @@ export async function generateMetadata({
   }
 
   const displayName = formatCategoryName(category);
-  const canonicalUrl = `https://thenijobs.com/businesses/${category}`;
+  const canonicalUrl = `https://www.thenijobs.com/businesses/${category}`;
 
   return {
     title: `${displayName} Businesses in Theni | Companies & Services | THENIJOBS`,
@@ -81,9 +81,9 @@ export default async function BusinessCategoryPage({
   }
   const displayName = formatCategoryName(category);
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Businesses', url: 'https://thenijobs.com/businesses' },
-    { name: displayName, url: `https://thenijobs.com/businesses/${category}` },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Businesses', url: 'https://www.thenijobs.com/businesses' },
+    { name: displayName, url: `https://www.thenijobs.com/businesses/${category}` },
   ]);
 
   return (

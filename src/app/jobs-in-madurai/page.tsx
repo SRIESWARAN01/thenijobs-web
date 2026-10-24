@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('madurai');
 
 export default function MaduraiJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Madurai', url: 'https://thenijobs.com/jobs-in-madurai' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Madurai', url: 'https://www.thenijobs.com/jobs-in-madurai' },
   ]);
 
   return (

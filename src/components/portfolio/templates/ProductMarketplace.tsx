@@ -117,7 +117,7 @@ export default function ProductMarketplace({ site }: Props) {
           </div>
         </section>
       )}
-      <footer className="py-6 border-t text-center text-xs" style={{ borderColor: `${m}08`, color: m }}>© {new Date().getFullYear()} {b.companyName} · <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></footer>
+      <footer className="py-6 border-t text-center text-xs" style={{ borderColor: `${m}08`, color: m }}>© {new Date().getFullYear()} {b.companyName} · <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></footer>
     </div>
   );
 }

@@ -231,7 +231,7 @@ export default function CleanCorporate({ site }: Props) {
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs" style={{ color: muted }}>© {new Date().getFullYear()} {branding.companyName}. All rights reserved.</p>
           <div className="flex items-center gap-1 text-[10px]" style={{ color: muted }}>
-            Powered by <a href="https://thenijobs.com" className="font-bold ml-0.5" style={{ color: p }}>THENIJOBS</a>
+            Powered by <a href="https://www.thenijobs.com" className="font-bold ml-0.5" style={{ color: p }}>THENIJOBS</a>
           </div>
         </div>
       </footer>

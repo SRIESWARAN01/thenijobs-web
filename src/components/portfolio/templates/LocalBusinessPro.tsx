@@ -147,7 +147,7 @@ export default function LocalBusinessPro({ site }: Props) {
       )}
 
       <footer className="py-5 border-t text-center text-xs" style={{ borderColor: `${m}10`, color: m }}>
-        © {new Date().getFullYear()} {b.companyName} · <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a>
+        © {new Date().getFullYear()} {b.companyName} · <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a>
       </footer>
     </div>
   );

@@ -412,7 +412,7 @@ export default function SeekerPortfolioCreative({ site }: Props) {
 
       {/* Footer */}
       <footer className="py-6 text-center text-[10px]" style={{ color: `${muted}80` }}>
-        Powered by <a href="https://thenijobs.com" className="font-bold" style={{ color: primary }}>THENIJOBS</a>
+        Powered by <a href="https://www.thenijobs.com" className="font-bold" style={{ color: primary }}>THENIJOBS</a>
       </footer>
     </div>
   );

@@ -24,7 +24,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://thenijobs.com"),
+  metadataBase: new URL("https://www.thenijobs.com"),
   // SEO-2: there is deliberately no `template` here. It used to be "%s | THENIJOBS", which
   // appended a suffix that most page titles already carried — 362 of the 464 exported pages
   // shipped a title ending "| THENIJOBS | THENIJOBS", and the doubled ones were live in
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   authors: [{ name: "THENIJOBS" }],
   creator: "THENIJOBS",
   openGraph: {
-    type: "website", locale: "en_IN", url: "https://thenijobs.com",
+    type: "website", locale: "en_IN", url: "https://www.thenijobs.com",
     siteName: "THENIJOBS",
     title: "THENIJOBS - Search, Connect, Hire and Grow",
     description: "Find jobs, businesses, leads and services in Theni and Tamil Nadu",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
   },
   alternates: {
-    canonical: "https://thenijobs.com",
+    canonical: "https://www.thenijobs.com",
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
   icons: {

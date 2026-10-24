@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   // a title one.
   description:
     'Add your company to THENIJOBS. Create a verified business profile, list products and services, and start posting jobs to hire in Theni and Tamil Nadu.',
-  alternates: { canonical: 'https://thenijobs.com/company/register' },
+  alternates: { canonical: 'https://www.thenijobs.com/company/register' },
 };
 
 export default function CompanyRegisterLayout({ children }: { children: React.ReactNode }) {

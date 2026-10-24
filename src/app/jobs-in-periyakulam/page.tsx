@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('periyakulam');
 
 export default function PeriyakulamJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Periyakulam', url: 'https://thenijobs.com/jobs-in-periyakulam' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Periyakulam', url: 'https://www.thenijobs.com/jobs-in-periyakulam' },
   ]);
 
   return (

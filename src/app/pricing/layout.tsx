@@ -28,12 +28,12 @@ export const metadata: Metadata = {
     'Business subscription TheniJobs',
     'Recruitment package Tamil Nadu',
   ],
-  alternates: { canonical: 'https://thenijobs.com/pricing' },
+  alternates: { canonical: 'https://www.thenijobs.com/pricing' },
   openGraph: {
     title: 'Employer Pricing & Hiring Plans | THENIJOBS',
     description:
       'Affordable yearly recruitment plans for local businesses with Razorpay UPI & card checkout, digital visiting card, and verified badge.',
-    url: 'https://thenijobs.com/pricing',
+    url: 'https://www.thenijobs.com/pricing',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',

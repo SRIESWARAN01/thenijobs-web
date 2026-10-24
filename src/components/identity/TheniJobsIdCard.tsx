@@ -37,7 +37,7 @@ export default function TheniJobsIdCard({
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   useEffect(() => {
-    const targetUrl = portfolioUrl || `https://thenijobs.com/verify/${theniJobsId}`;
+    const targetUrl = portfolioUrl || `https://www.thenijobs.com/verify/${theniJobsId}`;
     QRCode.toDataURL(targetUrl, { width: 150, margin: 1 })
       .then(url => setQrCodeUrl(url))
       .catch(err => console.error(err));

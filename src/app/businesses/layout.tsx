@@ -12,12 +12,12 @@ export const metadata: Metadata = {
     'Shops and factories in Theni',
     'Commercial directory Tamil Nadu',
   ],
-  alternates: { canonical: 'https://thenijobs.com/businesses' },
+  alternates: { canonical: 'https://www.thenijobs.com/businesses' },
   openGraph: {
     title: 'Verified Businesses & Companies in Theni | THENIJOBS',
     description:
       'Search verified local companies, showroom profiles, and active hiring employers in Theni and Tamil Nadu.',
-    url: 'https://thenijobs.com/businesses',
+    url: 'https://www.thenijobs.com/businesses',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',

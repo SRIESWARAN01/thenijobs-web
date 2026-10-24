@@ -51,15 +51,15 @@ const homeStructuredData = {
   '@graph': [
     {
       '@type': 'WebSite',
-      '@id': 'https://thenijobs.com/#website',
-      url: 'https://thenijobs.com',
+      '@id': 'https://www.thenijobs.com/#website',
+      url: 'https://www.thenijobs.com',
       name: 'THENIJOBS',
       description: 'Local Job & Business Platform for Theni & Tamil Nadu',
       potentialAction: {
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: 'https://thenijobs.com/jobs?search={search_term_string}',
+          urlTemplate: 'https://www.thenijobs.com/jobs?search={search_term_string}',
         },
         'query-input': 'required name=search_term_string',
       },

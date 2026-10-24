@@ -85,9 +85,9 @@ export default async function CompanyProfilePage({
 
   // Breadcrumb with real company name and correct link to /businesses
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Businesses', url: 'https://thenijobs.com/businesses' },
-    ...(company?.category ? [{ name: company.category, url: `https://thenijobs.com/businesses/${slugify(company.category)}` }] : []),
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Businesses', url: 'https://www.thenijobs.com/businesses' },
+    ...(company?.category ? [{ name: company.category, url: `https://www.thenijobs.com/businesses/${slugify(company.category)}` }] : []),
     { name: displayName, url: canonicalCompanyUrl(slug) },
   ]);
 

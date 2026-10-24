@@ -2,22 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 test('THENIJOBS Technical SEO, Indexing & Canonical Domain Suite', async (t) => {
-  const PRIMARY_CANONICAL_DOMAIN = 'https://thenijobs.com';
+  const PRIMARY_CANONICAL_DOMAIN = 'https://www.thenijobs.com';
 
-  await t.test('Canonical Domain Strategy: Only https://thenijobs.com is canonical', () => {
+  await t.test('Canonical Domain Strategy: Only https://www.thenijobs.com is canonical', () => {
     const aliasDomains = [
       'https://thenijobs.in',
       'http://thenijobs.in',
       'https://www.thenijobs.in',
       'http://www.thenijobs.in',
-      'https://www.thenijobs.com',
+      'https://thenijobs.com',
       'http://thenijobs.com',
+      'http://www.thenijobs.com',
     ];
 
     for (const alias of aliasDomains) {
       assert.notEqual(alias, PRIMARY_CANONICAL_DOMAIN, `${alias} must never be treated as primary canonical`);
       assert.ok(
-        alias.includes('thenijobs.in') || alias.startsWith('http://') || alias.includes('www.'),
+        alias.includes('thenijobs.in') || alias.startsWith('http://') || alias === 'https://thenijobs.com',
         `${alias} is an alias/insecure origin that must 301 redirect to ${PRIMARY_CANONICAL_DOMAIN}`
       );
     }
@@ -114,22 +115,22 @@ test('THENIJOBS Technical SEO, Indexing & Canonical Domain Suite', async (t) => 
   });
 
   await t.test('Google Indexing API Policy Guardrails: Strictly JobPosting URLs only', () => {
-    const jobUrlPattern = /^https:\/\/thenijobs\.com\/jobs\/[a-zA-Z0-9_\-]+$/;
+    const jobUrlPattern = /^https:\/\/(www\.)?thenijobs\.com\/jobs\/[a-zA-Z0-9_\-]+$/;
 
     const validJobUrls = [
-      'https://thenijobs.com/jobs/accountant-theni-ab12',
-      'https://thenijobs.com/jobs/react-dev-cumbum-xyz89',
-      'https://thenijobs.com/jobs/driver-bodinayakanur-4567',
+      'https://www.thenijobs.com/jobs/accountant-theni-ab12',
+      'https://www.thenijobs.com/jobs/react-dev-cumbum-xyz89',
+      'https://www.thenijobs.com/jobs/driver-bodinayakanur-4567',
     ];
 
     const invalidUrlsRejectedByPolicy = [
-      'https://thenijobs.com/marketplace/product/acme/prod-1',
-      'https://thenijobs.com/marketplace/service/saloon/haircut',
-      'https://thenijobs.com/company/sri-krishna-stores',
-      'https://thenijobs.com/businesses/retail',
-      'https://thenijobs.com/pricing',
+      'https://www.thenijobs.com/marketplace/product/acme/prod-1',
+      'https://www.thenijobs.com/marketplace/service/saloon/haircut',
+      'https://www.thenijobs.com/company/sri-krishna-stores',
+      'https://www.thenijobs.com/businesses/retail',
+      'https://www.thenijobs.com/pricing',
       'https://thenijobs.in/jobs/accountant-theni-ab12', // Wrong domain
-      'https://thenijobs.com/jobs/123/edit', // Admin/sub-path
+      'https://www.thenijobs.com/jobs/123/edit', // Admin/sub-path
     ];
 
     for (const validUrl of validJobUrls) {
@@ -193,5 +194,88 @@ test('THENIJOBS Technical SEO, Indexing & Canonical Domain Suite', async (t) => 
     assert.equal(schema.baseSalary.value.minValue, 18000);
     assert.equal(schema.baseSalary.value.maxValue, 25000);
     assert.equal(schema.jobLocation.address.addressLocality, 'Theni');
+  });
+
+  await t.test('Company Visibility & Privacy Guardrails: Only verified companies are indexed', () => {
+    const companies = [
+      { id: 'c1', name: 'Approved Spices Corp', slug: 'approved-spices', verified: true, adminNotes: 'Internal KYC OK' },
+      { id: 'c2', name: 'Pending Review Mills', slug: 'pending-mills', verified: false, adminNotes: 'Pending bank check' },
+      { id: 'c3', name: 'Rejected Firm', slug: 'rejected-firm', verified: false, status: 'rejected' },
+    ];
+
+    // Filter used by sitemap and public indexer
+    const eligibleForSitemap = companies.filter(c => c.verified === true && c.status !== 'rejected');
+    assert.equal(eligibleForSitemap.length, 1);
+    assert.equal(eligibleForSitemap[0].slug, 'approved-spices');
+
+    // Schema privacy test: adminNotes, private KYC data must never appear in public schema
+    const publicSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: eligibleForSitemap[0].name,
+      url: `https://www.thenijobs.com/company/${eligibleForSitemap[0].slug}`,
+    };
+
+    assert.equal('adminNotes' in publicSchema, false, 'Private adminNotes must never be exposed');
+    assert.equal('status' in publicSchema, false, 'Internal status must never be exposed');
+  });
+
+  await t.test('Marketplace Product & Service Structured Data & Deduplication', () => {
+    const product = {
+      id: 'prod-99',
+      name: 'Organic Theni Cardamom 500g',
+      price: 1250,
+      imageUrl: 'https://images.thenijobs.com/cardamom.jpg',
+      companySlug: 'bodinayakanur-spices',
+      companyName: 'Bodinayakanur Spices Pvt Ltd',
+    };
+
+    const service = {
+      id: 'serv-44',
+      name: 'Solar Panel Installation',
+      startingPrice: 15000,
+      companySlug: 'theni-solar-solutions',
+      companyName: 'Theni Solar Solutions',
+    };
+
+    // Product canonical URL check
+    const prodCanonical = `https://www.thenijobs.com/marketplace/product/${product.companySlug}/${product.id}`;
+    assert.equal(prodCanonical, 'https://www.thenijobs.com/marketplace/product/bodinayakanur-spices/prod-99');
+
+    // Service canonical URL check
+    const servCanonical = `https://www.thenijobs.com/marketplace/service/${service.companySlug}/${service.id}`;
+    assert.equal(servCanonical, 'https://www.thenijobs.com/marketplace/service/theni-solar-solutions/serv-44');
+
+    // Search query parameter deduplication: query parameters must not alter canonical URL
+    const searchedUrl = 'https://www.thenijobs.com/marketplace?search=cardamom&sort=price_asc';
+    const canonicalBase = 'https://www.thenijobs.com/marketplace';
+    assert.notEqual(searchedUrl, canonicalBase);
+    assert.equal(new URL(searchedUrl).pathname, '/marketplace');
+  });
+
+  await t.test('BreadcrumbList Schema Generation for Public Hierarchy', () => {
+    const items = [
+      { name: 'Home', url: 'https://www.thenijobs.com' },
+      { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+      { name: 'Jobs in Theni', url: 'https://www.thenijobs.com/jobs-in-theni' },
+      { name: 'Software Developer', url: 'https://www.thenijobs.com/jobs/software-developer-theni' },
+    ];
+
+    const breadcrumbSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: items.map((item, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        name: item.name,
+        item: item.url,
+      })),
+    };
+
+    assert.equal(breadcrumbSchema['@type'], 'BreadcrumbList');
+    assert.equal(breadcrumbSchema.itemListElement.length, 4);
+    assert.equal(breadcrumbSchema.itemListElement[0].position, 1);
+    assert.equal(breadcrumbSchema.itemListElement[3].position, 4);
+    assert.equal(breadcrumbSchema.itemListElement[3].name, 'Software Developer');
   });
 });

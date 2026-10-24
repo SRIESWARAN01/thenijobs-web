@@ -59,6 +59,13 @@ service firebase.storage {
       allow delete: if isCompanyOwner(companyId) || isAdmin();
     }
 
+    // ===== COMPANY FOUNDER / OWNER PROFILE PHOTOS =====
+    match /companies/{companyId}/founder/{fileName} {
+      allow read:  if true;
+      allow write: if (isCompanyOwner(companyId) || isAdmin()) && isImage() && isUnder5MB();
+      allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
     // ===== COMPANY COVER PHOTOS =====
     match /companies/{companyId}/cover/{fileName} {
       allow read:  if true;
@@ -73,6 +80,27 @@ service firebase.storage {
         (isImage() || request.resource.contentType.matches('video/.*')) &&
         isUnder10MB();
       allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
+    // ===== COMPANY PRODUCTS =====
+    match /companies/{companyId}/products/{fileName} {
+      allow read:  if true;
+      allow write: if (isCompanyOwner(companyId) || isAdmin()) && isImage() && isUnder10MB();
+      allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
+    // ===== COMPANY SERVICES =====
+    match /companies/{companyId}/services/{fileName} {
+      allow read:  if true;
+      allow write: if (isCompanyOwner(companyId) || isAdmin()) && isImage() && isUnder10MB();
+      allow delete: if isCompanyOwner(companyId) || isAdmin();
+    }
+
+    // ===== STANDALONE SERVICE BANNERS =====
+    match /services/{serviceId}/banner/{fileName} {
+      allow read:  if true;
+      allow write: if isAuthenticated() && isImage() && isUnder10MB();
+      allow delete: if isAuthenticated() || isAdmin();
     }
 
     // ===== RESUMES =====

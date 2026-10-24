@@ -19,6 +19,7 @@ import { Button, PageHeader, PageShell, Tabs } from '@/components/dashboard';
 
 const PLAN_COLORS: Record<PlanTier, { bg: string; text: string; label: string; icon: any }> = {
   free: { bg: '#F3F4F6', text: '#6B7280', label: 'Free', icon: Shield },
+  basic: { bg: '#F0FDF4', text: '#16A34A', label: 'Basic', icon: Shield },
   standard: { bg: '#ECFDF5', text: '#059669', label: 'Standard', icon: Crown },
   premium: { bg: '#FFFBEB', text: '#D97706', label: 'Premium', icon: Sparkles },
   enterprise: { bg: '#F5F3FF', text: '#7C3AED', label: 'Enterprise', icon: Diamond },
@@ -27,6 +28,7 @@ const PLAN_COLORS: Record<PlanTier, { bg: string; text: string; label: string; i
 const FILTER_TABS: { label: string; value: string }[] = [
   { label: 'All', value: 'all' },
   { label: 'Free', value: 'free' },
+  { label: 'Basic', value: 'basic' },
   { label: 'Standard', value: 'standard' },
   { label: 'Premium', value: 'premium' },
   { label: 'Enterprise', value: 'enterprise' },

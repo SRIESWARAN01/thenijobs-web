@@ -14,6 +14,7 @@ import {
   BookOpen, UserCheck, HardHat, Cpu, Truck, CheckSquare, PhoneCall
 } from 'lucide-react';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
+import { LinkedinIcon } from '@/components/ui/BrandIcons';
 
 // ─── 10 INDUSTRY TEMPLATE IDENTIFIERS ───────────────────────────────────────
 export type IndustryTemplateKey =
@@ -740,6 +741,111 @@ export default function CompanyLandingWebsite({
               </p>
             </div>
           </div>
+
+          {/* Founder & Owner Profile Showcase */}
+          {((company.founder && company.founder.name) || company.founderName) && (() => {
+            const founder = (company.founder && company.founder.name) ? company.founder : {
+              name: company.founderName,
+              designation: company.founderDesignation || 'Founder',
+              photoUrl: company.founderPhotoUrl,
+              bio: company.founderBio,
+              linkedinUrl: company.founderLinkedInUrl,
+              since: company.founderSince,
+              founderSince: company.founderSince,
+              experienceYears: company.founderExperience,
+              nativePlace: company.nativePlace,
+              message: (company as any).founderMessage
+            };
+
+            return (
+              <div className="mt-12 p-6 sm:p-8 rounded-3xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-slate-50/60 shadow-xs">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-6 sm:gap-8">
+                  {/* Founder Photo */}
+                  <div className="relative shrink-0">
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden border-4 border-white shadow-md bg-slate-100 flex items-center justify-center">
+                      {founder.photoUrl ? (
+                        <img
+                          src={founder.photoUrl}
+                          alt={founder.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-3xl">
+                          {founder.name ? founder.name[0]?.toUpperCase() : 'F'}
+                        </div>
+                      )}
+                    </div>
+                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-amber-500 text-amber-950 px-2.5 py-0.5 rounded-full text-[9px] font-extrabold shadow-xs uppercase tracking-wider whitespace-nowrap">
+                      Leadership
+                    </span>
+                  </div>
+
+                  {/* Founder Details */}
+                  <div className="flex-1 text-center md:text-left space-y-3">
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600">
+                        Founder &amp; Owner Profile
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+                        {founder.name}
+                      </h3>
+                      <p className="text-sm font-semibold text-slate-600">
+                        {founder.designation || 'Founder / Owner'}
+                      </p>
+                    </div>
+
+                    {/* Metadata tags */}
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-0.5">
+                      {(founder.since || founder.founderSince) && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 text-xs font-semibold">
+                          <Clock size={12} className="text-amber-600" /> Since {founder.since || founder.founderSince}
+                        </span>
+                      )}
+                      {(founder.experienceYears || founder.experience) && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/70 text-xs font-semibold">
+                          <Briefcase size={12} className="text-emerald-600" /> {founder.experienceYears || founder.experience}
+                        </span>
+                      )}
+                      {founder.nativePlace && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium">
+                          <MapPin size={12} className="text-slate-500" /> {founder.nativePlace}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Biography */}
+                    {founder.bio && (
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl">
+                        {founder.bio}
+                      </p>
+                    )}
+
+                    {/* Founder's Message */}
+                    {founder.message && (
+                      <div className="p-3.5 rounded-2xl bg-white border border-slate-200/70 text-xs text-slate-700 italic max-w-2xl">
+                        &quot;{founder.message}&quot;
+                      </div>
+                    )}
+
+                    {/* LinkedIn Connection */}
+                    {founder.linkedinUrl && (
+                      <div className="pt-1">
+                        <a
+                          href={founder.linkedinUrl.startsWith('http') ? founder.linkedinUrl : 'https://' + founder.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A66C2]/10 hover:bg-[#0A66C2] text-[#0A66C2] hover:text-white border border-[#0A66C2]/20 text-xs font-bold transition-all shadow-xs"
+                        >
+                          <LinkedinIcon size={14} />
+                          <span>Connect on LinkedIn</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </section>
 

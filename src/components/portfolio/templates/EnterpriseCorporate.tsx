@@ -339,7 +339,7 @@ export default function EnterpriseCorporate({ site }: Props) {
             {b.logo ? <img src={b.logo} alt="" className="h-6 w-auto opacity-60" /> : <Building2 size={16} style={{ color: p }} />}
             <span>© {new Date().getFullYear()} {b.companyName}. All rights reserved.</span>
           </div>
-          <span>Powered by <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
+          <span>Powered by <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
         </div>
       </footer>
     </div>

@@ -295,7 +295,42 @@ export default function PostJobPage() {
         updatedAt: serverTimestamp(),
       };
 
-      const jobId = await createDocument('jobs', jobPayload);
+      // Submit via backend API to enforce authoritative plan limits and verification
+      const apiRes = await fetch('/api/jobs/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          description: form.description.trim(),
+          jobType: form.jobType,
+          location: form.location.trim() || form.district || 'Theni',
+          district: form.district || 'Theni',
+          openings: form.openings,
+          experience: form.experience,
+          education: form.education,
+          skills,
+          salaryMin: form.salaryMin,
+          salaryMax: form.salaryMax,
+          salaryType: form.salaryType,
+          isNegotiable: form.isNegotiable,
+          benefits,
+          isPremium: form.isPremium,
+          isUrgent: form.isUrgent,
+          isWalkIn: form.isWalkIn,
+          walkInDate: form.walkInDate,
+          walkInTime: form.walkInTime,
+          walkInVenue: form.walkInVenue || form.location || 'Company Office',
+          walkInContactPhone: form.walkInContactPhone || company.phone || '',
+          companyId,
+          userId: user?.uid || '',
+        }),
+      });
+
+      const apiData = await apiRes.json();
+      if (!apiRes.ok || !apiData.success) {
+        throw new Error(apiData.error || 'Failed to submit job opening.');
+      }
+      const jobId = apiData.jobId;
 
       await logActivity({
         userId: user?.uid || '',

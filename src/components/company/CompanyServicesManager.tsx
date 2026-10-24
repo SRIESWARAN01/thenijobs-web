@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { ServiceItem } from '@/lib/types';
-import { hasFeaturePermission } from '@/lib/plans';
+import { canAddService, getPlanLimits, formatLimit, isUnlimited, hasFeaturePermission } from '@/lib/plans';
 import {
   Wrench, Plus, Trash2, Edit3, Lock, Sparkles,
   Phone, MessageCircle, Check, X, ExternalLink,
@@ -26,14 +26,6 @@ interface CompanyServicesManagerProps {
   onChange: (services: ServiceItem[]) => void;
 }
 
-const PLAN_SERVICE_LIMITS: Record<string, number> = {
-  free: 3,
-  basic: 3,
-  standard: 10,
-  premium: 50,
-  enterprise: 999
-};
-
 export default function CompanyServicesManager({
   services = [],
   planSlug = 'free',
@@ -46,7 +38,9 @@ export default function CompanyServicesManager({
 }: CompanyServicesManagerProps) {
   const toast = useToast();
   const { user } = useAuth();
-  const maxLimit = PLAN_SERVICE_LIMITS[planSlug.toLowerCase()] || 3;
+  const quota = canAddService(planSlug, services.length);
+  const maxLimit = quota.limit;
+  const isLimitReached = !quota.allowed;
 
   // Storage upload hook for service banners
   const { uploadFile, progress: uploadProgress, loading: uploading } = useUploadFile();
@@ -61,8 +55,6 @@ export default function CompanyServicesManager({
     }
     return s;
   });
-
-  const isLimitReached = normalizedServices.length >= maxLimit;
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -308,11 +300,15 @@ export default function CompanyServicesManager({
               Company Services &amp; Offerings
             </h3>
             <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
-              {normalizedServices.length} / {maxLimit === 999 ? 'Unlimited' : maxLimit}
+              {normalizedServices.length} / {formatLimit(maxLimit)}
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            Showcase your business services, consulting packages, hourly rates, and booking options to customers across Tamil Nadu.
+            {maxLimit === 0
+              ? 'Service listings are not included in Basic. Upgrade to Standard (10 services) or higher to offer services.'
+              : isUnlimited(maxLimit)
+              ? `Unlimited service listings enabled (${normalizedServices.length} active services).`
+              : `Showcase your business services, consulting packages, hourly rates, and booking options (${normalizedServices.length}/${maxLimit} listed).`}
           </p>
         </div>
 
@@ -321,7 +317,7 @@ export default function CompanyServicesManager({
             type="button"
             onClick={() => {
               if (isLimitReached) {
-                toast.error(`Service Limit Reached (${maxLimit} Max)`, `Your current ${planSlug.toUpperCase()} plan allows up to ${maxLimit} services. Please upgrade to add more.`);
+                toast.error(`Service Limit Reached (${formatLimit(maxLimit)})`, `Your current ${planSlug.toUpperCase()} plan allows up to ${formatLimit(maxLimit)} services. Please upgrade to add more.`);
                 return;
               }
               resetForm();
@@ -769,7 +765,16 @@ export default function CompanyServicesManager({
                   </div>
 
                   <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100 text-xs">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {companySlug && service.id && (
+                        <Link
+                          href={`/marketplace/service/${companySlug}/${service.id}`}
+                          target="_blank"
+                          className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 flex items-center gap-1 hover:bg-blue-100 transition-colors"
+                        >
+                          <ExternalLink size={10} /> View on Marketplace
+                        </Link>
+                      )}
                       {service.whatsappEnquiry !== false && (
                         <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
                           <MessageCircle size={11} /> WhatsApp

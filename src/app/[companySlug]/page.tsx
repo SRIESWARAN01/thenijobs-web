@@ -59,7 +59,7 @@ export async function generateMetadata({
       title: pageTitle,
       description: pageDesc,
       type: 'website',
-      url: `https://thenijobs.com/${companySlug}`,
+      url: `https://www.thenijobs.com/${companySlug}`,
       siteName: 'THENIJOBS',
       images: company.logoUrl ? [{ url: company.logoUrl }] : undefined,
     },
@@ -70,7 +70,7 @@ export async function generateMetadata({
       images: company.logoUrl ? [company.logoUrl] : undefined,
     },
     alternates: {
-      canonical: `https://thenijobs.com/${companySlug}`,
+      canonical: `https://www.thenijobs.com/${companySlug}`,
     },
     robots: {
       index: true,

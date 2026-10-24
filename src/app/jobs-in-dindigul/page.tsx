@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('dindigul');
 
 export default function DindigulJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Dindigul', url: 'https://thenijobs.com/jobs-in-dindigul' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Dindigul', url: 'https://www.thenijobs.com/jobs-in-dindigul' },
   ]);
 
   return (

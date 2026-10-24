@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     'THENIJOBS marketplace',
   ],
   alternates: {
-    canonical: 'https://thenijobs.com/marketplace',
+    canonical: 'https://www.thenijobs.com/marketplace',
   },
   openGraph: {
     title: 'Marketplace Theni | Verified Products & Services | THENIJOBS',
     description:
       'Buy local products and hire verified service professionals across Theni and Tamil Nadu directly without commission.',
-    url: 'https://thenijobs.com/marketplace',
+    url: 'https://www.thenijobs.com/marketplace',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',
@@ -44,8 +44,8 @@ export const metadata: Metadata = {
 
 export default function MarketplacePage() {
   const breadcrumbs = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Marketplace', url: 'https://thenijobs.com/marketplace' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Marketplace', url: 'https://www.thenijobs.com/marketplace' },
   ]);
 
   return (

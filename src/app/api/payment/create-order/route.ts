@@ -26,6 +26,20 @@ export async function POST(request: Request) {
     // The order is always created for the server-derived price, never whatever the client sent.
     const amount = expectedAmount;
 
+    // Automatically resolve companyId if omitted
+    let resolvedCompanyId = companyId || '';
+    if (!resolvedCompanyId && userId) {
+      try {
+        const db = getAdminFirestore();
+        const compSnap = await db.collection('companies').where('ownerId', '==', userId).limit(1).get();
+        if (!compSnap.empty) {
+          resolvedCompanyId = compSnap.docs[0].id;
+        }
+      } catch (err) {
+        console.warn('[Payment Create Order] Could not resolve company for user:', err);
+      }
+    }
+
     // Generate unique internal receipt identifier
     const receiptSeed = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
@@ -57,7 +71,7 @@ export async function POST(request: Request) {
           notes: {
             planSlug: planSlug || 'standard',
             planName: planName || 'Subscription Plan',
-            companyId: companyId || '',
+            companyId: resolvedCompanyId,
             userId: userId || '',
             mode: isTestMode ? 'test' : 'live',
           },
@@ -76,7 +90,7 @@ export async function POST(request: Request) {
             planName: planName || 'Subscription Plan',
             amount,
             currency: 'INR',
-            companyId: companyId || '',
+            companyId: resolvedCompanyId,
             userId: userId || '',
             role: role || 'employer',
             status: 'created',

@@ -73,7 +73,7 @@ export default function WebsiteSettingsPage() {
     );
   }
 
-  const siteUrl = `https://thenijobs.com/portfolio/${site.customUrl}`;
+  const siteUrl = `https://www.thenijobs.com/portfolio/${site.customUrl}`;
 
   return (
     <PageShell className="max-w-4xl">

@@ -7,7 +7,7 @@
 
 import { SITE_CONTACT } from '@/lib/constants';
 
-const BASE_URL = 'https://thenijobs.com';
+const BASE_URL = 'https://www.thenijobs.com';
 
 /**
  * Schema.org Organization for THENIJOBS.

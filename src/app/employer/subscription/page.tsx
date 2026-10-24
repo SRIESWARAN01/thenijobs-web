@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
-import { Crown, ChevronRight, Loader2, Sparkles, ShieldCheck, Zap, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Crown, Loader2, Sparkles, ShieldCheck, Zap, ArrowRight, CheckCircle2, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
+import { getPlanBadgeInfo } from '@/components/identity/PlanBadge';
+import { getPlanLimits, formatLimit } from '@/lib/plans';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
 import { PageHeader } from '@/components/dashboard';
 
@@ -20,7 +22,7 @@ export default function EmployerSubscriptionPage() {
     where('ownerId', '==', user?.uid || '')
   ], { skip: !user?.uid });
 
-  const company = companies[0];
+  const company = companies?.[0];
   const companyId = company?.id;
 
   // 2. Fetch active subscriptions
@@ -29,19 +31,25 @@ export default function EmployerSubscriptionPage() {
     where('status', '==', 'active')
   ], { skip: !companyId });
 
-  const activeSub = subscriptions[0];
+  const activeSub = subscriptions?.[0];
   const currentPlanSlug = activeSub ? activeSub.plan : (company?.subscriptionPlan || 'free');
   const currentPlan = SUBSCRIPTION_PLANS.find(p => p.slug === currentPlanSlug) || SUBSCRIPTION_PLANS[0];
+  const limits = getPlanLimits(currentPlanSlug);
+
+  const isBusinessVerified = company?.verificationStatus === 'verified' || company?.isVerified === true;
+  const badgeInfo = getPlanBadgeInfo(currentPlanSlug, isBusinessVerified, company?.verificationStatus);
 
   const loading = companyLoading || subLoading;
 
-  const handleOpenUpgrade = (plan: any) => {
+  const handleOpenUpgrade = (plan: (typeof SUBSCRIPTION_PLANS)[number]) => {
     setSelectedPlan({
       name: plan.name,
       slug: plan.slug,
       price: plan.price,
       dailyEquivalent: plan.dailyEquivalent,
+      monthlyEquivalent: plan.monthlyEquivalent,
       features: plan.features,
+      badge: plan.badge,
     });
     setIsCheckoutOpen(true);
   };
@@ -64,8 +72,8 @@ export default function EmployerSubscriptionPage() {
   return (
     <div className="mx-auto w-full max-w-screen-2xl space-y-4 sm:space-y-6">
       <PageHeader
-        title="Portal subscription"
-        description="Monitor your employer subscription and plan benefits."
+        title="Portal Subscription"
+        description="Monitor your employer subscription, membership tier, and benefits."
         breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Subscription' }]}
       />
 
@@ -75,40 +83,52 @@ export default function EmployerSubscriptionPage() {
           <p className="text-xs text-gray-500 font-medium">Loading subscription details...</p>
         </div>
       ) : (
-        <div className="max-w-xl space-y-6">
+        <div className="max-w-2xl space-y-6">
           {/* Card detailing plan */}
           <div className="bg-white rounded-3xl p-6 border border-blue-100 shadow-sm space-y-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Crown size={24} />
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+                <Crown size={28} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-gray-900">
+                  <h3 className="text-lg font-bold text-gray-900">
                     {currentPlan.name} Plan
                   </h3>
-                  {currentPlan.badge && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800">
-                      {currentPlan.badge}
-                    </span>
-                  )}
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 border"
+                    style={{
+                      background: badgeInfo.bgColor,
+                      color: badgeInfo.color,
+                      borderColor: badgeInfo.borderColor,
+                    }}
+                  >
+                    <span>{badgeInfo.emoji}</span>
+                    <span>{badgeInfo.displayLabel}</span>
+                  </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {currentPlan.price === 0 ? 'Free Forever' : `₹${currentPlan.price}/year (~₹${currentPlan.dailyEquivalent}/day)`}
+                  {currentPlan.price === 0 ? 'Free tier' : `₹${currentPlan.price.toLocaleString('en-IN')}/year (~₹${currentPlan.dailyEquivalent}/day) · Manual annual renewal`}
                 </p>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <p className="text-gray-500">Subscription Status</p>
-                <p className="text-emerald-600 font-bold mt-0.5 flex items-center gap-1">
-                  <CheckCircle2 size={13} /> Active
-                </p>
+            <div className="pt-4 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Active Jobs</p>
+                <p className="text-sm font-bold text-gray-900 mt-0.5">{formatLimit(limits.activeJobs)}</p>
               </div>
-              <div>
-                <p className="text-gray-500">Billing Cycle</p>
-                <p className="text-gray-900 font-bold mt-0.5">{currentPlan.price === 0 ? 'Forever' : 'Annual'}</p>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Products</p>
+                <p className="text-sm font-bold text-gray-900 mt-0.5">{formatLimit(limits.products)}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Services</p>
+                <p className="text-sm font-bold text-gray-900 mt-0.5">{formatLimit(limits.services)}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-[10px] text-gray-500 uppercase font-bold">Branches</p>
+                <p className="text-sm font-bold text-gray-900 mt-0.5">{formatLimit(limits.branches)}</p>
               </div>
             </div>
 
@@ -129,18 +149,10 @@ export default function EmployerSubscriptionPage() {
             <div className="pt-4 border-t border-gray-100 flex gap-2">
               <Link
                 href="/employer/billing"
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-xs font-bold text-center hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold text-center transition-all shadow-sm"
               >
-                View All Plans
+                Manage Subscription &amp; Quotas
               </Link>
-              {currentPlanSlug === 'free' && (
-                <button
-                  onClick={() => handleOpenUpgrade(SUBSCRIPTION_PLANS[1])}
-                  className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold text-center hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  Upgrade to Basic
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -154,6 +166,10 @@ export default function EmployerSubscriptionPage() {
           plan={selectedPlan}
           companyId={companyId}
           companyName={company?.name}
+          companyAddress={company?.address}
+          companyPhone={company?.phone}
+          companyGst={company?.gstNumber}
+          company={company}
           onSuccess={() => {
             refresh?.();
           }}

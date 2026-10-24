@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('cumbum');
 
 export default function CumbumJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Cumbum', url: 'https://thenijobs.com/jobs-in-cumbum' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Cumbum', url: 'https://www.thenijobs.com/jobs-in-cumbum' },
   ]);
 
   return (

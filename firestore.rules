@@ -144,7 +144,12 @@ service cloud.firestore {
         'accountStatus', 'status', 'subscriptionStatus',
         // RULES-1: credits, plan and employer-grant fields are admin/server-owned (security.md S-3)
         'aiCredits', 'aiCreditsUsed', 'companyId', 'isEmployer', 'canPostJobs',
-        'subscriptionPlan', 'isPremium'
+        'subscriptionPlan', 'isPremium',
+        // Business Owner Approval fields (Admin only)
+        'approvalStatus', 'approvedAt', 'approvedBy', 'rejectedAt', 'rejectedBy', 'rejectionReason',
+        // Business Owner Trial & Payment fields (Admin / Server only)
+        'trialStartedAt', 'trialEndsAt', 'trialStartDate', 'trialEndDate', 'trialDurationDays',
+        'hasUsedFreeTrial', 'trialActivatedBy', 'trialActivatedAt', 'paymentStatus'
       ]);
     }
 
@@ -209,8 +214,12 @@ service cloud.firestore {
       allow read:   if isOwner(userId) || isAdmin();
       allow create: if (isOwner(userId) && isNotSuspended() &&
         request.resource.data.role in ['job_seeker', 'employer', 'business_owner', 'supplier', 'service_provider'] &&
+        (!request.resource.data.keys().hasAny(['approvalStatus']) || request.resource.data.approvalStatus != 'approved') &&
         (!request.resource.data.keys().hasAny(['accountStatus']) || !(request.resource.data.accountStatus in ['suspended', 'banned'])) &&
-        (!request.resource.data.keys().hasAny(['status']) || !(request.resource.data.status in ['suspended', 'banned']))) ||
+        (!request.resource.data.keys().hasAny(['status']) || !(request.resource.data.status in ['suspended', 'banned'])) &&
+        (!request.resource.data.keys().hasAny(['paymentStatus']) || request.resource.data.paymentStatus != 'paid') &&
+        (!request.resource.data.keys().hasAny(['hasUsedFreeTrial']) || request.resource.data.hasUsedFreeTrial == false) &&
+        (!request.resource.data.keys().hasAny(['subscriptionStatus']) || request.resource.data.subscriptionStatus != 'active')) ||
         (isAdmin() && isNotSuspended());
       allow update: if (isOwner(userId) && isNotSuspended() && userModerationUnchanged()) || (isAdmin() && isNotSuspended());
       allow delete: if isAdmin() && isNotSuspended();

@@ -42,8 +42,8 @@ export default function EmployerWebsitePage() {
 
   const planSlug = (company?.subscriptionPlan || 'free').toLowerCase();
   const companySlug = company?.slug || '';
-  const standardProfileUrl = companySlug ? `https://thenijobs.com/company/${companySlug}` : '';
-  const landingWebsiteUrl = companySlug ? `https://thenijobs.com/${companySlug}` : '';
+  const standardProfileUrl = companySlug ? `https://www.thenijobs.com/company/${companySlug}` : '';
+  const landingWebsiteUrl = companySlug ? `https://www.thenijobs.com/${companySlug}` : '';
 
   const isVerified = company?.verificationStatus === 'verified' || company?.isVerified === true;
   const currentTemplate = company?.templateId || 'local-business';

@@ -246,7 +246,7 @@ export default function ClassicBusiness({ site }: Props) {
           </p>
           <div className="flex items-center gap-1">
             <span className="text-[10px]" style={{ color: muted }}>Powered by</span>
-            <a href="https://thenijobs.com" className="text-[10px] font-bold" style={{ color: primary }}>THENIJOBS</a>
+            <a href="https://www.thenijobs.com" className="text-[10px] font-bold" style={{ color: primary }}>THENIJOBS</a>
           </div>
         </div>
       </footer>

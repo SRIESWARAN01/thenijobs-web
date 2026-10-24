@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     'Apply jobs online Theni',
   ],
   alternates: {
-    canonical: 'https://thenijobs.com/jobs',
+    canonical: 'https://www.thenijobs.com/jobs',
   },
   openGraph: {
     title: 'Jobs in Theni & Tamil Nadu | Verified Vacancies | THENIJOBS',
     description:
       'Search and apply directly to verified employer job vacancies across Theni district. Zero consultancy fees, verified local employers.',
-    url: 'https://thenijobs.com/jobs',
+    url: 'https://www.thenijobs.com/jobs',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',
@@ -46,8 +46,8 @@ export const metadata: Metadata = {
 
 export default function JobsPage() {
   const breadcrumbs = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
   ]);
 
   return (

@@ -346,7 +346,7 @@ export default function SeekerPortfolioMinimal({ site }: Props) {
           </div>
           <p className="text-[11px] mt-6" style={{ color: muted }}>
             <Calendar size={10} className="inline mb-0.5 mr-1" />
-            Built on <a href="https://thenijobs.com" className="font-semibold underline">THENIJOBS</a>
+            Built on <a href="https://www.thenijobs.com" className="font-semibold underline">THENIJOBS</a>
           </p>
         </footer>
       </div>

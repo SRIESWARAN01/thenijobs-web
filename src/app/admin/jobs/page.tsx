@@ -212,7 +212,7 @@ export default function AdminJobsPage() {
 
       const { whatsapp } = getCompanyContact(job);
       if (whatsapp) {
-        const msg = `🎉 *CONGRATULATIONS FROM THENIJOBS!*\n\nYour job opening *"${job.title}"* for *${job.companyName || 'your company'}* has been approved and is now LIVE on THENIJOBS.\n\nCandidates can now view and apply directly. Manage applications on https://thenijobs.com/employer/jobs`;
+        const msg = `🎉 *CONGRATULATIONS FROM THENIJOBS!*\n\nYour job opening *"${job.title}"* for *${job.companyName || 'your company'}* has been approved and is now LIVE on THENIJOBS.\n\nCandidates can now view and apply directly. Manage applications on https://www.thenijobs.com/employer/jobs`;
         window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
       }
     } catch (e: any) {
@@ -240,7 +240,7 @@ export default function AdminJobsPage() {
         );
         const { whatsapp } = getCompanyContact(job);
         if (whatsapp) {
-          const renewMsg = `📢 *THENIJOBS Admin — Subscription Renewal Needed*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job opening *"${job.title}"* cannot be reactivated because your company subscription has expired.\n\n🔗 Please renew your subscription to reactivate your listings: https://thenijobs.com/employer/billing`;
+          const renewMsg = `📢 *THENIJOBS Admin — Subscription Renewal Needed*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job opening *"${job.title}"* cannot be reactivated because your company subscription has expired.\n\n🔗 Please renew your subscription to reactivate your listings: https://www.thenijobs.com/employer/billing`;
           window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(renewMsg)}`, '_blank');
         }
         return;
@@ -261,7 +261,7 @@ export default function AdminJobsPage() {
 
       const { whatsapp } = getCompanyContact(job);
       if (whatsapp) {
-        const msg = `🎉 *THENIJOBS Listing Renewed!*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job opening *"${job.title}"* has been renewed by Admin and is now LIVE on THENIJOBS until *${newDeadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}*.\n\nManage applicants: https://thenijobs.com/employer/jobs`;
+        const msg = `🎉 *THENIJOBS Listing Renewed!*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job opening *"${job.title}"* has been renewed by Admin and is now LIVE on THENIJOBS until *${newDeadline.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}*.\n\nManage applicants: https://www.thenijobs.com/employer/jobs`;
         window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
       }
     } catch (e: any) {
@@ -292,7 +292,7 @@ export default function AdminJobsPage() {
       if (sendOnWhatsApp) {
         const { whatsapp } = getCompanyContact(rejectingJob);
         if (whatsapp) {
-          const msg = `⚠️ *THENIJOBS Job Review Update*\n\nRegarding your job listing *"${rejectingJob.title}"*:\n\n*Status:* Requires Revision\n*Reason:* ${rejectionReason.trim()}\n\nPlease edit your job details and resubmit on https://thenijobs.com/employer/jobs`;
+          const msg = `⚠️ *THENIJOBS Job Review Update*\n\nRegarding your job listing *"${rejectingJob.title}"*:\n\n*Status:* Requires Revision\n*Reason:* ${rejectionReason.trim()}\n\nPlease edit your job details and resubmit on https://www.thenijobs.com/employer/jobs`;
           window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(msg)}`, '_blank');
         }
       }
@@ -571,7 +571,7 @@ export default function AdminJobsPage() {
                 const empPhone = (app.companyPhone || comp?.phone || '9360519460').replace(/[^0-9+]/g, '');
                 const empWhatsApp = (app.companyWhatsapp || comp?.whatsapp || comp?.phone || '9360519460').replace(/[^0-9]/g, '');
 
-                const waMessage = `⚠️ *THENIJOBS Admin Reminder*\n\nHello *${app.companyName || 'Employer'}*,\n\nCandidate *${app.seekerName}* applied for *"${app.jobTitle}"* *${daysAgo} days ago* on THENIJOBS.\n\nAccording to THENIJOBS guidelines, applications should receive a response within 7 days. Please login and review candidate status:\nhttps://thenijobs.com/employer/candidates`;
+                const waMessage = `⚠️ *THENIJOBS Admin Reminder*\n\nHello *${app.companyName || 'Employer'}*,\n\nCandidate *${app.seekerName}* applied for *"${app.jobTitle}"* *${daysAgo} days ago* on THENIJOBS.\n\nAccording to THENIJOBS guidelines, applications should receive a response within 7 days. Please login and review candidate status:\nhttps://www.thenijobs.com/employer/candidates`;
 
                 return (
                   <div
@@ -673,7 +673,7 @@ export default function AdminJobsPage() {
                 onClick: () => doRenewJob(job, 30),
               });
               if (whatsapp) {
-                const renewMsg = `📢 *THENIJOBS Admin — Subscription Renewal*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job listing *"${job.title}"* has expired because your subscription plan has ended.\n\n✅ To *repost this job and continue hiring*, please renew your THENIJOBS subscription.\n\n💬 Reply to this message to choose a plan and get reactivated instantly!\n\n🔗 https://thenijobs.com/employer/billing`;
+                const renewMsg = `📢 *THENIJOBS Admin — Subscription Renewal*\n\nHello *${job.companyName || 'Employer'}*,\n\nYour job listing *"${job.title}"* has expired because your subscription plan has ended.\n\n✅ To *repost this job and continue hiring*, please renew your THENIJOBS subscription.\n\n💬 Reply to this message to choose a plan and get reactivated instantly!\n\n🔗 https://www.thenijobs.com/employer/billing`;
                 items.push({
                   label: 'WhatsApp: Ask Employer to Renew',
                   icon: MessageCircle,

@@ -87,7 +87,7 @@ export default function ServiceMarketplace({ site }: Props) {
           {contact.whatsapp && <a href={`https://wa.me/${contact.whatsapp.replace(/\D/g,'')}`} target="_blank" rel="noopener" className="px-5 py-3 text-sm font-bold text-white" style={{ borderRadius: r, background: p }}><MessageCircle size={14} className="inline mr-1.5" />Book via WhatsApp</a>}
         </div>
       </div></section>)}
-      <footer className="py-6 border-t text-center text-xs" style={{ borderColor: `${m}08`, color: m }}>© {new Date().getFullYear()} {b.companyName} · <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></footer>
+      <footer className="py-6 border-t text-center text-xs" style={{ borderColor: `${m}08`, color: m }}>© {new Date().getFullYear()} {b.companyName} · <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></footer>
     </div>
   );
 }

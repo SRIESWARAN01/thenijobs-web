@@ -64,6 +64,35 @@ export default function Header() {
     }
   }, [mobileOpen]);
 
+  const [currentQuery, setCurrentQuery] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentQuery(window.location.search);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (typeof window !== 'undefined') {
+        setCurrentQuery(window.location.search);
+      }
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
+
+  const isLinkActive = (href: string) => {
+    if (href === '/marketplace?type=services') {
+      return pathname === '/marketplace' && currentQuery.includes('type=services');
+    }
+    if (href === '/marketplace') {
+      return pathname === '/marketplace' && !currentQuery.includes('type=services');
+    }
+    const basePath = href.split('?')[0];
+    return pathname === basePath || (basePath !== '/' && pathname?.startsWith(basePath));
+  };
+
   const role = user?.role;
 
   const dashboardHref =
@@ -121,7 +150,7 @@ export default function Header() {
             aria-label="Primary Navigation"
           >
             {navLinks.map((link) => {
-              const active = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
+              const active = isLinkActive(link.href);
               return (
                 <Link
                   key={link.href}
@@ -296,7 +325,7 @@ export default function Header() {
             <div className="space-y-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
-                const active = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href));
+                const active = isLinkActive(link.href);
                 return (
                   <Link
                     key={link.href}

@@ -206,7 +206,7 @@ export default function AdminSeoManagementPage() {
         'seo.title': seoTitle,
         'seo.description': seoDesc,
         'seo.keywords': updatedKeywords,
-        'seo.canonicalUrl': `https://thenijobs.com/${collectionName === 'portfolioSites' ? 'portfolio/' + (item.customUrl || item.id) : 'company/' + (item.slug || slugifyCompany(item.name || item.id))}`,
+        'seo.canonicalUrl': `https://www.thenijobs.com/${collectionName === 'portfolioSites' ? 'portfolio/' + (item.customUrl || item.id) : 'company/' + (item.slug || slugifyCompany(item.name || item.id))}`,
         updatedAt: new Date(),
       });
 
@@ -222,7 +222,7 @@ export default function AdminSeoManagementPage() {
   };
 
   const handleCopyUrl = (slug: string) => {
-    navigator.clipboard.writeText(`https://thenijobs.com/portfolio/${slug}`);
+    navigator.clipboard.writeText(`https://www.thenijobs.com/portfolio/${slug}`);
     setCopiedSlug(slug);
     setTimeout(() => setCopiedSlug(null), 2000);
     toast.success('Public URL copied!');

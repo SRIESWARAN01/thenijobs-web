@@ -82,11 +82,20 @@ export interface PlatformStatsData {
   totalLeads: number;
   totalRevenue: number;
   pendingBusinesses: number;
-  // DATA-4: `pendingJobs` used to live here, fed by `jobs where isActive == false`. That also
-  // matches draft, rejected, closed and expired, so it counted the whole dormant job table as
-  // "pending" — and nothing rendered it. admin/dashboard already asks the right question a few
-  // lines from where it displayed the answer, with where('status','==','pending').
   pendingUsers: number;
+  // ── Enhanced 15-Metric Executive Dashboard Metrics ─────────────────────────
+  totalBusinessOwners: number;
+  pendingBusinessApprovals: number;
+  approvedBusinessOwners: number;
+  activeTrials: number;
+  expiredTrials: number;
+  activePaidSubscriptions: number;
+  pendingPayments: number;
+  verifiedPayments: number;
+  totalJobs: number;
+  pendingJobs: number;
+  pendingProducts: number;
+  pendingServices: number;
 }
 
 /**
@@ -102,7 +111,20 @@ export function usePlatformStats(skip = false) {
     totalLeads: 0,
     totalRevenue: 0,
     pendingBusinesses: 0,
-    pendingUsers: 0 });
+    pendingUsers: 0,
+    totalBusinessOwners: 0,
+    pendingBusinessApprovals: 0,
+    approvedBusinessOwners: 0,
+    activeTrials: 0,
+    expiredTrials: 0,
+    activePaidSubscriptions: 0,
+    pendingPayments: 0,
+    verifiedPayments: 0,
+    totalJobs: 0,
+    pendingJobs: 0,
+    pendingProducts: 0,
+    pendingServices: 0,
+  });
   const [loading, setLoading] = useState(!skip);
   const [error, setError] = useState<string | null>(null);
 
@@ -170,6 +192,63 @@ export function usePlatformStats(skip = false) {
       },
     );
     unsubscribers.push(revUnsub);
+
+    // Business Owners listener
+    const boQ = query(collection(db, 'users'), where('role', '==', 'business_owner'));
+    const boUnsub = onSnapshot(
+      boQ,
+      (snapshot) => {
+        let pending = 0;
+        let approved = 0;
+        let trials = 0;
+        let expiredTrials = 0;
+        let pendingPay = 0;
+        const now = Date.now();
+
+        snapshot.docs.forEach((doc) => {
+          const u = doc.data();
+          const isApproved = u.approvalStatus === 'approved' || u.accountStatus === 'active';
+          const isPending = !isApproved && u.approvalStatus !== 'rejected';
+          if (isPending) pending++;
+          if (isApproved) approved++;
+
+          const trialEndsAtMs = u.trialEndsAt?.seconds ? u.trialEndsAt.seconds * 1000 : (u.trialEndsAt ? new Date(u.trialEndsAt).getTime() : 0);
+          if (u.trialRequested || u.selectedPlan === 'trial' || u.subscriptionPlan === 'trial') {
+            if (trialEndsAtMs && trialEndsAtMs < now && u.paymentStatus !== 'paid') {
+              expiredTrials++;
+            } else {
+              trials++;
+            }
+          }
+          if (u.paymentStatus === 'pending') {
+            pendingPay++;
+          }
+        });
+
+        setStats((prev) => ({
+          ...prev,
+          totalBusinessOwners: snapshot.size,
+          pendingBusinessApprovals: pending,
+          approvedBusinessOwners: approved,
+          activeTrials: trials,
+          expiredTrials,
+          pendingPayments: pendingPay,
+        }));
+      },
+      (err) => console.error('[usePlatformStats] business owners listener error:', err)
+    );
+    unsubscribers.push(boUnsub);
+
+    // Jobs metrics
+    listen('jobs', 'totalJobs');
+    listen('jobs', 'pendingJobs', [where('status', '==', 'pending')]);
+
+    // Payments and Subscriptions
+    listen('payments', 'verifiedPayments', [where('status', '==', 'captured')]);
+    listen('subscriptions', 'activePaidSubscriptions', [where('status', '==', 'active')]);
+
+    // Services & Marketplace
+    listen('services', 'pendingServices', [where('status', '==', 'pending')]);
 
     setLoading(false);
 

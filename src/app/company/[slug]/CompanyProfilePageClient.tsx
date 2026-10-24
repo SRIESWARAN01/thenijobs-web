@@ -152,7 +152,7 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
     const rating = reviewCount > 0
       ? reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviewCount
       : (company.rating || 0);
-    const canonicalUrl = `https://thenijobs.com/company/${slug}`;
+    const canonicalUrl = `https://www.thenijobs.com/company/${slug}`;
     const logoUrl = company.logoUrl || company.logo || '';
 
     // 1. Document title
@@ -258,11 +258,13 @@ export default function CompanyProfilePageClient({ slug: slugProp }: { slug: str
     }
 
     // Add founder info
-    if (company.founder?.name) {
+    const founderName = company.founder?.name || company.founderName;
+    if (founderName) {
       jsonLd.founder = {
         '@type': 'Person',
-        name: company.founder.name,
-        jobTitle: company.founder.designation || 'Founder'
+        name: founderName,
+        jobTitle: company.founder?.designation || company.founderDesignation || 'Founder',
+        image: company.founder?.photoUrl || company.founderPhotoUrl || undefined
       };
     }
 

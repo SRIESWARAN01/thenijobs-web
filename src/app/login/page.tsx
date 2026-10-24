@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { GoogleIcon } from '@/components/ui/BrandIcons';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, query, collection, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import AuthShell from '@/components/auth/AuthShell';
 
@@ -92,9 +92,32 @@ function LoginPageContent() {
     if (user) {
       if (redirectUrl) { router.push(redirectUrl); return; }
       const role = (user as any).role;
-      if (role === 'admin' || role === 'super_admin') router.push('/admin/dashboard');
-      else if (role === 'employer' || role === 'business_owner') router.push('/employer/dashboard');
-      else router.push('/seeker/dashboard');
+      if (role === 'admin' || role === 'super_admin') {
+        router.push('/admin/dashboard');
+      } else if (role === 'employer' || role === 'business_owner') {
+        if (role === 'business_owner') {
+          const u = user as any;
+          const isApproved = u.approvalStatus === 'approved' || u.accountStatus === 'active';
+          const isRejected = u.approvalStatus === 'rejected' || u.accountStatus === 'rejected';
+
+          if (isRejected) {
+            router.push('/register-business');
+          } else if (!u.selectedPlan && !u.trialRequested && u.paymentStatus !== 'paid') {
+            // Plan not selected yet
+            router.push('/register-business?step=plan');
+          } else if (!isApproved) {
+            // Approval pending (either paid or trial requested)
+            router.push('/register-business');
+          } else {
+            // Approved and active
+            router.push('/employer/dashboard');
+          }
+        } else {
+          router.push('/employer/dashboard');
+        }
+      } else {
+        router.push('/seeker/dashboard');
+      }
     }
   }, [user, router, redirectUrl]);
 
@@ -136,10 +159,61 @@ function LoginPageContent() {
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true); setLocalError(null);
-    try { await signInWithEmail(email, password); }
-    catch (err: any) { setLocalError(err.message || 'Login failed. Check your credentials.'); }
-    finally { setLoading(false); }
+    e.preventDefault();
+    setLoading(true);
+    setLocalError(null);
+
+    try {
+      const trimmedInput = email.trim();
+      let resolvedEmail = trimmedInput;
+
+      // Detect if user entered a 10-digit Indian phone number
+      const cleanPhone = trimmedInput.replace(/\D/g, '').slice(-10);
+      const isPhoneLike = /^[6-9]\d{9}$/.test(cleanPhone) && (
+        trimmedInput === cleanPhone ||
+        trimmedInput === `+91${cleanPhone}` ||
+        trimmedInput.startsWith('+91') ||
+        !trimmedInput.includes('@')
+      );
+
+      if (isPhoneLike) {
+        try {
+          const phoneQuery = query(
+            collection(db, 'users'),
+            where('phone', 'in', [`+91${cleanPhone}`, cleanPhone])
+          );
+          const phoneSnap = await getDocs(phoneQuery);
+          if (!phoneSnap.empty) {
+            const userData = phoneSnap.docs[0].data();
+            if (userData.email) {
+              resolvedEmail = userData.email;
+            } else {
+              resolvedEmail = `${cleanPhone}@thenijobs.com`;
+            }
+          } else {
+            resolvedEmail = `${cleanPhone}@thenijobs.com`;
+          }
+        } catch {
+          // If firestore rules prevent unauthenticated queries, fall back to standard alias
+          resolvedEmail = `${cleanPhone}@thenijobs.com`;
+        }
+      }
+
+      await signInWithEmail(resolvedEmail, password);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      if (
+        err?.code === 'auth/user-not-found' ||
+        err?.code === 'auth/invalid-credential' ||
+        err?.code === 'auth/wrong-password'
+      ) {
+        setLocalError('Invalid credentials. Please check your mobile number / email and password.');
+      } else {
+        setLocalError(err.message || 'Login failed. Check your credentials.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Phone Submit -> Trigger SMS & initialize both timers ──────────────────
@@ -352,7 +426,7 @@ function LoginPageContent() {
           <div className="flex items-start gap-2 px-3 py-[clamp(0.3rem,1dvh,0.5rem)] rounded-xl bg-amber-50 border border-amber-200 mb-[clamp(0.5rem,1.6dvh,1rem)]">
             <Info size={13} className="text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-[11px] text-amber-800 leading-snug font-medium">
-              Mobile OTP is temporarily unavailable. Use email or Google below.
+              Sign in using your 10-digit Mobile Number or Email and Password, or continue with Google.
             </p>
           </div>
         )}
@@ -394,10 +468,10 @@ function LoginPageContent() {
                 ) : (
                   <>
                     <div>
-                      <label className="text-xs font-semibold text-gray-700 block mb-1.5">Email Address</label>
+                      <label className="text-xs font-semibold text-gray-700 block mb-1.5">Email Address or Mobile Number</label>
                       <div className="relative">
                         <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type="email" required placeholder="your@email.com"
+                        <input type="text" required placeholder="you@example.com or 10-digit mobile"
                           value={email} onChange={e => setEmail(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all" />
                       </div>

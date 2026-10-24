@@ -128,7 +128,7 @@ export default function BusinessShowcase({ site }: Props) {
         </section>
       )}
       <footer className="py-6 border-t text-center text-xs" style={{ borderColor: `${m}10`, color: m }}>
-        © {new Date().getFullYear()} {b.companyName} · Powered by <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a>
+        © {new Date().getFullYear()} {b.companyName} · Powered by <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a>
       </footer>
     </div>
   );

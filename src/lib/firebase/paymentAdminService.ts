@@ -424,7 +424,7 @@ export async function recordVerifiedPayment(input: VerifyPaymentInput) {
     amount: amount || (rpPayment?.amount ? rpPayment.amount / 100 : 0),
     startDate: now,
     endDate: expiryDate,
-    autoRenew: true,
+    autoRenew: false, // Manual annual renewal
     paymentMethod: paymentMethodResolved,
     paymentId,
     orderId,
@@ -556,14 +556,38 @@ export async function recordVerifiedPayment(input: VerifyPaymentInput) {
     // 4. Update user document (merge: true ensures non-existent docs don't throw NOT_FOUND)
     const targetUserId = userId || rpPayment?.notes?.userId;
     if (targetUserId) {
-      await db.collection('users').doc(targetUserId).set({
+      let isAlreadyApproved = false;
+      try {
+        const uSnap = await db.collection('users').doc(targetUserId).get();
+        if (uSnap.exists && uSnap.data()?.approvalStatus === 'approved') {
+          isAlreadyApproved = true;
+        }
+      } catch (err) {
+        console.warn('[paymentAdminService] Could not check existing approval status:', err);
+      }
+
+      const userUpdatePayload: Record<string, any> = {
         subscriptionPlan: planSlug,
-        subscriptionStatus: 'active',
-        accountStatus: 'active',
+        selectedPlan: planSlug,
         paymentStatus: 'paid',
+        paidAt: now,
         isPremium: true,
         updatedAt: now,
-      }, { merge: true });
+      };
+
+      if (isAlreadyApproved) {
+        userUpdatePayload.subscriptionStatus = 'active';
+        userUpdatePayload.accountStatus = 'active';
+        userUpdatePayload.planStartDate = now;
+        userUpdatePayload.planEndDate = expiryDate;
+      } else {
+        // Business owner is waiting for mandatory Admin Approval!
+        userUpdatePayload.subscriptionStatus = 'pending_admin_approval';
+        userUpdatePayload.accountStatus = 'pending_approval';
+        userUpdatePayload.approvalStatus = 'pending';
+      }
+
+      await db.collection('users').doc(targetUserId).set(userUpdatePayload, { merge: true });
 
       // If job seeker plan
       if (planSlug === 'seeker_pro' || planSlug === 'seeker-premium') {

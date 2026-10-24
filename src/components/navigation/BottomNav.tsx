@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Briefcase, Building2, Home, Store, User } from 'lucide-react';
@@ -14,13 +15,35 @@ const navItems = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [currentQuery, setCurrentQuery] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCurrentQuery(window.location.search);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (typeof window !== 'undefined') {
+        setCurrentQuery(window.location.search);
+      }
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-blue-100 bg-white px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.06)] lg:hidden">
       <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const basePath = href.split('?')[0];
-          const isActive = pathname === basePath || (basePath !== '/' && pathname.startsWith(basePath));
+          let isActive = false;
+          if (href === '/marketplace?type=services') {
+            isActive = pathname === '/marketplace' && currentQuery.includes('type=services');
+          } else {
+            const basePath = href.split('?')[0];
+            isActive = pathname === basePath || (basePath !== '/' && pathname.startsWith(basePath));
+          }
           return (
             <Link
               key={href}

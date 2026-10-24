@@ -11,12 +11,12 @@ export const metadata: Metadata = {
     'Recruitment platform Tamil Nadu',
     'Theni business directory',
   ],
-  alternates: { canonical: 'https://thenijobs.com/about' },
+  alternates: { canonical: 'https://www.thenijobs.com/about' },
   openGraph: {
     title: 'About THENIJOBS — Theni’s Leading Employment & Business Platform',
     description:
       'Connecting job seekers, companies, and local commerce across Theni district with verified credentials, AI coach, and direct applications.',
-    url: 'https://thenijobs.com/about',
+    url: 'https://www.thenijobs.com/about',
     type: 'website',
     locale: 'en_IN',
     siteName: 'THENIJOBS',

@@ -820,6 +820,156 @@ export async function rejectCompany(
     targetId: companyId });
 }
 
+export async function approveBusinessOwner(userId: string, adminId: string) {
+  const now = new Date();
+  const userDoc = await fetchDocument<any>('users', userId);
+
+  const isTrial = userDoc?.selectedPlan === 'trial' || userDoc?.trialRequested;
+  const isPaid = userDoc?.paymentStatus === 'paid';
+  const selectedPlan = userDoc?.selectedPlan || userDoc?.subscriptionPlan || 'standard';
+
+  const userUpdates: Record<string, any> = {
+    approvalStatus: 'approved',
+    accountStatus: 'active',
+    isEmployer: true,
+    canPostJobs: true,
+    approvedAt: serverTimestamp(),
+    adminApprovedAt: now,
+    approvedBy: adminId,
+    rejectionReason: '',
+    updatedAt: serverTimestamp(),
+  };
+
+  if (isTrial && !isPaid) {
+    // 15-Day Free Trial activated starting exactly from Admin Approval time
+    const trialDurationDays = 15;
+    const trialEndDate = new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000);
+    userUpdates.subscriptionStatus = 'trial';
+    userUpdates.selectedPlan = 'trial';
+    userUpdates.trialEligible = false;
+    userUpdates.hasUsedFreeTrial = true;
+    userUpdates.trialStartedAt = now;
+    userUpdates.trialStartDate = now;
+    userUpdates.trialEndsAt = trialEndDate;
+    userUpdates.trialEndDate = trialEndDate;
+    userUpdates.trialDurationDays = trialDurationDays;
+    userUpdates.trialActivatedBy = adminId;
+    userUpdates.trialActivatedAt = now;
+  } else if (isPaid) {
+    // Paid Annual Subscription activated starting exactly from Admin Approval time
+    const planEndDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+    userUpdates.subscriptionStatus = 'active';
+    userUpdates.subscriptionPlan = selectedPlan;
+    userUpdates.planStartDate = now;
+    userUpdates.planEndDate = planEndDate;
+    userUpdates.subscriptionStartDate = now;
+    userUpdates.subscriptionEndDate = planEndDate;
+    userUpdates.isPremium = true;
+  } else {
+    // Default fallback: activate 15-day trial if no paid plan was purchased
+    const trialDurationDays = 15;
+    const trialEndDate = new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000);
+    userUpdates.subscriptionStatus = 'trial';
+    userUpdates.selectedPlan = 'trial';
+    userUpdates.trialEligible = false;
+    userUpdates.hasUsedFreeTrial = true;
+    userUpdates.trialStartedAt = now;
+    userUpdates.trialStartDate = now;
+    userUpdates.trialEndsAt = trialEndDate;
+    userUpdates.trialEndDate = trialEndDate;
+    userUpdates.trialDurationDays = trialDurationDays;
+    userUpdates.trialActivatedBy = adminId;
+    userUpdates.trialActivatedAt = now;
+  }
+
+  await updateDoc(doc(db, 'users', userId), userUpdates);
+
+  // If user already has a company, also mark verified, active, and sync plan
+  if (userDoc?.companyId) {
+    try {
+      const companyUpdates: Record<string, any> = {
+        verificationStatus: 'verified',
+        isVerified: true,
+        isActive: true,
+        accountStatus: 'active',
+        adminApprovedAt: now,
+        approvedBy: adminId,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (isTrial && !isPaid) {
+        const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+        companyUpdates.trialStartDate = now;
+        companyUpdates.trialEndDate = trialEndDate;
+        companyUpdates.subscriptionStatus = 'trial';
+        companyUpdates.subscriptionPlan = 'standard';
+      } else if (isPaid) {
+        const planEndDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+        companyUpdates.subscriptionPlan = selectedPlan;
+        companyUpdates.subscriptionStatus = 'active';
+        companyUpdates.subscriptionStartDate = now;
+        companyUpdates.subscriptionEndDate = planEndDate;
+        companyUpdates.isPremium = true;
+      }
+
+      await updateDoc(doc(db, 'companies', userDoc.companyId), companyUpdates);
+    } catch (cErr) {
+      console.warn('[approveBusinessOwner] Note updating company:', cErr);
+    }
+  }
+
+  await createNotification({
+    userId,
+    type: 'system',
+    title: isTrial && !isPaid ? '15-Day Free Trial Approved & Activated! 🎉' : 'Business Account Approved! 🎉',
+    message: isTrial && !isPaid
+      ? 'Your 15-day Free Trial has been approved and activated by THENIJOBS Admin. You now have full access to your Business Owner Dashboard, job postings, and company tools.'
+      : `Your ${selectedPlan.toUpperCase()} Business Owner account has been approved by admin. You now have full access to your Business Owner Dashboard.`,
+    actionUrl: '/employer/dashboard',
+  });
+
+  await logActivity({
+    userId: adminId,
+    userName: 'Admin',
+    action: isTrial && !isPaid ? 'Business Owner trial activated' : 'Business Owner paid plan approved',
+    target: userDoc?.displayName || userDoc?.email || userId,
+    targetId: userId,
+  });
+}
+
+export async function rejectBusinessOwner(userId: string, adminId: string, reason: string) {
+  const trimmedReason = reason?.trim() || 'Registration details could not be verified.';
+
+  await updateDoc(doc(db, 'users', userId), {
+    approvalStatus: 'rejected',
+    accountStatus: 'rejected',
+    canPostJobs: false,
+    rejectedAt: serverTimestamp(),
+    rejectedBy: adminId,
+    rejectionReason: trimmedReason,
+    updatedAt: serverTimestamp(),
+  });
+
+  const userDoc = await fetchDocument<{ displayName?: string; email?: string }>('users', userId);
+
+  await createNotification({
+    userId,
+    type: 'system',
+    title: 'Business Account Registration Not Approved',
+    message: `Your Business Owner registration was not approved. Reason: ${trimmedReason}. Please contact support or update your information.`,
+    actionUrl: '/register-business',
+  });
+
+  await logActivity({
+    userId: adminId,
+    userName: 'Admin',
+    action: 'Business Owner rejected',
+    target: userDoc?.displayName || userDoc?.email || userId,
+    targetId: userId,
+    details: `Reason: ${trimmedReason}`,
+  });
+}
+
 export async function featureCompany(companyId: string, isFeatured: boolean) {
   await updateDoc(doc(db, 'companies', companyId), {
     isFeatured,
@@ -984,6 +1134,20 @@ export async function approveJob(jobId: string, adminId: string) {
 
   await notifyMatchingJobAlerts(jobId, job ?? null);
 
+  // Best-effort Google Indexing notification for newly approved job
+  try {
+    const jobSlug = (job as any)?.slug || jobId;
+    if (typeof window !== 'undefined') {
+      fetch('/api/seo/index-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, slug: jobSlug, type: 'URL_UPDATED' }),
+      }).catch((e) => console.warn('[Indexing API Background Call]:', e));
+    }
+  } catch (idxErr) {
+    console.warn('[Indexing Call Exception]:', idxErr);
+  }
+
   await logActivity({
     userId: adminId,
     userName: 'Admin',
@@ -1045,22 +1209,69 @@ export async function updateUserRole(
 }
 
 export async function verifyUser(uid: string, adminId: string) {
-  await updateDoc(doc(db, 'users', uid), {
+  const userSnap = await getDoc(doc(db, 'users', uid));
+  const userData = userSnap.exists() ? userSnap.data() : null;
+  const isBusinessOwner = userData?.role === 'business_owner';
+
+  const updatePayload: Record<string, any> = {
     isVerified: true,
-    updatedAt: serverTimestamp() });
+    updatedAt: serverTimestamp(),
+  };
+
+  if (isBusinessOwner) {
+    updatePayload.approvalStatus = 'approved';
+    updatePayload.accountStatus = 'active';
+    updatePayload.adminApprovedAt = serverTimestamp();
+    updatePayload.approvedBy = adminId;
+  }
+
+  await updateDoc(doc(db, 'users', uid), updatePayload);
 
   await createNotification({
     userId: uid,
     type: 'system',
-    title: 'Account Verified! ✅',
-    message: 'Your account has been verified by the THENIJOBS team.' });
+    title: isBusinessOwner ? 'Business Owner Registration Approved! 🎉' : 'Account Verified! ✅',
+    message: isBusinessOwner
+      ? 'Your Business Owner registration has been verified and approved by THENIJOBS Admin. Full dashboard access is now unlocked.'
+      : 'Your account has been verified by the THENIJOBS team.',
+    actionUrl: isBusinessOwner ? '/employer/dashboard' : '/seeker/dashboard',
+  });
 
   await logActivity({
     userId: adminId,
     userName: 'Admin',
-    action: 'User verified',
+    action: isBusinessOwner ? 'Business Owner verified & approved' : 'User verified',
     target: uid,
-    targetId: uid });
+    targetId: uid,
+  });
+}
+
+export async function rejectUser(uid: string, adminId: string, reason?: string) {
+  const finalReason = reason?.trim() || 'Registration details could not be verified.';
+
+  await updateDoc(doc(db, 'users', uid), {
+    approvalStatus: 'rejected',
+    accountStatus: 'rejected',
+    rejectionReason: finalReason,
+    updatedAt: serverTimestamp(),
+  });
+
+  await createNotification({
+    userId: uid,
+    type: 'system',
+    title: 'Registration Review Update',
+    message: `Your registration requires revision: ${finalReason}`,
+    actionUrl: '/contact',
+  });
+
+  await logActivity({
+    userId: adminId,
+    userName: 'Admin',
+    action: 'Business Owner registration rejected',
+    target: uid,
+    targetId: uid,
+    details: finalReason,
+  });
 }
 
 // ============================================================

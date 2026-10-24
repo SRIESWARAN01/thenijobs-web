@@ -44,7 +44,7 @@ export default function JobShareModal({ isOpen, onClose, job }: JobShareModalPro
 
   if (!isOpen) return null;
 
-  const jobUrl = `https://thenijobs.com/jobs/${job.slug || job.id}`;
+  const jobUrl = `https://www.thenijobs.com/jobs/${job.slug || job.id}`;
 
   const salary = job.salaryMin && job.salaryMax
     ? `₹${Number(job.salaryMin).toLocaleString('en-IN')}–₹${Number(job.salaryMax).toLocaleString('en-IN')}`

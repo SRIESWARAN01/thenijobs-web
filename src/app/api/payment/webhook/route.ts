@@ -7,7 +7,7 @@ import { recordVerifiedPayment } from '@/lib/firebase/paymentAdminService';
  * Universal Razorpay Webhook Handler for THENIJOBS Subscription and Order Payments.
  *
  * Configured in Razorpay Dashboard -> Settings -> Webhooks:
- * Endpoint: https://thenijobs.com/api/payment/webhook
+ * Endpoint: https://www.thenijobs.com/api/payment/webhook
  * Secret: RAZORPAY_WEBHOOK_SECRET (falls back to RAZORPAY_KEY_SECRET)
  * Events: payment.captured, order.paid, payment.failed
  *

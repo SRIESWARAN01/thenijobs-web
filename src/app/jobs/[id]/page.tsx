@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const canonicalSlug = job.slug || id;
-  const canonicalUrl = `https://thenijobs.com/jobs/${canonicalSlug}`;
+  const canonicalUrl = `https://www.thenijobs.com/jobs/${canonicalSlug}`;
   const salary = formatSalaryDisplay(job.salaryMin, job.salaryMax);
   const locationText = `${job.district || job.location}, ${job.state || 'Tamil Nadu'}`;
   const pageTitle = `${job.title} in ${job.district || job.location} | ${job.companyName} | THENIJOBS`;
@@ -122,10 +122,10 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   // Generate breadcrumb schema (server-side)
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: `Jobs in ${job.district || 'Theni'}`, url: `https://thenijobs.com/jobs-in-${(job.district || 'theni').toLowerCase().replace(/\s+/g, '-')}` },
-    { name: job.title, url: `https://thenijobs.com/jobs/${canonicalSlug}` },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: `Jobs in ${job.district || 'Theni'}`, url: `https://www.thenijobs.com/jobs-in-${(job.district || 'theni').toLowerCase().replace(/\s+/g, '-')}` },
+    { name: job.title, url: `https://www.thenijobs.com/jobs/${canonicalSlug}` },
   ]);
 
   // Generate JobPosting JSON-LD (server-side) — ONLY for active, non-expired jobs
@@ -134,7 +134,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     jobPostingSchema = generateJobPostingSchema({
       id: job.id,
       slug: job.slug,
-      url: `https://thenijobs.com/jobs/${canonicalSlug}`,
+      url: `https://www.thenijobs.com/jobs/${canonicalSlug}`,
       title: job.title,
       description: job.description || `${job.title} at ${job.companyName}`,
       companyName: job.companyName,

@@ -53,8 +53,8 @@ export function computeSubscriptionState(
 ): SubscriptionState {
   const now = new Date();
 
-  // If company not loaded or empty
-  if (!company) {
+  // If neither company nor user is provided
+  if (!company && !user) {
     return {
       isPendingApproval: false,
       isTrialActive: false,
@@ -72,18 +72,18 @@ export function computeSubscriptionState(
     };
   }
 
-  const rawVerificationStatus = company.verificationStatus || 'pending';
-  const rawAccountStatus = (company.accountStatus || user?.accountStatus || (rawVerificationStatus === 'pending' ? 'pending_admin_approval' : 'trial_active')) as AccountStatus;
-  const rawWebsiteStatus = (company.websiteStatus || (rawAccountStatus === 'suspended' ? 'suspended' : 'active')) as WebsiteStatus;
-  const rawPaymentStatus = (company.paymentStatus || user?.paymentStatus || 'unpaid') as PaymentStatus;
-  const rawSubscriptionStatus = company.subscriptionStatus || user?.subscriptionStatus;
+  const rawVerificationStatus = company?.verificationStatus || (user?.approvalStatus === 'approved' ? 'verified' : 'pending');
+  const rawAccountStatus = (company?.accountStatus || user?.accountStatus || (rawVerificationStatus === 'pending' ? 'pending_admin_approval' : 'trial_active')) as AccountStatus;
+  const rawWebsiteStatus = (company?.websiteStatus || (rawAccountStatus === 'suspended' ? 'suspended' : 'active')) as WebsiteStatus;
+  const rawPaymentStatus = (company?.paymentStatus || user?.paymentStatus || 'unpaid') as PaymentStatus;
+  const rawSubscriptionStatus = company?.subscriptionStatus || user?.subscriptionStatus;
 
-  const trialStartDate = toJsDate(company.trialStartDate || user?.trialStartDate);
-  const trialEndDate = toJsDate(company.trialEndDate || user?.trialEndDate);
-  const subStartDate = toJsDate(company.subscriptionStartDate);
-  const subEndDate = toJsDate(company.subscriptionEndDate);
-  const adminApprovedAt = toJsDate(company.adminApprovedAt || user?.adminApprovedAt);
-  const approvedBy = company.approvedBy || user?.approvedBy;
+  const trialStartDate = toJsDate(company?.trialStartDate || (user as any)?.trialStartDate || (user as any)?.trialStartedAt);
+  const trialEndDate = toJsDate(company?.trialEndDate || (user as any)?.trialEndDate || (user as any)?.trialEndsAt);
+  const subStartDate = toJsDate(company?.subscriptionStartDate || (user as any)?.subscriptionStartDate || (user as any)?.planStartDate);
+  const subEndDate = toJsDate(company?.subscriptionEndDate || (user as any)?.subscriptionEndDate || (user as any)?.planEndDate);
+  const adminApprovedAt = toJsDate(company?.adminApprovedAt || user?.adminApprovedAt);
+  const approvedBy = company?.approvedBy || user?.approvedBy;
 
   // 1. Pending Approval Check
   const isPendingApproval =
@@ -149,7 +149,7 @@ export function computeSubscriptionState(
   // Effective Plan: Trial gets Standard features only
   let plan = 'standard';
   if (isPaidActive) {
-    plan = company.subscriptionPlan || 'standard';
+    plan = company?.subscriptionPlan || (user as any)?.subscriptionPlan || (user as any)?.selectedPlan || 'standard';
   } else if (isTrialActive) {
     plan = 'standard'; // 15-day free trial is STANDARD plan only
   } else {
@@ -388,7 +388,7 @@ export function generateWhatsAppReminderUrl(
     paymentUrl ||
     (typeof window !== 'undefined'
       ? `${window.location.origin}/pricing?plan=standard`
-      : 'https://thenijobs.com/pricing?plan=standard');
+      : 'https://www.thenijobs.com/pricing?plan=standard');
 
   const text = `Hello ${companyName},
 

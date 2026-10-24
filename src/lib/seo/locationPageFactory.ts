@@ -6,7 +6,7 @@ export function createLocationMetadata(locationSlug: string): Metadata {
     name: locationSlug.charAt(0).toUpperCase() + locationSlug.slice(1),
   };
   const name = loc.name;
-  const canonicalUrl = `https://thenijobs.com/jobs-in-${locationSlug}`;
+  const canonicalUrl = `https://www.thenijobs.com/jobs-in-${locationSlug}`;
 
   return {
     title: `Jobs in ${name} | Latest ${name} Job Vacancies & Openings | THENIJOBS`,
@@ -49,7 +49,7 @@ export function createCategoryMetadata(locationSlug: string, categorySlug: strin
   const catObj = CATEGORIES_LIST.find(c => c.slug === categorySlug);
   const catName = catObj?.name || (categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1));
   const locName = loc.name;
-  const canonicalUrl = `https://thenijobs.com/jobs-in-${locationSlug}/${categorySlug}`;
+  const canonicalUrl = `https://www.thenijobs.com/jobs-in-${locationSlug}/${categorySlug}`;
 
   return {
     title: `${catName} Jobs in ${locName} | Vacancies & Openings | THENIJOBS`,

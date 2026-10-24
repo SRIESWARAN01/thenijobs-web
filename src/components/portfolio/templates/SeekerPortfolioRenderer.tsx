@@ -870,7 +870,7 @@ export default function SeekerPortfolioRenderer({ site, isPreview }: Props) {
       {/* ── FOOTER ── */}
       <footer className="border-t py-8 mt-16 text-center text-xs" style={{ borderColor: `${muted}20`, color: muted }}>
         <div className="max-w-6xl mx-auto px-4 space-y-2">
-          <p>© {new Date().getFullYear()} {name} • Built & Verified on <a href="https://thenijobs.com" className="font-bold text-blue-600 hover:underline">THENIJOBS</a></p>
+          <p>© {new Date().getFullYear()} {name} • Built & Verified on <a href="https://www.thenijobs.com" className="font-bold text-blue-600 hover:underline">THENIJOBS</a></p>
           <p className="text-[10px] text-slate-400">Official Digital Portfolio & Interactive Resume</p>
         </div>
       </footer>

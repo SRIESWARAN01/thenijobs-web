@@ -7,9 +7,9 @@ export const metadata = createLocationMetadata('chinnamanur');
 
 export default function ChinnamanurJobsPage() {
   const breadcrumbSchema = generateBreadcrumbSchema([
-    { name: 'Home', url: 'https://thenijobs.com' },
-    { name: 'Jobs', url: 'https://thenijobs.com/jobs' },
-    { name: 'Jobs in Chinnamanur', url: 'https://thenijobs.com/jobs-in-chinnamanur' },
+    { name: 'Home', url: 'https://www.thenijobs.com' },
+    { name: 'Jobs', url: 'https://www.thenijobs.com/jobs' },
+    { name: 'Jobs in Chinnamanur', url: 'https://www.thenijobs.com/jobs-in-chinnamanur' },
   ]);
 
   return (

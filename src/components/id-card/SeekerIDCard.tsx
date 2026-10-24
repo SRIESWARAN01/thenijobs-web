@@ -24,7 +24,7 @@ export interface SeekerIDCardProps {
   };
 }
 
-const BASE_URL = 'https://thenijobs.com';
+const BASE_URL = 'https://www.thenijobs.com';
 
 export default function SeekerIDCard({ seeker }: SeekerIDCardProps) {
   const [flipped, setFlipped] = useState(false);

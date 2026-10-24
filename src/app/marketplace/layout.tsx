@@ -6,11 +6,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Local Business Marketplace — Theni & Tamil Nadu | THENIJOBS',
     description: 'Explore products, services, and verified companies across Theni district.',
-    url: 'https://thenijobs.com/marketplace',
+    url: 'https://www.thenijobs.com/marketplace',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://thenijobs.com/marketplace',
+    canonical: 'https://www.thenijobs.com/marketplace',
   },
 };
 

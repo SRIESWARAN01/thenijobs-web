@@ -4,7 +4,7 @@
 
 // ===== TEMPLATE DEFINITIONS =====
 
-export type PlanTier = 'free' | 'standard' | 'premium' | 'enterprise';
+export type PlanTier = 'free' | 'basic' | 'standard' | 'premium' | 'enterprise';
 
 export interface PortfolioTemplate {
   id: string;
@@ -473,10 +473,11 @@ export interface PlanBadgeDef {
 }
 
 export const PLAN_BADGES: PlanBadgeDef[] = [
-  { plan: 'free', label: 'Basic', icon: 'Shield', color: '#6B7280', bgColor: '#F3F4F6', borderColor: '#D1D5DB', emoji: '🛡️' },
-  { plan: 'standard', label: 'Silver Verified', icon: 'Award', color: '#6B7280', bgColor: '#F1F5F9', borderColor: '#94A3B8', emoji: '🥈' },
+  { plan: 'free', label: 'Free Member', icon: 'Shield', color: '#6B7280', bgColor: '#F3F4F6', borderColor: '#D1D5DB', emoji: '🛡️' },
+  { plan: 'basic', label: 'Basic Verified', icon: 'Shield', color: '#16A34A', bgColor: '#F0FDF4', borderColor: '#BBF7D0', emoji: '🟢' },
+  { plan: 'standard', label: 'Silver Verified', icon: 'Award', color: '#475569', bgColor: '#F1F5F9', borderColor: '#94A3B8', emoji: '🥈' },
   { plan: 'premium', label: 'Gold Verified', icon: 'Star', color: '#D97706', bgColor: '#FFFBEB', borderColor: '#FCD34D', emoji: '⭐' },
-  { plan: 'enterprise', label: 'Platinum Elite', icon: 'Diamond', color: '#7C3AED', bgColor: '#F5F3FF', borderColor: '#C4B5FD', emoji: '💎' },
+  { plan: 'enterprise', label: 'Platinum Corporate Badge', icon: 'Diamond', color: '#7C3AED', bgColor: '#F5F3FF', borderColor: '#C4B5FD', emoji: '💎' },
 ];
 
 // ===== FONT OPTIONS =====

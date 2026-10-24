@@ -8,7 +8,7 @@
  * Per Google's official guidelines, the Indexing API can ONLY be used for pages
  * with JobPosting or BroadcastEvent embedded in VideoObject.
  * This module STRICTLY refuses to send URLs for products, services, companies,
- * or general website pages. Only valid https://thenijobs.com/jobs/* URLs are allowed.
+ * or general website pages. Only valid https://www.thenijobs.com/jobs/* URLs are allowed.
  */
 
 import crypto from 'crypto';
@@ -104,14 +104,14 @@ export async function notifyGoogleJobPosting(
   jobUrl: string,
   type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED',
 ): Promise<IndexingNotificationResult> {
-  // 1. Strict URL validation — only https://thenijobs.com/jobs/*
-  const jobUrlPattern = /^https:\/\/thenijobs\.com\/jobs\/[a-zA-Z0-9_\-]+$/;
+  // 1. Strict URL validation — only https://www.thenijobs.com/jobs/* (or https://www.thenijobs.com/jobs/*)
+  const jobUrlPattern = /^https:\/\/(www\.)?thenijobs\.com\/jobs\/[a-zA-Z0-9_\-]+$/;
   if (!jobUrlPattern.test(jobUrl)) {
     return {
       success: false,
       url: jobUrl,
       type,
-      error: 'Invalid URL. Google Indexing API can only be used for published individual job postings (https://thenijobs.com/jobs/*).',
+      error: 'Invalid URL. Google Indexing API can only be used for published individual job postings (https://www.thenijobs.com/jobs/*).',
     };
   }
 

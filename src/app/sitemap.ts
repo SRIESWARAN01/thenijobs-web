@@ -50,7 +50,7 @@ function withLastModified(value: unknown): { lastModified?: Date } {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const BASE = 'https://thenijobs.com';
+  const BASE = 'https://www.thenijobs.com';
 
   /**
    * SEO-4 — there is deliberately no `const now = new Date()` here any more.

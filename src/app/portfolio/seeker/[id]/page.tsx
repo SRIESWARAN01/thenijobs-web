@@ -39,7 +39,7 @@ export async function generateMetadata({
   const roleText = seeker.currentRole ? ` (${seeker.currentRole})` : '';
   const title = `${seeker.name}${roleText} — Professional Resume & Portfolio | THENIJOBS`;
   const description = `View ${seeker.name}'s verified career profile, skills, experience, and qualifications in ${seeker.district || 'Theni'}, Tamil Nadu on THENIJOBS.`;
-  const canonicalUrl = `https://thenijobs.com/portfolio/seeker/${id}`;
+  const canonicalUrl = `https://www.thenijobs.com/portfolio/seeker/${id}`;
 
   return {
     title,

@@ -446,7 +446,7 @@ export default function UltimateBusinessPro({ site }: Props) {
               {b.logo ? <img src={b.logo} alt="" className="h-7 w-auto opacity-60" /> : <div className="h-7 w-7 rounded-lg flex items-center justify-center text-white text-[10px] font-bold" style={{ background: grad }}>{b.companyName?.[0]}</div>}
               <span>© {new Date().getFullYear()} {b.companyName}. All rights reserved.</span>
             </div>
-            <span>Powered by <a href="https://thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
+            <span>Powered by <a href="https://www.thenijobs.com" className="font-bold" style={{ color: p }}>THENIJOBS</a></span>
           </div>
         </div>
       </footer>

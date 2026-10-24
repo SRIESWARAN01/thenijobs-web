@@ -27,7 +27,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://thenijobs.com/sitemap.xml',
-    host: 'https://thenijobs.com',
+    sitemap: 'https://www.thenijobs.com/sitemap.xml',
+    host: 'https://www.thenijobs.com',
   };
 }

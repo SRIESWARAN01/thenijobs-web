@@ -1,4 +1,4 @@
-import { PosterTemplate, TemplateId } from './types';
+import type { PosterTemplate, TemplateId } from './types';
 
 export const POSTER_TEMPLATES: PosterTemplate[] = [
   {

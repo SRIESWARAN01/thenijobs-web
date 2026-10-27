@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { GeneratedPoster, PosterData } from './types';
+import type { GeneratedPoster, PosterData } from './types';
 
 function sanitizeFilename(text: string): string {
   return text

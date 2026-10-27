@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   BarChart2, Briefcase, Building2, Calendar, CheckCircle, ChevronRight, Clock,
   Eye, Loader2, Plus, Star, UserCheck, Users, XCircle, ShieldCheck, BadgeCheck, Camera, ImagePlus,
-  Sparkles, CreditCard, Gift, Printer
+  Sparkles, CreditCard, Gift, Printer, QrCode
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -14,6 +14,7 @@ import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import { updateApplicationStatus } from '@/lib/firebase/firestoreService';
 import { where, limit, orderBy } from 'firebase/firestore';
 import { formatDate, type FirestoreTime } from '@/lib/firestoreTime';
+import { downloadQuickStandee } from '@/lib/pdf/tableTopStandeeGenerator';
 import {
   Button, Card, CardBody, CardHeader, DataTable, EmptyState, PageHeader, PageShell,
   Pill, Stat, StatGrid, type Column, type PillTone,
@@ -29,6 +30,7 @@ const STATUS_LABEL: Record<string, { tone: PillTone; label: string }> = {
 
 interface CompanyDoc {
   id: string;
+  slug?: string;
   name?: string;
   tagline?: string;
   logoUrl?: string;
@@ -36,7 +38,10 @@ interface CompanyDoc {
   coverUrl?: string;
   bannerUrl?: string;
   coverImageUrl?: string;
+  location?: string;
   district?: string;
+  phone?: string;
+  whatsapp?: string;
   category?: string;
   viewCount?: number;
   verificationStatus?: string;
@@ -80,6 +85,19 @@ export default function EmployerDashboard() {
   ], { skip: !companyId });
 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [standeeDownloading, setStandeeDownloading] = useState<'hiring' | 'catalog' | null>(null);
+
+  const handle1ClickStandee = async (mode: 'hiring' | 'catalog') => {
+    if (!company) return;
+    try {
+      setStandeeDownloading(mode);
+      await downloadQuickStandee(company as any, mode, 'a5', 'blue');
+    } catch (err) {
+      console.error('[1-Click Standee Download Error]:', err);
+    } finally {
+      setStandeeDownloading(null);
+    }
+  };
 
   const handleAppStatus = async (appId: string, status: string) => {
     setActionLoading(appId);
@@ -380,6 +398,66 @@ export default function EmployerDashboard() {
         <Stat label="Hired" value={stats?.hired || 0} icon={Star} tone="rose" loading={loading} />
         <Stat label="Profile views" value={company?.viewCount || 0} icon={Eye} tone="slate" loading={loading} />
       </StatGrid>
+
+      {/* ── Printable Cash-Counter Standee 1-Click Studio Card ── */}
+      {company && (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-950 p-5 sm:p-6 text-white shadow-md border border-blue-900/40 font-outfit">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-bold border border-blue-500/30">
+                <Printer size={13} className="text-blue-400" /> Printable Table-Top QR Standee (மேஜை ஸ்டாண்டி)
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-white">
+                Turn your shop cash counter into a hiring &amp; sales portal
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                1-Click download ready-to-print A4 / A5 table-top acrylic standees with your company logo, official THENIJOBS verification seal, and high-contrast QR code for instant candidate applications and product catalog viewing.
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1 font-medium text-emerald-300">
+                  <CheckCircle size={13} className="text-emerald-400" /> A4 &amp; A5 Print Ready
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1 font-medium text-amber-300">
+                  <ShieldCheck size={13} className="text-amber-400" /> Official THENIJOBS Seal
+                </span>
+                <span>•</span>
+                <span className="flex items-center gap-1 font-medium text-blue-300">
+                  <QrCode size={13} className="text-blue-400" /> Folded Counter Stand
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch gap-2.5 shrink-0 w-full lg:w-auto">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handle1ClickStandee('hiring')}
+                disabled={standeeDownloading === 'hiring'}
+                className="gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold whitespace-nowrap shadow-md cursor-pointer"
+              >
+                {standeeDownloading === 'hiring' ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
+                1-Click A5 Hiring Standee
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handle1ClickStandee('catalog')}
+                disabled={standeeDownloading === 'catalog'}
+                className="gap-2 bg-white/10 hover:bg-white/20 text-white border-white/20 font-bold whitespace-nowrap cursor-pointer"
+              >
+                {standeeDownloading === 'catalog' ? <Loader2 size={14} className="animate-spin" /> : <QrCode size={14} />}
+                1-Click A5 Catalog Standee
+              </Button>
+              <Link href="/employer/standee">
+                <Button variant="ghost" size="sm" className="gap-1.5 text-blue-300 hover:text-white hover:bg-white/10 font-bold text-xs whitespace-nowrap">
+                  Customize Studio →
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:gap-6 xl:grid-cols-3">
         {/* Recent applications */}

@@ -1,10 +1,19 @@
-import { GeneratedPoster, PosterData } from './types';
-import { downloadPosterImage } from './posterExportService';
+import type { GeneratedPoster, PosterData } from './types';
 
 export interface ShareResult {
   method: 'native_file_share' | 'whatsapp_link_with_download' | 'clipboard_copied';
   success: boolean;
   message: string;
+}
+
+function triggerDownload(dataUrl: string, filename: string): void {
+  if (typeof document === 'undefined') return;
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 /**
@@ -98,9 +107,11 @@ export async function sharePosterOnWhatsApp(
   }
 
   // 2. Desktop Fallback: Download the poster image + open WhatsApp Web/App with text
-  downloadPosterImage(poster, data, 'png', index);
+  triggerDownload(poster.dataUrlPng, filename);
   const encodedText = encodeURIComponent(shareText);
-  window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+  if (typeof window !== 'undefined') {
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+  }
 
   return {
     method: 'whatsapp_link_with_download',

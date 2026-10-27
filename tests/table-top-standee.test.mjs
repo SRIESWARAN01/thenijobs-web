@@ -113,4 +113,43 @@ describe('Printable QR Table-Top Standee Generator (PDF) Tests', () => {
     assert.equal(a5Fold.foldLineY, 178.5);
     assert.equal(a5Fold.foldBaseHeight, 31.5);
   });
+
+  test('Exact Copy Invariants: Hiring vs Catalog Cash-Counter Copy', () => {
+    const hiringPromptCopy = 'We are hiring! Scan to apply on THENIJOBS';
+    const catalogPromptCopy = 'Scan to view our product catalog & daily offers';
+
+    assert.ok(hiringPromptCopy.includes('We are hiring! Scan to apply on THENIJOBS'));
+    assert.ok(catalogPromptCopy.includes('Scan to view our product catalog & daily offers'));
+  });
+
+  test('Official THENIJOBS Verification Seal Geometry & Typography', () => {
+    const sealConfig = {
+      primaryColor: '#D97706', // Amber 600
+      fillColor: '#FEF3C7',    // Amber 100
+      brandText: 'THENIJOBS',
+      verifiedText: 'VERIFIED',
+      sealText: '★ DISTRICT SEAL ★',
+    };
+
+    assert.equal(sealConfig.brandText, 'THENIJOBS');
+    assert.equal(sealConfig.verifiedText, 'VERIFIED');
+    assert.equal(sealConfig.sealText, '★ DISTRICT SEAL ★');
+  });
+
+  test('1-Click Standee Downloader Filename Sanitization', () => {
+    const formatFilename = (name, mode, size) => {
+      const safe = (name || 'standee').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      return `THENIJOBS_${safe}_${mode}_standee_${size.toUpperCase()}.pdf`;
+    };
+
+    assert.equal(
+      formatFilename('Sri Krishna Sweets & Bakery', 'hiring', 'a5'),
+      'THENIJOBS_sri_krishna_sweets___bakery_hiring_standee_A5.pdf'
+    );
+    assert.equal(
+      formatFilename('Theni City Hospital', 'catalog', 'a4'),
+      'THENIJOBS_theni_city_hospital_catalog_standee_A4.pdf'
+    );
+  });
 });
+

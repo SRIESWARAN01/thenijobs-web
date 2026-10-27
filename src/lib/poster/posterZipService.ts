@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { GeneratedPoster, PosterData } from './types';
+import type { GeneratedPoster, PosterData } from './types';
 
 function sanitizeFilenamePart(text: string): string {
   return text

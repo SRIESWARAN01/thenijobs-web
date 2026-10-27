@@ -15,6 +15,8 @@ interface TableTopStandeeGeneratorProps {
     district?: string;
     phone?: string;
     whatsapp?: string;
+    logoUrl?: string;
+    companyLogo?: string;
   };
 }
 
@@ -61,6 +63,7 @@ export default function TableTopStandeeGenerator({ company }: TableTopStandeeGen
         location: locationDisplay,
         phone: phoneDisplay,
         websiteUrl,
+        logoUrl: company.logoUrl || company.companyLogo,
         customHeadline: customHeadline.trim() || undefined,
         customSubtext: customSubtext.trim() || undefined,
       });

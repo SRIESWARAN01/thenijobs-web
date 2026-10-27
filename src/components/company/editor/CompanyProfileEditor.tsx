@@ -214,7 +214,7 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
       title: company.name,
       companyName: company.name,
       companyLogoUrl: company.logoUrl || (company as any).companyLogo,
-      category: company.category || 'Business & Enterprise',
+      category: (company as any).category || (initialCompany as any)?.category || 'Business & Enterprise',
       location: company.address || company.district || 'Theni District',
       district: company.district || 'Theni District',
       salaryText: company.tagline || 'Verified Theni Business Enterprise',
@@ -227,7 +227,7 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         'Direct customer contact & WhatsApp connectivity'
       ],
       publicUrl: `https://www.thenijobs.com/company/${slug}`,
-      isVerified: company.verificationStatus === 'verified' || !!initialCompany?.isVerified,
+      isVerified: initialCompany?.verificationStatus === 'verified' || !!initialCompany?.isVerified,
       isFeatured: true,
     };
   }, [company, initialCompany]);

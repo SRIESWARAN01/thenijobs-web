@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import { PosterData, GeneratedPoster, TemplateId } from './types';
+import type { PosterData, GeneratedPoster, TemplateId } from './types';
 import { POSTER_TEMPLATES, getTemplateById } from './posterTemplates';
 import { getCategoryTheme } from './categoryThemes';
 

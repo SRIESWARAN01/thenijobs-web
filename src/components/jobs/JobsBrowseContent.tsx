@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
 import WhatsAppStatusButton from '@/components/jobs/WhatsAppStatusButton';
+import WhatsAppJobAlertsCard from '@/components/jobs/WhatsAppJobAlertsCard';
 import { isJobUrgent } from '@/lib/constants';
 
 /* ─── Types ─── */
@@ -702,16 +703,21 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
                 </button>
               </div>
             ) : (
-              visibleJobs.map(job => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  selected={selectedJob?.id === job.id}
-                  onSelect={() => setSelectedJob(job)}
-                  onSave={() => handleSave(job.id)}
-                  saved={savedJobs.includes(job.id)}
-                />
-              ))
+              <>
+                {/* 1-Click WhatsApp Job Alerts Card */}
+                <WhatsAppJobAlertsCard className="mb-4" />
+
+                {visibleJobs.map(job => (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    selected={selectedJob?.id === job.id}
+                    onSelect={() => setSelectedJob(job)}
+                    onSave={() => handleSave(job.id)}
+                    saved={savedJobs.includes(job.id)}
+                  />
+                ))}
+              </>
             )}
           </div>
 

@@ -22,6 +22,8 @@ import JobApplySuccessModal from '@/components/ui/JobApplySuccessModal';
 import { slugify } from '@/lib/seo/jobSlug';
 import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
 import WhatsAppStatusButton from '@/components/jobs/WhatsAppStatusButton';
+import WhatsAppDirectApplyModal from '@/components/jobs/WhatsAppDirectApplyModal';
+import WhatsAppJobAlertsCard from '@/components/jobs/WhatsAppJobAlertsCard';
 import { isJobUrgent } from '@/lib/constants';
 
 interface JobRecord {
@@ -144,6 +146,7 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showWhatsAppApplyModal, setShowWhatsAppApplyModal] = useState(false);
   const [showSuccessTicket, setShowSuccessTicket] = useState(false);
   const [createdApplicationId, setCreatedApplicationId] = useState<string | undefined>(undefined);
   const [coverLetter, setCoverLetter] = useState('');
@@ -823,15 +826,14 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                     Apply Now
                   </button>
                 )}
-                {!isJobActuallyExpired && job.whatsapp && (
-                  <a
-                    href={`https://wa.me/${job.whatsapp}?text=Hi, I am interested in the ${job.title} position at ${job.companyName}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="px-5 py-3.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2"
+                {!isJobActuallyExpired && (
+                  <button
+                    onClick={() => setShowWhatsAppApplyModal(true)}
+                    className="px-5 py-3.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-700/20 active:scale-98"
                     style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}
                   >
-                    <MessageCircle size={15} /> WhatsApp Apply
-                  </a>
+                    <MessageCircle size={16} /> WhatsApp Apply
+                  </button>
                 )}
               </div>
             </div>
@@ -918,6 +920,11 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                 </div>
               </div>
             )}
+
+            {/* WhatsApp Job Alerts Widget for Theni & Local Taluks */}
+            <div className="pt-2">
+              <WhatsAppJobAlertsCard defaultTaluk={job.district?.toLowerCase() || 'theni'} />
+            </div>
           </div>
 
           {/* Right Sidebar */}
@@ -938,6 +945,15 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
               ) : (
                 <button onClick={() => setShowApplyModal(true)} className="w-full btn-gradient py-3.5 rounded-xl font-semibold text-sm relative z-10 mb-3">
                   Apply Now
+                </button>
+              )}
+              {!isJobActuallyExpired && (
+                <button
+                  onClick={() => setShowWhatsAppApplyModal(true)}
+                  className="w-full py-3 rounded-xl font-bold text-xs text-white flex items-center justify-center gap-2 mb-2 transition-all shadow-md shadow-emerald-700/20 active:scale-98"
+                  style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}
+                >
+                  <MessageCircle size={15} /> WhatsApp Direct Apply
                 </button>
               )}
               {!isJobActuallyExpired && job.phone && (
@@ -1135,6 +1151,18 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
           companyName={job.companyName}
           district={job.district || job.location}
           applicationId={createdApplicationId}
+        />
+      )}
+
+      {/* 1-Click WhatsApp Direct Apply Modal */}
+      {job && (
+        <WhatsAppDirectApplyModal
+          job={job}
+          user={user}
+          seekerProfile={seekerProfile}
+          isOpen={showWhatsAppApplyModal}
+          onClose={() => setShowWhatsAppApplyModal(false)}
+          onSuccess={() => setHasApplied(true)}
         />
       )}
     </main>

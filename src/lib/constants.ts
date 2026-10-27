@@ -36,6 +36,49 @@ export const RETAINED_PRODUCTION_COMPANIES = [
   { id: 'u9sYSAG9YoGrept1FbSe', name: 'Suruliraj Chemicals' },
 ] as const;
 
+// ===== 7 THENI TALUKS & LOCAL AREAS =====
+export const THENI_TALUKS = [
+  { id: 'theni', name: 'Theni', tamilName: 'தேனி', popularTowns: ['Theni', 'Allinagaram', 'Veerapandi'] },
+  { id: 'periyakulam', name: 'Periyakulam', tamilName: 'பெரியகுளம்', popularTowns: ['Periyakulam', 'Vadugapatti', 'Devadanapatti'] },
+  { id: 'cumbum', name: 'Cumbum', tamilName: 'கம்பம்', popularTowns: ['Cumbum', 'Gudalur', 'Kamayagoundanpatti'] },
+  { id: 'bodinayakanur', name: 'Bodinayakanur', tamilName: 'போடிநாயக்கனூர்', popularTowns: ['Bodi', 'Bodinayakanur', 'Kurangani'] },
+  { id: 'uthamapalayam', name: 'Uthamapalayam', tamilName: 'உத்தமபாளையம்', popularTowns: ['Uthamapalayam', 'Kombai', 'Pannaipuram'] },
+  { id: 'andipatti', name: 'Andipatti', tamilName: 'ஆண்டிபட்டி', popularTowns: ['Andipatti', 'Kadamalaikundu', 'Myladumparai'] },
+  { id: 'chinnamanur', name: 'Chinnamanur', tamilName: 'சின்னமனூர்', popularTowns: ['Chinnamanur', 'Markayankottai', 'Oveepuram'] },
+] as const;
+
+// ===== POPULAR JOB CATEGORIES FOR LOCAL ALERTS =====
+export const POPULAR_JOB_CATEGORIES = [
+  { id: 'retail_sales', name: 'Retail & Field Sales', tamilName: 'விற்பனை & சேல்ஸ்' },
+  { id: 'accounts', name: 'Accounts & Tally GST', tamilName: 'கணக்காளர் & டாலி' },
+  { id: 'office_admin', name: 'Office, Typing & Computer', tamilName: 'அலுவலகம் & கணினி' },
+  { id: 'software_it', name: 'Software & Web Dev', tamilName: 'மென்பொருள் & ஐடி' },
+  { id: 'hospital_medical', name: 'Hospital, Nurse & Pharma', tamilName: 'மருத்துவம் & நர்சிங்' },
+  { id: 'teaching', name: 'Teaching & Faculty', tamilName: 'ஆசிரியர் & பயிற்சி' },
+  { id: 'hotel_food', name: 'Hotel, Chef & Service', tamilName: 'ஹோட்டல் & சர்வீஸ்' },
+  { id: 'driver_logistics', name: 'Driver & Delivery', tamilName: 'டிரைவர் & டெலிவரி' },
+  { id: 'agriculture_factory', name: 'Agriculture & Mills', tamilName: 'விவசாயம் & ஆலை' },
+] as const;
+
+/**
+ * Sanitizes any raw phone number into a clean international WhatsApp number for India.
+ * Handles '+91', spaces, hyphens, and leading zeros.
+ */
+export function sanitizeWhatsAppPhone(rawPhone: string | null | undefined): string {
+  if (!rawPhone) return '919360519460';
+  let digits = rawPhone.replace(/\D/g, '');
+  if (digits.startsWith('0')) {
+    digits = digits.substring(1);
+  }
+  if (digits.length === 10) {
+    return '91' + digits;
+  }
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return digits;
+  }
+  return digits.length >= 10 ? digits : '919360519460';
+}
+
 // ===== SEEKER PUBLIC PROFILE FEE (SEEKERPRIVACY-1) =====
 // A one-year fee to make a job seeker's portfolio publicly viewable at
 // /portfolio/seeker/[id] -- distinct from SUBSCRIPTION_PLANS (those are

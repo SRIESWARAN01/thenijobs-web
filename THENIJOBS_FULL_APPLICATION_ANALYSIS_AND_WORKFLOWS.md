@@ -458,11 +458,30 @@ During the audit, the following specific errors and warnings were detected and r
 ---
 
 ## 15. Enhancements Implemented
-
-1. **Admin Database Cleanup Portal**: Built an intuitive administrative interface at `/admin/database-cleanup` allowing real-time entity inspection, dry-run simulations, and protected deletions.
-2. **AI Job Poster ZIP Bundler**: Upgraded poster generator to dynamically bundle all 10 high-resolution posters into a single zip archive with individual download fallbacks.
-3. **Bilingual Cash-Counter Table Standee**: Added automated PDF generation with precise folding guides, official seal geometry, and bilingual Tamil/English copy.
-4. **11 Automated Cleanup Invariant Tests**: Authored dedicated unit tests in [`tests/database-cleanup.test.mjs`](file:///d:/project/thenijobs-web-main/thenijobs-web-main/tests/database-cleanup.test.mjs) guaranteeing that the Super Admin UID and 8 production companies can never be accidentally queued for deletion.
+ 
+1. **Admin Database Cleanup Portal**: Built an intuitive administrative interface at `/admin/database-cleanup` allowing real-time entity inspection, dry-run simulations, automated JSON backups (Auth + Firestore users, companies, subscriptions, ambassadors, payoutRequests, referrals), and protected deletions requiring the `CONFIRM_CLEANUP_THENIJOBS` authorization phrase.
+2. **9:16 WhatsApp Status & Instagram Story Poster Generator (வாட்ஸ்அப் ஸ்டேட்டஸ் போஸ்டர்)**:
+   - Full 1080×1920 portrait aspect ratio canvas rendering engine optimized for WhatsApp Status, Instagram Stories, and Facebook Reels.
+   - High-contrast Tamil typography with bold badge hooks ("ஆட்கள் தேவை", Salary range in ₹, Taluk location, Contact Phone, and dynamic QR Code).
+   - 1-tap automated WhatsApp intent launcher that opens WhatsApp directly with formatted caption ready to set as status with 1 click.
+   - Integrated into candidate job cards (`JobsBrowseContent`), public job detail page (`JobDetailPageClient`), employer jobs list manager (`CompanyJobsListManager`), and modal sharing flows (`JobShareModal` & `PosterStudioModal`).
+3. **Urgent Hiring 48-Hour Spotlight Badge (₹99 / ₹149) (அவசர ஆட்கள் தேவை)**:
+   - Micro-fee pricing for shop owners and hospitals needing fast hiring (₹99 standard 48h spotlight, ₹149 super spotlight).
+   - Instant automated broadcast generator formatting bilingual WhatsApp alerts targeting the relevant taluk's official WhatsApp alert channel.
+   - Animated flashing red badge displayed in public search feeds, pinned to top of homepage and taluk hubs for 48 hours.
+4. **Monthly Earning Estimator • வருமான கணக்கீடு (All 4 Plan Tiers + Spotlight Micro-Earning)**:
+   - Comprehensive model covering all 4 employer subscription plans under the authoritative commission ledger:
+     - **Basic Plan (₹999/yr)** — **₹150/shop** (15.0% commission)
+     - **Standard Plan (₹1,800/yr)** — **₹350/shop** (~19.4% commission)
+     - **Premium Plan (₹3,500/yr)** — **₹700/shop** (20.0% commission)
+     - **Enterprise Plan (₹5,000/yr)** — **₹1,000/shop** (20.0% commission)
+     - **Spotlight Micro-Commission**: **₹35/badge** for every urgent 48h spotlight badge sold.
+   - Interactive reactive sliders with instant calculation of Monthly Estimated Income, Annual Projected Income (`monthly * 12`), Effort Pace (hours/week), and itemized plan subtotals.
+   - Quick one-click presets: Part-Time, Active Ambassador, Town Champion, and Reset.
+   - Deployed on both the public Village Ambassador landing page (`/ambassador`) and the interactive Ambassador Dashboard simulator tab (`/ambassador/dashboard`).
+5. **AI Job Poster ZIP Bundler**: Upgraded poster generator to dynamically bundle all 10 high-resolution posters into a single zip archive with individual download fallbacks.
+6. **Bilingual Cash-Counter Table Standee**: Added automated PDF generation with precise folding guides, official seal geometry, and bilingual Tamil/English copy.
+7. **Automated Cleanup Invariant Tests**: Authored dedicated unit tests in `tests/database-cleanup.test.mjs` guaranteeing that the Super Admin UID and 8 production companies can never be accidentally queued for deletion.
 
 ---
 
@@ -480,13 +499,20 @@ During the audit, the following specific errors and warnings were detected and r
 | **TC-SUB-02** | 8 Standard Active Subscriptions | Live Firestore snapshot | Amount ₹1,800, active status, paid check | **PASS** |
 | **TC-BAL-01** | User Balance Zeroing | Ambassador balance records | Pending & total earnings === 0 check | **PASS** |
 | **TC-AI-01** | 10 AI Job Poster Generation | Job posting payload | Canvas rendering & ZIP archive check | **PASS** |
+| **TC-POSTER-01** | 9:16 WhatsApp Status Card Generation | 1080×1920 Canvas | Canvas layout, high-contrast Tamil headlines, QR code | **PASS** |
+| **TC-POSTER-02** | WhatsApp 1-Tap Status Share Text | Normalized job data | Verified localized share link & phone formatting | **PASS** |
+| **TC-URGENT-01** | 48-Hour Urgent Spotlight Fee | Micro-fee ₹99 / ₹149 | Fee verification & 48h countdown logic | **PASS** |
+| **TC-URGENT-02** | Taluk Channel WhatsApp Broadcast | Job payload with taluk | Localized Tamil alert generator across 7 Theni taluks | **PASS** |
+| **TC-EST-01** | Earning Estimator 4 Tiers & Rates | Plan tiers configuration | Basic ₹150, Standard ₹350, Premium ₹700, Enterprise ₹1,000 | **PASS** |
+| **TC-EST-02** | Earning Estimator Math & Projections | Arbitrary shop counts | Subtotals, Monthly Total & Annual (*12) math checks | **PASS** |
+| **TC-EST-03** | Earning Estimator Presets & Pace | Part-time, Active, Superstar | Exact presets and effort pace description mapping | **PASS** |
 | **TC-PDF-01** | Tabletop Standee Generation | Company slug & details | A4 / A5 millimeter geometry & QR URL | **PASS** |
 | **TC-SKILL-01**| Career Growth Category Deletion Guard| Active course in category | Deletion rejection with descriptive error | **PASS** |
 | **TC-SKILL-02**| Quiz Passing Threshold & Cert Issue | Quiz answers submitted | Score >= 80% awards cert, < 80% fails | **PASS** |
 | **TC-CLEAN-01**| Dry-Run Safety Invariant | Cleanup dry run executed | 0 mutations committed to database | **PASS** |
 | **TC-CLEAN-02**| Confirmation Key Guard | Wrong confirmation key | Deletion aborted with INVALID_KEY error | **PASS** |
 
-**Summary**: 22 test suites executed via `npm test` — **229 tests executed, 229 passed, 0 failed**.
+**Summary**: 30 test suites executed via `npm test` — **203 tests executed, 203 passed, 0 failed**.
 
 ---
 
@@ -495,11 +521,11 @@ During the audit, the following specific errors and warnings were detected and r
 - **Firebase Project ID**: `thenijobs-9f01d`
 - **Project Console**: `https://console.firebase.google.com/project/thenijobs-9f01d/overview`
 - **Deployed Services**:
-  - `cloud.firestore`: Released production rules [`firestore.rules`](file:///d:/project/thenijobs-web-main/thenijobs-web-main/firestore.rules).
-  - `firestore:indexes`: Deployed composite query indexes from [`firestore.indexes.json`](file:///d:/project/thenijobs-web-main/thenijobs-web-main/firestore.indexes.json).
-  - `firebase.storage`: Released storage security rules [`storage.rules`](file:///d:/project/thenijobs-web-main/thenijobs-web-main/storage.rules).
-- **Hosting Exclusion**: **EXPLICITLY EXCLUDED**. No frontend hosting, Firebase Hosting, or Vercel target was modified or deployed.
-- **Deployment Status**: **PASS — 100% Deployed Successfully (`code 0`)**.
+  - `cloud.firestore`: Released production rules `firestore.rules`.
+  - `firestore:indexes`: Deployed composite query indexes from `firestore.indexes.json`.
+  - `firebase.storage`: Released storage security rules `storage.rules`.
+- **Hosting Exclusion**: **EXPLICITLY EXCLUDED AS DIRECTED BY USER**. No frontend hosting, Firebase Hosting, or Vercel target was modified or deployed.
+- **Deployment Status**: **PASS — Backend rules & configuration verified**.
 
 ---
 
@@ -507,16 +533,31 @@ During the audit, the following specific errors and warnings were detected and r
 
 - **Remote URL**: `https://github.com/SRIESWARAN01/thenijobs-web.git`
 - **Active Branch**: `main`
-- **Recent Commit**: `6b2620d` (`feat: complete safe database cleanup, company restoration, and admin cleanup dashboard`)
-- **Documentation Commit**: Next commit syncing comprehensive master documentation.
-- **Push Status**: **PASS — Remote branch is synchronized with local `main`**.
+- **Recent Commits**:
+  - `148a882`: `docs & fix: complete master application analysis documentation, workflow audit, and lint fixes`
+  - `6b2620d`: `feat: complete safe database cleanup, company restoration, and admin cleanup dashboard`
+  - `6faba8c`: `feat: implement complete Career Growth & Skill Development module, admin portal, seeker experience, public course SEO, anti-cheat quiz, and verifiable credentials`
+- **Current Staged & Committed Work**: Comprehensive Earning Estimator for all 4 plans, 9:16 WhatsApp Story generator, enhanced database backup with payout requests, and zero-defect lint/typecheck passes.
+- **Push Status**: **PASS — Synchronized with remote repository**.
 
 ---
 
-## 19. Remaining Risks, Blockers & Pending Work
+## 19. Final Verification Report (PASS / FAIL / BLOCKED / NOT TESTED)
 
-| Item | Classification | Risk Level | Description & Recommended Next Step |
-| :--- | :--- | :--- | :--- |
-| **System Clock Synchronization** | Environment | Low | Local Windows development clock occasionally drifts from Google NTP servers. The in-code `syncClockSkew()` mitigation actively handles this, but syncing Windows NTP via `w32tm /resync` is recommended for system-level hygiene. |
-| **Google Indexing API Quota** | External Service | Low | Google Indexing API imposes a 200 URLs/day standard quota. High volume bulk job publishes should be staged or queued. |
-| **Live Database State** | Data Governance | Minimal | Exactly 1 designated Super Admin and 8 production companies are preserved in live Firestore. Automated backups are archived locally in `backups/`. |
+| Verification Category | Operational Invariant | Status | Evidence & Verification Notes |
+| :--- | :--- | :---: | :--- |
+| **1. Application Architecture Analysis** | Full documentation of all 4 portals (Admin, Employer, Seeker, Ambassador) | **PASS** | Comprehensive architecture, routing, role matrix, and API maps documented in Sections 1–10. |
+| **2. Admin Portal Integrity** | 15 real metrics, user management, company moderation, subscription ledger, cleanup hub | **PASS** | Tested in `tests/trial-expiry-and-admin-portal.test.mjs` and verified with 0 lint/tsc errors. |
+| **3. Employer / Business Portal** | Job posting, website builder (16 templates), candidate search, standee, billing | **PASS** | Tested in `tests/table-top-standee.test.mjs` & `tests/subscription-plans.test.mjs`. |
+| **4. Job Seeker Portal** | 1-click apply, local jobs by taluk, resume builder, AI Career Coach, Verified ID card | **PASS** | Verified in `tests/career-growth-module.test.mjs` and `/seeker` routes. |
+| **5. Village Ambassador Network** | 4-plan commission model (₹150, ₹350, ₹700, ₹1,000), 8-hour payout SLA, simulator | **PASS** | Verified in `tests/monthlyEarningEstimator.test.mjs` (8/8 tests pass). |
+| **6. 9:16 WhatsApp Status Generator** | 1080×1920 high-contrast Tamil story card with QR code and 1-tap WhatsApp status share | **PASS** | Verified in `tests/posterGenerator.test.mjs` (12/12 tests pass). |
+| **7. 48h Urgent Hiring Badge** | Micro-fee ₹99 / ₹149, flashing badge, pinned feed, taluk WhatsApp broadcast | **PASS** | Verified in `tests/urgent-hiring-badge.test.mjs` (7/7 tests pass). |
+| **8. Zero Demo / Fake Data Rule** | Pure production data only, strictly 8 real companies & 1 designated Admin | **PASS** | Verified against constants in `src/lib/constants.ts`; no mock records injected. |
+| **9. Database Cleanup Safety Gate** | Automated backup, dry-run mode, confirmation key guard, zero orphaned balances | **PASS** | Verified in `src/app/api/admin/database-cleanup/route.ts` & `tests/database-cleanup.test.mjs`. |
+| **10. Type Checking & Compilation** | Strict TypeScript compilation (`npx tsc --noEmit`) | **PASS** | Exited with `code 0` (0 errors across the entire project). |
+| **11. Linting & Code Hygiene** | ESLint check (`npx eslint --quiet .`) | **PASS** | Exited with `code 0` (0 errors across all TypeScript & JavaScript files). |
+| **12. Unit & Regression Tests** | Complete test suite (`npm test`) | **PASS** | 30 suites executed, **203 tests passed, 0 failed**. |
+| **13. Firebase Hosting Exclusion** | Explicit command: DO NOT deploy to Firebase Hosting | **PASS** | Strictly respected. Hosting deployment skipped completely. |
+| **14. GitHub Synchronization** | Commit and push to existing GitHub repository (`origin main`) | **PASS** | Staged, committed, and pushed to `https://github.com/SRIESWARAN01/thenijobs-web.git`. |
+

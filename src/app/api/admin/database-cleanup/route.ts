@@ -135,17 +135,21 @@ export async function POST(req: NextRequest) {
       } while (nextPageToken);
       fs.writeFileSync(path.join(backupDir, 'firebase_auth_users.json'), JSON.stringify(authUsers, null, 2));
 
-      const [uSnap, cSnap, sSnap, aSnap] = await Promise.all([
+      const [uSnap, cSnap, sSnap, aSnap, pSnap, rSnap] = await Promise.all([
         db.collection('users').get(),
         db.collection('companies').get(),
         db.collection('subscriptions').get(),
         db.collection('ambassadors').get(),
+        db.collection('payoutRequests').get().catch(() => ({ docs: [], size: 0 } as any)),
+        db.collection('referrals').get().catch(() => ({ docs: [], size: 0 } as any)),
       ]);
 
       fs.writeFileSync(path.join(backupDir, 'firestore_users.json'), JSON.stringify(uSnap.docs.map((d) => ({ id: d.id, ...d.data() })), null, 2));
       fs.writeFileSync(path.join(backupDir, 'companies.json'), JSON.stringify(cSnap.docs.map((d) => ({ id: d.id, ...d.data() })), null, 2));
       fs.writeFileSync(path.join(backupDir, 'subscriptions.json'), JSON.stringify(sSnap.docs.map((d) => ({ id: d.id, ...d.data() })), null, 2));
       fs.writeFileSync(path.join(backupDir, 'ambassadors.json'), JSON.stringify(aSnap.docs.map((d) => ({ id: d.id, ...d.data() })), null, 2));
+      fs.writeFileSync(path.join(backupDir, 'payout_requests.json'), JSON.stringify(pSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })), null, 2));
+      fs.writeFileSync(path.join(backupDir, 'referrals.json'), JSON.stringify(rSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })), null, 2));
 
       return NextResponse.json({
         success: true,
@@ -157,6 +161,8 @@ export async function POST(req: NextRequest) {
           companies: cSnap.size,
           subscriptions: sSnap.size,
           ambassadors: aSnap.size,
+          payoutRequests: pSnap.size,
+          referrals: rSnap.size,
         },
       });
     }
@@ -288,18 +294,35 @@ export async function POST(req: NextRequest) {
         appPurged++;
       }
 
-      // 5. Zero out any residual balances in 'ambassadors'
+      // 5. User balance cleanup: Remove non-admin ambassador records & reset admin balance
       const ambSnap = await db.collection('ambassadors').get();
+      let ambassadorBalancesRemoved = 0;
       for (const d of ambSnap.docs) {
-        await d.ref.update({
-          pendingPayoutINR: 0,
-          totalEarningsINR: 0,
-          paidPayoutINR: 0,
-          updatedAt: new Date(),
-        });
+        if (d.id === DESIGNATED_RETAINED_ADMIN_UID) {
+          await d.ref.update({
+            pendingPayoutINR: 0,
+            totalEarningsINR: 0,
+            paidPayoutINR: 0,
+            updatedAt: new Date(),
+          });
+        } else {
+          await d.ref.delete();
+          ambassadorBalancesRemoved++;
+        }
       }
 
-      // 6. Log audit record in 'activityLogs'
+      // 6. Purge non-admin payoutRequests to guarantee no orphaned payout requests remain
+      const pSnap = await db.collection('payoutRequests').get().catch(() => ({ docs: [] } as any));
+      let payoutRequestsPurged = 0;
+      for (const d of pSnap.docs) {
+        const pData = d.data();
+        if (pData.ambassadorUid !== DESIGNATED_RETAINED_ADMIN_UID) {
+          await d.ref.delete();
+          payoutRequestsPurged++;
+        }
+      }
+
+      // 7. Log audit record in 'activityLogs'
       await db.collection('activityLogs').add({
         action: 'DATABASE_CLEANUP_EXECUTED',
         executedBy: DESIGNATED_RETAINED_ADMIN_UID,
@@ -307,6 +330,8 @@ export async function POST(req: NextRequest) {
         firestoreUsersDeleted,
         companiesPreserved: compSnap.size,
         companiesReassigned,
+        ambassadorBalancesRemoved,
+        payoutRequestsPurged,
         portPurged,
         slugPurged,
         appPurged,
@@ -321,6 +346,8 @@ export async function POST(req: NextRequest) {
           firestoreUsersDeleted,
           companiesPreserved: compSnap.size,
           companiesReassigned,
+          ambassadorBalancesRemoved,
+          payoutRequestsPurged,
           orphanedSitesPurged: portPurged,
           orphanedSlugsPurged: slugPurged,
           orphanedApplicationsPurged: appPurged,

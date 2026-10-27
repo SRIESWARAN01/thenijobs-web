@@ -20,8 +20,16 @@ interface CandidateRow {
   id: string;
   seekerName?: string;
   seekerId?: string;
+  seekerPhone?: string;
+  seekerTaluk?: string;
+  seekerEmail?: string;
+  seekerQualification?: string;
+  seekerExperience?: string;
   jobTitle?: string;
+  jobId?: string;
   status?: string;
+  notes?: string;
+  appliedVia?: string;
   createdAt?: FirestoreTime;
   [key: string]: unknown;
 }
@@ -61,6 +69,9 @@ function CandidateDetailModal({
   jobTitle,
   seekerName,
   createdAt,
+  appliedVia,
+  appliedPhone,
+  appliedTaluk,
   onClose,
   onNotesUpdated,
   onStatusUpdated
@@ -75,6 +86,9 @@ function CandidateDetailModal({
   jobTitle: string;
   seekerName: string;
   createdAt?: any;
+  appliedVia?: string;
+  appliedPhone?: string;
+  appliedTaluk?: string;
   onClose: () => void;
   onNotesUpdated: (notes: string) => void;
   onStatusUpdated: (status: string) => void;
@@ -179,13 +193,13 @@ function CandidateDetailModal({
   }
 
   const email = profile?.email || 'N/A';
-  const phone = profile?.phone || 'N/A';
+  const phone = profile?.phone || appliedPhone || 'N/A';
   const cleanPhone = phone.replace(/[^0-9+]/g, '');
-  const cleanWhatsApp = (profile?.whatsapp || profile?.phone || '').replace(/[^0-9]/g, '');
+  const cleanWhatsApp = (profile?.whatsapp || profile?.phone || appliedPhone || '').replace(/[^0-9]/g, '');
   const experienceList = profile?.experience || [];
   const educationList = profile?.education || [];
   const skillsList = profile?.skills || [];
-  const district = profile?.district || 'Theni';
+  const district = profile?.district || appliedTaluk || 'Theni';
   const resumeUrl = profile?.resumeUrl;
 
   return (
@@ -198,7 +212,14 @@ function CandidateDetailModal({
               {seekerName[0]?.toUpperCase() || 'C'}
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug">{seekerName}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug">{seekerName}</h2>
+                {appliedVia === 'whatsapp' && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 shadow-xs">
+                    <MessageCircle size={12} className="text-emerald-600" aria-hidden /> Applied via WhatsApp
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-gray-500 font-medium">Applied for: <span className="text-blue-700 font-bold">{jobTitle}</span></p>
             </div>
           </div>
@@ -520,7 +541,14 @@ export default function CandidatesPage() {
             {app.seekerName?.[0]?.toUpperCase() || 'C'}
           </span>
           <span className="min-w-0">
-            <span className="block truncate font-semibold text-slate-900">{app.seekerName || 'Candidate'}</span>
+            <span className="flex items-center gap-1.5 flex-wrap">
+              <span className="block truncate font-semibold text-slate-900">{app.seekerName || 'Candidate'}</span>
+              {app.appliedVia === 'whatsapp' && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 shadow-xs">
+                  <MessageCircle size={10} className="text-emerald-600" aria-hidden /> WhatsApp Apply
+                </span>
+              )}
+            </span>
             {isOverdue(app) && (
               <span className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-900">
                 <Clock size={10} aria-hidden /> Overdue 7+ days
@@ -664,16 +692,19 @@ export default function CandidatesPage() {
       {/* Candidate Modal */}
       {activeModalCandidate && (
         <CandidateDetailModal
-          seekerId={activeModalCandidate.seekerId}
+          seekerId={activeModalCandidate.seekerId ?? ''}
           applicationId={activeModalCandidate.id}
           currentStatus={activeModalCandidate.status || 'applied'}
           initialNotes={activeModalCandidate.notes || ''}
           companyId={companyId}
           companyName={company?.name || 'Company'}
-          jobId={activeModalCandidate.jobId}
-          jobTitle={activeModalCandidate.jobTitle}
-          seekerName={activeModalCandidate.seekerName}
+          jobId={activeModalCandidate.jobId ?? ''}
+          jobTitle={activeModalCandidate.jobTitle ?? ''}
+          seekerName={activeModalCandidate.seekerName ?? 'Candidate'}
           createdAt={activeModalCandidate.createdAt}
+          appliedVia={activeModalCandidate.appliedVia}
+          appliedPhone={activeModalCandidate.seekerPhone}
+          appliedTaluk={activeModalCandidate.seekerTaluk}
           onClose={() => setActiveModalCandidate(null)}
           onNotesUpdated={(notes) => {
             // Assigning to the object returned by useState does not re-render, so a saved

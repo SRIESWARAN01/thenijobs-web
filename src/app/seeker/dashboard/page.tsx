@@ -17,6 +17,7 @@ import {
   Button, Card, CardBody, CardHeader, EmptyState, PageHeader, PageShell, Pill,
   Stat, StatGrid, type PillTone,
 } from '@/components/dashboard';
+import WhatsAppJobAlertsCard from '@/components/jobs/WhatsAppJobAlertsCard';
 
 const STATUS_LABEL: Record<string, { tone: PillTone; label: string }> = {
   applied:             { tone: 'info', label: 'Applied' },
@@ -349,6 +350,9 @@ export default function SeekerDashboard() {
               </div>
             </CardBody>
           </Card>
+
+          {/* Daily WhatsApp Job Alerts for Seeker */}
+          <WhatsAppJobAlertsCard compact={true} />
         </div>
       </div>
 

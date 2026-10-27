@@ -7,6 +7,7 @@ export type UserRole =
   | 'job_seeker'
   | 'employer'
   | 'business_owner'
+  | 'employee'
   | 'supplier'
   | 'service_provider'
   | 'admin'

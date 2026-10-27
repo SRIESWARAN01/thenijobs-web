@@ -58,7 +58,7 @@ service cloud.firestore {
 
     function isEmployerOrOwner() {
       return isAuthenticated() &&
-        getUserRole() in ['employer', 'business_owner', 'supplier', 'service_provider'];
+        getUserRole() in ['employer', 'business_owner', 'supplier', 'service_provider', 'employee'];
     }
 
     // EMPLOYER-1: portfolioSites.templateId carries a plan tier (src/lib/constants.ts's
@@ -869,6 +869,65 @@ service cloud.firestore {
 
     // ===== SYSTEM SETTINGS =====
     match /systemSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    // ===== CAREER GROWTH & SKILL DEVELOPMENT =====
+    match /skillCategories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /skillCourses/{courseId} {
+      allow read: if resource.data.status in ['published', 'active'] || (isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin()));
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /learningPaths/{pathId} {
+      allow read: if resource.data.status in ['published', 'active'] || isAdmin();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /lessons/{lessonId} {
+      allow read: if resource.data.isFreePreview == true || isAuthenticated();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /quizzes/{quizId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /quizAttempts/{attemptId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isActiveUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if isActiveUser() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /certificates/{certId} {
+      allow read: if true;
+      allow create: if isActiveUser() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /certificateTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /aiContentRequests/{requestId} {
+      allow read, create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    match /settings/{docId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin() && isNotSuspended();
     }

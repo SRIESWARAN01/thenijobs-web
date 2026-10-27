@@ -34,7 +34,9 @@ interface SubscriptionDoc {
   id: string;
   businessName?: string;
   companyName?: string;
-  plan: PlanType;
+  userName?: string;
+  displayName?: string;
+  plan: PlanType | string;
   amount: number;
   status: string;
   paymentStatus?: string;
@@ -85,6 +87,7 @@ const PLAN_CONFIG: Record<string, { label: string; tone: PillTone; icon: any }> 
   standard:   { label: 'Standard', tone: 'info', icon: Star },
   premium:    { label: 'Premium', tone: 'violet', icon: Crown },
   enterprise: { label: 'Enterprise', tone: 'warning', icon: Building2 },
+  seeker_pro: { label: 'Pro Candidate', tone: 'success', icon: Sparkles },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; tone: PillTone }> = {
@@ -226,7 +229,7 @@ export default function SubscriptionsPage() {
   // Subscriptions Table Filtered Rows
   const filteredSubs = useMemo(() => {
     return subscriptions.filter((sub) => {
-      const name = sub.businessName || sub.companyName || 'Company';
+      const name = sub.businessName || sub.companyName || sub.userName || sub.displayName || 'Candidate / Company';
       const matchSearch = name.toLowerCase().includes(searchQuery.toLowerCase());
       const subPlan = (sub.plan || 'free').toLowerCase();
       const matchPlan = planFilter === 'all' || subPlan === planFilter.toLowerCase();
@@ -1017,6 +1020,7 @@ export default function SubscriptionsPage() {
                     { label: 'Standard (₹1,800)', value: 'standard' },
                     { label: 'Premium (₹3,500)', value: 'premium' },
                     { label: 'Enterprise (₹5,000)', value: 'enterprise' },
+                    { label: 'Candidate Pro (₹199)', value: 'seeker_pro' },
                   ]}
                 />
                 <FilterSelect

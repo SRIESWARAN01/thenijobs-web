@@ -6,7 +6,7 @@ import {
   Users, Search, Download, ShieldCheck, Ban, Trash2,
   UserCheck, AlertCircle, Loader2, CheckCircle, XCircle,
   Plus, X, Phone, Mail, MapPin, Shield, Clock,
-  Edit3
+  Edit3, FileText
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import {
@@ -37,6 +37,7 @@ const ROLE_STYLES: Record<string, { bg: string; color: string; label: string }> 
   job_seeker:       { bg: '#EFF6FF', color: '#2563EB', label: 'Job Seeker' },
   employer:         { bg: '#F5F3FF', color: '#7C3AED', label: 'Employer' },
   business_owner:   { bg: '#FFFBEB', color: '#D97706', label: 'Business Owner' },
+  employee:         { bg: '#F1F5F9', color: '#475569', label: 'Employee' },
   admin:            { bg: '#FEF2F2', color: '#DC2626', label: 'Admin' },
   super_admin:      { bg: '#FDF4FF', color: '#9333EA', label: 'Super Admin' },
   supplier:         { bg: '#ECFDF5', color: '#059669', label: 'Supplier' },
@@ -396,6 +397,15 @@ export default function UsersPage() {
           const items: ActionItem[] = [
             { label: 'Edit user & credentials', icon: Edit3, onClick: () => openEditModal(u) },
           ];
+          if (u.role === 'job_seeker') {
+            items.unshift({
+              label: 'View Seeker Dossier & Resume',
+              icon: FileText,
+              onClick: () => {
+                window.location.href = `/admin/job-seekers?q=${encodeURIComponent(u.email || u.displayName || u.id)}`;
+              },
+            });
+          }
           if (!u.isVerified || (u as any).approvalStatus !== 'approved') {
             items.push({
               label: u.role === 'business_owner' ? 'Approve & Verify Business Owner' : 'Verify user',

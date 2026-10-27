@@ -98,6 +98,8 @@ export interface AuthHelpers {
   isAdmin: boolean;
   /** True if the current user has employer or business_owner role */
   isEmployer: boolean;
+  /** True if the current user is an employee / staff */
+  isEmployee: boolean;
   /** True if the current user is a job_seeker */
   isSeeker: boolean;
 }
@@ -537,6 +539,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // ── Role helpers ──────────────────────────────────────────────
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isEmployer = user?.role === 'employer' || user?.role === 'business_owner' || user?.role === 'supplier' || user?.role === 'service_provider';
+  const isEmployee = user?.role === 'employee';
   const isSeeker = user?.role === 'job_seeker';
 
   // ── Memoised context value ────────────────────────────────────
@@ -558,6 +561,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       refreshUserProfile,
       isAdmin,
       isEmployer,
+      isEmployee,
       isSeeker,
     }),
     [
@@ -577,6 +581,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       refreshUserProfile,
       isAdmin,
       isEmployer,
+      isEmployee,
       isSeeker,
     ],
   );

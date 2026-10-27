@@ -47,7 +47,7 @@ const EMPLOYER_NAV = [
 ];
 
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useRequireAuth(['employer', 'business_owner', 'supplier', 'service_provider']);
+  const { user, loading: authLoading } = useRequireAuth(['employer', 'business_owner', 'employee', 'supplier', 'service_provider']);
   const { refreshUserProfile } = useAuth();
   const toast = useToast();
   const { unreadCount } = useNotifications();

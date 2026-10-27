@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Building2, Briefcase, BarChart3, CreditCard, Shield, Settings, Bell,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Star,
   TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet, Award,
-  BadgeCheck, FileText, GraduationCap, Database
+  BadgeCheck, FileText, GraduationCap, Database, UserCheck
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -19,6 +19,7 @@ const ADMIN_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
   { label: 'Business Owner Approvals', icon: BadgeCheck, href: '/admin/business-approvals', badge: 'pending' },
   { label: 'Users', icon: Users, href: '/admin/users' },
+  { label: 'Job Seekers', icon: UserCheck, href: '/admin/job-seekers' },
   { label: 'Create User', icon: UserPlus, href: '/admin/users/create' },
   { label: 'Companies', icon: Building2, href: '/admin/businesses', badge: 'pending' },
   { label: 'Bulk Import', icon: FileSpreadsheet, href: '/admin/businesses/import' },

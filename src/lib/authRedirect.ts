@@ -106,6 +106,14 @@ export function resolveAuthRedirect(
     return '/employer/dashboard';
   }
 
+  // Employee / Staff account
+  if (role === 'employee') {
+    if (isSafeRedirectUrl(customRedirectUrl)) {
+      return customRedirectUrl!;
+    }
+    return '/employer/dashboard';
+  }
+
   // 8. Pending role selection or unassigned
   return '/register';
 }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Briefcase, Plus, Search, Eye, Users2,
   Pause, Play, Trash2, Clock, Loader2, AlertTriangle,
-  Share2, Copy, Archive, MessageCircle, CreditCard,
+  Share2, Copy, Archive, MessageCircle, CreditCard, Zap,
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import {
@@ -15,6 +15,7 @@ import {
 import { updateDocument, deleteDocument, createDocument } from '@/lib/firebase/firestoreService';
 import { where, orderBy } from 'firebase/firestore';
 import JobShareModal from '@/components/employer/JobShareModal';
+import UrgentHiringBadgeModal from '@/components/employer/UrgentHiringBadgeModal';
 import { useToast } from '@/contexts/ToastContext';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
 
@@ -127,6 +128,7 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
   const [view, setView] = useViewMode('company-jobs-list', 'table');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [shareJob, setShareJob] = useState<JobDoc | null>(null);
+  const [urgentJob, setUrgentJob] = useState<JobDoc | null>(null);
 
   const filtered = jobs.filter(j => {
     const s = resolveStatus(j);
@@ -445,6 +447,11 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
                 });
               }
               if (jobStatus === 'active') {
+                items.push({
+                  label: job.isUrgent ? '⚡ Urgent 48h Spotlight Active' : '⚡ 48h Urgent Spotlight (₹99)',
+                  icon: Zap,
+                  onClick: () => setUrgentJob(job),
+                });
                 items.push({ label: 'Share job', icon: Share2, onClick: () => setShareJob(job) });
               }
               if (jobStatus === 'expired') {
@@ -487,6 +494,20 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
             salary: shareJob.salary,
             status: shareJob.status,
             jobType: shareJob.jobType,
+          }}
+        />
+      )}
+
+      {/* Urgent 48-Hour Spotlight Modal */}
+      {urgentJob && (
+        <UrgentHiringBadgeModal
+          isOpen={!!urgentJob}
+          onClose={() => setUrgentJob(null)}
+          job={urgentJob}
+          userId={companyId}
+          onSuccess={() => {
+            setUrgentJob(null);
+            toast.success('Urgent Spotlight activated! WhatsApp broadcast ready.');
           }}
         />
       )}

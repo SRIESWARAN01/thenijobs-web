@@ -694,10 +694,10 @@ export default function DailyJobsClient() {
                 <Sparkles size={13} className="text-emerald-400 animate-pulse" />
                 Theni District Daily Jobs Hub
               </div>
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
                 Daily Jobs &amp; Urgent Vacancies in Theni
               </h1>
-              <p className="text-xs sm:text-sm text-blue-200/80 mt-1 max-w-2xl">
+              <p className="text-xs sm:text-sm text-blue-100 mt-1 max-w-2xl font-normal">
                 Browse verified daily jobs, urgent hiring, walk-in interviews, and immediate joining vacancies across Theni, Cumbum, Periyakulam, and Tamil Nadu. Apply directly with zero middleman fees.
               </p>
             </div>
@@ -717,20 +717,20 @@ export default function DailyJobsClient() {
           {/* Search Box Bar */}
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-12 gap-2.5">
             <div className="sm:col-span-6 relative">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 aria-label="Search job title, skills, company name, location"
                 placeholder="Search job title, skills, company name, or location..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-3 bg-white text-gray-900 rounded-2xl text-xs sm:text-sm font-semibold placeholder-gray-400 outline-none shadow-sm focus:ring-2 focus:ring-blue-400 transition-all"
+                className="w-full pl-10 pr-9 py-3 bg-white text-slate-900 rounded-2xl text-xs sm:text-sm font-semibold placeholder-slate-500 outline-none shadow-sm focus:ring-2 focus:ring-blue-400 transition-all"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
                   aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5 rounded-full"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 p-0.5 rounded-full"
                 >
                   <X size={15} />
                 </button>
@@ -742,7 +742,7 @@ export default function DailyJobsClient() {
                 aria-label="Filter by Taluk or Location"
                 value={selectedLocation}
                 onChange={e => setSelectedLocation(e.target.value)}
-                className="w-full px-3.5 py-3 bg-white text-gray-900 rounded-2xl text-xs sm:text-sm font-semibold outline-none shadow-sm cursor-pointer"
+                className="w-full px-3.5 py-3 bg-white text-slate-900 rounded-2xl text-xs sm:text-sm font-semibold outline-none shadow-sm cursor-pointer"
               >
                 {LOCATIONS.map(loc => (
                   <option key={loc} value={loc}>
@@ -757,7 +757,7 @@ export default function DailyJobsClient() {
                 aria-label="Filter by Job Category"
                 value={selectedCategory}
                 onChange={e => setSelectedCategory(e.target.value)}
-                className="w-full px-3.5 py-3 bg-white text-gray-900 rounded-2xl text-xs sm:text-sm font-semibold outline-none shadow-sm cursor-pointer"
+                className="w-full px-3.5 py-3 bg-white text-slate-900 rounded-2xl text-xs sm:text-sm font-semibold outline-none shadow-sm cursor-pointer"
               >
                 {CATEGORIES.map(cat => (
                   <option key={cat} value={cat}>
@@ -785,7 +785,7 @@ export default function DailyJobsClient() {
 
           {/* Search Autocomplete Suggestions Chips */}
           <div className="pt-1 flex items-center gap-1.5 flex-wrap text-xs">
-            <span className="text-blue-300 font-bold text-[11px] mr-1">Popular in Theni:</span>
+            <span className="text-blue-200 font-bold text-[11px] mr-1">Popular in Theni:</span>
             {SEARCH_SUGGESTIONS.map(sug => (
               <button
                 key={sug}
@@ -793,8 +793,8 @@ export default function DailyJobsClient() {
                 onClick={() => setSearchQuery(sug)}
                 className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer ${
                   searchQuery.toLowerCase() === sug.toLowerCase()
-                    ? 'bg-blue-500 text-white border border-blue-400'
-                    : 'bg-white/10 text-blue-100 hover:bg-white/20 hover:text-white border border-white/10'
+                    ? 'bg-blue-500 text-white border border-blue-400 shadow-xs'
+                    : 'bg-white/15 text-white hover:bg-white/25 hover:text-white border border-white/20'
                 }`}
               >
                 {sug}
@@ -813,7 +813,7 @@ export default function DailyJobsClient() {
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'all'
                   ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-slate-100 text-slate-800 hover:bg-slate-200 font-semibold'
               }`}
             >
               All Openings ({counts.all})
@@ -825,7 +825,7 @@ export default function DailyJobsClient() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'today'
                     ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-300 font-semibold'
                 }`}
               >
                 <Clock size={13} />
@@ -839,7 +839,7 @@ export default function DailyJobsClient() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'urgent'
                     ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300 font-semibold'
                 }`}
               >
                 <Flame size={13} className="text-amber-500 fill-amber-500" />
@@ -853,7 +853,7 @@ export default function DailyJobsClient() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'fresher'
                     ? 'bg-teal-600 text-white shadow-xs'
-                    : 'bg-teal-50 text-teal-800 hover:bg-teal-100 border border-teal-200'
+                    : 'bg-teal-50 text-teal-900 hover:bg-teal-100 border border-teal-300 font-semibold'
                 }`}
               >
                 <GraduationCap size={13} />
@@ -867,7 +867,7 @@ export default function DailyJobsClient() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'walkin'
                     ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200'
+                    : 'bg-purple-50 text-purple-900 hover:bg-purple-100 border border-purple-300 font-semibold'
                 }`}
               >
                 <Calendar size={13} />
@@ -881,7 +881,7 @@ export default function DailyJobsClient() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'daily_wage'
                     ? 'bg-orange-600 text-white shadow-xs'
-                    : 'bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200'
+                    : 'bg-orange-50 text-orange-950 hover:bg-orange-100 border border-orange-300 font-semibold'
                 }`}
               >
                 ⚡ Daily Wage ({counts.daily_wage})
@@ -894,7 +894,7 @@ export default function DailyJobsClient() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'featured'
                     ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-200'
+                    : 'bg-indigo-50 text-indigo-900 hover:bg-indigo-100 border border-indigo-300 font-semibold'
                 }`}
               >
                 ⭐ Featured ({counts.featured})
@@ -926,7 +926,7 @@ export default function DailyJobsClient() {
               </span>
               <button
                 onClick={clearRecentlyViewed}
-                className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 cursor-pointer"
+                className="text-[11px] font-bold text-slate-600 hover:text-slate-900 cursor-pointer"
               >
                 Clear History
               </button>
@@ -947,8 +947,8 @@ export default function DailyJobsClient() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-gray-900 group-hover:text-blue-600 truncate">{rj.title}</p>
-                    <p className="text-[11px] text-gray-500 truncate">{rj.companyName} • {rj.district}</p>
+                    <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600 truncate">{rj.title}</p>
+                    <p className="text-[11px] text-slate-600 truncate">{rj.companyName} • {rj.district}</p>
                   </div>
                 </Link>
               ))}
@@ -980,8 +980,8 @@ export default function DailyJobsClient() {
 
             {/* Quick Badges Toggles */}
             <div className="space-y-2">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Fast Toggles</p>
-              <label className="flex items-center justify-between text-xs font-semibold text-gray-700 cursor-pointer group">
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Fast Toggles</p>
+              <label className="flex items-center justify-between text-xs font-semibold text-slate-800 cursor-pointer group">
                 <span className="flex items-center gap-1.5 group-hover:text-emerald-700">
                   <BadgeCheck size={14} className="text-emerald-600" /> Verified Employers Only
                 </span>
@@ -993,7 +993,7 @@ export default function DailyJobsClient() {
                 />
               </label>
 
-              <label className="flex items-center justify-between text-xs font-semibold text-gray-700 cursor-pointer group">
+              <label className="flex items-center justify-between text-xs font-semibold text-slate-800 cursor-pointer group">
                 <span className="flex items-center gap-1.5 group-hover:text-amber-700">
                   <Flame size={14} className="text-amber-600" /> Urgent Vacancies Only
                 </span>
@@ -1005,7 +1005,7 @@ export default function DailyJobsClient() {
                 />
               </label>
 
-              <label className="flex items-center justify-between text-xs font-semibold text-gray-700 cursor-pointer group">
+              <label className="flex items-center justify-between text-xs font-semibold text-slate-800 cursor-pointer group">
                 <span className="flex items-center gap-1.5 group-hover:text-teal-700">
                   <GraduationCap size={14} className="text-teal-600" /> Fresher Friendly
                 </span>
@@ -1017,7 +1017,7 @@ export default function DailyJobsClient() {
                 />
               </label>
 
-              <label className="flex items-center justify-between text-xs font-semibold text-gray-700 cursor-pointer group">
+              <label className="flex items-center justify-between text-xs font-semibold text-slate-800 cursor-pointer group">
                 <span className="flex items-center gap-1.5 group-hover:text-purple-700">
                   <Calendar size={14} className="text-purple-600" /> Walk-in Interviews
                 </span>
@@ -1029,7 +1029,7 @@ export default function DailyJobsClient() {
                 />
               </label>
 
-              <label className="flex items-center justify-between text-xs font-semibold text-gray-700 cursor-pointer group">
+              <label className="flex items-center justify-between text-xs font-semibold text-slate-800 cursor-pointer group">
                 <span className="flex items-center gap-1.5 group-hover:text-orange-700">
                   ⚡ Daily Wage / Immediate
                 </span>
@@ -1046,10 +1046,10 @@ export default function DailyJobsClient() {
 
             {/* Salary Range */}
             <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Salary Expectation</p>
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Salary Expectation</p>
               <div className="space-y-1.5">
                 {SALARY_RANGES.map(sal => (
-                  <label key={sal.value} className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                  <label key={sal.value} className="flex items-center gap-2 text-xs font-medium text-slate-800 cursor-pointer">
                     <input
                       type="radio"
                       name="salaryRange"
@@ -1067,7 +1067,7 @@ export default function DailyJobsClient() {
 
             {/* Qualification */}
             <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Minimum Qualification</p>
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Minimum Qualification</p>
               <select
                 value={selectedQualification}
                 onChange={e => setSelectedQualification(e.target.value)}
@@ -1081,7 +1081,7 @@ export default function DailyJobsClient() {
 
             {/* Experience Level */}
             <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Experience</p>
+              <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Experience</p>
               <select
                 value={selectedExperience}
                 onChange={e => setSelectedExperience(e.target.value)}
@@ -1096,7 +1096,7 @@ export default function DailyJobsClient() {
             {/* Job Type & Work Mode */}
             <div className="space-y-3">
               <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Job Type</p>
+                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Job Type</p>
                 <select
                   value={selectedJobType}
                   onChange={e => setSelectedJobType(e.target.value)}
@@ -1107,7 +1107,7 @@ export default function DailyJobsClient() {
               </div>
 
               <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Work Mode</p>
+                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Work Mode</p>
                 <select
                   value={selectedWorkMode}
                   onChange={e => setSelectedWorkMode(e.target.value)}
@@ -1118,7 +1118,7 @@ export default function DailyJobsClient() {
               </div>
 
               <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Posted Window</p>
+                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Posted Window</p>
                 <select
                   value={selectedPostedWindow}
                   onChange={e => setSelectedPostedWindow(e.target.value)}
@@ -1132,11 +1132,11 @@ export default function DailyJobsClient() {
 
           {/* Job Cards Listing Column (5 cols or 9 cols if preview hidden) */}
           <div className="lg:col-span-5 space-y-4">
-            <div className="flex items-center justify-between text-xs text-gray-600 px-1">
+            <div className="flex items-center justify-between text-xs text-slate-700 px-1">
               <span>
                 Showing <strong>{filteredJobs.length}</strong> matching openings
               </span>
-              <span className="text-gray-400">Sorted by newest posted</span>
+              <span className="text-slate-500 font-medium">Sorted by newest posted</span>
             </div>
 
             {loading ? (
@@ -1209,7 +1209,7 @@ export default function DailyJobsClient() {
                                   {job.title}
                                 </h3>
                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                  <p className="text-xs text-gray-600 font-semibold truncate">{job.company}</p>
+                                  <p className="text-xs text-slate-700 font-semibold truncate">{job.company}</p>
                                   {job.isVerified && (
                                     <span title="Verified Employer">
                                       <BadgeCheck size={14} className="text-emerald-600 shrink-0" />
@@ -1236,18 +1236,18 @@ export default function DailyJobsClient() {
                           <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-100">
                             {job.type}
                           </span>
-                          <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-700 font-medium border border-gray-100">
-                            <MapPin size={10} className="inline mr-1 text-gray-400" />
+                          <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-medium border border-slate-200">
+                            <MapPin size={10} className="inline mr-1 text-slate-500" />
                             {job.location}
                           </span>
                           {job.experience && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-700 font-medium border border-gray-100">
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-medium border border-slate-200">
                               {job.experience}
                             </span>
                           )}
                           {job.education && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-700 font-medium border border-gray-100">
-                              <GraduationCap size={10} className="inline mr-1 text-gray-400" />
+                            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 font-medium border border-slate-200">
+                              <GraduationCap size={10} className="inline mr-1 text-slate-500" />
                               {job.education}
                             </span>
                           )}
@@ -1265,7 +1265,7 @@ export default function DailyJobsClient() {
 
                         {/* Description Summary Snippet */}
                         {job.description && (
-                          <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed mb-2">
+                          <p className="text-xs text-slate-700 line-clamp-2 leading-relaxed mb-2 font-normal">
                             {job.description}
                           </p>
                         )}
@@ -1345,7 +1345,7 @@ export default function DailyJobsClient() {
 
                   <h2 className="text-lg font-bold text-gray-900 leading-snug">{selectedJob.title}</h2>
                   <div className="flex items-center gap-1.5 mt-1">
-                    <p className="text-xs text-gray-600 font-semibold">{selectedJob.company}</p>
+                    <p className="text-xs text-slate-700 font-semibold">{selectedJob.company}</p>
                     {selectedJob.isVerified && <BadgeCheck size={14} className="text-emerald-600" />}
                   </div>
 
@@ -1353,33 +1353,33 @@ export default function DailyJobsClient() {
                 </div>
 
                 {/* Key Attributes */}
-                <div className="space-y-2 text-xs text-gray-600">
+                <div className="space-y-2 text-xs text-slate-700">
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-400">Location:</span>
-                    <strong className="text-gray-800">{selectedJob.location}</strong>
+                    <span className="text-slate-600 font-semibold">Location:</span>
+                    <strong className="text-slate-900 font-bold">{selectedJob.location}</strong>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-400">Job Type:</span>
-                    <strong className="text-gray-800">{selectedJob.type}</strong>
+                    <span className="text-slate-600 font-semibold">Job Type:</span>
+                    <strong className="text-slate-900 font-bold">{selectedJob.type}</strong>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-400">Experience:</span>
-                    <strong className="text-gray-800">{selectedJob.experience}</strong>
+                    <span className="text-slate-600 font-semibold">Experience:</span>
+                    <strong className="text-slate-900 font-bold">{selectedJob.experience}</strong>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-400">Qualification:</span>
-                    <strong className="text-gray-800">{selectedJob.education}</strong>
+                    <span className="text-slate-600 font-semibold">Qualification:</span>
+                    <strong className="text-slate-900 font-bold">{selectedJob.education}</strong>
                   </div>
                   {selectedJob.openings && (
                     <div className="flex justify-between py-1 border-b border-gray-50">
-                      <span className="text-gray-400">Openings:</span>
-                      <strong className="text-gray-800">{selectedJob.openings} vacancies</strong>
+                      <span className="text-slate-600 font-semibold">Openings:</span>
+                      <strong className="text-slate-900 font-bold">{selectedJob.openings} vacancies</strong>
                     </div>
                   )}
                   {selectedJob.deadline && (
                     <div className="flex justify-between py-1 border-b border-gray-50">
-                      <span className="text-gray-400">Deadline:</span>
-                      <strong className="text-amber-700">{selectedJob.deadline}</strong>
+                      <span className="text-slate-600 font-semibold">Deadline:</span>
+                      <strong className="text-amber-800 font-bold">{selectedJob.deadline}</strong>
                     </div>
                   )}
                 </div>
@@ -1388,7 +1388,7 @@ export default function DailyJobsClient() {
                 {selectedJob.description && (
                   <div className="pt-2 border-t border-gray-100">
                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Overview</h4>
-                    <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto">
+                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto font-normal">
                       {selectedJob.description}
                     </p>
                   </div>
@@ -1492,9 +1492,9 @@ export default function DailyJobsClient() {
           </div>
         }
       >
-        <div className="space-y-4 text-xs font-semibold text-gray-800">
+        <div className="space-y-4 text-xs font-semibold text-slate-800">
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Taluk / Town</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Taluk / Town</p>
             <select
               value={selectedLocation}
               onChange={e => setSelectedLocation(e.target.value)}
@@ -1505,7 +1505,7 @@ export default function DailyJobsClient() {
           </div>
 
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Category</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Category</p>
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
@@ -1516,7 +1516,7 @@ export default function DailyJobsClient() {
           </div>
 
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Job Type</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Job Type</p>
             <select
               value={selectedJobType}
               onChange={e => setSelectedJobType(e.target.value)}
@@ -1527,7 +1527,7 @@ export default function DailyJobsClient() {
           </div>
 
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Salary Range</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Salary Range</p>
             <div className="space-y-1.5">
               {SALARY_RANGES.map(sal => (
                 <label key={sal.value} className="flex items-center gap-2 cursor-pointer">
@@ -1545,7 +1545,7 @@ export default function DailyJobsClient() {
           </div>
 
           <div className="pt-2 border-t border-gray-100 space-y-2">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Quick Filters</p>
+            <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Quick Filters</p>
             <label className="flex items-center justify-between cursor-pointer">
               <span>Verified Employers Only</span>
               <input

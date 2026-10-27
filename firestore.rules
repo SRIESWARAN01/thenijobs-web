@@ -861,6 +861,18 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin() && isNotSuspended();
     }
 
+    // ===== BILLING SLOGANS =====
+    match /billingSlogans/{sloganId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
+    // ===== SYSTEM SETTINGS =====
+    match /systemSettings/{settingId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isNotSuspended();
+    }
+
     // ===== DEFAULT DENY (RULES-1, security.md S-1) =====
     // Firestore denies any request no block above matches. Rules are additive (OR): a permissive
     // recursive wildcard block here would override every block above it, which is exactly what

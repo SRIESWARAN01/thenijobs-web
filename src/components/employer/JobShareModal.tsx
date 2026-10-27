@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   X, Copy, Check, Share2, MessageCircle, QrCode,
-  ExternalLink
+  ExternalLink, Sparkles
 } from 'lucide-react';
 
 const FacebookIcon = ({ size = 15, className = '' }: { size?: number; className?: string }) => (
@@ -22,6 +22,7 @@ import QRCode from 'qrcode';
 interface JobShareModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenPosters?: () => void;
   job: {
     id: string;
     slug?: string;
@@ -37,7 +38,7 @@ interface JobShareModalProps {
   };
 }
 
-export default function JobShareModal({ isOpen, onClose, job }: JobShareModalProps) {
+export default function JobShareModal({ isOpen, onClose, onOpenPosters, job }: JobShareModalProps) {
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
@@ -156,6 +157,28 @@ export default function JobShareModal({ isOpen, onClose, job }: JobShareModalPro
 
         {/* Share Actions */}
         <div className="p-5 space-y-2">
+          {/* AI Posters Studio Button */}
+          {onOpenPosters && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenPosters();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50/60 hover:bg-blue-100/70 transition-all text-left"
+            >
+              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0 text-white shadow-xs">
+                <Sparkles size={18} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-blue-900 flex items-center gap-1.5">
+                  AI Job Posters Studio
+                  <span className="bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">10 Styles</span>
+                </p>
+                <p className="text-[10px] text-blue-700">Download ZIP, individual PNG/PDF, & WhatsApp share</p>
+              </div>
+            </button>
+          )}
+
           {/* WhatsApp */}
           <button
             onClick={handleWhatsApp}

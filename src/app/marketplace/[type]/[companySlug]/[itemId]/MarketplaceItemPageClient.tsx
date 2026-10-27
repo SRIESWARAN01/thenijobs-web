@@ -14,6 +14,8 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { resolveCompanyBySlug } from '@/lib/companySlug';
 import { createLead } from '@/lib/firebase/firestoreService';
 import { useAuth } from '@/hooks/useAuth';
+import PosterStudioModal from '@/components/employer/poster/PosterStudioModal';
+import { PosterData } from '@/lib/poster/types';
 import {
   addRecentlyViewed,
   isInWishlist,
@@ -67,6 +69,7 @@ export default function MarketplaceItemPageClient({
 
   // Share Toast
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [showPosterModal, setShowPosterModal] = useState(false);
 
   // Bilingual Language Toggle (EN / TA)
   const [lang, setLang] = useState<'en' | 'ta'>('en');
@@ -309,6 +312,33 @@ export default function MarketplaceItemPageClient({
     : []
   ).filter((entry: any) => entry && typeof entry === 'object' && entry.id !== itemId).slice(0, 4);
 
+  const itemPosterData: PosterData | null = useMemo(() => {
+    if (!company || !item) return null;
+    return {
+      id: itemId,
+      type: type as 'product' | 'service',
+      title: itemName,
+      companyName: company.name,
+      companyLogoUrl: company.logoUrl || company.logo,
+      category: item.category || company.category || (type === 'service' ? 'Professional Service' : 'Retail Product'),
+      location: company.address || company.district || 'Theni District',
+      district: company.district || 'Theni District',
+      salaryText: priceLabel,
+      jobType: type === 'service' ? 'Service Showcase' : 'Product Catalogue',
+      experience: 'Special Offers & Inquiries',
+      education: 'Scan to View Full Details',
+      highlights: [
+        description ? description.slice(0, 75) + '...' : `${itemName} available at ${company.name}`,
+        'Direct WhatsApp inquiry and order booking available',
+        'Verified local business on THENIJOBS Marketplace'
+      ],
+      publicUrl: listingUrl,
+      isVerified: isVerified,
+      isFeatured: true,
+      itemPrice: priceLabel,
+    };
+  }, [company, item, type, itemName, priceLabel, description, listingUrl, isVerified, itemId]);
+
   const handleWhatsAppOrder = async () => {
     if (company?.id) {
       try {
@@ -503,6 +533,15 @@ export default function MarketplaceItemPageClient({
             >
               {shareSuccess ? <Check size={13} className="text-emerald-600" /> : <Share2 size={13} />}
               <span>{shareSuccess ? (lang === 'ta' ? 'இணைப்பு நகலெடுக்கப்பட்டது' : 'Copied!') : (lang === 'ta' ? 'பகிர்' : 'Share')}</span>
+            </button>
+
+            <button
+              onClick={() => setShowPosterModal(true)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center gap-1.5 shadow-2xs transition-colors"
+              title="Generate Promotional Posters"
+            >
+              <Sparkles size={13} className="text-indigo-600" />
+              <span>{lang === 'ta' ? 'விளம்பர போஸ்டர் (10)' : 'Posters (10)'}</span>
             </button>
           </div>
         </div>

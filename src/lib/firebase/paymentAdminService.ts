@@ -358,10 +358,17 @@ export async function recordVerifiedPayment(input: VerifyPaymentInput) {
 
   const receiptNo = `THENI-REC-${paymentId.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase()}`;
 
-  // 3. Assign dynamic billing slogan
+  // 3. Assign dynamic billing slogan based on billing model / plan
+  const resolvedModel = planSlug
+    ? (planSlug.startsWith('subscription_') ? planSlug : `subscription_${planSlug}`)
+    : 'subscription_standard';
+
   let assignedSlogan: any = null;
   try {
-    assignedSlogan = await assignNextBillingSlogan({ seedFallback: orderId });
+    assignedSlogan = await assignNextBillingSlogan({
+      billingModel: resolvedModel,
+      seedFallback: orderId,
+    });
   } catch (sErr) {
     console.warn('[paymentAdminService] Slogan assignment fallback:', sErr);
     assignedSlogan = getDeterministicBillingSlogan(orderId);
@@ -371,6 +378,7 @@ export async function recordVerifiedPayment(input: VerifyPaymentInput) {
   const sloganLanguage = assignedSlogan?.sloganLanguage || assignedSlogan?.language || 'ta';
   const sloganId = assignedSlogan?.sloganId || assignedSlogan?.id || 'SLOGAN-TJ-01';
   const sloganCycle = assignedSlogan?.sloganCycle || assignedSlogan?.cycle || 1;
+  const sloganCategory = assignedSlogan?.sloganCategory || 'business_growth';
 
   const formattedStartDate = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   const formattedEndDate = expiryDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -412,6 +420,8 @@ export async function recordVerifiedPayment(input: VerifyPaymentInput) {
     sloganText,
     sloganLanguage,
     sloganCycle,
+    sloganCategory,
+    billingModel: resolvedModel,
   };
 
   const subscriptionPayload = {

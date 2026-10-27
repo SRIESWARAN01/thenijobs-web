@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Camera, Upload, Building2, Phone, Mail, Globe, MapPin,
   Link2, Heart, Briefcase as LinkedinIcon, Play, Plus, Save,
   CheckCircle, AlertCircle, Shield, Smartphone, FileText,
   ImagePlus, Trash2, MessageCircle, Loader2, Clock, XCircle, Eye,
   Package, Wrench, FolderGit2, User, LayoutGrid, MessageSquare, Lock,
-  FileCheck2, BadgeCheck, ShieldCheck
+  FileCheck2, BadgeCheck, ShieldCheck, Sparkles
 } from 'lucide-react';
 import { TN_DISTRICTS, FounderProfile } from '@/lib/types';
 import { hasFeaturePermission } from '@/lib/plans';
@@ -20,6 +20,8 @@ import CompanyPortfolioManager from '@/components/company/CompanyPortfolioManage
 import CompanyFounderManager from '@/components/company/CompanyFounderManager';
 import CompanySectionToggler from '@/components/company/CompanySectionToggler';
 import CompanyReviewsManager from '@/components/company/CompanyReviewsManager';
+import PosterStudioModal from '@/components/employer/poster/PosterStudioModal';
+import { PosterData } from '@/lib/poster/types';
 import { useUploadFile, useDeleteFile } from '@/hooks/useStorage';
 import { updateDocument } from '@/lib/firebase/firestoreService';
 import { optimizeImageForUpload } from '@/lib/storage/imageOptimizer';
@@ -197,10 +199,38 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
   const [showBranchForm, setShowBranchForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showCompanyPosterModal, setShowCompanyPosterModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'products' | 'services' | 'portfolio' | 'founder' | 'reviews' | 'sections'>('basic');
   const [coverBroken, setCoverBroken] = useState(false);
   const [logoBroken, setLogoBroken] = useState(false);
   const [galleryBroken, setGalleryBroken] = useState<Record<number, boolean>>({});
+
+  const companyPosterData: PosterData | null = useMemo(() => {
+    if (!company.name) return null;
+    const slug = initialCompany?.slug || initialCompany?.id || 'company';
+    return {
+      id: initialCompany?.id || 'company',
+      type: 'company',
+      title: company.name,
+      companyName: company.name,
+      companyLogoUrl: company.logoUrl || (company as any).companyLogo,
+      category: company.category || 'Business & Enterprise',
+      location: company.address || company.district || 'Theni District',
+      district: company.district || 'Theni District',
+      salaryText: company.tagline || 'Verified Theni Business Enterprise',
+      jobType: 'Business Profile',
+      experience: company.establishedYear ? `Est. ${company.establishedYear}` : 'Verified MSME',
+      education: 'Products & Services Available',
+      highlights: [
+        company.tagline || 'Leading Business in Theni District',
+        'Scan QR code to browse complete catalog & offers',
+        'Direct customer contact & WhatsApp connectivity'
+      ],
+      publicUrl: `https://www.thenijobs.com/company/${slug}`,
+      isVerified: company.verificationStatus === 'verified' || !!initialCompany?.isVerified,
+      isFeatured: true,
+    };
+  }, [company, initialCompany]);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -532,6 +562,13 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         breadcrumbs={breadcrumbs}
         actions={
           <>
+            <Button
+              variant="secondary"
+              onClick={() => setShowCompanyPosterModal(true)}
+              className="flex-1 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white sm:flex-none flex items-center gap-1.5"
+            >
+              <Sparkles size={15} /> Company Posters (10)
+            </Button>
             <Button
               variant="secondary"
               onClick={() => setShowPreviewModal(true)}
@@ -1343,6 +1380,15 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
       >
         <CompanyProfileClient company={company} jobs={[]} reviews={[]} />
       </DeviceLivePreviewModal>
+
+      {/* Company Promotional Posters Studio */}
+      {showCompanyPosterModal && companyPosterData && (
+        <PosterStudioModal
+          isOpen={showCompanyPosterModal}
+          onClose={() => setShowCompanyPosterModal(false)}
+          data={companyPosterData}
+        />
+      )}
     </PageShell>
   );
 }

@@ -717,7 +717,7 @@ function MarketplaceContent() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
               {activeTab === 'services'
                 ? (language === 'en' ? 'Hire Verified Local Services in Theni' : 'தேனியில் தொழில்முறை சேவைகளை உடனடியாக பெறுங்கள்')
                 : activeTab === 'products'
@@ -727,7 +727,7 @@ function MarketplaceContent() {
                 : (language === 'en' ? 'Discover Products, Services & Verified Businesses' : 'பொருட்கள், சேவைகள் மற்றும் சரிபார்க்கப்பட்ட வணிகங்கள்')}
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-200 max-w-2xl leading-relaxed font-normal">
               {activeTab === 'services'
                 ? (language === 'en'
                     ? 'Book certified electricians, plumbers, AC technicians, agricultural machinery, and corporate service providers across Theni district without middleman commission.'
@@ -743,7 +743,7 @@ function MarketplaceContent() {
             <div className="flex flex-col md:flex-row gap-2">
               {/* Keyword Search with Autocomplete */}
               <div className="relative flex-1" ref={searchBoxRef}>
-                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type="text"
                   aria-label="Search products, services, businesses"
@@ -762,7 +762,7 @@ function MarketplaceContent() {
                     setSearchQuery(e.target.value);
                     setShowSuggestions(true);
                   }}
-                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium shadow-2xs"
+                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl text-sm text-slate-900 placeholder-slate-500 focus:outline-none font-medium shadow-2xs"
                 />
 
                 {/* Autocomplete Dropdown */}
@@ -825,7 +825,7 @@ function MarketplaceContent() {
             {/* Subcategories bar if category is selected */}
             {currentSubcategories.length > 0 && (
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider shrink-0">
+                <span className="text-[11px] font-bold text-slate-200 uppercase tracking-wider shrink-0">
                   {language === 'en' ? 'Subcategory:' : 'துணைப்பிரிவு:'}
                 </span>
                 {currentSubcategories.map(sub => (
@@ -835,8 +835,8 @@ function MarketplaceContent() {
                     onClick={() => setSelectedSubcategory(sub)}
                     className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold shrink-0 transition-colors ${
                       selectedSubcategory === sub
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-white/10 hover:bg-white/20 text-slate-200'
+                        ? 'bg-blue-500 text-white shadow-xs'
+                        : 'bg-white/10 hover:bg-white/20 text-slate-100 border border-white/15'
                     }`}
                   >
                     {sub}
@@ -848,7 +848,7 @@ function MarketplaceContent() {
             {/* Filter Bar: Price Range & Sort */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/10 text-xs text-white">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold flex items-center gap-1 text-slate-300">
+                <span className="font-bold flex items-center gap-1 text-slate-200">
                   <Tag size={13} /> {language === 'en' ? 'Price:' : 'விலை:'}
                 </span>
                 {PRICE_RANGES.map(pr => (
@@ -859,7 +859,7 @@ function MarketplaceContent() {
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                       selectedPriceRange === pr.id
                         ? 'bg-amber-400 text-amber-950 shadow-xs'
-                        : 'bg-white/15 hover:bg-white/25 text-white'
+                        : 'bg-white/15 hover:bg-white/25 text-white border border-white/15'
                     }`}
                   >
                     {language === 'en' ? pr.labelEn : pr.labelTa}
@@ -868,7 +868,7 @@ function MarketplaceContent() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="font-bold flex items-center gap-1 text-slate-300">
+                <span className="font-bold flex items-center gap-1 text-slate-200">
                   <ArrowUpDown size={13} /> {language === 'en' ? 'Sort:' : 'வரிசைப்படுத்து:'}
                 </span>
                 <select
@@ -877,7 +877,7 @@ function MarketplaceContent() {
                   className="px-2.5 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg text-xs font-bold focus:outline-none cursor-pointer border border-white/20"
                 >
                   {SORT_OPTIONS.map(opt => (
-                    <option key={opt.id} value={opt.id} className="text-slate-900">
+                    <option key={opt.id} value={opt.id} className="text-slate-900 bg-white">
                       {language === 'en' ? opt.labelEn : opt.labelTa}
                     </option>
                   ))}
@@ -897,7 +897,7 @@ function MarketplaceContent() {
             <button
               onClick={() => handleTabChange('all')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                activeTab === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-900 font-semibold'
               }`}
             >
               {language === 'en' ? 'All Items' : 'அனைத்தும்'} ({filteredProducts.length + filteredServices.length + filteredCompanies.length})
@@ -905,7 +905,7 @@ function MarketplaceContent() {
             <button
               onClick={() => handleTabChange('products')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'products' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                activeTab === 'products' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-900 font-semibold'
               }`}
             >
               🛒 {language === 'en' ? 'Products' : 'பொருட்கள்'} ({filteredProducts.length})
@@ -913,7 +913,7 @@ function MarketplaceContent() {
             <button
               onClick={() => handleTabChange('services')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'services' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                activeTab === 'services' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-900 font-semibold'
               }`}
             >
               🔧 {language === 'en' ? 'Services' : 'சேவைகள்'} ({filteredServices.length})
@@ -921,7 +921,7 @@ function MarketplaceContent() {
             <button
               onClick={() => handleTabChange('businesses')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'businesses' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                activeTab === 'businesses' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-700 hover:text-slate-900 font-semibold'
               }`}
             >
               🏢 {language === 'en' ? 'Businesses' : 'நிறுவனங்கள்'} ({filteredCompanies.length})
@@ -929,7 +929,7 @@ function MarketplaceContent() {
             <button
               onClick={() => handleTabChange('wishlist')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                activeTab === 'wishlist' ? 'bg-white text-rose-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                activeTab === 'wishlist' ? 'bg-white text-rose-700 shadow-xs font-black' : 'text-slate-700 hover:text-rose-600 font-semibold'
               }`}
             >
               <Heart size={13} className={wishlistItems.length > 0 ? 'fill-rose-500 text-rose-500' : ''} />
@@ -949,7 +949,7 @@ function MarketplaceContent() {
               </button>
             )}
 
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={verifiedOnly}

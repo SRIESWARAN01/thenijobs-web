@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Building2, Search, CheckCircle, XCircle,
@@ -92,7 +92,50 @@ const QUICK_REJECTION_REASONS = [
 export default function BusinessesPage() {
   const { user: currentUser } = useAuth();
   const toast = useToast();
-  const { data: businesses, loading } = useCollection<BusinessDoc>('companies');
+  const { data: rawBusinesses = [], loading, error: collectionError, refresh } = useCollection<BusinessDoc>('companies');
+
+  // Defensively normalize all company documents to ensure missing/null/numeric fields never crash React rendering
+  const businesses = useMemo<BusinessDoc[]>(() => {
+    if (!Array.isArray(rawBusinesses)) return [];
+    return rawBusinesses.map(b => ({
+      ...b,
+      id: b.id || '',
+      name: String(b.name || '').trim() || 'Unnamed Business',
+      category: String(b.category || '').trim() || 'General Business',
+      district: String(b.district || '').trim() || 'Theni',
+      address: String(b.address || '').trim(),
+      ownerName: String(b.ownerName || '').trim(),
+      contactPerson: String(b.contactPerson || '').trim(),
+      designation: String(b.designation || '').trim() || 'Proprietor / MD',
+      phone: b.phone !== undefined && b.phone !== null ? String(b.phone).trim() : '',
+      whatsapp: b.whatsapp !== undefined && b.whatsapp !== null ? String(b.whatsapp).trim() : '',
+      email: String(b.email || '').trim(),
+      website: String(b.website || '').trim(),
+      logoUrl: String(b.logoUrl || '').trim(),
+      coverUrl: String(b.coverUrl || b.bannerUrl || '').trim(),
+      bannerUrl: String(b.bannerUrl || b.coverUrl || '').trim(),
+      slug: String(b.slug || '').trim(),
+      establishedYear: b.establishedYear !== undefined && b.establishedYear !== null ? String(b.establishedYear).trim() : '',
+      googleMapsUrl: String(b.googleMapsUrl || '').trim(),
+      instagram: String(b.instagram || '').trim(),
+      facebook: String(b.facebook || '').trim(),
+      youtube: String(b.youtube || '').trim(),
+      linkedin: String(b.linkedin || '').trim(),
+      services: Array.isArray(b.services) ? b.services : [],
+      employeeCount: String(b.employeeCount || '').trim() || '1-10',
+      verificationStatus: (b.verificationStatus || 'pending') as 'pending' | 'under_review' | 'verified' | 'rejected',
+      rejectionReason: String(b.rejectionReason || '').trim(),
+      isActive: b.isActive ?? false,
+      isFeatured: b.isFeatured ?? false,
+      isPremium: b.isPremium ?? false,
+      createdAt: b.createdAt ?? null,
+      description: String(b.description || '').trim(),
+      tagline: String(b.tagline || '').trim(),
+      proofType: String(b.proofType || '').trim(),
+      proofNumber: b.proofNumber !== undefined && b.proofNumber !== null ? String(b.proofNumber).trim() : '',
+    }));
+  }, [rawBusinesses]);
+
   // ADMIN-QS-1: seeds from the admin quick-search's own `?q=` link. A plain window.location read
   // (not next/navigation's useSearchParams, unused anywhere else in this app and requiring a new
   // Suspense boundary) since this is a static export where every page's real content already
@@ -131,7 +174,7 @@ export default function BusinessesPage() {
     setDeleteLoading(true);
     try {
       await deleteCompany(deletingBiz.id, currentUser?.uid || 'admin');
-      toast.success('Business Deleted', `${deletingBiz.name} was successfully removed.`);
+      toast.success('Business Deleted', `${deletingBiz.name || 'Business'} was successfully removed.`);
       if (previewBiz?.id === deletingBiz.id) setPreviewBiz(null);
       if (editingBiz?.id === deletingBiz.id) setEditingBiz(null);
       setDeletingBiz(null);

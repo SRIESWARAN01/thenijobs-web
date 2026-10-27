@@ -7,7 +7,7 @@ import {
   Briefcase, Eye, Users2, Star, Mic, CheckCircle2, XCircle,
   Pause, Play, X as XIcon, RotateCcw, Copy, Trash2, Archive, Share2,
   Loader2, MapPin, Banknote, Clock, Calendar, FileText,
-  Zap, Phone, Video, History, ChevronRight,
+  Zap, Phone, Video, History, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useDocument, useCollection } from '@/hooks/useFirestore';
@@ -17,6 +17,8 @@ import JobShareModal from '@/components/employer/JobShareModal';
 import JobPreviewModal from '@/components/employer/JobPreviewModal';
 import JobPerformanceDashboard from '@/components/employer/JobPerformanceDashboard';
 import JobQuickUpdateModals from '@/components/employer/JobQuickUpdateModals';
+import PosterStudioModal from '@/components/employer/poster/PosterStudioModal';
+import { PosterData } from '@/lib/poster/types';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
 import {
   ActionMenu, Button, PageHeader, PageShell, Pill, Stat, StatGrid, Tabs,
@@ -86,9 +88,39 @@ export default function CompanyJobDetailManager({ jobId, companyId, basePath, br
 
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showPosterModal, setShowPosterModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [quickModal, setQuickModal] = useState<QuickModal>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const posterData: PosterData | null = useMemo(() => {
+    if (!job) return null;
+    return {
+      id: jobId,
+      type: 'job',
+      title: job.title || 'Job Opportunity',
+      companyName: company?.name || job.companyName || 'Theni Company',
+      companyLogoUrl: company?.logoUrl || company?.logo || job.companyLogoUrl,
+      category: job.category || company?.category || 'General Employment',
+      location: job.location || job.district || company?.district || 'Theni',
+      district: job.district || company?.district || 'Theni District',
+      salaryText: job.salaryMin && job.salaryMax
+        ? `₹${Number(job.salaryMin).toLocaleString('en-IN')} - ₹${Number(job.salaryMax).toLocaleString('en-IN')}`
+        : job.salary || 'Competitive Salary',
+      jobType: job.jobType,
+      experience: job.experience,
+      education: job.education,
+      openings: job.openings,
+      deadlineText: job.deadline ? new Date(job.deadline).toLocaleDateString('en-IN') : undefined,
+      contactPhone: company?.phone || job.contactPhone,
+      contactEmail: company?.email || job.contactEmail,
+      highlights: job.skills || job.requirements || [],
+      publicUrl: `https://www.thenijobs.com/jobs/${job.slug || job.id || jobId}`,
+      isUrgent: !!job.isUrgent,
+      isFeatured: !!job.isFeatured,
+      isVerified: company?.verificationStatus === 'verified' || !!company?.isVerified,
+    };
+  }, [job, company, jobId]);
 
   const jobStatus = job ? resolveStatus(job) : 'draft';
   const statusStyle = STATUS_STYLES[jobStatus];
@@ -211,6 +243,7 @@ export default function CompanyJobDetailManager({ jobId, companyId, basePath, br
   ];
 
   const menuItems: ActionItem[] = [
+    { label: 'AI Job Posters (10 Designs)', icon: Sparkles, onClick: () => setShowPosterModal(true) },
     { label: 'Share job', icon: Share2, onClick: () => setShowShareModal(true) },
     { label: 'Preview', icon: Eye, onClick: () => setShowPreviewModal(true) },
   ];
@@ -231,6 +264,15 @@ export default function CompanyJobDetailManager({ jobId, companyId, basePath, br
         breadcrumbs={[...breadcrumbs, { label: 'Jobs', href: basePath }, { label: job.title }]}
         actions={
           <>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowPosterModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold flex items-center gap-1.5 shadow-xs"
+            >
+              <Sparkles size={14} />
+              <span className="hidden sm:inline">AI Posters (10)</span>
+            </Button>
             {(jobStatus === 'active' || jobStatus === 'paused') && (
               <Button
                 variant="secondary"
@@ -431,9 +473,18 @@ export default function CompanyJobDetailManager({ jobId, companyId, basePath, br
       )}
 
       {/* Modals */}
+      {showPosterModal && posterData && (
+        <PosterStudioModal
+          isOpen={showPosterModal}
+          onClose={() => setShowPosterModal(false)}
+          data={posterData}
+        />
+      )}
+
       <JobShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
+        onOpenPosters={() => setShowPosterModal(true)}
         job={{
           id: jobId,
           title: job.title,

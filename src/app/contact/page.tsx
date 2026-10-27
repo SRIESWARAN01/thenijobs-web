@@ -26,7 +26,7 @@ export default function ContactPage() {
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/15 text-xs font-bold border border-white/20">
             <HelpCircle size={14} className="text-amber-300" /> We&apos;re Here to Help You
           </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Contact Official Support
           </h1>
           <p className="text-blue-100 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">

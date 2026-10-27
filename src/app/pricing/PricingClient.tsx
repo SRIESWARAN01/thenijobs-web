@@ -609,7 +609,7 @@ export default function PricingClient() {
           className="mt-14 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center text-white relative overflow-hidden shadow-lg"
           style={{ background: 'linear-gradient(135deg, #2563EB, #1D4ED8)' }}
         >
-          <h2 className="text-lg sm:text-xl font-extrabold" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <h2 className="text-lg sm:text-xl font-extrabold text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Still deciding? Start with Basic, upgrade whenever you&apos;re ready.
           </h2>
           <p className="text-blue-100 text-xs sm:text-sm mt-1.5 max-w-md mx-auto">

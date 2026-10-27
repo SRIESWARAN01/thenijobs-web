@@ -37,6 +37,47 @@ export const SEEKER_PUBLIC_PROFILE_FEE_INR = 50;
 // preserves this entitlement, so reconnecting a replacement key later never re-bills.
 export const AI_CONNECTION_FEE_INR = 50;
 
+// ===== URGENT HIRING 48-HOUR SPOTLIGHT BADGE =====
+// Employers/hospitals can spotlight an urgent requirement for 48 hours for a micro-fee of ₹99.
+export const URGENT_HIRING_BADGE_FEE_INR = 99;
+export const URGENT_HIRING_DURATION_HOURS = 48;
+
+/**
+ * Checks if a job has an active 48-hour urgent spotlight.
+ */
+export function isJobUrgent(job: { isUrgent?: boolean; urgentUntil?: any } | null | undefined): boolean {
+  if (!job || !job.isUrgent) return false;
+  if (!job.urgentUntil) return true;
+  const expiry = job.urgentUntil instanceof Date
+    ? job.urgentUntil.getTime()
+    : typeof job.urgentUntil === 'string' || typeof job.urgentUntil === 'number'
+    ? new Date(job.urgentUntil).getTime()
+    : job.urgentUntil.seconds
+    ? job.urgentUntil.seconds * 1000
+    : 0;
+  return expiry > Date.now();
+}
+
+/**
+ * Returns human-readable remaining time for urgent spotlight.
+ */
+export function getUrgentRemainingTime(job: { urgentUntil?: any } | null | undefined): string {
+  if (!job?.urgentUntil) return 'Active';
+  const expiry = job.urgentUntil instanceof Date
+    ? job.urgentUntil.getTime()
+    : typeof job.urgentUntil === 'string' || typeof job.urgentUntil === 'number'
+    ? new Date(job.urgentUntil).getTime()
+    : job.urgentUntil.seconds
+    ? job.urgentUntil.seconds * 1000
+    : 0;
+  const diffMs = expiry - Date.now();
+  if (diffMs <= 0) return 'Expired';
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  if (hours > 0) return `${hours}h ${mins}m left`;
+  return `${mins}m left`;
+}
+
 // ===== VILLAGE AMBASSADOR & REFERRAL COMMISSIONS =====
 export const AMBASSADOR_COMMISSIONS: Record<string, number> = {
   basic: 150,       // ₹150 for ₹999 Basic plan

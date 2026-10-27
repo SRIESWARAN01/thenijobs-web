@@ -208,7 +208,7 @@ export default function AboutPage() {
             <Info size={13} className="text-amber-300" fill="currentColor" fillOpacity={0.3} strokeWidth={2.25} /> About THENIJOBS
           </div>
 
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white" style={{ fontFamily: "'Poppins', sans-serif" }}>
             Building Opportunities. Empowering People.{' '}
             <span className="text-emerald-400">Growing Businesses.</span>
           </h1>

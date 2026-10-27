@@ -254,7 +254,9 @@ function JobCard({ job, selected, onSelect, onSave, saved }: {
                 <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-full bg-blue-100 text-blue-800">FEATURED</span>
               )}
               {job.isUrgent && (
-                <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-full bg-amber-100 text-amber-900">URGENT</span>
+                <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-full bg-red-100 text-red-700 border border-red-300 animate-pulse flex items-center gap-0.5">
+                  ⚡ அவசர தேவை
+                </span>
               )}
             </div>
           </div>
@@ -588,6 +590,8 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
 
   const visibleJobs = useMemo(() => {
     return [...filtered].sort((a, b) => {
+      // 48-Hour Urgent Hiring Spotlight takes absolute top priority
+      if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
       if (sortBy === 'salary') return (b.salaryMax || 0) - (a.salaryMax || 0);
       if (sortBy === 'newest') return (b.postedAt || 0) - (a.postedAt || 0);
       if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
@@ -622,10 +626,10 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
             <h1 className="text-2xl font-black text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
               Browse Jobs in Theni &amp; Tamil Nadu
             </h1>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-slate-600 mt-0.5">
               {loading ? 'Searching...' : `${visibleJobs.length.toLocaleString()} verified career opportunities found`}
               {capped && !loading && (
-                <span className="ml-1 font-normal text-gray-500">
+                <span className="ml-1 font-normal text-slate-600">
                   {' '}· showing the first {PUBLIC_LIST_LIMIT.toLocaleString()}, narrow your search to see more
                 </span>
               )}
@@ -642,7 +646,7 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
-              className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-base sm:text-xs font-bold text-gray-700 outline-none cursor-pointer"
+              className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-base sm:text-xs font-bold text-slate-800 outline-none cursor-pointer"
             >
               <option value="latest">Latest First</option>
               <option value="salary">Highest Salary</option>

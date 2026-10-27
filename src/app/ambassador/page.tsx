@@ -151,7 +151,7 @@ export default function AmbassadorLandingPage() {
               <span>Village Ambassador Network • ஊர் அம்பாசிடர் திட்டம்</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight mb-4">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-white mb-4">
               Connect Local Shops.<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
                 Earn ₹5,000 – ₹15,000+ Every Month.

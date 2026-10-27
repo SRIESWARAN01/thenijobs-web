@@ -5,13 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Eye, EyeOff, Mail, Lock, Phone, ArrowRight, Loader2,
-  AlertCircle, CheckCircle2, MessageSquare, PhoneCall, RefreshCw, Info
+  AlertCircle, CheckCircle2, MessageSquare, PhoneCall, RefreshCw, Info,
+  Briefcase, Building2, X
 } from 'lucide-react';
 import { GoogleIcon } from '@/components/ui/BrandIcons';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, setDoc, query, collection, where, getDocs, serverTimestamp } from 'firebase/firestore';
+import { GoogleAuthProvider, type AuthCredential } from 'firebase/auth';
 import { db } from '@/lib/firebase/config';
 import AuthShell from '@/components/auth/AuthShell';
+import { resolveAuthRedirect, getFriendlyAuthErrorMessage } from '@/lib/authRedirect';
 
 type AuthMode = 'phone' | 'email';
 
@@ -41,7 +44,7 @@ function LoginPageContent() {
 
   const {
     user, loading: authLoading, error: authError,
-    signInWithEmail, signInWithGoogle, clearError
+    signInWithEmail, signInWithGoogle, assignUserRole, linkGoogleAccount, clearError
   } = useAuth() as any;
 
   const [mode, setMode] = useState<AuthMode>('email');
@@ -55,6 +58,16 @@ function LoginPageContent() {
   const [sessionId, setSessionId] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Google Auth interactive modals state
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [roleSelectionLoading, setRoleSelectionLoading] = useState(false);
+  const [showLinkingModal, setShowLinkingModal] = useState(false);
+  const [linkingEmail, setLinkingEmail] = useState('');
+  const [linkingPassword, setLinkingPassword] = useState('');
+  const [pendingCredential, setPendingCredential] = useState<AuthCredential | null>(null);
+  const [linkingLoading, setLinkingLoading] = useState(false);
+  const [linkingError, setLinkingError] = useState<string | null>(null);
 
   // ── Dual independent timers: SMS & Call (2:00 / 120s each) ───────────────
   const [smsTimer, setSmsTimer] = useState<number>(120);
@@ -90,34 +103,8 @@ function LoginPageContent() {
 
   useEffect(() => {
     if (user) {
-      if (redirectUrl) { router.push(redirectUrl); return; }
-      const role = (user as any).role;
-      if (role === 'admin' || role === 'super_admin') {
-        router.push('/admin/dashboard');
-      } else if (role === 'employer' || role === 'business_owner') {
-        if (role === 'business_owner') {
-          const u = user as any;
-          const isApproved = u.approvalStatus === 'approved' || u.accountStatus === 'active';
-          const isRejected = u.approvalStatus === 'rejected' || u.accountStatus === 'rejected';
-
-          if (isRejected) {
-            router.push('/register-business');
-          } else if (!u.selectedPlan && !u.trialRequested && u.paymentStatus !== 'paid') {
-            // Plan not selected yet
-            router.push('/register-business?step=plan');
-          } else if (!isApproved) {
-            // Approval pending (either paid or trial requested)
-            router.push('/register-business');
-          } else {
-            // Approved and active
-            router.push('/employer/dashboard');
-          }
-        } else {
-          router.push('/employer/dashboard');
-        }
-      } else {
-        router.push('/seeker/dashboard');
-      }
+      const destination = resolveAuthRedirect(user, redirectUrl);
+      router.push(destination);
     }
   }, [user, router, redirectUrl]);
 
@@ -374,22 +361,68 @@ function LoginPageContent() {
   };
 
   const handleGoogleLogin = async () => {
-    setLoading(true); setLocalError(null);
-    try { 
-      await signInWithGoogle(); 
-    } catch (err: any) { 
-      console.error('Google Sign-in error:', err);
-      if (err?.code === 'auth/popup-closed-by-user') {
-        setLocalError('Sign-in cancelled. The popup was closed.');
-      } else if (err?.code === 'auth/unauthorized-domain') {
-        setLocalError('Domain not authorized in Firebase. Please use http://localhost:3001 or add your domain in Firebase Console.');
-      } else if (err?.code === 'auth/operation-not-allowed') {
-        setLocalError('Google Sign-In is not enabled in Firebase Authentication console.');
-      } else {
-        setLocalError(err?.message || 'Google Sign-in failed. Please try again.');
+    setLoading(true);
+    setLocalError(null);
+    setSuccessMessage(null);
+    try {
+      const res = await signInWithGoogle();
+      if (res && typeof res === 'object' && res.needRoleSelection) {
+        setShowRoleModal(true);
+        return;
       }
-    } finally { 
-      setLoading(false); 
+      if (res && typeof res === 'object' && res.user) {
+        const destination = resolveAuthRedirect(res.user, redirectUrl);
+        router.push(destination);
+      }
+    } catch (err: any) {
+      console.error('Google Sign-in error:', err);
+      if (err?.code === 'auth/account-exists-with-different-credential') {
+        const pendingEmail = err.customData?.email || err.email || '';
+        const pendingCred = GoogleAuthProvider.credentialFromError(err);
+        setLinkingEmail(pendingEmail);
+        setPendingCredential(pendingCred);
+        setShowLinkingModal(true);
+      } else {
+        setLocalError(getFriendlyAuthErrorMessage(err));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectRole = async (selectedRole: 'job_seeker' | 'business_owner') => {
+    setRoleSelectionLoading(true);
+    setLocalError(null);
+    try {
+      const updatedUser = await assignUserRole(selectedRole);
+      setShowRoleModal(false);
+      const destination = resolveAuthRedirect(updatedUser, redirectUrl);
+      router.push(destination);
+    } catch (err: any) {
+      console.error('Role assignment error:', err);
+      setLocalError(getFriendlyAuthErrorMessage(err, 'Failed to assign role. Please try again.'));
+    } finally {
+      setRoleSelectionLoading(false);
+    }
+  };
+
+  const handleLinkAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkingPassword) {
+      setLinkingError('Please enter your existing password to link accounts.');
+      return;
+    }
+    setLinkingLoading(true);
+    setLinkingError(null);
+    try {
+      await linkGoogleAccount(linkingEmail, linkingPassword, pendingCredential);
+      setShowLinkingModal(false);
+      setSuccessMessage('Google account linked successfully! Redirecting...');
+    } catch (err: any) {
+      console.error('Account linking error:', err);
+      setLinkingError(getFriendlyAuthErrorMessage(err, 'Failed to link account. Please check your password.'));
+    } finally {
+      setLinkingLoading(false);
     }
   };
 
@@ -402,7 +435,7 @@ function LoginPageContent() {
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
           Welcome back 👋
         </h1>
-        <p className="text-gray-500 text-sm mt-1 mb-[clamp(0.5rem,1.6dvh,1rem)]">Sign in to continue</p>
+        <p className="text-slate-600 text-sm mt-1 mb-[clamp(0.5rem,1.6dvh,1rem)] font-medium">Sign in to continue</p>
 
         {/* Primary/secondary auth-method toggle — plain text link, not a tab control */}
         {PHONE_LOGIN_ENABLED && step === 'input' && (
@@ -617,6 +650,165 @@ function LoginPageContent() {
           </Link>
         </p>
       </div>
+
+      {/* Role Selection Modal for brand new Google users */}
+      {showRoleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="text-center space-y-1.5">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-2 border border-blue-100">
+                <GoogleIcon size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Complete Your Sign Up
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500">
+                Choose your account type to personalise your THENIJOBS experience.
+              </p>
+            </div>
+
+            {localError && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+                <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                <span>{localError}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              {/* Job Seeker */}
+              <button
+                type="button"
+                disabled={roleSelectionLoading}
+                onClick={() => handleSelectRole('job_seeker')}
+                className="w-full p-4 rounded-2xl border-2 border-slate-200 hover:border-blue-600 hover:bg-blue-50/40 text-left transition-all flex items-start gap-3.5 group cursor-pointer disabled:opacity-50"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Briefcase size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-bold text-gray-900 text-sm">Job Seeker</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Free</span>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Find jobs in Theni &amp; Tamil Nadu, apply in 1-click, manage saved jobs.
+                  </p>
+                </div>
+                <ArrowRight size={16} className="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all mt-2" />
+              </button>
+
+              {/* Business Owner */}
+              <button
+                type="button"
+                disabled={roleSelectionLoading}
+                onClick={() => handleSelectRole('business_owner')}
+                className="w-full p-4 rounded-2xl border-2 border-slate-200 hover:border-amber-600 hover:bg-amber-50/40 text-left transition-all flex items-start gap-3.5 group cursor-pointer disabled:opacity-50"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Building2 size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-bold text-gray-900 text-sm">Business Owner</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Hiring</span>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    List your business, post jobs, get direct WhatsApp calls &amp; buyer leads.
+                  </p>
+                </div>
+                <ArrowRight size={16} className="text-gray-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all mt-2" />
+              </button>
+            </div>
+
+            {roleSelectionLoading && (
+              <div className="flex items-center justify-center gap-2 text-xs font-semibold text-blue-600 pt-2">
+                <Loader2 size={16} className="animate-spin" />
+                <span>Setting up your account...</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Account Linking Modal */}
+      {showLinkingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <GoogleIcon size={22} />
+              </div>
+              <button
+                type="button"
+                onClick={() => { setShowLinkingModal(false); setLinkingError(null); }}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
+                Link Your Google Account
+              </h3>
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                An existing account was found for <strong className="text-gray-900">{linkingEmail}</strong> with email &amp; password. Enter your password to securely link Google Sign-In.
+              </p>
+            </div>
+
+            {linkingError && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+                <AlertCircle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                <span>{linkingError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleLinkAccount} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-700 block mb-1.5">
+                  Password for {linkingEmail}
+                </label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    required
+                    placeholder="Enter your existing password"
+                    value={linkingPassword}
+                    onChange={(e) => setLinkingPassword(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50/70 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                  >
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowLinkingModal(false); setLinkingError(null); }}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={linkingLoading || !linkingPassword}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {linkingLoading ? <Loader2 size={14} className="animate-spin" /> : null}
+                  <span>Link &amp; Sign In</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AuthShell>
   );
 }

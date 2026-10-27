@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   BarChart2, Briefcase, Building2, Calendar, CheckCircle, ChevronRight, Clock,
   Eye, Loader2, Plus, Star, UserCheck, Users, XCircle, ShieldCheck, BadgeCheck, Camera, ImagePlus,
-  Sparkles, CreditCard, Gift
+  Sparkles, CreditCard, Gift, Printer
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollection } from '@/hooks/useFirestore';
@@ -341,7 +341,12 @@ export default function EmployerDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Link href="/employer/standee">
+                <Button variant="secondary" size="sm" className="gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50">
+                  <Printer size={14} /> QR Standee (PDF)
+                </Button>
+              </Link>
               <Link href="/employer/company-profile">
                 <Button variant="secondary" size="sm" className="gap-1.5">
                   <ImagePlus size={14} /> Edit Profile &amp; Branding

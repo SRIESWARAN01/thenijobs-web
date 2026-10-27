@@ -19,14 +19,25 @@ import {
   GoogleAuthProvider,
   RecaptchaVerifier,
   updateProfile,
+  linkWithCredential,
   type User as FirebaseUser,
   type ConfirmationResult,
+  type AuthCredential,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import type { User, UserRole } from '@/lib/types';
 
 // ───────────────────────────── Types ─────────────────────────────
+
+export interface GoogleSignInResult {
+  /** True if the user profile document did not exist prior to this sign-in */
+  isNewUser: boolean;
+  /** The resulting user profile from Firestore, or null if pending role selection */
+  user: User | null;
+  /** True if brand-new Google user has not selected their role yet */
+  needRoleSelection?: boolean;
+}
 
 export interface AuthState {
   /** Firebase auth user object */
@@ -42,8 +53,20 @@ export interface AuthState {
 export interface AuthActions {
   /** Email + password sign-in */
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  /** Google OAuth sign-in (popup) */
-  signInWithGoogle: () => Promise<void>;
+  /** Google OAuth sign-in (popup) with optional pre-selected role */
+  signInWithGoogle: (
+    targetRole?: 'job_seeker' | 'business_owner'
+  ) => Promise<GoogleSignInResult | void>;
+  /** Link an existing email/password account with Google */
+  linkGoogleAccount: (
+    email: string,
+    password: string,
+    pendingCredential?: AuthCredential | null
+  ) => Promise<void>;
+  /** Assign user role for a freshly authenticated Google user */
+  assignUserRole: (
+    role: 'job_seeker' | 'business_owner'
+  ) => Promise<User>;
   /** Send OTP to phone number – returns ConfirmationResult for verification */
   sendPhoneOTP: (
     phoneNumber: string,
@@ -88,6 +111,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 // ───────────────────────────── Provider ─────────────────────────────
 
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -197,34 +221,202 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   // ── Sign in with Google ───────────────────────────────────────
-  const signInWithGoogle = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
+  const signInWithGoogle = useCallback(
+    async (targetRole?: 'job_seeker' | 'business_owner'): Promise<GoogleSignInResult> => {
+      setError(null);
+      setLoading(true);
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        const fbUser = result.user;
 
-      // Seed Firestore doc if first-time Google sign-in
-      const existing = await getDoc(doc(db, 'users', fbUser.uid));
-      if (!existing.exists()) {
-        const newUserDoc: Record<string, any> = {
-          email: fbUser.email ?? '',
-          displayName: fbUser.displayName ?? '',
-          role: 'job_seeker',
-          isVerified: Boolean(fbUser.emailVerified),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-        if (fbUser.photoURL) newUserDoc.photoURL = fbUser.photoURL;
-        if (fbUser.phoneNumber) newUserDoc.phone = fbUser.phoneNumber;
+        // Check if user doc exists
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        const existingSnap = await getDoc(userDocRef);
 
-        await setDoc(doc(db, 'users', fbUser.uid), newUserDoc);
+        if (existingSnap.exists()) {
+          // Existing user - update login metadata only, preserve all roles and moderation states
+          const existingData = existingSnap.data() as User;
+          const updates: Record<string, any> = {
+            lastLoginAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            authProvider: 'google.com',
+          };
+          if (!existingData.photoURL && fbUser.photoURL) {
+            updates.photoURL = fbUser.photoURL;
+          }
+          if (!existingData.displayName && fbUser.displayName) {
+            updates.displayName = fbUser.displayName;
+          }
+
+          await setDoc(userDocRef, updates, { merge: true });
+
+          const fullProfile = {
+            ...existingData,
+            ...updates,
+            uid: fbUser.uid,
+          } as User;
+
+          setUser(fullProfile);
+          try {
+            localStorage.setItem('tj_cached_user', JSON.stringify(fullProfile));
+          } catch {}
+
+          return { isNewUser: false, user: fullProfile, needRoleSelection: false };
+        } else {
+          // Brand new user
+          // Determine target role: explicit argument > sessionStorage fallback > undefined
+          let resolvedRole = targetRole;
+          if (!resolvedRole && typeof window !== 'undefined') {
+            const cachedRole = sessionStorage.getItem('tj_reg_role');
+            if (cachedRole === 'job_seeker' || cachedRole === 'business_owner') {
+              resolvedRole = cachedRole as 'job_seeker' | 'business_owner';
+            }
+          }
+
+          if (!resolvedRole) {
+            // Role selection needed
+            return { isNewUser: true, user: null, needRoleSelection: true };
+          }
+
+          // Role is chosen: seed Firestore user profile with strict security safeguards
+          const isBusiness = resolvedRole === 'business_owner';
+          const newUserDoc: Record<string, any> = {
+            uid: fbUser.uid,
+            email: fbUser.email ?? '',
+            displayName: fbUser.displayName ?? '',
+            role: resolvedRole,
+            isVerified: true,
+            authProvider: 'google.com',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+          };
+
+          if (fbUser.photoURL) newUserDoc.photoURL = fbUser.photoURL;
+          if (fbUser.phoneNumber) newUserDoc.phone = fbUser.phoneNumber;
+
+          if (isBusiness) {
+            newUserDoc.approvalStatus = 'pending';
+            newUserDoc.accountStatus = 'pending_approval';
+            newUserDoc.paymentStatus = 'unpaid';
+            newUserDoc.isEmployer = true;
+            newUserDoc.canPostJobs = false;
+          } else {
+            newUserDoc.approvalStatus = 'approved';
+            newUserDoc.accountStatus = 'active';
+          }
+
+          await setDoc(userDocRef, newUserDoc);
+
+          const fullProfile = {
+            ...newUserDoc,
+            uid: fbUser.uid,
+          } as User;
+
+          setUser(fullProfile);
+          try {
+            localStorage.setItem('tj_cached_user', JSON.stringify(fullProfile));
+          } catch {}
+
+          return { isNewUser: true, user: fullProfile, needRoleSelection: false };
+        }
+      } catch (err: any) {
+        setLoading(false);
+        handleError(err, 'Failed to sign in with Google.');
+        throw err;
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setLoading(false);
-      handleError(err, 'Failed to sign in with Google.');
-    }
-  }, [handleError]);
+    },
+    [handleError],
+  );
+
+  // ── Assign role to newly registered user ──────────────────────
+  const assignUserRole = useCallback(
+    async (role: 'job_seeker' | 'business_owner'): Promise<User> => {
+      const currentFbUser = auth.currentUser || firebaseUser;
+      if (!currentFbUser) {
+        throw new Error('No authenticated user session found to assign role.');
+      }
+
+      setError(null);
+      setLoading(true);
+      try {
+        const res = await fetch('/api/auth/select-role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentFbUser.uid,
+            role,
+            email: currentFbUser.email,
+            displayName: currentFbUser.displayName,
+            photoURL: currentFbUser.photoURL,
+            phone: currentFbUser.phoneNumber,
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to assign role.');
+        }
+
+        const freshProfile = await fetchUserProfile(currentFbUser.uid);
+        if (freshProfile) {
+          setUser(freshProfile);
+          try {
+            localStorage.setItem('tj_cached_user', JSON.stringify(freshProfile));
+          } catch {}
+          return freshProfile;
+        }
+
+        throw new Error('User profile could not be loaded after role assignment.');
+      } catch (err: any) {
+        setLoading(false);
+        handleError(err, 'Failed to update user role.');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [firebaseUser, fetchUserProfile, handleError],
+  );
+
+  // ── Link existing email/password account with Google ──────────
+  const linkGoogleAccount = useCallback(
+    async (email: string, password: string, pendingCredential?: AuthCredential | null) => {
+      setError(null);
+      setLoading(true);
+      try {
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        if (pendingCredential) {
+          await linkWithCredential(userCred.user, pendingCredential);
+        }
+        await setDoc(
+          doc(db, 'users', userCred.user.uid),
+          {
+            authProvider: 'google.com',
+            updatedAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        const freshProfile = await fetchUserProfile(userCred.user.uid);
+        if (freshProfile) {
+          setUser(freshProfile);
+          try {
+            localStorage.setItem('tj_cached_user', JSON.stringify(freshProfile));
+          } catch {}
+        }
+      } catch (err: any) {
+        setLoading(false);
+        handleError(err, 'Failed to link Google account.');
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchUserProfile, handleError],
+  );
 
 
 
@@ -356,6 +548,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       error,
       signInWithEmail,
       signInWithGoogle,
+      assignUserRole,
+      linkGoogleAccount,
       sendPhoneOTP,
       verifyPhoneOTP,
       createAccount,
@@ -373,6 +567,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       error,
       signInWithEmail,
       signInWithGoogle,
+      assignUserRole,
+      linkGoogleAccount,
       sendPhoneOTP,
       verifyPhoneOTP,
       createAccount,

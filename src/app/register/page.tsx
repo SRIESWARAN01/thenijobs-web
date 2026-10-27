@@ -14,6 +14,7 @@ import { db } from '@/lib/firebase/config';
 import type { UserRole } from '@/lib/types';
 import AuthShell from '@/components/auth/AuthShell';
 import { useDocument } from '@/hooks/useFirestore';
+import { resolveAuthRedirect, getFriendlyAuthErrorMessage } from '@/lib/authRedirect';
 
 // Only TWO allowed public registration roles as per specification
 const PUBLIC_ROLES = [
@@ -106,14 +107,8 @@ function RegisterPageContent() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      const r = user.role;
-      if (r === 'admin' || r === 'super_admin') {
-        router.push('/admin/dashboard');
-      } else if (r === 'employer' || r === 'business_owner' || r === 'supplier' || r === 'service_provider') {
-        router.push('/employer/dashboard');
-      } else {
-        router.push('/seeker/dashboard');
-      }
+      const destination = resolveAuthRedirect(user);
+      router.push(destination);
     }
   }, [user, router]);
 
@@ -130,21 +125,19 @@ function RegisterPageContent() {
     } catch {}
   };
 
-  const handleGoogleRegister = async () => {
+  const handleGoogleRegister = async (overrideRole?: PublicRoleType) => {
+    const targetRole = overrideRole || role;
     setLoading(true);
     setLocalError(null);
     try {
-      await signInWithGoogle();
-      // On success, useEffect above will detect auth state and redirect appropriately
+      const res = await signInWithGoogle(targetRole);
+      if (res && typeof res === 'object' && res.user) {
+        const destination = resolveAuthRedirect(res.user);
+        router.push(destination);
+      }
     } catch (err: any) {
       console.error('Google register error:', err);
-      if (err?.code === 'auth/popup-closed-by-user') {
-        setLocalError('Registration cancelled. The Google popup was closed.');
-      } else if (err?.code === 'auth/unauthorized-domain') {
-        setLocalError('Domain not authorized in Firebase Console.');
-      } else {
-        setLocalError(err?.message || 'Google registration failed. Please try again.');
-      }
+      setLocalError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -347,12 +340,12 @@ function RegisterPageContent() {
                     ? 'bg-blue-600 text-white'
                     : s === step
                     ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                    : 'bg-gray-100 text-gray-400'
+                    : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 {s < step ? <Check size={14} className="stroke-[3]" /> : s}
               </div>
-              <span className={`text-xs font-semibold ${s === step ? 'text-gray-900' : 'text-gray-400'}`}>
+              <span className={`text-xs font-semibold ${s === step ? 'text-gray-900 font-bold' : 'text-slate-500'}`}>
                 {s === 1 ? 'Select Role' : 'Basic Details'}
               </span>
               {i < 1 && (
@@ -380,7 +373,7 @@ function RegisterPageContent() {
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>
                 I am a... 👋
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-600 font-normal">
                 Select your role for a personalised experience
               </p>
             </div>
@@ -418,14 +411,14 @@ function RegisterPageContent() {
                             {r.subLabel}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2 leading-relaxed font-normal">
+                        <p className="text-xs text-slate-700 mb-2 leading-relaxed font-normal">
                           {r.desc}
                         </p>
 
                         {/* Bullet supporting points */}
                         <div className="space-y-1">
                           {r.supportingPoints.map((point, idx) => (
-                            <div key={idx} className="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
+                            <div key={idx} className="flex items-center gap-1.5 text-[11px] text-slate-600 font-medium">
                               <Check size={12} className="text-emerald-600 shrink-0 stroke-[2.5]" />
                               <span>{point}</span>
                             </div>
@@ -445,6 +438,25 @@ function RegisterPageContent() {
                   </button>
                 );
               })}
+            </div>
+
+            {/* 1-Click Google Sign-up with Pre-selected Role */}
+            <div className="pt-4 space-y-2">
+              <div className="relative flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">or 1-click register</span>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleGoogleRegister(role)}
+                disabled={loading}
+                className="w-full py-3 rounded-2xl text-xs sm:text-sm font-semibold text-gray-800 bg-white border-2 border-gray-200 flex items-center justify-center gap-2.5 hover:border-blue-300 hover:bg-blue-50/30 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              >
+                <GoogleIcon size={18} />
+                <span>Continue with Google as {selectedRoleMeta.label}</span>
+              </button>
             </div>
           </div>
         )}
@@ -609,7 +621,7 @@ function RegisterPageContent() {
               {/* Google 1-Click Sign-in */}
               <button
                 type="button"
-                onClick={handleGoogleRegister}
+                onClick={() => handleGoogleRegister(role)}
                 disabled={loading}
                 className="w-full py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 bg-white border border-gray-200 flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-all shadow-2xs disabled:opacity-50"
               >

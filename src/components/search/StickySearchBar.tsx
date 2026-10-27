@@ -66,7 +66,7 @@ export default function StickySearchBar({
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              className="canonical-search-field flex-1 min-w-0 bg-transparent text-base sm:text-sm text-gray-900 placeholder-gray-400 outline-none"
+              className="canonical-search-field flex-1 min-w-0 bg-transparent text-base sm:text-sm text-gray-900 placeholder-slate-500 outline-none"
             />
             {searchValue && (
               <button
@@ -87,7 +87,7 @@ export default function StickySearchBar({
                 <select
                   value={location.value}
                   onChange={e => location.onChange(e.target.value)}
-                  className="canonical-search-field bg-transparent text-base sm:text-sm text-gray-700 outline-none pr-1 w-16 cursor-pointer"
+                  className="canonical-search-field bg-transparent text-base sm:text-sm text-slate-800 font-semibold outline-none pr-1 w-16 cursor-pointer"
                 >
                   {location.options.map(opt => (
                     <option key={opt}>{opt}</option>
@@ -103,10 +103,10 @@ export default function StickySearchBar({
         <button
           type="button"
           onClick={onFilterClick}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
             filterOpen || filterActiveCount > 0
-              ? 'bg-blue-50 border-blue-200 text-blue-600'
-              : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+              ? 'bg-blue-50 border-blue-300 text-blue-700'
+              : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
           }`}
         >
           <SlidersHorizontal size={15} />

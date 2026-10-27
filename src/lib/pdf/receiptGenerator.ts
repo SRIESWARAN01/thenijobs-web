@@ -47,10 +47,12 @@ function loadLogoAsBase64(): Promise<string | null> {
 
 export interface ReceiptData {
   receiptNo: string;
+  documentType?: 'invoice' | 'receipt' | 'bill' | 'quotation';
   paymentId?: string;
   orderId?: string;
   planName: string;
   planSlug?: string;
+  billingModel?: string;
   amount: number;
   startDate: string;
   expiryDate: string;
@@ -66,12 +68,14 @@ export interface ReceiptData {
   sloganText?: string;
   sloganLanguage?: 'ta' | 'en';
   sloganId?: string;
+  sloganCategory?: string;
   sloganCycle?: number;
 }
 
 /**
  * Ultra-crisp Canvas rasterizer for rendering Tamil and English slogans cleanly in PDF.
  * Ensures complex Tamil glyphs and typography render perfectly without missing characters.
+ * Supports smart multiline auto-wrapping so longer taglines never clip.
  */
 function renderSloganBadgeCanvas(
   slogan: string,
@@ -102,17 +106,47 @@ function renderSloganBadgeCanvas(
     ctx.fill();
     ctx.stroke();
 
-    // Slogan Text (Supports Tamil & English)
-    ctx.font = "italic 600 13px 'Mukta Malar', 'Noto Sans Tamil', 'Latha', 'Nirmala UI', system-ui, -apple-system, sans-serif";
+    // Slogan Text Font
+    ctx.font = "italic 600 12.5px 'Mukta Malar', 'Noto Sans Tamil', 'Latha', 'Nirmala UI', system-ui, -apple-system, sans-serif";
     ctx.fillStyle = '#1D4ED8'; // Blue-700
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`“${slogan}”`, widthPx / 2, heightPx / 2 - 7);
+
+    const fullText = `“${slogan}”`;
+    const maxTextWidth = widthPx - 28;
+
+    // Check if wrapping is needed
+    if (ctx.measureText(fullText).width <= maxTextWidth) {
+      ctx.fillText(fullText, widthPx / 2, heightPx / 2 - 7);
+    } else {
+      // Multiline text wrapping
+      const words = fullText.split(' ');
+      const lines: string[] = [];
+      let currentLine = words[0] || '';
+
+      for (let i = 1; i < words.length; i++) {
+        const testLine = `${currentLine} ${words[i]}`;
+        if (ctx.measureText(testLine).width <= maxTextWidth) {
+          currentLine = testLine;
+        } else {
+          lines.push(currentLine);
+          currentLine = words[i];
+        }
+      }
+      lines.push(currentLine);
+
+      if (lines.length === 2) {
+        ctx.fillText(lines[0], widthPx / 2, heightPx / 2 - 12);
+        ctx.fillText(lines[1], widthPx / 2, heightPx / 2 - 1);
+      } else {
+        ctx.fillText(fullText.slice(0, 65) + '...”', widthPx / 2, heightPx / 2 - 7);
+      }
+    }
 
     // Subtext
-    ctx.font = "500 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    ctx.font = "500 9.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
     ctx.fillStyle = '#475569'; // Slate-600
-    ctx.fillText('Thank you for choosing THENIJOBS.', widthPx / 2, heightPx / 2 + 8);
+    ctx.fillText('Thank you for choosing THENIJOBS.', widthPx / 2, heightPx / 2 + 9);
 
     return canvas.toDataURL('image/png');
   } catch (err) {
@@ -201,7 +235,15 @@ export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPD
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(12);
   pdf.setTextColor(15, 23, 42);
-  pdf.text('TAX INVOICE & RECEIPT', pageWidth - margin, y + 5, { align: 'right' });
+  const docTitle =
+    data.documentType === 'invoice'
+      ? 'TAX INVOICE'
+      : data.documentType === 'quotation'
+      ? 'QUOTATION / ESTIMATE'
+      : data.documentType === 'bill'
+      ? 'BILL OF SUPPLY'
+      : 'TAX INVOICE & RECEIPT';
+  pdf.text(docTitle, pageWidth - margin, y + 5, { align: 'right' });
 
   // Paid Pill Badge
   pdf.setFillColor(209, 250, 229); // Emerald-100

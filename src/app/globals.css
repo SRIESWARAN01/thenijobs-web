@@ -343,7 +343,7 @@ img, video, svg {
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', 'Inter', system-ui, sans-serif;
     font-weight: 700;
-    color: var(--vk-text);
+    color: inherit;
     line-height: 1.25;
   }
 
@@ -1478,13 +1478,41 @@ button[class*="text-gray-300"][class*="bg-white"] {
 /* 4. Form inputs — already handled by base layer rules above */
 
 /* 5. Dark themed sections (Hero, Dark Modals, Dark Cards) */
-.bg-slate-950, .bg-blue-950, .bg-indigo-950, .bg-gray-900 {
+.bg-slate-950, .bg-blue-950, .bg-indigo-950, .bg-gray-900,
+[class*="from-slate-9"], [class*="from-blue-9"], [class*="from-indigo-9"], [class*="from-gray-9"],
+[class*="bg-slate-9"], [class*="bg-blue-9"], [class*="bg-indigo-9"] {
   color: #F8FAFC;
 }
-.bg-slate-950 h1, .bg-slate-950 h2, .bg-slate-950 h3,
-.bg-blue-950 h1, .bg-blue-950 h2, .bg-blue-950 h3,
-.bg-indigo-950 h1, .bg-indigo-950 h2, .bg-indigo-950 h3 {
+
+.text-white h1:not([class*="text-transparent"]),
+.text-white h2:not([class*="text-transparent"]),
+.text-white h3:not([class*="text-transparent"]),
+.text-white h4:not([class*="text-transparent"]),
+.text-white h5:not([class*="text-transparent"]),
+.text-white h6:not([class*="text-transparent"]),
+.bg-slate-950 h1:not([class*="text-transparent"]),
+.bg-slate-950 h2:not([class*="text-transparent"]),
+.bg-slate-950 h3:not([class*="text-transparent"]),
+.bg-blue-950 h1:not([class*="text-transparent"]),
+.bg-blue-950 h2:not([class*="text-transparent"]),
+.bg-blue-950 h3:not([class*="text-transparent"]),
+.bg-indigo-950 h1:not([class*="text-transparent"]),
+.bg-indigo-950 h2:not([class*="text-transparent"]),
+.bg-indigo-950 h3:not([class*="text-transparent"]),
+[class*="from-slate-9"] h1:not([class*="text-transparent"]),
+[class*="from-slate-9"] h2:not([class*="text-transparent"]),
+[class*="from-slate-9"] h3:not([class*="text-transparent"]),
+[class*="from-blue-9"] h1:not([class*="text-transparent"]),
+[class*="from-blue-9"] h2:not([class*="text-transparent"]),
+[class*="from-blue-9"] h3:not([class*="text-transparent"]),
+[class*="from-indigo-9"] h1:not([class*="text-transparent"]),
+[class*="from-indigo-9"] h2:not([class*="text-transparent"]),
+[class*="from-indigo-9"] h3:not([class*="text-transparent"]),
+[class*="bg-slate-9"] h1:not([class*="text-transparent"]),
+[class*="bg-blue-9"] h1:not([class*="text-transparent"]),
+[class*="bg-indigo-9"] h1:not([class*="text-transparent"]) {
   color: #FFFFFF !important;
 }
+
 
 

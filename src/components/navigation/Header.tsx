@@ -156,7 +156,7 @@ export default function Header() {
                   key={link.href}
                   href={link.href}
                   className={`group relative whitespace-nowrap py-1.5 text-xs xl:text-sm font-semibold transition-colors ${
-                    active ? 'text-blue-600' : 'text-slate-600 hover:text-blue-600'
+                    active ? 'text-blue-700 font-bold' : 'text-slate-700 hover:text-blue-700'
                   }`}
                 >
                   {link.label}

@@ -10,7 +10,7 @@ import {
   Plus, TrendingUp, Settings, Key, BadgeCheck,
   Clock, AlertTriangle, CheckCircle, CheckCircle2, ShieldAlert,
   PhoneCall, Check, Zap, ArrowRight, MessageCircle,
-  Loader2, RefreshCw, AlertCircle, XCircle,
+  Loader2, RefreshCw, AlertCircle, XCircle, Printer,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +42,7 @@ const EMPLOYER_NAV = [
   // without a nav link the new /employer/ai page would be unreachable by any real user.
   { label: 'AI Key Connection', icon: Key, href: '/employer/ai' },
   { label: 'Digital ID Card', icon: CreditCard, href: '/employer/id-card' },
+  { label: 'Table-Top Standee (PDF)', icon: Printer, href: '/employer/standee' },
   { label: 'Settings', icon: Settings, href: '/employer/settings' },
 ];
 

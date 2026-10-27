@@ -60,6 +60,8 @@ export interface User {
   mobileNumber?: string;
   countryCode?: string;
   role: UserRole;
+  authProvider?: string;
+  authMethod?: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
   adminRole?: AdminRole;
   employerRole?: EmployerRole;
@@ -408,6 +410,10 @@ export interface Job {
   isPremium: boolean;
   isFeatured: boolean;
   isUrgent: boolean;
+  urgentUntil?: any;
+  urgentPurchasedAt?: any;
+  urgentFeePaid?: number;
+  urgentPaymentId?: string;
   applicationCount: number;
   viewCount: number;
   postedBy: string;

@@ -17,12 +17,14 @@ import { useToast } from '@/contexts/ToastContext';
 import AuthShell from '@/components/auth/AuthShell';
 import { SUBSCRIPTION_PLANS, SITE_CONTACT } from '@/lib/constants';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
+import { GoogleIcon } from '@/components/ui/BrandIcons';
+import { getFriendlyAuthErrorMessage } from '@/lib/authRedirect';
 
 export default function RegisterBusinessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
-  const { user, refreshUserProfile, loading: authLoading } = useAuth() as any;
+  const { user, refreshUserProfile, signInWithGoogle, loading: authLoading } = useAuth() as any;
 
   // Step state: auto-detect from query param or user state
   const stepParam = searchParams.get('step');
@@ -193,6 +195,23 @@ export default function RegisterBusinessPage() {
       } else {
         setError(err?.message || 'Registration failed. Please check your connection and try again.');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google 1-Click Business Registration
+  const handleGoogleBusinessRegister = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await signInWithGoogle('business_owner');
+      await refreshUserProfile?.();
+      toast.success('Account created with Google! Please choose your plan or start free trial.');
+      setForcePlanStep(true);
+    } catch (err: any) {
+      console.error('Google business register error:', err);
+      setError(getFriendlyAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -947,6 +966,24 @@ export default function RegisterBusinessPage() {
               <ArrowRight size={16} />
             </>
           )}
+        </button>
+
+        {/* Divider */}
+        <div className="relative flex items-center gap-3 pt-1">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 font-medium">or</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        {/* Google 1-Click Business Registration */}
+        <button
+          type="button"
+          onClick={handleGoogleBusinessRegister}
+          disabled={loading}
+          className="w-full py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-gray-700 bg-white border border-gray-200 flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-all shadow-2xs disabled:opacity-50 cursor-pointer"
+        >
+          <GoogleIcon size={18} />
+          <span>Continue with Google as Business Owner</span>
         </button>
 
         {/* Sign in redirect */}

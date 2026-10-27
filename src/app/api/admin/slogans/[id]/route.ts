@@ -4,7 +4,7 @@ import { verifyAdminAuth } from '@/lib/api/adminAuth';
 
 /**
  * PUT /api/admin/slogans/[id]
- * Updates slogan fields: text, language, category, isActive.
+ * Updates slogan fields: text, language, category, billingModel, isActive, isDefault.
  * SECURITY: Requires admin authentication.
  */
 export async function PUT(
@@ -29,7 +29,9 @@ export async function PUT(
     if (typeof body.text === 'string' && body.text.trim()) updates.text = body.text.trim();
     if (body.language === 'ta' || body.language === 'en') updates.language = body.language;
     if (typeof body.category === 'string') updates.category = body.category;
+    if (body.billingModel !== undefined) updates.billingModel = body.billingModel || null;
     if (typeof body.isActive === 'boolean') updates.isActive = body.isActive;
+    if (typeof body.isDefault === 'boolean') updates.isDefault = body.isDefault;
     updates.updatedAt = new Date().toISOString();
 
     await docRef.update(updates);

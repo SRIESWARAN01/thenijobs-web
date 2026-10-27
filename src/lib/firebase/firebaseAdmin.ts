@@ -4,19 +4,65 @@ import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 let adminApp: App | null = null;
+let clockSkewSyncPromise: Promise<number> | null = null;
+
+/**
+ * In development or environments where the local machine clock may be desynchronized
+ * from Google servers, this adjusts Date.now() by the detected offset to prevent
+ * "16 UNAUTHENTICATED: Request had invalid authentication credentials" OAuth JWT rejections.
+ */
+export async function syncClockSkew(): Promise<number> {
+  if (clockSkewSyncPromise) return clockSkewSyncPromise;
+  clockSkewSyncPromise = (async () => {
+    try {
+      const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
+      const dateHeader = res.headers.get('date');
+      if (dateHeader) {
+        const serverTime = new Date(dateHeader).getTime();
+        const skew = Date.now() - serverTime;
+        if (Math.abs(skew) > 60_000) {
+          console.warn(`[firebaseAdmin] Compensating for system clock skew (${Math.round(skew / 1000)}s offset from Google servers)...`);
+          const originalNow = Date.now;
+          Date.now = () => originalNow() - skew;
+        }
+        return skew;
+      }
+    } catch {
+      // Ignore network errors during skew check; proceed with system clock
+    }
+    return 0;
+  })();
+  return clockSkewSyncPromise;
+}
 
 export function getServiceAccountCredentials(): Record<string, any> | null {
   // 1. Single env var JSON string (Vercel standard)
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (raw) {
     try {
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      let str = typeof raw === 'string' ? raw.trim() : raw;
+      // Strip outer quotes if enclosed in single or double quotes
+      if (typeof str === 'string' && ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"')))) {
+        str = str.slice(1, -1).trim();
+      }
+      // Decode Base64 if not starting with JSON bracket
+      if (typeof str === 'string' && !str.startsWith('{')) {
+        try {
+          const decoded = Buffer.from(str, 'base64').toString('utf8').trim();
+          if (decoded.startsWith('{')) {
+            str = decoded;
+          }
+        } catch {
+          // not base64
+        }
+      }
+      const parsed = typeof str === 'string' ? JSON.parse(str) : str;
       if (parsed.private_key && typeof parsed.private_key === 'string') {
         parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
       }
       return parsed;
     } catch (e) {
-      console.error('[firebaseAdmin] FIREBASE_SERVICE_ACCOUNT_KEY is set but is not valid JSON:', e);
+      console.error('[firebaseAdmin] FIREBASE_SERVICE_ACCOUNT_KEY is set but is not valid JSON:', (e as any)?.message);
     }
   }
 
@@ -40,8 +86,8 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
       }
       return parsed;
     }
-  } catch (err) {
-    console.warn('[firebaseAdmin] Could not read local serviceAccountKey.json:', err);
+  } catch (err: any) {
+    console.warn('[firebaseAdmin] Could not read local serviceAccountKey.json:', err?.message || err);
   }
 
   return null;
@@ -54,6 +100,11 @@ function getAdminApp(): App {
   if (existing.length > 0) {
     adminApp = existing[0];
     return adminApp;
+  }
+
+  // Proactively trigger non-blocking clock skew check in node environment
+  if (typeof fetch === 'function') {
+    void syncClockSkew();
   }
 
   const credentials = getServiceAccountCredentials();
@@ -80,4 +131,5 @@ function getAdminApp(): App {
 export function getAdminFirestore(): Firestore {
   return getFirestore(getAdminApp());
 }
+
 

@@ -2,13 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getAuth, type Auth } from 'firebase-admin/auth';
 
 let adminApp: App | null = null;
 let clockSkewSyncPromise: Promise<number> | null = null;
 
 /**
  * In development or environments where the local machine clock may be desynchronized
- * from Google servers, this adjusts Date.now() by the detected offset to prevent
+ * from Google servers, this adjusts Date.now() and global Date by the detected offset to prevent
  * "16 UNAUTHENTICATED: Request had invalid authentication credentials" OAuth JWT rejections.
  */
 export async function syncClockSkew(): Promise<number> {
@@ -22,8 +23,24 @@ export async function syncClockSkew(): Promise<number> {
         const skew = Date.now() - serverTime;
         if (Math.abs(skew) > 60_000) {
           console.warn(`[firebaseAdmin] Compensating for system clock skew (${Math.round(skew / 1000)}s offset from Google servers)...`);
-          const originalNow = Date.now;
+          const OriginalDate = Date;
+          const originalNow = OriginalDate.now.bind(OriginalDate);
           Date.now = () => originalNow() - skew;
+
+          const PatchedDate = function(this: any, ...args: any[]) {
+            if (!(this instanceof PatchedDate)) {
+              return new (OriginalDate as any)(Date.now()).toString();
+            }
+            if (args.length === 0) {
+              return new (OriginalDate as any)(Date.now());
+            }
+            return new (OriginalDate as any)(...args);
+          } as any;
+          PatchedDate.prototype = OriginalDate.prototype;
+          PatchedDate.now = () => originalNow() - skew;
+          PatchedDate.UTC = OriginalDate.UTC;
+          PatchedDate.parse = OriginalDate.parse;
+          global.Date = PatchedDate;
         }
         return skew;
       }
@@ -77,14 +94,21 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
 
   // 3. Local serviceAccountKey.json (Development environment)
   try {
-    const localKeyPath = path.join(process.cwd(), 'serviceAccountKey.json');
-    if (fs.existsSync(localKeyPath)) {
-      const fileContent = fs.readFileSync(localKeyPath, 'utf8');
-      const parsed = JSON.parse(fileContent);
-      if (parsed.private_key && typeof parsed.private_key === 'string') {
-        parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    const candidatePaths = [
+      path.join(process.cwd(), 'serviceAccountKey.json'),
+      path.join(process.cwd(), 'thenijobs-web-main', 'serviceAccountKey.json'),
+      path.resolve(__dirname, '../../../serviceAccountKey.json'),
+      path.resolve(__dirname, '../../../../serviceAccountKey.json'),
+    ];
+    for (const localKeyPath of candidatePaths) {
+      if (fs.existsSync(localKeyPath)) {
+        const fileContent = fs.readFileSync(localKeyPath, 'utf8');
+        const parsed = JSON.parse(fileContent);
+        if (parsed.private_key && typeof parsed.private_key === 'string') {
+          parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+        }
+        return parsed;
       }
-      return parsed;
     }
   } catch (err: any) {
     console.warn('[firebaseAdmin] Could not read local serviceAccountKey.json:', err?.message || err);
@@ -93,7 +117,7 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
   return null;
 }
 
-function getAdminApp(): App {
+export function getAdminApp(): App {
   if (adminApp) return adminApp;
 
   const existing = getApps();
@@ -130,6 +154,13 @@ function getAdminApp(): App {
  */
 export function getAdminFirestore(): Firestore {
   return getFirestore(getAdminApp());
+}
+
+/**
+ * Returns the Firebase Admin Auth instance.
+ */
+export function getAdminAuth(): Auth {
+  return getAuth(getAdminApp());
 }
 
 

@@ -21,6 +21,21 @@ export const SITE_CONTACT = {
   location: 'Theni, Tamil Nadu, India',
 };
 
+// ===== DESIGNATED RETAINED ADMIN & PRODUCTION COMPANIES =====
+export const DESIGNATED_RETAINED_ADMIN_UID = 'xNM3lkvzQ5fcgVVZirlC6kkyoSE2';
+export const DESIGNATED_RETAINED_ADMIN_EMAIL = 'srieswaran22@gmail.com';
+
+export const RETAINED_PRODUCTION_COMPANIES = [
+  { id: 'vMQgOwNd2fZ4Nm8870Dw', name: 'AGS IT Solutions' },
+  { id: 'ik3pWBDVVUR3Sb51knwK', name: 'Agrimore' },
+  { id: '7K95afmwXMddFJo8PeRB', name: 'M K Security Solutions & Electronics' },
+  { id: 'VG1PwPzKXofu1fLxLIpk', name: 'SVR Heritage Hall' },
+  { id: 'SDv5CaYdxKRWOXl4ej84', name: 'Chennai Bakes' },
+  { id: 'mWWNVrCGounWsmXdaRGL', name: 'Sarvesh Super Market' },
+  { id: 'oKDQpFZ3bx9C4S0Z0ti9', name: 'Apex Scholar Publication' },
+  { id: 'u9sYSAG9YoGrept1FbSe', name: 'Suruliraj Chemicals' },
+] as const;
+
 // ===== SEEKER PUBLIC PROFILE FEE (SEEKERPRIVACY-1) =====
 // A one-year fee to make a job seeker's portfolio publicly viewable at
 // /portfolio/seeker/[id] -- distinct from SUBSCRIPTION_PLANS (those are

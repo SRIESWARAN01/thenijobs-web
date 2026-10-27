@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Building2, Briefcase, BarChart3, CreditCard, Shield, Settings, Bell,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Star,
   TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet, Award,
-  BadgeCheck, FileText, GraduationCap
+  BadgeCheck, FileText, GraduationCap, Database
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -37,6 +37,7 @@ const ADMIN_NAV = [
   { label: 'Notifications', icon: Bell, href: '/admin/notifications' },
   { label: 'AI Settings', icon: Sparkles, href: '/admin/ai-settings' },
   { label: 'Security', icon: Shield, href: '/admin/security' },
+  { label: 'Database Cleanup', icon: Database, href: '/admin/database-cleanup' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];
 

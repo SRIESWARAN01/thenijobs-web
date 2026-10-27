@@ -913,6 +913,15 @@ export default function MarketplaceItemPageClient({
         </div>
       )}
 
+      {/* Promotional Poster Studio Modal */}
+      {showPosterModal && itemPosterData && (
+        <PosterStudioModal
+          isOpen={showPosterModal}
+          onClose={() => setShowPosterModal(false)}
+          data={itemPosterData}
+        />
+      )}
+
       <BottomNav />
     </main>
   );

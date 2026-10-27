@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import {
   X, Copy, Check, Share2, MessageCircle, QrCode,
-  ExternalLink, Sparkles
+  ExternalLink, Sparkles, Smartphone
 } from 'lucide-react';
+import WhatsAppStatusGeneratorModal from '@/components/jobs/WhatsAppStatusGeneratorModal';
 
 const FacebookIcon = ({ size = 15, className = '' }: { size?: number; className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -42,6 +43,7 @@ export default function JobShareModal({ isOpen, onClose, onOpenPosters, job }: J
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [showQR, setShowQR] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   if (!isOpen) return null;
 
@@ -179,6 +181,28 @@ export default function JobShareModal({ isOpen, onClose, onOpenPosters, job }: J
             </button>
           )}
 
+          {/* 1-Tap 9:16 WhatsApp Status & Story Generator */}
+          <button
+            onClick={() => setShowStatusModal(true)}
+            disabled={!!isPendingOrClosed}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-emerald-300 bg-emerald-50/80 hover:bg-emerald-100/90 transition-all text-left group shadow-xs disabled:opacity-40"
+          >
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center flex-shrink-0 text-white shadow-xs group-hover:scale-105 transition-transform">
+              <Smartphone size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-black text-emerald-950 flex items-center gap-1.5">
+                📱 WhatsApp Status Poster (9:16)
+                <span className="bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                  1-Tap Viral
+                </span>
+              </p>
+              <p className="text-[10px] text-emerald-800 font-medium">
+                &quot;ஆட்கள் தேவை&quot;, சம்பளம், இடம், QR Code உடன் உடனடி ஸ்டேட்டஸ் கார்டு (1080×1920)
+              </p>
+            </div>
+          </button>
+
           {/* WhatsApp */}
           <button
             onClick={handleWhatsApp}
@@ -267,6 +291,15 @@ export default function JobShareModal({ isOpen, onClose, onOpenPosters, job }: J
           </div>
         )}
       </div>
+
+      {/* 9:16 WhatsApp Status & Story Generator Modal */}
+      {showStatusModal && (
+        <WhatsAppStatusGeneratorModal
+          isOpen={showStatusModal}
+          onClose={() => setShowStatusModal(false)}
+          job={job}
+        />
+      )}
     </div>
   );
 }

@@ -354,14 +354,23 @@ export default function PosterStudioModal({ isOpen, onClose, data }: PosterStudi
                           #{idx + 1} {poster.templateName}
                         </span>
                       </div>
-                      <span className="text-[10px] font-semibold text-slate-500 bg-white px-1.5 py-0.5 rounded border border-gray-200">
-                        {poster.templateNameTa}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {poster.templateId === 'social_story' && (
+                          <span className="text-[9px] font-black text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">
+                            9:16 Status
+                          </span>
+                        )}
+                        <span className="text-[10px] font-semibold text-slate-500 bg-white px-1.5 py-0.5 rounded border border-gray-200">
+                          {poster.templateNameTa}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Poster Thumbnail Image with Hover Preview Action */}
                     <div
-                      className="relative bg-slate-900 cursor-pointer overflow-hidden aspect-[4/5] flex items-center justify-center"
+                      className={`relative bg-slate-900 cursor-pointer overflow-hidden flex items-center justify-center ${
+                        poster.templateId === 'social_story' ? 'aspect-[9/16]' : 'aspect-[4/5]'
+                      }`}
                       onClick={() => setPreviewPoster(poster)}
                     >
                       <img
@@ -391,14 +400,18 @@ export default function PosterStudioModal({ isOpen, onClose, data }: PosterStudi
                       <button
                         onClick={() => handleWhatsApp(poster, idx + 1)}
                         disabled={isSharingThis}
-                        className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all tap-target-auto"
+                        className={`w-full py-2 px-3 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all tap-target-auto ${
+                          poster.templateId === 'social_story'
+                            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 ring-2 ring-emerald-400/40'
+                            : 'bg-emerald-600 hover:bg-emerald-700'
+                        }`}
                       >
                         {isSharingThis ? (
                           <Loader2 size={14} className="animate-spin" />
                         ) : (
                           <MessageCircle size={14} />
                         )}
-                        <span>Share on WhatsApp</span>
+                        <span>{poster.templateId === 'social_story' ? '📱 Set WhatsApp Status' : 'Share on WhatsApp'}</span>
                       </button>
 
                       {/* Export buttons row */}

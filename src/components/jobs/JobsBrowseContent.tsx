@@ -24,6 +24,7 @@ import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import WhatsAppStatusButton from '@/components/jobs/WhatsAppStatusButton';
 import { isJobUrgent } from '@/lib/constants';
 
 /* ─── Types ─── */
@@ -302,6 +303,7 @@ function JobCard({ job, selected, onSelect, onSave, saved }: {
           <span>{job.posted}</span>
         </div>
         <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+          <WhatsAppStatusButton job={job} variant="compact" />
           <button
             onClick={() => onSave()}
             className={`p-2 rounded-xl transition-all cursor-pointer ${saved ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'}`}

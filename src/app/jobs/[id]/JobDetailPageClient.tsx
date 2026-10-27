@@ -21,6 +21,7 @@ import { useToast } from '@/contexts/ToastContext';
 import JobApplySuccessModal from '@/components/ui/JobApplySuccessModal';
 import { slugify } from '@/lib/seo/jobSlug';
 import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import WhatsAppStatusButton from '@/components/jobs/WhatsAppStatusButton';
 import { isJobUrgent } from '@/lib/constants';
 
 interface JobRecord {
@@ -743,7 +744,10 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      {/* 1-Tap 9:16 WhatsApp Status Generator */}
+                      <WhatsAppStatusButton job={job} variant="compact" />
+
                       <button
                         onClick={handleToggleSave}
                         className={`p-2.5 rounded-xl border transition-all ${

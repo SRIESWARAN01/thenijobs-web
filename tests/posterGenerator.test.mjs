@@ -4,7 +4,11 @@ import QRCode from 'qrcode';
 import JSZip from 'jszip';
 import { POSTER_TEMPLATES, getTemplateById } from '../src/lib/poster/posterTemplates.ts';
 import { CATEGORY_THEMES, getCategoryTheme } from '../src/lib/poster/categoryThemes.ts';
-import { formatWhatsAppShareText } from '../src/lib/poster/posterShareService.ts';
+import {
+  formatWhatsAppShareText,
+  formatWhatsAppStatusShareText,
+  normalizeJobToPosterData
+} from '../src/lib/poster/posterShareService.ts';
 
 describe('THENIJOBS AI Job Poster Generator — Test Suite', () => {
 
@@ -215,6 +219,68 @@ describe('THENIJOBS AI Job Poster Generator — Test Suite', () => {
     };
     assert.strictEqual(servicePoster.type, 'service');
     assert.ok(servicePoster.publicUrl.includes('/marketplace/service/'));
+  });
+
+  test('10. 9:16 WhatsApp Status & Instagram Story Poster Format & Dimensions', () => {
+    const storyTemplate = getTemplateById('social_story');
+    assert.ok(storyTemplate, 'Social story template must exist');
+    assert.strictEqual(storyTemplate.id, 'social_story');
+    assert.strictEqual(storyTemplate.aspectRatio, '9:16', 'Must be vertical 9:16 aspect ratio');
+    assert.strictEqual(storyTemplate.width, 1080, 'Must have 1080px width');
+    assert.strictEqual(storyTemplate.height, 1920, 'Must have 1920px height');
+    assert.strictEqual(storyTemplate.nameTa, 'வாட்ஸ்அப் ஸ்டேட்டஸ் போஸ்டர் (9:16)', 'Must have Tamil title');
+    assert.ok(storyTemplate.tagline.includes('ஆட்கள் தேவை'), 'Tagline must highlight "ஆட்கள் தேவை"');
+  });
+
+  test('11. WhatsApp Status Share Text: High-Contrast Tamil Headlines & Theni Virality', () => {
+    const jobData = {
+      id: 'nurse_periyakulam',
+      type: 'job',
+      title: 'Staff Nurse (ICU)',
+      companyName: 'Theni Multi-Speciality Hospital',
+      location: 'Periyakulam, Theni',
+      district: 'Theni District',
+      salaryText: '₹22,000 - ₹28,000 / மாதம்',
+      contactPhone: '93605 19460',
+      education: 'B.Sc Nursing / GNM',
+      jobType: 'full_time',
+      publicUrl: 'https://www.thenijobs.com/jobs/staff-nurse-icu-theni-hospital-periyakulam',
+    };
+
+    const statusText = formatWhatsAppStatusShareText(jobData);
+    assert.ok(statusText.includes('🔥 *ஆட்கள் தேவை • WE ARE HIRING!*'), 'Must contain "ஆட்கள் தேவை" headline');
+    assert.ok(statusText.includes('Staff Nurse (ICU)'), 'Must contain job title');
+    assert.ok(statusText.includes('Theni Multi-Speciality Hospital'), 'Must contain company');
+    assert.ok(statusText.includes('₹22,000 - ₹28,000 / மாதம்'), 'Must contain salary');
+    assert.ok(statusText.includes('Periyakulam, Theni'), 'Must contain location');
+    assert.ok(statusText.includes('93605 19460'), 'Must contain contact phone');
+    assert.ok(statusText.includes('B.Sc Nursing / GNM'), 'Must contain education');
+    assert.ok(statusText.includes('THENIJOBS.IN'), 'Must contain THENIJOBS brand citation');
+    assert.ok(statusText.includes('உங்கள் வாட்ஸ்அப் ஸ்டேட்டஸில் வைத்து நண்பர்களுக்கும் பகிருங்கள்'), 'Must have viral status prompt');
+  });
+
+  test('12. Job Normalization for 1-Tap 9:16 WhatsApp Story Card Generation', () => {
+    const rawJob = {
+      id: 'job_456',
+      slug: 'cashier-retail-mart-theni',
+      title: 'Supermarket Cashier',
+      companyName: 'Theni Mega Mart',
+      salaryMin: 14000,
+      salaryMax: 18000,
+      salaryType: 'மாதம்',
+      location: 'Theni Main Bazaar',
+      whatsapp: '9876543210',
+      education: '12th Pass / Any Degree',
+    };
+
+    const normalized = normalizeJobToPosterData(rawJob);
+    assert.strictEqual(normalized.id, 'job_456');
+    assert.strictEqual(normalized.title, 'Supermarket Cashier');
+    assert.strictEqual(normalized.companyName, 'Theni Mega Mart');
+    assert.strictEqual(normalized.salaryText, '₹14,000 - ₹18,000/மாதம்');
+    assert.strictEqual(normalized.contactPhone, '9876543210');
+    assert.strictEqual(normalized.publicUrl, 'https://www.thenijobs.com/jobs/cashier-retail-mart-theni');
+    assert.strictEqual(normalized.education, '12th Pass / Any Degree');
   });
 
 });

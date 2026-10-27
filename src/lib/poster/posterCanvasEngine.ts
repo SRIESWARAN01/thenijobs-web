@@ -1059,92 +1059,196 @@ async function renderGeometricAgency(ctx: CanvasRenderingContext2D, data: Poster
 
 /**
  * 9. MOBILE SOCIAL STORY TEMPLATE (9:16 - 1080x1920)
+ * Optimized for WhatsApp Status & Instagram Stories with high-contrast Tamil headlines,
+ * salary, location, contact phone, and prominent QR code for organic virality across Theni.
  */
 async function renderSocialStory(ctx: CanvasRenderingContext2D, data: PosterData, qrImg: HTMLImageElement, w: number, h: number) {
-  // Midnight Gradient Background
+  // Midnight Obsidian Gradient Background
   const bg = ctx.createLinearGradient(0, 0, 0, h);
-  bg.addColorStop(0, '#0B0F19');
-  bg.addColorStop(0.5, '#111827');
-  bg.addColorStop(1, '#0F172A');
+  bg.addColorStop(0, '#070B14');
+  bg.addColorStop(0.3, '#0B1120');
+  bg.addColorStop(0.7, '#0F172A');
+  bg.addColorStop(1, '#030712');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, w, h);
 
-  // Top Glow Ring
-  const ring = ctx.createRadialGradient(w / 2, 250, 10, w / 2, 250, 400);
-  ring.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
-  ring.addColorStop(1, 'rgba(11, 15, 25, 0)');
-  ctx.fillStyle = ring;
-  ctx.fillRect(0, 0, w, 500);
+  // Top Dynamic Radial Glow (Tech Blue & Emerald)
+  const glow = ctx.createRadialGradient(w / 2, 220, 20, w / 2, 220, 480);
+  glow.addColorStop(0, 'rgba(37, 99, 235, 0.40)');
+  glow.addColorStop(0.5, 'rgba(16, 185, 129, 0.15)');
+  glow.addColorStop(1, 'rgba(7, 11, 20, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, 520);
 
-  // Company Pill
-  ctx.fillStyle = '#1E293B';
-  roundRect(ctx, 80, 120, w - 160, 90, 45, true, false);
+  // 1. TOP HIGH-CONTRAST TAMIL HEADLINE BANNER: "ஆட்கள் தேவை"
+  const bannerY = 80;
+  const bannerH = 76;
+  const bannerW = w - 160;
+  const bannerGradient = ctx.createLinearGradient(80, bannerY, 80 + bannerW, bannerY);
+  bannerGradient.addColorStop(0, '#DC2626'); // Red 600
+  bannerGradient.addColorStop(0.5, '#EF4444'); // Red 500
+  bannerGradient.addColorStop(1, '#B91C1C'); // Red 700
+  ctx.fillStyle = bannerGradient;
+  roundRect(ctx, 80, bannerY, bannerW, bannerH, 38, true, false);
 
-  await drawLogo(ctx, data, 100, 130, 70, '#2563EB', '#FFFFFF');
+  // Gold stroke accent around banner
+  ctx.strokeStyle = '#F59E0B';
+  ctx.lineWidth = 3;
+  roundRect(ctx, 80, bannerY, bannerW, bannerH, 38, false, true);
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = "bold 28px 'Inter', sans-serif";
-  ctx.fillText(data.companyName, 195, 175);
-
-  // Big Story Headline
-  ctx.fillStyle = '#38BDF8';
-  ctx.font = "bold 26px 'Inter', sans-serif";
+  ctx.font = "bold 34px 'Noto Sans Tamil', 'Inter', -apple-system, sans-serif";
   ctx.textAlign = 'center';
-  ctx.fillText('🚀 WE ARE HIRING!', w / 2, 310);
+  ctx.fillText('🔥 ஆட்கள் தேவை • WE ARE HIRING!', w / 2, bannerY + 49);
+
+  // 2. COMPANY IDENTITY PILL
+  const compY = 180;
+  const compH = 92;
+  ctx.fillStyle = '#1E293B';
+  roundRect(ctx, 80, compY, w - 160, compH, 24, true, false);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, 80, compY, w - 160, compH, 24, false, true);
+
+  await drawLogo(ctx, data, 100, compY + 11, 70, '#2563EB', '#FFFFFF');
 
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = "bold 56px 'Inter', sans-serif";
-  drawWrappedText(ctx, data.title, w / 2, 385, w - 200, 68, 3);
+  ctx.font = "bold 30px 'Noto Sans Tamil', 'Inter', sans-serif";
+  ctx.textAlign = 'left';
+  ctx.fillText(data.companyName, 190, compY + 45);
 
-  // Highlight Cards
+  ctx.fillStyle = '#94A3B8';
+  ctx.font = "bold 17px 'Noto Sans Tamil', 'Inter', sans-serif";
+  const compLocation = data.location || data.district || 'தேனி மாவட்டம் (Theni)';
+  ctx.fillText(`📍 ${compLocation} • சரிபார்க்கப்பட்ட நிறுவனம் (Verified)`, 190, compY + 74);
+
+  // 3. JOB TITLE HEADLINE (High Contrast)
+  ctx.fillStyle = '#38BDF8';
+  ctx.font = "bold 22px 'Noto Sans Tamil', 'Inter', sans-serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('📢 வேலைவாய்ப்பு அறிவிப்பு / CAREER VACANCY', w / 2, 318);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = "bold 52px 'Noto Sans Tamil', 'Inter', sans-serif";
+  drawWrappedText(ctx, data.title, w / 2, 380, w - 200, 64, 2);
+
+  // 4. FOUR HIGH-CONTRAST VALUE CARDS ("ஆட்கள் தேவை", Salary, Location, Contact Phone)
   const cards = [
-    { icon: '📍', label: 'LOCATION', val: data.location || 'Theni District' },
-    { icon: '💰', label: 'SALARY', val: data.salaryText || 'Best in Industry' },
-    { icon: '🎓', label: 'ELIGIBILITY', val: data.education || 'Diploma / Degree / Any' },
-    { icon: '⚡', label: 'JOINING', val: 'Immediate Joining' }
+    {
+      icon: '💰',
+      labelTa: 'மாத சம்பளம் / SALARY',
+      val: data.salaryText || 'தகுதிக்கேற்ப சிறந்த சம்பளம் (Attractive)',
+      bg: '#13211B',
+      border: 'rgba(74, 222, 128, 0.4)',
+      valColor: '#4ADE80',
+    },
+    {
+      icon: '📍',
+      labelTa: 'பணி இடம் / LOCATION',
+      val: data.location || data.district || 'தேனி மாவட்டம் (Theni District)',
+      bg: '#1E293B',
+      border: 'rgba(255, 255, 255, 0.12)',
+      valColor: '#F8FAFC',
+    },
+    {
+      icon: '📞',
+      labelTa: 'தொடர்புக்கு / CONTACT PHONE',
+      val: data.contactPhone ? `அழைக்கவும்: ${data.contactPhone}` : 'ஆன்லைன் விண்ணப்பம் (Apply Online)',
+      bg: '#252012',
+      border: 'rgba(250, 204, 21, 0.45)',
+      valColor: '#FACC15',
+    },
+    {
+      icon: '🎓',
+      labelTa: 'கல்வித்தகுதி / QUALIFICATION',
+      val: data.education || '10th / 12th / ITI / Diploma / Any Degree',
+      bg: '#1E293B',
+      border: 'rgba(255, 255, 255, 0.12)',
+      valColor: '#E2E8F0',
+    },
   ];
 
+  const cardsStartY = 505;
+  const cardH = 108;
+  const cardGap = 16;
+
   cards.forEach((c, idx) => {
-    const cy = 600 + idx * 115;
-    ctx.fillStyle = '#1E293B';
-    roundRect(ctx, 80, cy, w - 160, 95, 20, true, false);
+    const cy = cardsStartY + idx * (cardH + cardGap);
+    ctx.fillStyle = c.bg;
+    roundRect(ctx, 80, cy, w - 160, cardH, 20, true, false);
+
+    ctx.strokeStyle = c.border;
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, 80, cy, w - 160, cardH, 20, false, true);
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = "32px 'Inter', sans-serif";
+    ctx.font = "38px 'Noto Sans Tamil', 'Inter', sans-serif";
     ctx.textAlign = 'left';
-    ctx.fillText(c.icon, 115, cy + 58);
+    ctx.fillText(c.icon, 110, cy + 66);
 
     ctx.fillStyle = '#94A3B8';
-    ctx.font = "bold 15px 'Inter', sans-serif";
-    ctx.fillText(c.label, 175, cy + 42);
+    ctx.font = "bold 15px 'Noto Sans Tamil', 'Inter', sans-serif";
+    ctx.fillText(c.labelTa, 175, cy + 42);
 
-    ctx.fillStyle = '#F8FAFC';
-    ctx.font = "bold 24px 'Inter', sans-serif";
-    ctx.fillText(c.val, 175, cy + 76);
+    ctx.fillStyle = c.valColor;
+    ctx.font = "bold 28px 'Noto Sans Tamil', 'Inter', sans-serif";
+    ctx.fillText(c.val, 175, cy + 80);
   });
 
-  // Massive Central QR Section
+  // 5. MASSIVE CENTRAL QR CODE SECTION
+  const qrSectionY = 1015;
+  const qrSectionH = 650;
   ctx.fillStyle = '#1E293B';
-  roundRect(ctx, 80, 1100, w - 160, 580, 32, true, false);
+  roundRect(ctx, 80, qrSectionY, w - 160, qrSectionH, 32, true, false);
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, 80, qrSectionY, w - 160, qrSectionH, 32, false, true);
 
-  ctx.fillStyle = '#FFFFFF';
-  const qrBoxSize = 340;
-  const qrX = (w - qrBoxSize) / 2;
-  roundRect(ctx, qrX, 1150, qrBoxSize, qrBoxSize, 24, true, false);
-  ctx.drawImage(qrImg, qrX + 20, 1170, qrBoxSize - 40, qrBoxSize - 40);
-
-  ctx.fillStyle = '#22C55E';
-  ctx.font = "bold 38px 'Inter', sans-serif";
+  // Section Header Banner inside QR container
+  ctx.fillStyle = '#F8FAFC';
+  ctx.font = "bold 26px 'Noto Sans Tamil', 'Inter', sans-serif";
   ctx.textAlign = 'center';
-  ctx.fillText('SCAN TO APPLY NOW', w / 2, 1550);
+  ctx.fillText('விண்ணப்பிக்க மொபைல் கேமரா மூலம் SCAN செய்யவும்', w / 2, qrSectionY + 55);
+
+  // High-Contrast Solid White QR Box
+  const qrBoxSize = 350;
+  const qrX = (w - qrBoxSize) / 2;
+  const qrY = qrSectionY + 80;
+  ctx.fillStyle = '#FFFFFF';
+  roundRect(ctx, qrX, qrY, qrBoxSize, qrBoxSize, 24, true, false);
+  ctx.drawImage(qrImg, qrX + 20, qrY + 20, qrBoxSize - 40, qrBoxSize - 40);
+
+  // Big CTA under QR
+  ctx.fillStyle = '#22C55E';
+  ctx.font = "bold 38px 'Noto Sans Tamil', 'Inter', sans-serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('SCAN TO APPLY IN 60 SECONDS', w / 2, qrSectionY + 490);
 
   ctx.fillStyle = '#E2E8F0';
-  ctx.font = "22px 'Inter', sans-serif";
-  ctx.fillText('Share this flyer on WhatsApp Status or Story', w / 2, 1600);
+  ctx.font = "20px 'Noto Sans Tamil', 'Inter', sans-serif";
+  ctx.fillText('நேரடியாக இணையதளத்தில் விண்ணப்பிக்கலாம்', w / 2, qrSectionY + 535);
 
   ctx.fillStyle = '#38BDF8';
-  ctx.font = "bold 18px 'Inter', sans-serif";
-  ctx.fillText(data.publicUrl, w / 2, 1640);
+  ctx.font = "bold 19px 'Inter', sans-serif";
+  ctx.fillText(data.publicUrl, w / 2, qrSectionY + 580);
+
+  // 6. BOTTOM VIRAL FOOTER BRANDING FOR THENIJOBS
+  const footerY = 1715;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(80, footerY);
+  ctx.lineTo(w - 80, footerY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = "bold 24px 'Noto Sans Tamil', 'Inter', sans-serif";
+  ctx.textAlign = 'center';
+  ctx.fillText('THENIJOBS.IN • தேனி மாவட்ட முன்னணி வேலைவாய்ப்பு தளம்', w / 2, footerY + 50);
+
+  ctx.fillStyle = '#FBBF24'; // Warning Gold
+  ctx.font = "bold 21px 'Noto Sans Tamil', 'Inter', sans-serif";
+  ctx.fillText('📲 உங்கள் வாட்ஸ்அப் ஸ்டேட்டஸில் வைத்து நண்பர்களுக்கும் பகிருங்கள்!', w / 2, footerY + 95);
   ctx.textAlign = 'left';
 
   drawWatermark(ctx, w, h, false);

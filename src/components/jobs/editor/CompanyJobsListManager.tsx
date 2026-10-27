@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Briefcase, Plus, Search, Eye, Users2,
   Pause, Play, Trash2, Clock, Loader2, AlertTriangle,
-  Share2, Copy, Archive, MessageCircle, CreditCard, Zap,
+  Share2, Copy, Archive, MessageCircle, CreditCard, Zap, Smartphone,
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import {
@@ -17,6 +17,7 @@ import { where, orderBy } from 'firebase/firestore';
 import JobShareModal from '@/components/employer/JobShareModal';
 import UrgentHiringBadgeModal from '@/components/employer/UrgentHiringBadgeModal';
 import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import WhatsAppStatusGeneratorModal from '@/components/jobs/WhatsAppStatusGeneratorModal';
 import { useToast } from '@/contexts/ToastContext';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
 
@@ -130,6 +131,7 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [shareJob, setShareJob] = useState<JobDoc | null>(null);
   const [urgentJob, setUrgentJob] = useState<JobDoc | null>(null);
+  const [statusStoryJob, setStatusStoryJob] = useState<JobDoc | null>(null);
 
   const filtered = jobs.filter(j => {
     const s = resolveStatus(j);
@@ -449,6 +451,11 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
               }
               if (jobStatus === 'active') {
                 items.push({
+                  label: '📱 WhatsApp Status (9:16 Story)',
+                  icon: Smartphone,
+                  onClick: () => setStatusStoryJob(job),
+                });
+                items.push({
                   label: job.isUrgent ? '⚡ Urgent 48h Spotlight Active' : '⚡ 48h Urgent Spotlight (₹99 / ₹149)',
                   icon: Zap,
                   onClick: () => setUrgentJob(job),
@@ -510,6 +517,16 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
             setUrgentJob(null);
             toast.success('Urgent Spotlight activated! WhatsApp broadcast ready.');
           }}
+        />
+      )}
+
+      {/* 9:16 WhatsApp Status & Story Generator Modal */}
+      {statusStoryJob && (
+        <WhatsAppStatusGeneratorModal
+          isOpen={!!statusStoryJob}
+          onClose={() => setStatusStoryJob(null)}
+          job={statusStoryJob}
+          company={{ name: companyName, id: companyId }}
         />
       )}
     </div>

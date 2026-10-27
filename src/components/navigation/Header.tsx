@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   ChevronDown, Bell, Menu, X, User, LogOut, Settings,
   Shield, PlusCircle, ChevronRight, Briefcase, Building2,
-  Wrench, Calendar, Tag, Info, ShoppingBag, Award
+  Wrench, Calendar, Tag, Info, ShoppingBag, Award, GraduationCap
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -19,6 +19,7 @@ interface NavLinkItem {
 
 const navLinks: NavLinkItem[] = [
   { label: 'Jobs', href: '/jobs', icon: Briefcase },
+  { label: 'Courses', href: '/courses', icon: GraduationCap },
   { label: 'Marketplace', href: '/marketplace', icon: ShoppingBag },
   { label: 'Companies', href: '/businesses', icon: Building2 },
   { label: 'Services', href: '/marketplace?type=services', icon: Wrench },

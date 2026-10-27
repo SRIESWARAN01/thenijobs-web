@@ -131,9 +131,9 @@ export const POSTER_TEMPLATES: PosterTemplate[] = [
   },
   {
     id: 'social_story',
-    name: 'Mobile Social Story (9:16)',
-    nameTa: 'வாட்ஸ்அப் நிலை (9:16)',
-    tagline: 'Tall 9:16 mobile-first format optimized for WhatsApp Status and Instagram Stories.',
+    name: 'WhatsApp Status & Instagram Story (9:16)',
+    nameTa: 'வாட்ஸ்அப் ஸ்டேட்டஸ் போஸ்டர் (9:16)',
+    tagline: 'High-contrast vertical 9:16 story card with Tamil headline "ஆட்கள் தேவை", salary, location, contact phone & QR code.',
     aspectRatio: '9:16',
     width: 1080,
     height: 1920,

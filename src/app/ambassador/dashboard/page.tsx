@@ -11,8 +11,9 @@ import {
   ExternalLink, Download, Sparkles, Loader2, ArrowLeft,
   DollarSign, CheckCircle2, ShieldAlert, Phone, Building,
   CreditCard, ShieldCheck, FileText, ChevronDown, ChevronUp,
-  Info, HelpCircle, X, Zap, CheckCircle, Smartphone
+  Info, HelpCircle, X, Zap, CheckCircle, Smartphone, Calculator
 } from 'lucide-react';
+import MonthlyEarningEstimator from '@/components/ambassador/MonthlyEarningEstimator';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase/config';
 import {
@@ -28,7 +29,7 @@ export default function AmbassadorDashboardPage() {
 
   const [ambassador, setAmbassador] = useState<Ambassador | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'shops' | 'payouts' | 'marketing'>('shops');
+  const [activeTab, setActiveTab] = useState<'shops' | 'payouts' | 'marketing' | 'calculator'>('shops');
 
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
@@ -490,6 +491,18 @@ export default function AmbassadorDashboardPage() {
             <Sparkles className="w-4 h-4" />
             Marketing Kit & Sales Guide
           </button>
+
+          <button
+            onClick={() => setActiveTab('calculator')}
+            className={`pb-3 px-4 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
+              activeTab === 'calculator'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Calculator className="w-4 h-4" />
+            Earnings Simulator • வருமான கணக்கீடு
+          </button>
         </div>
 
         {/* TAB 1: REFERRED SHOPS */}
@@ -714,6 +727,17 @@ export default function AmbassadorDashboardPage() {
                 <span className="font-semibold text-blue-600">Theni Jobs Partner</span>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB 4: EARNINGS SIMULATOR */}
+        {activeTab === 'calculator' && (
+          <div className="space-y-6">
+            <MonthlyEarningEstimator
+              ctaText="Share Your Referral Code Now • கடைகளை இணைக்க"
+              onCtaClick={() => setActiveTab('marketing')}
+              includeSpotlightBonus={true}
+            />
           </div>
         )}
       </main>

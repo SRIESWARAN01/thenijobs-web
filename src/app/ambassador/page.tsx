@@ -17,6 +17,7 @@ import { db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { AMBASSADOR_COMMISSIONS, SITE_CONTACT } from '@/lib/constants';
 import type { Ambassador } from '@/lib/types/ambassador';
+import MonthlyEarningEstimator from '@/components/ambassador/MonthlyEarningEstimator';
 
 const TALUKS = [
   'Theni', 'Periyakulam', 'Bodinayakanur', 'Cumbum',
@@ -37,11 +38,6 @@ export default function AmbassadorLandingPage() {
   const [copiedModalCode, setCopiedModalCode] = useState(false);
   const [copiedModalLink, setCopiedModalLink] = useState(false);
 
-  // Calculator State
-  const [standardCount, setStandardCount] = useState(6);
-  const [premiumCount, setPremiumCount] = useState(4);
-  const estimatedEarnings = (standardCount * (AMBASSADOR_COMMISSIONS.standard || 350)) +
-                            (premiumCount * (AMBASSADOR_COMMISSIONS.premium || 700));
 
   // Form State
   const [fullName, setFullName] = useState('');
@@ -273,93 +269,13 @@ export default function AmbassadorLandingPage() {
           </div>
         </div>
 
-        {/* COMMISSION CALCULATOR */}
-        <div id="calculator" className="bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 text-white rounded-3xl p-8 sm:p-10 border border-indigo-800 shadow-xl mb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold mb-3">
-                <Calculator className="w-3.5 h-3.5" />
-                <span>Monthly Earning Estimator • வருமான கணக்கீடு</span>
-              </div>
-              <h3 className="text-2xl sm:text-3xl font-extrabold mb-3">
-                See How Much You Can Earn
-              </h3>
-              <p className="text-slate-300 text-sm mb-6">
-                Adjust the sliders below to estimate your monthly part-time or full-time commission by helping local businesses in your town:
-              </p>
-
-              {/* Sliders */}
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center text-sm font-semibold mb-2">
-                    <span className="text-slate-200">
-                      Standard Plans (₹1,800/yr) — <span className="text-emerald-400">₹350/shop</span>
-                    </span>
-                    <span className="bg-blue-600 px-2.5 py-0.5 rounded-full text-white text-xs">{standardCount} shops</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="20"
-                    value={standardCount}
-                    onChange={(e) => setStandardCount(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center text-sm font-semibold mb-2">
-                    <span className="text-slate-200">
-                      Premium Plans (₹3,500/yr) — <span className="text-amber-400">₹700/shop</span>
-                    </span>
-                    <span className="bg-purple-600 px-2.5 py-0.5 rounded-full text-white text-xs">{premiumCount} shops</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="15"
-                    value={premiumCount}
-                    onChange={(e) => setPremiumCount(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5 bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 text-center">
-              <p className="text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1">
-                Estimated Monthly Income
-              </p>
-              <div className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200 my-2">
-                ₹{estimatedEarnings.toLocaleString('en-IN')}
-              </div>
-              <p className="text-xs text-slate-300 mb-6">
-                Based on onboarding {standardCount + premiumCount} shops this month
-              </p>
-
-              <div className="text-left bg-slate-900/60 rounded-xl p-4 text-xs space-y-2 text-slate-300 mb-6">
-                <div className="flex justify-between">
-                  <span>Standard ({standardCount} × ₹350):</span>
-                  <span className="font-semibold text-white">₹{(standardCount * 350).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Premium ({premiumCount} × ₹700):</span>
-                  <span className="font-semibold text-white">₹{(premiumCount * 700).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="border-t border-slate-700 pt-1.5 flex justify-between font-bold text-emerald-400">
-                  <span>Total Payout:</span>
-                  <span>₹{estimatedEarnings.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-
-              <a
-                href="#signup-form"
-                className="w-full block py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition-all shadow-lg"
-              >
-                Claim Your Referral Code Now
-              </a>
-            </div>
-          </div>
+        {/* COMMISSION CALCULATOR ALL PLANS */}
+        <div id="calculator" className="mb-16">
+          <MonthlyEarningEstimator
+            ctaHref="#signup-form"
+            ctaText="Claim Your Referral Code Now • பதிவு செய்யுங்கள்"
+            includeSpotlightBonus={true}
+          />
         </div>
 
         {/* SIGNUP FORM */}

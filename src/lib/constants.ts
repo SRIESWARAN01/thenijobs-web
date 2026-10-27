@@ -38,8 +38,14 @@ export const SEEKER_PUBLIC_PROFILE_FEE_INR = 50;
 export const AI_CONNECTION_FEE_INR = 50;
 
 // ===== URGENT HIRING 48-HOUR SPOTLIGHT BADGE =====
-// Employers/hospitals can spotlight an urgent requirement for 48 hours for a micro-fee of ₹99.
+// Employers/hospitals can spotlight an urgent requirement for 48 hours for a micro-fee of ₹99 or ₹149 (Super Spotlight).
 export const URGENT_HIRING_BADGE_FEE_INR = 99;
+export const URGENT_HIRING_SUPER_FEE_INR = 149;
+export const URGENT_HIRING_FEES = {
+  STANDARD_48H: 99,
+  SUPER_SPOTLIGHT_48H: 149,
+} as const;
+export const VALID_URGENT_FEES = [99, 149] as const;
 export const URGENT_HIRING_DURATION_HOURS = 48;
 
 /**
@@ -464,6 +470,220 @@ export const PLAN_FEATURE_MATRIX = {
     prioritySupport: true,
   },
 } as const;
+
+// ===== AUTHORITATIVE 20-ROW FEATURE ACCESS MATRIX =====
+export type FeatureAccessType =
+  | 'Not available'
+  | 'Available'
+  | 'Limited quantity'
+  | 'Unlimited'
+  | 'Premium feature'
+  | 'Enterprise feature';
+
+export interface FeatureMatrixItem {
+  value: string;
+  accessType: FeatureAccessType;
+}
+
+export interface FeatureMatrixRow {
+  id: string;
+  feature: string;
+  category: 'Core Resources & Postings' | 'Digital Identity & Branding' | 'Marketing & Leads' | 'Enterprise & AI';
+  basic: FeatureMatrixItem;
+  standard: FeatureMatrixItem;
+  premium: FeatureMatrixItem;
+  enterprise: FeatureMatrixItem;
+}
+
+export const FEATURE_ACCESS_MATRIX_20_ROWS: FeatureMatrixRow[] = [
+  // 1. Core Resources & Postings
+  {
+    id: 'jobs',
+    feature: 'Active Job Postings',
+    category: 'Core Resources & Postings',
+    basic: { value: '5 Active Jobs', accessType: 'Limited quantity' },
+    standard: { value: '10 Active Jobs', accessType: 'Limited quantity' },
+    premium: { value: '50 Active Jobs', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Active Postings', accessType: 'Unlimited' },
+  },
+  {
+    id: 'jobAlerts',
+    feature: 'Job Alerts',
+    category: 'Core Resources & Postings',
+    basic: { value: '5 Job Alerts', accessType: 'Limited quantity' },
+    standard: { value: '10 Job Alerts', accessType: 'Limited quantity' },
+    premium: { value: '50 Job Alerts', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Job Alerts', accessType: 'Unlimited' },
+  },
+  {
+    id: 'products',
+    feature: 'Product Catalogue',
+    category: 'Core Resources & Postings',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: '20 Products', accessType: 'Limited quantity' },
+    premium: { value: '100 Products', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Products', accessType: 'Unlimited' },
+  },
+  {
+    id: 'services',
+    feature: 'Service Listings',
+    category: 'Core Resources & Postings',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: '10 Services', accessType: 'Limited quantity' },
+    premium: { value: '50 Services', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Services', accessType: 'Unlimited' },
+  },
+  {
+    id: 'galleryImages',
+    feature: 'Gallery Images',
+    category: 'Core Resources & Postings',
+    basic: { value: '6 Images', accessType: 'Limited quantity' },
+    standard: { value: '10 Images', accessType: 'Limited quantity' },
+    premium: { value: '50 Images', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Images', accessType: 'Unlimited' },
+  },
+  {
+    id: 'videos',
+    feature: 'Gallery Videos',
+    category: 'Core Resources & Postings',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: '2 Videos', accessType: 'Limited quantity' },
+    premium: { value: '10 Videos', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Videos', accessType: 'Unlimited' },
+  },
+  {
+    id: 'templates',
+    feature: 'Website Templates',
+    category: 'Core Resources & Postings',
+    basic: { value: '1 Template', accessType: 'Limited quantity' },
+    standard: { value: '5 Templates', accessType: 'Limited quantity' },
+    premium: { value: '15 Templates', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited (All 16)', accessType: 'Unlimited' },
+  },
+  {
+    id: 'themes',
+    feature: 'Color Themes',
+    category: 'Core Resources & Postings',
+    basic: { value: '1 Basic Theme', accessType: 'Limited quantity' },
+    standard: { value: '5 Color Themes', accessType: 'Limited quantity' },
+    premium: { value: '15 Color Themes', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited & Custom Palette', accessType: 'Unlimited' },
+  },
+  {
+    id: 'branches',
+    feature: 'Branch Locations',
+    category: 'Core Resources & Postings',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: '3 Branches', accessType: 'Limited quantity' },
+    premium: { value: '20 Branches', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Branches', accessType: 'Unlimited' },
+  },
+  {
+    id: 'staffIds',
+    feature: 'Staff Digital IDs',
+    category: 'Core Resources & Postings',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: 'Not Included', accessType: 'Not available' },
+    premium: { value: '25 Staff IDs', accessType: 'Limited quantity' },
+    enterprise: { value: 'Unlimited Staff IDs', accessType: 'Unlimited' },
+  },
+
+  // 2. Digital Identity & Branding
+  {
+    id: 'digitalIdCard',
+    feature: 'Company Digital ID Card',
+    category: 'Digital Identity & Branding',
+    basic: { value: 'Standard Digital ID', accessType: 'Available' },
+    standard: { value: 'Premium Visiting Card', accessType: 'Available' },
+    premium: { value: 'Premium+ Visiting Card', accessType: 'Premium feature' },
+    enterprise: { value: 'Enterprise Digital Card', accessType: 'Enterprise feature' },
+  },
+  {
+    id: 'qrCode',
+    feature: 'QR Code & Profile URL',
+    category: 'Digital Identity & Branding',
+    basic: { value: 'Public QR Code & Link', accessType: 'Available' },
+    standard: { value: 'Static QR & Standee Ready', accessType: 'Available' },
+    premium: { value: 'Dynamic QR Code Showcase', accessType: 'Premium feature' },
+    enterprise: { value: 'Enterprise Dynamic QR', accessType: 'Enterprise feature' },
+  },
+  {
+    id: 'seo',
+    feature: 'SEO & Schema Markup',
+    category: 'Digital Identity & Branding',
+    basic: { value: 'Basic SEO & Schema', accessType: 'Available' },
+    standard: { value: 'Enhanced SEO & Custom Meta', accessType: 'Available' },
+    premium: { value: 'Custom Meta Tags & OpenGraph', accessType: 'Premium feature' },
+    enterprise: { value: 'AI SEO Content & Meta Generation', accessType: 'Enterprise feature' },
+  },
+
+  // 3. Marketing & Leads
+  {
+    id: 'whatsappEnquiry',
+    feature: 'WhatsApp Enquiry & Call',
+    category: 'Marketing & Leads',
+    basic: { value: 'Basic WhatsApp Enquiry', accessType: 'Available' },
+    standard: { value: 'Direct Click-to-Chat & Call', accessType: 'Available' },
+    premium: { value: 'Priority Lead Routing', accessType: 'Available' },
+    enterprise: { value: 'Automated WhatsApp Dispatch', accessType: 'Available' },
+  },
+  {
+    id: 'leadManagement',
+    feature: 'Lead Management & Enquiries',
+    category: 'Marketing & Leads',
+    basic: { value: 'Lead Management Dashboard', accessType: 'Available' },
+    standard: { value: 'Leads & Interview Scheduling', accessType: 'Available' },
+    premium: { value: 'Advanced Lead Tracking & Analytics', accessType: 'Available' },
+    enterprise: { value: 'Full CRM & Careers Portal Leads', accessType: 'Enterprise feature' },
+  },
+  {
+    id: 'searchPriority',
+    feature: 'Search Priority',
+    category: 'Marketing & Leads',
+    basic: { value: 'Standard Search Listing', accessType: 'Not available' },
+    standard: { value: 'Silver Verified Search Ranking', accessType: 'Available' },
+    premium: { value: 'Featured Search Priority', accessType: 'Premium feature' },
+    enterprise: { value: 'Top Search Priority (#1)', accessType: 'Enterprise feature' },
+  },
+
+  // 4. Enterprise & AI
+  {
+    id: 'aiCompanyAssistant',
+    feature: 'AI Company Assistant / Chatbot',
+    category: 'Enterprise & AI',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: 'Not Included', accessType: 'Not available' },
+    premium: { value: 'Not Included', accessType: 'Not available' },
+    enterprise: { value: 'AI Company Assistant / Chatbot', accessType: 'Enterprise feature' },
+  },
+  {
+    id: 'aiSeoContent',
+    feature: 'AI SEO Content & Meta Tags',
+    category: 'Enterprise & AI',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: 'Not Included', accessType: 'Not available' },
+    premium: { value: 'Not Included', accessType: 'Not available' },
+    enterprise: { value: 'AI Generated SEO Meta & Copy', accessType: 'Enterprise feature' },
+  },
+  {
+    id: 'careersPortal',
+    feature: 'Enterprise Careers Portal',
+    category: 'Enterprise & AI',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: 'Not Included', accessType: 'Not available' },
+    premium: { value: 'Not Included', accessType: 'Not available' },
+    enterprise: { value: 'Dedicated Enterprise Careers Hub', accessType: 'Enterprise feature' },
+  },
+  {
+    id: 'homepageFeaturedPlacement',
+    feature: 'Homepage Featured Placement',
+    category: 'Enterprise & AI',
+    basic: { value: 'Not Included', accessType: 'Not available' },
+    standard: { value: 'Not Included', accessType: 'Not available' },
+    premium: { value: 'Not Included', accessType: 'Not available' },
+    enterprise: { value: 'Homepage Featured Showcase', accessType: 'Enterprise feature' },
+  },
+];
 
 // ===== JOB CATEGORIES =====
 export const JOB_CATEGORIES = [

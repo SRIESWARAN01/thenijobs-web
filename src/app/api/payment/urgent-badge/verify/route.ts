@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
-import { URGENT_HIRING_BADGE_FEE_INR, URGENT_HIRING_DURATION_HOURS } from '@/lib/constants';
-import { generateUrgentJobWhatsAppBroadcast } from '@/lib/urgentJobBroadcast';
+import { URGENT_HIRING_BADGE_FEE_INR, URGENT_HIRING_DURATION_HOURS, VALID_URGENT_FEES } from '@/lib/constants';
+import { dispatchTalukWhatsAppBroadcast } from '@/lib/urgentJobBroadcast';
 
 export async function POST(request: Request) {
   try {
@@ -12,11 +12,19 @@ export async function POST(request: Request) {
       razorpay_signature,
       jobId,
       userId,
+      fee,
+      amount: requestedAmount,
     } = await request.json();
 
     if (!jobId || !userId) {
       return NextResponse.json({ error: 'Missing jobId or userId' }, { status: 400 });
     }
+
+    // Determine validated fee (₹99 or ₹149)
+    const rawFee = Number(fee || requestedAmount);
+    const feePaid = (rawFee && (VALID_URGENT_FEES as readonly number[]).includes(rawFee))
+      ? rawFee
+      : URGENT_HIRING_BADGE_FEE_INR;
 
     // Verify HMAC SHA-256 signature if secret is configured
     const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -43,6 +51,7 @@ export async function POST(request: Request) {
     const now = new Date();
     const urgentUntilDate = new Date(now.getTime() + URGENT_HIRING_DURATION_HOURS * 60 * 60 * 1000);
     const paymentId = razorpay_payment_id || `urg_pay_${Date.now()}`;
+    const planTier = feePaid === 149 ? 'super_spotlight' : 'standard_spotlight';
 
     // 1. Update the Job Document with 48h Urgent Spotlight
     await jobRef.set(
@@ -50,8 +59,10 @@ export async function POST(request: Request) {
         isUrgent: true,
         urgentUntil: urgentUntilDate.toISOString(),
         urgentPurchasedAt: now.toISOString(),
-        urgentFeePaid: URGENT_HIRING_BADGE_FEE_INR,
+        urgentFeePaid: feePaid,
         urgentPaymentId: paymentId,
+        urgentTier: planTier,
+        urgentDurationHours: URGENT_HIRING_DURATION_HOURS,
         updatedAt: now.toISOString(),
       },
       { merge: true }
@@ -67,7 +78,8 @@ export async function POST(request: Request) {
         jobId,
         companyId: jobData.companyId || '',
         purpose: 'urgent-badge',
-        amount: URGENT_HIRING_BADGE_FEE_INR,
+        planTier,
+        amount: feePaid,
         currency: 'INR',
         status: 'paid',
         receiptNumber: `TJ-URG-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -76,26 +88,40 @@ export async function POST(request: Request) {
       { merge: true }
     );
 
-    // 3. Pre-format the WhatsApp broadcast card
-    const broadcastText = generateUrgentJobWhatsAppBroadcast({
-      id: jobId,
-      title: jobData.title || 'Urgent Position',
-      companyName: jobData.companyName || jobData.company?.name || 'Local Company',
-      location: jobData.location || 'Theni',
-      district: jobData.district || 'Theni',
-      salaryMin: jobData.salaryMin,
-      salaryMax: jobData.salaryMax,
-      salary: jobData.salary,
-      openings: jobData.openings,
-      jobType: jobData.jobType,
-    });
+    // 3. Instant auto-broadcast to the relevant taluk WhatsApp alert channel
+    const broadcastResult = await dispatchTalukWhatsAppBroadcast(
+      {
+        id: jobId,
+        title: jobData.title || 'Urgent Position',
+        companyName: jobData.companyName || jobData.company?.name || 'Local Company',
+        location: jobData.location || 'Theni',
+        district: jobData.district || 'Theni',
+        salaryMin: jobData.salaryMin,
+        salaryMax: jobData.salaryMax,
+        salary: jobData.salary,
+        openings: jobData.openings,
+        jobType: jobData.jobType,
+        description: jobData.description,
+      },
+      {
+        feePaid,
+        userId,
+        paymentId,
+      }
+    );
 
     return NextResponse.json({
       success: true,
-      message: '48-Hour Urgent Hiring Spotlight activated successfully!',
+      message: '48-Hour Urgent Hiring Spotlight activated and broadcasted to Taluk channel successfully!',
       urgentUntil: urgentUntilDate.toISOString(),
-      feePaid: URGENT_HIRING_BADGE_FEE_INR,
-      whatsAppBroadcastText: broadcastText,
+      feePaid,
+      planTier,
+      taluk: broadcastResult.taluk,
+      channelName: broadcastResult.channelName,
+      channelTamilName: broadcastResult.channelTamilName,
+      channelUrl: broadcastResult.channelUrl,
+      directWhatsAppShareUrl: broadcastResult.directWhatsAppShareUrl,
+      whatsAppBroadcastText: broadcastResult.broadcastText,
     });
   } catch (error: any) {
     console.error('[Urgent Badge Verify Error]:', error);

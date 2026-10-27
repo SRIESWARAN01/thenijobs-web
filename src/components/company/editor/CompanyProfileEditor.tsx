@@ -10,7 +10,7 @@ import {
   FileCheck2, BadgeCheck, ShieldCheck, Sparkles
 } from 'lucide-react';
 import { TN_DISTRICTS, FounderProfile } from '@/lib/types';
-import { hasFeaturePermission } from '@/lib/plans';
+import { hasFeaturePermission, canAddBranch, canAddGalleryImage, canAddGalleryVideo, getPlanLimits } from '@/lib/plans';
 import { useToast } from '@/contexts/ToastContext';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
 import CompanyProfileClient from '@/app/company/[slug]/CompanyProfileClient';
@@ -21,6 +21,7 @@ import CompanyFounderManager from '@/components/company/CompanyFounderManager';
 import CompanySectionToggler from '@/components/company/CompanySectionToggler';
 import CompanyReviewsManager from '@/components/company/CompanyReviewsManager';
 import PosterStudioModal from '@/components/employer/poster/PosterStudioModal';
+import CompanyAiEnhanceModal from '@/components/company/CompanyAiEnhanceModal';
 import { PosterData } from '@/lib/poster/types';
 import { useUploadFile, useDeleteFile } from '@/hooks/useStorage';
 import { updateDocument } from '@/lib/firebase/firestoreService';
@@ -82,7 +83,10 @@ const DEFAULT_COMPANY = {
     email: false,
     gst: false,
     business: false
-  }
+  },
+  aiEnhanced: false,
+  aiEnhancedAt: null as any,
+  aiOriginalContent: null as any
 };
 
 function calcCompletion(data: typeof DEFAULT_COMPANY): number {
@@ -160,6 +164,9 @@ export interface CompanyProfileEditorSaveFields {
   isVerified?: boolean;
   trustScore?: number;
   verificationStatus?: string;
+  aiEnhanced?: boolean;
+  aiEnhancedAt?: any;
+  aiOriginalContent?: any;
 }
 
 export interface CompanyProfileEditorProps {
@@ -200,6 +207,7 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
   const [saving, setSaving] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showCompanyPosterModal, setShowCompanyPosterModal] = useState(false);
+  const [showAiEnhanceModal, setShowAiEnhanceModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'basic' | 'products' | 'services' | 'portfolio' | 'founder' | 'reviews' | 'sections'>('basic');
   const [coverBroken, setCoverBroken] = useState(false);
   const [logoBroken, setLogoBroken] = useState(false);
@@ -325,6 +333,13 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
   };
 
   const addBranch = () => {
+    const planSlug = (initialCompany as any)?.subscriptionPlan || 'free';
+    const currentBranchCount = (company.branches || []).length;
+    const branchQuota = canAddBranch(planSlug, currentBranchCount);
+    if (!branchQuota.allowed) {
+      toast.warning(`Your ${planSlug.toUpperCase()} plan allows up to ${branchQuota.limit} branches. Please upgrade your plan to add more branches.`);
+      return;
+    }
     if (newBranch.name && newBranch.address && newBranch.district) {
       setCompany((prev) => ({
         ...prev,
@@ -436,6 +451,16 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
       toast.error('Please save your company profile first, then add gallery photos.');
       return;
     }
+    const planSlug = (initialCompany as any)?.subscriptionPlan || 'free';
+    const currentFilledCount = (company.gallery || []).filter(Boolean).length;
+    const isNewSlot = !company.gallery?.[index];
+    if (isNewSlot) {
+      const quota = canAddGalleryImage(planSlug, currentFilledCount);
+      if (!quota.allowed) {
+        toast.warning(`Your ${planSlug.toUpperCase()} plan allows up to ${quota.limit} gallery images. Please upgrade to add more.`);
+        return;
+      }
+    }
     const previousUrl = company.gallery[index];
     try {
       // 1. Optimize image client-side to WebP (max 1200x1200, quality 0.82, limit 10MB)
@@ -543,7 +568,10 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         businessVerified: company.verification.business,
         isVerified: company.verification.business || initialCompany?.verificationStatus === 'verified',
         trustScore: computedTrustScore,
-        verificationStatus: initialCompany?.verificationStatus
+        verificationStatus: initialCompany?.verificationStatus,
+        aiEnhanced: Boolean(company.aiEnhanced),
+        aiEnhancedAt: company.aiEnhancedAt || null,
+        aiOriginalContent: company.aiOriginalContent || null
       };
       await onSave(docData);
     } catch (err) {
@@ -562,6 +590,13 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
         breadcrumbs={breadcrumbs}
         actions={
           <>
+            <Button
+              variant="secondary"
+              onClick={() => setShowAiEnhanceModal(true)}
+              className="flex-1 border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white sm:flex-none flex items-center gap-1.5"
+            >
+              <Sparkles size={15} /> Auto Fill / Auto Enhance (AI)
+            </Button>
             <Button
               variant="secondary"
               onClick={() => setShowCompanyPosterModal(true)}
@@ -913,9 +948,18 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
 
             {/* About Company */}
             <div className="bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-xs space-y-3">
-              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <FileText size={16} className="text-blue-600" /> About Business
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                  <FileText size={16} className="text-blue-600" /> About Business
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAiEnhanceModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <Sparkles size={13} className="text-purple-600" /> Auto Enhance (AI)
+                </button>
+              </div>
               <div>
                 <textarea
                   rows={5}
@@ -1387,6 +1431,39 @@ export default function CompanyProfileEditor({ initialCompany, title, descriptio
           isOpen={showCompanyPosterModal}
           onClose={() => setShowCompanyPosterModal(false)}
           data={companyPosterData}
+        />
+      )}
+
+      {/* Company AI Auto-Enhance Modal */}
+      {showAiEnhanceModal && (
+        <CompanyAiEnhanceModal
+          isOpen={showAiEnhanceModal}
+          onClose={() => setShowAiEnhanceModal(false)}
+          originalData={{
+            companyName: company.name,
+            category: (company as any).category || (initialCompany as any)?.category || 'Business',
+            district: company.district || 'Theni District',
+            location: company.address,
+            phone: company.phone,
+            email: company.email,
+            website: company.website,
+            shortDescription: company.description,
+            tagline: company.tagline,
+          }}
+          onApply={(applied) => {
+            setCompany((prev) => ({
+              ...prev,
+              ...(applied.description ? { description: applied.description } : {}),
+              ...(applied.tagline ? { tagline: applied.tagline } : {}),
+              aiEnhanced: true,
+              aiEnhancedAt: applied.aiEnhancedAt || new Date(),
+              aiOriginalContent: applied.aiOriginalContent,
+            }));
+            if (applied.description) {
+              setCharCount(applied.description.length);
+            }
+            toast.success('Applied AI enhancements! Review your changes and click Save changes to submit for admin review.');
+          }}
         />
       )}
     </PageShell>

@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
-import { URGENT_HIRING_BADGE_FEE_INR } from '@/lib/constants';
+import { URGENT_HIRING_BADGE_FEE_INR, VALID_URGENT_FEES } from '@/lib/constants';
 
 /**
- * URGENT-BADGE-1 — creates a Razorpay order for the ₹99 48-Hour Urgent Hiring Spotlight fee.
+ * URGENT-BADGE-1 — creates a Razorpay order for the 48-Hour Urgent Hiring Spotlight fee (₹99 or ₹149).
  * 
- * Server-derived fixed amount — never trusts a client-supplied price.
- * Notes embed purpose: 'urgent-badge', jobId, and userId so server-side verify/webhook can activate it.
+ * Server-derived fixed amount — validates strictly against VALID_URGENT_FEES ([99, 149]).
+ * Notes embed purpose: 'urgent-badge', tier, jobId, and userId so server-side verify/webhook can activate it.
  */
 export async function POST(request: Request) {
   try {
-    const { jobId, userId } = await request.json();
+    const { jobId, userId, fee } = await request.json();
 
     if (!jobId || typeof jobId !== 'string') {
       return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
@@ -18,7 +18,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const amount = URGENT_HIRING_BADGE_FEE_INR;
+    // Validate fee against allowed tiers (defaulting to ₹99)
+    const amount = (fee && (VALID_URGENT_FEES as readonly number[]).includes(Number(fee)))
+      ? Number(fee)
+      : URGENT_HIRING_BADGE_FEE_INR;
+
+    const planTier = amount === 149 ? 'super_spotlight_149' : 'standard_spotlight_99';
     const orderId = `urg_order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     const razorpayKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -39,6 +44,7 @@ export async function POST(request: Request) {
             receipt: orderId,
             notes: {
               purpose: 'urgent-badge',
+              planTier,
               jobId,
               userId,
             },
@@ -51,6 +57,7 @@ export async function POST(request: Request) {
             success: true,
             orderId: rpOrder.id,
             amount,
+            planTier,
             currency: 'INR',
             key: razorpayKey,
             isRazorpay: true,
@@ -67,6 +74,7 @@ export async function POST(request: Request) {
       success: true,
       orderId,
       amount,
+      planTier,
       currency: 'INR',
       key: razorpayKey || 'rzp_test_placeholder',
       isRazorpay: false,

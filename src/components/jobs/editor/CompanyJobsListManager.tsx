@@ -16,6 +16,7 @@ import { updateDocument, deleteDocument, createDocument } from '@/lib/firebase/f
 import { where, orderBy } from 'firebase/firestore';
 import JobShareModal from '@/components/employer/JobShareModal';
 import UrgentHiringBadgeModal from '@/components/employer/UrgentHiringBadgeModal';
+import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
 import { useToast } from '@/contexts/ToastContext';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
 
@@ -231,7 +232,7 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
             >
               {job.title}
             </Link>
-            {job.isUrgent && <Pill tone="danger">Urgent</Pill>}
+            {job.isUrgent && <UrgentSpotlightBadge job={job} variant="compact" />}
             {job.jobOrdinal && (
               <span className="shrink-0 rounded-full border border-blue-100 bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-bold text-[#1E40AF]">
                 {job.jobOrdinal}
@@ -448,7 +449,7 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
               }
               if (jobStatus === 'active') {
                 items.push({
-                  label: job.isUrgent ? '⚡ Urgent 48h Spotlight Active' : '⚡ 48h Urgent Spotlight (₹99)',
+                  label: job.isUrgent ? '⚡ Urgent 48h Spotlight Active' : '⚡ 48h Urgent Spotlight (₹99 / ₹149)',
                   icon: Zap,
                   onClick: () => setUrgentJob(job),
                 });

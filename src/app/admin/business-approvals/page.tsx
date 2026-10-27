@@ -597,9 +597,17 @@ export default function BusinessApprovalsPage() {
                       {/* Business */}
                       <td className="py-3.5 px-4">
                         {u.companyName ? (
-                          <div className="flex items-center gap-1.5 font-semibold text-gray-800">
-                            <Building2 size={13} className="text-gray-400 shrink-0" />
-                            <span className="truncate max-w-[150px]">{u.companyName}</span>
+                          <div>
+                            <div className="flex items-center gap-1.5 font-semibold text-gray-800">
+                              <Building2 size={13} className="text-gray-400 shrink-0" />
+                              <span className="truncate max-w-[150px]">{u.companyName}</span>
+                            </div>
+                            {(u.companyDoc?.aiEnhanced || (u as any).aiEnhanced) && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-extrabold mt-1">
+                                <Sparkles size={10} className="text-purple-600" />
+                                AI Enhanced
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-gray-400 italic text-[11px]">Not created yet</span>
@@ -746,6 +754,12 @@ export default function BusinessApprovalsPage() {
                       <span className="font-semibold text-gray-800 truncate block">
                         {u.companyName || 'Not created'}
                       </span>
+                      {(u.companyDoc?.aiEnhanced || (u as any).aiEnhanced) && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-extrabold mt-0.5">
+                          <Sparkles size={9} className="text-purple-600" />
+                          AI Enhanced
+                        </span>
+                      )}
                     </div>
                     <div className="col-span-2 pt-1 border-t border-gray-200/60 flex justify-between text-[11px]">
                       <span className="text-gray-400">Registered:</span>
@@ -976,6 +990,40 @@ export default function BusinessApprovalsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* AI Enhancement Dossier & Anti-Fabrication Review */}
+              {(detailsUser.companyDoc?.aiEnhanced || (detailsUser as any).aiEnhanced) && (
+                <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-200 text-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-purple-900">
+                      <Sparkles size={15} className="text-purple-600" />
+                      <span>Gemini AI Profile Enhancement Dossier</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-purple-200/80 text-purple-900 text-[10px] font-extrabold">
+                      AI Generated
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-3 rounded-xl border border-purple-100 space-y-2">
+                    <p className="font-bold text-purple-950 text-xs">
+                      {detailsUser.companyDoc?.aiEnhancedAt
+                        ? `Generated on: ${formatDate(detailsUser.companyDoc.aiEnhancedAt)}`
+                        : 'Enhanced with Gemini AI'}
+                    </p>
+                    {detailsUser.companyDoc?.aiOriginalContent && (
+                      <div className="text-[11px] text-slate-600 space-y-1 pt-1 border-t border-purple-100">
+                        <p className="font-bold text-slate-700">Original User Input vs AI Content:</p>
+                        <p className="italic text-slate-500">
+                          Original: &quot;{detailsUser.companyDoc.aiOriginalContent.shortDescription || detailsUser.companyDoc.description || 'Basic profile submitted'}&quot;
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-[10px] text-purple-700 font-medium">
+                      🛡️ Zero-Fabrication verified: All enhancement is strictly constrained to provided business name, category, and location.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Rejection Information (if rejected) */}
               {(detailsUser.approvalStatus === 'rejected' || detailsUser.rejectionReason) && (

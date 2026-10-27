@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import Header from '@/components/navigation/Header';
 import BottomNav from '@/components/navigation/BottomNav';
-import { SUBSCRIPTION_PLANS } from '@/lib/constants';
+import { SUBSCRIPTION_PLANS, FEATURE_ACCESS_MATRIX_20_ROWS } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useReferral } from '@/hooks/useReferral';
 import { useCollection } from '@/hooks/useFirestore';
@@ -26,81 +26,17 @@ const PLAN_ICONS: Record<string, typeof Shield> = {
 // Strips the leading emoji glyph off constants.ts badge strings (e.g. "🥈 Silver Verified")
 const stripBadgeEmoji = (badge?: string) => badge?.replace(/^\S+\s*/, '').trim() ?? '';
 
-// Authoritative Feature Comparison Matrix (10 standard rows as specified)
-const COMPARISON_MATRIX = [
-  {
-    feature: 'Active Job Postings Limit',
-    basic: '5 Jobs',
-    standard: '10 Jobs',
-    premium: '50 Jobs',
-    enterprise: 'Unlimited',
-    highlight: true,
-  },
-  {
-    feature: 'Company Portfolio Website',
-    basic: '1 Template',
-    standard: '5 Templates',
-    premium: '15 Templates',
-    enterprise: 'Unlimited (All 16)',
-  },
-  {
-    feature: 'Digital ID Card & QR Code',
-    basic: 'Standard Card & QR',
-    standard: 'Premium Visiting Card',
-    premium: 'Premium+ & Dynamic QR',
-    enterprise: 'Enterprise Digital Card',
-  },
-  {
-    feature: 'Reviews & Ratings',
-    basic: '❌',
-    standard: '✅ Photo Reviews',
-    premium: '✅ Priority Reviews',
-    enterprise: '✅ Full Showcase',
-  },
-  {
-    feature: 'Services & Products Listing',
-    basic: '❌',
-    standard: '20 Products / 10 Services',
-    premium: '100 Products / 50 Services',
-    enterprise: 'Unlimited',
-    highlight: true,
-  },
-  {
-    feature: 'Featured Company Placement',
-    basic: '❌',
-    standard: '❌',
-    premium: '✅ Search Priority',
-    enterprise: '✅ Homepage + Top Priority',
-  },
-  {
-    feature: 'Candidate Search & Filtering',
-    basic: '❌',
-    standard: 'Basic',
-    premium: 'Advanced',
-    enterprise: 'Advanced + Priority Alerts',
-  },
-  {
-    feature: 'Interview Scheduling & Leads',
-    basic: 'Leads Only',
-    standard: '✅ Leads & Interviews',
-    premium: '✅ Leads & Interviews',
-    enterprise: '✅ Dedicated Careers Portal',
-  },
-  {
-    feature: 'Premium SEO Enhancement',
-    basic: 'Basic SEO & Schema',
-    standard: 'Enhanced Meta Tags',
-    premium: 'Custom SEO Meta',
-    enterprise: 'AI Generated SEO Content',
-  },
-  {
-    feature: 'Branch / Franchise Management',
-    basic: '❌',
-    standard: '3 Branches',
-    premium: '20 Branches',
-    enterprise: 'Unlimited Branches',
-  },
-];
+// Authoritative Feature Comparison Matrix (Complete 20 rows as specified in requirement 3)
+const COMPARISON_MATRIX = FEATURE_ACCESS_MATRIX_20_ROWS.map((row) => ({
+  id: row.id,
+  feature: row.feature,
+  category: row.category,
+  basic: row.basic.accessType === 'Not available' ? '❌' : row.basic.value,
+  standard: row.standard.accessType === 'Not available' ? '❌' : row.standard.value,
+  premium: row.premium.accessType === 'Not available' ? '❌' : row.premium.value,
+  enterprise: row.enterprise.accessType === 'Not available' ? '❌' : row.enterprise.value,
+  highlight: ['jobs', 'products', 'services', 'branches', 'searchPriority', 'staffIds'].includes(row.id),
+}));
 
 const WHY_US = [
   {

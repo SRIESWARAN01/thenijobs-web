@@ -47,7 +47,7 @@ function loadLogoAsBase64(): Promise<string | null> {
 
 export interface ReceiptData {
   receiptNo: string;
-  documentType?: 'invoice' | 'receipt' | 'bill' | 'quotation';
+  documentType?: 'invoice' | 'receipt' | 'bill' | 'quotation' | 'trial_confirmation';
   paymentId?: string;
   orderId?: string;
   planName: string;
@@ -231,27 +231,40 @@ export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPD
   pdf.text('Address: North Street, A.M. Patty, Uthamapalayam, Theni District, Tamil Nadu - 625533', margin + 18, y + 16);
   pdf.text(`Phone: ${SITE_CONTACT.phone1}  |  WhatsApp: +${SITE_CONTACT.whatsapp}  |  Email: ${SITE_CONTACT.supportEmail}`, margin + 18, y + 20);
 
-  // Top Right: Invoice Title & Status
+  // Top Right: Invoice / Receipt Title & Status
+  const isTrial = data.documentType === 'trial_confirmation' || data.amount === 0 || (data.status?.toLowerCase().includes('trial') ?? false);
+
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(12);
   pdf.setTextColor(15, 23, 42);
-  const docTitle =
-    data.documentType === 'invoice'
-      ? 'TAX INVOICE'
-      : data.documentType === 'quotation'
-      ? 'QUOTATION / ESTIMATE'
-      : data.documentType === 'bill'
-      ? 'BILL OF SUPPLY'
-      : 'TAX INVOICE & RECEIPT';
+  const docTitle = isTrial
+    ? '15-DAY FREE TRIAL CONFIRMATION'
+    : data.documentType === 'invoice'
+    ? 'TAX INVOICE'
+    : data.documentType === 'quotation'
+    ? 'QUOTATION / ESTIMATE'
+    : data.documentType === 'bill'
+    ? 'BILL OF SUPPLY'
+    : 'TAX INVOICE & RECEIPT';
   pdf.text(docTitle, pageWidth - margin, y + 5, { align: 'right' });
 
-  // Paid Pill Badge
-  pdf.setFillColor(209, 250, 229); // Emerald-100
-  pdf.roundedRect(pageWidth - margin - 38, y + 8, 38, 6.5, 1.5, 1.5, 'F');
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(8);
-  pdf.setTextColor(5, 150, 105); // Emerald-600
-  pdf.text('✓ PAID / ACTIVE', pageWidth - margin - 19, y + 12.5, { align: 'center' });
+  // Status Badge Pill
+  if (isTrial) {
+    pdf.setFillColor(239, 246, 255); // Blue-50
+    pdf.setDrawColor(191, 219, 254); // Blue-200
+    pdf.roundedRect(pageWidth - margin - 48, y + 8, 48, 6.5, 1.5, 1.5, 'FD');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(29, 78, 216); // Blue-700
+    pdf.text('✓ FREE TRIAL ACTIVE', pageWidth - margin - 24, y + 12.5, { align: 'center' });
+  } else {
+    pdf.setFillColor(209, 250, 229); // Emerald-100
+    pdf.roundedRect(pageWidth - margin - 38, y + 8, 38, 6.5, 1.5, 1.5, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.setTextColor(5, 150, 105); // Emerald-600
+    pdf.text('✓ PAID / ACTIVE', pageWidth - margin - 19, y + 12.5, { align: 'center' });
+  }
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(8.5);
@@ -339,12 +352,12 @@ export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPD
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(71, 85, 105);
   pdf.text('Duration:', rightX + 4, y + 27);
-  pdf.text('1 Full Year (365 Days Access)', rightX + 38, y + 27);
+  pdf.text(isTrial ? '15 Days Complimentary Trial' : '1 Full Year (365 Days Access)', rightX + 38, y + 27);
 
   pdf.text('Payment Ref / ID:', rightX + 4, y + 32);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 41, 59);
-  const cleanPayId = data.paymentId || 'pay_online_verified';
+  const cleanPayId = data.paymentId || (isTrial ? 'TRIAL_COMPLIMENTARY' : (data.paymentMethod || 'ADMIN_MANUAL'));
   pdf.text(cleanPayId.length > 22 ? cleanPayId.slice(0, 22) + '...' : cleanPayId, rightX + 38, y + 32);
 
   y += cardHeight + 8;
@@ -374,16 +387,16 @@ export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPD
   pdf.setFontSize(8.5);
   pdf.setTextColor(15, 23, 42);
   pdf.text('1', margin + 4, y + 6);
-  pdf.text(`${data.planName} Employer Subscription`, margin + 14, y + 6);
+  pdf.text(isTrial ? `${data.planName} 15-Day Complimentary Trial Access` : `${data.planName} Employer Subscription`, margin + 14, y + 6);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7.5);
   pdf.setTextColor(100, 116, 139);
-  pdf.text('Full Company Website, Job Postings, Digital ID Card & Candidate Portal', margin + 14, y + 11);
+  pdf.text(isTrial ? 'Complimentary trial access to employer portal, website & job postings' : 'Full Company Website, Job Postings, Digital ID Card & Candidate Portal', margin + 14, y + 11);
 
   pdf.setTextColor(30, 41, 59);
   pdf.setFontSize(8);
-  pdf.text('1 Year (Annual)', margin + 85, y + 6);
+  pdf.text(isTrial ? '15 Days Trial' : '1 Year (Annual)', margin + 85, y + 6);
   pdf.text(data.startDate, margin + 115, y + 6);
   pdf.text(data.expiryDate, margin + 142, y + 6);
 
@@ -394,7 +407,7 @@ export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPD
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(7);
   pdf.setTextColor(16, 185, 129);
-  pdf.text('100% Tax Inclusive', pageWidth - margin - 4, y + 11, { align: 'right' });
+  pdf.text(isTrial ? 'Complimentary (Zero Cost)' : '100% Tax Inclusive', pageWidth - margin - 4, y + 11, { align: 'right' });
 
   y += 16;
 
@@ -408,13 +421,13 @@ export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPD
   pdf.text('Subtotal:', margin + 115, y + 6);
   pdf.text(`Rs. ${data.amount.toLocaleString('en-IN')}`, pageWidth - margin - 4, y + 6, { align: 'right' });
 
-  pdf.text('GST & Applicable Platform Fees:', margin + 115, y + 11);
-  pdf.text('Inclusive (Rs. 0 Extra)', pageWidth - margin - 4, y + 11, { align: 'right' });
+  pdf.text(isTrial ? 'Trial Discount / Waiver:' : 'GST & Applicable Platform Fees:', margin + 115, y + 11);
+  pdf.text(isTrial ? '100% Waived (Rs. 0)' : 'Inclusive (Rs. 0 Extra)', pageWidth - margin - 4, y + 11, { align: 'right' });
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(10.5);
   pdf.setTextColor(15, 23, 42);
-  pdf.text('Total Amount Paid:', margin + 115, y + 18);
+  pdf.text(isTrial ? 'Total Trial Value:' : 'Total Amount Paid:', margin + 115, y + 18);
   pdf.setTextColor(5, 150, 105);
   pdf.text(`Rs. ${data.amount.toLocaleString('en-IN')}`, pageWidth - margin - 4, y + 18, { align: 'right' });
 
@@ -425,12 +438,17 @@ export async function generatePaymentReceiptPDF(data: ReceiptData): Promise<jsPD
   pdf.text('Amount in Words:', margin + 4, y + 6);
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(30, 41, 59);
-  const words = numberToIndianWords(data.amount);
+  const words = isTrial ? 'Zero Rupees (Complimentary 15-Day Free Trial)' : numberToIndianWords(data.amount);
   pdf.text(words, margin + 4, y + 11);
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(5, 150, 105);
-  pdf.text('Payment Gateway: Razorpay 256-Bit SSL Secured (Paid in Full)', margin + 4, y + 17);
+  const paymentMethodLabel = isTrial
+    ? 'Activation Mode: 15-Day Free Trial (No Payment Charged)'
+    : data.paymentMethod === 'ADMIN_MANUAL' || data.paymentMethod?.includes('ADMIN')
+    ? 'Payment Method: Authorized Admin Activation (Paid in Full)'
+    : `Payment Gateway: ${data.paymentMethod || 'Razorpay 256-Bit SSL Secured'} (Paid in Full)`;
+  pdf.text(paymentMethodLabel, margin + 4, y + 17);
 
   y += 26;
 

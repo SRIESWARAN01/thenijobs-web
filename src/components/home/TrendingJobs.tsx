@@ -10,6 +10,8 @@ import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, limit } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import { isJobUrgent } from '@/lib/constants';
 
 interface Job {
   id: string;
@@ -24,6 +26,7 @@ interface Job {
   posted: string;
   logo: string;
   isUrgent: boolean;
+  urgentUntil?: any;
   isFeatured: boolean;
   isVerified: boolean;
   category: string;
@@ -43,11 +46,23 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
 
 function JobCard({ job, rank, saved, onSave }: { job: Job; rank: number; saved: boolean; onSave: (e: React.MouseEvent) => void }) {
   const typeStyle = TYPE_COLORS[job.type] || TYPE_COLORS['Full Time'];
+  const hasUrgentSpotlight = isJobUrgent(job);
 
   return (
     <Link href={`/jobs/${job.slug || job.id}`} className="block group">
-      <div className="bg-white border-2 border-gray-100 rounded-3xl p-5 hover:border-blue-300 hover:shadow-lg transition-all duration-200 group-hover:-translate-y-1 relative flex flex-col justify-between h-full">
+      <div className={`bg-white rounded-3xl p-5 hover:shadow-lg transition-all duration-200 group-hover:-translate-y-1 relative flex flex-col justify-between h-full ${
+        hasUrgentSpotlight
+          ? 'border-2 border-red-500/80 shadow-md shadow-red-500/15 ring-2 ring-red-500/20'
+          : 'border-2 border-gray-100 hover:border-blue-300'
+      }`}>
         <div>
+          {/* Urgent Hiring 48-Hour Spotlight Badge */}
+          {hasUrgentSpotlight && (
+            <div className="mb-3">
+              <UrgentSpotlightBadge job={job} variant="compact" />
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-start gap-3 mb-3">
             {/* Logo */}
@@ -283,7 +298,8 @@ export default function TrendingJobs() {
               education: d.education || '',
               posted: formatTime(d.createdAt),
               logo: d.logoUrl || d.logo || '',
-              isUrgent: !!d.isUrgent,
+              isUrgent: isJobUrgent(d),
+              urgentUntil: d.urgentUntil,
               isFeatured: !!d.isFeatured,
               isVerified: d.isVerified || false,
               category: d.category || 'General',
@@ -294,8 +310,13 @@ export default function TrendingJobs() {
           })
           .filter(Boolean) as Job[];
 
-        // Sort descending by calculated dynamic trending score
-        calculatedJobs.sort((a, b) => b.trendingScore - a.trendingScore);
+        // Pin active 48-Hour Urgent Spotlight jobs strictly to the top of homepage, then by trendingScore
+        calculatedJobs.sort((a, b) => {
+          const aUrgent = isJobUrgent(a);
+          const bUrgent = isJobUrgent(b);
+          if (aUrgent !== bUrgent) return aUrgent ? -1 : 1;
+          return b.trendingScore - a.trendingScore;
+        });
 
         setJobs(calculatedJobs.slice(0, 6));
       } catch (err) {
@@ -337,6 +358,13 @@ export default function TrendingJobs() {
             <ArrowRight size={14} />
           </Link>
         </div>
+
+        {/* Pinned 48-Hour Urgent Hiring Banner if any active urgent openings exist */}
+        {!loading && jobs.some(j => isJobUrgent(j)) && (
+          <div className="mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <UrgentSpotlightBadge variant="banner" />
+          </div>
+        )}
 
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

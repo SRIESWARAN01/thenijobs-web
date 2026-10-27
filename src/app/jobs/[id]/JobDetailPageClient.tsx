@@ -20,6 +20,8 @@ import { doc, getDoc, addDoc, collection, query, where, getDocs, writeBatch, ser
 import { useToast } from '@/contexts/ToastContext';
 import JobApplySuccessModal from '@/components/ui/JobApplySuccessModal';
 import { slugify } from '@/lib/seo/jobSlug';
+import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import { isJobUrgent } from '@/lib/constants';
 
 interface JobRecord {
   id: string;
@@ -38,6 +40,7 @@ interface JobRecord {
   openings: number;
   logo: string;
   isUrgent: boolean;
+  urgentUntil?: any;
   isVerified: boolean;
   whatsapp?: string;
   phone?: string;
@@ -694,8 +697,15 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Column */}
           <div className="lg:col-span-2 space-y-5">
+            {/* 48-Hour Urgent Spotlight Banner */}
+            {isJobUrgent(job) && (
+              <UrgentSpotlightBadge job={job} variant="banner" />
+            )}
+
             {/* Header Card */}
-            <div className="glass-card rounded-2xl p-6">
+            <div className={`glass-card rounded-2xl p-6 ${
+              isJobUrgent(job) ? 'border-2 border-red-500/70 shadow-lg shadow-red-500/10' : ''
+            }`}>
               <div className="flex gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-white/5 border border-gray-200 flex items-center justify-center text-3xl font-bold shrink-0 overflow-hidden">
                   {job.logo && !logoBroken ? (
@@ -714,10 +724,8 @@ export default function JobDetailPageClient({ id: idProp, initialJob }: { id: st
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">{job.title}</h1>
-                        {job.isUrgent && (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
-                            <Zap size={9} className="fill-current" /> URGENT
-                          </span>
+                        {isJobUrgent(job) && (
+                          <UrgentSpotlightBadge job={job} variant="full" showCountdown={true} />
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 text-sm font-medium">

@@ -8,8 +8,9 @@ import BottomNav from '@/components/navigation/BottomNav';
 import {
   Building2, MapPin, Globe, FileText, Image,
   Clock, ChevronRight, Check, ArrowLeft, ArrowRight,
-  Loader2, Upload, Plus, X, BadgeCheck
+  Loader2, Upload, Plus, X, BadgeCheck, Sparkles
 } from 'lucide-react';
+import CompanyAiEnhanceModal from '@/components/company/CompanyAiEnhanceModal';
 import { BUSINESS_CATEGORIES, TN_DISTRICTS } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, addDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -49,6 +50,8 @@ export default function CompanyRegisterPage() {
   const removeService = (i: number) => setServices(s => s.filter((_, idx) => idx !== i));
 
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [showAiEnhanceModal, setShowAiEnhanceModal] = useState(false);
+  const [aiEnhancedMetadata, setAiEnhancedMetadata] = useState<any>(null);
 
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim() || !form.district.trim()) {
@@ -95,6 +98,9 @@ export default function CompanyRegisterPage() {
           emailVerified: !!form.email,
           gstVerified: !!form.gstNumber,
           businessVerified: false },
+        aiEnhanced: !!aiEnhancedMetadata?.aiEnhanced,
+        aiEnhancedAt: aiEnhancedMetadata?.aiEnhancedAt || null,
+        aiOriginalContent: aiEnhancedMetadata?.aiOriginalContent || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp() });
 
@@ -265,7 +271,18 @@ export default function CompanyRegisterPage() {
                     className="search-input w-full px-4 py-3 text-base sm:text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label htmlFor="company-register-business-description-for-seo-min-100-wor" className="text-xs text-slate-600 font-medium block mb-1.5">Business Description * <span className="text-gray-600">(for SEO – min 100 words)</span></label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="company-register-business-description-for-seo-min-100-wor" className="text-xs text-slate-600 font-medium block">
+                      Business Description * <span className="text-gray-600">(for SEO – min 100 words)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowAiEnhanceModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <Sparkles size={13} className="text-purple-600" /> Auto Fill / Auto Enhance (AI)
+                    </button>
+                  </div>
                   <textarea id="company-register-business-description-for-seo-min-100-wor" rows={5} placeholder="Describe your business, services offered, and what makes you unique. This will appear on Google Search results."
                     value={form.description} onChange={e => update('description', e.target.value)}
                     className="search-input w-full px-4 py-3 text-base sm:text-sm resize-none leading-relaxed" />
@@ -530,6 +547,37 @@ export default function CompanyRegisterPage() {
       </>
       )}
       </div>
+
+      {showAiEnhanceModal && (
+        <CompanyAiEnhanceModal
+          isOpen={showAiEnhanceModal}
+          onClose={() => setShowAiEnhanceModal(false)}
+          originalData={{
+            companyName: form.name,
+            category: form.category || 'Business',
+            district: form.district || 'Theni',
+            location: form.address,
+            phone: form.phone,
+            email: form.email,
+            website: form.website,
+            shortDescription: form.description,
+          }}
+          onApply={(applied) => {
+            if (applied.description) {
+              update('description', applied.description);
+            }
+            if (applied.category && !form.category) {
+              update('category', applied.category);
+            }
+            setAiEnhancedMetadata({
+              aiEnhanced: true,
+              aiEnhancedAt: applied.aiEnhancedAt || new Date(),
+              aiOriginalContent: applied.aiOriginalContent,
+            });
+          }}
+        />
+      )}
+
       <BottomNav />
     </main>
   );

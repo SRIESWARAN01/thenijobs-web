@@ -23,6 +23,8 @@ import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import { isJobUrgent } from '@/lib/constants';
 
 // Public list limit matching platform standards
 const PUBLIC_LIST_LIMIT = 500;
@@ -54,6 +56,7 @@ export interface DailyJob {
   postedText: string;
   deadline?: string;
   isUrgent?: boolean;
+  urgentUntil?: any;
   isVerified?: boolean;
   isFeatured?: boolean;
   isWalkIn?: boolean;
@@ -323,7 +326,8 @@ export default function DailyJobsClient() {
             postedAt: millis,
             postedText,
             deadline: d.deadline || d.expiryDate || '',
-            isUrgent: !!d.isUrgent,
+            isUrgent: isJobUrgent(d),
+            urgentUntil: d.urgentUntil,
             isVerified: !!d.isVerified,
             isFeatured: !!d.isFeatured || !!d.isPremium,
             isWalkIn: !!d.isWalkIn || d.jobType === 'walk_in',
@@ -1251,10 +1255,8 @@ export default function DailyJobsClient() {
                               {job.education}
                             </span>
                           )}
-                          {job.isUrgent && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-extrabold text-[10px]">
-                              URGENT
-                            </span>
+                          {isJobUrgent(job) && (
+                            <UrgentSpotlightBadge job={job} variant="compact" />
                           )}
                           {job.isWalkIn && (
                             <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 font-extrabold text-[10px]">

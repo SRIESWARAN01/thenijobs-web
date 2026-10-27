@@ -13,6 +13,8 @@ import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, addDoc, writeBatch, serverTimestamp, limit as fbLimit } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import { isJobUrgent } from '@/lib/constants';
 
 const PUBLIC_LIST_LIMIT = 500;
 import { LOCATIONS_DATA, CATEGORIES_LIST } from './locationData';
@@ -103,7 +105,16 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
           (j.location && j.location.toLowerCase().includes(loc.slug)) ||
           (j.district && j.district.toLowerCase().includes(loc.slug))
         );
-        setJobs(filtered);
+
+        // Pin active 48-Hour Urgent Spotlight jobs strictly to the top of the taluk hub
+        const sorted = [...filtered].sort((a: any, b: any) => {
+          const aUrgent = isJobUrgent(a);
+          const bUrgent = isJobUrgent(b);
+          if (aUrgent !== bUrgent) return aUrgent ? -1 : 1;
+          return (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0);
+        });
+
+        setJobs(sorted);
       } catch (err) {
         console.error('Error loading location jobs:', err);
       } finally {
@@ -203,32 +214,43 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
               </div>
             ) : jobs.length > 0 ? (
               <div className="space-y-3">
-                {jobs.map((job) => (
-                  <Link
-                    key={job.id}
-                    href={`/jobs/${job.slug || job.id}`}
-                    className="block bg-white border border-gray-200 hover:border-blue-300 rounded-2xl p-5 transition-all hover:shadow-md group"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg flex-shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                          {job.logo ? <img src={job.logo} alt="" className="w-12 h-12 rounded-xl object-contain" /> : <Building2 size={22} />}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                              {job.title}
-                            </h3>
-                            {job.isUrgent && (
-                              <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold rounded-full flex items-center gap-1">
-                                <Zap size={10} className="fill-current" /> Urgent
-                              </span>
-                            )}
+                {jobs.some(j => isJobUrgent(j)) && (
+                  <div className="mb-4">
+                    <UrgentSpotlightBadge variant="banner" />
+                  </div>
+                )}
+                {jobs.map((job) => {
+                  const isUrgent = isJobUrgent(job);
+                  return (
+                    <Link
+                      key={job.id}
+                      href={`/jobs/${job.slug || job.id}`}
+                      className={`block bg-white rounded-2xl p-5 transition-all hover:shadow-md group ${
+                        isUrgent
+                          ? 'border-2 border-red-500/80 shadow-md shadow-red-500/10 ring-2 ring-red-500/15'
+                          : 'border border-gray-200 hover:border-blue-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex gap-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0 transition-colors ${
+                            isUrgent ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                          }`}>
+                            {job.logo ? <img src={job.logo} alt="" className="w-12 h-12 rounded-xl object-contain" /> : <Building2 size={22} />}
                           </div>
-                          <p className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1.5">
-                            {job.companyName || 'Verified Employer'}
-                            {job.isVerified && <BadgeCheck size={14} className="text-emerald-500" />}
-                          </p>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <h3 className="text-base sm:text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                {job.title}
+                              </h3>
+                              {isUrgent && (
+                                <UrgentSpotlightBadge job={job} variant="compact" />
+                              )}
+                            </div>
+                            <p className="text-sm font-semibold text-gray-600 mb-2 flex items-center gap-1.5">
+                              {job.companyName || 'Verified Employer'}
+                              {job.isVerified && <BadgeCheck size={14} className="text-emerald-500" />}
+                            </p>
                           <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
                             <span className="flex items-center gap-1"><MapPin size={13} className="text-slate-500" /> {job.location || loc.name}</span>
                             <span className="flex items-center gap-1"><Banknote size={13} className="text-slate-500" /> {job.salaryMin ? `₹${job.salaryMin.toLocaleString('en-IN')} - ₹${(job.salaryMax || job.salaryMin).toLocaleString('en-IN')}/mo` : 'Best in Industry'}</span>
@@ -253,7 +275,8 @@ export default function LocationJobPageClient({ locationSlug }: { locationSlug: 
                       </div>
                     </div>
                   </Link>
-                ))}
+                );
+              })}
               </div>
             ) : (
               <div className="bg-white rounded-2xl p-10 border border-gray-200 text-center">

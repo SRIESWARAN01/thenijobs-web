@@ -300,7 +300,7 @@ export async function extendCompanyTrial(
  */
 export async function manualActivateSubscription(
   companyId: string,
-  plan: 'standard' | 'premium' | 'enterprise',
+  plan: 'basic' | 'standard' | 'premium' | 'enterprise',
   adminId: string,
   reason: string = 'Manual Admin Activation',
 ) {

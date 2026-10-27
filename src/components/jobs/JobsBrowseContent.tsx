@@ -23,6 +23,8 @@ const PUBLIC_LIST_LIMIT = 500;
 import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import { isJobUrgent } from '@/lib/constants';
 
 /* ─── Types ─── */
 interface Job {
@@ -41,6 +43,7 @@ interface Job {
   postedAt?: number;
   logo: string;
   isUrgent: boolean;
+  urgentUntil?: any;
   isPremium: boolean;
   isFeatured: boolean;
   isVerified: boolean;
@@ -218,14 +221,19 @@ function JobCard({ job, selected, onSelect, onSave, saved }: {
   onSave: () => void; saved: boolean;
 }) {
   const typeStyle = TYPE_COLORS[job.type] || TYPE_COLORS['Full Time'];
+  const hasUrgentSpotlight = isJobUrgent(job);
 
   return (
     <div
       onClick={onSelect}
       className={`cursor-pointer rounded-3xl p-5 border-2 transition-all duration-200 shadow-xs hover:shadow-md ${
         selected
-          ? 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-100'
-          : 'border-gray-200 bg-white hover:border-blue-300'
+          ? hasUrgentSpotlight
+            ? 'border-red-600 bg-red-50/40 ring-2 ring-red-100'
+            : 'border-blue-600 bg-blue-50/40 ring-2 ring-blue-100'
+          : hasUrgentSpotlight
+            ? 'border-red-500/80 bg-white hover:border-red-600 ring-2 ring-red-500/15'
+            : 'border-gray-200 bg-white hover:border-blue-300'
       }`}
     >
       <div className="flex items-start gap-3 mb-3">
@@ -249,14 +257,12 @@ function JobCard({ job, selected, onSelect, onSave, saved }: {
                 {job.isVerified && <BadgeCheck size={14} className="text-emerald-600 flex-shrink-0" />}
               </div>
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
               {job.isFeatured && (
                 <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-full bg-blue-100 text-blue-800">FEATURED</span>
               )}
-              {job.isUrgent && (
-                <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-full bg-red-100 text-red-700 border border-red-300 animate-pulse flex items-center gap-0.5">
-                  ⚡ அவசர தேவை
-                </span>
+              {hasUrgentSpotlight && (
+                <UrgentSpotlightBadge job={job} variant="compact" />
               )}
             </div>
           </div>
@@ -423,7 +429,8 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
               // companyLogoUrl is the field src/app/employer/post-job/page.tsx actually writes;
               // logoUrl/companyLogo/logo are kept as fallbacks for a differently-shaped job doc.
               logo: d.companyLogoUrl || d.logoUrl || d.companyLogo || d.logo || d.companyName?.[0]?.toUpperCase() || 'C',
-              isUrgent: d.isUrgent || false,
+              isUrgent: isJobUrgent(d),
+              urgentUntil: d.urgentUntil,
               isPremium: d.isPremium || false,
               isFeatured: d.isFeatured || false,
               isVerified: d.isVerified || false,
@@ -591,7 +598,9 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
   const visibleJobs = useMemo(() => {
     return [...filtered].sort((a, b) => {
       // 48-Hour Urgent Hiring Spotlight takes absolute top priority
-      if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
+      const aUrgent = isJobUrgent(a);
+      const bUrgent = isJobUrgent(b);
+      if (aUrgent !== bUrgent) return aUrgent ? -1 : 1;
       if (sortBy === 'salary') return (b.salaryMax || 0) - (a.salaryMax || 0);
       if (sortBy === 'newest') return (b.postedAt || 0) - (a.postedAt || 0);
       if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;

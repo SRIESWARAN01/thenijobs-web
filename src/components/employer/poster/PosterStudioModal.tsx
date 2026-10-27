@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  X, Download, Share2, Sparkles, Check, CheckSquare, Square,
+  X, Download, Sparkles, Check, CheckSquare, Square,
   Eye, RefreshCw, Loader2, ExternalLink, QrCode, FileText, Image as ImageIcon,
-  CheckCircle2, AlertCircle, Info, Layers, ChevronRight, MessageCircle, Copy
+  CheckCircle2, AlertCircle, Layers, MessageCircle, Copy
 } from 'lucide-react';
 import { PosterData, GeneratedPoster, TemplateId } from '@/lib/poster/types';
 import { generateAll10Posters, renderPoster } from '@/lib/poster/posterCanvasEngine';
@@ -34,18 +34,10 @@ export default function PosterStudioModal({ isOpen, onClose, data }: PosterStudi
   const [selectedIds, setSelectedIds] = useState<Set<TemplateId>>(new Set());
   const [previewPoster, setPreviewPoster] = useState<GeneratedPoster | null>(null);
   const [isZipping, setIsZipping] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'selected'>('all');
   const [copiedLink, setCopiedLink] = useState(false);
   const [sharingId, setSharingId] = useState<string | null>(null);
 
-  // Generate on first open
-  useEffect(() => {
-    if (isOpen && posters.length === 0 && !loading) {
-      handleGenerateAll();
-    }
-  }, [isOpen]);
-
-  const handleGenerateAll = async () => {
+  const handleGenerateAll = useCallback(async () => {
     try {
       setLoading(true);
       const generated = await generateAll10Posters(data);
@@ -58,7 +50,14 @@ export default function PosterStudioModal({ isOpen, onClose, data }: PosterStudi
     } finally {
       setLoading(false);
     }
-  };
+  }, [data]);
+
+  // Generate on first open
+  useEffect(() => {
+    if (isOpen && posters.length === 0 && !loading) {
+      handleGenerateAll();
+    }
+  }, [isOpen, posters.length, loading, handleGenerateAll]);
 
   const handleRegenerateSingle = async (templateId: TemplateId) => {
     try {

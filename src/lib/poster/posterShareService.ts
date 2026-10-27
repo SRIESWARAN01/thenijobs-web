@@ -76,7 +76,7 @@ export async function sharePosterOnWhatsApp(
   index = 1
 ): Promise<ShareResult> {
   const shareText = formatWhatsAppShareText(data);
-  const filename = `THENIJOBS_${poster.templateId}_Poster.png`;
+  const filename = `THENIJOBS_${poster.templateId}_Poster_${String(index).padStart(2, '0')}.png`;
 
   // 1. Check if native Web Share with files is supported (Android/iOS Chrome, Safari)
   if (typeof navigator !== 'undefined' && 'canShare' in navigator && navigator.canShare) {

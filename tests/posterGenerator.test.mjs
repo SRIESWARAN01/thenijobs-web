@@ -66,6 +66,7 @@ describe('THENIJOBS AI Job Poster Generator — Test Suite', () => {
     ];
 
     categories.forEach(cat => {
+      assert.ok(CATEGORY_THEMES[cat], `Theme record for ${cat} must exist in CATEGORY_THEMES`);
       const theme = getCategoryTheme(cat);
       assert.ok(theme, `Theme for ${cat} must exist`);
       assert.ok(theme.nameTa && theme.nameTa.length > 0, `Theme for ${cat} must have Tamil name`);

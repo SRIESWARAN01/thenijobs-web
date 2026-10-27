@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -312,32 +312,29 @@ export default function MarketplaceItemPageClient({
     : []
   ).filter((entry: any) => entry && typeof entry === 'object' && entry.id !== itemId).slice(0, 4);
 
-  const itemPosterData: PosterData | null = useMemo(() => {
-    if (!company || !item) return null;
-    return {
-      id: itemId,
-      type: type as 'product' | 'service',
-      title: itemName,
-      companyName: company.name,
-      companyLogoUrl: company.logoUrl || company.logo,
-      category: item.category || company.category || (type === 'service' ? 'Professional Service' : 'Retail Product'),
-      location: company.address || company.district || 'Theni District',
-      district: company.district || 'Theni District',
-      salaryText: priceLabel,
-      jobType: type === 'service' ? 'Service Showcase' : 'Product Catalogue',
-      experience: 'Special Offers & Inquiries',
-      education: 'Scan to View Full Details',
-      highlights: [
-        description ? description.slice(0, 75) + '...' : `${itemName} available at ${company.name}`,
-        'Direct WhatsApp inquiry and order booking available',
-        'Verified local business on THENIJOBS Marketplace'
-      ],
-      publicUrl: listingUrl,
-      isVerified: isVerified,
-      isFeatured: true,
-      itemPrice: priceLabel,
-    };
-  }, [company, item, type, itemName, priceLabel, description, listingUrl, isVerified, itemId]);
+  const itemPosterData: PosterData | null = (company && item) ? {
+    id: itemId,
+    type: type as 'product' | 'service',
+    title: itemName,
+    companyName: company.name,
+    companyLogoUrl: company.logoUrl || company.logo,
+    category: item.category || company.category || (type === 'service' ? 'Professional Service' : 'Retail Product'),
+    location: company.address || company.district || 'Theni District',
+    district: company.district || 'Theni District',
+    salaryText: priceLabel,
+    jobType: type === 'service' ? 'Service Showcase' : 'Product Catalogue',
+    experience: 'Special Offers & Inquiries',
+    education: 'Scan to View Full Details',
+    highlights: [
+      description ? description.slice(0, 75) + '...' : `${itemName} available at ${company.name}`,
+      'Direct WhatsApp inquiry and order booking available',
+      'Verified local business on THENIJOBS Marketplace'
+    ],
+    publicUrl: listingUrl,
+    isVerified: isVerified,
+    isFeatured: true,
+    itemPrice: priceLabel,
+  } : null;
 
   const handleWhatsAppOrder = async () => {
     if (company?.id) {

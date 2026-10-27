@@ -37,6 +37,7 @@ import { updateApplicationStatus, createDocument, createNotification } from '@/l
 import { where, orderBy } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import InterviewConfirmedModal from '@/components/ui/InterviewConfirmedModal';
+import WhatsAppInterviewPassModal from '@/components/employer/WhatsAppInterviewPassModal';
 import { safeExternalUrl } from '@/lib/safeUrl';
 
 type PipelineStatus = 'all' | 'applied' | 'shortlisted' | 'interview_scheduled' | 'selected' | 'rejected';
@@ -74,7 +75,8 @@ function CandidateDetailModal({
   appliedTaluk,
   onClose,
   onNotesUpdated,
-  onStatusUpdated
+  onStatusUpdated,
+  onOpenInterviewPass,
 }: {
   seekerId: string;
   applicationId: string;
@@ -92,6 +94,7 @@ function CandidateDetailModal({
   onClose: () => void;
   onNotesUpdated: (notes: string) => void;
   onStatusUpdated: (status: string) => void;
+  onOpenInterviewPass?: () => void;
 }) {
   // RULES-1: users/{uid} is readable only by its owner and admins; employers read the seeker profile
   // (the rule grants employers/business owners read on seekerProfiles).
@@ -278,6 +281,18 @@ function CandidateDetailModal({
           )}
         </div>
 
+        {/* 1-Click WhatsApp Interview Call Pass Button */}
+        {onOpenInterviewPass && (
+          <button
+            type="button"
+            onClick={onOpenInterviewPass}
+            className="w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+          >
+            <MessageCircle size={16} />
+            <span>Send WhatsApp Interview Call Pass with Google Maps Pin (நேர்காணல் அட்டை)</span>
+          </button>
+        )}
+
         {/* Candidate Bio & Details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-4 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-700">
           <p><span className="text-gray-500 font-medium">District / Location:</span> <strong className="text-gray-900 font-bold block sm:inline sm:ml-1">{district}</strong></p>
@@ -449,6 +464,7 @@ export default function CandidatesPage() {
   const [search, setSearch] = useState('');
   const [jobFilter, setJobFilter] = useState('All Jobs');
   const [activeModalCandidate, setActiveModalCandidate] = useState<any | null>(null);
+  const [passCandidate, setPassCandidate] = useState<CandidateRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [view, setView] = useViewMode('employer-candidates', 'table');
 
@@ -673,6 +689,12 @@ export default function CandidatesPage() {
               const curStatus = app.status || 'applied';
               const items: ActionItem[] = [
                 { label: 'Full profile & notes', icon: Eye, onClick: () => setActiveModalCandidate(app) },
+                {
+                  label: 'Send WhatsApp Interview Pass (நேர்காணல் அட்டை)',
+                  icon: MessageCircle,
+                  tone: 'success',
+                  onClick: () => setPassCandidate(app),
+                },
               ];
               if (curStatus !== 'shortlisted' && curStatus !== 'selected') {
                 items.push({ label: 'Shortlist', icon: Star, separatorBefore: true, onClick: () => handleUpdateStatus(app.id, 'shortlisted', app.seekerId ?? '', app.jobTitle ?? 'this role') });
@@ -713,6 +735,46 @@ export default function CandidatesPage() {
           }}
           onStatusUpdated={(status) => {
             setActiveModalCandidate((prev: any) => (prev ? { ...prev, status } : prev));
+          }}
+          onOpenInterviewPass={() => {
+            setPassCandidate(activeModalCandidate);
+          }}
+        />
+      )}
+
+      {/* WhatsApp Interview Pass Modal */}
+      {passCandidate && (
+        <WhatsAppInterviewPassModal
+          isOpen={!!passCandidate}
+          onClose={() => setPassCandidate(null)}
+          candidateName={passCandidate.seekerName || 'Candidate'}
+          candidatePhone={passCandidate.seekerPhone || ''}
+          jobTitle={passCandidate.jobTitle || 'Job Role'}
+          companyName={company?.name || 'Company'}
+          companyAddress={company?.address || 'Theni Main Road, Theni, Tamil Nadu'}
+          companyMapsUrl={company?.mapsUrl || ''}
+          companyContactPhone={company?.phone || user?.phone || '9360519460'}
+          onConfirmSend={async (details) => {
+            try {
+              await updateApplicationStatus(
+                passCandidate.id,
+                'interview_scheduled',
+                `Interview Call Pass issued for ${details.interviewDate} at ${details.interviewTime}. Location: ${details.interviewLocation}. Maps: ${details.mapsUrl}. Pass dispatched via WhatsApp.`
+              );
+              if (passCandidate.seekerId) {
+                await createNotification({
+                  userId: passCandidate.seekerId,
+                  type: 'interview',
+                  title: 'Interview Call Pass Issued! 🎟️',
+                  message: `Interview call pass for "${passCandidate.jobTitle}" on ${details.interviewDate} at ${details.interviewTime} at ${details.interviewLocation} has been issued.`,
+                  actionUrl: '/seeker/interviews'
+                });
+              }
+              toast.success('Interview Call Pass dispatched via WhatsApp!');
+            } catch (err) {
+              console.error('Failed to log interview pass:', err);
+              toast.error('Failed to update interview pass');
+            }
           }}
         />
       )}

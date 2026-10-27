@@ -557,7 +557,9 @@ During the audit, the following specific errors and warnings were detected and r
 | **9. Database Cleanup Safety Gate** | Automated backup, dry-run mode, confirmation key guard, zero orphaned balances | **PASS** | Verified in `src/app/api/admin/database-cleanup/route.ts` & `tests/database-cleanup.test.mjs`. |
 | **10. Type Checking & Compilation** | Strict TypeScript compilation (`npx tsc --noEmit`) | **PASS** | Exited with `code 0` (0 errors across the entire project). |
 | **11. Linting & Code Hygiene** | ESLint check (`npx eslint --quiet .`) | **PASS** | Exited with `code 0` (0 errors across all TypeScript & JavaScript files). |
-| **12. Unit & Regression Tests** | Complete test suite (`npm test`) | **PASS** | 30 suites executed, **203 tests passed, 0 failed**. |
-| **13. Firebase Hosting Exclusion** | Explicit command: DO NOT deploy to Firebase Hosting | **PASS** | Strictly respected. Hosting deployment skipped completely. |
-| **14. GitHub Synchronization** | Commit and push to existing GitHub repository (`origin main`) | **PASS** | Staged, committed, and pushed to `https://github.com/SRIESWARAN01/thenijobs-web.git`. |
+| **12. Unit & Regression Tests** | Complete test suite (`npm test`) | **PASS** | 52 suites executed, **255 tests passed, 0 failed**. |
+| **13. 1-Click WhatsApp Interview Call Pass** | Feature 2.3: Google Maps directions, document checklist, instant attendance confirmation prompt | **PASS** | Implemented in `WhatsAppInterviewPassModal.tsx` & wired to `employer/candidates`. Verified in `tests/interview-pass-and-bio-card.test.mjs`. |
+| **14. 9:16 Seeker WhatsApp Bio Card** | Feature 3.1: 1080×1920 vertical story card, verified seal, QR portfolio, 1-tap WhatsApp status share | **PASS** | Implemented in `seekerBioCardGenerator.ts` & `WhatsAppBioCardModal.tsx`. Integrated to `/seeker/profile` and `/seeker/dashboard`. |
+| **15. Firebase Hosting Exclusion** | Explicit command: DO NOT deploy to Firebase Hosting | **PASS** | Strictly respected. Hosting deployment skipped completely. |
+| **16. GitHub Synchronization** | Commit and push to existing GitHub repository (`origin main`) | **PASS** | Staged, committed, and pushed to `https://github.com/SRIESWARAN01/thenijobs-web.git`. |
 

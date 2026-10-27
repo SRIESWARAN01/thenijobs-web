@@ -5,7 +5,8 @@ import {
   User, Phone, Mail, MapPin, Camera, Briefcase, GraduationCap,
   Plus, X, Check, Save, Globe, Award, Sparkles, Zap,
   CheckCircle, Circle, Languages, ExternalLink, Loader2, Eye,
-  FolderGit2, Shield, Settings, Sliders, ArrowRight, Wand2, FileText, CheckCircle2
+  FolderGit2, Shield, Settings, Sliders, ArrowRight, Wand2, FileText, CheckCircle2,
+  MessageCircle
 } from 'lucide-react';
 import { TN_DISTRICTS } from '@/lib/types';
 import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
@@ -18,6 +19,7 @@ import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
 import SeekerPortfolioClient from '@/app/portfolio/seeker/[id]/SeekerPortfolioClient';
 import SeekerPublicProfileModal from '@/components/payment/SeekerPublicProfileModal';
+import WhatsAppBioCardModal from '@/components/seeker/WhatsAppBioCardModal';
 import { useToast } from '@/contexts/ToastContext';
 import { Switch } from '@/components/dashboard';
 
@@ -195,6 +197,7 @@ export default function SeekerProfilePage() {
   const [activeTab, setActiveTab] = useState<TabKey>('personal');
   const [saving, setSaving] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showBioCardModal, setShowBioCardModal] = useState(false);
   const toast = useToast();
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -546,6 +549,14 @@ export default function SeekerProfilePage() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBioCardModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-600 hover:text-white transition-all text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  <MessageCircle size={13} className="text-emerald-600" />
+                  <span>WhatsApp Bio Card (பயோ அட்டை)</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowPreviewModal(true)}
@@ -1735,6 +1746,33 @@ export default function SeekerProfilePage() {
           oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
           setPublicProfilePaidUntil(oneYearFromNow.getTime());
         }}
+      />
+
+      <WhatsAppBioCardModal
+        isOpen={showBioCardModal}
+        onClose={() => setShowBioCardModal(false)}
+        profile={{
+          uid: user?.uid,
+          name: profile.name,
+          displayName: profile.name,
+          headline: profile.headline,
+          currentRole: profile.currentRole,
+          highestDegree: education[0]?.degree || 'Graduate',
+          education,
+          experience,
+          experienceYears: experience.length ? `${experience.length} Years` : 'Fresher',
+          skills,
+          skillsWithLevels,
+          preferredLocations: profile.preferredLocations,
+          targetRoles: profile.targetRoles,
+          district: profile.district,
+          phone: profile.phone,
+          email: profile.email,
+          photoUrl: profile.photoUrl,
+          noticePeriod: profile.noticePeriod,
+          isOpenToWork: profile.isOpenToWork,
+        }}
+        uid={user?.uid}
       />
     </div>
   );

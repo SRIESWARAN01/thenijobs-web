@@ -90,16 +90,21 @@ mindmap
     - Benefits: `Free Food / Accommodation`
 - **Business ROI**: Cuts job posting time from 8 minutes to 30 seconds; huge rural adoption.
 
-### 2.3 1-Click WhatsApp Interview Call Pass with Google Maps Pin (வாட்ஸ்அப் நேர்காணல் அனுமதி அட்டை)
+### 2.3 1-Click WhatsApp Interview Call Pass with Google Maps Pin (வாட்ஸ்அப் நேர்காணல் அனுமதி அட்டை) — ✅ IMPLEMENTED & VERIFIED
 - **Problem**: Candidates get lost finding shops or forget interview timings and documents to bring.
 - **Solution**:
-  - In candidate list, click **"Send WhatsApp Interview Pass"**.
+  - In candidate list, click **"Send WhatsApp Interview Pass"** or access via applicant drawer.
   - Automatically generates a formatted WhatsApp message with:
     - Company Name & Contact Person
     - Interview Date & Time slot
     - Google Maps directions link to shop entrance
-    - Checklist of documents (Aadhaar, Bio-data, Marksheet)
+    - Checklist of documents (Aadhaar, Bio-data, Marksheet, Photos, Experience letter)
     - Single-click **"Confirm Attendance"** response button.
+- **Implementation**:
+  - Component: `src/components/employer/WhatsAppInterviewPassModal.tsx`
+  - Integration: `src/app/employer/candidates/page.tsx`
+  - Automatic status mutation to `interview_scheduled`, application note timestamping, and seeker notification trigger.
+  - Test Suite: `tests/interview-pass-and-bio-card.test.mjs`
 
 ### 2.4 Candidate Match & Proximity Score (தகுதியான ஆட்கள் AI தரவரிசை)
 - **Problem**: Employers receive dozens of applications and have to open each resume manually.
@@ -114,16 +119,23 @@ mindmap
 
 ## 3. Job Seeker Portal Enhancements (வேலை தேடுவோர் தளம்)
 
-### 3.1 1-Tap "My THENIJOBS Profile" WhatsApp Story Card (வாட்ஸ்அப் பயோ அட்டை)
+### 3.1 1-Tap "My THENIJOBS Profile" WhatsApp Story Card (வாட்ஸ்அப் பயோ அட்டை) — ✅ IMPLEMENTED & VERIFIED
 - **Problem**: Job seekers want to share their availability with family and friends on WhatsApp Status.
 - **Solution**:
-  - In `/seeker/profile`, add a **"Generate WhatsApp Status Bio Card"** button.
-  - Produces a vertical 9:16 card showing:
+  - In `/seeker/profile` and `/seeker/dashboard`, add **"Generate WhatsApp Status Bio Card"** button.
+  - Produces a vertical 9:16 card (1080×1920) showing:
     - Candidate Photo & Full Name
-    - Top Skills (e.g., *B.Com + Tally GST, Two-Wheeler License*)
+    - High-contrast banner: `🟢 வேலை தேடுகிறேன் • OPEN TO WORK`
+    - Top Skills (e.g., *B.Com + Tally GST, Two-Wheeler License, Driving*)
     - Preferred Taluks & Job Roles
-    - Official Verified Candidate Seal & Profile Link
-  - 1-click opens WhatsApp Status with image attached!
+    - Contact phone & availability notice period
+    - Official Verified Candidate Seal & Scannable QR Code targeting the seeker's live public portfolio
+  - 1-click opens WhatsApp Status with image attached (Web Share API with file) or downloads PNG with prefilled Tamil status text!
+- **Implementation**:
+  - Generator: `src/lib/poster/seekerBioCardGenerator.ts`
+  - Modal: `src/components/seeker/WhatsAppBioCardModal.tsx`
+  - Integration: `src/app/seeker/profile/page.tsx` & `src/app/seeker/dashboard/page.tsx`
+  - Test Suite: `tests/interview-pass-and-bio-card.test.mjs`
 
 ### 3.2 Village Bus Route & Commute Proximity Finder (பேருந்து வழித்தடம் & தூர வழிகாட்டி)
 - **Problem**: Public transport in Theni rural areas operates on specific bus frequencies (e.g., between Andipatti and Myladumparai). Candidates often reject jobs if bus connectivity is poor.

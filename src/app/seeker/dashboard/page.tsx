@@ -1,10 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertCircle, ArrowRight, ArrowUpRight, Award, Bell, Bookmark, Briefcase, Building2,
-  Calendar, CheckCircle2, ChevronRight, Clock, Eye, FileText, MapPin, Search, Send,
+  Calendar, CheckCircle2, ChevronRight, Clock, Eye, FileText, MapPin, MessageCircle, Search, Send,
   Sparkles, TrendingUp, User,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,7 @@ import {
   Stat, StatGrid, type PillTone,
 } from '@/components/dashboard';
 import WhatsAppJobAlertsCard from '@/components/jobs/WhatsAppJobAlertsCard';
+import WhatsAppBioCardModal from '@/components/seeker/WhatsAppBioCardModal';
 
 const STATUS_LABEL: Record<string, { tone: PillTone; label: string }> = {
   applied:             { tone: 'info', label: 'Applied' },
@@ -74,6 +76,8 @@ export default function SeekerDashboard() {
   const user = auth.user as SeekerProfile | null | undefined;
   const firebaseUser = (auth as { firebaseUser?: { displayName?: string; photoURL?: string } }).firebaseUser;
   const uid = user?.uid;
+
+  const [showBioCardModal, setShowBioCardModal] = useState(false);
 
   const { stats, loading: statsLoading } = useSeekerStats(uid);
   const { data: seekerProfile } = useDocument<SeekerProfileDoc>('seekerProfiles', uid);
@@ -348,6 +352,15 @@ export default function SeekerDashboard() {
                   );
                 })}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowBioCardModal(true)}
+                className="w-full mt-2.5 py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+              >
+                <MessageCircle size={15} className="text-emerald-600" />
+                <span>WhatsApp Bio Card • பயோ அட்டை (9:16)</span>
+              </button>
             </CardBody>
           </Card>
 
@@ -405,6 +418,28 @@ export default function SeekerDashboard() {
         <TrendingUp size={12} aria-hidden />
         <span>Stats refresh automatically as employers act on your applications.</span>
       </div>
+
+      <WhatsAppBioCardModal
+        isOpen={showBioCardModal}
+        onClose={() => setShowBioCardModal(false)}
+        profile={{
+          uid,
+          name: seekerProfile?.name || displayName,
+          displayName,
+          headline: seekerProfile?.currentRole || 'Looking for Job in Theni',
+          currentRole: seekerProfile?.currentRole,
+          highestDegree: Array.isArray(seekerProfile?.education) && (seekerProfile.education[0] as any)?.degree ? String((seekerProfile.education[0] as any).degree) : 'Graduate',
+          education: Array.isArray(seekerProfile?.education) ? seekerProfile.education as any : [],
+          experience: Array.isArray(seekerProfile?.experience) ? seekerProfile.experience as any : [],
+          experienceYears: Array.isArray(seekerProfile?.experience) && seekerProfile.experience.length ? `${seekerProfile.experience.length} Years` : 'Fresher',
+          skills: Array.isArray(seekerProfile?.skills) ? seekerProfile.skills.map(s => String(s)) : [],
+          district: seekerProfile?.district || 'Theni',
+          phone: user?.phone || user?.phoneNumber || '',
+          photoUrl: seekerProfile?.photoUrl || firebaseUser?.photoURL || '',
+          isOpenToWork: true,
+        }}
+        uid={uid}
+      />
     </PageShell>
   );
 }

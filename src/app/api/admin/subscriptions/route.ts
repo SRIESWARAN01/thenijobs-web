@@ -189,14 +189,14 @@ export async function POST(req: NextRequest) {
     const now = new Date();
 
     // Check existing subscription end date to add 1 full year from current end or now
-    let baseStartDate = now;
+    const baseStartDate = now;
     let baseEndDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
 
     const existingSubsQuery = await db.collection('subscriptions')
       .where('companyId', '==', companyId)
       .get();
 
-    let targetSubDoc = existingSubsQuery.docs.find(d => d.data().status === 'active') || existingSubsQuery.docs[0];
+    const targetSubDoc = existingSubsQuery.docs.find(d => d.data().status === 'active') || existingSubsQuery.docs[0];
 
     if (targetSubDoc) {
       const currentEnd = targetSubDoc.data().endDate?._seconds

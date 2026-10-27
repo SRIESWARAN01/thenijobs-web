@@ -762,7 +762,7 @@ export default function AdminCareerGrowthPage() {
             <div className="p-10 bg-white rounded-2xl border border-slate-200 text-center text-slate-500">
               <BookOpen size={36} className="mx-auto mb-2 text-slate-300" />
               <p className="font-bold text-slate-700">No courses found matching filter</p>
-              <p className="text-xs mt-1">Click "Create Course" to add a new curriculum.</p>
+              <p className="text-xs mt-1">Click &quot;Create Course&quot; to add a new curriculum.</p>
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">

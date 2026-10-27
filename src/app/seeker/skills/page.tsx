@@ -88,16 +88,17 @@ export default function SeekerSkillsPage() {
   const [enrollingCourseId, setEnrollingCourseId] = useState<string | null>(null);
 
   // ── 1. Fetch Real Live Data ───────────────────────────────────────────────────
+  const userId = user?.uid;
   const loadData = useCallback(async () => {
-    if (!user?.uid) return;
+    if (!userId) return;
     try {
       setLoading(true);
       const [catsData, coursesData, pathsData, enrollsData, certsData] = await Promise.all([
         getSkillCategories(true).catch(() => []),
         getCourses({ status: 'published' }).catch(() => []),
         getLearningPaths({ status: 'published' }).catch(() => []),
-        getEnrollments(user.uid).catch(() => []),
-        getCertificates(user.uid).catch(() => []),
+        getEnrollments(userId).catch(() => []),
+        getCertificates(userId).catch(() => []),
       ]);
 
       setCategories(catsData);
@@ -111,13 +112,13 @@ export default function SeekerSkillsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.uid, toast]);
+  }, [userId, toast]);
 
   useEffect(() => {
-    if (!authLoading && user?.uid) {
+    if (!authLoading && userId) {
       loadData();
     }
-  }, [authLoading, user?.uid, loadData]);
+  }, [authLoading, userId, loadData]);
 
   // Derived user statistics
   const metrics = useMemo(() => {
@@ -631,7 +632,7 @@ export default function SeekerSkillsPage() {
                   <GraduationCap size={32} />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-base font-bold text-slate-900">You haven't enrolled in any courses yet</h3>
+                  <h3 className="text-base font-bold text-slate-900">You haven&apos;t enrolled in any courses yet</h3>
                   <p className="text-xs text-slate-500 max-w-md mx-auto">
                     Browse our practical courses in Accounting, Software, Typing, Field Marketing, and more to advance your career.
                   </p>
@@ -894,7 +895,7 @@ export default function SeekerSkillsPage() {
                         {/* Learning Objectives Preview */}
                         {course.learningObjectives?.length > 0 && (
                           <div className="space-y-1 pt-1 border-t border-slate-100">
-                            <p className="text-[11px] font-semibold text-slate-700">What you'll learn:</p>
+                            <p className="text-[11px] font-semibold text-slate-700">What you&apos;ll learn:</p>
                             <ul className="space-y-0.5 text-[11px] text-slate-500">
                               {course.learningObjectives.slice(0, 2).map((obj, i) => (
                                 <li key={i} className="flex items-center gap-1.5 truncate">

@@ -22,7 +22,7 @@ async function getCourseData(slugOrId: string) {
     const db = getAdminFirestore();
 
     // 1. Try finding by slug
-    let querySnap = await db.collection('skillCourses')
+    const querySnap = await db.collection('skillCourses')
       .where('slug', '==', slugOrId)
       .where('status', '==', 'published')
       .limit(1)

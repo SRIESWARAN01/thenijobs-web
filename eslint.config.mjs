@@ -21,6 +21,8 @@ const eslintConfig = defineConfig([
       "react-hooks/refs": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/static-components": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-compiler/react-compiler": "off",
     },
   },
 ]);

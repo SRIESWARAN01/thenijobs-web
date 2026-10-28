@@ -11,6 +11,7 @@ import { SITE_CONTACT } from '@/lib/constants';
 import { getReceiptGrowthSlogan } from '@/lib/branding/slogans';
 import { generatePaymentReceiptPDF, ReceiptData } from '@/lib/pdf/receiptGenerator';
 import { getDeterministicBillingSlogan } from '@/lib/billing/sloganLibrary';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 export interface PlanDetails {
   name: string;
@@ -124,8 +125,9 @@ export default function PaymentCheckoutModal({
           cache: 'no-store'
         });
 
-        if (res.ok) {
-          const data = await res.json();
+        const parsed = await safeParseResponse<any>(res);
+        if (parsed.ok && parsed.data) {
+          const data = parsed.data;
           if (data.isPaid && (data.receiptData || data.payment)) {
             const resolvedReceipt: ReceiptData = data.receiptData || {
               receiptNo: `THENI-REC-${paymentId.replace(/[^a-zA-Z0-9]/g, '').slice(-6).toUpperCase()}`,
@@ -193,10 +195,12 @@ export default function PaymentCheckoutModal({
         }),
       });
 
-      const orderData = await orderRes.json();
-      if (!orderRes.ok || !orderData.success) {
-        throw new Error(orderData.error || 'Failed to initiate payment order with gateway.');
+      const parsedOrder = await safeParseResponse<{ success?: boolean; error?: string; key?: string; orderId?: string }>(orderRes);
+      const orderData = parsedOrder.data;
+      if (!parsedOrder.ok || !orderData?.success || !orderData.orderId) {
+        throw new Error(orderData?.error || parsedOrder.error || 'Failed to initiate payment order with gateway.');
       }
+      const orderId = orderData.orderId;
 
       // Check if Razorpay script is loaded
       const isScriptLoaded = await loadRazorpayScript();
@@ -245,12 +249,12 @@ export default function PaymentCheckoutModal({
             }
 
             setPendingIdentifiers({
-              orderId: orderData.orderId,
+              orderId,
               paymentId: response.razorpay_payment_id,
             });
 
             await handleVerifyPayment(
-              orderData.orderId,
+              orderId,
               response.razorpay_payment_id,
               response.razorpay_signature || '',
             );
@@ -308,7 +312,8 @@ export default function PaymentCheckoutModal({
         }),
       });
 
-      const verifyData = await verifyRes.json();
+      const parsedVerify = await safeParseResponse<any>(verifyRes);
+      const verifyData = parsedVerify.data;
 
       // If server verified Razorpay but is synchronizing records asynchronously
       if (verifyRes.status === 202 || verifyData?.pendingReconciliation) {
@@ -316,8 +321,8 @@ export default function PaymentCheckoutModal({
         return;
       }
 
-      if (!verifyRes.ok || !verifyData.success) {
-        throw new Error(verifyData.error || 'Payment verification failed at backend.');
+      if (!parsedVerify.ok || !verifyData?.success) {
+        throw new Error(verifyData?.error || parsedVerify.error || 'Payment verification failed at backend.');
       }
 
       // If server returned pre-formatted receiptData, use it directly!

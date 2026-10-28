@@ -227,8 +227,10 @@ export default function RegisterBusinessPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: uid }),
       });
-      const data = await res.json();
-      if (!res.ok) {
+      const rawText = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(rawText); } catch {}
+      if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to request free trial.');
       }
       toast.success('15-Day Free Trial requested! Your account is now waiting for Admin approval.');

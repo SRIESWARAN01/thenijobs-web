@@ -14,12 +14,13 @@ import { TN_DISTRICTS } from '@/lib/types';
 import type { UserRole } from '@/lib/types';
 import { Button, PageHeader } from '@/components/dashboard';
 
-type CreateRole = 'job_seeker' | 'employer' | 'business_owner' | 'supplier' | 'service_provider' | 'admin';
+type CreateRole = 'job_seeker' | 'employer' | 'business_owner' | 'employee' | 'supplier' | 'service_provider' | 'admin';
 
 const ROLE_OPTIONS: { id: CreateRole; label: string; icon: any; desc: string; color: string; bg: string }[] = [
   { id: 'job_seeker', label: 'Job Seeker', icon: Briefcase, desc: 'Create a job seeker account', color: '#2563EB', bg: '#EFF6FF' },
   { id: 'employer', label: 'Employer / HR', icon: Building2, desc: 'Create an employer account', color: '#059669', bg: '#ECFDF5' },
   { id: 'business_owner', label: 'Business Owner', icon: Building2, desc: 'Create a business owner account', color: '#D97706', bg: '#FFFBEB' },
+  { id: 'employee', label: 'Company Staff / Recruiter', icon: User, desc: 'Create a company employee or recruiter account', color: '#475569', bg: '#F1F5F9' },
   { id: 'supplier', label: 'Supplier / B2B', icon: Package, desc: 'Create a supplier account', color: '#7C3AED', bg: '#F5F3FF' },
   { id: 'service_provider', label: 'Service Provider', icon: Wrench, desc: 'Create a service provider account', color: '#E11D48', bg: '#FFF1F2' },
   { id: 'admin', label: 'Admin', icon: ShieldCheck, desc: 'Create an administrator account', color: '#4B5563', bg: '#F3F4F6' },
@@ -228,12 +229,12 @@ export default function AdminCreateUserPage() {
               placeholder="Enter full name" className={inputCls} />
           </div>
 
-          {/* Company Name (for employer/business_owner) */}
-          {(form.role === 'employer' || form.role === 'business_owner') && (
+          {/* Company Name (for employer/business_owner/employee) */}
+          {(form.role === 'employer' || form.role === 'business_owner' || form.role === 'employee') && (
             <div>
-              <label htmlFor="admin-users-create-company-name" className={labelCls}><Building2 size={12} className="inline mr-1" />Company Name</label>
+              <label htmlFor="admin-users-create-company-name" className={labelCls}><Building2 size={12} className="inline mr-1" />Company Name / ID *</label>
               <input id="admin-users-create-company-name" type="text" value={form.companyName} onChange={e => update('companyName', e.target.value)}
-                placeholder="Enter company/business name" className={inputCls} />
+                placeholder="Enter assigned company name or ID" className={inputCls} />
             </div>
           )}
 

@@ -154,12 +154,23 @@ export function getFriendlyAuthErrorMessage(codeOrMessage: unknown, defaultMessa
     case 'auth/wrong-password':
       return 'Incorrect password. Please verify and try again.';
     default: {
-      const msg = typeof codeOrMessage === 'object' && codeOrMessage !== null && 'message' in codeOrMessage
+      const raw = typeof codeOrMessage === 'object' && codeOrMessage !== null && 'message' in codeOrMessage
         ? String((codeOrMessage as any).message)
         : typeof codeOrMessage === 'string' && codeOrMessage
         ? codeOrMessage
         : defaultMessage || 'Authentication failed. Please try again.';
-      return msg;
+
+      // Map raw browser/JSON fetch exceptions to user-friendly messages
+      if (
+        raw.includes("Failed to execute 'json' on 'Response'") ||
+        raw.includes('Unexpected end of JSON input') ||
+        raw.includes('is not valid JSON') ||
+        raw.includes('JSON.parse')
+      ) {
+        return 'Server authentication service response was incomplete. Please check your connection or try again.';
+      }
+
+      return raw;
     }
   }
 }

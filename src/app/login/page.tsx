@@ -218,7 +218,9 @@ function LoginPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: cleanPhone }),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(rawText); } catch {}
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to send OTP.');
       }
@@ -250,7 +252,9 @@ function LoginPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: cleanPhone }),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(rawText); } catch {}
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to resend SMS OTP.');
       }
@@ -276,7 +280,9 @@ function LoginPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: cleanPhone }),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(rawText); } catch {}
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to initiate Voice Call.');
       }
@@ -305,7 +311,9 @@ function LoginPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, otp: fullCode }),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(rawText); } catch {}
       if (!res.ok || !data.verified) {
         throw new Error(data.error || 'Invalid OTP. Please check the code and try again.');
       }

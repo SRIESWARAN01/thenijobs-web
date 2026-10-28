@@ -1,17 +1,18 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Users, Search, Download, ShieldCheck, Ban, Trash2,
   UserCheck, AlertCircle, Loader2, CheckCircle, XCircle,
   FileText, Phone, Mail, MapPin, ExternalLink, Briefcase,
   GraduationCap, Globe, Clock, Star, X, Check, Eye,
-  Languages, Sparkles, Filter, RefreshCw, MessageCircle
+  Languages, Sparkles, Filter, RefreshCw, MessageCircle, CreditCard
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import SeekerIDCard from '@/components/id-card/SeekerIDCard';
 import {
   ActionMenu, Button, Card, DataTable, EmptyState, PageHeader, PageShell,
   Pill, Stat, StatGrid, ViewToggle, useViewMode,
@@ -52,6 +53,16 @@ interface SeekerProfileDoc {
   skills?: string[];
   languages?: string[];
   resumeUrl?: string;
+  resumes?: Array<{
+    id: string;
+    name: string;
+    uploadDate?: string;
+    size?: string;
+    isDefault?: boolean;
+    format?: string;
+    url?: string;
+    storagePath?: string;
+  }>;
   isVerified?: boolean;
   isPortfolioPublic?: boolean;
   portfolioTemplate?: string;
@@ -88,6 +99,7 @@ interface MergedCandidate {
   isVerified: boolean;
   status: string;
   resumeUrl?: string;
+  resumes?: SeekerProfileDoc['resumes'];
   skills: string[];
   currentRole: string;
   isPortfolioPublic: boolean;
@@ -126,7 +138,14 @@ export default function AdminJobSeekersPage() {
   const [resumeFilter, setResumeFilter] = useState<'all' | 'has_resume' | 'no_resume'>('all');
   const [districtFilter, setDistrictFilter] = useState('All Districts');
   const [selectedCandidate, setSelectedCandidate] = useState<MergedCandidate | null>(null);
+  const [viewingIdCard, setViewingIdCard] = useState<MergedCandidate | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Synchronize query from admin quick search or /admin/users parameter
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearchQuery(q);
+  }, []);
 
   // 2. Correlate Users and SeekerProfiles
   const candidates: MergedCandidate[] = useMemo(() => {
@@ -152,7 +171,9 @@ export default function AdminJobSeekersPage() {
       const district = prof?.district || u.district || 'Theni';
       const isVerified = Boolean(prof?.isVerified || u.isVerified);
       const status = u.status || 'active';
-      const resumeUrl = prof?.resumeUrl;
+      const resumesList = Array.isArray(prof?.resumes) ? prof.resumes : [];
+      const defaultResumeObj = resumesList.find((r) => r?.isDefault) || resumesList[0];
+      const resumeUrl = prof?.resumeUrl || defaultResumeObj?.url || undefined;
       const skills = prof?.skills || [];
       const currentRole = prof?.currentRole || prof?.designation || prof?.headline || '';
       const isPortfolioPublic = Boolean(prof?.isPortfolioPublic);
@@ -166,6 +187,7 @@ export default function AdminJobSeekersPage() {
         isVerified,
         status,
         resumeUrl,
+        resumes: resumesList,
         skills,
         currentRole,
         isPortfolioPublic,
@@ -187,7 +209,8 @@ export default function AdminJobSeekersPage() {
           district: prof.district || 'Theni',
           isVerified: Boolean(prof.isVerified),
           status: 'active',
-          resumeUrl: prof.resumeUrl,
+          resumeUrl: prof.resumeUrl || (Array.isArray(prof.resumes) ? (prof.resumes.find((r) => r?.isDefault)?.url || prof.resumes[0]?.url) : undefined),
+          resumes: Array.isArray(prof.resumes) ? prof.resumes : [],
           skills: prof.skills || [],
           currentRole: prof.currentRole || prof.designation || prof.headline || '',
           isPortfolioPublic: Boolean(prof.isPortfolioPublic),
@@ -200,6 +223,23 @@ export default function AdminJobSeekersPage() {
 
     return merged;
   }, [users, seekerProfiles]);
+
+  // Auto-open candidate dossier if URL ?q= matches UID or exact email
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q && candidates.length > 0 && !selectedCandidate) {
+      const trimmedQ = q.trim().toLowerCase();
+      const match = candidates.find(
+        (c) =>
+          c.id === q ||
+          c.email.toLowerCase() === trimmedQ ||
+          (c.phone && q.length >= 10 && c.phone.replace(/\D/g, '').endsWith(q.replace(/\D/g, '')))
+      );
+      if (match) {
+        setSelectedCandidate(match);
+      }
+    }
+  }, [candidates, selectedCandidate]);
 
   // 3. KPI Statistics
   const stats = useMemo(() => {
@@ -603,6 +643,12 @@ export default function AdminJobSeekersPage() {
               });
             }
 
+            items.push({
+              label: 'View Digital Candidate Pass',
+              icon: CreditCard,
+              onClick: () => setViewingIdCard(c),
+            });
+
             if (!c.isVerified) {
               items.push({
                 label: 'Verify candidate',
@@ -677,7 +723,7 @@ export default function AdminJobSeekersPage() {
             </div>
 
             {/* Quick Contact & Links Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {selectedCandidate.phone ? (
                 <a
                   href={`tel:${selectedCandidate.phone.replace(/[^0-9+]/g, '')}`}
@@ -729,6 +775,14 @@ export default function AdminJobSeekersPage() {
               >
                 <Globe size={13} /> Portfolio
               </Link>
+
+              <button
+                type="button"
+                onClick={() => setViewingIdCard(selectedCandidate)}
+                className="py-2.5 px-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-emerald-200 cursor-pointer"
+              >
+                <CreditCard size={13} /> Digital Pass
+              </button>
             </div>
 
             {/* Candidate Details Grid */}
@@ -740,6 +794,46 @@ export default function AdminJobSeekersPage() {
               <p><span className="text-gray-500 font-medium">Expected Salary:</span> <strong className="text-gray-900 font-bold block sm:inline sm:ml-1">{selectedCandidate.profileDoc?.expectedSalary || 'Negotiable'}</strong></p>
               <p><span className="text-gray-500 font-medium">Registered:</span> <strong className="text-gray-900 font-bold block sm:inline sm:ml-1">{formatDate(selectedCandidate.createdAt)}</strong></p>
             </div>
+
+            {/* Uploaded Resumes Library */}
+            {selectedCandidate.resumes && selectedCandidate.resumes.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                  <FileText size={14} className="text-blue-600" />
+                  Uploaded Resumes ({selectedCandidate.resumes.length}):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedCandidate.resumes.map((res, idx) => (
+                    <div
+                      key={res.id || idx}
+                      className="p-3 bg-white rounded-xl border border-slate-200 text-xs flex items-center justify-between gap-2 shadow-2xs"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate">{res.name}</p>
+                        <p className="text-[11px] text-slate-500">
+                          {res.size || 'PDF'} • {res.uploadDate || 'Uploaded'}
+                          {res.isDefault && (
+                            <span className="ml-1.5 px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                              Default
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {res.url && (
+                        <a
+                          href={safeExternalUrl(res.url)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="shrink-0 p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center gap-1 transition-colors"
+                        >
+                          <Download size={13} /> View
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Bio / Summary */}
             {selectedCandidate.profileDoc?.bio && (
@@ -838,6 +932,61 @@ export default function AdminJobSeekersPage() {
                   Close
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Candidate Digital ID Card Modal */}
+      {viewingIdCard && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs font-outfit"
+          onClick={() => setViewingIdCard(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-xl w-full max-h-[92vh] overflow-y-auto p-5 sm:p-7 shadow-2xl border border-gray-200 space-y-4 animate-fade-in flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 leading-snug">
+                  Digital Candidate Pass &amp; ID Card
+                </h3>
+                <p className="text-xs text-gray-500 font-medium">
+                  Candidate ID Card with QR Verification &amp; Profile Details
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingIdCard(null)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-slate-500 cursor-pointer"
+                aria-label="Close pass"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <SeekerIDCard
+              seeker={{
+                uid: viewingIdCard.id,
+                name: viewingIdCard.name,
+                phone: viewingIdCard.phone,
+                email: viewingIdCard.email,
+                district: viewingIdCard.district,
+                state: (viewingIdCard.profileDoc?.state as string) || 'Tamil Nadu',
+                address: (viewingIdCard.profileDoc?.address as string) || '',
+                skills: viewingIdCard.skills,
+                currentRole: viewingIdCard.currentRole,
+                experience: (viewingIdCard.profileDoc?.experience as any) || [],
+                education: (viewingIdCard.profileDoc?.education as any) || [],
+              }}
+            />
+            <div className="w-full pt-2 flex justify-end">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setViewingIdCard(null)}
+              >
+                Close Pass
+              </Button>
             </div>
           </div>
         </div>

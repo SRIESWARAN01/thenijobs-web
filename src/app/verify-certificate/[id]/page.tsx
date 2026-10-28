@@ -21,11 +21,13 @@ export default function CertificateVerificationPage() {
         setLoading(true);
         setError(null);
         const res = await fetch(`/api/career-growth/certificate/verify?id=${encodeURIComponent(id)}`);
-        const data = await res.json();
-        if (data.success && data.certificate) {
+        const rawText = await res.text();
+        let data: any = {};
+        try { data = JSON.parse(rawText); } catch {}
+        if (data && data.success && data.certificate) {
           setCert(data.certificate);
         } else {
-          setError(data.error || 'Certificate not found or invalid.');
+          setError(data?.error || 'Certificate not found or invalid.');
         }
       } catch (err: any) {
         setError(err.message || 'Verification network error.');

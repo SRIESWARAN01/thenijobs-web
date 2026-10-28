@@ -344,22 +344,108 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
       setLoading(true);
       try {
-        const res = await fetch('/api/auth/select-role', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: currentFbUser.uid,
-            role,
-            email: currentFbUser.email,
-            displayName: currentFbUser.displayName,
-            photoURL: currentFbUser.photoURL,
-            phone: currentFbUser.phoneNumber,
-          }),
-        });
+        let serverSuccess = false;
+        let serverErrorMsg: string | null = null;
 
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to assign role.');
+        try {
+          const res = await fetch('/api/auth/select-role', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: currentFbUser.uid,
+              role,
+              email: currentFbUser.email,
+              displayName: currentFbUser.displayName,
+              photoURL: currentFbUser.photoURL,
+              phone: currentFbUser.phoneNumber,
+            }),
+          });
+
+          const rawText = await res.text();
+          let data: { success?: boolean; error?: string; redirectTo?: string } | null = null;
+          if (rawText && rawText.trim()) {
+            try {
+              data = JSON.parse(rawText);
+            } catch (jsonErr) {
+              console.warn('[assignUserRole] Non-JSON response received from /api/auth/select-role:', jsonErr);
+            }
+          }
+
+          if (res.ok && data?.success) {
+            serverSuccess = true;
+          } else {
+            serverErrorMsg = data?.error || (res.status ? `Server error (HTTP ${res.status})` : 'Server request failed');
+            console.warn('[assignUserRole] Server API response was not successful:', serverErrorMsg);
+          }
+        } catch (fetchErr: any) {
+          console.warn('[assignUserRole] Network error invoking /api/auth/select-role:', fetchErr);
+          serverErrorMsg = fetchErr?.message || 'Network request failed';
+        }
+
+        // Resilient client-side fallback if server API was unavailable
+        if (!serverSuccess) {
+          console.info('[assignUserRole] Executing authenticated client-side Firestore fallback for role:', role);
+          const userDocRef = doc(db, 'users', currentFbUser.uid);
+          const isBusiness = role === 'business_owner';
+          const fallbackDoc: Record<string, any> = {
+            uid: currentFbUser.uid,
+            role,
+            email: currentFbUser.email || '',
+            displayName: currentFbUser.displayName || '',
+            authProvider: 'google.com',
+            isVerified: true,
+            updatedAt: serverTimestamp(),
+          };
+
+          if (currentFbUser.photoURL) fallbackDoc.photoURL = currentFbUser.photoURL;
+          if (currentFbUser.phoneNumber) fallbackDoc.phone = currentFbUser.phoneNumber;
+
+          if (isBusiness) {
+            fallbackDoc.approvalStatus = 'pending';
+            fallbackDoc.accountStatus = 'pending_approval';
+            fallbackDoc.paymentStatus = 'unpaid';
+            fallbackDoc.isEmployer = true;
+            fallbackDoc.canPostJobs = false;
+          } else {
+            // Note: firestore.rules strictly forbids non-admin client writes with approvalStatus: 'approved'
+            // Job seekers are active immediately by role without requiring approvalStatus.
+            fallbackDoc.accountStatus = 'active';
+          }
+
+          const existingSnap = await getDoc(userDocRef);
+          if (!existingSnap.exists()) {
+            fallbackDoc.createdAt = serverTimestamp();
+            fallbackDoc.lastLoginAt = serverTimestamp();
+            await setDoc(userDocRef, fallbackDoc);
+          } else {
+            await setDoc(userDocRef, fallbackDoc, { merge: true });
+          }
+
+          // Ensure skeleton seekerProfiles doc exists for job seekers
+          if (role === 'job_seeker') {
+            try {
+              const seekerRef = doc(db, 'seekerProfiles', currentFbUser.uid);
+              const seekerSnap = await getDoc(seekerRef);
+              if (!seekerSnap.exists()) {
+                await setDoc(seekerRef, {
+                  uid: currentFbUser.uid,
+                  name: currentFbUser.displayName || '',
+                  email: currentFbUser.email || '',
+                  phone: currentFbUser.phoneNumber || '',
+                  skills: [],
+                  experience: [],
+                  education: [],
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp(),
+                });
+              }
+            } catch (seekerProfileErr) {
+              console.warn('[assignUserRole] Seeker profile skeleton creation skipped:', seekerProfileErr);
+            }
+          }
         }
 
         const freshProfile = await fetchUserProfile(currentFbUser.uid);
@@ -371,7 +457,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return freshProfile;
         }
 
-        throw new Error('User profile could not be loaded after role assignment.');
+        // Graceful profile reconstruction if Firestore read is momentarily delayed
+        const reconstructedProfile: User = {
+          uid: currentFbUser.uid,
+          email: currentFbUser.email || '',
+          displayName: currentFbUser.displayName || '',
+          role,
+          isVerified: true,
+          authProvider: 'google.com',
+          accountStatus: role === 'business_owner' ? 'pending_approval' : 'active',
+          approvalStatus: role === 'business_owner' ? 'pending' : undefined,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        setUser(reconstructedProfile);
+        try {
+          localStorage.setItem('tj_cached_user', JSON.stringify(reconstructedProfile));
+        } catch {}
+        return reconstructedProfile;
       } catch (err: any) {
         setLoading(false);
         handleError(err, 'Failed to update user role.');

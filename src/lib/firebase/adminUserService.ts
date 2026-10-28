@@ -91,6 +91,8 @@ export async function adminCreateUser(
       phone: params.phone || '',
       district: params.district || '',
       role: params.role,
+      companyName: params.companyName || '',
+      companyId: params.role === 'employee' ? (params.companyName || '') : '',
       isVerified: false,
       createdByAdmin: true,
       createdAt: serverTimestamp(),

@@ -354,6 +354,7 @@ export default function UsersPage() {
             <option value="job_seeker">Job Seeker</option>
             <option value="employer">Employer</option>
             <option value="business_owner">Business Owner</option>
+            <option value="employee">Employee</option>
             <option value="admin">Admin</option>
             <option value="super_admin">Super Admin</option>
           </select>

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Building2, Briefcase, BarChart3, CreditCard, Shield, Settings, Bell,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Star,
   TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet, Award,
-  BadgeCheck, FileText, GraduationCap, Database, UserCheck
+  BadgeCheck, FileText, GraduationCap, Database, UserCheck, Calendar
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -25,6 +25,7 @@ const ADMIN_NAV = [
   { label: 'Bulk Import', icon: FileSpreadsheet, href: '/admin/businesses/import' },
   { label: 'Jobs', icon: Briefcase, href: '/admin/jobs', badge: 'pending' },
   { label: 'Job Applications', icon: FileText, href: '/admin/applications' },
+  { label: 'Interviews', icon: Calendar, href: '/admin/interviews' },
   { label: 'SEO & Keywords', icon: Search, href: '/admin/seo' },
   { label: 'Leads', icon: TrendingUp, href: '/admin/leads' },
   { label: 'Career Growth', icon: GraduationCap, href: '/admin/career-growth' },

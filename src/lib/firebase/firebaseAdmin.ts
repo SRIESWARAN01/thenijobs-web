@@ -92,26 +92,29 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
     };
   }
 
-  // 3. Local serviceAccountKey.json (Development environment)
-  try {
-    const candidatePaths = [
-      path.join(process.cwd(), 'serviceAccountKey.json'),
-      path.join(process.cwd(), 'thenijobs-web-main', 'serviceAccountKey.json'),
-      path.resolve(__dirname, '../../../serviceAccountKey.json'),
-      path.resolve(__dirname, '../../../../serviceAccountKey.json'),
-    ];
-    for (const localKeyPath of candidatePaths) {
-      if (fs.existsSync(localKeyPath)) {
-        const fileContent = fs.readFileSync(localKeyPath, 'utf8');
-        const parsed = JSON.parse(fileContent);
-        if (parsed.private_key && typeof parsed.private_key === 'string') {
-          parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+  // 3. Local serviceAccountKey.json (Development environment only).
+  // Never trace or load a workstation credential into a production deployment.
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      const candidatePaths = [
+        path.join(process.cwd(), 'serviceAccountKey.json'),
+        path.join(process.cwd(), 'thenijobs-web-main', 'serviceAccountKey.json'),
+        path.resolve(__dirname, '../../../serviceAccountKey.json'),
+        path.resolve(__dirname, '../../../../serviceAccountKey.json'),
+      ];
+      for (const localKeyPath of candidatePaths) {
+        if (fs.existsSync(localKeyPath)) {
+          const fileContent = fs.readFileSync(localKeyPath, 'utf8');
+          const parsed = JSON.parse(fileContent);
+          if (parsed.private_key && typeof parsed.private_key === 'string') {
+            parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+          }
+          return parsed;
         }
-        return parsed;
       }
+    } catch (err: any) {
+      console.warn('[firebaseAdmin] Could not read local serviceAccountKey.json:', err?.message || err);
     }
-  } catch (err: any) {
-    console.warn('[firebaseAdmin] Could not read local serviceAccountKey.json:', err?.message || err);
   }
 
   return null;

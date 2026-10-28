@@ -6,34 +6,57 @@ import { resolveAuthRedirect } from '@/lib/authRedirect';
 const ALLOWED_PUBLIC_ROLES = ['job_seeker', 'business_owner'] as const;
 type AllowedRole = (typeof ALLOWED_PUBLIC_ROLES)[number];
 
+const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    let body: any = null;
+    try {
+      body = await req.json();
+    } catch {
+      // Handle empty body or malformed JSON payload defensively
+      body = {};
+    }
+
     const { userId, role, email, displayName, photoURL, phone } = body || {};
 
     if (!userId || typeof userId !== 'string') {
       return NextResponse.json(
-        { error: 'User ID is mandatory.' },
-        { status: 400 }
+        { success: false, error: 'User ID is mandatory.' },
+        { status: 400, headers: JSON_HEADERS }
       );
     }
 
     if (!role || !ALLOWED_PUBLIC_ROLES.includes(role as AllowedRole)) {
       return NextResponse.json(
-        { error: 'Invalid role. Only Job Seeker or Business Owner can be selected.' },
-        { status: 400 }
+        { success: false, error: 'Invalid role. Only Job Seeker or Business Owner can be selected.' },
+        { status: 400, headers: JSON_HEADERS }
       );
     }
 
     // Security check: strictly prohibit privilege escalation to admin/super_admin
     if (role === 'admin' || role === 'super_admin') {
       return NextResponse.json(
-        { error: 'Administrative roles cannot be self-assigned.' },
-        { status: 403 }
+        { success: false, error: 'Administrative roles cannot be self-assigned.' },
+        { status: 403, headers: JSON_HEADERS }
       );
     }
 
-    const db = getAdminFirestore();
+    let db: any;
+    try {
+      db = getAdminFirestore();
+    } catch (dbErr: any) {
+      console.error('[/api/auth/select-role] Firebase Admin init error:', dbErr?.message);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Backend authentication service unavailable. Client fallback will synchronize profile.',
+          details: dbErr?.message,
+        },
+        { status: 503, headers: JSON_HEADERS }
+      );
+    }
+
     const userDocRef = db.collection('users').doc(userId);
     const existingSnap = await userDocRef.get();
 
@@ -45,8 +68,8 @@ export async function POST(req: NextRequest) {
       // Security check: protect existing admin/super_admin accounts from accidental override
       if (existing.role === 'admin' || existing.role === 'super_admin') {
         return NextResponse.json(
-          { error: 'Administrative user role cannot be modified.' },
-          { status: 403 }
+          { success: false, error: 'Administrative user role cannot be modified.' },
+          { status: 403, headers: JSON_HEADERS }
         );
       }
 
@@ -102,21 +125,68 @@ export async function POST(req: NextRequest) {
 
       await userDocRef.set(newDoc);
       finalUserData = newDoc;
+
+      // Seed skeleton seekerProfiles doc for job seekers
+      if (!isBusiness) {
+        try {
+          const seekerProfileRef = db.collection('seekerProfiles').doc(userId);
+          const seekerSnap = await seekerProfileRef.get();
+          if (!seekerSnap.exists) {
+            await seekerProfileRef.set({
+              uid: userId,
+              name: displayName || '',
+              email: email || '',
+              phone: phone || '',
+              skills: [],
+              experience: [],
+              education: [],
+              createdAt: FieldValue.serverTimestamp(),
+              updatedAt: FieldValue.serverTimestamp(),
+            });
+          }
+        } catch (seekerErr) {
+          console.warn('[/api/auth/select-role] Seeker profile creation warning:', seekerErr);
+        }
+      }
     }
 
     const redirectTo = resolveAuthRedirect(finalUserData as any);
 
-    return NextResponse.json({
-      success: true,
-      userId,
-      role,
-      redirectTo,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        userId,
+        role,
+        redirectTo,
+      },
+      {
+        status: 200,
+        headers: JSON_HEADERS,
+      }
+    );
   } catch (error: any) {
     console.error('[/api/auth/select-role] Error:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to select role.' },
-      { status: 500 }
+      { success: false, error: error?.message || 'Failed to select role.' },
+      { status: 500, headers: JSON_HEADERS }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Please send a POST request with userId and role.' },
+    { status: 405, headers: JSON_HEADERS }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Allow': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

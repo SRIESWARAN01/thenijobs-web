@@ -15,6 +15,7 @@ import { useReferral } from '@/hooks/useReferral';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 const PLAN_ICONS: Record<string, typeof Shield> = {
   Shield,
@@ -111,9 +112,9 @@ export default function PricingClient() {
           companyId: company?.id,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || 'Failed to request free trial.');
+      const parsed = await safeParseResponse<{ success?: boolean; error?: string }>(res);
+      if (!parsed.ok || (parsed.data && parsed.data.success === false)) {
+        alert(parsed.error || parsed.data?.error || 'Failed to request free trial.');
         return;
       }
       router.push('/employer/dashboard');

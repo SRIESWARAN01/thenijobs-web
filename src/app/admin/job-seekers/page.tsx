@@ -7,7 +7,8 @@ import {
   UserCheck, AlertCircle, Loader2, CheckCircle, XCircle,
   FileText, Phone, Mail, MapPin, ExternalLink, Briefcase,
   GraduationCap, Globe, Clock, Star, X, Check, Eye,
-  Languages, Sparkles, Filter, RefreshCw, MessageCircle, CreditCard
+  Languages, Sparkles, Filter, RefreshCw, MessageCircle, CreditCard,
+  Bell, Building2
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { useAuth } from '@/hooks/useAuth';
@@ -104,6 +105,14 @@ interface MergedCandidate {
   currentRole: string;
   isPortfolioPublic: boolean;
   hasProfileDoc: boolean;
+  alerts?: any[];
+  alertCount?: number;
+  employerApplication?: {
+    status?: string;
+    companyId?: string;
+    companyName?: string;
+    submittedAt?: string;
+  };
   createdAt?: FirestoreTime;
   profileDoc?: SeekerProfileDoc;
   userDoc?: UserDoc;
@@ -131,6 +140,7 @@ export default function AdminJobSeekersPage() {
   // 1. Fetch live collections
   const { data: users, loading: usersLoading, refresh: refreshUsers } = useCollection<UserDoc>('users');
   const { data: seekerProfiles, loading: profilesLoading, refresh: refreshProfiles } = useCollection<SeekerProfileDoc>('seekerProfiles');
+  const { data: jobAlerts, loading: alertsLoading, refresh: refreshAlerts } = useCollection<any>('jobAlerts');
 
   // Filter & Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -147,12 +157,22 @@ export default function AdminJobSeekersPage() {
     if (q) setSearchQuery(q);
   }, []);
 
-  // 2. Correlate Users and SeekerProfiles
+  // 2. Correlate Users, SeekerProfiles and Job Alerts
   const candidates: MergedCandidate[] = useMemo(() => {
     // Map seekerProfiles by document ID (user UID)
     const profileMap = new Map<string, SeekerProfileDoc>();
     seekerProfiles.forEach((p) => {
       profileMap.set(p.id, p);
+    });
+
+    // Map jobAlerts by userId
+    const alertsMap = new Map<string, any[]>();
+    jobAlerts.forEach((a) => {
+      if (a.userId) {
+        const list = alertsMap.get(a.userId) || [];
+        list.push(a);
+        alertsMap.set(a.userId, list);
+      }
     });
 
     // Extract all users who have role == 'job_seeker'
@@ -177,6 +197,8 @@ export default function AdminJobSeekersPage() {
       const skills = prof?.skills || [];
       const currentRole = prof?.currentRole || prof?.designation || prof?.headline || '';
       const isPortfolioPublic = Boolean(prof?.isPortfolioPublic);
+      const candidateAlerts = alertsMap.get(u.id) || [];
+      const employerApplication = (u as any).employerApplication;
 
       merged.push({
         id: u.id,
@@ -192,6 +214,9 @@ export default function AdminJobSeekersPage() {
         currentRole,
         isPortfolioPublic,
         hasProfileDoc: Boolean(prof),
+        alerts: candidateAlerts,
+        alertCount: candidateAlerts.length,
+        employerApplication,
         createdAt: u.createdAt || prof?.createdAt,
         profileDoc: prof,
         userDoc: u,
@@ -201,6 +226,7 @@ export default function AdminJobSeekersPage() {
     // Also include any seekerProfiles that exist without a users doc (edge case)
     seekerProfiles.forEach((prof) => {
       if (!processedUids.has(prof.id)) {
+        const candidateAlerts = alertsMap.get(prof.id) || [];
         merged.push({
           id: prof.id,
           name: prof.name || 'Job Seeker',
@@ -215,6 +241,8 @@ export default function AdminJobSeekersPage() {
           currentRole: prof.currentRole || prof.designation || prof.headline || '',
           isPortfolioPublic: Boolean(prof.isPortfolioPublic),
           hasProfileDoc: true,
+          alerts: candidateAlerts,
+          alertCount: candidateAlerts.length,
           createdAt: prof.createdAt,
           profileDoc: prof,
         });
@@ -222,7 +250,7 @@ export default function AdminJobSeekersPage() {
     });
 
     return merged;
-  }, [users, seekerProfiles]);
+  }, [users, seekerProfiles, jobAlerts]);
 
   // Auto-open candidate dossier if URL ?q= matches UID or exact email
   useEffect(() => {

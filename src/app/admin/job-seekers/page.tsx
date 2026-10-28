@@ -542,6 +542,23 @@ export default function AdminJobSeekersPage() {
         ),
     },
     {
+      key: 'jobAlerts',
+      header: 'Job Alerts',
+      align: 'center',
+      render: (c) => (
+        c.alertCount && c.alertCount > 0 ? (
+          <Link
+            href={`/admin/job-alerts?q=${c.id}`}
+            className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors"
+          >
+            <Bell size={12} className="text-amber-600" /> {c.alertCount} {c.alertCount === 1 ? 'alert' : 'alerts'}
+          </Link>
+        ) : (
+          <span className="text-xs text-slate-400 font-medium">0 alerts</span>
+        )
+      ),
+    },
+    {
       key: 'status',
       header: 'Status',
       align: 'center',
@@ -556,7 +573,7 @@ export default function AdminJobSeekersPage() {
     },
   ];
 
-  const loading = usersLoading || profilesLoading;
+  const loading = usersLoading || profilesLoading || alertsLoading;
 
   return (
     <PageShell>
@@ -568,7 +585,7 @@ export default function AdminJobSeekersPage() {
             <Button variant="secondary" size="sm" onClick={handleExportCSV}>
               <Download size={14} aria-hidden /> Export CSV
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => { refreshUsers(); refreshProfiles(); }}>
+            <Button variant="secondary" size="sm" onClick={() => { refreshUsers(); refreshProfiles(); refreshAlerts(); }}>
               <RefreshCw size={14} aria-hidden /> Refresh
             </Button>
           </div>
@@ -821,6 +838,88 @@ export default function AdminJobSeekersPage() {
               <p><span className="text-gray-500 font-medium">Experience:</span> <strong className="text-gray-900 font-bold block sm:inline sm:ml-1">{selectedCandidate.profileDoc?.experienceYears || 'Fresher'}</strong></p>
               <p><span className="text-gray-500 font-medium">Expected Salary:</span> <strong className="text-gray-900 font-bold block sm:inline sm:ml-1">{selectedCandidate.profileDoc?.expectedSalary || 'Negotiable'}</strong></p>
               <p><span className="text-gray-500 font-medium">Registered:</span> <strong className="text-gray-900 font-bold block sm:inline sm:ml-1">{formatDate(selectedCandidate.createdAt)}</strong></p>
+            </div>
+
+            {/* Employer Transition Application Banner (if candidate applied via /seeker/become-employer) */}
+            {selectedCandidate.employerApplication && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <Building2 size={18} className="text-amber-700 shrink-0" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-amber-950">Employer Registration Request</span>
+                      <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-200 text-amber-900">
+                        {selectedCandidate.employerApplication.status || 'Pending'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 font-medium">
+                      Company: <strong>{selectedCandidate.employerApplication.companyName || 'Business Entity'}</strong>
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/admin/business-approvals?q=${selectedCandidate.id}`}
+                  className="px-3 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold shadow-xs transition-colors shrink-0"
+                >
+                  Review In Approvals →
+                </Link>
+              </div>
+            )}
+
+            {/* Candidate Job Alert Subscriptions */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                  <Bell size={14} className="text-amber-600" />
+                  Job Alert Subscriptions ({selectedCandidate.alertCount || 0}):
+                </span>
+                <Link
+                  href={`/admin/job-alerts?q=${selectedCandidate.id}`}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  Open in Alerts Manager →
+                </Link>
+              </div>
+              {selectedCandidate.alerts && selectedCandidate.alerts.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {selectedCandidate.alerts.map((alert: any) => (
+                    <div
+                      key={alert.id}
+                      className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-1.5 shadow-2xs"
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <strong className="text-slate-900 font-bold truncate">
+                          {alert.title || alert.category || 'All Categories'}
+                        </strong>
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
+                            alert.status === 'active'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {alert.status || 'active'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                        <span>📍 {alert.district || 'Any Location'}</span>
+                        <span>•</span>
+                        <span>⏱️ {alert.frequency || 'Daily'}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-600">
+                        <span>Channels:</span>
+                        {alert.channels?.whatsapp && <span className="text-emerald-700 font-bold">WhatsApp</span>}
+                        {alert.channels?.email && <span className="text-blue-700 font-bold">Email</span>}
+                        {alert.channels?.push && <span className="text-violet-700 font-bold">Push</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  No active or paused job alerts configured by this candidate.
+                </p>
+              )}
             </div>
 
             {/* Uploaded Resumes Library */}

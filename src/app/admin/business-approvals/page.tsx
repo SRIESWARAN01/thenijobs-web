@@ -30,6 +30,7 @@ interface BusinessOwnerDoc {
   canPostJobs?: boolean;
   companyId?: string;
   companyName?: string;
+  employerApplication?: any;
   paymentStatus?: 'paid' | 'pending' | 'failed' | 'not_required' | 'unpaid' | string;
   selectedPlan?: 'trial' | 'basic' | 'standard' | 'premium' | 'enterprise' | string;
   subscriptionPlan?: string;
@@ -102,17 +103,22 @@ export default function BusinessApprovalsPage() {
     return map;
   }, [companies]);
 
-  // Filter all business owners
+  // Filter all business owners (including job seekers transitioning via /seeker/become-employer)
   const businessOwners: BusinessOwnerDoc[] = useMemo(() => {
     return users
-      .filter((u: any) => u.role === 'business_owner' || u.approvalStatus !== undefined)
+      .filter((u: any) => u.role === 'business_owner' || u.approvalStatus !== undefined || u.employerApplication?.status !== undefined)
       .map((u: any) => {
         const uid = u.uid || u.id;
         const linkedCompany = companyByOwnerId.get(uid);
+        const resolvedApprovalStatus = u.approvalStatus ?? (u.employerApplication?.status === 'pending' ? 'pending' : u.employerApplication?.status);
+        const resolvedAccountStatus = u.accountStatus ?? (resolvedApprovalStatus === 'approved' ? 'active' : resolvedApprovalStatus === 'rejected' ? 'rejected' : 'pending');
         return {
           ...u,
           uid,
-          companyName: linkedCompany?.name || u.companyName || u.businessName,
+          role: u.role || (u.employerApplication ? 'business_owner' : 'job_seeker'),
+          approvalStatus: resolvedApprovalStatus,
+          accountStatus: resolvedAccountStatus,
+          companyName: linkedCompany?.name || u.employerApplication?.companyName || u.companyName || u.businessName,
           companyDoc: linkedCompany,
         };
       })

@@ -25,6 +25,7 @@ const ADMIN_NAV = [
   { label: 'Bulk Import', icon: FileSpreadsheet, href: '/admin/businesses/import' },
   { label: 'Jobs', icon: Briefcase, href: '/admin/jobs', badge: 'pending' },
   { label: 'Job Applications', icon: FileText, href: '/admin/applications' },
+  { label: 'Job Alerts', icon: Bell, href: '/admin/job-alerts' },
   { label: 'Interviews', icon: Calendar, href: '/admin/interviews' },
   { label: 'SEO & Keywords', icon: Search, href: '/admin/seo' },
   { label: 'Leads', icon: TrendingUp, href: '/admin/leads' },
@@ -193,3 +194,4 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
+

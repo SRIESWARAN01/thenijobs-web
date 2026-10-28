@@ -15,7 +15,7 @@ import {
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
-import { useCollection } from '@/hooks/useFirestore';
+import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
@@ -52,7 +52,9 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   const toast = useToast();
   const { unreadCount } = useNotifications();
   const { data: companies } = useCollection<any>('companies', [where('ownerId', '==', user?.uid || '')], { skip: !user?.uid });
-  const company = companies?.[0];
+  const employeeCompanyId = (user as any)?.companyId || null;
+  const { data: employeeCompany } = useDocument<any>('companies', employeeCompanyId);
+  const company = companies?.[0] || employeeCompany;
   const subState = useSubscriptionStatus(company, user);
   const router = useRouter();
   const pathname = usePathname();
@@ -1159,3 +1161,5 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
     </div>
   );
 }
+
+

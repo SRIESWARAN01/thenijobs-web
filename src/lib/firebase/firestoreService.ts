@@ -827,8 +827,10 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
   const isTrial = userDoc?.selectedPlan === 'trial' || userDoc?.trialRequested;
   const isPaid = userDoc?.paymentStatus === 'paid';
   const selectedPlan = userDoc?.selectedPlan || userDoc?.subscriptionPlan || 'standard';
+  const targetCompanyId = userDoc?.companyId || userDoc?.employerApplication?.companyId;
 
   const userUpdates: Record<string, any> = {
+    role: 'business_owner',
     approvalStatus: 'approved',
     accountStatus: 'active',
     isEmployer: true,
@@ -839,6 +841,15 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
     rejectionReason: '',
     updatedAt: serverTimestamp(),
   };
+
+  if (targetCompanyId && !userDoc?.companyId) {
+    userUpdates.companyId = targetCompanyId;
+  }
+
+  if (userDoc?.employerApplication) {
+    userUpdates['employerApplication.status'] = 'approved';
+    userUpdates['employerApplication.approvedAt'] = now;
+  }
 
   if (isTrial && !isPaid) {
     // 15-Day Free Trial activated starting exactly from Admin Approval time
@@ -885,7 +896,7 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
   await updateDoc(doc(db, 'users', userId), userUpdates);
 
   // If user already has a company, also mark verified, active, and sync plan
-  if (userDoc?.companyId) {
+  if (targetCompanyId) {
     try {
       const companyUpdates: Record<string, any> = {
         verificationStatus: 'verified',
@@ -912,7 +923,7 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
         companyUpdates.isPremium = true;
       }
 
-      await updateDoc(doc(db, 'companies', userDoc.companyId), companyUpdates);
+      await updateDoc(doc(db, 'companies', targetCompanyId), companyUpdates);
     } catch (cErr) {
       console.warn('[approveBusinessOwner] Note updating company:', cErr);
     }
@@ -939,8 +950,9 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
 
 export async function rejectBusinessOwner(userId: string, adminId: string, reason: string) {
   const trimmedReason = reason?.trim() || 'Registration details could not be verified.';
+  const userDoc = await fetchDocument<any>('users', userId);
 
-  await updateDoc(doc(db, 'users', userId), {
+  const updates: Record<string, any> = {
     approvalStatus: 'rejected',
     accountStatus: 'rejected',
     canPostJobs: false,
@@ -948,9 +960,15 @@ export async function rejectBusinessOwner(userId: string, adminId: string, reaso
     rejectedBy: adminId,
     rejectionReason: trimmedReason,
     updatedAt: serverTimestamp(),
-  });
+  };
 
-  const userDoc = await fetchDocument<{ displayName?: string; email?: string }>('users', userId);
+  if (userDoc?.employerApplication) {
+    updates['employerApplication.status'] = 'rejected';
+    updates['employerApplication.rejectedAt'] = serverTimestamp();
+    updates['employerApplication.rejectionReason'] = trimmedReason;
+  }
+
+  await updateDoc(doc(db, 'users', userId), updates);
 
   await createNotification({
     userId,

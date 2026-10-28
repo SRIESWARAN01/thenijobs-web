@@ -106,7 +106,7 @@ mindmap
   - Automatic status mutation to `interview_scheduled`, application note timestamping, and seeker notification trigger.
   - Test Suite: `tests/interview-pass-and-bio-card.test.mjs`
 
-### 2.4 Candidate Match & Proximity Score (தகுதியான ஆட்கள் AI தரவரிசை)
+### 2.4 Candidate Match & Proximity Score (தகுதியான ஆட்கள் AI தரவரிசை) — ✅ IMPLEMENTED & VERIFIED
 - **Problem**: Employers receive dozens of applications and have to open each resume manually.
 - **Solution**:
   - AI match score (0-100%) based on:
@@ -114,6 +114,22 @@ mindmap
     - Relevant skill match (Tally, Driving License, Nursing = +40 pts)
     - Availability for immediate joining (+30 pts)
   - Sorted automatically so employers call the highest-fit local candidates first.
+- **Implementation**:
+  - Matching Engine: `src/lib/matching/candidateMatchScore.ts`
+    - Haversine distance calculations across all 7 Theni taluks (Theni, Periyakulam, Bodinayakanur, Cumbum, Chinnamanur, Uthamapalayam, Andipatti) & surrounding TN districts (within 5 km: +30 pts, 5–15 km: +20 pts, same district: +10 pts).
+    - Skill cluster matching (Tally Prime / Accounts / Billing, Driving License / Two-Wheeler / Commercial Driver, Nursing / GNM / Clinic, +40 pts).
+    - Availability parser for immediate joiners (immediate / 0 days / ready to join: +30 pts, 15 days: +15 pts, 30 days: +5 pts).
+    - Tamil fit tier classifications: `தகுதியான ஆள் • Best Fit` (≥90%), `நல்ல பொருத்தம் • High Fit` (≥70%), `மிதமான பொருத்தம் • Moderate` (≥50%).
+  - UI Component: `src/components/employer/CandidateMatchScoreWidget.tsx`
+    - `CandidateMatchBadge`: Compact/full visual badge with pulsating status indicator, fit tier label, and score percentage.
+    - `CandidateMatchScoreWidget`: 3-part score breakdown (Location & Proximity, Relevant Skills, Availability), progress gauges, and instant AI call recommendation.
+  - Portal Integration: `src/app/employer/candidates/page.tsx`
+    - Default sort order: `sortBy = 'match_desc'` (`⭐ AI Match (Highest first) - Default`) so highest-fit local candidates appear at the very top.
+    - AI Quick Filter tabs: `All`, `Top Matches (75%+)`, `Within 5 km Local`, `Immediate Joiners`.
+    - `Call First (தகுதியான ஆள்)` prominent CTA button in candidate detail modal.
+  - Test Suites:
+    - `tests/candidate-match-and-proximity.test.mjs` (20 tests passing)
+    - `tests/candidate-match-score.test.mjs` (9 tests passing)
 
 ---
 

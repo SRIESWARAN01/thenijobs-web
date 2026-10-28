@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  Users2, Search, Eye, Download, CheckCircle, XCircle,
-  Calendar, Clock, Briefcase, MessageCircle,
-  Star, X, Mail, Phone, ExternalLink, Loader2, Save, GraduationCap,
-  MapPin, Check, FileText, ChevronRight
+  Users2, Search, Eye, CheckCircle, XCircle,
+  Calendar, Clock, MessageCircle,
+  Star, X, Phone, ExternalLink, Loader2, Save,
+  MapPin, Check, FileText, Zap, ArrowUpDown, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +15,13 @@ import {
   ActionMenu, DataTable, ViewToggle, useViewMode,
   type ActionItem, type Column,
 } from '@/components/dashboard';
+import {
+  computeCandidateMatchScore,
+  type CandidateMatchBreakdown,
+} from '@/lib/matching/candidateMatchScore';
+import CandidateMatchScoreWidget, {
+  CandidateMatchBadge,
+} from '@/components/employer/CandidateMatchScoreWidget';
 
 interface CandidateRow {
   id: string;
@@ -31,6 +38,8 @@ interface CandidateRow {
   notes?: string;
   appliedVia?: string;
   createdAt?: FirestoreTime;
+  matchScore?: number;
+  matchBreakdown?: CandidateMatchBreakdown;
   [key: string]: unknown;
 }
 import { updateApplicationStatus, createDocument, createNotification } from '@/lib/firebase/firestoreService';
@@ -73,6 +82,8 @@ function CandidateDetailModal({
   appliedVia,
   appliedPhone,
   appliedTaluk,
+  targetJob,
+  initialMatchBreakdown,
   onClose,
   onNotesUpdated,
   onStatusUpdated,
@@ -91,6 +102,8 @@ function CandidateDetailModal({
   appliedVia?: string;
   appliedPhone?: string;
   appliedTaluk?: string;
+  targetJob?: any;
+  initialMatchBreakdown?: CandidateMatchBreakdown;
   onClose: () => void;
   onNotesUpdated: (notes: string) => void;
   onStatusUpdated: (status: string) => void;
@@ -103,6 +116,47 @@ function CandidateDetailModal({
 
   const [savingNotes, setSavingNotes] = useState(false);
   const [localNotes, setLocalNotes] = useState(initialNotes || '');
+
+  // Compute live AI match score incorporating rich profile data when loaded
+  const effectiveMatch: CandidateMatchBreakdown = useMemo(() => {
+    if (profile || targetJob) {
+      return computeCandidateMatchScore(
+        {
+          id: seekerId,
+          name: seekerName,
+          phone: profile?.phone || appliedPhone,
+          taluk: profile?.taluk || appliedTaluk,
+          location: profile?.district || profile?.city || profile?.location || appliedTaluk,
+          skills: profile?.skills || profile?.keySkills || [],
+          immediateJoiner: profile?.immediateJoiner,
+          noticePeriod: profile?.noticePeriod,
+          availableFrom: profile?.availableFrom,
+          experienceYears: profile?.experienceYears,
+          qualification: profile?.qualification,
+        },
+        targetJob || {
+          title: jobTitle,
+          taluk: appliedTaluk || 'Theni',
+          location: 'Theni',
+        }
+      );
+    }
+    return (
+      initialMatchBreakdown ||
+      computeCandidateMatchScore(
+        {
+          id: seekerId,
+          name: seekerName,
+          phone: appliedPhone,
+          taluk: appliedTaluk,
+        },
+        {
+          title: jobTitle,
+          taluk: 'Theni',
+        }
+      )
+    );
+  }, [profile, targetJob, initialMatchBreakdown, seekerId, seekerName, appliedPhone, appliedTaluk, jobTitle]);
   
   // Interview Form State
   const [showScheduleForm, setShowScheduleForm] = useState(false);
@@ -199,8 +253,6 @@ function CandidateDetailModal({
   const phone = profile?.phone || appliedPhone || 'N/A';
   const cleanPhone = phone.replace(/[^0-9+]/g, '');
   const cleanWhatsApp = (profile?.whatsapp || profile?.phone || appliedPhone || '').replace(/[^0-9]/g, '');
-  const experienceList = profile?.experience || [];
-  const educationList = profile?.education || [];
   const skillsList = profile?.skills || [];
   const district = profile?.district || appliedTaluk || 'Theni';
   const resumeUrl = profile?.resumeUrl;
@@ -244,14 +296,26 @@ function CandidateDetailModal({
           </div>
         )}
 
+        {/* AI Candidate Match & Proximity Score (தகுதியான ஆட்கள் AI தரவரிசை) */}
+        <CandidateMatchScoreWidget match={effectiveMatch} />
+
         {/* Quick Contact & Resume Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {cleanPhone && cleanPhone !== 'N/A' && (
             <a
               href={`tel:${cleanPhone}`}
-              className="py-2.5 px-3 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-indigo-200"
+              className={`py-2.5 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all border ${
+                effectiveMatch.tier === 'exceptional' || effectiveMatch.totalScore >= 75
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white border-emerald-500 shadow-sm ring-2 ring-emerald-200'
+                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+              }`}
             >
-              <Phone size={14} /> Call Candidate
+              <Phone size={14} />
+              {effectiveMatch.tier === 'exceptional' || effectiveMatch.totalScore >= 75 ? (
+                <span>Call First (தகுதியான ஆள்)</span>
+              ) : (
+                <span>Call Candidate</span>
+              )}
             </a>
           )}
           {cleanWhatsApp && (
@@ -460,10 +524,61 @@ export default function CandidatesPage() {
     orderBy('createdAt', 'desc')
   ], { skip: !companyId });
 
+  // Fetch employer's active jobs to cross-match required skills & job location
+  const { data: jobs, loading: jobsLoading } = useCollection<any>('jobs', [
+    where('companyId', '==', companyId || '')
+  ], { skip: !companyId });
+
+  const jobsMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (jobs || []).forEach((j: any) => {
+      if (j.id) map.set(j.id, j);
+    });
+    return map;
+  }, [jobs]);
+
+  // Score each applicant against its targeted job requirements
+  const scoredApplications: CandidateRow[] = useMemo(() => {
+    return (applications || []).map((app: any) => {
+      const targetJob = app.jobId ? jobsMap.get(app.jobId) : null;
+      const jobContext = targetJob || {
+        title: app.jobTitle || 'Job Role',
+        location: app.jobLocation || company?.location || company?.taluk || 'Theni',
+        taluk: app.jobTaluk || company?.taluk || 'Theni',
+        skillsRequired: app.skillsRequired || [],
+      };
+
+      const candidateContext = {
+        id: app.seekerId || app.id,
+        name: app.seekerName,
+        phone: app.seekerPhone,
+        taluk: app.seekerTaluk || app.taluk,
+        location: app.seekerLocation || app.location || app.district,
+        skills: app.skills || app.seekerSkills || [],
+        immediateJoiner: app.immediateJoiner,
+        noticePeriod: app.noticePeriod || app.seekerNoticePeriod,
+        availableFrom: app.availableFrom,
+        experienceYears: app.seekerExperience || app.experience,
+        qualification: app.seekerQualification || app.qualification,
+      };
+
+      const breakdown = computeCandidateMatchScore(candidateContext, jobContext);
+
+      return {
+        ...app,
+        matchScore: breakdown.totalScore,
+        matchBreakdown: breakdown,
+      };
+    });
+  }, [applications, jobsMap, company]);
+
   const [pipelineTab, setPipelineTab] = useState<PipelineStatus>('all');
+  const [matchFilter, setMatchFilter] = useState<'all' | 'high_match' | 'local_5km' | 'immediate'>('all');
+  // Default sort is 'match_desc' so employers call the highest-fit local candidates first
+  const [sortBy, setSortBy] = useState<'match_desc' | 'date_desc' | 'date_asc'>('match_desc');
   const [search, setSearch] = useState('');
   const [jobFilter, setJobFilter] = useState('All Jobs');
-  const [activeModalCandidate, setActiveModalCandidate] = useState<any | null>(null);
+  const [activeModalCandidate, setActiveModalCandidate] = useState<CandidateRow | null>(null);
   const [passCandidate, setPassCandidate] = useState<CandidateRow | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [view, setView] = useViewMode('employer-candidates', 'table');
@@ -501,25 +616,64 @@ export default function CandidatesPage() {
   };
 
   const counts = {
-    all: applications.length,
-    applied: applications.filter((c) => c.status === 'applied' || !c.status).length,
-    shortlisted: applications.filter((c) => c.status === 'shortlisted').length,
-    interview_scheduled: applications.filter((c) => c.status === 'interview_scheduled').length,
-    selected: applications.filter((c) => c.status === 'selected').length,
-    rejected: applications.filter((c) => c.status === 'rejected').length
+    all: scoredApplications.length,
+    applied: scoredApplications.filter((c) => c.status === 'applied' || !c.status).length,
+    shortlisted: scoredApplications.filter((c) => c.status === 'shortlisted').length,
+    interview_scheduled: scoredApplications.filter((c) => c.status === 'interview_scheduled').length,
+    selected: scoredApplications.filter((c) => c.status === 'selected').length,
+    rejected: scoredApplications.filter((c) => c.status === 'rejected').length
   };
 
-  const jobOptions = ['All Jobs', ...Array.from(new Set(applications.map((a: any) => a.jobTitle).filter(Boolean)))];
+  const matchCounts = useMemo(() => {
+    return {
+      all: scoredApplications.length,
+      high_match: scoredApplications.filter(c => (c.matchScore ?? 0) >= 75).length,
+      local_5km: scoredApplications.filter(c => (c.matchBreakdown?.distanceKm ?? 999) <= 5).length,
+      immediate: scoredApplications.filter(c => c.matchBreakdown?.immediateJoiner?.score === 30).length,
+    };
+  }, [scoredApplications]);
 
-  const filtered = applications.filter((c) => {
-    const candidateStatus = c.status || 'applied';
-    if (pipelineTab !== 'all' && candidateStatus !== pipelineTab) return false;
-    if (search && !c.seekerName?.toLowerCase().includes(search.toLowerCase())) return false;
-    if (jobFilter !== 'All Jobs' && c.jobTitle !== jobFilter) return false;
-    return true;
-  });
+  const jobOptions = ['All Jobs', ...Array.from(new Set(scoredApplications.map((a: any) => a.jobTitle).filter(Boolean)))];
 
-  const loading = companyLoading || appsLoading;
+  const filtered = useMemo(() => {
+    const list = scoredApplications.filter((c) => {
+      const candidateStatus = c.status || 'applied';
+      if (pipelineTab !== 'all' && candidateStatus !== pipelineTab) return false;
+      if (search && !c.seekerName?.toLowerCase().includes(search.toLowerCase())) return false;
+      if (jobFilter !== 'All Jobs' && c.jobTitle !== jobFilter) return false;
+
+      // Match filter checks
+      if (matchFilter === 'high_match' && (c.matchScore ?? 0) < 75) return false;
+      if (matchFilter === 'local_5km' && ((c.matchBreakdown?.distanceKm ?? 999) > 5)) return false;
+      if (matchFilter === 'immediate' && c.matchBreakdown?.immediateJoiner?.score !== 30) return false;
+
+      return true;
+    });
+
+    // Automatic Sorting: default 'match_desc' so employers call highest-fit local candidates first
+    return [...list].sort((a, b) => {
+      if (sortBy === 'match_desc') {
+        const scoreDiff = (b.matchScore ?? 0) - (a.matchScore ?? 0);
+        if (scoreDiff !== 0) return scoreDiff;
+        const timeA = toDate(a.createdAt)?.getTime() ?? 0;
+        const timeB = toDate(b.createdAt)?.getTime() ?? 0;
+        return timeB - timeA;
+      }
+      if (sortBy === 'date_desc') {
+        const timeA = toDate(a.createdAt)?.getTime() ?? 0;
+        const timeB = toDate(b.createdAt)?.getTime() ?? 0;
+        return timeB - timeA;
+      }
+      if (sortBy === 'date_asc') {
+        const timeA = toDate(a.createdAt)?.getTime() ?? 0;
+        const timeB = toDate(b.createdAt)?.getTime() ?? 0;
+        return timeA - timeB;
+      }
+      return 0;
+    });
+  }, [scoredApplications, pipelineTab, search, jobFilter, matchFilter, sortBy]);
+
+  const loading = companyLoading || appsLoading || jobsLoading;
 
   if (!companyId && !companyLoading) {
     return (
@@ -573,6 +727,54 @@ export default function CandidatesPage() {
           </span>
         </div>
       ),
+    },
+    {
+      key: 'matchScore',
+      header: 'AI Match (AI தரவரிசை)',
+      sortValue: app => app.matchScore ?? 0,
+      render: app => {
+        const breakdown = app.matchBreakdown;
+        return (
+          <div className="flex flex-col gap-1 py-0.5 min-w-[155px]">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <CandidateMatchBadge score={app.matchScore ?? 0} tier={breakdown?.tier} compact />
+              {breakdown && breakdown.distanceKm !== undefined && breakdown.distanceKm !== null && (
+                <span
+                  className={`inline-flex items-center gap-0.5 text-[10px] font-bold rounded-md px-1.5 py-0.5 border ${
+                    breakdown.distanceKm <= 5
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : breakdown.distanceKm <= 15
+                      ? 'bg-blue-50 text-blue-800 border-blue-200'
+                      : 'bg-slate-50 text-slate-700 border-slate-200'
+                  }`}
+                  title={`Distance from job: ${Math.round(breakdown.distanceKm)} km`}
+                >
+                  <MapPin size={10} />
+                  {breakdown.distanceKm <= 5 ? `~${Math.round(breakdown.distanceKm)} km (Local)` : `~${Math.round(breakdown.distanceKm)} km`}
+                </span>
+              )}
+              {breakdown?.immediateJoiner?.score === 30 && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-800 bg-amber-50 rounded-md px-1.5 py-0.5 border border-amber-200">
+                  <Zap size={10} className="fill-amber-600 text-amber-600" /> Immediate
+                </span>
+              )}
+            </div>
+            {breakdown?.matchedSkills && breakdown.matchedSkills.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap text-[10px] text-slate-500">
+                <span className="font-semibold text-slate-400">Skills:</span>
+                {breakdown.matchedSkills.slice(0, 2).map((s: string, idx: number) => (
+                  <span key={idx} className="bg-indigo-50 text-indigo-700 font-semibold px-1.5 py-0.5 rounded text-[10px] border border-indigo-100">
+                    {s}
+                  </span>
+                ))}
+                {breakdown.matchedSkills.length > 2 && (
+                  <span className="text-[10px] text-slate-400 font-bold">+{breakdown.matchedSkills.length - 2}</span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'jobTitle',
@@ -648,6 +850,68 @@ export default function CandidatesPage() {
             ))}
           </div>
 
+          {/* AI Candidate Match Quick Filters (தகுதியான ஆட்கள் AI வடிகட்டி) */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-xs font-bold text-gray-500 flex items-center gap-1 shrink-0">
+              <Sparkles size={13} className="text-blue-600" /> AI Filter:
+            </span>
+            <button
+              type="button"
+              onClick={() => setMatchFilter('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                matchFilter === 'all'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              All Candidates ({matchCounts.all})
+            </button>
+            <button
+              type="button"
+              onClick={() => setMatchFilter('high_match')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                matchFilter === 'high_match'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-white border border-gray-200 text-emerald-800 hover:bg-emerald-50'
+              }`}
+            >
+              <span>🎯 Top Match 75%+</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${matchFilter === 'high_match' ? 'bg-white/20' : 'bg-emerald-100 text-emerald-900'}`}>
+                {matchCounts.high_match}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMatchFilter('local_5km')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                matchFilter === 'local_5km'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white border border-gray-200 text-indigo-800 hover:bg-indigo-50'
+              }`}
+            >
+              <MapPin size={12} />
+              <span>Within 5 km Local</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${matchFilter === 'local_5km' ? 'bg-white/20' : 'bg-indigo-100 text-indigo-900'}`}>
+                {matchCounts.local_5km}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMatchFilter('immediate')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                matchFilter === 'immediate'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-white border border-gray-200 text-amber-800 hover:bg-amber-50'
+              }`}
+            >
+              <Zap size={12} className="fill-current" />
+              <span>Immediate Joiners</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${matchFilter === 'immediate' ? 'bg-white/20' : 'bg-amber-100 text-amber-900'}`}>
+                {matchCounts.immediate}
+              </span>
+            </button>
+          </div>
+
           {/* Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -669,6 +933,22 @@ export default function CandidatesPage() {
                 <option key={j} value={j}>{j}</option>
               ))}
             </select>
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-1.5 bg-white border border-gray-300 rounded-2xl px-3 py-2 text-xs font-bold text-gray-700 shadow-2xs">
+              <ArrowUpDown size={14} className="text-gray-400 shrink-0" />
+              <label htmlFor="candidates-sort-by" className="text-xs font-bold text-gray-500 hidden sm:inline">Sort:</label>
+              <select
+                id="candidates-sort-by"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="bg-transparent text-xs font-bold text-gray-800 outline-none cursor-pointer"
+                aria-label="Sort candidates"
+              >
+                <option value="match_desc">⭐ AI Match (Highest first) - Default</option>
+                <option value="date_desc">📅 Applied Date (Newest first)</option>
+                <option value="date_asc">📅 Applied Date (Oldest first)</option>
+              </select>
+            </div>
             <ViewToggle value={view} onChange={setView} />
           </div>
 
@@ -727,6 +1007,8 @@ export default function CandidatesPage() {
           appliedVia={activeModalCandidate.appliedVia}
           appliedPhone={activeModalCandidate.seekerPhone}
           appliedTaluk={activeModalCandidate.seekerTaluk}
+          targetJob={activeModalCandidate.jobId ? jobsMap.get(activeModalCandidate.jobId) : undefined}
+          initialMatchBreakdown={activeModalCandidate.matchBreakdown}
           onClose={() => setActiveModalCandidate(null)}
           onNotesUpdated={(notes) => {
             // Assigning to the object returned by useState does not re-render, so a saved

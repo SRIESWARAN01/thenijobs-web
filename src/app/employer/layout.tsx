@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, Building2, Briefcase, Users2, Calendar,
+  LayoutDashboard, Building2, Briefcase, Globe, Users2, Calendar,
   Search, MessageSquare, BarChart3, CreditCard, Star,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Bell,
   Plus, TrendingUp, Settings, Key, BadgeCheck,
@@ -28,6 +28,7 @@ import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentC
 const EMPLOYER_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/employer/dashboard' },
   { label: 'Company Profile', icon: Building2, href: '/employer/company-profile' },
+  { label: 'Company Website', icon: Globe, href: '/employer/website' },
   { label: 'Post a Job', icon: Plus, href: '/employer/post-job', accent: true },
   { label: 'My Jobs', icon: Briefcase, href: '/employer/jobs' },
   { label: 'Candidates', icon: Users2, href: '/employer/candidates' },

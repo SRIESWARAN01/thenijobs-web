@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  LayoutDashboard, User, FileText, Search, Bookmark,
+  LayoutDashboard, User, FileText, MessageSquare, Crown, Search, Bookmark,
   Bell, Calendar, Building2, Settings, LogOut,
   ChevronLeft, ChevronRight, Menu, X, Sparkles,
   Send, GraduationCap, Loader2, CreditCard, Briefcase,
@@ -30,6 +30,8 @@ const SEEKER_NAV = [
   { label: 'Saved Jobs', icon: Bookmark, href: '/seeker/saved-jobs' },
   { label: 'Job Alerts', icon: Bell, href: '/seeker/job-alerts' },
   { label: 'Interviews', icon: Calendar, href: '/seeker/interviews' },
+  { label: 'Messages', icon: MessageSquare, href: '/seeker/messages' },
+  { label: 'Pro Membership', icon: Crown, href: '/seeker/subscription' },
   { label: 'Companies', icon: Building2, href: '/seeker/companies' },
   { label: 'AI Coach', icon: Sparkles, href: '/seeker/ai-coach', accent: true },
   // AI-CHAT-1: unlisted in this phase's own may_write, but a justified cascade -- same reasoning

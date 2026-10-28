@@ -39,6 +39,7 @@ const ADMIN_NAV = [
   { label: 'Error Monitoring', icon: AlertTriangle, href: '/admin/errors' },
   { label: 'Notifications', icon: Bell, href: '/admin/notifications' },
   { label: 'AI Settings', icon: Sparkles, href: '/admin/ai-settings' },
+  { label: 'AI Analytics', icon: BarChart3, href: '/admin/ai-analytics' },
   { label: 'Security', icon: Shield, href: '/admin/security' },
   { label: 'Database Cleanup', icon: Database, href: '/admin/database-cleanup' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },

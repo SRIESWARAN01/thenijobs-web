@@ -106,6 +106,7 @@ export default function PublicPortfolioPageClient({ username: usernameProp }: Pu
   if (site.status !== 'published') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <meta name="robots" content="noindex, nofollow" />
         <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mb-3">
           <AlertCircle size={24} />
         </div>
@@ -117,13 +118,15 @@ export default function PublicPortfolioPageClient({ username: usernameProp }: Pu
     );
   }
 
-  // Schema.org Person JSON-LD for Google Search Engine Indexing. Title/description/OpenGraph
+  // Schema.org Person JSON-LD for Search Engine Indexing. Title/description/OpenGraph
   // meta tags are handled server-side by generateMetadata in page.tsx (SEEKER-5) — a client
   // component under the App Router cannot set the actual served <head> via next/head.
+  const isJobSeekerPath = pathname?.includes('/job-seeker');
+  const pathPrefix = isJobSeekerPath ? 'job-seeker' : 'portfolio';
   const heroSection = site.sections?.find(s => s.type === 'hero');
   const heroData = heroSection?.data || {};
   const pageDesc = site.seo?.description || heroData.tagline || site.branding?.tagline || `Explore the verified professional portfolio, skills, and projects of ${heroData.name || site.branding?.companyName} on THENIJOBS.`;
-  const canonicalUrl = `https://www.thenijobs.com/portfolio/${site.customUrl || username}`;
+  const canonicalUrl = `https://www.thenijobs.com/${pathPrefix}/${site.customUrl || username}`;
   const isSeeker = site.ownerType === 'seeker' || site.templateId?.startsWith('seeker-');
 
   const personSchema = isSeeker ? {

@@ -422,7 +422,7 @@ export function buildSeekerPortfolioSite(input: SeekerAdapterInput): PortfolioSi
       description: `${name} (${role}) verified professional portfolio and resume in ${location}.`,
       keywords: [name, role, 'Theni', 'Tamil Nadu', 'Portfolio', 'Resume'],
       ogImage: avatar || cover,
-      canonicalUrl: `https://www.thenijobs.com/portfolio/seeker/${uid}`,
+      canonicalUrl: `https://www.thenijobs.com/job-seeker/${customSlug}`,
       structuredDataType: 'Person',
     },
     analytics: {

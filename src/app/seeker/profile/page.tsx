@@ -1645,7 +1645,7 @@ export default function SeekerProfilePage() {
                       <Globe size={14} className="text-purple-700" /> Public Candidate Web Address (₹{SEEKER_PUBLIC_PROFILE_FEE_INR}/year)
                     </p>
                     <p className="text-[11px] text-purple-800">
-                      Enables a standalone shareable website at <code className="bg-purple-100 px-1 py-0.5 rounded font-mono">thenijobs.com/portfolio/seeker/{user?.uid?.slice(0, 8) || 'id'}</code>
+                      Enables a standalone shareable website at <code className="bg-purple-100 px-1 py-0.5 rounded font-mono">thenijobs.com/job-seeker/{remoteProfile?.customUrl || user?.uid?.slice(0, 8) || 'username'}</code>
                     </p>
                   </div>
                   <Switch
@@ -1708,6 +1708,7 @@ export default function SeekerProfilePage() {
           noticePeriod: profile.noticePeriod,
           isOpenToWork: profile.isOpenToWork,
           isPortfolioPublic: profile.isPortfolioPublic,
+          customUrl: remoteProfile?.customUrl,
           privacySettings: profile.privacySettings,
           photoUrl: profile.photoUrl,
           skills: skills,

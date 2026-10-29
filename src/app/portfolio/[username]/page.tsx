@@ -34,17 +34,21 @@ export async function generateMetadata({
 
   const site = await getPortfolioSiteSeoByUsernameServer(username);
 
-  if (!site || site.status !== 'published') {
+  // Draft or private sites: STRICTLY NOINDEX
+  if (!site || site.status !== 'published' || site.visibility !== 'public' || !site.googleIndex) {
     return {
       title: 'Portfolio Not Found | THENIJOBS',
-      description: 'This portfolio website does not exist or is not yet published.',
-      robots: { index: false, follow: false },
+      description: 'This portfolio website does not exist, is in draft mode, or is private.',
+      robots: { index: false, follow: false, nocache: true },
     };
   }
 
+  const isSeeker = site.ownerType === 'seeker' || (site.templateId && site.templateId.startsWith('seeker-'));
   const pageTitle = site.seoTitle || `${site.name} — Official Website | THENIJOBS`;
   const pageDesc = site.seoDescription || site.tagline || `Explore the verified professional portfolio, skills, and projects of ${site.name} on THENIJOBS.`;
-  const canonicalUrl = `https://www.thenijobs.com/portfolio/${site.customUrl}`;
+  const canonicalUrl = isSeeker
+    ? `https://www.thenijobs.com/job-seeker/${site.customUrl}`
+    : `https://www.thenijobs.com/portfolio/${site.customUrl}`;
 
   return {
     title: pageTitle,
@@ -57,7 +61,7 @@ export async function generateMetadata({
       url: canonicalUrl,
       type: 'profile',
       siteName: 'THENIJOBS',
-      images: site.avatarUrl ? [site.avatarUrl] : undefined,
+      images: site.avatarUrl ? [{ url: site.avatarUrl }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -65,8 +69,15 @@ export async function generateMetadata({
       description: pageDesc,
     },
     robots: {
-      index: site.googleIndex,
-      follow: site.googleIndex,
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
     },
   };
 }

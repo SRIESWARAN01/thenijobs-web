@@ -642,6 +642,9 @@ export async function getVerifiedCompanySlugsForSitemap(): Promise<
 export interface ServerPortfolioSeoData {
   customUrl: string;
   status: string;
+  visibility?: string;
+  ownerType?: string;
+  templateId?: string;
   googleIndex: boolean;
   name: string;
   tagline: string;
@@ -686,6 +689,9 @@ export async function getPortfolioSiteSeoByUsernameServer(username: string): Pro
     return {
       customUrl: raw.customUrl || raw.id,
       status: raw.status || 'draft',
+      visibility: raw.visibility || (raw.status === 'published' ? 'public' : 'private'),
+      ownerType: raw.ownerType,
+      templateId: raw.templateId,
       googleIndex: raw.googleIndex === true,
       name: heroData.name || raw.branding?.companyName || 'Portfolio',
       tagline: heroData.tagline || raw.branding?.tagline || '',
@@ -704,7 +710,7 @@ export async function getPortfolioSiteSeoByUsernameServer(username: string): Pro
  * Fetch all published portfolio sites that enabled Google Indexing for sitemap
  */
 export async function getPublishedPortfolioSitesForSitemap(): Promise<
-  Array<{ customUrl: string; updatedAt?: string }>
+  Array<{ customUrl: string; ownerType?: string; templateId?: string; updatedAt?: string }>
 > {
   try {
     const sites = await runQueryREST<any>(
@@ -719,6 +725,8 @@ export async function getPublishedPortfolioSitesForSitemap(): Promise<
       .filter((s) => s.customUrl)
       .map((s) => ({
         customUrl: s.customUrl,
+        ownerType: s.ownerType,
+        templateId: s.templateId,
         updatedAt: s.updatedAt || s.createdAt || '',
       }));
   } catch (err) {

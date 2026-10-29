@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Laptop, Tablet, Smartphone, X, Sparkles, Check, ExternalLink,
   Palette, Layers, Type, Lock, ShieldCheck, Save, Loader2,
-  QrCode, Globe, Copy, ChevronDown, CheckCircle2
+  QrCode, Globe, Copy, ChevronDown, CheckCircle2, AlertCircle, Search, Share2
 } from 'lucide-react';
 import TemplateRenderer from './TemplateRenderer';
 import SeekerIDCard from '@/components/id-card/SeekerIDCard';
@@ -56,6 +56,8 @@ const DEVICE_SPECS: Record<DeviceMode, { name: string; icon: any; width: string;
   },
 };
 
+const USERNAME_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 export default function CandidatePortfolioLiveModal({
   isOpen,
   onClose,
@@ -75,6 +77,13 @@ export default function CandidatePortfolioLiveModal({
     headingFont: initialProfile.theme?.headingFont || 'Poppins',
   });
   const [selectedCover, setSelectedCover] = useState<string>(initialProfile.coverImage || BANNER_GRADIENT_PRESETS[0].url);
+
+  // Custom username state and availability checking
+  const defaultSlug = (initialProfile.customUrl || initialProfile.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || `seeker-${userId.slice(0, 6)}`).toLowerCase();
+  const [customUsername, setCustomUsername] = useState<string>(defaultSlug);
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [usernameFeedback, setUsernameFeedback] = useState<{ en: string; ta: string } | null>(null);
+  const lastSavedUsernameRef = useRef<string>(defaultSlug);
 
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -102,6 +111,10 @@ export default function CandidatePortfolioLiveModal({
           }
           if (sData.branding?.coverImage) setSelectedCover(sData.branding.coverImage);
           if (sData.status === 'published') setIsPublic(true);
+          if (sData.customUrl) {
+            setCustomUsername(sData.customUrl);
+            lastSavedUsernameRef.current = sData.customUrl;
+          }
         }
       } catch (e) {
         console.warn('Could not load existing portfolio site settings:', e);
@@ -110,30 +123,92 @@ export default function CandidatePortfolioLiveModal({
     fetchSavedSettings();
   }, [isOpen, userId, initialProfile.isPortfolioPublic]);
 
+  // Live validation of customUsername
+  useEffect(() => {
+    if (!isOpen) return;
+    const trimmed = customUsername.trim().toLowerCase();
+
+    if (!trimmed) {
+      setUsernameStatus('invalid');
+      setUsernameFeedback({
+        en: 'Username cannot be empty',
+        ta: 'Username காலியாக இருக்கக்கூடாது',
+      });
+      return;
+    }
+
+    if (trimmed.length < 3 || trimmed.length > 35) {
+      setUsernameStatus('invalid');
+      setUsernameFeedback({
+        en: 'Username must be between 3 and 35 characters',
+        ta: 'Username 3 முதல் 35 எழுத்துக்கள் வரை இருக்க வேண்டும்',
+      });
+      return;
+    }
+
+    if (!USERNAME_REGEX.test(trimmed)) {
+      setUsernameStatus('invalid');
+      setUsernameFeedback({
+        en: 'Use only lowercase letters, numbers, and single hyphens (-)',
+        ta: 'சிறிய ஆங்கில எழுத்துக்கள், எண்கள் மற்றும் ஒற்றை ஹைபன்கள் (-) மட்டுமே பயன்படுத்தலாம்',
+      });
+      return;
+    }
+
+    // Debounced check against check-username API
+    setUsernameStatus('checking');
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/job-seeker/check-username?username=${encodeURIComponent(trimmed)}&userId=${encodeURIComponent(userId)}`);
+        const data = await res.json();
+        if (data.available) {
+          setUsernameStatus('available');
+          setUsernameFeedback({
+            en: data.message || 'Username is available!',
+            ta: data.messageTa || 'இந்த username கிடைக்கிறது! பயன்படுத்தலாம்.',
+          });
+        } else {
+          setUsernameStatus('taken');
+          setUsernameFeedback({
+            en: data.error || `Username "${trimmed}" is already taken. Please choose another username.`,
+            ta: data.errorTa || `"${trimmed}" என்ற username ஏற்கெனவே பயன்பாட்டில் உள்ளது. வேறு பெயரைத் தேர்வு செய்யவும்.`,
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to check username:', e);
+        setUsernameStatus('idle');
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [customUsername, userId, isOpen]);
+
   // Dynamically build the live site
   const liveSite = useMemo<PortfolioSite>(() => {
     return buildSeekerPortfolioSite({
       ...initialProfile,
       userId,
+      customUrl: customUsername,
       templateId: selectedTemplate,
       theme: selectedTheme,
       coverImage: selectedCover,
       isPortfolioPublic: isPublic,
     });
-  }, [initialProfile, userId, selectedTemplate, selectedTheme, selectedCover, isPublic]);
+  }, [initialProfile, userId, customUsername, selectedTemplate, selectedTheme, selectedCover, isPublic]);
 
   if (!isOpen) return null;
 
   const currentSpec = DEVICE_SPECS[device];
-  const publicUrl = `/portfolio/seeker/${userId || 'demo-seeker'}`;
-  const fullPublicUrl = typeof window !== 'undefined' ? `${window.location.origin}${publicUrl}` : publicUrl;
+  const candidateSlug = customUsername.trim().toLowerCase() || userId || 'demo-seeker';
+  const publicUrl = `/job-seeker/${candidateSlug}`;
+  const fullPublicUrl = typeof window !== 'undefined' ? `${window.location.origin}${publicUrl}` : `https://www.thenijobs.com${publicUrl}`;
 
   const handleCopyLink = () => {
     if (typeof navigator !== 'undefined') {
       navigator.clipboard.writeText(fullPublicUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
-      toast.success('Link copied!', 'Candidate portfolio URL is in your clipboard.');
+      toast.success('Link copied!', `Candidate portfolio URL copied: ${fullPublicUrl}`);
     }
   };
 
@@ -144,6 +219,24 @@ export default function CandidatePortfolioLiveModal({
 
   const handleSavePreferences = async () => {
     if (!userId) return;
+    const cleanUsername = customUsername.trim().toLowerCase();
+
+    if (usernameStatus === 'taken') {
+      toast.error(
+        usernameFeedback?.en || 'Username is already taken.',
+        usernameFeedback?.ta || 'வேறு username தேர்வு செய்யவும்.'
+      );
+      return;
+    }
+
+    if (usernameStatus === 'invalid') {
+      toast.error(
+        usernameFeedback?.en || 'Invalid username format.',
+        usernameFeedback?.ta || 'சரியான username உள்ளிடவும்.'
+      );
+      return;
+    }
+
     setSavingTheme(true);
     try {
       // 1. Update or create portfolioSites doc
@@ -151,6 +244,7 @@ export default function CandidatePortfolioLiveModal({
         ownerId: userId,
         ownerType: 'seeker',
         templateId: selectedTemplate,
+        customUrl: cleanUsername,
         theme: {
           ...liveSite.theme,
           ...selectedTheme,
@@ -159,6 +253,10 @@ export default function CandidatePortfolioLiveModal({
           ...liveSite.branding,
           coverImage: selectedCover,
         },
+        seo: {
+          ...liveSite.seo,
+          canonicalUrl: `https://www.thenijobs.com/job-seeker/${cleanUsername}`,
+        },
         updatedAt: new Date(),
       }, { merge: true });
 
@@ -166,10 +264,21 @@ export default function CandidatePortfolioLiveModal({
       await setDoc(doc(db, 'seekerProfiles', userId), {
         portfolioTemplate: selectedTemplate,
         portfolioCoverImage: selectedCover,
+        customUrl: cleanUsername,
         updatedAt: new Date(),
       }, { merge: true });
 
-      toast.success('Preferences saved!', 'Your template and theme customizations are preserved.');
+      // 3. Claim/reserve slug in portfolioSlugs
+      if (cleanUsername) {
+        await setDoc(doc(db, 'portfolioSlugs', cleanUsername), {
+          ownerId: userId,
+          siteId: `site-${userId}`,
+          updatedAt: new Date(),
+        }, { merge: true });
+        lastSavedUsernameRef.current = cleanUsername;
+      }
+
+      toast.success('Preferences & URL saved!', `Portfolio URL: thenijobs.com/job-seeker/${cleanUsername}`);
     } catch (err: any) {
       console.error('Save error:', err);
       toast.error('Failed to save preferences');
@@ -202,7 +311,7 @@ export default function CandidatePortfolioLiveModal({
           <div className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1 ml-1 sm:ml-4">
             <button
               onClick={() => setActiveView('portfolio')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 activeView === 'portfolio'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-white'
@@ -213,7 +322,7 @@ export default function CandidatePortfolioLiveModal({
             </button>
             <button
               onClick={() => setActiveView('idcard')}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                 activeView === 'idcard'
                   ? 'bg-blue-600 text-white shadow-xs'
                   : 'text-slate-400 hover:text-white'
@@ -234,7 +343,7 @@ export default function CandidatePortfolioLiveModal({
               <button
                 key={mode}
                 onClick={() => setDevice(mode)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
                   isActive
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
@@ -254,14 +363,14 @@ export default function CandidatePortfolioLiveModal({
           {activeView === 'portfolio' && (
             <button
               onClick={() => setShowCustomizer(!showCustomizer)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                 showCustomizer
                   ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
                   : 'border-slate-700 bg-slate-800/80 text-slate-200 hover:bg-slate-700'
               }`}
             >
               <Palette size={14} />
-              <span>Theme & Templates</span>
+              <span>Theme & URL</span>
               <ChevronDown size={13} className={`transition-transform ${showCustomizer ? 'rotate-180' : ''}`} />
             </button>
           )}
@@ -274,14 +383,21 @@ export default function CandidatePortfolioLiveModal({
               </span>
               <button
                 onClick={handleCopyLink}
-                className="p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors"
+                className="p-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title="Copy Live Public URL"
               >
                 {copiedLink ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}
               </button>
               <button
+                onClick={handleShareWhatsApp}
+                className="p-2 rounded-xl border border-slate-700 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                title="Share on WhatsApp"
+              >
+                <Share2 size={15} />
+              </button>
+              <button
                 onClick={() => window.open(fullPublicUrl, '_blank')}
-                className="p-2 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600 hover:text-white transition-colors"
+                className="p-2 rounded-xl bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
                 title="Open in new tab"
               >
                 <ExternalLink size={15} />
@@ -310,8 +426,59 @@ export default function CandidatePortfolioLiveModal({
 
       {/* ── CUSTOMIZER SUB-TOOLBAR (Slide Down) ── */}
       {showCustomizer && activeView === 'portfolio' && (
-        <div className="border-b border-slate-800 bg-slate-900/95 px-4 py-3 text-slate-200 z-10 transition-all">
+        <div className="border-b border-slate-800 bg-slate-900/95 px-4 py-3 text-slate-200 z-10 transition-all max-h-[42vh] overflow-y-auto">
           <div className="max-w-6xl mx-auto space-y-3">
+            {/* Custom URL & Username Row */}
+            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                    <Globe size={13} className="text-emerald-400" />
+                    <span>Candidate Profile URL / தனிப்பயன் இணைய முகவரி</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400">thenijobs.com/job-seeker/{candidateSlug}</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="px-3 py-1.5 bg-slate-800 border border-r-0 border-slate-700 text-slate-400 text-xs font-mono rounded-l-xl select-none">
+                    thenijobs.com/job-seeker/
+                  </span>
+                  <input
+                    type="text"
+                    value={customUsername}
+                    onChange={(e) => setCustomUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                    placeholder="your-name"
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 text-white font-mono text-xs rounded-r-xl focus:border-emerald-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Status Indicator */}
+              <div className="flex items-center min-w-[200px] justify-start md:justify-end">
+                {usernameStatus === 'checking' && (
+                  <span className="text-slate-400 text-xs flex items-center gap-1.5 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl">
+                    <Loader2 size={13} className="animate-spin text-blue-400" /> Checking...
+                  </span>
+                )}
+                {usernameStatus === 'available' && (
+                  <span className="text-emerald-400 text-xs font-semibold flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+                    <CheckCircle2 size={14} /> Available / பயன்படுத்தலாம்
+                  </span>
+                )}
+                {usernameStatus === 'taken' && (
+                  <div className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 px-3 py-1.5 rounded-xl">
+                    <p className="font-bold flex items-center gap-1"><AlertCircle size={13} /> {usernameFeedback?.en}</p>
+                    <p className="text-[10px] text-red-300">{usernameFeedback?.ta}</p>
+                  </div>
+                )}
+                {usernameStatus === 'invalid' && (
+                  <div className="text-amber-400 text-xs bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl">
+                    <p className="font-semibold">{usernameFeedback?.en}</p>
+                    <p className="text-[10px] text-amber-300">{usernameFeedback?.ta}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Template Selector Row */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
@@ -325,7 +492,7 @@ export default function CandidatePortfolioLiveModal({
                       <button
                         key={tpl.id}
                         onClick={() => setSelectedTemplate(tpl.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                           isSelected
                             ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/40'
                             : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
@@ -346,15 +513,15 @@ export default function CandidatePortfolioLiveModal({
               {/* Save Preferences Button */}
               <button
                 onClick={handleSavePreferences}
-                disabled={savingTheme}
-                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                disabled={savingTheme || usernameStatus === 'taken' || usernameStatus === 'invalid'}
+                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
                 {savingTheme ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                <span>Save Design</span>
+                <span>Save Design & URL</span>
               </button>
             </div>
 
-            {/* Colors & Fonts Row */}
+            {/* Colors, Banners & Fonts Row */}
             <div className="flex flex-wrap items-center gap-4 pt-1 border-t border-slate-800/80">
               {/* Theme Color Presets */}
               <div className="flex items-center gap-2">
@@ -373,7 +540,7 @@ export default function CandidatePortfolioLiveModal({
                           secondaryColor: p.secondary,
                           surfaceColor: p.surface,
                         })}
-                        className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all ${
+                        className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                           isSelected
                             ? 'ring-2 ring-white text-white font-bold'
                             : 'text-slate-400 hover:text-slate-200'
@@ -397,7 +564,7 @@ export default function CandidatePortfolioLiveModal({
                     <button
                       key={bg.id}
                       onClick={() => setSelectedCover(bg.url)}
-                      className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all ${
+                      className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer ${
                         selectedCover === bg.url
                           ? 'bg-blue-600 text-white'
                           : 'bg-slate-800 text-slate-400 hover:text-slate-200'
@@ -425,6 +592,20 @@ export default function CandidatePortfolioLiveModal({
                   <option value="DM Sans">DM Sans (Creative)</option>
                 </select>
               </div>
+            </div>
+
+            {/* Google Search Engine Indexing Clarification */}
+            <div className="rounded-xl border border-blue-500/20 bg-blue-950/30 p-2.5 text-xs text-slate-300">
+              <div className="flex items-center gap-2 font-bold text-blue-300 text-[11px] mb-0.5">
+                <Search size={13} />
+                <span>Google Search Discovery & Indexing Policy</span>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                Google Search crawlers independently evaluate and decide crawling and indexing schedules. THENIJOBS automatically includes verified Schema.org Person JSON-LD and dynamic XML sitemap entries to ensure optimum search readiness. Draft and private profiles are strictly protected with <code className="text-slate-300">noindex</code> tags.
+              </p>
+              <p className="text-[10px] text-blue-200/90 mt-0.5">
+                Google-ல் உடனடியாக index ஆகும் என்று உறுதி அளிக்க முடியாது; Google தனது crawling மற்றும் indexing முடிவுகளைத் தானே எடுக்கும்.
+              </p>
             </div>
           </div>
         </div>
@@ -507,7 +688,7 @@ export default function CandidatePortfolioLiveModal({
         onActivated={() => {
           setIsPublic(true);
           setShowPaymentModal(false);
-          toast.success('🎉 Portfolio Website is now LIVE!', 'Your candidate portfolio is verified and active for 1 year.');
+          toast.success('🎉 Portfolio Website is now LIVE!', `Your candidate portfolio is verified and live at thenijobs.com/job-seeker/${candidateSlug}`);
           onPortfolioPublished?.();
         }}
       />

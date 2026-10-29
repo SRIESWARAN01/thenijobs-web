@@ -473,7 +473,7 @@ export default function SeekerSiteEditor() {
                 'Tamil Nadu',
               ],
               ogImage: prof.photoUrl || '/og-image.jpg',
-              canonicalUrl: `https://www.thenijobs.com/portfolio/${defaultSlug}`,
+              canonicalUrl: `https://www.thenijobs.com/job-seeker/${defaultSlug}`,
               structuredDataType: 'Person',
             },
             analytics: {
@@ -677,7 +677,10 @@ export default function SeekerSiteEditor() {
         }
         const available = await isPortfolioSlugAvailable(newSlug, user.uid);
         if (!available) {
-          toast.warning(`The URL thenijobs.com/portfolio/${newSlug} is already taken. Please choose another.`);
+          toast.warning(
+            `Username "${newSlug}" is already taken. Please choose another username.`,
+            `"${newSlug}" என்ற username ஏற்கெனவே பயன்பாட்டில் உள்ளது. வேறு பெயரைத் தேர்வு செய்யவும்.`
+          );
           setSaving(false);
           return;
         }
@@ -737,7 +740,7 @@ export default function SeekerSiteEditor() {
       } : null);
 
       if (isNowPub) {
-        toast.success('🎉 Portfolio Website is now LIVE!', `Your website is published at thenijobs.com/portfolio/${site.customUrl}`);
+        toast.success('🎉 Portfolio Website is now LIVE!', `Your website is published at thenijobs.com/job-seeker/${site.customUrl}`);
       } else {
         toast.info('Portfolio set to Draft mode.');
       }
@@ -878,7 +881,7 @@ export default function SeekerSiteEditor() {
                 site.status === 'published' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
               }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${site.status === 'published' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-                {site.status === 'published' ? 'LIVE & INDEXED' : 'DRAFT MODE'}
+                {site.status === 'published' ? 'LIVE (CRAWL-READY)' : 'DRAFT MODE'}
               </span>
             </div>
             <p className="text-xs text-slate-500">
@@ -917,7 +920,7 @@ export default function SeekerSiteEditor() {
                 : 'bg-emerald-600 text-white hover:bg-emerald-700'
             }`}
           >
-            {publishing ? <Loader2 size={13} className="animate-spin" /> : site.status === 'published' ? <><EyeOff size={13} /> Unpublish</> : <><Globe size={13} /> Publish to Google</>}
+            {publishing ? <Loader2 size={13} className="animate-spin" /> : site.status === 'published' ? <><EyeOff size={13} /> Unpublish</> : <><Globe size={13} /> Publish to Web</>}
           </button>
 
           {site.status === 'published' && (
@@ -2258,14 +2261,14 @@ export default function SeekerSiteEditor() {
           {activeTab === 'seo' && (
             <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-6">
 
-              {/* Google Search Engine Index Toggle */}
+              {/* Google Search Engine Crawling & Discovery Toggle */}
               <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Search size={18} className="text-blue-600" />
                     <div>
-                      <h3 className="text-xs font-bold text-slate-900">Google Search Engine Indexing</h3>
-                      <p className="text-[11px] text-slate-500">Show this portfolio in Google & search engine results</p>
+                      <h3 className="text-xs font-bold text-slate-900">Google Search Engine Crawling &amp; Discovery</h3>
+                      <p className="text-[11px] text-slate-500">Allow search engine crawlers to discover this candidate portfolio</p>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -2280,17 +2283,20 @@ export default function SeekerSiteEditor() {
                 </div>
                 <p className="text-[10px] text-blue-700 font-semibold">
                   {site.googleIndex !== false
-                    ? '🟢 Google will crawl and index your portfolio, Schema.org Person metadata & search snippet.'
-                    : '⚪ Portfolio will be hidden from search engines (noindex tag enabled).'}
+                    ? '🟢 Crawl-Ready: Schema.org Person metadata & dynamic sitemap enabled. Google independently decides its crawling, indexing, and ranking timeline.'
+                    : '⚪ Private: Hidden from all search engine crawlers with strict noindex, nofollow, and nocache tags.'}
+                </p>
+                <p className="text-[10px] text-slate-500 italic">
+                  Google-ல் உடனடியாக index ஆகும் என்று உறுதி அளிக்க முடியாது; Google தனது விதிகளின்படி crawling & indexing செய்யும்.
                 </p>
               </div>
 
               {/* Custom SEO URL Slug */}
               <div>
-                <label className="text-xs font-bold text-slate-700">Custom SEO URL Slug</label>
+                <label className="text-xs font-bold text-slate-700">Custom Candidate URL Slug (Username)</label>
                 <div className="flex items-center mt-1">
                   <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-200 rounded-l-xl text-xs text-slate-500 font-mono">
-                    thenijobs.com/portfolio/
+                    thenijobs.com/job-seeker/
                   </span>
                   <input
                     type="text"
@@ -2298,10 +2304,10 @@ export default function SeekerSiteEditor() {
                     onChange={e => {
                       const clean = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
                       updateField('customUrl', clean);
-                      updateField('seo.canonicalUrl', `https://www.thenijobs.com/portfolio/${clean}`);
+                      updateField('seo.canonicalUrl', `https://www.thenijobs.com/job-seeker/${clean}`);
                     }}
                     className="flex-1 px-3 py-2 text-base sm:text-xs font-mono font-bold rounded-r-xl border border-slate-200 focus:border-emerald-500 focus:outline-hidden"
-                    aria-label="your-name" placeholder="your-name"
+                    aria-label="your-username" placeholder="your-username"
                   />
                 </div>
               </div>
@@ -2356,7 +2362,7 @@ export default function SeekerSiteEditor() {
                     <div className="leading-none truncate text-[12px]">
                       <span className="text-slate-800 font-medium">THENIJOBS</span>
                       <span className="text-slate-400 font-mono text-[11px] block truncate">
-                        https://www.thenijobs.com › portfolio › {site.customUrl || 'anand-kumar'}
+                        https://www.thenijobs.com › job-seeker › {site.customUrl || 'candidate-name'}
                       </span>
                     </div>
                   </div>
@@ -2404,7 +2410,7 @@ export default function SeekerSiteEditor() {
                       {site.seo?.description || 'View interactive resume and projects on THENIJOBS.'}
                     </p>
                     <span className="text-[10px] text-emerald-700 font-mono font-bold block truncate">
-                      thenijobs.com/portfolio/{site.customUrl}
+                      thenijobs.com/job-seeker/{site.customUrl}
                     </span>
                   </div>
                 </div>
@@ -2445,9 +2451,9 @@ export default function SeekerSiteEditor() {
                     </div>
                     <ul className="text-[11px] text-emerald-950 space-y-1">
                       <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Razorpay Secured 1-Year Public Deployment</li>
-                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Google Search Engine Indexing & Rich Snippet</li>
-                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> 4 Responsive Templates & Custom Color Themes</li>
-                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Shareable Link & WhatsApp Recruiter Direct Connect</li>
+                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Google Search Engine Crawl-Ready &amp; Rich Schema.org Snippet</li>
+                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> 4 Responsive Templates &amp; Custom Color Themes</li>
+                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Shareable Link &amp; WhatsApp Recruiter Direct Connect</li>
                     </ul>
                   </div>
                 </div>
@@ -2463,7 +2469,7 @@ export default function SeekerSiteEditor() {
                 </h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   {site.status === 'published'
-                    ? `Accessible at thenijobs.com/portfolio/${site.customUrl}. Google search crawlers can discover your skills.`
+                    ? `Accessible at thenijobs.com/job-seeker/${site.customUrl}. Google search crawlers can discover your skills (indexing is subject to Google's discretion).`
                     : isPortfolioPublic
                     ? 'Your public portfolio fee is active. Click below to publish your website live to the world.'
                     : `Publish your website with verified Razorpay payment (₹${SEEKER_PUBLIC_PROFILE_FEE_INR}/year) to make it publicly viewable by top employers and HR recruiters.`}
@@ -2500,7 +2506,7 @@ export default function SeekerSiteEditor() {
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 <span className="font-mono text-[11px] text-white/50 ml-2">
-                  thenijobs.com/portfolio/{site.customUrl}
+                  thenijobs.com/job-seeker/{site.customUrl}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -2551,7 +2557,7 @@ export default function SeekerSiteEditor() {
             } : null);
           }
           setShowPublicProfileModal(false);
-          toast.success('🎉 Portfolio Website is now LIVE!', `Your website is published at thenijobs.com/portfolio/${site?.customUrl}`);
+          toast.success('🎉 Portfolio Website is now LIVE!', `Your website is published at thenijobs.com/job-seeker/${site?.customUrl}`);
         }}
       />
     </div>

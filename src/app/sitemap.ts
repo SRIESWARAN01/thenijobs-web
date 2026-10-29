@@ -160,10 +160,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const portfolios = await getPublishedPortfolioSitesForSitemap();
     portfolios.forEach(p => {
+      const isSeeker = p.ownerType === 'seeker' || (p.templateId && p.templateId.startsWith('seeker-'));
       portfolioPages.push({
-        url: `${BASE}/portfolio/${p.customUrl}`,
+        url: isSeeker ? `${BASE}/job-seeker/${p.customUrl}` : `${BASE}/portfolio/${p.customUrl}`,
         changeFrequency: 'weekly' as const,
-        priority: 0.8,
+        priority: isSeeker ? 0.85 : 0.8,
         ...withLastModified(p.updatedAt),
       });
     });

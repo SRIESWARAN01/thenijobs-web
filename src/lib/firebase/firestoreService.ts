@@ -851,16 +851,32 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
     userUpdates['employerApplication.approvedAt'] = now;
   }
 
+  let trialStartDate = now;
+  let trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+
   if (isTrial && !isPaid) {
-    // 15-Day Free Trial activated starting exactly from Admin Approval time
+    // 15-Day Free Trial: preserve existing valid trial dates or initialize 15 days
+    const existingEnd = userDoc?.trialEndDate?.seconds
+      ? new Date(userDoc.trialEndDate.seconds * 1000)
+      : (userDoc?.trialEndDate ? new Date(userDoc.trialEndDate) : null);
+    const existingStart = userDoc?.trialStartDate?.seconds
+      ? new Date(userDoc.trialStartDate.seconds * 1000)
+      : (userDoc?.trialStartDate ? new Date(userDoc.trialStartDate) : null);
+
+    if (existingEnd && existingEnd > now) {
+      trialEndDate = existingEnd;
+    }
+    if (existingStart) {
+      trialStartDate = existingStart;
+    }
+
     const trialDurationDays = 15;
-    const trialEndDate = new Date(now.getTime() + trialDurationDays * 24 * 60 * 60 * 1000);
     userUpdates.subscriptionStatus = 'trial';
     userUpdates.selectedPlan = 'trial';
     userUpdates.trialEligible = false;
     userUpdates.hasUsedFreeTrial = true;
-    userUpdates.trialStartedAt = now;
-    userUpdates.trialStartDate = now;
+    userUpdates.trialStartedAt = trialStartDate;
+    userUpdates.trialStartDate = trialStartDate;
     userUpdates.trialEndsAt = trialEndDate;
     userUpdates.trialEndDate = trialEndDate;
     userUpdates.trialDurationDays = trialDurationDays;
@@ -909,8 +925,7 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
       };
 
       if (isTrial && !isPaid) {
-        const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
-        companyUpdates.trialStartDate = now;
+        companyUpdates.trialStartDate = trialStartDate;
         companyUpdates.trialEndDate = trialEndDate;
         companyUpdates.subscriptionStatus = 'trial';
         companyUpdates.subscriptionPlan = 'standard';

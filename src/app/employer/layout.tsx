@@ -204,7 +204,16 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
       );
     }
 
-    if (!isApproved) {
+    // 15-Day Free Trial: Business Owners get an automatic 15-day free trial without Admin Approval.
+    // Dashboard and Website Preview are accessible immediately; Job Posting stays locked until Admin Approval.
+    const isTrialActive =
+      subState.isTrialActive ||
+      user.subscriptionStatus === 'trial' ||
+      company?.subscriptionStatus === 'trial' ||
+      user.accountStatus === 'trial_active' ||
+      ((user.selectedPlan === 'trial' || user.trialRequested) && !subState.isTrialExpired);
+
+    if (!isApproved && !isTrialActive) {
       const rawCreated: any = user.createdAt;
       const formattedDate = rawCreated
         ? new Date(rawCreated?.seconds ? rawCreated.seconds * 1000 : rawCreated).toLocaleDateString('en-IN', {
@@ -332,133 +341,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
         );
       }
 
-      // State 2: Free Trial Selected, Waiting for Admin Approval
-      if (user.selectedPlan === 'trial' || user.trialRequested) {
-        return (
-          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
-            <div className="max-w-lg w-full bg-white rounded-3xl border border-amber-200 shadow-xl p-6 sm:p-8 text-center space-y-6">
-              <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
-                <Clock size={32} />
-              </div>
-
-              <div>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider">
-                  <Clock size={12} /> 15-Day Free Trial • Pending Admin Approval
-                </span>
-                <h1 className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
-                  Your 15-Day Free Trial Is Waiting for Admin Approval
-                </h1>
-                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                  Thank you for registering with THENIJOBS. Your 15-day free trial request has been submitted and is waiting for Admin approval. <strong>No payment is required.</strong>
-                </p>
-              </div>
-
-              {/* Submitted Information Card */}
-              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-2.5 text-xs text-slate-700">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                  <span className="text-slate-500 font-medium">Selected Option</span>
-                  <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
-                    15-Day Free Trial (Standard Plan)
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                  <span className="text-slate-500 font-medium">Payment Status</span>
-                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    No Payment Required (₹0)
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                  <span className="text-slate-500 font-medium">Approval Status</span>
-                  <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                    Pending Admin Review
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                  <span className="text-slate-500 font-medium">Business Owner</span>
-                  <span className="font-bold text-slate-900">{user.fullName || user.displayName || 'Business Owner'}</span>
-                </div>
-                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-                  <span className="text-slate-500 font-medium">Registered Email</span>
-                  <span className="font-bold text-slate-900">{user.email}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500 font-medium">Submission Date</span>
-                  <span className="font-bold text-slate-900">{formattedDate}</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-3 pt-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setCheckingStatus(true);
-                    try {
-                      await refreshUserProfile?.();
-                      if (user.approvalStatus === 'approved' || user.accountStatus === 'active') {
-                        toast.success('Your account is approved! Loading Dashboard...');
-                        router.push('/employer/dashboard');
-                      } else {
-                        toast.info('Your trial request is still under review by Admin. Please check back shortly.');
-                      }
-                    } catch (e) {
-                      toast.error('Failed to check status. Please try again.');
-                    } finally {
-                      setCheckingStatus(false);
-                    }
-                  }}
-                  disabled={checkingStatus}
-                  className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-                >
-                  {checkingStatus ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin text-white" />
-                      <span>Checking Status...</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw size={16} />
-                      <span>Check Approval Status</span>
-                    </>
-                  )}
-                </button>
-
-                <Link
-                  href="/register-business?step=plan"
-                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-800 hover:bg-indigo-100 font-bold text-xs flex items-center justify-center gap-2 transition-all"
-                >
-                  <Zap size={14} className="text-indigo-600" />
-                  <span>Choose an Annual Paid Plan Instead</span>
-                </Link>
-
-                <a
-                  href={SITE_CONTACT.whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2 px-4 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center justify-center gap-2 transition-all"
-                >
-                  <MessageCircle size={15} className="text-emerald-600" />
-                  <span>Contact Admin on WhatsApp (+91 93605 19460)</span>
-                </a>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await signOut(auth);
-                    router.push('/login');
-                  }}
-                  className="flex items-center gap-1.5 mx-auto text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1 cursor-pointer"
-                >
-                  <LogOut size={13} />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      // State 3: Plan Not Selected Yet
+      // State 2: Plan Not Selected Yet
       if (!user.selectedPlan && !user.trialRequested) {
         return (
           <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
@@ -610,7 +493,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   }
 
   // ── Pending Admin Approval Screen (Company-Level) ─────────────────────────
-  if (company && subState.isPendingApproval) {
+  if (company && subState.isPendingApproval && !subState.isTrialActive) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50 p-4">
         <div className="max-w-md w-full bg-white rounded-3xl border border-amber-200 shadow-xl p-8 text-center space-y-5">
@@ -1048,7 +931,12 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
               >
                 <Icon size={17} className="flex-shrink-0" />
                 {!collapsed && <span className="truncate">{item.label}</span>}
-                {!collapsed && active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                {!collapsed && item.href === '/employer/post-job' && !subState.isJobPostingAllowed && (
+                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                    Locked
+                  </span>
+                )}
+                {!collapsed && active && (item.href !== '/employer/post-job' || subState.isJobPostingAllowed) && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />}
               </Link>
             );
           })}
@@ -1141,6 +1029,40 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
             View Site
           </Link>
         </header>
+
+        {/* 15-Day Free Trial Notice Banner (Job Posting locked until Admin Approval) */}
+        {subState.isTrialActive && !subState.isJobPostingAllowed && (
+          <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-amber-200/90 px-4 py-2.5 sm:px-6 shadow-2xs">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
+              <div className="flex items-center gap-2 text-amber-950 font-medium">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black shrink-0 shadow-xs">
+                  🎁 15-Day Free Trial
+                </span>
+                <span>
+                  <strong>{subState.trialDaysRemaining || 15} days remaining</strong>. Your Website preview is accessible! Job Posting stays locked until Admin approval.
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`Hi THENIJOBS Admin, I am on the 15-day Free Trial (${company?.name || user?.fullName || user?.email}). Please verify and approve my business to unlock Job Posting.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs transition-colors"
+                >
+                  <MessageCircle size={13} />
+                  <span>Fast-Track on WhatsApp</span>
+                </a>
+                <a
+                  href="tel:+919360519460"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 hover:bg-amber-50 font-semibold text-[11px] transition-colors"
+                >
+                  <PhoneCall size={12} />
+                  <span>Call Admin</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <main className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8">{children}</main>

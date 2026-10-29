@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const now = new Date();
+    const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+
     if (companyId) {
       const existingCompany = await db.collection('companies').doc(companyId).get();
       if (existingCompany.exists) {
@@ -55,38 +58,54 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // Record trial intent on company. DO NOT activate dates yet. Admin approval required.
+        // Automatic 15-day free trial activates immediately without admin approval.
+        // Website preview is accessible (isActive: true), but verificationStatus stays pending.
         await db.collection('companies').doc(companyId).update({
           trialRequested: true,
           requestedPlan: 'standard',
-          accountStatus: 'pending_admin_approval',
-          subscriptionStatus: 'pending_admin_approval',
+          subscriptionPlan: 'standard',
+          subscriptionStatus: 'trial',
+          accountStatus: 'trial_active',
+          trialStartDate: now,
+          trialEndDate: trialEndDate,
+          trialStartedAt: now,
+          trialEndsAt: trialEndDate,
           verificationStatus: 'pending',
+          isVerified: false,
+          isActive: true,
           updatedAt: FieldValue.serverTimestamp(),
         });
       }
     }
 
     if (userId) {
-      // Record trial intent on user document. DO NOT activate dates yet. Admin approval required.
+      // Activate 15-day free trial for user. canPostJobs stays false until Admin approval.
       await db.collection('users').doc(userId).set({
         trialRequested: true,
         selectedPlan: 'trial',
         requestedPlan: 'standard',
-        trialEligible: true,
-        hasUsedFreeTrial: false,
+        subscriptionPlan: 'standard',
+        subscriptionStatus: 'trial',
+        accountStatus: 'trial_active',
+        trialStartDate: now,
+        trialEndDate: trialEndDate,
+        trialStartedAt: now,
+        trialEndsAt: trialEndDate,
+        trialEligible: false,
+        hasUsedFreeTrial: true,
+        trialDurationDays: 15,
         paymentStatus: 'not_required',
         approvalStatus: 'pending',
-        accountStatus: 'pending_approval',
-        subscriptionStatus: 'pending_admin_approval',
+        isEmployer: true,
+        canPostJobs: false,
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     }
 
     return NextResponse.json({
       success: true,
-      message: '15-Day Free Trial requested successfully. Your account is pending admin approval.',
-      status: 'pending_admin_approval',
+      message: '15-Day Free Trial activated! Your website preview is accessible. Job posting will unlock upon Admin approval.',
+      status: 'trial_active',
     });
   } catch (error: any) {
     console.error('[request-trial] Error requesting free trial:', error);

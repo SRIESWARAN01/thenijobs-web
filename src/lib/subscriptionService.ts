@@ -19,6 +19,8 @@ export interface SubscriptionState {
   isSuspended: boolean;
   /** Convenience: true when the employer has portal access (trial active OR paid active) */
   isAccessAllowed: boolean;
+  /** True when job posting is explicitly unlocked (requires admin approval) */
+  isJobPostingAllowed: boolean;
   trialDaysRemaining: number;
   trialHoursRemaining: number;
   plan: string;
@@ -63,6 +65,7 @@ export function computeSubscriptionState(
       isPaidExpired: false,
       isSuspended: false,
       isAccessAllowed: false,
+      isJobPostingAllowed: false,
       trialDaysRemaining: 0,
       trialHoursRemaining: 0,
       plan: 'free',
@@ -85,12 +88,6 @@ export function computeSubscriptionState(
   const adminApprovedAt = toJsDate(company?.adminApprovedAt || user?.adminApprovedAt);
   const approvedBy = company?.approvedBy || user?.approvedBy;
 
-  // 1. Pending Approval Check
-  const isPendingApproval =
-    rawAccountStatus === 'pending_admin_approval' ||
-    rawVerificationStatus === 'pending' ||
-    rawSubscriptionStatus === 'pending_admin_approval';
-
   // 2. Paid Subscription Check
   const isPaidActive =
     rawPaymentStatus === 'paid' &&
@@ -111,10 +108,7 @@ export function computeSubscriptionState(
   let isTrialActive = false;
   let isTrialExpired = false;
 
-  if (isPendingApproval) {
-    isTrialActive = false;
-    isTrialExpired = false;
-  } else if (isPaidActive) {
+  if (isPaidActive) {
     isTrialActive = false;
     isTrialExpired = false;
   } else if (isPaidExpired) {
@@ -124,6 +118,7 @@ export function computeSubscriptionState(
   } else if (trialEndDate) {
     const diffMs = trialEndDate.getTime() - now.getTime();
     if (diffMs > 0) {
+      // 15-day free trial is active right away upon registration without waiting for admin approval
       isTrialActive = true;
       isTrialExpired = false;
       trialHoursRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
@@ -137,7 +132,17 @@ export function computeSubscriptionState(
     isTrialExpired = true;
   }
 
-  // 4. Suspension — now also catches expired paid subscriptions
+  // 4. Pending Approval Check — applies only when neither active paid nor active trial
+  const isPendingApproval =
+    !isPaidActive &&
+    !isTrialActive &&
+    !isTrialExpired &&
+    !isPaidExpired &&
+    (rawAccountStatus === 'pending_admin_approval' ||
+      rawVerificationStatus === 'pending' ||
+      rawSubscriptionStatus === 'pending_admin_approval');
+
+  // 5. Suspension — now also catches expired paid subscriptions
   const isSuspended =
     rawAccountStatus === 'suspended' ||
     rawWebsiteStatus === 'suspended' ||
@@ -160,18 +165,18 @@ export function computeSubscriptionState(
   let resolvedAccountStatus: AccountStatus = rawAccountStatus;
   let resolvedWebsiteStatus: WebsiteStatus = rawWebsiteStatus;
 
-  if (isPendingApproval) {
-    resolvedAccountStatus = 'pending_admin_approval';
-    resolvedWebsiteStatus = 'pending_approval';
-  } else if (isPaidActive) {
+  if (isPaidActive) {
     resolvedAccountStatus = 'active';
+    resolvedWebsiteStatus = 'active';
+  } else if (isTrialActive) {
+    resolvedAccountStatus = 'trial_active';
     resolvedWebsiteStatus = 'active';
   } else if (isSuspended) {
     resolvedAccountStatus = 'suspended';
     resolvedWebsiteStatus = 'suspended';
-  } else if (isTrialActive) {
-    resolvedAccountStatus = 'trial_active';
-    resolvedWebsiteStatus = 'active';
+  } else if (isPendingApproval) {
+    resolvedAccountStatus = 'pending_admin_approval';
+    resolvedWebsiteStatus = 'pending_approval';
   }
 
   return {
@@ -181,7 +186,8 @@ export function computeSubscriptionState(
     isTrialExpired,
     isPaidExpired,
     isSuspended,
-    isAccessAllowed: (isTrialActive || isPaidActive) && !isSuspended && !isPendingApproval,
+    isAccessAllowed: (isTrialActive || isPaidActive) && !isSuspended,
+    isJobPostingAllowed: (isPaidActive || (isTrialActive && rawVerificationStatus === 'verified')) && !isSuspended,
     trialDaysRemaining,
     trialHoursRemaining,
     plan,

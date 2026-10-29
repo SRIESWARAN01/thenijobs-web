@@ -56,7 +56,13 @@ export default function RegisterBusinessPage() {
   // If already logged in and approved, redirect to dashboard
   useEffect(() => {
     if (user && user.role === 'business_owner') {
-      if (user.approvalStatus === 'approved' || user.accountStatus === 'active') {
+      if (
+        user.approvalStatus === 'approved' ||
+        user.accountStatus === 'active' ||
+        user.subscriptionStatus === 'trial' ||
+        user.selectedPlan === 'trial' ||
+        user.accountStatus === 'trial_active'
+      ) {
         router.push('/employer/dashboard');
       }
     }
@@ -233,9 +239,10 @@ export default function RegisterBusinessPage() {
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to request free trial.');
       }
-      toast.success('15-Day Free Trial requested! Your account is now waiting for Admin approval.');
+      toast.success('15-Day Free Trial activated! Loading your Dashboard & Website Preview...');
       await refreshUserProfile?.();
       setForcePlanStep(false);
+      router.push('/employer/dashboard');
     } catch (err: any) {
       console.error('Free trial request error:', err);
       toast.error(err.message || 'Failed to request free trial. Please try again.');
@@ -489,132 +496,16 @@ export default function RegisterBusinessPage() {
     );
   }
 
-  // ── SCREEN C: 15-DAY FREE TRIAL SELECTED – WAITING FOR ADMIN APPROVAL ──────
-  if (isBusinessOwner && (user.selectedPlan === 'trial' || user.trialRequested) && user.approvalStatus !== 'approved' && !forcePlanStep) {
-    const formattedDate = user.createdAt
-      ? new Date(user.createdAt?.seconds ? user.createdAt.seconds * 1000 : user.createdAt).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        })
-      : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-
+  // ── SCREEN C: 15-DAY FREE TRIAL ACTIVE – INSTANT ACCESS ──────────────────
+  if (isBusinessOwner && (user.selectedPlan === 'trial' || user.trialRequested || user.subscriptionStatus === 'trial') && !forcePlanStep) {
+    if (typeof window !== 'undefined') {
+      router.push('/employer/dashboard');
+    }
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-outfit">
-        <div className="max-w-lg w-full bg-white rounded-3xl border border-amber-200 shadow-xl p-6 sm:p-8 text-center space-y-6">
-          {/* Status Icon */}
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 border border-amber-500/30 flex items-center justify-center mx-auto shadow-inner">
-            <Clock size={32} />
-          </div>
-
-          <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider">
-              <Clock size={12} /> 15-Day Free Trial • Pending Admin Approval
-            </span>
-            <h1 className="text-2xl font-black text-slate-900 mt-3 tracking-tight">
-              Your 15-Day Free Trial Is Waiting for Admin Approval
-            </h1>
-            <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-              Thank you for registering with THENIJOBS. Your 15-day free trial request has been submitted successfully and is waiting for Admin approval. <strong>No payment is required.</strong>
-            </p>
-          </div>
-
-          {/* Submitted Information Card */}
-          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 text-left space-y-2.5 text-xs text-slate-700">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-              <span className="text-slate-500 font-medium">Selected Option</span>
-              <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full">
-                15-Day Free Trial (Standard Plan)
-              </span>
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-              <span className="text-slate-500 font-medium">Payment Status</span>
-              <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                No Payment Required (₹0)
-              </span>
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-              <span className="text-slate-500 font-medium">Approval Status</span>
-              <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                Pending Admin Review
-              </span>
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-              <span className="text-slate-500 font-medium">Business Owner</span>
-              <span className="font-bold text-slate-900">{user.fullName || user.displayName || 'Business Owner'}</span>
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
-              <span className="text-slate-500 font-medium">Registered Email</span>
-              <span className="font-bold text-slate-900">{user.email}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500 font-medium">Submitted On</span>
-              <span className="font-bold text-slate-900">{formattedDate}</span>
-            </div>
-          </div>
-
-          {/* Trial Duration Rule */}
-          <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 text-left space-y-2 text-xs text-amber-950">
-            <p className="font-bold text-amber-900 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-amber-600" />
-              Trial Activation Rules:
-            </p>
-            <ul className="space-y-1 text-amber-800 text-[11px]">
-              <li>✓ The trial does not start today — it starts <strong>only after Admin approval</strong>.</li>
-              <li>✓ You get <strong>exactly 15 days</strong> of Standard plan features (10 jobs, 20 products, 10 services).</li>
-              <li>✓ Upgrade to an annual plan anytime without losing your business data.</li>
-            </ul>
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-3 pt-2">
-            <button
-              type="button"
-              onClick={handleCheckStatus}
-              disabled={checkingStatus}
-              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-            >
-              {checkingStatus ? (
-                <>
-                  <Loader2 size={16} className="animate-spin text-white" />
-                  <span>Checking Status...</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw size={16} />
-                  <span>Check Approval Status</span>
-                </>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setForcePlanStep(true)}
-              className="w-full py-2.5 px-4 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100 text-indigo-800 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              <Zap size={14} className="text-indigo-600" />
-              <span>Upgrade to Annual Paid Plan Instead</span>
-            </button>
-
-            <a
-              href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`Hi THENIJOBS Admin, I requested the 15-day Free Trial for my business account (${user.email}). Please review and approve my account.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-2 px-4 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-xs flex items-center justify-center gap-2 transition-all"
-            >
-              <MessageCircle size={15} className="text-emerald-600" />
-              <span>Contact Admin on WhatsApp (+91 93605 19460)</span>
-            </a>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 mx-auto text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1 cursor-pointer"
-            >
-              <LogOut size={13} />
-              <span>Sign Out</span>
-            </button>
-          </div>
+        <div className="text-center space-y-3">
+          <Loader2 className="animate-spin text-blue-600 mx-auto" size={32} />
+          <p className="text-sm font-semibold text-slate-700">15-Day Free Trial Active. Loading your Business Dashboard...</p>
         </div>
       </div>
     );

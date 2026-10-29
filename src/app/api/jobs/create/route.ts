@@ -62,6 +62,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'You are not authorized to post jobs for this company.' }, { status: 403 });
     }
 
+    // 2b. Enforce Admin Approval requirement for Job Posting
+    if (companyData.verificationStatus !== 'verified') {
+      return NextResponse.json({
+        success: false,
+        error: 'Job posting is locked until your business profile is verified and approved by THENIJOBS Admin. Please contact support on WhatsApp to request approval.',
+        locked: true,
+      }, { status: 403 });
+    }
+
     // 3. Compute Subscription State
     const subState = computeSubscriptionState(companyData as any);
     if (!subState.isAccessAllowed) {

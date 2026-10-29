@@ -6,8 +6,9 @@ import Link from 'next/link';
 import {
   Briefcase, Banknote, FileText, Users, Clock,
   ArrowLeft, ArrowRight, Check, Loader2, Plus, X, Zap, ShieldAlert, Eye,
-  Sparkles, CheckCircle2
+  Sparkles, CheckCircle2, Lock, MessageCircle, PhoneCall
 } from 'lucide-react';
+import { SITE_CONTACT } from '@/lib/constants';
 import JobPreviewModal from '@/components/employer/JobPreviewModal';
 import JobPostSuccessModal from '@/components/employer/JobPostSuccessModal';
 import { TN_DISTRICTS } from '@/lib/types';
@@ -382,22 +383,66 @@ export default function PostJobPage() {
 
   if (!isCompanyVerified) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-96 py-20 text-center px-4 font-outfit">
-        <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-200 shadow-xs">
-          <ShieldAlert size={32} />
+      <div className="flex flex-col items-center justify-center min-h-[480px] py-16 text-center px-4 font-outfit max-w-xl mx-auto">
+        <div className="w-16 h-16 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-200 shadow-sm">
+          <Lock size={32} />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
-          Company Verification Pending
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider mb-2">
+          <ShieldAlert size={12} /> Job Posting Locked • Admin Approval Required
+        </span>
+        <h2 className="text-xl sm:text-2xl font-black text-gray-900 mb-2">
+          Job Posting Is Locked Awaiting Admin Approval
         </h2>
         <p className="text-xs sm:text-sm text-gray-600 max-w-md mb-6 leading-relaxed">
-          Only <strong>Admin-Verified Companies</strong> can post active job openings on THENIJOBS. Our verification team is reviewing your profile.
+          Your <strong>15-day free trial is active</strong>! You have full access to your Dashboard and Website Preview, but publishing job vacancies stays locked until THENIJOBS Admin approves your business profile.
         </p>
-        <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-600 max-w-sm mb-6 font-medium">
-          Status: <span className="font-extrabold text-amber-600 uppercase">{company?.verificationStatus || 'Pending Verification'}</span>
+
+        {/* WhatsApp & Call Support Box */}
+        <div className="w-full p-5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-3 mb-6 shadow-xs">
+          <p className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+            Request Immediate Approval:
+          </p>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Contact THENIJOBS support directly via WhatsApp or phone call to fast-track your business verification and unlock job posting immediately.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <a
+              href="https://wa.me/919360519460?text=Hello%20THENIJOBS%2C%20I%20have%20an%20active%2015-day%20free%20trial%20for%20my%20business%20and%20would%20like%20to%20request%20admin%20approval%20to%20unlock%20Job%20Posting."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+            >
+              <MessageCircle size={15} />
+              <span>WhatsApp Support</span>
+            </a>
+            <a
+              href={`tel:${SITE_CONTACT.phone1Raw}`}
+              className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+            >
+              <PhoneCall size={14} />
+              <span>Call {SITE_CONTACT.phone1}</span>
+            </a>
+          </div>
+          <p className="text-[11px] text-slate-500 pt-1 text-center">
+            Secondary Helpline: <a href={`tel:${SITE_CONTACT.phone2Raw}`} className="font-semibold text-slate-700 hover:underline">{SITE_CONTACT.phone2}</a> · {SITE_CONTACT.supportEmail}
+          </p>
         </div>
-        <Link href="/employer/company-profile" className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm">
-          View Company Verification Details
-        </Link>
+
+        <div className="flex flex-col sm:flex-row gap-2 w-full">
+          <Link
+            href="/employer/website"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+          >
+            <Eye size={14} />
+            <span>Preview Company Website</span>
+          </Link>
+          <Link
+            href="/employer/dashboard"
+            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+          >
+            <span>Back to Dashboard</span>
+          </Link>
+        </div>
       </div>
     );
   }

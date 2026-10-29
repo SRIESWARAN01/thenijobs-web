@@ -23,6 +23,7 @@ const ADMIN_NAV = [
   { label: 'Job Seekers', icon: UserCheck, href: '/admin/job-seekers' },
   { label: 'Create User', icon: UserPlus, href: '/admin/users/create' },
   { label: 'Companies', icon: Building2, href: '/admin/businesses', badge: 'pending' },
+  { label: 'Company Accounts', icon: Building2, href: '/admin/company-accounts' },
   { label: 'Bulk Import', icon: FileSpreadsheet, href: '/admin/businesses/import' },
   {
     label: 'Jobs Management',

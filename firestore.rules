@@ -240,6 +240,11 @@ service cloud.firestore {
       allow delete: if isAdmin() && isNotSuspended();
     }
 
+    // ===== COMPANY ACCOUNTS =====
+    match /companyAccounts/{companyId} {
+      allow read, write: if isAdmin() && isNotSuspended();
+    }
+
     // ===== JOBS =====
     match /jobs/{jobId} {
       // H3 FIX: Allow public read for multiple valid status values — aligns with admin workflows

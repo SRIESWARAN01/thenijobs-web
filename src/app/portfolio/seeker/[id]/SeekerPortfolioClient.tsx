@@ -13,8 +13,11 @@ import {
   ShieldCheck, Smartphone, AlertCircle, QrCode, FileCheck
 } from 'lucide-react';
 import { db } from '@/lib/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import SeekerIDCard from '@/components/id-card/SeekerIDCard';
+import TemplateRenderer from '@/components/portfolio/TemplateRenderer';
+import { buildSeekerPortfolioSite } from '@/lib/portfolio/seekerPortfolioAdapter';
+import type { PortfolioSite } from '@/lib/types/portfolio';
 import VerifiedBadge from '@/components/ui/VerifiedBadge';
 import { getSeekerGrowthSlogan } from '@/lib/branding/slogans';
 import { safeExternalUrl } from '@/lib/safeUrl';
@@ -85,11 +88,38 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [hrShortlisted, setHrShortlisted] = useState(false);
   const [hrNote, setHrNote] = useState('');
+  const [portfolioSite, setPortfolioSite] = useState<PortfolioSite | null>(null);
 
   useEffect(() => {
     if (initialData) {
       setSeeker(initialData);
       setUserName(initialData.name || '');
+      const synthesized = buildSeekerPortfolioSite({
+        userId: seekerId || 'preview-seeker',
+        name: initialData.name,
+        headline: initialData.currentRole,
+        currentRole: initialData.currentRole,
+        bio: initialData.aboutMe || initialData.careerObjective,
+        email: initialData.email,
+        phone: initialData.phone,
+        address: initialData.address,
+        district: initialData.district,
+        state: initialData.state,
+        photoUrl: initialData.photoUrl || initialData.profilePhotoUrl,
+        resumeUrl: initialData.resumeUrl,
+        isOpenToWork: initialData.isOpenToWork,
+        isPortfolioPublic: initialData.isPortfolioPublic ?? true,
+        skills: initialData.skills,
+        languages: initialData.languages,
+        education: initialData.education,
+        experience: initialData.experience,
+        projects: initialData.projects,
+        certifications: initialData.certifications,
+        achievements: initialData.achievements,
+        portfolioLinks: (initialData.workSamples || []).map(w => w.url),
+        privacySettings: initialData.privacySettings,
+      });
+      setPortfolioSite(synthesized);
       setLoading(false);
       return;
     }
@@ -122,6 +152,52 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
         // RULES-1: users/{uid} is readable only by its owner and admins; the public name comes
         // from the seeker profile (written by the seeker on their profile page).
         setUserName((profileData as any).name || (profileData as any).displayName || '');
+
+        // Fetch custom site from portfolioSites if configured
+        let siteFound: PortfolioSite | null = null;
+        try {
+          const directSiteSnap = await getDoc(doc(db, 'portfolioSites', `site-${seekerId}`));
+          if (directSiteSnap.exists()) {
+            siteFound = { id: directSiteSnap.id, ...directSiteSnap.data() } as PortfolioSite;
+          } else {
+            const qSite = query(collection(db, 'portfolioSites'), where('ownerId', '==', seekerId), limit(1));
+            const qSnap = await getDocs(qSite);
+            if (!qSnap.empty) {
+              siteFound = { id: qSnap.docs[0].id, ...qSnap.docs[0].data() } as PortfolioSite;
+            }
+          }
+        } catch { /* ignore fallback */ }
+
+        if (siteFound) {
+          setPortfolioSite(siteFound);
+        } else {
+          const synthesized = buildSeekerPortfolioSite({
+            userId: seekerId,
+            name: profileData.name || (profileData as any).displayName || '',
+            headline: profileData.currentRole,
+            currentRole: profileData.currentRole,
+            bio: profileData.aboutMe || profileData.careerObjective,
+            email: profileData.email,
+            phone: profileData.phone,
+            address: profileData.address,
+            district: profileData.district,
+            state: profileData.state,
+            photoUrl: profileData.photoUrl || profileData.profilePhotoUrl,
+            resumeUrl: profileData.resumeUrl,
+            isOpenToWork: profileData.isOpenToWork,
+            isPortfolioPublic: true,
+            skills: profileData.skills,
+            languages: profileData.languages,
+            education: profileData.education,
+            experience: profileData.experience,
+            projects: profileData.projects,
+            certifications: profileData.certifications,
+            achievements: profileData.achievements,
+            portfolioLinks: (profileData.workSamples || []).map(w => w.url),
+            privacySettings: profileData.privacySettings,
+          });
+          setPortfolioSite(synthesized);
+        }
       } catch (err) {
         console.error('Error loading seeker portfolio:', err);
         setNotFound(true);
@@ -131,7 +207,7 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
     }
 
     fetchData();
-  }, [seekerId]);
+  }, [seekerId, initialData]);
 
   // Google Search Indexing Matrix: Premium/Enterprise = INDEX; Free/Basic/Standard = NOINDEX
   //
@@ -417,450 +493,16 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
           />
         </div>
       ) : (
-        <>
-          {/* Royal Blue Candidate Hero Banner */}
-          <header className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white pt-6 pb-12 rounded-b-[2.5rem] shadow-md overflow-hidden">
-            <div className="max-w-2xl mx-auto px-6 relative z-10">
-
-              {/* ID Tag & Verification */}
-              <div className="flex items-center justify-between text-xs text-blue-100/80 mb-6">
-                <Link href="/" className="flex items-center gap-1.5 hover:text-white transition-colors">
-                  <img src="/logo.png" alt="THENIJOBS" className="h-5 w-auto object-contain bg-white/90 rounded p-0.5" />
-                  <span className="font-extrabold tracking-tight">THENIJOBS</span>
-                </Link>
-                <span className="bg-white/10 px-2.5 py-1 rounded-full text-[10px] font-mono tracking-wider font-semibold">
-                  ID: {tnjId}
-                </span>
-              </div>
-
-              {/* Avatar & Bio */}
-              <div className="flex flex-col items-center text-center space-y-3">
-                <div className="relative">
-                  {photoUrl ? (
-                    <img
-                      src={photoUrl}
-                      alt={name}
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white/90 shadow-xl bg-white"
-                    />
-                  ) : (
-                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white/90 shadow-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center">
-                      {initials}
-                    </div>
-                  )}
-
-                  {/* Work Status Badge */}
-                  {workStatus === 'open' && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-extrabold text-emerald-800 bg-emerald-300 border-2 border-white shadow-md flex items-center gap-1 whitespace-nowrap">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
-                      🟢 OPEN TO WORK
-                    </div>
-                  )}
-                  {workStatus === 'opportunities' && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-extrabold text-amber-900 bg-amber-300 border-2 border-white shadow-md flex items-center gap-1 whitespace-nowrap">
-                      🟡 OPEN TO OPPORTUNITIES
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-center gap-2 flex-wrap">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" style={{ fontFamily: "'Poppins', sans-serif" }}>
-                      {name}
-                    </h1>
-                    <VerifiedBadge tier={(seeker as any)?.subscriptionPlan || 'standard'} isVerified={true} companyName={name} size="md" />
-                  </div>
-
-                  <p className="text-blue-100 text-sm sm:text-base font-semibold mt-1">
-                    {currentRole}
-                  </p>
-
-                  {/* Dynamic Motivational Slogan */}
-                  <p className="text-xs text-blue-200/95 italic font-medium mt-1 max-w-md mx-auto">
-                    &ldquo;{getSeekerGrowthSlogan({ name, currentRole, skills: rawSkills.map(s => (typeof s === 'string' ? s : s.name)), uid: seekerId })}&rdquo;
-                  </p>
-
-                  <div className="flex items-center justify-center gap-3 text-xs text-blue-200/90 mt-1.5 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin size={13} className="text-blue-300" />
-                      {district}, {state}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Briefcase size={13} className="text-blue-300" />
-                      {experience.length > 0 ? `${experience.length} Experience Record${experience.length > 1 ? 's' : ''}` : 'Fresher Candidate'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Verification Badges Row */}
-                <div className="flex items-center justify-center gap-2 flex-wrap pt-1">
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 text-[10px] font-bold flex items-center gap-1">
-                    <Smartphone size={10} /> Mobile Verified
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/30 text-[10px] font-bold flex items-center gap-1">
-                    <Mail size={10} /> Email Verified
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/30 text-[10px] font-bold flex items-center gap-1">
-                    <ShieldCheck size={10} /> Identity Verified
-                  </span>
-                </div>
-
-                {/* Quick Action Header Buttons */}
-                <div className="flex items-center gap-2 pt-2 w-full justify-center max-w-md">
-                  {seeker.resumeUrl ? (
-                    <a
-                      href={safeExternalUrl(seeker.resumeUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-2.5 px-4 rounded-2xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Download size={15} /> Download Resume
-                    </a>
-                  ) : (
-                    <a
-                      href="#contact-section"
-                      className="flex-1 py-2.5 px-4 rounded-2xl bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <Phone size={15} /> Contact Candidate
-                    </a>
-                  )}
-
-                  {seeker.videoIntroUrl && (
-                    <button
-                      onClick={() => setShowVideoModal(true)}
-                      className="py-2.5 px-4 rounded-2xl bg-emerald-400 text-emerald-950 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 shadow-md"
-                    >
-                      <Play size={14} className="fill-emerald-950" /> Video Intro
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setHrShortlisted(!hrShortlisted)}
-                    className={`py-2.5 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 shadow-md ${
-                      hrShortlisted ? 'bg-amber-400 text-amber-950' : 'bg-white/15 text-white border border-white/30 hover:bg-white/25'
-                    }`}
-                  >
-                    <Bookmark size={15} className={hrShortlisted ? 'fill-amber-950' : ''} />
-                    {hrShortlisted ? 'Shortlisted' : 'Shortlist'}
-                  </button>
-                </div>
-
-              </div>
-
-            </div>
-          </header>
-
-          {/* Main Content Area */}
-          <div className="max-w-2xl mx-auto px-4 sm:px-6 -mt-6 space-y-5">
-
-            {/* Profile Strength Meter */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Sparkles size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm">Profile Strength</h3>
-                    <p className="text-[11px] text-gray-500">Completeness & Readiness Score</p>
-                  </div>
-                </div>
-                <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                  {profileStrength}% Complete
-                </span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500" style={{ width: `${profileStrength}%` }} />
-              </div>
-            </div>
-
-            {/* Summary Section */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-2">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                <User size={15} className="text-blue-600" />
-                {isFresher ? 'Career Objective' : 'About Candidate'}
-              </h2>
-              <p className="text-gray-700 text-xs sm:text-sm leading-relaxed">
-                {showFullAbout ? summaryText : (summaryText.length > 180 ? `${summaryText.slice(0, 180)}...` : summaryText)}
-              </p>
-              {summaryText.length > 180 && (
-                <button
-                  onClick={() => setShowFullAbout(!showFullAbout)}
-                  className="text-xs font-bold text-blue-600 hover:underline"
-                >
-                  {showFullAbout ? 'Show Less' : 'Read More'}
-                </button>
-              )}
-            </div>
-
-            {/* Dynamic Section Ordering */}
-            {isFresher ? (
-              <>
-                <SkillsSection rawSkills={rawSkills} />
-                {projects.length > 0 && <ProjectsSection projects={projects} />}
-                {education.length > 0 && <EducationSection education={education} />}
-              </>
-            ) : (
-              <>
-                <SkillsSection rawSkills={rawSkills} />
-                {experience.length > 0 && <ExperienceSection experience={experience} />}
-                {projects.length > 0 && <ProjectsSection projects={projects} />}
-                {education.length > 0 && <EducationSection education={education} />}
-              </>
-            )}
-
-            {/* Certifications */}
-            {certifications.length > 0 && (
-              <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-4">
-                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Award size={15} className="text-amber-500" /> Certifications
-                </h2>
-                <div className="space-y-3">
-                  {certifications.map((cert, i) => (
-                    <div key={cert.id || i} className="flex items-center justify-between p-3.5 rounded-2xl bg-gray-50 border border-gray-100">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                          <Award size={16} />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-xs sm:text-sm font-bold text-gray-900 truncate">{cert.name}</h3>
-                          <p className="text-xs text-gray-500">{cert.organization}{cert.date ? ` • ${cert.date}` : ''}</p>
-                        </div>
-                      </div>
-                      {cert.link && (
-                        <a
-                          href={safeExternalUrl(cert.link)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors shrink-0 ml-2"
-                        >
-                          View
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Achievements & Awards */}
-            {achievements.length > 0 && (
-              <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-3">
-                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Award size={15} className="text-purple-600" /> Achievements & Honors
-                </h2>
-                <div className="space-y-2">
-                  {achievements.map((ach, i) => (
-                    <div key={ach.id || i} className="p-3.5 rounded-2xl bg-purple-50/50 border border-purple-100 flex items-start gap-3">
-                      <span className="text-lg">🏆</span>
-                      <div>
-                        <h3 className="text-xs sm:text-sm font-bold text-gray-900">{ach.title}</h3>
-                        {ach.description && <p className="text-xs text-gray-600 mt-0.5">{ach.description}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Work Samples / Attachments */}
-            {workSamples.length > 0 && (
-              <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-3">
-                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileCode size={15} className="text-indigo-600" /> Work Samples & Documents
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {workSamples.map((sample, i) => (
-                    <a
-                      key={sample.id || i}
-                      href={safeExternalUrl(sample.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between text-xs font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                    >
-                      <span className="truncate">{sample.title}</span>
-                      <ExternalLink size={13} className="shrink-0" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Languages */}
-            {rawLanguages.length > 0 && (
-              <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-3">
-                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Globe size={15} className="text-teal-600" /> Languages Spoken
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {rawLanguages.map((langItem, i) => {
-                    const langName = typeof langItem === 'string' ? langItem : langItem.name;
-                    const level = typeof langItem === 'object' ? langItem.proficiency : (langName.toLowerCase() === 'tamil' ? 'Native' : 'Professional');
-                    return (
-                      <div key={i} className="p-3 rounded-2xl bg-teal-50/60 border border-teal-100 flex items-center justify-between">
-                        <span className="text-xs font-bold text-teal-900">{langName}</span>
-                        <span className="text-[10px] font-semibold text-teal-600 bg-white px-2 py-0.5 rounded-full border border-teal-200">
-                          {level}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Dedicated Resume Section */}
-            {!seeker.privacySettings?.hideResume && (
-              <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText size={15} className="text-blue-600" /> Official Resume
-                  </h2>
-                  <span className="text-[11px] text-gray-400 font-medium">Updated: August 2026</span>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                      PDF
-                    </div>
-                    <div>
-                      <h3 className="text-xs sm:text-sm font-bold text-gray-900">{name}&apos;s Resume</h3>
-                      <p className="text-[11px] text-gray-500">Verified THENIJOBS candidate document</p>
-                    </div>
-                  </div>
-
-                  {seeker.resumeUrl ? (
-                    <a
-                      href={safeExternalUrl(seeker.resumeUrl)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors shrink-0"
-                    >
-                      View PDF
-                    </a>
-                  ) : (
-                    <span className="text-xs text-slate-600 font-medium">Attached in profile</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Career Preferences */}
-            <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-3">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Sliders size={15} className="text-indigo-600" /> Career Preferences
-              </h2>
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Looking For</span>
-                  <span className="font-bold text-gray-900">Full Time / Remote</span>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Preferred Location</span>
-                  <span className="font-bold text-gray-900">{district}, Tamil Nadu</span>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Expected Salary</span>
-                  <span className="font-bold text-emerald-600">{seeker.expectedSalary || '₹15,000 - ₹25,000 / mo'}</span>
-                </div>
-                <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Availability</span>
-                  <span className="font-bold text-blue-600">{seeker.availability || 'Available Immediately'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* HR Private Notes & Shortlist Box (for employers) */}
-            <div className="bg-amber-50/60 border border-amber-200 rounded-3xl p-5 shadow-sm space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck size={14} className="text-amber-700" /> HR Recruiter Private Notes
-                </h3>
-                <span className="text-[10px] text-amber-700 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">Private</span>
-              </div>
-              <textarea
-                value={hrNote}
-                onChange={(e) => setHrNote(e.target.value)}
-                aria-label="Write private notes about this candidate (visible only to your hiring team)" placeholder="Write private notes about this candidate (visible only to your hiring team)..."
-                className="w-full p-3 bg-white border border-amber-200 rounded-2xl text-base sm:text-xs text-gray-900 placeholder-amber-700/50 focus:outline-none focus:border-amber-400 resize-none"
-                rows={2}
-              />
-            </div>
-
-            {/* Contact / One-Tap Hiring Section (with Privacy Controls) */}
-            <div id="contact-section" className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4 text-center">
-              <div>
-                <h2 className="text-base font-bold text-gray-900 font-sans">Interested in hiring {name}?</h2>
-                <p className="text-xs text-gray-500 mt-1">Get in touch directly with this candidate</p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-w-md mx-auto pt-2">
-                {/* PRIV-2: privacySettings.hidePhone/hideEmail now has a real writer
-                    (seeker/profile/page.tsx's Contact Visibility toggles, default hidden). This
-                    stays presentation-level, same as every other field on this document -- the
-                    firestore.rules seekerProfiles read rule is document-level (see its own
-                    comment there), so a raw query against an already-public+paid profile can
-                    still read these fields directly regardless of this flag. What changes here is
-                    the normal app UI: a seeker who never opts in still shows exactly today's
-                    "Hidden" state; one who does gets a real, working tel:/mailto: link instead of
-                    a permanently disabled placeholder. */}
-                {seeker.phone && seeker.privacySettings?.hidePhone === false ? (
-                  <a
-                    href={`tel:${seeker.phone}`}
-                    className="py-3 px-3 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold flex items-center justify-center gap-1 hover:bg-emerald-100 transition-colors"
-                  >
-                    <Phone size={12} /> Call
-                  </a>
-                ) : (
-                  <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
-                    <Lock size={12} /> Phone Hidden
-                  </div>
-                )}
-
-                {seeker.email && seeker.privacySettings?.hideEmail === false ? (
-                  <a
-                    href={`mailto:${seeker.email}`}
-                    className="py-3 px-3 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold flex items-center justify-center gap-1 hover:bg-emerald-100 transition-colors"
-                  >
-                    <Mail size={12} /> Email
-                  </a>
-                ) : (
-                  <div className="py-3 px-3 rounded-2xl bg-gray-100 text-gray-400 text-xs font-bold flex items-center justify-center gap-1 cursor-not-allowed">
-                    <Lock size={12} /> Email Hidden
-                  </div>
-                )}
-
-                <button
-                  onClick={() => {
-                    // Visual feedback via temporary state is handled elsewhere; no browser alert
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2000);
-                  }}
-                  className="col-span-2 sm:col-span-1 py-3 px-3 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-700 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <Send size={14} /> Interview
-                </button>
-              </div>
-            </div>
-
-            {/* Footer Branding */}
-            <footer className="text-center pt-6 pb-4">
-              <Link href="/" className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-blue-600 transition-colors">
-                <img src="/logo.png" alt="THENIJOBS" className="h-5 w-auto object-contain" />
-                <span>Powered by <strong className="font-bold text-gray-800">THENIJOBS</strong></span>
-                <ChevronRight size={12} />
-              </Link>
-            </footer>
-
+        portfolioSite ? (
+          <TemplateRenderer site={portfolioSite} isPreview={false} />
+        ) : (
+          <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
+            <Loader2 className="animate-spin text-blue-600" size={32} />
+            <p className="text-sm text-gray-500 font-medium">Loading candidate portfolio...</p>
           </div>
-        </>
+        )
       )}
-
-      {/* Video Intro Modal */}
+            {/* Video Intro Modal */}
       {showVideoModal && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowVideoModal(false)}>
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 text-center" onClick={(e) => e.stopPropagation()}>
@@ -878,133 +520,6 @@ export default function SeekerPortfolioClient({ seekerId: seekerIdProp, initialD
         </div>
       )}
 
-    </div>
-  );
-}
-
-{/* Helper Sub-Component: Skills */}
-function SkillsSection({ rawSkills }: { rawSkills: (string | { name: string; level?: string; verified?: boolean })[] }) {
-  if (!rawSkills || rawSkills.length === 0) return null;
-  return (
-    <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-3">
-      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-        <Code2 size={15} className="text-blue-600" /> Verified Skills & Expertise
-      </h2>
-      <div className="flex flex-wrap gap-2">
-        {rawSkills.map((skillItem, i) => {
-          const skillName = typeof skillItem === 'string' ? skillItem : skillItem.name;
-          const skillLevel = typeof skillItem === 'object' ? skillItem.level : null;
-          const isVerified = typeof skillItem === 'object' ? skillItem.verified : true;
-
-          return (
-            <div key={i} className="px-3.5 py-2 rounded-2xl bg-blue-50/70 border border-blue-100/80 text-blue-900 text-xs font-bold flex items-center gap-1.5">
-              <span>{skillName}</span>
-              {isVerified && <CheckCircle2 size={13} className="fill-blue-600 text-white shrink-0" />}
-              {skillLevel && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-200 text-blue-800 font-semibold">
-                  {skillLevel}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-{/* Helper Sub-Component: Experience */}
-function ExperienceSection({ experience }: { experience: any[] }) {
-  return (
-    <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-4">
-      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-        <Briefcase size={15} className="text-blue-600" /> Work Experience Timeline
-      </h2>
-      <div className="space-y-4">
-        {experience.map((exp, i) => (
-          <div key={exp.id || i} className="relative pl-6 border-l-2 border-blue-200">
-            <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 border-2 border-white" />
-            <h3 className="text-xs sm:text-sm font-bold text-gray-900">{exp.role}</h3>
-            <p className="text-xs font-bold text-blue-600 mt-0.5">{exp.company}</p>
-            <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
-              <Clock size={11} />
-              {exp.startDate}{exp.endDate ? ` — ${exp.endDate}` : ' — Present'}
-              {exp.location ? ` • ${exp.location}` : ''}
-            </p>
-            {exp.description && (
-              <p className="text-xs text-gray-600 mt-2 leading-relaxed">{exp.description}</p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-{/* Helper Sub-Component: Education */}
-function EducationSection({ education }: { education: any[] }) {
-  return (
-    <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-4">
-      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-        <GraduationCap size={15} className="text-purple-600" /> Education & Qualifications
-      </h2>
-      <div className="space-y-3">
-        {education.map((edu, i) => (
-          <div key={edu.id || i} className="flex items-start gap-3 p-3.5 rounded-2xl bg-gray-50 border border-gray-100">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0">
-              <GraduationCap size={18} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-xs sm:text-sm font-bold text-gray-900">{edu.degree}{edu.field ? ` in ${edu.field}` : ''}</h3>
-              <p className="text-xs text-gray-500 mt-0.5">{edu.institution}</p>
-              <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1">
-                {edu.year && <span>Graduation: {edu.year}</span>}
-                {edu.percentage && <span className="font-bold text-emerald-600">Score: {edu.percentage}</span>}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-{/* Helper Sub-Component: Projects */}
-function ProjectsSection({ projects }: { projects: any[] }) {
-  return (
-    <div className="bg-white rounded-3xl border border-gray-100 p-5 sm:p-6 shadow-sm space-y-4">
-      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-        <FolderGit2 size={15} className="text-indigo-600" /> Featured Projects
-      </h2>
-      <div className="grid grid-cols-1 gap-3">
-        {projects.map((proj, i) => (
-          <div key={proj.id || i} className="p-4 rounded-2xl border border-gray-100 bg-gray-50/60 space-y-2">
-            <h3 className="font-bold text-gray-900 text-xs sm:text-sm">{proj.title}</h3>
-            <p className="text-xs text-gray-600 leading-relaxed">{proj.description}</p>
-            {proj.techStack && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {proj.techStack.map((tech: string, j: number) => (
-                  <span key={j} className="px-2 py-0.5 rounded-lg bg-gray-200/70 text-gray-800 text-[10px] font-semibold">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex gap-2 pt-2">
-              {proj.liveUrl && (
-                <a href={safeExternalUrl(proj.liveUrl)} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700">
-                  Live Demo
-                </a>
-              )}
-              {proj.githubUrl && (
-                <a href={safeExternalUrl(proj.githubUrl)} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-lg bg-gray-900 text-white text-[11px] font-bold hover:bg-black">
-                  GitHub
-                </a>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

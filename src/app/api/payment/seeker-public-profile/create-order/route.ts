@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
 
 /**
- * SEEKERPRIVACY-1 — creates a Razorpay order for the ₹50/year seeker public-profile fee.
+ * SEEKERPRIVACY-1 — creates a Razorpay order for the ₹100/year seeker public-profile fee.
  *
  * Mirrors payment/create-order/route.ts's own pattern (server-derived, fixed amount — never
  * trusts a client-supplied price), but this purchase is activated by a real server-to-server

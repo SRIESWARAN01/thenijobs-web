@@ -17,6 +17,7 @@ import { optimizeImageForUpload } from '@/lib/storage/imageOptimizer';
 import { db } from '@/lib/firebase/config';
 import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
 import DeviceLivePreviewModal from '@/components/ui/DeviceLivePreviewModal';
+import CandidatePortfolioLiveModal from '@/components/portfolio/CandidatePortfolioLiveModal';
 import SeekerPortfolioClient from '@/app/portfolio/seeker/[id]/SeekerPortfolioClient';
 import SeekerPublicProfileModal from '@/components/payment/SeekerPublicProfileModal';
 import WhatsAppBioCardModal from '@/components/seeker/WhatsAppBioCardModal';
@@ -1687,52 +1688,52 @@ export default function SeekerProfilePage() {
       </div>
 
       {/* Live Device Portfolio Preview Modal */}
-      <DeviceLivePreviewModal
+      <CandidatePortfolioLiveModal
         isOpen={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
-        title={`${profile.name || 'Job Seeker'} — Live Portfolio Preview`}
-        publicUrl={user?.uid ? `/portfolio/seeker/${user.uid}` : '/portfolio/seeker/demo-seeker'}
-      >
-        <SeekerPortfolioClient
-          initialData={{
-            name: profile.name,
-            email: profile.email,
-            phone: profile.phone,
-            address: profile.address,
-            district: profile.district,
-            state: 'Tamil Nadu',
-            currentRole: profile.headline || profile.currentRole,
-            aboutMe: profile.bio,
-            expectedSalary: profile.expectedSalary,
-            preferredLocations: profile.preferredLocations,
-            preferredMode: profile.workMode,
-            availability: profile.noticePeriod,
-            isOpenToWork: profile.isOpenToWork,
-            isPortfolioPublic: profile.isPortfolioPublic,
-            privacySettings: profile.privacySettings,
-            photoUrl: profile.photoUrl,
-            profilePhotoUrl: profile.photoUrl,
-            gender: profile.gender,
-            dob: profile.dob,
-            skills: skills,
-            languages: languages,
-            education: education,
-            experience: experience,
-            projects: projects.map(p => ({
-              id: p.id,
-              title: p.title,
-              role: p.role,
-              description: p.description,
-              techStack: p.technologies ? p.technologies.split(',').map(t => t.trim()) : [],
-              liveUrl: p.liveUrl,
-              githubUrl: p.githubUrl
-            })),
-            certifications: certifications,
-            achievements: achievements,
-            workSamples: portfolio.map((url, i) => ({ id: i.toString(), title: `Portfolio Link ${i + 1}`, type: 'link', url })),
-          }}
-        />
-      </DeviceLivePreviewModal>
+        userId={user?.uid || ''}
+        initialProfile={{
+          userId: user?.uid,
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          address: profile.address,
+          district: profile.district,
+          state: 'Tamil Nadu',
+          currentRole: profile.headline || profile.currentRole,
+          headline: profile.headline,
+          bio: profile.bio,
+          expectedSalary: profile.expectedSalary,
+          workMode: profile.workMode,
+          noticePeriod: profile.noticePeriod,
+          isOpenToWork: profile.isOpenToWork,
+          isPortfolioPublic: profile.isPortfolioPublic,
+          privacySettings: profile.privacySettings,
+          photoUrl: profile.photoUrl,
+          skills: skills,
+          languages: languages,
+          education: education,
+          experience: experience,
+          projects: projects.map(p => ({
+            id: p.id,
+            title: p.title,
+            role: p.role,
+            description: p.description,
+            techStack: p.technologies ? p.technologies.split(',').map(t => t.trim()) : [],
+            liveUrl: p.liveUrl,
+            githubUrl: p.githubUrl,
+          })),
+          certifications: certifications,
+          achievements: achievements,
+          portfolioLinks: portfolio,
+        }}
+        onPortfolioPublished={() => {
+          setProfile(p => ({ ...p, isPortfolioPublic: true }));
+          const oneYearFromNow = new Date();
+          oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+          setPublicProfilePaidUntil(oneYearFromNow.getTime());
+        }}
+      />
 
       <SeekerPublicProfileModal
         isOpen={showPublicProfileModal}

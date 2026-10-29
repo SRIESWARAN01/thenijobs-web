@@ -145,15 +145,38 @@ export default function SeekerPublicProfileModal({
             setErrorMessage('Payment window was closed or cancelled. No funds were debited.');
           },
         },
-        handler: function (response: any) {
+        handler: async function (response: any) {
           if (!response?.razorpay_payment_id) {
             setState('failed');
             setErrorMessage('The gateway returned an incomplete confirmation. If money was debited, contact support — do not pay again.');
             return;
           }
-          // Deliberately not calling /api/payment/verify here — see the file header comment.
-          // The popup reporting success only means Razorpay captured the payment; activation
-          // still waits for the real webhook to land.
+          setState('waiting');
+          setLastPaymentId(response.razorpay_payment_id);
+
+          try {
+            const verifyRes = await fetch('/api/payment/seeker-public-profile/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                userId,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.success) {
+              setState('success');
+              toast.success('🎉 Portfolio Website is now LIVE!', 'Your candidate portfolio is verified and published for 1 year.');
+              onActivated?.();
+              return;
+            }
+          } catch (vErr) {
+            console.warn('[Seeker Public Profile] Direct verify call failed, falling back to listener:', vErr);
+          }
+
+          // Fallback to real-time Firestore listener (webhook or retry)
           waitForActivation(response.razorpay_payment_id);
         },
       };

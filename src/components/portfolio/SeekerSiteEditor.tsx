@@ -25,6 +25,8 @@ import type {
 import { DEFAULT_THEME, FONT_OPTIONS, DEVICE_SIZES } from '@/lib/types/portfolio';
 import SeekerPortfolioRenderer from './templates/SeekerPortfolioRenderer';
 import TemplateRenderer from './TemplateRenderer';
+import SeekerPublicProfileModal from '@/components/payment/SeekerPublicProfileModal';
+import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
 
 // 4 distinct seeker portfolio layouts
 const SEEKER_LAYOUT_TEMPLATES = [
@@ -220,6 +222,8 @@ export default function SeekerSiteEditor() {
   const [showLivePreview, setShowLivePreview] = useState(true);
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isPortfolioPublic, setIsPortfolioPublic] = useState(false);
+  const [showPublicProfileModal, setShowPublicProfileModal] = useState(false);
   // SEEKER-2: the last customUrl actually saved to Firestore, so handleSave can tell whether
   // the slug changed since the last save (and release the old reservation) without an extra
   // read on every save.
@@ -238,6 +242,17 @@ export default function SeekerSiteEditor() {
           limit(1)
         );
         const snap = await getDocs(qSite);
+
+        // Check if candidate has active ₹100 public profile subscription
+        try {
+          const profDoc = await getDoc(doc(db, 'seekerProfiles', user?.uid || ''));
+          if (profDoc.exists()) {
+            const pData = profDoc.data();
+            const paidUntil = pData?.publicProfilePaidUntil?.toMillis?.() ?? (pData?.publicProfilePaidUntil ? new Date(pData.publicProfilePaidUntil).getTime() : null);
+            const isPaid = pData?.isPortfolioPublic === true && (paidUntil ? paidUntil > Date.now() : true);
+            setIsPortfolioPublic(isPaid);
+          }
+        } catch { /* ignore fallback */ }
 
         if (!snap.empty) {
           const docData = snap.docs[0].data() as PortfolioSite;
@@ -696,11 +711,17 @@ export default function SeekerSiteEditor() {
   // Publish / Unpublish Toggle
   const handlePublishToggle = async () => {
     if (!site?.id) return;
+    const nextStatus = site.status === 'published' ? 'draft' : 'published';
+    const isNowPub = nextStatus === 'published';
+
+    // Verification gate: Portfolio must only publish after payment verification
+    if (isNowPub && !isPortfolioPublic) {
+      setShowPublicProfileModal(true);
+      return;
+    }
+
     setPublishing(true);
     try {
-      const nextStatus = site.status === 'published' ? 'draft' : 'published';
-      const isNowPub = nextStatus === 'published';
-
       await updateDoc(doc(db, 'portfolioSites', site.id), {
         status: nextStatus,
         visibility: isNowPub ? 'public' : 'private',
@@ -2419,14 +2440,14 @@ export default function SeekerSiteEditor() {
                       RECOMMENDED
                     </span>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-extrabold text-emerald-900">Standard Pro</span>
-                      <span className="text-xs font-black text-emerald-700">₹499 / Year</span>
+                      <span className="text-xs font-extrabold text-emerald-900">Candidate Public Portfolio</span>
+                      <span className="text-xs font-black text-emerald-700">₹{SEEKER_PUBLIC_PROFILE_FEE_INR} / Year</span>
                     </div>
                     <ul className="text-[11px] text-emerald-950 space-y-1">
-                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Google Search Engine Indexing</li>
-                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Verified Candidate Badge ⭐</li>
-                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Priority in Recruiter Talent Search</li>
-                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Unlimited Projects & Custom Colors</li>
+                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Razorpay Secured 1-Year Public Deployment</li>
+                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Google Search Engine Indexing & Rich Snippet</li>
+                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> 4 Responsive Templates & Custom Color Themes</li>
+                      <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-600" /> Shareable Link & WhatsApp Recruiter Direct Connect</li>
                     </ul>
                   </div>
                 </div>
@@ -2443,7 +2464,9 @@ export default function SeekerSiteEditor() {
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   {site.status === 'published'
                     ? `Accessible at thenijobs.com/portfolio/${site.customUrl}. Google search crawlers can discover your skills.`
-                    : 'Publish your website to make it publicly viewable by top employers and HR recruiters in Tamil Nadu.'}
+                    : isPortfolioPublic
+                    ? 'Your public portfolio fee is active. Click below to publish your website live to the world.'
+                    : `Publish your website with verified Razorpay payment (₹${SEEKER_PUBLIC_PROFILE_FEE_INR}/year) to make it publicly viewable by top employers and HR recruiters.`}
                 </p>
 
                 <div className="flex items-center justify-center gap-2 pt-2">
@@ -2455,7 +2478,11 @@ export default function SeekerSiteEditor() {
                     }`}
                   >
                     {publishing ? <Loader2 size={13} className="animate-spin inline mr-1" /> : null}
-                    {site.status === 'published' ? 'Switch to Draft Mode' : '🚀 Publish Portfolio Now'}
+                    {site.status === 'published'
+                      ? 'Switch to Draft Mode'
+                      : isPortfolioPublic
+                      ? '🚀 Publish Portfolio Now'
+                      : `🚀 Pay ₹${SEEKER_PUBLIC_PROFILE_FEE_INR} & Publish`}
                   </button>
                 </div>
               </div>
@@ -2500,6 +2527,33 @@ export default function SeekerSiteEditor() {
         )}
 
       </div>
+
+      <SeekerPublicProfileModal
+        isOpen={showPublicProfileModal}
+        onClose={() => setShowPublicProfileModal(false)}
+        userId={user?.uid || ''}
+        userName={heroData.name || user?.displayName}
+        userEmail={user?.email || ''}
+        onActivated={async () => {
+          setIsPortfolioPublic(true);
+          if (site?.id) {
+            await updateDoc(doc(db, 'portfolioSites', site.id), {
+              status: 'published',
+              visibility: 'public',
+              publishedAt: new Date(),
+              updatedAt: new Date(),
+            });
+            setSite(prev => prev ? {
+              ...prev,
+              status: 'published',
+              visibility: 'public',
+              publishedAt: new Date(),
+            } : null);
+          }
+          setShowPublicProfileModal(false);
+          toast.success('🎉 Portfolio Website is now LIVE!', `Your website is published at thenijobs.com/portfolio/${site?.customUrl}`);
+        }}
+      />
     </div>
   );
 }

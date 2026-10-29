@@ -52,7 +52,13 @@ export default function ForgotPasswordPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         setBusinessResult({
           referenceId: data.referenceId,

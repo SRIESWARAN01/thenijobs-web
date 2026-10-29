@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Search, MapPin, Lock, User, Award, Clock, Loader2, Phone, Mail, Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import Link from 'next/link';
@@ -17,11 +18,8 @@ export default function TalentSearchPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // 1. Fetch employer's company to check premium status
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-
-  const company = companies[0];
+  const { company: canonicalComp, loading: companyLoading } = useEmployerCompany();
+  const company = canonicalComp;
   const isPremiumCompany = company?.isPremium === true;
 
   // 2. Fetch seeker profiles

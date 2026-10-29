@@ -60,7 +60,13 @@ export default function AdminCompanyAccountsPage() {
           Authorization: `Bearer ${token || ''}`,
         },
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to fetch accounts');
       }
@@ -118,7 +124,13 @@ export default function AdminCompanyAccountsPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to reset password');
       }

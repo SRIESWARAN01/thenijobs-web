@@ -15,6 +15,7 @@ import { getEligibleBusinessesPublicList } from '@/lib/business/businessConstant
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { TN_DISTRICTS } from '@/lib/types';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 const ELIGIBLE_BUSINESSES = getEligibleBusinessesPublicList();
 
@@ -250,9 +251,10 @@ export default function AdminCreateJobForCompanyPage() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to create job posting.');
+      const parsed = await safeParseResponse<any>(res);
+      const data = parsed.data || {};
+      if (!parsed.ok || !data.success) {
+        throw new Error(parsed.error || data.error || 'Failed to create job posting.');
       }
 
       setShowPreview(false);

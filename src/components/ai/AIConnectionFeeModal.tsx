@@ -118,7 +118,13 @@ export default function AIConnectionFeeModal({
 
     try {
       const orderRes = await authedFetch('/api/ai/connections/fee/create-order', { method: 'POST' });
-      const orderData = await orderRes.json();
+      let orderData: any = {};
+      try {
+        const rawText = await orderRes.text();
+        orderData = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        orderData = {};
+      }
       if (!orderRes.ok || !orderData.success) {
         throw new Error(orderData.error || 'Failed to initiate payment order with gateway.');
       }

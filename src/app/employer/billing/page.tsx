@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { 
@@ -64,11 +65,8 @@ export default function EmployerBillingPage() {
   const [planChangeModal, setPlanChangeModal] = useState<PlanChangeModalData | null>(null);
 
   // 1. Fetch employer's company
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-
-  const company = companies?.[0];
+  const { company: canonicalComp, loading: companyLoading } = useEmployerCompany();
+  const company = canonicalComp;
   const companyId = company?.id;
 
   // 2. Fetch active subscriptions
@@ -92,7 +90,7 @@ export default function EmployerBillingPage() {
   const activeSub = subscriptions?.[0];
   const currentPlanSlug = activeSub ? activeSub.plan : (company?.subscriptionPlan || 'free');
   const currentPlan = SUBSCRIPTION_PLANS.find(p => p.slug === currentPlanSlug) || SUBSCRIPTION_PLANS[0];
-  const subState = useSubscriptionStatus(company, user);
+  const subState = useSubscriptionStatus(company as any, user);
 
   const loading = companyLoading || subLoading;
 

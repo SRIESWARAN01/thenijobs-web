@@ -110,17 +110,17 @@ describe('THENIJOBS Business Account Login & Forgot Password Feature Suite', () 
     assert.ok(content.includes('status: 403'), 'Must return 403 for unauthorized business accounts');
   });
 
-  it('5. Login Page provides verified Partner Business Google Sign-In and signOut fallback', () => {
+  it('5. Login Page cleanly removes Partner Business Google Sign-In card per user instruction while preserving standard authentication', () => {
     const loginPagePath = path.join(rootDir, 'src/app/login/page.tsx');
     assert.ok(fs.existsSync(loginPagePath), 'login/page.tsx must exist');
     const content = fs.readFileSync(loginPagePath, 'utf8');
 
-    assert.ok(content.includes('handleBusinessGoogleLogin'), 'Must have handleBusinessGoogleLogin handler');
-    assert.ok(content.includes('/api/auth/business-google-login'), 'Must call business-google-login API');
-    assert.ok(content.includes('Partner Business Account'), 'Must render Partner Business Account section');
-    assert.ok(content.includes('signOut(auth)'), 'Must immediately sign out disallowed Google accounts');
-    assert.ok(content.includes('businessLoginError'), 'Must display friendly business login error banner');
-    assert.ok(content.includes('/forgot-password'), 'Must link to recovery workflow');
+    // Verified removal of Partner Business section from login page per user instruction
+    assert.ok(!content.includes('Partner Business Account'), 'Must not render Partner Business Account section on login page');
+    assert.ok(!content.includes('Partner Business Sign In with Google'), 'Must not render Partner Business Sign In with Google button');
+    assert.ok(!content.includes('handleBusinessGoogleLogin'), 'handleBusinessGoogleLogin must be removed from login page');
+    assert.ok(content.includes('Continue with Google'), 'Standard Google Sign-In must remain active');
+    assert.ok(content.includes('/forgot-password'), 'Standard forgot password link must remain active');
   });
 
   // ── 4. FORGOT PASSWORD RECOVERY FORM & ANTI-ENUMERATION ───────────────────

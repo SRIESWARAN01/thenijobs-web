@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
 import {
@@ -85,10 +86,7 @@ export default function EmployerMessagesPage() {
   // companyId, including threads written before participants held the owner's uid, so this
   // finds existing conversations without a data migration. The rules allow the read via
   // isCompanyOwner(resource.data.companyId).
-  const { data: companies } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const companyId = companies?.[0]?.id;
+  const { companyId } = useEmployerCompany();
 
   const { data: rawConversations, loading: convsLoading } = useCollection<any>('conversations', [
     where('companyId', '==', companyId || '')

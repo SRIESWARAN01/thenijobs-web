@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { Crown, Loader2, Sparkles, ShieldCheck, Zap, ArrowRight, CheckCircle2, RefreshCw } from 'lucide-react';
@@ -18,11 +19,8 @@ export default function EmployerSubscriptionPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // 1. Fetch employer's company
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-
-  const company = companies?.[0];
+  const { company: canonicalComp, loading: companyLoading } = useEmployerCompany();
+  const company = canonicalComp;
   const companyId = company?.id;
 
   // 2. Fetch active subscriptions

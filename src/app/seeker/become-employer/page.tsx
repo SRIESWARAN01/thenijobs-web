@@ -13,8 +13,9 @@ import { Button, PageHeader, PageShell } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { db } from '@/lib/firebase/config';
-import { collection, addDoc, doc, setDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, setDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
+import { reserveCompanySlug } from '@/lib/company/companyResolver';
 
 const BUSINESS_CATEGORIES = [
   'Agriculture & Farming', 'Automobile & Transport', 'Banking & Finance',
@@ -92,28 +93,39 @@ export default function BecomeEmployerPage() {
     if (!user?.uid) return;
     async function checkUserCompany() {
       try {
-        const q = query(collection(db, 'companies'), where('ownerId', '==', user!.uid));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const cData: any = { id: snap.docs[0].id, ...(snap.docs[0].data() as any) };
-          setExistingCompany(cData);
+        let foundDoc: any = null;
+        if ((user as any)?.companyId) {
+          const directSnap = await getDoc(doc(db, 'companies', (user as any).companyId));
+          if (directSnap.exists()) {
+            foundDoc = { id: directSnap.id, ...directSnap.data() };
+          }
+        }
+        if (!foundDoc) {
+          const q = query(collection(db, 'companies'), where('ownerId', '==', user!.uid));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            foundDoc = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          }
+        }
+        if (foundDoc) {
+          setExistingCompany(foundDoc);
           setForm(prev => ({
             ...prev,
-            name: cData.name || prev.name,
-            category: cData.category || prev.category,
-            district: cData.district || prev.district,
-            address: cData.address || prev.address,
-            phone: cData.phone || prev.phone,
-            whatsapp: cData.whatsapp || prev.whatsapp,
-            email: cData.email || prev.email,
-            description: cData.description || prev.description,
-            tagline: cData.tagline || prev.tagline,
-            website: cData.website || prev.website,
-            logoUrl: cData.logoUrl || prev.logoUrl,
-            bannerUrl: cData.bannerUrl || prev.bannerUrl,
-            employeeCount: cData.employeeCount || prev.employeeCount,
-            proofType: cData.proofType || prev.proofType,
-            proofNumber: cData.proofNumber || prev.proofNumber,
+            name: foundDoc.name || prev.name,
+            category: foundDoc.category || prev.category,
+            district: foundDoc.district || prev.district,
+            address: foundDoc.address || prev.address,
+            phone: foundDoc.phone || prev.phone,
+            whatsapp: foundDoc.whatsapp || prev.whatsapp,
+            email: foundDoc.email || prev.email,
+            description: foundDoc.description || prev.description,
+            tagline: foundDoc.tagline || prev.tagline,
+            website: foundDoc.website || prev.website,
+            logoUrl: foundDoc.logoUrl || prev.logoUrl,
+            bannerUrl: foundDoc.bannerUrl || prev.bannerUrl,
+            employeeCount: foundDoc.employeeCount || prev.employeeCount,
+            proofType: foundDoc.proofType || prev.proofType,
+            proofNumber: foundDoc.proofNumber || prev.proofNumber,
           }));
         }
       } catch (err) {
@@ -123,7 +135,7 @@ export default function BecomeEmployerPage() {
       }
     }
     checkUserCompany();
-  }, [user?.uid]);
+  }, [user?.uid, (user as any)?.companyId]);
 
   const handleNext = () => {
     if (currentStep === 1) {
@@ -211,8 +223,13 @@ export default function BecomeEmployerPage() {
         companyDocId = newDoc.id;
       }
 
-      // Update user doc with employerApplication metadata
+      if (companyDocId) {
+        await reserveCompanySlug(companyPayload.slug, companyDocId, user.uid, user.email);
+      }
+
+      // Update user doc with employerApplication metadata and link companyId
       await setDoc(doc(db, 'users', user.uid), {
+        companyId: companyDocId,
         employerApplication: {
           status: 'pending',
           companyId: companyDocId,

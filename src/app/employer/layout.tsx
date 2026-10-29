@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useToast } from '@/contexts/ToastContext';
 import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
@@ -52,11 +53,8 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   const { refreshUserProfile } = useAuth();
   const toast = useToast();
   const { unreadCount } = useNotifications();
-  const { data: companies } = useCollection<any>('companies', [where('ownerId', '==', user?.uid || '')], { skip: !user?.uid });
-  const employeeCompanyId = (user as any)?.companyId || null;
-  const { data: employeeCompany } = useDocument<any>('companies', employeeCompanyId);
-  const company = companies?.[0] || employeeCompany;
-  const subState = useSubscriptionStatus(company, user);
+  const { company, loading: companyLoading } = useEmployerCompany();
+  const subState = useSubscriptionStatus(company as any, user);
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -80,7 +78,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  if (authLoading || (user && companies === undefined)) {
+  if (authLoading || (user && companyLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8FAFC' }}>
         <div className="flex flex-col items-center gap-3">

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Globe, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { updateDocument } from '@/lib/firebase/firestoreService';
@@ -12,10 +13,7 @@ import PortfolioSiteEditor from '@/components/portfolio/editor/PortfolioSiteEdit
 export default function WebsiteEditorPage() {
   const { user } = useAuth();
 
-  const { data: companies } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const company = companies?.[0];
+  const { company } = useEmployerCompany();
 
   const { data: sites, loading } = useCollection<any>('portfolioSites', [
     where('ownerId', '==', user?.uid || '')

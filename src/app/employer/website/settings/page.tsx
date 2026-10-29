@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Save, Globe, Eye, QrCode, CreditCard, Shield, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { updateDocument } from '@/lib/firebase/firestoreService';
@@ -17,10 +18,7 @@ export default function WebsiteSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const { data: companies } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const company = companies?.[0];
+  const { company } = useEmployerCompany();
 
   const { data: sites, loading } = useCollection<any>('portfolioSites', [
     where('ownerId', '==', user?.uid || '')

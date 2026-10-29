@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateDocument } from '@/lib/firebase/firestoreService';
 import { useToast } from '@/contexts/ToastContext';
@@ -32,11 +33,8 @@ export default function EmployerSettingsPage() {
   const toast = useToast();
 
   // 1. Fetch employer's company
-  const { data: companies, loading: companyLoading } = useCollection<CompanyDoc>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-
-  const company = companies[0];
+  const { company: canonicalComp, loading: companyLoading } = useEmployerCompany();
+  const company = canonicalComp as unknown as CompanyDoc;
   const companyId = company?.id;
 
   const [notifs, setNotifs] = useState({

@@ -33,7 +33,13 @@ export default function AdminDatabaseCleanupPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/database-cleanup');
-      const json = await res.json();
+      let json: any = {};
+      try {
+        const rawText = await res.text();
+        json = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        json = {};
+      }
       if (json.success) {
         setData(json);
       } else {
@@ -59,7 +65,13 @@ export default function AdminDatabaseCleanupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'dry_run' }),
       });
-      const json = await res.json();
+      let json: any = {};
+      try {
+        const rawText = await res.text();
+        json = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        json = {};
+      }
       if (json.success) {
         setDryRunReport(json.dryRunReport);
         toast.success('Dry run completed safely. 0 writes performed.');
@@ -82,7 +94,13 @@ export default function AdminDatabaseCleanupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'create_backup' }),
       });
-      const json = await res.json();
+      let json: any = {};
+      try {
+        const rawText = await res.text();
+        json = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        json = {};
+      }
       if (json.success) {
         setBackupResult(json);
         toast.success(`Automated backup saved to ${json.backupPath}`);
@@ -113,7 +131,13 @@ export default function AdminDatabaseCleanupPage() {
           confirmationKey: confirmInput.trim(),
         }),
       });
-      const json = await res.json();
+      let json: any = {};
+      try {
+        const rawText = await res.text();
+        json = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        json = {};
+      }
       if (json.success) {
         setExecutionResult(json.result);
         setConfirmModalOpen(false);

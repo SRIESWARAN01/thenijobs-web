@@ -437,7 +437,13 @@ export default function AdminCareerGrowthPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok) throw new Error(data.error || 'AI generation failed');
 
       setAiGeneratedText(data.generatedContent);

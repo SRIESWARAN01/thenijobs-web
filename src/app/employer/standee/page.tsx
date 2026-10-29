@@ -1,8 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection } from '@/hooks/useFirestore';
-import { where } from 'firebase/firestore';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { Building2, Loader2, Printer, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button, EmptyState, PageHeader, PageShell } from '@/components/dashboard';
@@ -22,12 +21,8 @@ interface CompanyDoc {
 
 export default function EmployerStandeePage() {
   const { user } = useAuth();
-  const { data: companies, loading } = useCollection<CompanyDoc>(
-    'companies',
-    [where('ownerId', '==', user?.uid || '')],
-    { skip: !user?.uid },
-  );
-  const company = companies?.[0];
+  const { company: canonicalComp, loading } = useEmployerCompany();
+  const company = canonicalComp as unknown as CompanyDoc;
 
   if (loading) {
     return (

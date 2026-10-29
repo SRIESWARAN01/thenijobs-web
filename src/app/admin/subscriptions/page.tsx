@@ -143,7 +143,13 @@ export default function SubscriptionsPage() {
       setPlansLoading(true);
       const res = await fetch('/api/admin/plans');
       if (res.ok) {
-        const data = await res.json();
+        let data: any = {};
+        try {
+          const rawText = await res.text();
+          data = rawText ? JSON.parse(rawText) : {};
+        } catch {
+          data = {};
+        }
         if (data.plans && Array.isArray(data.plans)) {
           setLivePlans(data.plans);
         }
@@ -396,7 +402,13 @@ export default function SubscriptionsPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok) {
         throw new Error(data.error || 'Failed to save plan configuration.');
       }
@@ -463,7 +475,13 @@ export default function SubscriptionsPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok) throw new Error(data.error || 'Failed to update matrix');
 
       setLiveMatrix(updatedMatrix);

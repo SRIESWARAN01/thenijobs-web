@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, addDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { notifyAllAdmins } from '@/lib/firebase/adminNotify';
+import { getUniqueCompanySlug } from '@/lib/company/companyResolver';
 
 const STEPS = [
   { id: 1, label: 'Basic Info', icon: Building2 },
@@ -61,7 +62,7 @@ export default function CompanyRegisterPage() {
 
     setLoading(true);
     try {
-      const slug = form.name
+      let slug = form.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '') || `company-${Date.now()}`;
@@ -70,9 +71,37 @@ export default function CompanyRegisterPage() {
       // RULES-1 (D-SLUG): checked against the public `companySlugs` reservation collection.
       const existingSlug = await getDoc(doc(db, 'companySlugs', slug));
       if (existingSlug.exists()) {
-        alert(`A registered company with the name "${form.name.trim()}" already exists. Please choose a unique name (e.g. ${form.name.trim()} ${form.district}).`);
-        setLoading(false);
-        return;
+        const slugData = existingSlug.data();
+        const isSameOwner = user && (slugData?.ownerId === user.uid || (user.email && slugData?.email === user.email.toLowerCase()));
+
+        if (isSameOwner) {
+          // Legitimate resume/update of existing company for this owner
+          const existingCompanyId = slugData?.companyId || (user as any)?.companyId;
+          if (existingCompanyId) {
+            await setDoc(doc(db, 'companies', existingCompanyId), {
+              ...form,
+              foundedYear: form.foundedYear ? parseInt(form.foundedYear) : '',
+              services,
+              ownerId: user.uid,
+              ownerEmail: (user.email || form.email || '').toLowerCase(),
+              updatedAt: serverTimestamp(),
+            }, { merge: true });
+
+            await setDoc(doc(db, 'users', user.uid), {
+              companyId: existingCompanyId,
+              role: 'business_owner',
+              isEmployer: true,
+              updatedAt: serverTimestamp(),
+            }, { merge: true });
+
+            alert(`Your existing business record for "${form.name.trim()}" has been updated successfully!`);
+            router.push('/employer/dashboard');
+            return;
+          }
+        }
+
+        // Slug taken by another business — auto-generate unique non-colliding slug with district/suffix
+        slug = await getUniqueCompanySlug(form.name, form.district);
       }
 
       const ownerId = user ? user.uid : `guest_${form.phone.replace(/[^0-9]/g, '') || Date.now()}`;
@@ -116,6 +145,18 @@ export default function CompanyRegisterPage() {
           });
         } catch (reserveErr) {
           console.warn('[company/register] slug reservation failed (registration itself succeeded):', reserveErr);
+        }
+
+        // Link company directly to user document
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            companyId: created.id,
+            role: 'business_owner',
+            isEmployer: true,
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        } catch (linkErr) {
+          console.warn('[company/register] user linking failed:', linkErr);
         }
       }
 

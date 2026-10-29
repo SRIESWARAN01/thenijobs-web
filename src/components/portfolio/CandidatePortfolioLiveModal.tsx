@@ -160,7 +160,13 @@ export default function CandidatePortfolioLiveModal({
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/job-seeker/check-username?username=${encodeURIComponent(trimmed)}&userId=${encodeURIComponent(userId)}`);
-        const data = await res.json();
+        let data: any = {};
+        try {
+          const rawText = await res.text();
+          data = rawText ? JSON.parse(rawText) : {};
+        } catch {
+          data = {};
+        }
         if (data.available) {
           setUsernameStatus('available');
           setUsernameFeedback({

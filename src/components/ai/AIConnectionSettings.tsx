@@ -60,7 +60,13 @@ export default function AIConnectionSettings({ userName, userEmail }: { userName
     setLoading(true);
     try {
       const res = await authedFetch('/api/ai/connections/status');
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (res.ok && data.success) {
         setStatus(data);
         setShowForm(!data.connected);
@@ -94,7 +100,13 @@ export default function AIConnectionSettings({ userName, userEmail }: { userName
         method: 'POST',
         body: JSON.stringify({ provider, model, apiKey: apiKey.trim() }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok || !data.success) {
         if (res.status === 402) {
           setShowFeeModal(true);
@@ -118,7 +130,13 @@ export default function AIConnectionSettings({ userName, userEmail }: { userName
     setTesting(true);
     try {
       const res = await authedFetch('/api/ai/connections/test', { method: 'POST' });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         toast.success('Connection is working', `Responded in ${data.latencyMs}ms.`);
       } else {
@@ -137,7 +155,13 @@ export default function AIConnectionSettings({ userName, userEmail }: { userName
     setDisconnecting(true);
     try {
       const res = await authedFetch('/api/ai/connections/disconnect', { method: 'POST' });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         toast.success('AI key disconnected.');
         await loadStatus();

@@ -7,6 +7,7 @@ import {
   X, Loader2, Sparkles, Crown, Shield, Diamond, Zap
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { where } from 'firebase/firestore';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
@@ -41,10 +42,7 @@ export default function TemplateGalleryPage() {
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'laptop' | 'tablet' | 'mobile'>('desktop');
   const [selecting, setSelecting] = useState(false);
 
-  const { data: companies } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const company = companies?.[0];
+  const { company } = useEmployerCompany();
 
   const { data: sites } = useCollection<any>('portfolioSites', [
     where('ownerId', '==', user?.uid || '')

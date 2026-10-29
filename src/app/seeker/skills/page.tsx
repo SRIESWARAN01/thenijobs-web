@@ -357,7 +357,13 @@ export default function SeekerSkillsPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!data.success) {
         throw new Error(data.error || 'Quiz submission failed');
       }
@@ -395,7 +401,13 @@ export default function SeekerSkillsPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (!data.success) {
         throw new Error(data.error || 'Failed to claim certificate');
       }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Zap, CheckCircle2, Share2, Sparkles, AlertCircle, Loader2, X, Radio, Send, BellRing } from 'lucide-react';
 import { URGENT_HIRING_BADGE_FEE_INR, URGENT_HIRING_SUPER_FEE_INR, URGENT_HIRING_DURATION_HOURS } from '@/lib/constants';
 import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 interface UrgentHiringBadgeModalProps {
   isOpen: boolean;
@@ -54,10 +55,11 @@ export default function UrgentHiringBadgeModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobId: job.id, userId, fee: selectedFee }),
       });
-      const orderData = await res.json();
+      const parsedOrder = await safeParseResponse<any>(res);
+      const orderData = parsedOrder.data || {};
 
-      if (!res.ok || !orderData.success) {
-        throw new Error(orderData.error || 'Failed to initiate order');
+      if (!parsedOrder.ok || !orderData.success) {
+        throw new Error(parsedOrder.error || orderData.error || 'Failed to initiate order');
       }
 
       // 2. Launch Razorpay if configured, or auto-verify in test/dev
@@ -110,10 +112,11 @@ export default function UrgentHiringBadgeModal({
           fee: selectedFee,
         }),
       });
-      const verifyData = await verifyRes.json();
+      const parsedVerify = await safeParseResponse<any>(verifyRes);
+      const verifyData = parsedVerify.data || {};
 
-      if (!verifyRes.ok || !verifyData.success) {
-        throw new Error(verifyData.error || 'Verification failed');
+      if (!parsedVerify.ok || !verifyData.success) {
+        throw new Error(parsedVerify.error || verifyData.error || 'Verification failed');
       }
 
       setActivated(true);

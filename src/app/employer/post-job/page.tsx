@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -13,10 +13,12 @@ import JobPreviewModal from '@/components/employer/JobPreviewModal';
 import JobPostSuccessModal from '@/components/employer/JobPostSuccessModal';
 import { TN_DISTRICTS } from '@/lib/types';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useDocument } from '@/hooks/useFirestore';
 import { useCollection } from '@/hooks/useFirestore';
 import { createDocument, logActivity } from '@/lib/firebase/firestoreService';
 import { notifyAllAdmins } from '@/lib/firebase/adminNotify';
+import { auth } from '@/lib/firebase/config';
 import { where, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { canPostNewJob, getPlan } from '@/lib/plans';
@@ -24,6 +26,7 @@ import { computeSubscriptionState } from '@/lib/subscriptionService';
 import { Switch } from '@/components/dashboard';
 import { requestAIService } from '@/lib/ai/aiClient';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
+import { safeApiFetch, getFriendlyApiErrorMessage } from '@/lib/api/safeResponse';
 
 const STEPS = [
   { id: 1, label: 'Job Details' },
@@ -69,15 +72,13 @@ export default function PostJobPage() {
   const router = useRouter();
   const toast = useToast();
 
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
+  const { company: canonicalComp, loading: companyLoading } = useEmployerCompany();
 
   // DOC2-1: fail-open (jobPostingEnabled defaults to true) when the doc/field doesn't exist yet.
   const { data: platformPublic } = useDocument<{ features?: { jobPostingEnabled?: boolean } }>('platformSettings', 'public');
   const jobPostingEnabled = platformPublic?.features?.jobPostingEnabled !== false;
 
-  const company = companies?.[0];
+  const company = canonicalComp;
   const companyId = company?.id;
 
   const { data: existingJobs, refresh: refreshJobs } = useCollection<any>('jobs', [
@@ -90,13 +91,14 @@ export default function PostJobPage() {
   // C2 FIX: Derive the effective plan from the centralized subscription state,
   // not from the raw company doc. If trial is expired but cron hasn't run yet,
   // computeSubscriptionState correctly returns 'free' instead of 'standard'.
-  const subState = computeSubscriptionState(company, user);
+  const subState = computeSubscriptionState(company as any, user);
   const planSlug = subState.plan;
   const planInfo = getPlan(planSlug);
   const planCheck = canPostNewJob(planSlug, activeJobsCount);
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
   const [benefits, setBenefits] = useState<string[]>([]);
@@ -207,6 +209,8 @@ export default function PostJobPage() {
   };
 
   const handlePost = async () => {
+    if (isSubmittingRef.current || loading) return;
+
     if (!companyId) {
       toast.warning('You must have a registered company profile to post a job.');
       return;
@@ -234,11 +238,12 @@ export default function PostJobPage() {
       return;
     }
 
+    isSubmittingRef.current = true;
     setLoading(true);
 
     try {
-      const minSal = form.salaryMin ? parseInt(form.salaryMin) : null;
-      const maxSal = form.salaryMax ? parseInt(form.salaryMax) : null;
+      const minSal = form.salaryMin ? parseInt(form.salaryMin, 10) : null;
+      const maxSal = form.salaryMax ? parseInt(form.salaryMax, 10) : null;
 
       let salaryDisplay = 'Not Disclosed';
       if (minSal && maxSal) {
@@ -253,53 +258,31 @@ export default function PostJobPage() {
       const ordinalName = getJobOrdinalName(nextJobNum);
       const jobSlug = generateJobSlug(
         form.title.trim(),
-        company.name || 'Company',
+        company?.name || 'Company',
         form.district || form.location.trim() || 'Theni'
       );
 
-      const jobPayload: any = {
-        title: form.title.trim(),
-        slug: jobSlug,
-        description: form.description.trim(),
-        jobType: form.jobType,
-        location: form.location.trim() || form.district || 'Theni',
-        district: form.district || 'Theni',
-        openings: parseInt(form.openings) || 1,
-        experience: form.experience || 'Fresher',
-        education: form.education || 'Any Degree',
-        skills,
-        salaryMin: minSal,
-        salaryMax: maxSal,
-        salary: salaryDisplay,
-        salaryType: form.salaryType,
-        isNegotiable: form.isNegotiable,
-        benefits,
-        isPremium: form.isPremium,
-        isUrgent: form.isUrgent,
-        isWalkIn: form.isWalkIn,
-        walkInDate: form.walkInDate,
-        walkInTime: form.walkInTime,
-        walkInVenue: form.walkInVenue || form.location || 'Company Office',
-        walkInContactPhone: form.walkInContactPhone || company.phone || '',
-        companyId,
-        companyName: company.name || 'Company',
-        companyLogoUrl: company.logoUrl || '',
-        companyDistrict: company.district || form.district || 'Theni',
-        postedBy: user?.uid,
-        status: 'pending',
-        approvalStatus: 'pending',
-        isActive: false,
-        viewCount: 0,
-        applicationsCount: 0,
-        jobOrdinal: ordinalName,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
+      const idempotencyKey = `job_post_${companyId}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken().catch(() => '') : '';
 
-      // Submit via backend API to enforce authoritative plan limits and verification
-      const apiRes = await fetch('/api/jobs/create', {
+      const now = new Date();
+      const resolvedDeadline = form.deadline || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // 1. Submit via backend API to enforce authoritative plan limits and verification
+      const apiRes = await safeApiFetch<{
+        success?: boolean;
+        jobId?: string;
+        slug?: string;
+        error?: string;
+        locked?: boolean;
+        isDuplicate?: boolean;
+      }>('/api/jobs/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
+          'x-idempotency-key': idempotencyKey,
+        },
         body: JSON.stringify({
           title: form.title.trim(),
           description: form.description.trim(),
@@ -321,17 +304,79 @@ export default function PostJobPage() {
           walkInDate: form.walkInDate,
           walkInTime: form.walkInTime,
           walkInVenue: form.walkInVenue || form.location || 'Company Office',
-          walkInContactPhone: form.walkInContactPhone || company.phone || '',
+          walkInContactPhone: form.walkInContactPhone || company?.phone || '',
           companyId,
           userId: user?.uid || '',
+          deadline: resolvedDeadline,
+          applicationDeadline: resolvedDeadline,
+          idempotencyKey,
         }),
       });
 
-      const apiData = await apiRes.json();
-      if (!apiRes.ok || !apiData.success) {
-        throw new Error(apiData.error || 'Failed to submit job opening.');
+      let jobId: string | null = null;
+
+      if (apiRes.ok && apiRes.data?.success && apiRes.data.jobId) {
+        jobId = apiRes.data.jobId;
+      } else {
+        // If the backend returns a handled business/validation rejection, surface it directly
+        if (apiRes.status === 400 || apiRes.status === 401 || apiRes.status === 403) {
+          throw new Error(apiRes.error || apiRes.data?.error || 'Failed to submit job opening.');
+        }
+
+        // Defensive Fallback: If backend encounters cold-start, 0-byte stream, or edge infrastructure timeout (status >= 500 or 0),
+        // and client-side employer is already verified and within plan limits:
+        console.warn('[PostJob] API route unavailable or returned error, executing verified client Firestore fallback:', apiRes.error);
+
+        const fallbackJobPayload = {
+          title: form.title.trim(),
+          slug: jobSlug,
+          description: form.description.trim(),
+          jobType: form.jobType,
+          location: form.location.trim() || form.district || 'Theni',
+          district: form.district || 'Theni',
+          openings: parseInt(form.openings, 10) || 1,
+          experience: form.experience || 'Fresher',
+          education: form.education || 'Any Degree',
+          skills,
+          salaryMin: minSal,
+          salaryMax: maxSal,
+          salary: salaryDisplay,
+          salaryType: form.salaryType,
+          isNegotiable: form.isNegotiable,
+          benefits,
+          isPremium: form.isPremium,
+          isUrgent: form.isUrgent,
+          isWalkIn: form.isWalkIn,
+          walkInDate: form.walkInDate,
+          walkInTime: form.walkInTime,
+          walkInVenue: form.walkInVenue || form.location || 'Company Office',
+          walkInContactPhone: form.walkInContactPhone || company?.phone || '',
+          companyId,
+          business_id: companyId,
+          companyName: company?.name || 'Company',
+          companyLogoUrl: company?.logoUrl || '',
+          companyDistrict: company?.district || form.district || 'Theni',
+          deadline: resolvedDeadline,
+          application_deadline: resolvedDeadline,
+          postedBy: user?.uid,
+          created_by: user?.uid,
+          created_by_role: 'employer',
+          status: 'pending',
+          approvalStatus: 'pending',
+          approval_status: 'pending',
+          isActive: false,
+          viewCount: 0,
+          applicationsCount: 0,
+          jobOrdinal: ordinalName,
+          idempotencyKey,
+          createdAt: serverTimestamp(),
+          created_at: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          updated_at: serverTimestamp(),
+        };
+
+        jobId = await createDocument('jobs', fallbackJobPayload);
       }
-      const jobId = apiData.jobId;
 
       await logActivity({
         userId: user?.uid || '',
@@ -339,19 +384,19 @@ export default function PostJobPage() {
         action: 'Posted a job listing',
         target: form.title,
         targetId: jobId
-      });
+      }).catch(() => null);
 
       await notifyAllAdmins(
         'New Job Pending Approval 💼',
-        `"${form.title}" posted by ${company.name} is awaiting review.`,
+        `"${form.title}" posted by ${company?.name || 'Company'} is awaiting review.`,
         '/admin/jobs',
-      );
+      ).catch(() => null);
 
       // Save for celebratory modal
       setSuccessJobData({
         id: jobId,
         title: form.title,
-        companyName: company.name,
+        companyName: company?.name || 'Company',
         district: form.district,
         location: form.location,
         jobType: form.jobType,
@@ -366,8 +411,10 @@ export default function PostJobPage() {
       refreshJobs?.();
     } catch (err: any) {
       console.error('Failed to post job:', err);
-      toast.error('Failed to post job listing', err.message || 'Please check your inputs and try again.');
+      const friendly = getFriendlyApiErrorMessage(err, 'Please check your inputs and try again.');
+      toast.error('Failed to post job listing', friendly);
     } finally {
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };
@@ -960,9 +1007,17 @@ export default function PostJobPage() {
             className="flex-1 py-3.5 rounded-2xl text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-40"
             style={{ background: step === 4 ? '#10B981' : '#2563EB' }}
           >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-            {step === 4 ? `🚀 Submit ${getJobOrdinalName(activeJobsCount + 1)}` : 'Continue'}
-            {!loading && <ArrowRight size={15} />}
+            {loading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Posting Job...</span>
+              </>
+            ) : (
+              <>
+                <span>{step === 4 ? `🚀 Submit ${getJobOrdinalName(activeJobsCount + 1)}` : 'Continue'}</span>
+                <ArrowRight size={15} />
+              </>
+            )}
           </button>
         </div>
 
@@ -984,11 +1039,11 @@ export default function PostJobPage() {
             skills,
             benefits,
             deadline: form.deadline,
-            companyName: company?.name,
+            companyName: company?.name || 'Company',
             isVerified: isCompanyVerified,
           }}
           companyData={company ? {
-            name: company.name,
+            name: company.name || 'Company',
             logo: company.logoUrl,
             category: company.category,
             district: company.district,

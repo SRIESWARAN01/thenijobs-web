@@ -1,5 +1,6 @@
 import { AIFeatureKey } from './config';
 import { auth } from '@/lib/firebase/config';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 export interface RequestAIOptions {
   feature: AIFeatureKey;
@@ -51,12 +52,13 @@ export async function requestAIService<T = any>(
       }),
     });
 
-    const result = await res.json();
+    const parsed = await safeParseResponse<any>(res);
+    const result = parsed.data || {};
 
-    if (!res.ok || !result.success) {
+    if (!parsed.ok || !result.success) {
       return {
         success: false,
-        error: result.error || 'AI is temporarily unavailable. Please try again.',
+        error: parsed.error || result.error || 'AI is temporarily unavailable. Please try again.',
       };
     }
 

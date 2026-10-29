@@ -49,7 +49,13 @@ function ResetPasswordContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ requestId, token }),
         });
-        const data = await res.json();
+        let data: any = {};
+        try {
+          const rawText = await res.text();
+          data = rawText ? JSON.parse(rawText) : {};
+        } catch {
+          data = {};
+        }
         if (data.valid) {
           setValid(true);
           setBusinessName(data.businessName || 'Business Account');
@@ -88,7 +94,13 @@ function ResetPasswordContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId, token, newPassword: password }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         setCompleted(true);
       } else {

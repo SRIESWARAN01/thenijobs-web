@@ -67,7 +67,13 @@ export default function AdminSlogansPage() {
       const res = await fetch('/api/admin/slogans', {
         headers: authHeaders,
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         setSlogans(data.slogans || []);
         setRotationState(data.rotationState || null);
@@ -108,7 +114,13 @@ export default function AdminSlogansPage() {
         },
         body: JSON.stringify({ action: reseed ? 'reseed' : 'seed' }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         showFeedback(data.message);
         fetchSlogans();
@@ -136,7 +148,13 @@ export default function AdminSlogansPage() {
         },
         body: JSON.stringify({ cycle: nextCycle }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         showFeedback(data.message);
         fetchSlogans();
@@ -161,7 +179,13 @@ export default function AdminSlogansPage() {
         },
         body: JSON.stringify({ isActive: !slogan.isActive }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         setSlogans((prev) =>
           prev.map((s) => (s.id === slogan.id ? { ...s, isActive: !s.isActive } : s))
@@ -185,7 +209,13 @@ export default function AdminSlogansPage() {
         },
         body: JSON.stringify({ action: 'set_default', sloganId: slogan.id }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         showFeedback(data.message);
         fetchSlogans();
@@ -216,7 +246,13 @@ export default function AdminSlogansPage() {
           sloganIdEn,
         }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         showFeedback(data.message);
         setModelMappings(data.modelMappings);
@@ -253,7 +289,13 @@ export default function AdminSlogansPage() {
             isDefault: formIsDefault,
           }),
         });
-        const data = await res.json();
+        let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
         if (data.success) {
           showFeedback('Slogan updated successfully.');
           setIsAddModalOpen(false);
@@ -279,7 +321,13 @@ export default function AdminSlogansPage() {
             sloganNumber: slogans.length + 1,
           }),
         });
-        const data = await res.json();
+        let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
         if (data.success) {
           showFeedback('New slogan added to library.');
           setIsAddModalOpen(false);
@@ -303,7 +351,13 @@ export default function AdminSlogansPage() {
         method: 'DELETE',
         headers: authHeaders,
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         setSlogans((prev) => prev.filter((s) => s.id !== slogan.id));
         showFeedback('Slogan removed from library.');

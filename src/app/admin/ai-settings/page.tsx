@@ -144,7 +144,13 @@ export default function AdminAISettingsPage() {
         return;
       }
 
-      const result = await response.json();
+      let result: any = {};
+      try {
+        const rawText = await response.text();
+        result = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        result = { success: false, error: 'Malformed response received from AI testing route.' };
+      }
       setTestResults(prev => ({ ...prev, [providerName]: result }));
 
       updateProvider(providerName, {

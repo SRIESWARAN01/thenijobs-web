@@ -6,6 +6,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
 import { useToast } from '@/contexts/ToastContext';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 interface SeekerPublicProfileModalProps {
   isOpen: boolean;
@@ -114,9 +115,10 @@ export default function SeekerPublicProfileModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       });
-      const orderData = await orderRes.json();
-      if (!orderRes.ok || !orderData.success) {
-        throw new Error(orderData.error || 'Failed to initiate payment order with gateway.');
+      const parsedOrder = await safeParseResponse<any>(orderRes);
+      const orderData = parsedOrder.data || {};
+      if (!parsedOrder.ok || !orderData.success) {
+        throw new Error(parsedOrder.error || orderData.error || 'Failed to initiate payment order with gateway.');
       }
 
       const isScriptLoaded = await loadRazorpayScript();
@@ -165,8 +167,9 @@ export default function SeekerPublicProfileModal({
                 userId,
               }),
             });
-            const verifyData = await verifyRes.json();
-            if (verifyRes.ok && verifyData.success) {
+            const parsedVerify = await safeParseResponse<any>(verifyRes);
+            const verifyData = parsedVerify.data || {};
+            if (parsedVerify.ok && verifyData.success) {
               setState('success');
               toast.success('🎉 Portfolio Website is now LIVE!', 'Your candidate portfolio is verified and published for 1 year.');
               onActivated?.();

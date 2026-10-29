@@ -1,8 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection } from '@/hooks/useFirestore';
-import { where } from 'firebase/firestore';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { AlertCircle, Building2, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import CompanyIDCard, { type CompanyIDCardProps } from '@/components/id-card/CompanyIDCard';
@@ -12,12 +11,8 @@ type CompanyDoc = CompanyIDCardProps['company'];
 
 export default function EmployerIDCardPage() {
   const { user } = useAuth();
-  const { data: companies, loading } = useCollection<CompanyDoc>(
-    'companies',
-    [where('ownerId', '==', user?.uid || '')],
-    { skip: !user?.uid },
-  );
-  const company = companies?.[0];
+  const { company: canonicalComp, loading } = useEmployerCompany();
+  const company = canonicalComp as unknown as CompanyDoc;
 
   if (loading) {
     return (

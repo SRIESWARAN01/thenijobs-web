@@ -3,17 +3,13 @@
 import Link from 'next/link';
 import { Briefcase, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection } from '@/hooks/useFirestore';
-import { where } from 'firebase/firestore';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import CompanyJobsListManager from '@/components/jobs/editor/CompanyJobsListManager';
 
 export default function EmployerJobsPage() {
   const { user } = useAuth();
 
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const company = companies?.[0];
+  const { company, loading: companyLoading } = useEmployerCompany();
   const companyId = company?.id;
 
   if (companyLoading) {

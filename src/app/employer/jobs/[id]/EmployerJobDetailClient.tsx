@@ -2,17 +2,12 @@
 
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useCollection } from '@/hooks/useFirestore';
-import { where } from 'firebase/firestore';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import CompanyJobDetailManager from '@/components/jobs/editor/CompanyJobDetailManager';
 
 export default function EmployerJobDetailClient({ jobId }: { jobId: string }) {
   const { user } = useAuth();
-
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const companyId = companies?.[0]?.id;
+  const { companyId, loading: companyLoading } = useEmployerCompany();
 
   if (companyLoading) {
     return (

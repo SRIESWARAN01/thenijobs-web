@@ -12,6 +12,7 @@ import {
   Send, FileText, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useToast } from '@/contexts/ToastContext';
 import { useCollection } from '@/hooks/useFirestore';
 import { where, doc, updateDoc } from 'firebase/firestore';
@@ -35,10 +36,7 @@ export default function EmployerWebsitePage() {
   const [aiGeneratedSeo, setAiGeneratedSeo] = useState({ title: '', desc: '', keywords: '' });
 
   // Fetch company
-  const { data: companies, loading: compLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const company = companies?.[0];
+  const { company, loading: compLoading } = useEmployerCompany();
 
   const planSlug = (company?.subscriptionPlan || 'free').toLowerCase();
   const companySlug = company?.slug || '';

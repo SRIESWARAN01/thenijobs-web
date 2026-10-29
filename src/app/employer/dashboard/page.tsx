@@ -8,6 +8,7 @@ import {
   Sparkles, CreditCard, Gift, Printer, QrCode
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { useEmployerStats } from '@/hooks/useRealtimeStats';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
@@ -57,10 +58,8 @@ interface InterviewDoc { id: string; seekerName?: string; mode?: string; date?: 
 export default function EmployerDashboard() {
   const { user } = useAuth();
 
-  const { data: companies, loading: companyLoading } = useCollection<CompanyDoc>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-  const company = companies?.[0];
+  const { company: canonicalComp, loading: companyLoading } = useEmployerCompany();
+  const company = canonicalComp as unknown as CompanyDoc;
   const companyId = company?.id;
 
   const subscriptionState = useSubscriptionStatus(company as any, user);

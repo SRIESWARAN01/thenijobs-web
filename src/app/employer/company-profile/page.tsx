@@ -3,20 +3,15 @@
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
-import { useCollection } from '@/hooks/useFirestore';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { createDocument, updateDocument } from '@/lib/firebase/firestoreService';
-import { where } from 'firebase/firestore';
+import { getUniqueCompanySlug, reserveCompanySlug, linkUserToCompany } from '@/lib/company/companyResolver';
 import CompanyProfileEditor, { type CompanyProfileEditorSaveFields } from '@/components/company/editor/CompanyProfileEditor';
 
 export default function CompanyProfilePage() {
   const { user } = useAuth();
   const toast = useToast();
-
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-
-  const resolvedCompany = companies[0];
+  const { company: resolvedCompany, loading: companyLoading } = useEmployerCompany();
 
   if (companyLoading) {
     return (
@@ -28,29 +23,43 @@ export default function CompanyProfilePage() {
   }
 
   const handleSave = async (docData: CompanyProfileEditorSaveFields) => {
-    if (resolvedCompany?.id) {
-      await updateDocument('companies', resolvedCompany.id, { ...docData, updatedAt: new Date() });
-      if (resolvedCompany.verificationStatus === 'rejected') {
-        toast.success('Profile updated! Please contact support or wait for admin to re-review your listing.');
+    try {
+      if (resolvedCompany?.id) {
+        await updateDocument('companies', resolvedCompany.id, { ...docData, updatedAt: new Date() });
+        if (resolvedCompany.verificationStatus === 'rejected') {
+          toast.success('Profile updated! Please contact support or wait for admin to re-review your listing.');
+        } else {
+          toast.success('Company profile updated successfully!');
+        }
       } else {
-        toast.success('Company profile updated successfully!');
+        const uniqueSlug = await getUniqueCompanySlug(docData.name || 'company', docData.district);
+        const createdId = await createDocument('companies', {
+          ...docData,
+          slug: uniqueSlug,
+          ownerId: user?.uid,
+          ownerEmail: user?.email ? user.email.toLowerCase().trim() : '',
+          verificationStatus: 'pending',
+          isActive: false,
+          viewCount: 0,
+          updatedAt: new Date(),
+        });
+
+        if (user?.uid && createdId) {
+          await reserveCompanySlug(uniqueSlug, createdId, user.uid, user.email);
+          await linkUserToCompany(user.uid, createdId);
+        }
+
+        toast.success('Company profile created successfully! It is currently pending admin approval.');
       }
-    } else {
-      await createDocument('companies', {
-        ...docData,
-        ownerId: user?.uid,
-        verificationStatus: 'pending',
-        isActive: false,
-        viewCount: 0,
-        updatedAt: new Date()
-      });
-      toast.success('Company profile created successfully! It is currently pending admin approval.');
+    } catch (err: any) {
+      console.error('Error saving company profile:', err);
+      toast.error('Failed to save company profile: ' + (err.message || ''));
     }
   };
 
   return (
     <CompanyProfileEditor
-      initialCompany={resolvedCompany}
+      initialCompany={resolvedCompany || undefined}
       title="Company profile"
       description="Manage your company branding, products, services and branches."
       breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Company profile' }]}

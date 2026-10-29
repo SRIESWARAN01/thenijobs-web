@@ -70,7 +70,13 @@ export default function AdminBusinessRecoveryPage() {
           Authorization: `Bearer ${idToken || ''}`,
         },
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success && Array.isArray(data.requests)) {
         setRequests(data.requests);
       }
@@ -104,7 +110,13 @@ export default function AdminBusinessRecoveryPage() {
         },
         body: JSON.stringify({ requestId: req.id }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         toast.success('Approved', `Generated single-use 1-hour recovery link for ${req.businessName}`);
         setApprovalModalData({
@@ -141,7 +153,13 @@ export default function AdminBusinessRecoveryPage() {
           reason: rejectionReason.trim() || 'Identity could not be verified by administrator.',
         }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        const rawText = await res.text();
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = {};
+      }
       if (data.success) {
         toast.success('Rejected', `Recovery request for ${rejectModalReq.businessName} has been rejected.`);
         setRejectModalReq(null);

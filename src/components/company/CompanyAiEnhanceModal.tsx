@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { auth } from '@/lib/firebase/config';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 export interface CompanyAiEnhanceResult {
   tagline: string;
@@ -100,9 +101,10 @@ export default function CompanyAiEnhanceModal({
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Failed to generate enhanced company content');
+      const parsed = await safeParseResponse<any>(res);
+      const json = parsed.data || {};
+      if (!parsed.ok || !json.success) {
+        throw new Error(parsed.error || json.error || 'Failed to generate enhanced company content');
       }
 
       const data: CompanyAiEnhanceResult = json.data;

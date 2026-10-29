@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection, useDocument } from '@/hooks/useFirestore';
 import { formatDate, toDate, type FirestoreTime } from '@/lib/firestoreTime';
 import {
@@ -512,11 +513,8 @@ export default function CandidatesPage() {
   const { user } = useAuth();
   const toast = useToast();
 
-  const { data: companies, loading: companyLoading } = useCollection<any>('companies', [
-    where('ownerId', '==', user?.uid || '')
-  ], { skip: !user?.uid });
-
-  const company = companies[0];
+  const { company: canonicalComp, loading: companyLoading } = useEmployerCompany();
+  const company = canonicalComp;
   const companyId = company?.id;
 
   const { data: applications, loading: appsLoading } = useCollection<any>('applications', [
@@ -998,7 +996,7 @@ export default function CandidatesPage() {
           applicationId={activeModalCandidate.id}
           currentStatus={activeModalCandidate.status || 'applied'}
           initialNotes={activeModalCandidate.notes || ''}
-          companyId={companyId}
+          companyId={companyId || ''}
           companyName={company?.name || 'Company'}
           jobId={activeModalCandidate.jobId ?? ''}
           jobTitle={activeModalCandidate.jobTitle ?? ''}

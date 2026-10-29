@@ -11,8 +11,8 @@ import {
 import { GoogleIcon } from '@/components/ui/BrandIcons';
 import { useAuth } from '@/contexts/AuthContext';
 import { doc, getDoc, setDoc, query, collection, where, getDocs, serverTimestamp } from 'firebase/firestore';
-import { GoogleAuthProvider, type AuthCredential } from 'firebase/auth';
-import { db } from '@/lib/firebase/config';
+import { GoogleAuthProvider, signInWithPopup, signOut, type AuthCredential } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase/config';
 import AuthShell from '@/components/auth/AuthShell';
 import { resolveAuthRedirect, getFriendlyAuthErrorMessage } from '@/lib/authRedirect';
 
@@ -44,7 +44,7 @@ function LoginPageContent() {
 
   const {
     user, loading: authLoading, error: authError,
-    signInWithEmail, signInWithGoogle, assignUserRole, linkGoogleAccount, clearError
+    signInWithEmail, signInWithGoogle, assignUserRole, linkGoogleAccount, clearError, refreshUserProfile
   } = useAuth() as any;
 
   const [mode, setMode] = useState<AuthMode>('email');
@@ -368,6 +368,54 @@ function LoginPageContent() {
     }
   };
 
+  
+  // Special Verified Business Account Google Login state
+  const [businessLoginLoading, setBusinessLoginLoading] = useState(false);
+  const [businessLoginError, setBusinessLoginError] = useState<string | null>(null);
+
+  const handleBusinessGoogleLogin = async () => {
+    setBusinessLoginLoading(true);
+    setBusinessLoginError(null);
+    setLocalError(null);
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const cred = await signInWithPopup(auth, provider);
+      const idToken = await cred.user.getIdToken();
+
+      const res = await fetch('/api/auth/business-google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        // Disallowed Google account for this special business flow
+        await signOut(auth);
+        setBusinessLoginError(
+          data.error || 'This Google account is not registered for an eligible business account.'
+        );
+        return;
+      }
+
+      if (typeof refreshUserProfile === 'function') {
+        await refreshUserProfile();
+      }
+
+      router.push(data.redirectUrl || '/employer/dashboard');
+    } catch (err: any) {
+      if (err?.code === 'auth/popup-closed-by-user') {
+        return;
+      }
+      console.error('[Business Google Login] Error:', err);
+      setBusinessLoginError('This Google account is not registered for an eligible business account.');
+    } finally {
+      setBusinessLoginLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     setLocalError(null);
@@ -552,11 +600,59 @@ function LoginPageContent() {
                   <div className="flex-1 h-px bg-gray-100" />
                 </div>
 
-                <button type="button" onClick={handleGoogleLogin} disabled={loading}
-                  className="w-full py-2.5 rounded-2xl text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-all">
+                <button type="button" onClick={handleGoogleLogin} disabled={loading || businessLoginLoading}
+                  className="w-full py-2.5 rounded-2xl text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer">
                   <GoogleIcon size={18} />
                   Continue with Google
                 </button>
+
+                {/* ── Partner Business Account Sign-In with Google ── */}
+                <div className="pt-2">
+                  <div className="rounded-2xl border-2 border-dashed border-blue-200 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-900">
+                        <Building2 size={15} className="text-blue-600" /> Partner Business Account
+                      </span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wide bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full border border-blue-200">
+                        Verified Login
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 leading-normal">
+                      For registered THENIJOBS partner businesses. Sign in instantly using your verified business Google account.
+                    </p>
+
+                    {businessLoginError && (
+                      <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-medium text-amber-800 flex items-start gap-2 animate-in fade-in">
+                        <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                        <span>{businessLoginError}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleBusinessGoogleLogin}
+                      disabled={loading || businessLoginLoading}
+                      className="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                    >
+                      {businessLoginLoading ? (
+                        <Loader2 size={14} className="animate-spin text-white" />
+                      ) : (
+                        <GoogleIcon size={15} />
+                      )}
+                      <span>Partner Business Sign In with Google</span>
+                    </button>
+
+                    <div className="flex items-center justify-between pt-0.5 text-[11px]">
+                      <span className="text-gray-400">Can&apos;t access your business?</span>
+                      <Link
+                        href="/forgot-password"
+                        className="font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        Business Recovery →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </form>
             ) : (
               /* ── Full OTP Screen with Dual Independent Timers ── */

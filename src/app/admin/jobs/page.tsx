@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   Briefcase, Search, CheckCircle, XCircle,
   Star, Trash2, AlertTriangle, Clock, MapPin, Download, Loader2, Zap, Calendar,
-  Phone, MessageCircle, Eye, Building2, Banknote, Users, ShieldCheck, X, RefreshCw
+  Phone, MessageCircle, Eye, Building2, Banknote, Users, ShieldCheck, X, RefreshCw, Plus
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import {
@@ -67,6 +67,7 @@ const JOB_TYPE_STYLES: Record<string, { bg: string; text: string; label: string 
 const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   active:   { bg: '#ECFDF5', text: '#059669', dot: '#059669', label: 'Active / Live' },
   pending:  { bg: '#FFFBEB', text: '#D97706', dot: '#D97706', label: 'Pending Review' },
+  draft:    { bg: '#F1F5F9', text: '#475569', dot: '#64748B', label: 'Draft' },
   expired:  { bg: '#F9FAFB', text: '#6B7280', dot: '#9CA3AF', label: 'Expired' },
   reported: { bg: '#FEF2F2', text: '#DC2626', dot: '#DC2626', label: 'Reported' },
   rejected: { bg: '#FEF2F2', text: '#DC2626', dot: '#DC2626', label: 'Requires Revision' },
@@ -80,7 +81,7 @@ const QUICK_REJECTION_REASONS = [
   'Post contains promotional or advertising content unrelated to job duties.',
 ];
 
-const TABS = ['All', 'Pending', 'Active', 'Expired', 'Overdue Apps', 'Rejected', 'Featured'] as const;
+const TABS = ['All', 'Pending', 'Active', 'Draft', 'Expired', 'Overdue Apps', 'Rejected', 'Featured'] as const;
 const JOB_TYPES = ['All Types', 'Full Time', 'Part Time', 'Internship', 'Remote', 'Fresher', 'Contract'];
 const CATEGORIES = ['All Categories', 'IT & Software', 'Marketing', 'Sales', 'Healthcare', 'Education', 'Engineering', 'Retail', 'Agriculture', 'Construction', 'General'];
 const DISTRICTS = ['All Districts', 'Theni', 'Madurai', 'Dindigul', 'Chennai', 'Coimbatore', 'Trichy', 'Salem'];
@@ -104,16 +105,25 @@ export default function AdminJobsPage() {
   // matches the static shell exactly, then a post-hydration effect applies the real query --
   // an update after mount, not a mismatch during it.
   const [searchQuery, setSearchQuery] = useState('');
-  useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q');
-    if (q) setSearchQuery(q);
-  }, []);
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('All');
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [districtFilter, setDistrictFilter] = useState('All Districts');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [view, setView] = useViewMode('admin-jobs', 'table');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q) setSearchQuery(q);
+    const statusParam = params.get('status')?.toLowerCase();
+    if (statusParam === 'pending') setActiveTab('Pending');
+    else if (statusParam === 'draft') setActiveTab('Draft');
+    else if (statusParam === 'active' || statusParam === 'published') setActiveTab('Active');
+    else if (statusParam === 'rejected') setActiveTab('Rejected');
+    else if (statusParam === 'expired') setActiveTab('Expired');
+    else if (statusParam === 'all') setActiveTab('All');
+  }, []);
 
   // Rejection modal
   const [rejectingJob, setRejectingJob] = useState<JobDoc | null>(null);
@@ -140,6 +150,7 @@ export default function AdminJobsPage() {
       } catch {}
     }
     if (job.status === 'rejected' || job.approvalStatus === 'rejected') return 'rejected';
+    if (job.status === 'draft' || job.approvalStatus === 'draft') return 'draft';
     if (job.status === 'pending' || job.approvalStatus === 'pending' || job.isActive === false) return 'pending';
     if (job.status === 'active' || job.isActive === true) return 'active';
     return job.status || 'pending';
@@ -164,6 +175,7 @@ export default function AdminJobsPage() {
     if (activeTab === 'Featured') matchTab = !!job.isFeatured;
     else if (activeTab === 'Active') matchTab = status === 'active';
     else if (activeTab === 'Pending') matchTab = status === 'pending';
+    else if (activeTab === 'Draft') matchTab = status === 'draft' || job.status === 'draft';
     else if (activeTab === 'Rejected') matchTab = status === 'rejected';
     else if (activeTab === 'Expired') matchTab = isExpiredJob;
 
@@ -335,6 +347,7 @@ export default function AdminJobsPage() {
   const totalCount = jobs.length;
   const activeCount = jobs.filter(isActive).length;
   const pendingCount = jobs.filter(j => getStatus(j) === 'pending').length;
+  const draftCount = jobs.filter(j => j.status === 'draft' || getStatus(j) === 'draft').length;
   const rejectedCount = jobs.filter(j => getStatus(j) === 'rejected').length;
   const featuredCount = jobs.filter(j => j.isFeatured).length;
   const expiredCount = jobs.filter(j => j.status === 'expired' || getStatus(j) === 'expired' || (!j.isActive && getStatus(j) !== 'pending' && getStatus(j) !== 'rejected')).length;
@@ -438,6 +451,14 @@ export default function AdminJobsPage() {
             Review employer postings, verify salary, follow-up overdue applications (7+ days), and activate listings
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/jobs/create"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+          >
+            <Plus size={16} /> Create Job for Company
+          </Link>
+        </div>
       </div>
 
       {/* KPI Stats */}
@@ -481,6 +502,11 @@ export default function AdminJobsPage() {
             {tab === 'Pending' && pendingCount > 0 && (
               <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] text-white font-extrabold bg-amber-600">
                 {pendingCount}
+              </span>
+            )}
+            {tab === 'Draft' && draftCount > 0 && (
+              <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] text-slate-800 font-extrabold bg-slate-200">
+                {draftCount}
               </span>
             )}
             {tab === 'Expired' && expiredCount > 0 && (

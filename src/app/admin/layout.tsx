@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Building2, Briefcase, BarChart3, CreditCard, Shield, Settings, Bell,
   LogOut, ChevronLeft, ChevronRight, Menu, X, Star,
   TrendingUp, Globe, Search, AlertTriangle, Loader2, Sparkles, UserPlus, FileSpreadsheet, Award,
-  BadgeCheck, FileText, GraduationCap, Database, UserCheck, Calendar
+  BadgeCheck, KeyRound, FileText, GraduationCap, Database, UserCheck, Calendar
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -18,12 +18,27 @@ import AdminQuickSearch from '@/components/admin/AdminQuickSearch';
 const ADMIN_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
   { label: 'Business Owner Approvals', icon: BadgeCheck, href: '/admin/business-approvals', badge: 'pending' },
+  { label: 'Business Recovery', icon: KeyRound, href: '/admin/business-recovery', badge: 'pending' },
   { label: 'Users', icon: Users, href: '/admin/users' },
   { label: 'Job Seekers', icon: UserCheck, href: '/admin/job-seekers' },
   { label: 'Create User', icon: UserPlus, href: '/admin/users/create' },
   { label: 'Companies', icon: Building2, href: '/admin/businesses', badge: 'pending' },
   { label: 'Bulk Import', icon: FileSpreadsheet, href: '/admin/businesses/import' },
-  { label: 'Jobs', icon: Briefcase, href: '/admin/jobs', badge: 'pending' },
+  {
+    label: 'Jobs Management',
+    icon: Briefcase,
+    href: '/admin/jobs',
+    badge: 'pending',
+    subItems: [
+      { label: 'All Jobs', href: '/admin/jobs' },
+      { label: 'Create Job for Company', href: '/admin/jobs/create' },
+      { label: 'Pending Approval', href: '/admin/jobs?status=pending' },
+      { label: 'Draft Jobs', href: '/admin/jobs?status=draft' },
+      { label: 'Published Jobs', href: '/admin/jobs?status=active' },
+      { label: 'Rejected Jobs', href: '/admin/jobs?status=rejected' },
+      { label: 'Expired Jobs', href: '/admin/jobs?status=expired' },
+    ],
+  },
   { label: 'Job Applications', icon: FileText, href: '/admin/applications' },
   { label: 'Job Alerts', icon: Bell, href: '/admin/job-alerts' },
   { label: 'Interviews', icon: Calendar, href: '/admin/interviews' },
@@ -124,8 +139,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {ADMIN_NAV.map(item => {
             const Icon = item.icon;
             const active = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
+            const subItems = (item as any).subItems;
             return (
-              <Link key={item.href} href={item.href}
+              <div key={item.href} className="space-y-0.5">
+                <Link href={item.href}
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-medium transition-all
                   ${active ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100/60' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
@@ -141,6 +158,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </>
                 )}
               </Link>
+                {!collapsed && subItems && active && (
+                  <div className="pl-6 pr-1 py-1 space-y-0.5 border-l-2 border-indigo-100 ml-4 my-1">
+                    {subItems.map((sub: { label: string; href: string }) => (
+                      <Link
+                        key={sub.label}
+                        href={sub.href}
+                        className="block px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

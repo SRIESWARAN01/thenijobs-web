@@ -99,9 +99,9 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
       const candidatePaths = [
         path.join(process.cwd(), 'serviceAccountKey.json'),
         path.join(process.cwd(), 'thenijobs-web-main', 'serviceAccountKey.json'),
-        path.resolve(__dirname, '../../../serviceAccountKey.json'),
-        path.resolve(__dirname, '../../../../serviceAccountKey.json'),
-      ];
+        typeof __dirname !== 'undefined' ? path.resolve(__dirname, '../../../serviceAccountKey.json') : '',
+        typeof __dirname !== 'undefined' ? path.resolve(__dirname, '../../../../serviceAccountKey.json') : '',
+      ].filter(Boolean);
       for (const localKeyPath of candidatePaths) {
         if (fs.existsSync(localKeyPath)) {
           const fileContent = fs.readFileSync(localKeyPath, 'utf8');

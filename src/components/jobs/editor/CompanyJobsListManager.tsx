@@ -244,6 +244,11 @@ export default function CompanyJobsListManager({ companyId, companyName, basePat
           <span className="block truncate text-xs text-slate-500">
             {(job.jobType || 'full_time').replace(/_/g, ' ')} · {job.district || job.location || 'Theni'}
           </span>
+          {resolveStatus(job) === 'rejected' && (job.rejectionReason || (job as any).rejection_reason) && (
+            <div className="mt-1.5 text-[11px] font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1 max-w-md">
+              <span className="font-bold">Revision required:</span> {job.rejectionReason || (job as any).rejection_reason}
+            </div>
+          )}
         </div>
       ),
     },

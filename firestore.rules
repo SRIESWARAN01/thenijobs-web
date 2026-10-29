@@ -932,6 +932,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin() && isNotSuspended();
     }
 
+    // ===== BUSINESS RECOVERY REQUESTS =====
+    match /businessRecoveryRequests/{requestId} {
+      allow read, update, delete: if isAdmin() && isNotSuspended();
+      allow create: if false; // Creation is handled exclusively through server-side Admin SDK via /api/auth/business-recovery/request with rate limiting and anti-enumeration protections
+    }
+
     // ===== DEFAULT DENY (RULES-1, security.md S-1) =====
     // Firestore denies any request no block above matches. Rules are additive (OR): a permissive
     // recursive wildcard block here would override every block above it, which is exactly what

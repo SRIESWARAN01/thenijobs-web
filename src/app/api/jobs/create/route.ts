@@ -31,6 +31,8 @@ export async function POST(request: Request) {
       walkInContactPhone,
       companyId,
       userId,
+      deadline,
+      applicationDeadline,
     } = body;
 
     if (!title || !title.trim()) {
@@ -109,6 +111,8 @@ export async function POST(request: Request) {
     );
 
     const now = new Date();
+    const resolvedDeadline = deadline || applicationDeadline || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
     const jobPayload = {
       title: title.trim(),
       slug: jobSlug,
@@ -134,17 +138,25 @@ export async function POST(request: Request) {
       walkInVenue: walkInVenue || location || 'Company Office',
       walkInContactPhone: walkInContactPhone || companyData.phone || '',
       companyId,
+      business_id: companyId,
       companyName: companyData.name || 'Company',
       companyLogoUrl: companyData.logoUrl || '',
       companyDistrict: companyData.district || district || 'Theni',
+      deadline: resolvedDeadline,
+      application_deadline: resolvedDeadline,
       postedBy: userId,
+      created_by: userId,
+      created_by_role: 'employer',
       status: 'pending',
       approvalStatus: 'pending',
+      approval_status: 'pending',
       isActive: false, // Inactive until approved by admin
       viewCount: 0,
       applicationsCount: 0,
       createdAt: now,
+      created_at: now,
       updatedAt: now,
+      updated_at: now,
     };
 
     const docRef = await db.collection('jobs').add(jobPayload);

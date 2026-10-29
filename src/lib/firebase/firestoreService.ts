@@ -1122,10 +1122,17 @@ export async function approveJob(jobId: string, adminId: string) {
       isActive: true,
       status: 'active',
       approvalStatus: 'approved',
+      approval_status: 'approved',
       approvedBy: adminId,
+      approved_by: adminId,
       approvedAt: serverTimestamp(),
+      approved_at: serverTimestamp(),
+      publishedAt: serverTimestamp(),
+      published_at: serverTimestamp(),
       rejectionReason: '',
+      rejection_reason: '',
       updatedAt: serverTimestamp(),
+      updated_at: serverTimestamp(),
     };
     if (!d?.slug && d?.title) {
       updates.slug = generateJobSlug(d.title, d.companyName || 'Company', d.district || d.location || 'Theni');
@@ -1180,10 +1187,16 @@ export async function rejectJob(jobId: string, adminId: string, reason?: string)
     status: 'rejected',
     // Same contract as approveJob — the admin list keys off approvalStatus.
     approvalStatus: 'rejected',
+    approval_status: 'rejected',
     rejectedBy: adminId,
+    rejected_by: adminId,
     rejectedAt: serverTimestamp(),
+    rejected_at: serverTimestamp(),
     rejectionReason: reason || '',
-    updatedAt: serverTimestamp() });
+    rejection_reason: reason || '',
+    updatedAt: serverTimestamp(),
+    updated_at: serverTimestamp(),
+  });
 
   const job = await fetchDocument<{ postedBy?: string; title?: string }>(
     'jobs',

@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { slugifyCompany } from '@/lib/companySlug';
+import type { VerificationStatus } from '@/lib/types';
 
 export interface CompanyEntity {
   id: string;
@@ -22,7 +23,7 @@ export interface CompanyEntity {
   email?: string;
   ownerId?: string;
   ownerEmail?: string;
-  verificationStatus?: any;
+  verificationStatus?: VerificationStatus;
   isActive?: boolean;
   isVerified?: boolean;
   [key: string]: any;

@@ -91,7 +91,7 @@ export default function PostJobPage() {
   // C2 FIX: Derive the effective plan from the centralized subscription state,
   // not from the raw company doc. If trial is expired but cron hasn't run yet,
   // computeSubscriptionState correctly returns 'free' instead of 'standard'.
-  const subState = computeSubscriptionState(company as any, user);
+  const subState = computeSubscriptionState(company, user);
   const planSlug = subState.plan;
   const planInfo = getPlan(planSlug);
   const planCheck = canPostNewJob(planSlug, activeJobsCount);

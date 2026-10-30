@@ -12,7 +12,7 @@ import type { NextRequest } from 'next/server';
  * Requests arriving at www.thenijobs.com must NEVER redirect back to apex thenijobs.com,
  * as Vercel's edge already 308-redirects apex to www, which would cause an infinite ERR_TOO_MANY_REDIRECTS loop.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Respect Vercel forwarded host header if present, falling back to Host header
   const rawHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
   const hostname = rawHost.split(':')[0].toLowerCase();

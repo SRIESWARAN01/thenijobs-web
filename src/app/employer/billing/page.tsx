@@ -90,7 +90,7 @@ export default function EmployerBillingPage() {
   const activeSub = subscriptions?.[0];
   const currentPlanSlug = activeSub ? activeSub.plan : (company?.subscriptionPlan || 'free');
   const currentPlan = SUBSCRIPTION_PLANS.find(p => p.slug === currentPlanSlug) || SUBSCRIPTION_PLANS[0];
-  const subState = useSubscriptionStatus(company as any, user);
+  const subState = useSubscriptionStatus(company, user);
 
   const loading = companyLoading || subLoading;
 

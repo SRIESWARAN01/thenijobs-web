@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Mirror of the logic implemented in src/middleware.ts
+// Mirror of the logic implemented in src/proxy.ts (formerly src/middleware.ts)
 function resolveCanonicalRedirect(requestUrl, headers = {}) {
   const rawHost = headers['x-forwarded-host'] || headers['host'] || '';
   const hostname = rawHost.split(':')[0].toLowerCase();
@@ -109,30 +109,30 @@ test('THENIJOBS Production Domain Redirect Loop Prevention Suite', async (t) => 
     assert.equal(hop2, null, 'Hop 2 must NOT redirect; loop terminates cleanly at canonical');
   });
 
-  await t.test('9. Middleware source code static invariants audit', () => {
-    const middlewareSource = fs.readFileSync(path.join(process.cwd(), 'src', 'middleware.ts'), 'utf8');
+  await t.test('9. Proxy source code static invariants audit', () => {
+    const proxySource = fs.readFileSync(path.join(process.cwd(), 'src', 'proxy.ts'), 'utf8');
 
     // Invariant A: Must set host to www.thenijobs.com
     assert.ok(
-      middlewareSource.includes("url.host = 'www.thenijobs.com'"),
-      'Middleware must redirect to www.thenijobs.com'
+      proxySource.includes("url.host = 'www.thenijobs.com'"),
+      'Proxy must redirect to www.thenijobs.com'
     );
 
     // Invariant B: Must NEVER redirect to thenijobs.com (apex)
     assert.ok(
-      !middlewareSource.includes("url.host = 'thenijobs.com'"),
-      'Middleware must NEVER set destination host to apex thenijobs.com'
+      !proxySource.includes("url.host = 'thenijobs.com'"),
+      'Proxy must NEVER set destination host to apex thenijobs.com'
     );
 
     // Invariant C: Must contain canonical domain check to prevent self-redirect
     assert.ok(
-      middlewareSource.includes("hostname === 'www.thenijobs.com'"),
-      'Middleware must check for canonical hostname and return next()'
+      proxySource.includes("hostname === 'www.thenijobs.com'"),
+      'Proxy must check for canonical hostname and return next()'
     );
 
     // Invariant D: Must alias thenijobs.com, thenijobs.in, www.thenijobs.in
-    assert.ok(middlewareSource.includes("hostname === 'thenijobs.com'"), 'Must alias thenijobs.com');
-    assert.ok(middlewareSource.includes("hostname === 'thenijobs.in'"), 'Must alias thenijobs.in');
-    assert.ok(middlewareSource.includes("hostname === 'www.thenijobs.in'"), 'Must alias www.thenijobs.in');
+    assert.ok(proxySource.includes("hostname === 'thenijobs.com'"), 'Must alias thenijobs.com');
+    assert.ok(proxySource.includes("hostname === 'thenijobs.in'"), 'Must alias thenijobs.in');
+    assert.ok(proxySource.includes("hostname === 'www.thenijobs.in'"), 'Must alias www.thenijobs.in');
   });
 });

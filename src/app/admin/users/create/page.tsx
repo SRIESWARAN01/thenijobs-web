@@ -10,6 +10,7 @@ import {
 import { adminCreateUser, generatePassword } from '@/lib/firebase/adminUserService';
 import { logActivity } from '@/lib/firebase/firestoreService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCollection } from '@/hooks/useFirestore';
 import { TN_DISTRICTS } from '@/lib/types';
 import type { UserRole } from '@/lib/types';
 import { Button, PageHeader } from '@/components/dashboard';
@@ -28,6 +29,7 @@ const ROLE_OPTIONS: { id: CreateRole; label: string; icon: any; desc: string; co
 
 export default function AdminCreateUserPage() {
   const { user } = useAuth();
+  const { data: companies } = useCollection<{ id: string; name: string; district?: string }>('companies');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState('');
@@ -42,7 +44,9 @@ export default function AdminCreateUserPage() {
     district: 'Theni',
     role: 'job_seeker' as CreateRole,
     password: generatePassword(),
+    companyId: '',
     companyName: '',
+    employeeRole: 'staff_user',
   });
 
   const update = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));
@@ -60,6 +64,9 @@ export default function AdminCreateUserPage() {
     setResult(null);
 
     try {
+      const selectedComp = companies.find(c => c.id === form.companyId);
+      const resolvedCompanyName = form.companyName.trim() || selectedComp?.name || undefined;
+
       const res = await adminCreateUser({
         displayName: form.name.trim(),
         email: form.email.trim().toLowerCase(),
@@ -67,7 +74,9 @@ export default function AdminCreateUserPage() {
         phone: form.phone.trim(),
         district: form.district,
         role: form.role,
-        companyName: form.companyName.trim() || undefined,
+        companyName: resolvedCompanyName,
+        companyId: form.companyId.trim() || undefined,
+        employeeRole: form.employeeRole.trim() || undefined,
       });
 
       setResult(res);
@@ -107,7 +116,8 @@ export default function AdminCreateUserPage() {
     setResult(null);
     setForm({
       name: '', email: '', phone: '', district: 'Theni',
-      role: 'job_seeker', password: generatePassword(), companyName: '',
+      role: 'job_seeker', password: generatePassword(),
+      companyId: '', companyName: '', employeeRole: 'staff_user',
     });
   };
 
@@ -229,12 +239,42 @@ export default function AdminCreateUserPage() {
               placeholder="Enter full name" className={inputCls} />
           </div>
 
-          {/* Company Name (for employer/business_owner/employee) */}
+          {/* Company Name & Selector (for employer/business_owner/employee) */}
           {(form.role === 'employer' || form.role === 'business_owner' || form.role === 'employee') && (
-            <div>
-              <label htmlFor="admin-users-create-company-name" className={labelCls}><Building2 size={12} className="inline mr-1" />Company Name / ID *</label>
-              <input id="admin-users-create-company-name" type="text" value={form.companyName} onChange={e => update('companyName', e.target.value)}
-                placeholder="Enter assigned company name or ID" className={inputCls} />
+            <div className="space-y-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <label htmlFor="admin-users-create-company-select" className={labelCls}><Building2 size={12} className="inline mr-1" />Select Existing Company</label>
+              <select
+                id="admin-users-create-company-select"
+                value={form.companyId}
+                onChange={e => {
+                  const comp = companies.find(c => c.id === e.target.value);
+                  setForm(f => ({
+                    ...f,
+                    companyId: e.target.value,
+                    companyName: comp?.name || f.companyName,
+                  }));
+                }}
+                className={inputCls}
+              >
+                <option value="">-- Choose Existing Company (or type name below) --</option>
+                {companies.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} {c.district ? `(${c.district})` : ''}</option>
+                ))}
+              </select>
+
+              <div>
+                <label htmlFor="admin-users-create-company-name" className={labelCls}>Company Name</label>
+                <input id="admin-users-create-company-name" type="text" value={form.companyName} onChange={e => update('companyName', e.target.value)}
+                  placeholder="Enter assigned company name" className={inputCls} />
+              </div>
+
+              {form.role === 'employee' && (
+                <div>
+                  <label htmlFor="admin-users-create-employee-role" className={labelCls}>Employee Role / Designation</label>
+                  <input id="admin-users-create-employee-role" type="text" value={form.employeeRole} onChange={e => update('employeeRole', e.target.value)}
+                    placeholder="e.g. Recruiter, Branch Manager, Staff" className={inputCls} />
+                </div>
+              )}
             </div>
           )}
 

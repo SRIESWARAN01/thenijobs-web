@@ -13,7 +13,7 @@ import {
   updateProfile,
   signOut,
 } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 import type { UserRole } from '@/lib/types';
 
@@ -30,6 +30,8 @@ export interface AdminCreateUserParams {
   district?: string;
   role: UserRole;
   companyName?: string; // for employer/business_owner
+  companyId?: string; // linked canonical company ID
+  employeeRole?: string; // e.g. 'staff_user' | 'recruiter' | 'branch_manager'
 }
 
 export interface AdminCreateUserResult {
@@ -85,6 +87,7 @@ export async function adminCreateUser(
     await signOut(secondaryAuth);
 
     // 2. Create Firestore user document (using main db instance)
+    const assignedCompanyId = params.companyId || (params.role === 'employee' ? (params.companyName || '') : '');
     await setDoc(doc(db, 'users', newUser.uid), {
       email: params.email,
       displayName: params.displayName,
@@ -92,12 +95,34 @@ export async function adminCreateUser(
       district: params.district || '',
       role: params.role,
       companyName: params.companyName || '',
-      companyId: params.role === 'employee' ? (params.companyName || '') : '',
+      companyId: assignedCompanyId,
+      employeeRole: params.employeeRole || '',
+      isEmployer: params.role === 'employee' || params.role === 'employer' || params.role === 'business_owner',
       isVerified: false,
       createdByAdmin: true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    // If assigned to a company, link the employee's UID to companies/{companyId}.employeeIds
+    if (params.companyId) {
+      try {
+        const compRef = doc(db, 'companies', params.companyId);
+        const compSnap = await getDoc(compRef);
+        if (compSnap.exists()) {
+          const compData = compSnap.data();
+          const existingEmployeeIds = Array.isArray(compData.employeeIds) ? compData.employeeIds : [];
+          if (!existingEmployeeIds.includes(newUser.uid)) {
+            await setDoc(compRef, {
+              employeeIds: [...existingEmployeeIds, newUser.uid],
+              updatedAt: serverTimestamp(),
+            }, { merge: true });
+          }
+        }
+      } catch (linkErr) {
+        console.warn('[adminCreateUser] error linking employee to company doc:', linkErr);
+      }
+    }
 
     // 3. Create role-specific profile document
     if (params.role === 'job_seeker') {

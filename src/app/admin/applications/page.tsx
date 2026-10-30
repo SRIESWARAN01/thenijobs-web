@@ -489,7 +489,14 @@ export default function AdminApplicationsPage() {
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-100">
+              <Link
+                href={`/admin/job-seekers?q=${encodeURIComponent(selectedApp.seekerEmail || selectedApp.seekerName || selectedApp.seekerId || '')}`}
+                className="py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Users size={14} />
+                <span>View Full Candidate Profile &amp; Portfolio</span>
+              </Link>
               <Button variant="secondary" size="sm" onClick={() => setSelectedApp(null)}>
                 Close Dossier
               </Button>

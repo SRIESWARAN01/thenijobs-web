@@ -93,6 +93,18 @@ export function useEmployerCompany() {
           }
         }
 
+        // Priority 4: Query by employeeIds array containing user.uid
+        const qEmployee = query(
+          collection(db, 'companies'),
+          where('employeeIds', 'array-contains', user.uid),
+        );
+        const snapEmployee = await getDocs(qEmployee);
+        if (!snapEmployee.empty && !isCancelled) {
+          const foundDoc = snapEmployee.docs[0];
+          unsubPrimary = listenToDoc(foundDoc.id);
+          return;
+        }
+
         if (!isCancelled) {
           setCompany(null);
           setLoading(false);

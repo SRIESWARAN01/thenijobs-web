@@ -154,6 +154,19 @@ export async function resolveCanonicalCompany(user: {
     console.warn('[resolveCanonicalCompany] companySlugs lookup failed:', err);
   }
 
+  // 5. Query by employeeIds array
+  try {
+    const qEmp = query(collection(db, 'companies'), where('employeeIds', 'array-contains', user.uid), limit(1));
+    const snapEmp = await getDocs(qEmp);
+    if (!snapEmp.empty) {
+      const comp = { id: snapEmp.docs[0].id, ...snapEmp.docs[0].data() } as CompanyEntity;
+      await linkUserToCompany(user.uid, comp.id, (user as any).role || 'employee');
+      return comp;
+    }
+  } catch (err) {
+    console.warn('[resolveCanonicalCompany] employeeIds lookup failed:', err);
+  }
+
   return null;
 }
 

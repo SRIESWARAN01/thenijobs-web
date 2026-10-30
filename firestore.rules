@@ -47,7 +47,18 @@ service cloud.firestore {
     function isCompanyOwner(companyId) {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/companies/$(companyId)) &&
-        get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+        (
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid ||
+          (
+            'employeeIds' in get(/databases/$(database)/documents/companies/$(companyId)).data &&
+            request.auth.uid in get(/databases/$(database)/documents/companies/$(companyId)).data.employeeIds
+          ) ||
+          (
+            exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['employer', 'business_owner', 'employee']
+          )
+        );
     }
 
     function getUserRole() {
@@ -230,7 +241,10 @@ service cloud.firestore {
       // H2 FIX: Allow public read if verified OR if isActive — aligns with frontend queries
       allow read: if resource.data.verificationStatus == 'verified' ||
         resource.data.isActive == true ||
-        (isAuthenticated() && resource.data.ownerId == request.auth.uid) || isAdmin();
+        (isAuthenticated() && (
+          resource.data.ownerId == request.auth.uid ||
+          ('employeeIds' in resource.data && request.auth.uid in resource.data.employeeIds)
+        )) || isAdmin();
       allow create: if (isActiveUser() && safeCompanyCreate() &&
         request.resource.data.ownerId == request.auth.uid) || (isAdmin() && isNotSuspended());
       allow update: if

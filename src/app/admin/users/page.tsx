@@ -6,7 +6,7 @@ import {
   Users, Search, Download, ShieldCheck, Ban, Trash2,
   UserCheck, AlertCircle, Loader2, CheckCircle, XCircle,
   Plus, X, Phone, Mail, MapPin, Shield, Clock,
-  Edit3, FileText
+  Edit3, FileText, Building2
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import {
@@ -15,8 +15,8 @@ import {
 } from '@/components/dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { updateDocument, deleteDocument, verifyUser, rejectUser } from '@/lib/firebase/firestoreService';
-import { auth } from '@/lib/firebase/config';
-import { serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase/config';
+import { serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { useToast } from '@/contexts/ToastContext';
 
@@ -31,6 +31,16 @@ interface UserDoc {
   isVerified?: boolean;
   createdAt?: any;
   phone?: string;
+  companyId?: string;
+  companyName?: string;
+  employeeRole?: string;
+}
+
+interface CompanyItem {
+  id: string;
+  name: string;
+  slug?: string;
+  district?: string;
 }
 
 const ROLE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
@@ -56,6 +66,7 @@ export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const toast = useToast();
   const { data: users, loading } = useCollection<UserDoc>('users');
+  const { data: companies } = useCollection<CompanyItem>('companies');
   const [view, setView] = useViewMode('admin-users', 'table');
   // ADMIN-QS-1: seeds from the admin quick-search's own `?q=` link. A plain window.location read
   // (not next/navigation's useSearchParams, unused anywhere else in this app and requiring a new
@@ -87,6 +98,9 @@ export default function UsersPage() {
     role: 'job_seeker',
     district: 'Theni',
     status: 'active',
+    companyId: '',
+    companyName: '',
+    employeeRole: '',
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
@@ -101,6 +115,9 @@ export default function UsersPage() {
       role: u.role || 'job_seeker',
       district: u.district || 'Theni',
       status: u.status || 'active',
+      companyId: u.companyId || '',
+      companyName: u.companyName || '',
+      employeeRole: u.employeeRole || '',
     });
     setEditError('');
   };
@@ -114,6 +131,10 @@ export default function UsersPage() {
     setEditLoading(true);
     setEditError('');
     try {
+      const selectedComp = companies.find(c => c.id === editForm.companyId);
+      const resolvedCompanyName = editForm.companyName.trim() || selectedComp?.name || '';
+      const isEmployerRole = editForm.role === 'employee' || editForm.role === 'employer' || editForm.role === 'business_owner';
+
       const updatePayload: any = {
         displayName: editForm.displayName.trim(),
         name: editForm.displayName.trim(),
@@ -122,9 +143,34 @@ export default function UsersPage() {
         role: editForm.role,
         district: editForm.district,
         status: editForm.status,
+        companyId: editForm.companyId.trim(),
+        companyName: resolvedCompanyName,
+        employeeRole: editForm.employeeRole.trim(),
+        isEmployer: isEmployerRole,
         updatedAt: serverTimestamp(),
       };
       await updateDocument('users', editingUser.id, updatePayload);
+
+      // If linking to a company, ensure employee ID is added to company doc
+      if (editForm.companyId.trim() && (editForm.role === 'employee' || editForm.role === 'employer')) {
+        try {
+          const compRef = doc(db, 'companies', editForm.companyId.trim());
+          const compSnap = await getDoc(compRef);
+          if (compSnap.exists()) {
+            const compData = compSnap.data();
+            const existingEmployeeIds = Array.isArray(compData.employeeIds) ? compData.employeeIds : [];
+            if (!existingEmployeeIds.includes(editingUser.id)) {
+              await setDoc(compRef, {
+                employeeIds: [...existingEmployeeIds, editingUser.id],
+                updatedAt: serverTimestamp(),
+              }, { merge: true });
+            }
+          }
+        } catch (linkErr) {
+          console.warn('Error linking employee to company:', linkErr);
+        }
+      }
+
       toast.success('User profile updated successfully!');
       setEditingUser(null);
     } catch (e: any) {
@@ -244,13 +290,22 @@ export default function UsersPage() {
       sortValue: u => u.role ?? '',
       render: u => {
         const r = ROLE_STYLES[u.role];
+        const comp = companies.find(c => c.id === u.companyId) || (u.companyName ? companies.find(c => c.name?.toLowerCase() === u.companyName?.toLowerCase()) : null);
+        const compName = u.companyName || comp?.name;
         return (
-          <span
-            className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-            style={{ background: r?.bg ?? '#F1F5F9', color: r?.color ?? '#475569' }}
-          >
-            {r?.label ?? u.role ?? 'Unknown'}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span
+              className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold w-fit"
+              style={{ background: r?.bg ?? '#F1F5F9', color: r?.color ?? '#475569' }}
+            >
+              {r?.label ?? u.role ?? 'Unknown'}
+            </span>
+            {compName && (u.role === 'employee' || u.role === 'employer' || u.role === 'business_owner') && (
+              <span className="text-[10px] text-slate-500 font-medium truncate max-w-[160px]" title={compName}>
+                at {compName}
+              </span>
+            )}
+          </div>
         );
       },
     },
@@ -407,6 +462,19 @@ export default function UsersPage() {
               },
             });
           }
+          if (u.role === 'employee' || u.role === 'employer' || u.role === 'business_owner') {
+            const comp = companies.find(c => c.id === u.companyId) || (u.companyName ? companies.find(c => c.name?.toLowerCase() === u.companyName?.toLowerCase()) : null);
+            const targetCompId = u.companyId || comp?.id;
+            if (targetCompId) {
+              items.unshift({
+                label: 'View Assigned Company Profile',
+                icon: Building2,
+                onClick: () => {
+                  window.location.href = `/admin/businesses/${targetCompId}/profile`;
+                },
+              });
+            }
+          }
           if (!u.isVerified || (u as any).approvalStatus !== 'approved') {
             items.push({
               label: u.role === 'business_owner' ? 'Approve & Verify Business Owner' : 'Verify user',
@@ -527,6 +595,7 @@ export default function UsersPage() {
                     <option value="job_seeker">Job Seeker</option>
                     <option value="employer">Employer</option>
                     <option value="business_owner">Business Owner</option>
+                    <option value="employee">Employee</option>
                     <option value="supplier">Supplier</option>
                     <option value="service_provider">Service Provider</option>
                     <option value="admin">Admin</option>
@@ -556,6 +625,60 @@ export default function UsersPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Company / Employer Association for Staff & Business Roles */}
+              {(editForm.role === 'employee' || editForm.role === 'employer' || editForm.role === 'business_owner') && (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                    <Building2 size={14} className="text-blue-600" />
+                    <span>Company / Employer Association</span>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-700 block mb-1">Assigned Company</label>
+                    <select
+                      value={editForm.companyId}
+                      onChange={e => {
+                        const comp = companies.find(c => c.id === e.target.value);
+                        setEditForm({
+                          ...editForm,
+                          companyId: e.target.value,
+                          companyName: comp?.name || editForm.companyName,
+                        });
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium bg-white text-gray-900 outline-none"
+                    >
+                      <option value="">-- Select Company (or enter custom name below) --</option>
+                      {companies.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} {c.district ? `(${c.district})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">Company Display Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Chennai Bakes"
+                        value={editForm.companyName}
+                        onChange={e => setEditForm({ ...editForm, companyName: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-bold text-gray-700 block mb-1">Staff / Team Role</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Recruiter, Branch Manager"
+                        value={editForm.employeeRole}
+                        onChange={e => setEditForm({ ...editForm, employeeRole: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-900 font-medium outline-none bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 pt-2 border-t border-gray-100">

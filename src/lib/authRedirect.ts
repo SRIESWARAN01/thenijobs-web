@@ -48,6 +48,9 @@ export function resolveAuthRedirect(
 
   // 1. Admin / Super Admin
   if (role === 'admin' || role === 'super_admin') {
+    if (isSafeRedirectUrl(customRedirectUrl) && customRedirectUrl!.startsWith('/admin')) {
+      return customRedirectUrl!;
+    }
     return '/admin/dashboard';
   }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resetSloganRotation } from '@/lib/billing/sloganService';
 import { verifyAdminAuth } from '@/lib/api/adminAuth';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 /**
  * POST /api/admin/slogans/reset
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (!authResult.authorized) return authResult.response;
 
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = await safeReadRequestBody<any>(req, {});
     const cycle = typeof body.cycle === 'number' && body.cycle > 0 ? body.cycle : 1;
 
     await resetSloganRotation(cycle);
@@ -30,4 +31,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

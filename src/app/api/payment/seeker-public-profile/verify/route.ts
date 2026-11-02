@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { verifyRazorpaySignature, fetchRazorpayPayment } from '@/lib/firebase/paymentAdminService';
 import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 /**
  * Verified Candidate Public Portfolio Payment Route.
@@ -13,17 +14,17 @@ import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await safeReadRequestBody<any>(request, {});
     const { orderId, paymentId, signature, userId } = body;
 
     if (!userId || typeof userId !== 'string') {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 });
     }
     if (!paymentId || typeof paymentId !== 'string') {
-      return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Payment ID is required' }, { status: 400 });
     }
     if (!orderId || typeof orderId !== 'string') {
-      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Order ID is required' }, { status: 400 });
     }
 
     // 1. Dual-Path Gateway Verification
@@ -99,6 +100,24 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('[Seeker Public Profile Verify Error]:', error?.message || error);
-    return NextResponse.json({ error: 'Failed to verify payment and publish portfolio' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to verify payment and publish portfolio' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

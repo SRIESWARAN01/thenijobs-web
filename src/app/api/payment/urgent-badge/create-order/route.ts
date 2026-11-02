@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { URGENT_HIRING_BADGE_FEE_INR, VALID_URGENT_FEES } from '@/lib/constants';
+import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 /**
  * URGENT-BADGE-1 — creates a Razorpay order for the 48-Hour Urgent Hiring Spotlight fee (₹99 or ₹149).
@@ -9,13 +10,17 @@ import { URGENT_HIRING_BADGE_FEE_INR, VALID_URGENT_FEES } from '@/lib/constants'
  */
 export async function POST(request: Request) {
   try {
-    const { jobId, userId, fee } = await request.json();
+    const { jobId, userId, fee } = await safeReadRequestBody<{
+      jobId?: string;
+      userId?: string;
+      fee?: number | string;
+    }>(request, {});
 
     if (!jobId || typeof jobId !== 'string') {
-      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Job ID is required' }, { status: 400 });
     }
     if (!userId || typeof userId !== 'string') {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 });
     }
 
     // Validate fee against allowed tiers (defaulting to ₹99)
@@ -52,16 +57,19 @@ export async function POST(request: Request) {
         });
 
         if (rpResponse.ok) {
-          const rpOrder = await rpResponse.json();
-          return NextResponse.json({
-            success: true,
-            orderId: rpOrder.id,
-            amount,
-            planTier,
-            currency: 'INR',
-            key: razorpayKey,
-            isRazorpay: true,
-          });
+          const parsed = await safeParseResponse<any>(rpResponse);
+          const rpOrder = parsed.data;
+          if (rpOrder?.id) {
+            return NextResponse.json({
+              success: true,
+              orderId: rpOrder.id,
+              amount,
+              planTier,
+              currency: 'INR',
+              key: razorpayKey,
+              isRazorpay: true,
+            });
+          }
         }
         console.error('[Urgent Badge] Razorpay order creation failed:', rpResponse.status);
       } catch (rpErr) {
@@ -81,6 +89,24 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('[Urgent Badge Create Order Error]:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

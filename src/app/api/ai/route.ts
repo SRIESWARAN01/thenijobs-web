@@ -5,6 +5,7 @@ import { checkUserCredits, deductUserCredits, logAIUsage } from '@/lib/ai/credit
 import { AIFeatureKey, AI_CREDIT_COSTS } from '@/lib/ai/config';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 import { JOB_SEARCH_SYSTEM_PROMPT, buildJobSearchPrompt } from '@/lib/ai/prompts/jobSearchPrompt';
 import { JOB_RECOMMENDATION_SYSTEM_PROMPT, buildJobRecommendationPrompt } from '@/lib/ai/prompts/jobRecommendationPrompt';
@@ -46,7 +47,7 @@ function isRateLimited(identifier: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     // AI-1: `userId` is deliberately NOT destructured from the body any more. It used to be
     // the only thing this route knew about who was calling, and it was whatever the caller
     // typed. Identity now comes from the verified token below and nothing else.
@@ -396,4 +397,15 @@ export async function POST(req: NextRequest) {
     console.error('[AI API Controller Error]:', err);
     return NextResponse.json({ success: false, error: 'AI is temporarily unavailable. Please try again.' }, { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

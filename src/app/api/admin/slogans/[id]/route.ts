@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { verifyAdminAuth } from '@/lib/api/adminAuth';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 /**
  * PUT /api/admin/slogans/[id]
@@ -16,7 +17,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const db = getAdminFirestore();
     const docRef = db.collection('billingSlogans').doc(id);
 
@@ -85,4 +86,15 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

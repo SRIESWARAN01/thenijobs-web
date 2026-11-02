@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 // ─── Server-side rate limiting for Voice Call OTP ─────────────────────────────
 const callRateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -18,23 +19,23 @@ function isCallRateLimited(phone: string): boolean {
 
 export async function POST(request: Request) {
   try {
-    const { phone } = await request.json();
+    const { phone } = await safeReadRequestBody<{ phone?: string }>(request, {});
 
     if (!phone || typeof phone !== 'string') {
-      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
     }
 
     // Clean phone number (extract 10 digits)
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
     if (cleanPhone.length !== 10) {
-      return NextResponse.json({ error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
     }
 
     // Rate limiting
     if (isCallRateLimited(cleanPhone)) {
       return NextResponse.json(
-        { error: 'Too many call attempts. Please wait 5 minutes before requesting another voice call.' },
+        { success: false, error: 'Too many call attempts. Please wait 5 minutes before requesting another voice call.' },
         { status: 429 }
       );
     }
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     if (!apiKey) {
       console.error('[Voice OTP] Missing API key');
       return NextResponse.json(
-        { error: 'Voice call service is temporarily unavailable. Please use SMS OTP.' },
+        { success: false, error: 'Voice call service is temporarily unavailable. Please use SMS OTP.' },
         { status: 503 }
       );
     }
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
     try {
       const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
       if (response.ok) {
-        data = await response.json();
+        const parsed = await safeParseResponse<any>(response);
+        data = parsed.data;
       } else {
         console.error('[Voice OTP] 2Factor responded', response.status);
       }
@@ -75,7 +77,7 @@ export async function POST(request: Request) {
 
     if (!data) {
       return NextResponse.json(
-        { error: 'Could not place the verification call right now. Please use SMS OTP.' },
+        { success: false, error: 'Could not place the verification call right now. Please use SMS OTP.' },
         { status: 502 }
       );
     }
@@ -88,13 +90,33 @@ export async function POST(request: Request) {
       });
     } else {
       return NextResponse.json({
+        success: false,
         error: data.Details || 'Failed to initiate OTP voice call. Please try SMS.',
       }, { status: 400 });
     }
   } catch (error: any) {
     console.error('Voice OTP Call Error:', error);
     return NextResponse.json({
+      success: false,
       error: 'Server error while initiating voice OTP call. Please try SMS.',
     }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

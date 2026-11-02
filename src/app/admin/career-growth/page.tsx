@@ -23,8 +23,13 @@ import {
 } from '@/lib/firebase/careerGrowthService';
 import type {
   SkillCategory, Course, LearningPath, Lesson, Quiz, QuizQuestion,
-  Enrollment, Certificate, CareerGrowthStats, CareerGrowthSettings
+  Enrollment, Certificate, CareerGrowthStats, CareerGrowthSettings,
+  CourseDailyMilestone
 } from '@/lib/types/careerGrowth';
+import {
+  COURSE_LAUNCH_PRESETS, type CoursePreset,
+  generateDefaultSchedule, calculateDailyTargets
+} from '@/lib/career/coursePresets';
 
 export default function AdminCareerGrowthPage() {
   const { user: currentUser } = useAuth();
@@ -81,6 +86,56 @@ export default function AdminCareerGrowthPage() {
   const [modalMode, setModalMode] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [previewCourse, setPreviewCourse] = useState<Course | null>(null);
+
+  // Course Form & 1-Click Launch States
+  const [courseFormDays, setCourseFormDays] = useState<number>(7);
+  const [courseFormHours, setCourseFormHours] = useState<number>(1.5);
+  const [courseFormDailyPercent, setCourseFormDailyPercent] = useState<number>(14.3);
+  const [courseFormAudience, setCourseFormAudience] = useState<'all' | 'job_seeker' | 'employee' | 'business_owner'>('all');
+  const [courseFormSchedule, setCourseFormSchedule] = useState<CourseDailyMilestone[]>([]);
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
+
+  const applyPresetToForm = (preset: CoursePreset) => {
+    setSelectedPresetId(preset.id);
+    setCourseFormDays(preset.totalDays);
+    setCourseFormHours(preset.hoursPerDay);
+    setCourseFormDailyPercent(preset.dailyPercentageTarget);
+    setCourseFormAudience(preset.targetAudience);
+    setCourseFormSchedule(preset.dailySchedule);
+
+    // Auto-match or assign category
+    const matchedCategory = categories.find(c => c.name.toLowerCase() === preset.categoryName.toLowerCase());
+
+    setEditingItem({
+      title: preset.title,
+      titleTamil: preset.titleTamil,
+      categoryId: matchedCategory?.id || (categories[0]?.id || ''),
+      categoryName: preset.categoryName,
+      shortDescription: preset.shortDescription,
+      fullDescription: preset.fullDescription,
+      difficulty: preset.difficulty,
+      language: preset.language,
+      instructorName: preset.instructorName,
+      totalDays: preset.totalDays,
+      hoursPerDay: preset.hoursPerDay,
+      dailyPercentageTarget: preset.dailyPercentageTarget,
+      targetAudience: preset.targetAudience,
+      dailySchedule: preset.dailySchedule,
+      learningObjectives: preset.learningObjectives,
+      prerequisites: preset.prerequisites,
+      quizRequired: true,
+      certificateEligible: true,
+    });
+    toast.info('Course Preset Applied ⚡', `Pre-filled ${preset.title} (${preset.totalDays} Days, ${preset.dailyPercentageTarget}%/day target).`);
+  };
+
+  const handleDaysChange = (days: number) => {
+    const safeDays = Math.max(1, Math.min(180, days || 7));
+    setCourseFormDays(safeDays);
+    const targetPercent = Math.round((100 / safeDays) * 10) / 10;
+    setCourseFormDailyPercent(targetPercent);
+    setCourseFormSchedule(generateDefaultSchedule(safeDays, editingItem?.title || 'Skill Module'));
+  };
 
   // AI Assistant States
   const [aiType, setAiType] = useState<'course_outline' | 'lesson_content' | 'quiz_questions' | 'career_path' | 'skill_gap_analysis'>('course_outline');
@@ -196,44 +251,121 @@ export default function AdminCareerGrowthPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget as HTMLFormElement);
     const title = formData.get('title') as string;
+    const titleTamil = (formData.get('titleTamil') as string) || '';
     const shortDescription = (formData.get('shortDescription') as string) || '';
     const fullDescription = (formData.get('fullDescription') as string) || '';
     const categoryId = formData.get('categoryId') as string;
     const difficulty = formData.get('difficulty') as any;
-    const duration = (formData.get('duration') as string) || '4 hours';
+    const totalDays = Number(formData.get('totalDays')) || courseFormDays || 7;
+    const hoursPerDay = Number(formData.get('hoursPerDay')) || courseFormHours || 1.5;
+    const dailyPercentageTarget = Number(formData.get('dailyPercentageTarget')) || courseFormDailyPercent || Math.round((100 / totalDays) * 10) / 10;
+    const targetAudience = (formData.get('targetAudience') as any) || courseFormAudience || 'all';
+    const duration = (formData.get('duration') as string) || `${totalDays} Days (${Math.round(totalDays * hoursPerDay)} hrs)`;
     const language = formData.get('language') as any;
-    const instructorName = (formData.get('instructorName') as string) || 'THENIJOBS Expert';
+    const instructorName = (formData.get('instructorName') as string) || 'THENIJOBS Academy Faculty';
     const quizRequired = formData.get('quizRequired') === 'on';
     const certificateEligible = formData.get('certificateEligible') === 'on';
 
+    // Check if clicked "Publish Instantly" button
+    const publishImmediately = (e.nativeEvent as any)?.submitter?.dataset?.publish === 'true';
+
     const selectedCategory = categories.find(c => c.id === categoryId);
+    const finalSchedule = courseFormSchedule.length > 0
+      ? courseFormSchedule
+      : generateDefaultSchedule(totalDays, title);
 
     try {
       setActionLoading('save_course');
       if (editingItem?.id) {
         await updateCourse(editingItem.id, {
-          title, shortDescription, fullDescription, categoryId,
-          categoryName: selectedCategory?.name || '', difficulty, duration, language,
-          instructorName, quizRequired, certificateEligible
-        });
-        toast.success('Course Updated', `${title} updated.`);
-      } else {
-        await createCourse({
-          title, shortDescription, fullDescription, categoryId,
+          title, titleTamil, shortDescription, fullDescription, categoryId,
           categoryName: selectedCategory?.name || '', difficulty, duration, language,
           instructorName, quizRequired, certificateEligible,
-          lessonCount: 0, status: 'draft', visibility: 'public', tags: [],
-          learningObjectives: ['Gain practical career skills', 'Prepare for job interviews'],
-          prerequisites: ['Basic familiarity with the subject'],
+          totalDays, hoursPerDay, dailyPercentageTarget, targetAudience,
+          dailySchedule: finalSchedule,
+          ...(publishImmediately ? { status: 'published', visibility: 'public', publishedAt: new Date().toISOString() } : {})
+        });
+        toast.success(publishImmediately ? 'Course Launched & Published! 🚀' : 'Course Updated', `${title} updated successfully.`);
+      } else {
+        await createCourse({
+          title, titleTamil, shortDescription, fullDescription, categoryId,
+          categoryName: selectedCategory?.name || '', difficulty, duration, language,
+          instructorName, quizRequired, certificateEligible,
+          totalDays, hoursPerDay, dailyPercentageTarget, targetAudience,
+          dailySchedule: finalSchedule,
+          lessonCount: finalSchedule.length,
+          status: publishImmediately ? 'published' : 'draft',
+          visibility: 'public',
+          publishedAt: publishImmediately ? new Date().toISOString() : null,
+          tags: [selectedCategory?.name || 'Skills', 'Career Growth'],
+          learningObjectives: editingItem?.learningObjectives || ['Gain practical career skills', 'Pass the practical assessment and earn verified certification'],
+          prerequisites: editingItem?.prerequisites || ['Basic familiarity with the subject'],
           createdBy: currentUser?.uid || 'admin'
         });
-        toast.success('Course Created', `${title} created as draft.`);
+        toast.success(publishImmediately ? 'Course Launched Live! 🚀' : 'Course Created', `${title} is ${publishImmediately ? 'now live for Job Seekers & Employees' : 'saved as draft'}.`);
       }
       setModalMode(null);
       setEditingItem(null);
       await loadData();
     } catch (err: any) {
       toast.error('Course save failed', err.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSeedPresets = async () => {
+    if (!window.confirm('Launch all 6 official Theni skill development courses with pre-configured timelines, daily milestone targets, and syllabi?')) return;
+    try {
+      setActionLoading('seed_presets');
+      for (const preset of COURSE_LAUNCH_PRESETS) {
+        let cat = categories.find(c => c.name.toLowerCase() === preset.categoryName.toLowerCase());
+        let catId = cat?.id;
+        if (!catId) {
+          catId = await createSkillCategory({
+            name: preset.categoryName,
+            nameTamil: preset.categoryTamil,
+            description: `Official training courses for ${preset.categoryName}`,
+            order: categories.length + 1,
+            isActive: true,
+          });
+        }
+
+        const exists = courses.some(c => c.slug === preset.slug || c.title.toLowerCase() === preset.title.toLowerCase());
+        if (!exists) {
+          await createCourse({
+            title: preset.title,
+            titleTamil: preset.titleTamil,
+            shortDescription: preset.shortDescription,
+            fullDescription: preset.fullDescription,
+            categoryId: catId,
+            categoryName: preset.categoryName,
+            difficulty: preset.difficulty,
+            duration: `${preset.totalDays} Days (${preset.totalDays * preset.hoursPerDay} hrs)`,
+            totalDays: preset.totalDays,
+            hoursPerDay: preset.hoursPerDay,
+            dailyPercentageTarget: preset.dailyPercentageTarget,
+            targetAudience: preset.targetAudience,
+            dailySchedule: preset.dailySchedule,
+            language: preset.language,
+            instructorName: preset.instructorName,
+            quizRequired: true,
+            certificateEligible: true,
+            lessonCount: preset.dailySchedule.length,
+            status: 'published',
+            visibility: 'public',
+            tags: [preset.categoryName, ...preset.targetRoles],
+            learningObjectives: preset.learningObjectives,
+            prerequisites: preset.prerequisites,
+            createdBy: currentUser?.uid || 'admin'
+          });
+        }
+      }
+      toast.success('Academy Courses Live! 🚀', 'All 6 Theni skill development courses have been seeded and published.');
+      await loadData();
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Seeding failed', err.message);
     } finally {
       setActionLoading(null);
     }
@@ -717,17 +849,71 @@ export default function AdminCareerGrowthPage() {
       {/* ─── TAB 3: COURSES MANAGEMENT ───────────────────────────────────────── */}
       {activeTab === 'courses' && (
         <div className="space-y-4 mt-4">
+          {/* ⚡ 1-Click Course Launch Hero Card */}
+          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-5 shadow-lg space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-400/20 mb-2">
+                  <Sparkles size={14} className="text-yellow-400" />
+                  <span>THENIJOBS ACADEMY — COURSE LAUNCHER &amp; WORKFORCE HUB</span>
+                </div>
+                <h3 className="text-xl font-black text-white">
+                  Launch Skill Courses for Job Seekers &amp; Local Business Employees
+                </h3>
+                <p className="text-xs text-blue-100/80 max-w-2xl mt-1">
+                  Specify duration, total days, and daily completion percentage targets. Courses are immediately discoverable by seekers and assignable by local business owners.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => { setEditingItem(null); setModalMode('create_course'); }}
+                  className="px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
+                >
+                  <Plus size={16} />
+                  <span>Create Custom Course</span>
+                </button>
+                <button
+                  onClick={handleSeedPresets}
+                  disabled={actionLoading === 'seed_presets'}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles size={14} className="text-yellow-400" />
+                  <span>{actionLoading === 'seed_presets' ? 'Seeding Courses…' : '⚡ 1-Click Launch All 6 Presets'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Preset Badges */}
+            <div className="pt-2 border-t border-white/10">
+              <p className="text-[11px] font-bold text-blue-200 mb-2">
+                ⚡ 1-Click Launch Presets (Click any to pre-fill and launch in seconds):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {COURSE_LAUNCH_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      applyPresetToForm(p);
+                      setModalMode('create_course');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-xs font-semibold text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <span>{p.title.split('&')[0].trim()}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-400/20 text-blue-200 font-mono font-bold">
+                      {p.totalDays}D • {p.dailyPercentageTarget}%/day
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-base font-bold text-slate-900">Courses Directory</h3>
-              <p className="text-xs text-slate-500">Create, publish, preview, and archive skill development courses.</p>
+              <p className="text-xs text-slate-500">Manage all launched courses, daily targets, enrollments, and status.</p>
             </div>
-            <button
-              onClick={() => { setEditingItem(null); setModalMode('create_course'); }}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs self-start sm:self-auto"
-            >
-              <Plus size={14} /> Create Course
-            </button>
           </div>
 
           {/* Filters Bar */}
@@ -768,7 +954,7 @@ export default function AdminCareerGrowthPage() {
             <div className="p-10 bg-white rounded-2xl border border-slate-200 text-center text-slate-500">
               <BookOpen size={36} className="mx-auto mb-2 text-slate-300" />
               <p className="font-bold text-slate-700">No courses found matching filter</p>
-              <p className="text-xs mt-1">Click &quot;Create Course&quot; to add a new curriculum.</p>
+              <p className="text-xs mt-1">Click &quot;⚡ 1-Click Launch All 6 Presets&quot; or &quot;Create Custom Course&quot; to add a new curriculum.</p>
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
@@ -778,8 +964,8 @@ export default function AdminCareerGrowthPage() {
                     <tr>
                       <th className="py-3 px-4">Course</th>
                       <th className="py-3 px-3">Category</th>
-                      <th className="py-3 px-3">Difficulty</th>
-                      <th className="py-3 px-3">Duration</th>
+                      <th className="py-3 px-3">Timeline &amp; Target</th>
+                      <th className="py-3 px-3">Audience</th>
                       <th className="py-3 px-3">Status</th>
                       <th className="py-3 px-3 text-center">Lessons</th>
                       <th className="py-3 px-3 text-center">Enrolled</th>
@@ -792,18 +978,30 @@ export default function AdminCareerGrowthPage() {
                         <td className="py-3 px-4 font-semibold text-slate-900 max-w-xs truncate">
                           <div>
                             <span className="font-bold text-slate-900">{course.title}</span>
+                            {course.titleTamil && (
+                              <span className="block text-[10px] text-slate-500 font-normal truncate">
+                                {course.titleTamil}
+                              </span>
+                            )}
                             <span className="block text-[10px] text-slate-400 font-normal truncate mt-0.5">
                               By {course.instructorName || 'THENIJOBS'} · {course.language?.toUpperCase() || 'BOTH'}
                             </span>
                           </div>
                         </td>
-                        <td className="py-3 px-3 text-slate-600">{course.categoryName || 'General'}</td>
+                        <td className="py-3 px-3 text-slate-600 font-medium">{course.categoryName || 'General'}</td>
                         <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 capitalize">
-                            {course.difficulty}
+                          <div className="space-y-0.5">
+                            <span className="font-bold text-slate-800 block">{course.totalDays || 7} Days</span>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 inline-block">
+                              📈 {course.dailyPercentageTarget || Math.round(100 / (course.totalDays || 7))}% / day
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                            {course.targetAudience === 'employee' ? 'Staff Only' : course.targetAudience === 'job_seeker' ? 'Seekers' : 'Seekers & Staff'}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-slate-600">{course.duration}</td>
                         <td className="py-3 px-3">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             course.status === 'published' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
@@ -813,7 +1011,7 @@ export default function AdminCareerGrowthPage() {
                             {course.status.toUpperCase()}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-center font-bold text-slate-700">{course.lessonCount || 0}</td>
+                        <td className="py-3 px-3 text-center font-bold text-slate-700">{course.lessonCount || (course.dailySchedule ? course.dailySchedule.length : 0)}</td>
                         <td className="py-3 px-3 text-center font-bold text-blue-600">{course.enrollmentCount || 0}</td>
                         <td className="py-3 px-4 text-right space-x-1 whitespace-nowrap">
                           {course.status === 'published' ? (
@@ -834,6 +1032,17 @@ export default function AdminCareerGrowthPage() {
                             </button>
                           )}
                           <button
+                            onClick={() => {
+                              const url = `https://www.thenijobs.com/courses/${course.slug || course.id}`;
+                              navigator.clipboard.writeText(url);
+                              toast.success('Course Link Copied! 📋', 'Share with Job Seekers or Company Employees.');
+                            }}
+                            className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer inline-block"
+                            title="Copy link for seekers & employees"
+                          >
+                            <Copy size={13} />
+                          </button>
+                          <button
                             onClick={() => { setSelectedCourseId(course.id); setActiveTab('lessons'); }}
                             className="px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-bold cursor-pointer"
                             title="Manage lessons"
@@ -848,7 +1057,15 @@ export default function AdminCareerGrowthPage() {
                             <Copy size={13} />
                           </button>
                           <button
-                            onClick={() => { setEditingItem(course); setModalMode('create_course'); }}
+                            onClick={() => {
+                              setEditingItem(course);
+                              setCourseFormDays(course.totalDays || 7);
+                              setCourseFormHours(course.hoursPerDay || 1.5);
+                              setCourseFormDailyPercent(course.dailyPercentageTarget || 14.3);
+                              setCourseFormAudience(course.targetAudience || 'all');
+                              setCourseFormSchedule(course.dailySchedule || []);
+                              setModalMode('create_course');
+                            }}
                             className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer inline-block"
                             title="Edit course details"
                           >
@@ -1503,95 +1720,219 @@ export default function AdminCareerGrowthPage() {
       {/* ─── MODAL: CREATE / EDIT COURSE ─────────────────────────────────────── */}
       {modalMode === 'create_course' && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">
-                {editingItem ? 'Edit Course' : 'Create New Course'}
-              </h3>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <GraduationCap size={18} className="text-blue-600" />
+                  <span>{editingItem ? 'Edit Course Curriculum' : 'Launch New Skill Course'}</span>
+                </h3>
+                <p className="text-xs text-slate-500">Configure timeline, total days, and daily completion percentage targets.</p>
+              </div>
               <button onClick={() => setModalMode(null)} className="p-1 rounded-xl hover:bg-slate-100 cursor-pointer text-slate-400">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCourse} className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 block mb-1">Course Title *</label>
-                <input
-                  name="title"
-                  defaultValue={editingItem?.title || ''}
-                  required
-                  placeholder="e.g. Tally Prime with GST for Local Businesses"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
-                />
+            {/* ⚡ 1-Click Course Launch Presets Panel */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-blue-600" />
+                  <span>⚡ 1-Click Theni Course Launch Presets (Auto-fill):</span>
+                </span>
+                <span className="text-[10px] font-semibold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-full">
+                  Click to pre-fill
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto">
+                {COURSE_LAUNCH_PRESETS.map(preset => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPresetToForm(preset)}
+                    className={`text-left px-2.5 py-1.5 rounded-xl border transition-all text-[11px] font-semibold truncate shadow-xs cursor-pointer ${
+                      selectedPresetId === preset.id
+                        ? 'border-blue-600 bg-blue-600 text-white font-bold'
+                        : 'border-blue-200 bg-white hover:bg-blue-50 text-slate-800'
+                    }`}
+                    title={`${preset.title} (${preset.totalDays} Days, ${preset.dailyPercentageTarget}%/day)`}
+                  >
+                    <span className="block truncate font-bold">{preset.title.split('&')[0].trim()}</span>
+                    <span className={`block text-[10px] ${selectedPresetId === preset.id ? 'text-blue-100' : 'text-slate-500'}`}>
+                      {preset.totalDays} Days • {preset.dailyPercentageTarget}%/day
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Course Title (English) *</label>
+                  <input
+                    name="title"
+                    defaultValue={editingItem?.title || ''}
+                    required
+                    placeholder="e.g. Tally Prime with GST Billing Mastery"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Title in Tamil (தமிழ் தலைப்பு)</label>
+                  <input
+                    name="titleTamil"
+                    defaultValue={editingItem?.titleTamil || ''}
+                    placeholder="எ.கா. டாலி பிரைம் & ஜிஎஸ்டி பில்லிங் பயிற்சி"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Skill Category *</label>
                   <select
                     name="categoryId"
                     defaultValue={editingItem?.categoryId || categories[0]?.id || ''}
                     required
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
                   >
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Difficulty Level</label>
+                  <label className="font-bold text-slate-700 block mb-1">Target Audience *</label>
+                  <select
+                    name="targetAudience"
+                    value={courseFormAudience}
+                    onChange={e => setCourseFormAudience(e.target.value as any)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
+                  >
+                    <option value="all">🌐 Both Job Seekers &amp; Business Employees</option>
+                    <option value="job_seeker">🎓 Job Seekers Only</option>
+                    <option value="employee">🏢 Business Staff / Employees Only</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Timeline & Daily Percentage Targets */}
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 flex items-center gap-1.5 text-xs">
+                    <Clock size={14} className="text-emerald-600" />
+                    <span>Timeline &amp; Daily Percentage Completion Target</span>
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    {courseFormDailyPercent}% Daily Target
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Total Days *</label>
+                    <input
+                      type="number"
+                      name="totalDays"
+                      min="1"
+                      max="180"
+                      value={courseFormDays}
+                      onChange={e => handleDaysChange(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold"
+                    />
+                    <span className="text-[10px] text-slate-400">Total days to finish</span>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Hours / Day</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      name="hoursPerDay"
+                      min="0.5"
+                      max="12"
+                      value={courseFormHours}
+                      onChange={e => setCourseFormHours(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold"
+                    />
+                    <span className="text-[10px] text-slate-400">Daily study hours</span>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Daily Target %</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      name="dailyPercentageTarget"
+                      value={courseFormDailyPercent}
+                      onChange={e => setCourseFormDailyPercent(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold"
+                    />
+                    <span className="text-[10px] text-slate-400">Auto: 100 ÷ {courseFormDays} days</span>
+                  </div>
+                </div>
+
+                {/* Day-by-day Milestones preview */}
+                <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                  <span className="font-semibold text-slate-700 block text-[11px]">
+                    Milestone Progression Preview ({courseFormDays} Days):
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 max-h-28 overflow-y-auto">
+                    {calculateDailyTargets(courseFormDays).map((target, idx) => (
+                      <div key={idx} className="p-1.5 rounded-lg bg-white border border-slate-200 text-center">
+                        <span className="block text-[10px] text-slate-400 font-bold">Day {idx + 1}</span>
+                        <span className="block text-xs font-black text-emerald-700">{target}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Difficulty</label>
                   <select
                     name="difficulty"
                     defaultValue={editingItem?.difficulty || 'beginner'}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
                   >
                     <option value="beginner">Beginner</option>
                     <option value="intermediate">Intermediate</option>
                     <option value="advanced">Advanced</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="font-bold text-slate-700 block mb-1">Estimated Duration</label>
-                  <input
-                    name="duration"
-                    defaultValue={editingItem?.duration || '4 hours'}
-                    placeholder="e.g. 6 hours"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200"
-                  />
-                </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Language</label>
                   <select
                     name="language"
                     defaultValue={editingItem?.language || 'both'}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
                   >
                     <option value="tamil">Tamil (தமிழ்)</option>
                     <option value="english">English</option>
-                    <option value="both">Tamil &amp; English</option>
+                    <option value="both">Tamil &amp; English (Bilingual)</option>
                   </select>
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">Instructor</label>
                   <input
                     name="instructorName"
-                    defaultValue={editingItem?.instructorName || 'THENIJOBS Academy'}
+                    defaultValue={editingItem?.instructorName || 'THENIJOBS Academy Faculty'}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Short Description *</label>
+                <label className="font-bold text-slate-700 block mb-1">Short Description (Summary) *</label>
                 <textarea
                   name="shortDescription"
                   defaultValue={editingItem?.shortDescription || ''}
                   rows={2}
                   required
-                  placeholder="Summary displayed on course cards…"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200"
+                  placeholder="Summary displayed on course cards and mobile preview…"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium"
                 />
               </div>
 
@@ -1600,8 +1941,8 @@ export default function AdminCareerGrowthPage() {
                 <textarea
                   name="fullDescription"
                   defaultValue={editingItem?.fullDescription || ''}
-                  rows={4}
-                  placeholder="In-depth details of what learners will master…"
+                  rows={3}
+                  placeholder="Comprehensive details on topics, hands-on tasks, and target job roles…"
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 font-sans"
                 />
               </div>
@@ -1614,7 +1955,7 @@ export default function AdminCareerGrowthPage() {
                     defaultChecked={editingItem ? editingItem.quizRequired : true}
                     className="rounded text-blue-600"
                   />
-                  <span className="font-bold text-slate-800">Requires Quiz to Complete</span>
+                  <span className="font-bold text-slate-800">Requires Practical Quiz / Test</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -1624,24 +1965,37 @@ export default function AdminCareerGrowthPage() {
                     defaultChecked={editingItem ? editingItem.certificateEligible : true}
                     className="rounded text-blue-600"
                   />
-                  <span className="font-bold text-slate-800">Issues Certificate</span>
+                  <span className="font-bold text-slate-800">Issues Official Verified Certificate</span>
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              {/* Action Buttons: 1-Click Launch vs Draft */}
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setModalMode(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-bold cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold cursor-pointer hover:bg-slate-50"
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
+                  data-publish="false"
                   disabled={actionLoading === 'save_course'}
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-bold cursor-pointer disabled:opacity-50"
                 >
-                  {actionLoading === 'save_course' ? 'Saving…' : 'Save Course'}
+                  Save as Draft
+                </button>
+
+                <button
+                  type="submit"
+                  data-publish="true"
+                  disabled={actionLoading === 'save_course'}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold cursor-pointer shadow-md disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <Sparkles size={14} />
+                  <span>{actionLoading === 'save_course' ? 'Launching…' : '🚀 Launch & Publish Instantly'}</span>
                 </button>
               </div>
             </form>

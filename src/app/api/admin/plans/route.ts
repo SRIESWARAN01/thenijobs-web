@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { SUBSCRIPTION_PLANS, FEATURE_ACCESS_MATRIX_20_ROWS, FeatureMatrixRow } from '@/lib/constants';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 const SETTINGS_DOC = 'platformSettings';
 const PLANS_SUBDOC = 'subscriptionPlans';
@@ -100,7 +101,7 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { plans, featureMatrix, resetToDefault } = body;
 
     // Reset workflow
@@ -204,4 +205,15 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'GET, PUT, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

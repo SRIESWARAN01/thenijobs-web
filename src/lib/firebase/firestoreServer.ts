@@ -87,8 +87,8 @@ async function getServerAuthHeader(): Promise<Record<string, string>> {
       });
 
       if (res.ok) {
-        const d = await res.json();
-        if (d.access_token) {
+        const d = await res.json().catch(() => ({}));
+        if (d?.access_token) {
           cachedAccessToken = {
             token: d.access_token,
             expiresAt: now + (d.expires_in || 3600) * 1000,
@@ -239,8 +239,8 @@ async function fetchDocumentREST<T>(collectionPath: string, docId: string): Prom
       return null;
     }
 
-    const doc = await res.json();
-    if (!doc.fields) return null;
+    const doc = await res.json().catch(() => null);
+    if (!doc?.fields) return null;
 
     return {
       id: extractDocId(doc.name),
@@ -328,9 +328,9 @@ async function runQueryREST<T>(
       return [];
     }
 
-    const results = await res.json();
+    const results = await res.json().catch(() => []);
 
-    return results
+    return (Array.isArray(results) ? results : [])
       .filter((r: any) => r.document)
       .map((r: any) => ({
         id: extractDocId(r.document.name),

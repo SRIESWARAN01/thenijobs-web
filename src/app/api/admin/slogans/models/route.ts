@@ -5,6 +5,7 @@ import {
 } from '@/lib/billing/sloganService';
 import { BILLING_MODELS } from '@/lib/billing/sloganLibrary';
 import { verifyAdminAuth } from '@/lib/api/adminAuth';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 /**
  * GET /api/admin/slogans/models
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
   if (!authResult.authorized) return authResult.response;
 
   try {
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { modelId, sloganIdTa, sloganIdEn } = body;
 
     if (!modelId) {
@@ -71,4 +72,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
+import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 /**
  * SEEKERPRIVACY-1 — creates a Razorpay order for the ₹100/year seeker public-profile fee.
@@ -12,10 +13,10 @@ import { SEEKER_PUBLIC_PROFILE_FEE_INR } from '@/lib/constants';
  */
 export async function POST(request: Request) {
   try {
-    const { userId } = await request.json();
+    const { userId } = await safeReadRequestBody<{ userId?: string }>(request, {});
 
     if (!userId || typeof userId !== 'string') {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 });
     }
 
     const amount = SEEKER_PUBLIC_PROFILE_FEE_INR;
@@ -45,15 +46,18 @@ export async function POST(request: Request) {
         });
 
         if (rpResponse.ok) {
-          const rpOrder = await rpResponse.json();
-          return NextResponse.json({
-            success: true,
-            orderId: rpOrder.id,
-            amount,
-            currency: 'INR',
-            key: razorpayKey,
-            isRazorpay: true,
-          });
+          const parsed = await safeParseResponse<any>(rpResponse);
+          const rpOrder = parsed.data;
+          if (rpOrder?.id) {
+            return NextResponse.json({
+              success: true,
+              orderId: rpOrder.id,
+              amount,
+              currency: 'INR',
+              key: razorpayKey,
+              isRazorpay: true,
+            });
+          }
         }
         console.error('[Seeker Public Profile] Razorpay order creation failed:', rpResponse.status);
       } catch (rpErr) {
@@ -73,6 +77,24 @@ export async function POST(request: Request) {
     }, { status: 503 });
   } catch (error: any) {
     console.error('[Seeker Public Profile Create Order Error]:', error?.message || error);
-    return NextResponse.json({ error: 'Failed to create payment order' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to create payment order' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

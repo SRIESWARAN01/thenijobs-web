@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 const reconcileRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
@@ -33,16 +34,16 @@ function isReconcileRateLimited(identifier: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const { companyId, ownerUid } = await req.json();
+    const { companyId, ownerUid } = await safeReadRequestBody<{ companyId?: string; ownerUid?: string }>(req, {});
 
     if (!companyId || typeof companyId !== 'string') {
-      return NextResponse.json({ error: 'companyId is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'companyId is required' }, { status: 400 });
     }
 
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
     const rateLimitKey = `${ip}:${companyId}`;
     if (isReconcileRateLimited(rateLimitKey)) {
-      return NextResponse.json({ error: 'Too many reconciliation requests. Please wait a minute.' }, { status: 429 });
+      return NextResponse.json({ success: false, error: 'Too many reconciliation requests. Please wait a minute.' }, { status: 429 });
     }
 
     const db = getAdminFirestore();
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
     const companySnap = await companyRef.get();
 
     if (!companySnap.exists) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
     }
 
     const company = companySnap.data()!;
@@ -153,12 +154,31 @@ export async function POST(req: NextRequest) {
     console.log(`[Reconcile API] Reconciled company "${companyId}" as "${expiryType}".`);
 
     return NextResponse.json({
+      success: true,
       reconciled: true,
       expiryType,
       companyId,
     });
   } catch (err: any) {
     console.error('[Reconcile API] Error:', err);
-    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: err.message || 'Internal error' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

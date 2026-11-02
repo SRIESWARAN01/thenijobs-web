@@ -20,11 +20,22 @@ export interface SkillCategory {
 // ===== COURSE =====
 export type CourseStatus = 'draft' | 'pending_review' | 'published' | 'unpublished' | 'archived';
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+export type CourseDifficulty = DifficultyLevel;
 export type CourseLanguage = 'tamil' | 'english' | 'both';
+export type CourseTargetAudience = 'all' | 'job_seeker' | 'employee' | 'business_owner';
+
+export interface CourseDailyMilestone {
+  dayNumber: number;
+  title: string;
+  description: string;
+  percentageTarget: number;
+  keyTakeaway?: string;
+}
 
 export interface Course {
   id: string;
   title: string;
+  titleTamil?: string;
   slug: string;
   shortDescription: string;
   fullDescription: string;
@@ -37,6 +48,16 @@ export interface Course {
   difficulty: DifficultyLevel;
   duration: string;
   durationMinutes?: number;
+  /** Total course duration in days (e.g. 5, 7, 10, 15, 30 days) */
+  totalDays?: number;
+  /** Expected study hours per day (e.g. 1, 2 hours) */
+  hoursPerDay?: number;
+  /** Target percentage completion expected per day (e.g. 10% / day) */
+  dailyPercentageTarget?: number;
+  /** Primary target audience (Seekers, Employees, or All) */
+  targetAudience?: CourseTargetAudience;
+  /** Day-by-day milestone schedule with daily targets */
+  dailySchedule?: CourseDailyMilestone[];
   language: CourseLanguage;
   learningObjectives: string[];
   prerequisites: string[];

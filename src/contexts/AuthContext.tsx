@@ -149,26 +149,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let isMounted = true;
 
-    // Fast-path: Check cached user on client mount
+    // Fast-path: Hydrate cached user on client mount to avoid UI flicker,
+    // but KEEP loading=true until onAuthStateChanged explicitly confirms session.
     try {
       const cached = localStorage.getItem('tj_cached_user');
       if (cached) {
         setUser(JSON.parse(cached));
-      } else {
-        setLoading(false);
       }
     } catch {
-      setLoading(false);
+      // Ignore localStorage parse errors
     }
 
-    // AUTH-1: this used to defer subscribing via requestIdleCallback (up to a 2000ms
-    // timeout, or a 50ms setTimeout fallback) "so critical render and LCP complete first" —
-    // but every page that gates its content on `loading` (every /seeker, /employer, /admin
-    // dashboard) shows a spinner regardless, so the defer bought no LCP benefit there, only a
-    // real cost: Header.tsx renders its "Sign In" button whenever `!mounted || !user`, so an
-    // already-logged-in visitor saw it instead of their own account on every page load, for
-    // up to two seconds. Subscribing immediately is what Firebase's own guidance recommends;
-    // the listener stays a cheap, stateless subscription and its callback stays async.
+    // AUTH-1: Immediate listener subscription per Firebase production guidance.
     let unsubscribe: (() => void) | null = null;
     try {
       unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -177,7 +169,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (fbUser) {
           const profile = await fetchUserProfile(fbUser.uid);
-          if (isMounted) setUser(profile);
+          if (isMounted) {
+            if (profile) {
+              setUser(profile);
+            } else {
+              // Graceful fallback: check if cached profile matches current auth uid
+              try {
+                const cachedStr = localStorage.getItem('tj_cached_user');
+                if (cachedStr) {
+                  const cachedObj = JSON.parse(cachedStr);
+                  if (cachedObj?.uid === fbUser.uid) {
+                    setUser(cachedObj);
+                  } else {
+                    setUser(null);
+                  }
+                } else {
+                  setUser(null);
+                }
+              } catch {
+                setUser(null);
+              }
+            }
+          }
         } else {
           if (isMounted) setUser(null);
           try { localStorage.removeItem('tj_cached_user'); } catch {}

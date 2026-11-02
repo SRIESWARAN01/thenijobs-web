@@ -67,8 +67,8 @@ async function getIndexingAccessToken(): Promise<string | null> {
     });
 
     if (res.ok) {
-      const data = await res.json();
-      if (data.access_token) {
+      const data = await res.json().catch(() => ({}));
+      if (data?.access_token) {
         cachedIndexingToken = {
           token: data.access_token,
           expiresAt: now + (data.expires_in || 3600) * 1000,
@@ -141,7 +141,7 @@ export async function notifyGoogleJobPosting(
     });
 
     if (res.ok) {
-      const body = await res.json();
+      const body = await res.json().catch(() => ({}));
       return {
         success: true,
         url: jobUrl,

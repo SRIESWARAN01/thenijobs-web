@@ -10,7 +10,7 @@ import {
   Plus, TrendingUp, Settings, Key, BadgeCheck,
   Clock, AlertTriangle, CheckCircle, CheckCircle2, ShieldAlert,
   PhoneCall, Check, Zap, ArrowRight, MessageCircle,
-  Loader2, RefreshCw, AlertCircle, XCircle, Printer,
+  Loader2, RefreshCw, AlertCircle, XCircle, Printer, GraduationCap,
 } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,6 +35,7 @@ const EMPLOYER_NAV = [
   { label: 'Candidates', icon: Users2, href: '/employer/candidates' },
   { label: 'Interviews', icon: Calendar, href: '/employer/interviews' },
   { label: 'Talent Search', icon: Search, href: '/employer/talent-search' },
+  { label: 'Staff Training & Academy', icon: GraduationCap, href: '/employer/training' },
   { label: 'Leads', icon: TrendingUp, href: '/employer/leads' },
   { label: 'Messages', icon: MessageSquare, href: '/employer/messages' },
   { label: 'Reports', icon: BarChart3, href: '/employer/reports' },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { SUBSCRIPTION_PLANS } from '@/lib/constants';
 import { verifyAdminAuth } from '@/lib/api/adminAuth';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 /**
  * Fallback admin UID verification for development or token inspection.
@@ -166,7 +167,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: authCheck.error }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { companyId, plan = 'standard', notes = 'Admin renewal' } = body;
 
     if (!companyId) {
@@ -316,7 +317,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: false, error: authCheck.error }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { subscriptionId, updates } = body;
 
     if (!subscriptionId || !updates) {
@@ -433,4 +434,15 @@ export async function DELETE(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'GET, POST, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

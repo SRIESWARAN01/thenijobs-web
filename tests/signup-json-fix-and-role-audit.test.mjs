@@ -13,8 +13,8 @@ test('THENIJOBS — Signup API JSON Parsing & Role Workflow Audit Suite', async 
 
     // Safe body parsing check
     assert.ok(
-      content.includes('req.json()') && (content.includes('catch') || content.includes('try')),
-      'select-role route must wrap body parsing in try/catch or .catch() to handle empty payloads'
+      content.includes('safeReadRequestBody') || (content.includes('req.json()') && (content.includes('catch') || content.includes('try'))),
+      'select-role route must use safeReadRequestBody or wrap body parsing in try/catch or .catch() to handle empty payloads'
     );
 
     // Forbidden escalation check

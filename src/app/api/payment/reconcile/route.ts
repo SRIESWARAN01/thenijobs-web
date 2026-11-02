@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrReconcilePaymentStatus } from '@/lib/firebase/paymentAdminService';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 /**
  * Payment Reconciliation API
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
   const paymentId = searchParams.get('paymentId') || undefined;
 
   if (!orderId && !paymentId) {
-    return NextResponse.json({ error: 'orderId or paymentId is required' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'orderId or paymentId is required' }, { status: 400 });
   }
 
   try {
@@ -27,24 +28,35 @@ export async function GET(request: Request) {
     return NextResponse.json(result);
   } catch (err: any) {
     console.error('[Payment Reconcile GET Error]:', err);
-    return NextResponse.json({ error: err?.message || 'Reconciliation error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: err?.message || 'Reconciliation error' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await safeReadRequestBody<{ orderId?: string; paymentId?: string }>(request, {});
     const orderId = body.orderId || undefined;
     const paymentId = body.paymentId || undefined;
 
     if (!orderId && !paymentId) {
-      return NextResponse.json({ error: 'orderId or paymentId is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'orderId or paymentId is required' }, { status: 400 });
     }
 
     const result = await getOrReconcilePaymentStatus(orderId, paymentId);
     return NextResponse.json(result);
   } catch (err: any) {
     console.error('[Payment Reconcile POST Error]:', err);
-    return NextResponse.json({ error: err?.message || 'Reconciliation error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: err?.message || 'Reconciliation error' }, { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

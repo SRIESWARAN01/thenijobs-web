@@ -1,21 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Mail, Shield } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Mail, Shield, Loader2 } from 'lucide-react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
+import { useAuth } from '@/contexts/AuthContext';
+import { isSafeRedirectUrl } from '@/lib/authRedirect';
 import { Button, Card } from '@/components/dashboard';
 
 export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white">
+          <Loader2 className="animate-spin text-blue-600" size={32} />
+        </div>
+      }
+    >
+      <AdminLoginForm />
+    </Suspense>
+  );
+}
+
+function AdminLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get('redirect');
+  const targetRedirect = isSafeRedirectUrl(rawRedirect) && rawRedirect!.startsWith('/admin')
+    ? rawRedirect!
+    : '/admin/dashboard';
+
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-redirect if already signed in with admin privileges
+  useEffect(() => {
+    if (!authLoading && user && (user.role === 'admin' || user.role === 'super_admin')) {
+      router.replace(targetRedirect);
+    }
+  }, [user, authLoading, targetRedirect, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +61,7 @@ export default function AdminLoginPage() {
       if (userDoc.exists()) {
         const data = userDoc.data();
         if (data.role === 'admin' || data.role === 'super_admin') {
-          router.push('/admin/dashboard');
+          router.push(targetRedirect);
           return;
         }
       }

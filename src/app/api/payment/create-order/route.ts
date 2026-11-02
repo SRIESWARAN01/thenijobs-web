@@ -1,26 +1,34 @@
 import { NextResponse } from 'next/server';
 import { ALL_VALID_PLAN_PRICES } from '@/lib/constants';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 const PLAN_PRICES = ALL_VALID_PLAN_PRICES;
 
 export async function POST(request: Request) {
   try {
-    const { planSlug, planName, amount: clientAmount, companyId, userId, role } = await request.json();
+    const { planSlug, planName, amount: clientAmount, companyId, userId, role } = await safeReadRequestBody<{
+      planSlug?: string;
+      planName?: string;
+      amount?: number;
+      companyId?: string;
+      userId?: string;
+      role?: string;
+    }>(request, {});
 
     const expectedAmount = typeof planSlug === 'string' ? PLAN_PRICES[planSlug] : undefined;
 
     if (expectedAmount === undefined) {
-      return NextResponse.json({ error: 'That subscription plan was not recognised.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'That subscription plan was not recognised.' }, { status: 400 });
     }
 
     if (expectedAmount <= 0) {
-      return NextResponse.json({ error: 'No payment is required for this plan.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'No payment is required for this plan.' }, { status: 400 });
     }
 
     if (clientAmount !== undefined && clientAmount !== expectedAmount) {
       console.error(`[Payment Create Order] AMOUNT MISMATCH. Plan "${planSlug}" expects ₹${expectedAmount}, client sent ₹${clientAmount}.`);
-      return NextResponse.json({ error: 'Payment amount does not match the selected plan. Please refresh and try again.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Payment amount does not match the selected plan. Please refresh and try again.' }, { status: 400 });
     }
 
     // The order is always created for the server-derived price, never whatever the client sent.
@@ -79,7 +87,14 @@ export async function POST(request: Request) {
       });
 
       if (rpResponse.ok) {
-        const rpOrder = await rpResponse.json();
+        const parsed = await safeParseResponse<any>(rpResponse);
+        const rpOrder = parsed.data;
+        if (!rpOrder?.id) {
+          return NextResponse.json({
+            success: false,
+            error: 'Razorpay Gateway returned an unexpected response. Please try again.',
+          }, { status: 502 });
+        }
 
         // Securely record created order in Firestore
         try {
@@ -128,6 +143,24 @@ export async function POST(request: Request) {
     }
   } catch (error: any) {
     console.error('[Payment Create Order Error]:', error);
-    return NextResponse.json({ error: 'Failed to create payment order' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to create payment order' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

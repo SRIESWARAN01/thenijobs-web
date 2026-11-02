@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { notifyGoogleJobPosting } from '@/lib/seo/googleIndexingApi';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = await safeReadRequestBody<any>(request, {});
     const { jobId, slug, type = 'URL_UPDATED' } = body;
 
     let targetSlug = slug;
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
 
     if (!targetSlug) {
       return NextResponse.json(
-        { error: 'Missing jobId or slug. A valid job identifier is required.' },
+        { success: false, error: 'Missing jobId or slug. A valid job identifier is required.' },
         { status: 400 }
       );
     }
@@ -51,8 +52,20 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return NextResponse.json({
+    success: true,
     service: 'THENIJOBS Google Indexing API Integration',
     status: 'operational',
     policy: 'Strictly restricted to JobPosting URLs on https://www.thenijobs.com/jobs/*',
+  });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
   });
 }

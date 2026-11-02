@@ -64,7 +64,7 @@ export async function fetchRazorpayPayment(paymentId: string): Promise<RazorpayP
       return null;
     }
 
-    return await res.json();
+    return await res.json().catch(() => null);
   } catch (err) {
     console.error('[paymentAdminService] Error fetching Razorpay payment:', err);
     return null;
@@ -165,8 +165,8 @@ async function getFallbackBearerToken(): Promise<string | null> {
         }),
       });
 
-      const d = await res.json();
-      if (d.access_token) return d.access_token;
+      const d = await res.json().catch(() => ({}));
+      if (d?.access_token) return d.access_token;
     } catch (jwtErr) {
       console.warn('[paymentAdminService] Service account OAuth grant failed:', jwtErr);
     }
@@ -210,8 +210,8 @@ export async function executeRestFirestoreGet(collection: string, docId: string)
     });
 
     if (res.ok) {
-      const data = await res.json();
-      return parseFirestoreRestFields(data.fields);
+      const data = await res.json().catch(() => ({}));
+      return parseFirestoreRestFields(data?.fields);
     }
   } catch (err) {
     console.warn(`[paymentAdminService] REST get ${collection}/${docId} error:`, err);

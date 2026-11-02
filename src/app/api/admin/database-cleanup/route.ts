@@ -11,6 +11,7 @@ import {
   DESIGNATED_RETAINED_ADMIN_EMAIL,
   RETAINED_PRODUCTION_COMPANIES,
 } from '@/lib/constants';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function GET(req: NextRequest) {
   try {
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     await syncClockSkew();
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { action = 'dry_run', confirmationKey = '' } = body;
 
     const auth = getAdminAuth();
@@ -365,4 +366,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

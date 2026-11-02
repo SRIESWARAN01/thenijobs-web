@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AI_CONNECTION_FEE_INR } from '@/lib/constants';
 import { verifyRequestIdToken } from '@/lib/ai/verifyIdToken';
+import { safeParseResponse } from '@/lib/api/safeResponse';
 
 /**
  * AI-CONNECT-1 -- creates a Razorpay order for the one-time ₹50 AI-key connection fee.
@@ -47,15 +48,18 @@ export async function POST(req: NextRequest) {
         });
 
         if (rpResponse.ok) {
-          const rpOrder = await rpResponse.json();
-          return NextResponse.json({
-            success: true,
-            orderId: rpOrder.id,
-            amount,
-            currency: 'INR',
-            key: razorpayKey,
-            isRazorpay: true,
-          });
+          const parsed = await safeParseResponse<any>(rpResponse);
+          const rpOrder = parsed.data;
+          if (rpOrder?.id) {
+            return NextResponse.json({
+              success: true,
+              orderId: rpOrder.id,
+              amount,
+              currency: 'INR',
+              key: razorpayKey,
+              isRazorpay: true,
+            });
+          }
         }
         console.error('[AI Connection Fee] Razorpay order creation failed:', rpResponse.status);
       } catch (rpErr) {
@@ -72,6 +76,17 @@ export async function POST(req: NextRequest) {
     }, { status: 503 });
   } catch (error: any) {
     console.error('[AI Connection Fee Create Order Error]:', error?.message || error);
-    return NextResponse.json({ error: 'Failed to create payment order' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to create payment order' }, { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

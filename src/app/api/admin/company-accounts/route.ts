@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore, getAdminAuth, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 async function verifyAdmin(req: NextRequest) {
   await syncClockSkew();
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { db, auth, uid: adminUid } = check;
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { action, companyId, authUid, newPassword } = body;
 
     if (action === 'reset-password') {
@@ -171,4 +172,15 @@ export async function POST(req: NextRequest) {
     console.error('[API Admin Company Accounts POST] Error:', error);
     return NextResponse.json({ success: false, error: error.message || 'Failed to update company account' }, { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

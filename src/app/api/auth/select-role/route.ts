@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { resolveAuthRedirect } from '@/lib/authRedirect';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 const ALLOWED_PUBLIC_ROLES = ['job_seeker', 'business_owner'] as const;
 type AllowedRole = (typeof ALLOWED_PUBLIC_ROLES)[number];
@@ -10,13 +11,7 @@ const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
 export async function POST(req: NextRequest) {
   try {
-    let body: any = null;
-    try {
-      body = await req.json();
-    } catch {
-      // Handle empty body or malformed JSON payload defensively
-      body = {};
-    }
+    const body = await safeReadRequestBody<any>(req, {});
 
     const { userId, role, email, displayName, photoURL, phone } = body || {};
 

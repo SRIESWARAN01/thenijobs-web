@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
     await syncClockSkew();
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const {
       seekerId,
       courseId,
@@ -157,4 +158,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

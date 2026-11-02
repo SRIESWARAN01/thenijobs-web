@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore, getAdminAuth, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { ELIGIBLE_BUSINESS_IDS, ELIGIBLE_BUSINESS_NAMES_WITH_TALUKS } from '@/lib/business/businessAuthService';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Forbidden: admin access required' }, { status: 403 });
     }
 
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const {
       companyId,
       title,
@@ -236,4 +237,22 @@ export async function POST(req: NextRequest) {
     console.error('[Admin Create Job API] Error:', err);
     return NextResponse.json({ success: false, error: err.message || 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

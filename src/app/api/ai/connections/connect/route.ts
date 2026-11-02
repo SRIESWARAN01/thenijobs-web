@@ -7,6 +7,7 @@ import { encryptApiKey, maskApiKey } from '@/lib/ai/keyEncryption';
 import { createOpenAIProvider } from '@/lib/ai/providers/openaiProvider';
 import { createGeminiProvider } from '@/lib/ai/providers/geminiProvider';
 import { PROVIDER_MODELS } from '@/lib/ai/providers/index';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 /**
  * AI-CONNECT-1: connect (or replace) the caller's own OpenAI/Gemini key.
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: verified.error }, { status: verified.status });
   }
 
-  const body = await req.json().catch(() => null);
+  const body = await safeReadRequestBody<any>(req, {});
   const provider = body?.provider as 'openai' | 'gemini' | undefined;
   const apiKey = body?.apiKey as string | undefined;
   const model = body?.model as string | undefined;
@@ -76,4 +77,15 @@ export async function POST(req: NextRequest) {
     console.error('[AI Connections] Connect failed:', err?.message || err);
     return NextResponse.json({ success: false, error: 'Could not connect your AI key right now.' }, { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

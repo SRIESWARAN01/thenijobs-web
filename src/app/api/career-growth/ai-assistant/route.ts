@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { verifyAdminAuth } from '@/lib/api/adminAuth';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
       adminUid = token;
     }
 
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { contentType, prompt, context = '' } = body;
 
     if (!contentType || !prompt) {
@@ -156,4 +157,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

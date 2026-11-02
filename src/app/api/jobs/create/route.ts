@@ -3,6 +3,7 @@ import { getAdminFirestore, getAdminAuth, syncClockSkew } from '@/lib/firebase/f
 import { computeSubscriptionState } from '@/lib/subscriptionService';
 import { getActiveJobPostingLimit, isUnlimited } from '@/lib/plans';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -32,12 +33,7 @@ export async function POST(request: NextRequest) {
     await syncClockSkew().catch(() => 0);
 
     // 2. Safe Body Parsing (prevents SyntaxError crashes on empty/malformed streams)
-    let body: any = null;
-    try {
-      body = await request.json();
-    } catch {
-      body = {};
-    }
+    const body = await safeReadRequestBody<any>(request, {});
 
     const {
       title,

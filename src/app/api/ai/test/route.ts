@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createGeminiProvider } from '@/lib/ai/providers/geminiProvider';
 import { createGroqProvider } from '@/lib/ai/providers/groqProvider';
 import { createOpenAIProvider } from '@/lib/ai/providers/openaiProvider';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
@@ -69,7 +70,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { provider, apiKey, model } = await req.json();
+    const { provider, apiKey, model } = await safeReadRequestBody<{
+      provider?: string;
+      apiKey?: string;
+      model?: string;
+    }>(req, {});
 
     // AI-1: this endpoint has no authentication, and it used to fall back to the SERVER's
     // GROQ_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY when the caller sent none. So anyone able
@@ -121,4 +126,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

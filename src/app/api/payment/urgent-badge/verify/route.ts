@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { URGENT_HIRING_BADGE_FEE_INR, URGENT_HIRING_DURATION_HOURS, VALID_URGENT_FEES } from '@/lib/constants';
 import { dispatchTalukWhatsAppBroadcast } from '@/lib/urgentJobBroadcast';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(request: Request) {
   try {
@@ -14,10 +15,18 @@ export async function POST(request: Request) {
       userId,
       fee,
       amount: requestedAmount,
-    } = await request.json();
+    } = await safeReadRequestBody<{
+      razorpay_order_id?: string;
+      razorpay_payment_id?: string;
+      razorpay_signature?: string;
+      jobId?: string;
+      userId?: string;
+      fee?: number | string;
+      amount?: number | string;
+    }>(request, {});
 
     if (!jobId || !userId) {
-      return NextResponse.json({ error: 'Missing jobId or userId' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Missing jobId or userId' }, { status: 400 });
     }
 
     // Determine validated fee (₹99 or ₹149)
@@ -35,7 +44,7 @@ export async function POST(request: Request) {
         .digest('hex');
 
       if (generatedSignature !== razorpay_signature) {
-        return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Invalid payment signature' }, { status: 400 });
       }
     }
 
@@ -44,7 +53,7 @@ export async function POST(request: Request) {
     const jobSnap = await jobRef.get();
 
     if (!jobSnap.exists) {
-      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Job not found' }, { status: 404 });
     }
 
     const jobData = jobSnap.data() || {};
@@ -125,6 +134,24 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('[Urgent Badge Verify Error]:', error);
-    return NextResponse.json({ error: error.message || 'Verification failed' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || 'Verification failed' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

@@ -6,10 +6,12 @@ import BottomNav from '@/components/navigation/BottomNav';
 import { generateBreadcrumbSchema } from '@/lib/seo/schemas';
 import { toJsonLdScript } from '@/lib/seo/jsonLd';
 import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
+import { getCoursePreset, presetToCourse, generateDefaultSchedule } from '@/lib/career/coursePresets';
 import {
   GraduationCap, BookOpen, Clock, Award, ShieldCheck, Check,
   ChevronRight, ArrowRight, Sparkles, User, Video, FileText,
-  HelpCircle, Calendar, BookMarked, Globe
+  HelpCircle, Calendar, BookMarked, Globe, Building2, Users2,
+  TrendingUp, CheckCircle2
 } from 'lucide-react';
 
 interface Props {
@@ -41,6 +43,12 @@ async function getCourseData(slugOrId: string) {
         const lessons: any[] = lessonsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
         return { course, lessons };
       }
+
+      // Check fallback preset
+      const preset = getCoursePreset(slugOrId);
+      if (preset) {
+        return { course: presetToCourse(preset), lessons: [] };
+      }
       return null;
     }
 
@@ -58,6 +66,11 @@ async function getCourseData(slugOrId: string) {
     return { course, lessons };
   } catch (err) {
     console.warn('[Course Detail SSR Error]:', err);
+    // Fallback to presets if available
+    const preset = getCoursePreset(slugOrId);
+    if (preset) {
+      return { course: presetToCourse(preset), lessons: [] };
+    }
     return null;
   }
 }
@@ -116,44 +129,25 @@ export default async function CourseDetailPage({ params }: Props) {
   }
 
   const { course, lessons } = data;
+  const totalDays = Number(course.totalDays) || 7;
+  const hoursPerDay = Number(course.hoursPerDay) || 1.5;
+  const dailyTarget = Number(course.dailyPercentageTarget) || Math.round(100 / totalDays);
+  const targetAudience = course.targetAudience || 'all';
+  const dailySchedule = Array.isArray(course.dailySchedule) && course.dailySchedule.length > 0
+    ? course.dailySchedule
+    : generateDefaultSchedule(totalDays, course.title);
 
-  // JSON-LD Structured Data
   const breadcrumbs = generateBreadcrumbSchema([
     { name: 'Home', url: 'https://www.thenijobs.com' },
     { name: 'Courses', url: 'https://www.thenijobs.com/courses' },
     { name: course.title, url: `https://www.thenijobs.com/courses/${course.slug || course.id}` },
   ]);
 
-  const courseSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Course',
-    name: course.title,
-    description: course.fullDescription || course.shortDescription,
-    provider: {
-      '@type': 'Organization',
-      name: 'THENIJOBS',
-      sameAs: 'https://www.thenijobs.com',
-    },
-    url: `https://www.thenijobs.com/courses/${course.slug || course.id}`,
-    courseCode: course.slug || course.id,
-    educationalCredentialAwarded: course.certificateEligible ? 'Verified Certificate of Achievement' : undefined,
-    inLanguage: course.language === 'tamil' ? 'ta' : 'en',
-    hasCourseInstance: {
-      '@type': 'CourseInstance',
-      courseMode: 'Online',
-      courseWorkload: course.duration || '2 hours',
-    },
-  };
-
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: toJsonLdScript(breadcrumbs) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: toJsonLdScript(courseSchema) }}
       />
 
       <Header />
@@ -162,19 +156,21 @@ export default async function CourseDetailPage({ params }: Props) {
         {/* Hero Section */}
         <div className="bg-gradient-to-r from-emerald-800 via-teal-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 pt-10 pb-16">
           <div className="max-w-5xl mx-auto space-y-6">
-            {/* Breadcrumb nav */}
-            <div className="flex items-center gap-2 text-xs text-emerald-200">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
-              <ChevronRight size={12} />
-              <Link href="/courses" className="hover:text-white transition-colors">Courses</Link>
-              <ChevronRight size={12} />
-              <span className="text-white truncate max-w-xs">{course.title}</span>
+            {/* Breadcrumb pills */}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-emerald-200">
+              <Link href="/courses" className="hover:underline flex items-center gap-1">
+                <GraduationCap size={14} /> Courses
+              </Link>
+              <span>/</span>
+              <span className="text-emerald-100 font-semibold">{course.categoryName || 'Skills'}</span>
+              <span>/</span>
+              <span className="text-white font-bold truncate max-w-xs">{course.title}</span>
             </div>
 
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/20">
-                  {course.categoryName || 'Vocational Training'}
+                  {course.categoryName || 'General Skills'}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white capitalize">
                   {course.difficulty} Level
@@ -182,54 +178,69 @@ export default async function CourseDetailPage({ params }: Props) {
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white">
                   {course.language === 'tamil' ? 'தமிழ்' : course.language === 'both' ? 'Bilingual (Tamil + English)' : 'English'}
                 </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-200 border border-blue-400/30">
+                  👥 {targetAudience === 'employee' ? 'Staff Training' : targetAudience === 'job_seeker' ? 'For Job Seekers' : 'Seekers & Staff'}
+                </span>
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
                 {course.title}
               </h1>
 
+              {course.titleTamil && (
+                <p className="text-sm sm:text-base text-emerald-200 font-medium">
+                  {course.titleTamil}
+                </p>
+              )}
+
               <p className="text-sm sm:text-base text-emerald-100/90 max-w-3xl leading-relaxed">
                 {course.shortDescription}
               </p>
             </div>
 
-            {/* Quick Meta Stats */}
+            {/* Quick Timeline Stats Bar */}
             <div className="flex flex-wrap items-center gap-6 text-xs sm:text-sm text-emerald-200 pt-2 border-t border-white/10">
-              <span className="flex items-center gap-1.5">
-                <Clock size={16} className="text-emerald-300" />
-                Duration: {course.duration || '2 hours'}
+              <span className="flex items-center gap-1.5 font-bold text-white">
+                <Calendar size={16} className="text-emerald-300" />
+                Duration: {totalDays} Days ({Math.round(totalDays * hoursPerDay)} hrs total)
+              </span>
+              <span className="flex items-center gap-1.5 font-bold text-yellow-300">
+                <TrendingUp size={16} />
+                Daily Target: {dailyTarget}% / day ({hoursPerDay} hrs/day)
               </span>
               <span className="flex items-center gap-1.5">
                 <BookOpen size={16} className="text-emerald-300" />
-                Lessons: {lessons.length || course.lessonCount || 0}
+                Lessons: {lessons.length || dailySchedule.length} Modules
               </span>
-              {course.instructorName && (
-                <span className="flex items-center gap-1.5">
-                  <User size={16} className="text-emerald-300" />
-                  Instructor: {course.instructorName}
-                </span>
-              )}
               {course.certificateEligible && (
-                <span className="flex items-center gap-1.5 text-yellow-300 font-bold">
-                  <Award size={16} />
+                <span className="flex items-center gap-1.5 text-white font-bold">
+                  <Award size={16} className="text-yellow-300" />
                   Verifiable Certificate Included
                 </span>
               )}
             </div>
 
-            {/* CTA Buttons */}
+            {/* Dual CTAs for Job Seekers & Business Employees */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href="/seeker/skills"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-bold transition-all shadow-lg shadow-emerald-500/30"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-black transition-all shadow-lg shadow-emerald-500/30"
               >
                 <Sparkles size={16} />
-                <span>Enroll Now &amp; Start Learning</span>
+                <span>Enroll as Job Seeker (Free Learning)</span>
+              </Link>
+
+              <Link
+                href="/employer/training"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-all"
+              >
+                <Building2 size={16} />
+                <span>Assign to Staff (Employer Portal)</span>
               </Link>
 
               <Link
                 href="/courses"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-white/80 hover:text-white text-xs sm:text-sm transition-all"
               >
                 <span>Browse All Courses</span>
               </Link>
@@ -258,113 +269,150 @@ export default async function CourseDetailPage({ params }: Props) {
                   <h2 className="text-base font-bold text-slate-900">What You Will Learn</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {course.learningObjectives.map((obj: string, i: number) => (
-                      <div key={i} className="flex items-start gap-2 p-2 rounded-xl bg-slate-50 text-xs text-slate-700">
+                      <div key={i} className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-50 text-xs text-slate-700">
                         <Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-                        <span>{obj}</span>
+                        <span className="font-medium">{obj}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Course Syllabus & Lessons */}
+              {/* Interactive Day-by-Day Milestone Roadmap */}
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-bold text-slate-900">Course Syllabus</h2>
-                  <span className="text-xs text-slate-500 font-semibold">{lessons.length} Lessons</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">
+                      📅 {totalDays}-Day Milestone Schedule ({dailyTarget}% / day)
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      Complete daily topics and milestone targets to unlock your official verified certificate.
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 self-start sm:self-auto">
+                    {totalDays} Daily Milestones
+                  </span>
                 </div>
 
-                {lessons.length === 0 ? (
-                  <p className="text-xs text-slate-500">Curriculum is being updated by the instructor.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {lessons.map((lesson: any, idx: number) => (
-                      <div
-                        key={lesson.id || idx}
-                        className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 text-[11px] font-bold flex items-center justify-center shrink-0">
-                            {idx + 1}
+                <div className="space-y-3">
+                  {dailySchedule.map((milestone: any) => (
+                    <div
+                      key={milestone.dayNumber}
+                      className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition-all space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                            D{milestone.dayNumber}
                           </span>
                           <div>
-                            <p className="font-bold text-slate-900">{lesson.title}</p>
-                            {lesson.description && (
-                              <p className="text-[11px] text-slate-500 line-clamp-1">{lesson.description}</p>
-                            )}
+                            <h3 className="font-bold text-slate-900 text-xs sm:text-sm">
+                              {milestone.title}
+                            </h3>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {hoursPerDay} Hours of Study &amp; Practical Exercises
+                            </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 text-slate-400 shrink-0">
-                          <Clock size={12} />
-                          <span>{lesson.estimatedMinutes || 10}m</span>
-                        </div>
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-200 shrink-0">
+                          Target: {milestone.percentageTarget}%
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Right Column: Key Summary & Prerequisites */}
-            <div className="space-y-6">
-              {/* Enrollment Card */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4 sticky top-6">
-                <div className="space-y-2 pb-3 border-b border-slate-100">
-                  <div className="text-2xl font-black text-emerald-700">Free Enrollment</div>
-                  <p className="text-xs text-slate-500">Full access to lessons, assessment, and verifiable certification.</p>
+                      <p className="text-xs text-slate-600 pl-10">
+                        {milestone.description}
+                      </p>
+
+                      {milestone.keyTakeaway && (
+                        <div className="ml-10 text-[11px] font-medium text-emerald-800 bg-emerald-50/80 px-2.5 py-1 rounded-lg border border-emerald-100/80 flex items-center gap-1.5">
+                          <CheckCircle2 size={13} className="shrink-0 text-emerald-600" />
+                          <span><strong>Key Outcome:</strong> {milestone.keyTakeaway}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-
-                <div className="space-y-2.5 text-xs text-slate-700">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Language</span>
-                    <span className="font-semibold capitalize">{course.language}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Difficulty</span>
-                    <span className="font-semibold capitalize">{course.difficulty}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Estimated Duration</span>
-                    <span className="font-semibold">{course.duration}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Assessment</span>
-                    <span className="font-semibold">{course.quizRequired ? 'Required (70% Pass)' : 'Optional'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500">Certificate</span>
-                    <span className="font-semibold text-emerald-700">{course.certificateEligible ? 'Verified & Included' : 'No'}</span>
-                  </div>
-                </div>
-
-                <Link
-                  href="/seeker/skills"
-                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/30"
-                >
-                  <Sparkles size={15} />
-                  <span>Enroll in Seeker Portal</span>
-                </Link>
-
-                <p className="text-[11px] text-center text-slate-400">
-                  Requires a free THENIJOBS job seeker account.
-                </p>
               </div>
 
-              {/* Prerequisites Card */}
+              {/* Prerequisites */}
               {Array.isArray(course.prerequisites) && course.prerequisites.length > 0 && (
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">Prerequisites</h3>
+                  <h2 className="text-base font-bold text-slate-900">Requirements &amp; Prerequisites</h2>
                   <ul className="space-y-1.5 text-xs text-slate-600">
                     {course.prerequisites.map((req: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Check size={13} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <li key={i} className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                         <span>{req}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
+            </div>
+
+            {/* Right Col: Course Card & Quick Actions */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-5 sticky top-24">
+                <div className="space-y-3">
+                  <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                    Course Overview
+                  </span>
+
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">Timeline:</span>
+                      <strong className="text-slate-900">{totalDays} Days</strong>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">Daily Target:</span>
+                      <strong className="text-emerald-700">{dailyTarget}% per day</strong>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">Study Commitment:</span>
+                      <strong className="text-slate-900">{hoursPerDay} hrs / day</strong>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">Audience:</span>
+                      <strong className="text-slate-900 capitalize">
+                        {targetAudience === 'employee' ? 'Business Staff' : targetAudience === 'job_seeker' ? 'Job Seekers' : 'Seekers & Staff'}
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">Access Fee:</span>
+                      <strong className="text-emerald-700 font-bold">100% Free (THENIJOBS)</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <Link
+                    href="/seeker/skills"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20"
+                  >
+                    <Sparkles size={15} />
+                    <span>Start Learning (Job Seeker)</span>
+                  </Link>
+
+                  <Link
+                    href="/employer/training"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all"
+                  >
+                    <Building2 size={15} />
+                    <span>Assign to Staff (Employer)</span>
+                  </Link>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 space-y-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                    <ShieldCheck size={16} />
+                    <span>Official Verified Digital Certificate</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Shareable on your THENIJOBS Profile, Resume, and WhatsApp for local recruiters across Theni district.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

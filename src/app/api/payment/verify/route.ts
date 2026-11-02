@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ALL_VALID_PLAN_PRICES } from '@/lib/constants';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 import { 
   verifyRazorpaySignature, 
   fetchRazorpayPayment, 
@@ -20,7 +21,7 @@ function bestEffortAuditWrite(op: () => Promise<unknown>, what: string): void {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await safeReadRequestBody<any>(request, {});
     const {
       orderId,
       paymentId,
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     } = body;
 
     if (!orderId) {
-      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Order ID is required' }, { status: 400 });
     }
 
     // If explicit failure reported from frontend gateway
@@ -232,4 +233,22 @@ export async function POST(request: Request) {
       error: 'An unexpected error occurred during verification. If money was debited, quote your order ID and payment ID to support for automatic reconciliation — do not pay again.',
     }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Use POST.' },
+    { status: 405, headers: { Allow: 'POST, OPTIONS' } }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

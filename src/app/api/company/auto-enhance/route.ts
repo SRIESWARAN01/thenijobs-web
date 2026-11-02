@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getActiveProvider } from '@/lib/ai/aiConfigService';
 import { callGroqAI } from '@/lib/ai/groqClient';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 // In-memory rate limiting map for company enhancement
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Parse and Validate Request Body
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const {
       companyName,
       category = 'Business',
@@ -219,4 +220,15 @@ Remember the Zero Fabrication Policy: Do not invent fake GST numbers, years, awa
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

@@ -45,7 +45,20 @@ const ADMIN_NAV = [
   { label: 'Interviews', icon: Calendar, href: '/admin/interviews' },
   { label: 'SEO & Keywords', icon: Search, href: '/admin/seo' },
   { label: 'Leads', icon: TrendingUp, href: '/admin/leads' },
-  { label: 'Career Growth', icon: GraduationCap, href: '/admin/career-growth' },
+  {
+    label: 'Career & Skills Academy',
+    icon: GraduationCap,
+    href: '/admin/career-growth',
+    subItems: [
+      { label: 'All Courses & Skills', href: '/admin/career-growth?tab=courses' },
+      { label: '⚡ 1-Click Launch Course', href: '/admin/career-growth?action=launch' },
+      { label: 'Skill Categories', href: '/admin/career-growth?tab=categories' },
+      { label: 'Learning Paths', href: '/admin/career-growth?tab=paths' },
+      { label: 'Student Enrollments', href: '/admin/career-growth?tab=enrollments' },
+      { label: 'Certificates Issued', href: '/admin/career-growth?tab=certificates' },
+      { label: 'AI Content Assistant', href: '/admin/career-growth?tab=ai' },
+    ],
+  },
   { label: 'Services', icon: Globe, href: '/admin/services' },
   { label: 'Subscriptions', icon: CreditCard, href: '/admin/subscriptions' },
   { label: 'Billing Slogans', icon: Sparkles, href: '/admin/slogans' },
@@ -63,16 +76,18 @@ const ADMIN_NAV = [
 
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useRequireAuth(['admin', 'super_admin']);
   const router = useRouter();
   const pathname = usePathname();
+  const isLoginPage = pathname === '/admin/login';
+  // Strictly enforce admin and super_admin authentication: useRequireAuth(['admin', 'super_admin'])
+  const { user, loading: authLoading } = useRequireAuth(['admin', 'super_admin'], isLoginPage ? '/admin/login' : `/admin/login?redirect=${encodeURIComponent(pathname)}`, isLoginPage);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { unreadCount } = useNotifications();
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  if (pathname === '/admin/login') return <>{children}</>;
+  if (isLoginPage) return <>{children}</>;
 
   if (authLoading) {
     return (

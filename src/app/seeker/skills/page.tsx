@@ -24,6 +24,7 @@ import {
   getCertificates,
 } from '@/lib/firebase/careerGrowthService';
 import { downloadCertificatePdf } from '@/lib/pdf/certificateGenerator';
+import { FALLBACK_CATALOG_COURSES } from '@/lib/career/coursePresets';
 import type {
   SkillCategory, Course, LearningPath, Lesson, Quiz,
   Enrollment, Certificate
@@ -102,7 +103,7 @@ export default function SeekerSkillsPage() {
       ]);
 
       setCategories(catsData);
-      setCourses(coursesData);
+      setCourses(coursesData.length > 0 ? coursesData : (FALLBACK_CATALOG_COURSES as Course[]));
       setLearningPaths(pathsData);
       setEnrollments(enrollsData);
       setCertificates(certsData);
@@ -696,10 +697,12 @@ export default function SeekerSkillsPage() {
                           )}
                         </div>
 
-                        {/* Progress Bar */}
+                        {/* Progress Bar & Milestone Target */}
                         <div className="space-y-1.5 pt-2">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-slate-600">Syllabus Progress</span>
+                            <span className="font-semibold text-slate-600">
+                              Syllabus Progress {course?.totalDays ? `(${course.totalDays} Days Goal)` : ''}
+                            </span>
                             <span className="font-bold text-emerald-700">{enrollment.progressPercentage || 0}%</span>
                           </div>
                           <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
@@ -710,6 +713,11 @@ export default function SeekerSkillsPage() {
                           </div>
                           <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
                             <span>{enrollment.completedLessons?.length || 0} lessons done</span>
+                            {course?.dailyPercentageTarget && (
+                              <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                Goal: {course.dailyPercentageTarget}%/day
+                              </span>
+                            )}
                             {enrollment.bestQuizScore !== undefined && enrollment.bestQuizScore !== null && (
                               <span className="font-semibold text-emerald-600">Quiz: {enrollment.bestQuizScore}%</span>
                             )}
@@ -886,20 +894,27 @@ export default function SeekerSkillsPage() {
                           </p>
                         </div>
 
-                        {/* Meta Info */}
-                        <div className="flex items-center gap-4 text-xs text-slate-500 pt-1">
+                        {/* Timeline & Daily Percentage Target */}
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-700">
                           <span className="flex items-center gap-1">
                             <Clock size={13} className="text-slate-400" />
-                            {course.duration || '2 hours'}
+                            <span>{course.totalDays || 7} Days</span>
                           </span>
+                          <span className="font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md text-[11px]">
+                            📈 {course.dailyPercentageTarget || Math.round(100 / (course.totalDays || 7))}% / day target
+                          </span>
+                        </div>
+
+                        {/* Meta Info */}
+                        <div className="flex items-center gap-4 text-xs text-slate-500 pt-0.5">
                           <span className="flex items-center gap-1">
                             <BookOpen size={13} className="text-slate-400" />
-                            {course.lessonCount || 0} Lessons
+                            {course.lessonCount || (course.dailySchedule ? course.dailySchedule.length : 0)} Modules
                           </span>
                           {course.certificateEligible && (
                             <span className="flex items-center gap-1 text-purple-600 font-semibold">
                               <Award size={13} />
-                              Certificate
+                              Verified Certificate
                             </span>
                           )}
                         </div>

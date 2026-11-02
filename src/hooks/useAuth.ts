@@ -34,12 +34,13 @@ export const useAuth = useAuthContext;
 export function useRequireAuth(
   allowedRoles?: UserRole[],
   redirectTo = '/login',
+  disabled = false,
 ) {
   const { user, loading } = useAuthContext();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) return;
+    if (disabled || loading) return;
 
     // Not authenticated → redirect to login
     if (!user) {
@@ -66,7 +67,7 @@ export function useRequireAuth(
           router.replace('/seeker/dashboard');
       }
     }
-  }, [user, loading, allowedRoles, redirectTo, router]);
+  }, [user, loading, allowedRoles, redirectTo, router, disabled]);
 
   return { user, loading };
 }

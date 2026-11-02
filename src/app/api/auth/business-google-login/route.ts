@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { verifyEligibleBusinessGoogleLogin } from '@/lib/business/businessAuthService';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
     await syncClockSkew();
-    const body = await req.json();
+    const body = await safeReadRequestBody<{ idToken?: string }>(req, {});
     const { idToken } = body;
 
     if (!idToken || typeof idToken !== 'string') {
@@ -65,4 +66,22 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Send a POST request with idToken.' },
+    { status: 405 }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, companyId } = await req.json();
+    const body = await safeReadRequestBody<{ userId?: string; companyId?: string }>(req, {});
+    const { userId, companyId } = body;
 
     if (!userId && !companyId) {
       return NextResponse.json(
-        { error: 'User ID or Company ID is required.' },
+        { success: false, error: 'User ID or Company ID is required.' },
         { status: 400 }
       );
     }
@@ -22,7 +24,7 @@ export async function POST(req: NextRequest) {
         const udata = existingUser.data()!;
         if (udata.trialStartDate || udata.trialEndDate) {
           return NextResponse.json(
-            { error: 'A 15-day free trial has already been used by this account.' },
+            { success: false, error: 'A 15-day free trial has already been used by this account.' },
             { status: 400 }
           );
         }
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
 
       if (!subSnap.empty) {
         return NextResponse.json(
-          { error: 'A 15-day free trial has already been recorded for this account.' },
+          { success: false, error: 'A 15-day free trial has already been recorded for this account.' },
           { status: 400 }
         );
       }
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
         const cdata = existingCompany.data()!;
         if (cdata.trialStartDate || cdata.trialEndDate) {
           return NextResponse.json(
-            { error: 'A 15-day free trial has already been used by this company.' },
+            { success: false, error: 'A 15-day free trial has already been used by this company.' },
             { status: 400 }
           );
         }
@@ -110,8 +112,19 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('[request-trial] Error requesting free trial:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to request free trial.' },
+      { success: false, error: error.message || 'Failed to request free trial.' },
       { status: 500 }
     );
   }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

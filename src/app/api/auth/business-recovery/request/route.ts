@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createBusinessRecoveryRequest } from '@/lib/business/businessAuthService';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 // Server-side rate limiter for recovery requests: max 5 per IP per 15 minutes
 const recoveryRateLimits = new Map<string, { count: number; resetTime: number }>();
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { businessId, registeredMobile, requesterMobile, registeredEmail } = body;
 
     if (!businessId || typeof businessId !== 'string') {

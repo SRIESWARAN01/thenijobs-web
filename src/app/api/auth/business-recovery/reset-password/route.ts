@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { completePasswordReset } from '@/lib/business/businessAuthService';
+import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await safeReadRequestBody<any>(req, {});
     const { requestId, token, newPassword } = body;
 
     if (!requestId || !token || !newPassword) {

@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useEmployerCompany } from '@/hooks/useEmployerCompany';
 import { useCollection } from '@/hooks/useFirestore';
 import { useEmployerStats } from '@/hooks/useRealtimeStats';
+import { useToast } from '@/contexts/ToastContext';
 import { where } from 'firebase/firestore';
 import { BarChart3, Briefcase, Download, Eye, Users2 } from 'lucide-react';
 import Link from 'next/link';
@@ -37,6 +38,7 @@ interface JobMetric {
 }
 
 export default function EmployerReportsPage() {
+  const toast = useToast();
   const { user } = useAuth();
 
   // 1. Fetch employer's company
@@ -138,6 +140,46 @@ export default function EmployerReportsPage() {
     { label: 'Hired', count: stats.hired, bar: 'bg-emerald-500' },
   ];
 
+  const handleExportCSV = () => {
+    try {
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const csvLines: string[] = [];
+
+      csvLines.push(`THENIJOBS — Company Recruitment & Analytics Report`);
+      csvLines.push(`Company Name,"${(company?.name || 'Company').replace(/"/g, '""')}"`);
+      csvLines.push(`Generated Date,${new Date().toLocaleDateString('en-IN')}`);
+      csvLines.push('');
+
+      csvLines.push('1. PIPELINE SUMMARY');
+      csvLines.push('Stage,Count');
+      csvLines.push(`Total Job Postings,${jobs.length}`);
+      csvLines.push(`Active Job Postings,${stats.activeJobs}`);
+      csvLines.push(`Total Applications Received,${applications.length}`);
+      csvLines.push(`Shortlisted Candidates,${stats.shortlisted}`);
+      csvLines.push(`Interviews Conducted / Scheduled,${stats.interviews}`);
+      csvLines.push(`Candidates Hired,${stats.hired}`);
+      csvLines.push(`Company Profile Views,${company?.viewCount || 0}`);
+      csvLines.push('');
+
+      csvLines.push('2. JOB LISTINGS PERFORMANCE');
+      csvLines.push('Job Title,Job Type,Applications Received,Views,Status');
+      jobMetrics.forEach((j) => {
+        csvLines.push(`"${j.title.replace(/"/g, '""')}","${j.type}",${j.apps},${j.views},"${j.status}"`);
+      });
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvLines.join('\n'));
+      const link = document.createElement('a');
+      link.setAttribute('href', csvContent);
+      link.setAttribute('download', `thenijobs-${(company?.name || 'recruitment').toLowerCase().replace(/[^a-z0-9]/g, '-')}-report-${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Recruitment CSV report downloaded successfully');
+    } catch (err: any) {
+      toast.error('Failed to export CSV: ' + (err?.message || 'Error'));
+    }
+  };
+
   return (
     <PageShell>
       <PageHeader
@@ -145,7 +187,7 @@ export default function EmployerReportsPage() {
         description={company?.name ? `Analytics and metrics for ${company.name}.` : 'Analytics and metrics overview.'}
         breadcrumbs={[{ label: 'Employer', href: '/employer/dashboard' }, { label: 'Reports' }]}
         actions={
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" onClick={handleExportCSV}>
             <Download size={14} /> Export CSV
           </Button>
         }

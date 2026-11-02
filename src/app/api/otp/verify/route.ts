@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 // ─── Server-side rate limiting ─────────────────────────────────────────────
 const verifyRateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -18,27 +19,28 @@ function isVerifyRateLimited(sessionId: string): boolean {
 
 export async function POST(request: Request) {
   try {
-    const { sessionId, otp } = await request.json();
+    const body = await safeReadRequestBody<{ sessionId?: string; otp?: string }>(request, {});
+    const { sessionId, otp } = body;
 
     if (!sessionId || !otp) {
-      return NextResponse.json({ error: 'Session ID and OTP are required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Session ID and OTP are required', verified: false }, { status: 400 });
     }
 
     const cleanOtp = String(otp).trim();
 
     if (cleanOtp.length < 4 || cleanOtp.length > 8) {
-      return NextResponse.json({ error: 'Please enter a valid 6-digit OTP' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Please enter a valid 6-digit OTP', verified: false }, { status: 400 });
     }
 
     // Validate OTP is numeric only
     if (!/^\d+$/.test(cleanOtp)) {
-      return NextResponse.json({ error: 'OTP must contain only numbers' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'OTP must contain only numbers', verified: false }, { status: 400 });
     }
 
     // Rate limiting — prevent brute force OTP guessing
     if (isVerifyRateLimited(sessionId)) {
       return NextResponse.json(
-        { error: 'Too many verification attempts. Please request a new OTP.' },
+        { success: false, error: 'Too many verification attempts. Please request a new OTP.', verified: false },
         { status: 429 }
       );
     }
@@ -52,6 +54,7 @@ export async function POST(request: Request) {
     if (sessionId.startsWith('test_session_') || sessionId.startsWith('voice_session_')) {
       if (apiKey) {
         return NextResponse.json({
+          success: false,
           error: 'Invalid or expired session. Please request a new OTP.',
           verified: false,
         }, { status: 400 });
@@ -64,6 +67,7 @@ export async function POST(request: Request) {
         });
       }
       return NextResponse.json({
+        success: false,
         error: 'Invalid OTP. Please check the code and try again.',
         verified: false,
       }, { status: 400 });
@@ -75,6 +79,7 @@ export async function POST(request: Request) {
       // nothing to verify against, so say so instead of asserting success.
       console.error('[OTP Verify] TWOFACTOR_API_KEY is not set; cannot verify a real session.');
       return NextResponse.json({
+        success: false,
         error: 'Verification is temporarily unavailable. Please try again later.',
         verified: false,
       }, { status: 503 });
@@ -83,21 +88,28 @@ export async function POST(request: Request) {
     // 2Factor.in VERIFY OTP endpoint
     const url = `https://2factor.in/API/V1/${apiKey}/SMS/VERIFY/${sessionId}/${cleanOtp}`;
 
-    const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
-    const data = await response.json();
+    let data: any = null;
+    try {
+      const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
+      const safe = await safeParseResponse<any>(response);
+      data = safe.data;
+    } catch (fetchErr: any) {
+      console.error('[OTP Verify] 2Factor call error:', fetchErr);
+    }
 
-    if (data.Status === 'Success' && data.Details === 'OTP Matched') {
+    if (data && data.Status === 'Success' && data.Details === 'OTP Matched') {
       return NextResponse.json({
         success: true,
         verified: true,
         message: 'OTP verified successfully',
       });
     } else {
-      const errorMsg = data.Details === 'OTP Expired' 
+      const errorMsg = data?.Details === 'OTP Expired' 
         ? 'OTP has expired. Please click Resend OTP or Call Again.' 
-        : (data.Details || 'Invalid OTP. Please check the 6-digit code and try again.');
+        : (data?.Details || 'Invalid OTP. Please check the 6-digit code and try again.');
 
       return NextResponse.json({
+        success: false,
         error: errorMsg,
         verified: false,
       }, { status: 400 });
@@ -105,8 +117,27 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('OTP Verify Error:', error);
     return NextResponse.json({
+      success: false,
       error: 'Server error while verifying OTP. Please try again.',
       verified: false,
     }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Send a POST request with sessionId and otp.' },
+    { status: 405 }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 // ─── Server-side rate limiting ─────────────────────────────────────────────
 const otpRateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -18,23 +19,24 @@ function isOtpRateLimited(phone: string): boolean {
 
 export async function POST(request: Request) {
   try {
-    const { phone } = await request.json();
+    const body = await safeReadRequestBody<{ phone?: string }>(request, {});
+    const { phone } = body;
 
     if (!phone || typeof phone !== 'string') {
-      return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
     }
 
     // Clean phone number (extract 10 digits)
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
     if (cleanPhone.length !== 10) {
-      return NextResponse.json({ error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Please enter a valid 10-digit mobile number' }, { status: 400 });
     }
 
     // Rate limiting — prevent OTP abuse / brute force
     if (isOtpRateLimited(cleanPhone)) {
       return NextResponse.json(
-        { error: 'Too many OTP requests. Please wait 5 minutes and try again.' },
+        { success: false, error: 'Too many OTP requests. Please wait 5 minutes and try again.' },
         { status: 429 }
       );
     }
@@ -54,24 +56,50 @@ export async function POST(request: Request) {
     // 2Factor.in AUTOGEN OTP endpoint
     const url = `https://2factor.in/API/V1/${apiKey}/SMS/+91${cleanPhone}/AUTOGEN/OTP1`;
 
-    const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
-    const data = await response.json();
+    let parsedResponse: any = null;
+    try {
+      const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
+      const safe = await safeParseResponse<any>(response);
+      parsedResponse = safe.data;
+    } catch (fetchErr: any) {
+      console.error('[OTP Send] 2Factor call error:', fetchErr);
+    }
 
-    if (data.Status === 'Success') {
+    if (parsedResponse && parsedResponse.Status === 'Success') {
       return NextResponse.json({
         success: true,
-        sessionId: data.Details,
+        sessionId: parsedResponse.Details,
         message: 'OTP sent successfully to your mobile number via SMS',
       });
     } else {
       return NextResponse.json({
-        error: data.Details || 'Failed to send OTP. Please try again.',
+        success: false,
+        error: parsedResponse?.Details || 'Failed to send OTP via SMS gateway. Please try again.',
       }, { status: 400 });
     }
   } catch (error: any) {
     console.error('OTP Send Error:', error);
     return NextResponse.json({
+      success: false,
       error: 'Server error while sending OTP. Please try again.',
     }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Method Not Allowed. Send a POST request with phone.' },
+    { status: 405 }
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

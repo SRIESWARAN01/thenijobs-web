@@ -28,6 +28,51 @@ export interface SafeApiResponse<T = any> {
 const CORRELATION_HEADER = 'x-correlation-id';
 
 /**
+ * Safely reads and parses the JSON request body in Next.js API route handlers.
+ * Never throws 'Unexpected end of JSON input' on empty streams, 0-byte bodies, or malformed JSON.
+ * Returns defaultFallback (defaults to {}) on failure.
+ */
+export async function safeReadRequestBody<T = Record<string, any>>(
+  req: Request | any,
+  defaultFallback: T = {} as T
+): Promise<T> {
+  if (!req) return defaultFallback;
+  try {
+    if (typeof req.text === 'function') {
+      const rawText = await req.text();
+      if (!rawText || !rawText.trim()) return defaultFallback;
+      return JSON.parse(rawText) as T;
+    }
+    if (typeof req.json === 'function') {
+      const data = await req.json();
+      return (data ?? defaultFallback) as T;
+    }
+    return defaultFallback;
+  } catch {
+    return defaultFallback;
+  }
+}
+
+/**
+ * Standardized JSON response builder ensuring proper Content-Type and x-correlation-id headers.
+ */
+export function jsonResponse<T = any>(
+  body: { success: boolean; message?: string; error?: string; data?: T; [key: string]: any },
+  init?: ResponseInit & { correlationId?: string }
+): Response {
+  const headers = new Headers(init?.headers || {});
+  headers.set('Content-Type', 'application/json; charset=utf-8');
+  if (init?.correlationId) {
+    headers.set('x-correlation-id', init.correlationId);
+  }
+  return new Response(JSON.stringify(body), {
+    status: init?.status ?? 200,
+    statusText: init?.statusText,
+    headers,
+  });
+}
+
+/**
  * Generate a production-safe random correlation ID.
  */
 export function generateCorrelationId(): string {

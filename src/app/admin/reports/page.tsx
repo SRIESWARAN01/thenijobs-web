@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { usePlatformStats } from '@/hooks/useRealtimeStats';
 import { useCollection } from '@/hooks/useFirestore';
+import { useToast } from '@/contexts/ToastContext';
 import { Button, PageHeader, PageShell, Tabs } from '@/components/dashboard';
 
 // ===== CONSTANTS =====
@@ -35,7 +36,9 @@ interface JobDoc {
 }
 
 export default function ReportsPage() {
+  const toast = useToast();
   const [timePeriod, setTimePeriod] = useState<typeof TIME_PERIODS[number]>('1M');
+  const [exporting, setExporting] = useState(false);
   const { stats, loading: statsLoading } = usePlatformStats();
   
   const { data: users, loading: usersLoading } = useCollection<UserDoc>('users');
@@ -124,6 +127,220 @@ export default function ReportsPage() {
     rose: { bg: 'bg-rose-500/15', text: 'text-rose-600', chartBg: 'from-rose-500/20 to-rose-500/5' },
   };
 
+  const handleExportCSV = () => {
+    try {
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const csvLines: string[] = [];
+
+      csvLines.push('THENIJOBS — Platform Analytics & Executive Report');
+      csvLines.push(`Generated Date,${new Date().toLocaleDateString('en-IN')}`);
+      csvLines.push(`Reporting Period,${timePeriod}`);
+      csvLines.push('');
+
+      csvLines.push('1. EXECUTIVE METRICS');
+      csvLines.push('Metric,Value,Description');
+      csvLines.push(`Total Registered Users,${stats.totalUsers},"Job Seekers, Recruiters, and Admins"`);
+      csvLines.push(`Total Verified Businesses,${stats.totalBusinesses},"Verified local enterprises and shops"`);
+      csvLines.push(`Active Job Openings,${stats.activeJobs},"Current verified recruitment postings"`);
+      csvLines.push(`Total Subscription Revenue,₹${stats.totalRevenue},"Net collected subscription revenue"`);
+      csvLines.push(`Customer Leads Generated,${stats.totalLeads},"Inbound WhatsApp & Marketplace customer enquiries"`);
+      csvLines.push('');
+
+      csvLines.push('2. TOP TALUKS & DISTRICTS');
+      csvLines.push('Rank,Taluk / District,Users,Businesses,Total Engagement');
+      formattedDistricts.forEach((d, idx) => {
+        csvLines.push(`${idx + 1},"${d.name}",${d.users},${d.businesses},${d.total}`);
+      });
+      csvLines.push('');
+
+      csvLines.push('3. TOP HIRING CATEGORIES');
+      csvLines.push('Rank,Category,Active Jobs');
+      formattedCategories.forEach((c, idx) => {
+        csvLines.push(`${idx + 1},"${c.name}",${c.count}`);
+      });
+      csvLines.push('');
+
+      csvLines.push('4. TOP EMPLOYERS');
+      csvLines.push('Rank,Company Name,Jobs Posted,Applications Received,Rating');
+      formattedEmployers.forEach((e, idx) => {
+        csvLines.push(`${idx + 1},"${e.name}",${e.jobs},${e.applications},${e.rating}`);
+      });
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvLines.join('\n'));
+      const link = document.createElement('a');
+      link.setAttribute('href', csvContent);
+      link.setAttribute('download', `thenijobs-analytics-report-${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Analytics CSV report downloaded successfully');
+    } catch (err: any) {
+      toast.error('Failed to export CSV: ' + (err?.message || 'Error'));
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+      // Title & Header
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(18);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text('THENIJOBS — Platform Performance Report', 14, 20);
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`Official Executive Analytics | Period: ${timePeriod} | Generated: ${dateStr}`, 14, 26);
+
+      pdf.setDrawColor(226, 232, 240);
+      pdf.line(14, 30, 196, 30);
+
+      // Section 1: Executive KPI Cards
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text('1. Executive Summary', 14, 38);
+
+      const kpiItems = [
+        { label: 'Total Users', val: stats.totalUsers.toLocaleString() },
+        { label: 'Total Businesses', val: stats.totalBusinesses.toLocaleString() },
+        { label: 'Active Jobs', val: stats.activeJobs.toLocaleString() },
+        { label: 'Revenue', val: `₹${stats.totalRevenue.toLocaleString('en-IN')}` },
+        { label: 'Leads Generated', val: stats.totalLeads.toLocaleString() },
+      ];
+
+      kpiItems.forEach((item, i) => {
+        const x = 14 + (i * 36);
+        pdf.setFillColor(248, 250, 252);
+        pdf.roundedRect(x, 43, 34, 18, 2, 2, 'F');
+        pdf.setDrawColor(226, 232, 240);
+        pdf.roundedRect(x, 43, 34, 18, 2, 2, 'S');
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(item.label, x + 2, 48);
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.setTextColor(15, 23, 42);
+        pdf.text(item.val, x + 2, 56);
+      });
+
+      // Section 2: Top Districts
+      let currentY = 72;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text('2. Regional Demographics & Taluk Distribution', 14, currentY);
+
+      currentY += 6;
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(14, currentY, 182, 7, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text('Rank', 16, currentY + 5);
+      pdf.text('Taluk / Region', 32, currentY + 5);
+      pdf.text('Users', 90, currentY + 5);
+      pdf.text('Businesses', 130, currentY + 5);
+      pdf.text('Total Engagement', 160, currentY + 5);
+
+      currentY += 8;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(30, 41, 59);
+      formattedDistricts.forEach((d, idx) => {
+        pdf.text(String(idx + 1), 16, currentY);
+        pdf.text(d.name, 32, currentY);
+        pdf.text(String(d.users), 90, currentY);
+        pdf.text(String(d.businesses), 130, currentY);
+        pdf.text(String(d.total), 160, currentY);
+        currentY += 6;
+      });
+
+      // Section 3: Top Categories
+      currentY += 6;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text('3. Top Hiring Industry Categories', 14, currentY);
+
+      currentY += 6;
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(14, currentY, 182, 7, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text('Rank', 16, currentY + 5);
+      pdf.text('Industry Category', 32, currentY + 5);
+      pdf.text('Active Vacancies', 140, currentY + 5);
+
+      currentY += 8;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(30, 41, 59);
+      formattedCategories.forEach((c, idx) => {
+        pdf.text(String(idx + 1), 16, currentY);
+        pdf.text(c.name, 32, currentY);
+        pdf.text(String(c.count), 140, currentY);
+        currentY += 6;
+      });
+
+      // Section 4: Top Employers
+      currentY += 6;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(12);
+      pdf.setTextColor(30, 41, 59);
+      pdf.text('4. Top Recruiting Companies', 14, currentY);
+
+      currentY += 6;
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(14, currentY, 182, 7, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(71, 85, 105);
+      pdf.text('Rank', 16, currentY + 5);
+      pdf.text('Employer Name', 32, currentY + 5);
+      pdf.text('Jobs', 110, currentY + 5);
+      pdf.text('Applications', 140, currentY + 5);
+      pdf.text('Rating', 175, currentY + 5);
+
+      currentY += 8;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(30, 41, 59);
+      formattedEmployers.forEach((e, idx) => {
+        pdf.text(String(idx + 1), 16, currentY);
+        pdf.text(e.name, 32, currentY);
+        pdf.text(String(e.jobs), 110, currentY);
+        pdf.text(String(e.applications), 140, currentY);
+        pdf.text(`${e.rating} / 5.0`, 175, currentY);
+        currentY += 6;
+      });
+
+      // Footer
+      pdf.setDrawColor(226, 232, 240);
+      pdf.line(14, 280, 196, 280);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7);
+      pdf.setTextColor(148, 163, 184);
+      pdf.text('THENIJOBS — Official Platform Supervision & Governance Report | Confidential & Proprietary', 105, 285, { align: 'center' });
+
+      pdf.save(`thenijobs-platform-analytics-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success('Analytics PDF report generated successfully');
+    } catch (err: any) {
+      toast.error('Failed to export PDF: ' + (err?.message || 'Error'));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <PageShell>
       <PageHeader
@@ -132,8 +349,12 @@ export default function ReportsPage() {
         breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Reports' }]}
         actions={
           <>
-            <Button variant="secondary"><Download size={15} /> CSV</Button>
-            <Button variant="secondary"><FileText size={15} /> PDF</Button>
+            <Button variant="secondary" onClick={handleExportCSV}>
+              <Download size={15} /> CSV
+            </Button>
+            <Button variant="secondary" onClick={handleExportPDF} disabled={exporting}>
+              {exporting ? <Loader2 size={15} className="animate-spin" /> : <FileText size={15} />} PDF
+            </Button>
           </>
         }
       />

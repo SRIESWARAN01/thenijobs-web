@@ -13,6 +13,11 @@ let clockSkewSyncPromise: Promise<number> | null = null;
  * "16 UNAUTHENTICATED: Request had invalid authentication credentials" OAuth JWT rejections.
  */
 export async function syncClockSkew(): Promise<number> {
+  // Production serverless environments (e.g. Vercel) have synchronized NTP clocks.
+  // Never perform module-level network calls or monkey-patch globals in production.
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    return 0;
+  }
   if (clockSkewSyncPromise) return clockSkewSyncPromise;
   clockSkewSyncPromise = (async () => {
     try {
@@ -59,8 +64,8 @@ export async function syncClockSkew(): Promise<number> {
   return clockSkewSyncPromise;
 }
 
-// Proactively initiate clock skew detection on module load in Node.js runtime
-if (typeof fetch === 'function') {
+// Proactively initiate clock skew detection on module load ONLY in local dev environment
+if (typeof fetch === 'function' && !process.env.VERCEL && process.env.NODE_ENV !== 'production') {
   void syncClockSkew();
 }
 

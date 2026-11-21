@@ -279,7 +279,11 @@ export default function PaymentCheckoutModal({
       console.error('Payment checkout error:', err);
       setLoading(false);
       setPaymentState('failed');
-      setErrorMessage(err.message || 'Payment initiation failed. Please check your internet connection.');
+      const rawMsg = err.message || '';
+      const displayMsg = rawMsg.includes('Server returned empty response') || rawMsg.includes('HTTP 500')
+        ? 'Payment gateway is currently synchronizing or server configuration is updating. Please retry in a moment — no money has been debited.'
+        : rawMsg || 'Payment initiation failed. Please check your internet connection.';
+      setErrorMessage(displayMsg);
     }
   };
 
@@ -322,7 +326,11 @@ export default function PaymentCheckoutModal({
       }
 
       if (!parsedVerify.ok || !verifyData?.success) {
-        throw new Error(verifyData?.error || parsedVerify.error || 'Payment verification failed at backend.');
+        const rawErr = verifyData?.error || parsedVerify.error || '';
+        const userFacingErr = rawErr.includes('Server returned empty response') || rawErr.includes('HTTP 500')
+          ? 'Payment verification was temporarily interrupted by server. If money was debited, do not pay again — click Recheck Status or contact support.'
+          : rawErr || 'Payment verification failed at backend.';
+        throw new Error(userFacingErr);
       }
 
       // If server returned pre-formatted receiptData, use it directly!

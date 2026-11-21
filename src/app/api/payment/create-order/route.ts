@@ -56,15 +56,20 @@ export async function POST(request: Request) {
     const receiptSeed = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     // Razorpay Gateway Credentials
-    const razorpayKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    const rawKey = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+    const rawSecret = process.env.RAZORPAY_KEY_SECRET || '';
+    const razorpayKey = rawKey.trim().replace(/^["']|["']$/g, '');
+    const razorpaySecret = rawSecret.trim().replace(/^["']|["']$/g, '');
 
     if (!razorpayKey || !razorpaySecret) {
       console.error('[Payment API] Razorpay credentials missing. Key:', !!razorpayKey, 'Secret:', !!razorpaySecret);
       return NextResponse.json({
         success: false,
-        error: 'Razorpay Gateway credentials are not configured on the server. Please add RAZORPAY_KEY_SECRET in Vercel Environment Variables.',
-      }, { status: 503 });
+        error: 'Razorpay Gateway credentials are not configured on the server. Please add RAZORPAY_KEY_SECRET and RAZORPAY_KEY_ID in Vercel Environment Variables.',
+      }, { 
+        status: 503,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      });
     }
 
     try {
@@ -148,7 +153,10 @@ export async function POST(request: Request) {
     }
   } catch (error: any) {
     console.error('[Payment Create Order Error]:', error);
-    return NextResponse.json({ success: false, error: 'Failed to create payment order' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Failed to create payment order' },
+      { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+    );
   }
 }
 

@@ -25,10 +25,13 @@ export async function GET(request: Request) {
 
   try {
     const result = await getOrReconcilePaymentStatus(orderId, paymentId);
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
   } catch (err: any) {
     console.error('[Payment Reconcile GET Error]:', err);
-    return NextResponse.json({ success: false, error: err?.message || 'Reconciliation error' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err?.message || 'Reconciliation error' },
+      { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+    );
   }
 }
 
@@ -43,10 +46,13 @@ export async function POST(request: Request) {
     }
 
     const result = await getOrReconcilePaymentStatus(orderId, paymentId);
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
   } catch (err: any) {
     console.error('[Payment Reconcile POST Error]:', err);
-    return NextResponse.json({ success: false, error: err?.message || 'Reconciliation error' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: err?.message || 'Reconciliation error' },
+      { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
+    );
   }
 }
 

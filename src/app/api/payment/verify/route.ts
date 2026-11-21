@@ -233,8 +233,13 @@ export async function POST(request: Request) {
     console.error('[Payment Verification Route Exception]:', error?.message || error);
     return NextResponse.json({
       success: false,
-      error: 'An unexpected error occurred during verification. If money was debited, quote your order ID and payment ID to support for automatic reconciliation — do not pay again.',
-    }, { status: 500 });
+      error: error?.message 
+        ? `Payment verification error: ${error.message}`
+        : 'An unexpected error occurred during verification. If money was debited, quote your order ID and payment ID to support for automatic reconciliation — do not pay again.',
+    }, { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' }
+    });
   }
 }
 

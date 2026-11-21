@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
 import { ALL_VALID_PLAN_PRICES } from '@/lib/constants';
-import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 const PLAN_PRICES = ALL_VALID_PLAN_PRICES;
 
 export async function POST(request: Request) {
   try {
-    // 1. Proactively synchronize system clock skew to avoid OAuth JWT rejections
-    await syncClockSkew().catch(() => 0);
-
     const { planSlug, planName, amount: clientAmount, companyId, userId, role } = await safeReadRequestBody<{
       planSlug?: string;
       planName?: string;
@@ -38,10 +34,11 @@ export async function POST(request: Request) {
     // The order is always created for the server-derived price, never whatever the client sent.
     const amount = expectedAmount;
 
-    // Automatically resolve companyId if omitted
+    // Automatically resolve companyId if omitted (non-blocking best effort)
     let resolvedCompanyId = companyId || '';
     if (!resolvedCompanyId && userId) {
       try {
+        const { getAdminFirestore } = await import('@/lib/firebase/firebaseAdmin');
         const db = getAdminFirestore();
         const compSnap = await db.collection('companies').where('ownerId', '==', userId).limit(1).get();
         if (!compSnap.empty) {
@@ -106,8 +103,9 @@ export async function POST(request: Request) {
           }, { status: 502 });
         }
 
-        // Securely record created order in Firestore
+        // Securely record created order in Firestore (non-blocking best-effort)
         try {
+          const { getAdminFirestore } = await import('@/lib/firebase/firebaseAdmin');
           const db = getAdminFirestore();
           await db.collection('orders').doc(rpOrder.id).set({
             orderId: rpOrder.id,

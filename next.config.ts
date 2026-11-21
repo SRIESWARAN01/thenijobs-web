@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['firebase-admin'],
   // HOSTING-1 (D-HOSTING, owner-answered 2026-09-07, confirmed again in chat 2026-09-08):
   // production is no longer a static export. Vercel now builds and runs this app as a normal
   // Next.js server app, so src/app/api/** route handlers execute for real requests instead of

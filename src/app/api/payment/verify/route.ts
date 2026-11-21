@@ -21,9 +21,6 @@ function bestEffortAuditWrite(op: () => Promise<unknown>, what: string): void {
 
 export async function POST(request: Request) {
   try {
-    // 1. Proactively synchronize system clock skew to avoid OAuth JWT rejections
-    await syncClockSkew().catch(() => 0);
-
     const body = await safeReadRequestBody<any>(request, {});
     const {
       orderId,

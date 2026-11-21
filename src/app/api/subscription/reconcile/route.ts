@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
@@ -34,6 +34,7 @@ function isReconcileRateLimited(identifier: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
+    await syncClockSkew().catch(() => 0);
     const { companyId, ownerUid } = await safeReadRequestBody<{ companyId?: string; ownerUid?: string }>(req, {});
 
     if (!companyId || typeof companyId !== 'string') {

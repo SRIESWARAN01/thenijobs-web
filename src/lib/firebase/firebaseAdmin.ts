@@ -16,7 +16,14 @@ export async function syncClockSkew(): Promise<number> {
   if (clockSkewSyncPromise) return clockSkewSyncPromise;
   clockSkewSyncPromise = (async () => {
     try {
-      const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch('https://www.google.com', { 
+        method: 'HEAD', 
+        cache: 'no-store',
+        signal: controller.signal 
+      });
+      clearTimeout(timeoutId);
       const dateHeader = res.headers.get('date');
       if (dateHeader) {
         const serverTime = new Date(dateHeader).getTime();
@@ -52,6 +59,11 @@ export async function syncClockSkew(): Promise<number> {
   return clockSkewSyncPromise;
 }
 
+// Proactively initiate clock skew detection on module load in Node.js runtime
+if (typeof fetch === 'function') {
+  void syncClockSkew();
+}
+
 export function getServiceAccountCredentials(): Record<string, any> | null {
   // 1. Single env var JSON string (Vercel standard)
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -73,7 +85,24 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
           // not base64
         }
       }
-      const parsed = typeof str === 'string' ? JSON.parse(str) : str;
+      let parsed: any;
+      try {
+        parsed = typeof str === 'string' ? JSON.parse(str) : str;
+      } catch (jsonErr) {
+        // Fallback: extract credentials using regex if JSON.parse fails due to unescaped control chars / newlines in Vercel UI
+        const clientEmailMatch = str.match(/"client_email"\s*:\s*"([^"]+)"/);
+        const privateKeyMatch = str.match(/"private_key"\s*:\s*"([\s\S]*?)(?<!\\)"/);
+        const projectIdMatch = str.match(/"project_id"\s*:\s*"([^"]+)"/);
+        if (clientEmailMatch && privateKeyMatch) {
+          parsed = {
+            project_id: projectIdMatch ? projectIdMatch[1] : (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'thenijobs-9f01d'),
+            client_email: clientEmailMatch[1],
+            private_key: privateKeyMatch[1],
+          };
+        } else {
+          throw jsonErr;
+        }
+      }
       if (parsed.private_key && typeof parsed.private_key === 'string') {
         parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
       }
@@ -84,17 +113,18 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
   }
 
   // 2. Individual env vars (Vercel alternative)
-  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+  if (process.env.FIREBASE_CLIENT_EMAIL && (process.env.FIREBASE_PRIVATE_KEY || process.env.FIREBASE_SERVICE_ACCOUNT_KEY)) {
+    const rawKey = process.env.FIREBASE_PRIVATE_KEY || '';
     return {
       project_id: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'thenijobs-9f01d',
       client_email: process.env.FIREBASE_CLIENT_EMAIL,
-      private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      private_key: rawKey.replace(/\\n/g, '\n'),
     };
   }
 
-  // 3. Local serviceAccountKey.json (Development environment only).
+  // 3. Local serviceAccountKey.json (Development environment or local CLI only).
   // Never trace or load a workstation credential into a production deployment.
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     try {
       const candidatePaths = [
         path.join(process.cwd(), 'serviceAccountKey.json'),

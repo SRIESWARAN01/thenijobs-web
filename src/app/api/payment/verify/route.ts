@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ALL_VALID_PLAN_PRICES } from '@/lib/constants';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 import { 
   verifyRazorpaySignature, 
@@ -21,6 +21,9 @@ function bestEffortAuditWrite(op: () => Promise<unknown>, what: string): void {
 
 export async function POST(request: Request) {
   try {
+    // 1. Proactively synchronize system clock skew to avoid OAuth JWT rejections
+    await syncClockSkew().catch(() => 0);
+
     const body = await safeReadRequestBody<any>(request, {});
     const {
       orderId,

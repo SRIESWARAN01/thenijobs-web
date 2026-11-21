@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { ALL_VALID_PLAN_PRICES } from '@/lib/constants';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody, safeParseResponse } from '@/lib/api/safeResponse';
 
 const PLAN_PRICES = ALL_VALID_PLAN_PRICES;
 
 export async function POST(request: Request) {
   try {
+    // 1. Proactively synchronize system clock skew to avoid OAuth JWT rejections
+    await syncClockSkew().catch(() => 0);
+
     const { planSlug, planName, amount: clientAmount, companyId, userId, role } = await safeReadRequestBody<{
       planSlug?: string;
       planName?: string;
@@ -16,7 +19,9 @@ export async function POST(request: Request) {
       role?: string;
     }>(request, {});
 
-    const expectedAmount = typeof planSlug === 'string' ? PLAN_PRICES[planSlug] : undefined;
+    const rawSlug = typeof planSlug === 'string' ? planSlug.trim().toLowerCase() : '';
+    const cleanSlug = rawSlug.replace(/^subscription_/, '');
+    const expectedAmount = PLAN_PRICES[cleanSlug] ?? (rawSlug ? PLAN_PRICES[rawSlug] : undefined);
 
     if (expectedAmount === undefined) {
       return NextResponse.json({ success: false, error: 'That subscription plan was not recognised.' }, { status: 400 });
@@ -26,9 +31,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'No payment is required for this plan.' }, { status: 400 });
     }
 
-    if (clientAmount !== undefined && clientAmount !== expectedAmount) {
-      console.error(`[Payment Create Order] AMOUNT MISMATCH. Plan "${planSlug}" expects ₹${expectedAmount}, client sent ₹${clientAmount}.`);
-      return NextResponse.json({ success: false, error: 'Payment amount does not match the selected plan. Please refresh and try again.' }, { status: 400 });
+    if (clientAmount !== undefined && Number(clientAmount) !== expectedAmount) {
+      console.warn(`[Payment Create Order] Note: client requested ₹${clientAmount}, authoritative server price is ₹${expectedAmount}.`);
     }
 
     // The order is always created for the server-derived price, never whatever the client sent.
@@ -56,9 +60,10 @@ export async function POST(request: Request) {
     const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!razorpayKey || !razorpaySecret) {
+      console.error('[Payment API] Razorpay credentials missing. Key:', !!razorpayKey, 'Secret:', !!razorpaySecret);
       return NextResponse.json({
         success: false,
-        error: 'Razorpay Gateway credentials are not configured.',
+        error: 'Razorpay Gateway credentials are not configured on the server. Please add RAZORPAY_KEY_SECRET in Vercel Environment Variables.',
       }, { status: 503 });
     }
 

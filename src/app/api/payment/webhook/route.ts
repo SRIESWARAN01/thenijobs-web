@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { recordVerifiedPayment } from '@/lib/firebase/paymentAdminService';
 
 /**
@@ -17,6 +17,7 @@ import { recordVerifiedPayment } from '@/lib/firebase/paymentAdminService';
  * 3. Client-side verify request encountered an error or timeout.
  */
 export async function POST(request: Request) {
+  await syncClockSkew().catch(() => 0);
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
 
   if (!webhookSecret) {

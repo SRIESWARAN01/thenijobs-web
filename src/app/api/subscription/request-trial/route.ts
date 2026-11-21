@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Proactively synchronize system clock skew to avoid OAuth JWT rejections
+    await syncClockSkew().catch(() => 0);
+
     const body = await safeReadRequestBody<{ userId?: string; companyId?: string }>(req, {});
     const { userId, companyId } = body;
 
@@ -111,8 +114,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('[request-trial] Error requesting free trial:', error);
+    const isAuthErr = error?.message?.includes('UNAUTHENTICATED') || error?.message?.includes('invalid_grant');
+    const userMsg = isAuthErr
+      ? 'Database service authentication is undergoing synchronization. Please verify FIREBASE_SERVICE_ACCOUNT_KEY in Vercel settings and retry.'
+      : (error?.message || 'Failed to request free trial.');
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to request free trial.' },
+      { success: false, error: userMsg },
       { status: 500 }
     );
   }

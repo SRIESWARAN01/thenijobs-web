@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation';
 import CompanyLandingPageClient from './CompanyLandingPageClient';
 import { getAllCompanySlugsServer, getCompanyBySlugServer } from '@/lib/firebase/firestoreServer';
 
@@ -85,14 +84,6 @@ export default async function CompanyLandingPage({
   params: Promise<{ companySlug: string }>;
 }) {
   const { companySlug } = await params;
-
-  if (companySlug !== '_fallback') {
-    const company = await getCompanyBySlugServer(companySlug).catch(() => null);
-    if (!company) {
-      notFound();
-    }
-  }
-
   return <CompanyLandingPageClient slug={companySlug} />;
 }
 

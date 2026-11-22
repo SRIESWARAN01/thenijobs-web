@@ -223,7 +223,7 @@ export default function RegisterBusinessPage() {
     }
   };
 
-  // Step 2: Request 15-Day Free Trial
+  // Step 2: Request 7-Day Free Trial
   const handleRequestFreeTrial = async () => {
     setTrialLoading(true);
     try {
@@ -237,9 +237,17 @@ export default function RegisterBusinessPage() {
       let data: any = {};
       try { data = JSON.parse(rawText); } catch {}
       if (!res.ok || !data.success) {
+        const errMsg = (data.error || '').toLowerCase();
+        if (errMsg.includes('already') || errMsg.includes('active')) {
+          toast.success('7-Day Free Trial is active! Loading your Dashboard...');
+          await refreshUserProfile?.();
+          setForcePlanStep(false);
+          router.push('/employer/dashboard');
+          return;
+        }
         throw new Error(data.error || 'Failed to request free trial.');
       }
-      toast.success('15-Day Free Trial activated! Loading your Dashboard & Website Preview...');
+      toast.success('7-Day Free Trial activated! Loading your Dashboard & Website Preview...');
       await refreshUserProfile?.();
       setForcePlanStep(false);
       router.push('/employer/dashboard');
@@ -570,7 +578,7 @@ export default function RegisterBusinessPage() {
                     </>
                   ) : (
                     <>
-                      <span>Start 15-Day Free Trial</span>
+                      <span>Start 7-Day Free Trial</span>
                       <ArrowRight size={16} />
                     </>
                   )}

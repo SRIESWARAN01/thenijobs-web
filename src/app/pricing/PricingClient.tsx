@@ -96,9 +96,23 @@ export default function PricingClient() {
   const company = companies?.[0];
   const [trialLoading, setTrialLoading] = useState(false);
 
+  const isTrialActive = user?.subscriptionStatus === 'trial' || (user as any)?.accountStatus === 'trial_active';
+  const hasUsedTrial = (user as any)?.hasUsedFreeTrial;
+
   const handleRequestTrial = async () => {
     if (!user) {
       router.push('/register?role=business_owner&trial=true');
+      return;
+    }
+
+    if (isTrialActive) {
+      router.push('/employer/dashboard');
+      return;
+    }
+
+    if (hasUsedTrial) {
+      const el = document.getElementById('pricing-cards');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
@@ -114,6 +128,11 @@ export default function PricingClient() {
       });
       const parsed = await safeParseResponse<{ success?: boolean; error?: string }>(res);
       if (!parsed.ok || (parsed.data && parsed.data.success === false)) {
+        const errMsg = (parsed.error || parsed.data?.error || '').toLowerCase();
+        if (errMsg.includes('already') || errMsg.includes('active')) {
+          router.push('/employer/dashboard');
+          return;
+        }
         alert(parsed.error || parsed.data?.error || 'Failed to request free trial.');
         return;
       }
@@ -260,8 +279,20 @@ export default function PricingClient() {
             disabled={trialLoading}
             className="w-full md:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-xs sm:text-sm hover:from-amber-600 hover:to-amber-700 transition-all shadow-md shadow-amber-500/20 whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {trialLoading ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-            <span>Request 7-Day Free Trial</span>
+            {trialLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : isTrialActive ? (
+              <CheckCircle2 size={16} />
+            ) : (
+              <Zap size={16} />
+            )}
+            <span>
+              {isTrialActive
+                ? 'Trial Active (Go to Dashboard)'
+                : hasUsedTrial
+                ? 'Trial Completed (Select Plan Below)'
+                : 'Request 7-Day Free Trial'}
+            </span>
           </button>
         </div>
 

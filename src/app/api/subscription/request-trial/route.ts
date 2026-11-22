@@ -25,11 +25,21 @@ export async function POST(req: NextRequest) {
       const userDoc = await db.collection('users').doc(userId).get();
       if (userDoc.exists) {
         existingUserData = userDoc.data() || null;
-        if (existingUserData && (existingUserData.trialStartDate || existingUserData.trialEndDate)) {
-          return NextResponse.json(
-            { success: false, error: 'A 15-day free trial has already been used by this account.' },
-            { status: 400 }
-          );
+        if (existingUserData) {
+          // If already on an active trial, return idempotent success
+          if (existingUserData.subscriptionStatus === 'trial' || existingUserData.accountStatus === 'trial_active') {
+            return NextResponse.json({
+              success: true,
+              message: 'Your 7-Day Free Trial is already active!',
+              status: 'trial_active',
+            });
+          }
+          if (existingUserData.hasUsedFreeTrial || existingUserData.trialStartDate || existingUserData.trialEndDate) {
+            return NextResponse.json(
+              { success: false, error: 'A 7-day free trial has already been used by this account. Please select an annual subscription plan.' },
+              { status: 400 }
+            );
+          }
         }
       }
 
@@ -37,13 +47,21 @@ export async function POST(req: NextRequest) {
       const subSnap = await db
         .collection('subscriptions')
         .where('userId', '==', userId)
-        .where('paymentMethod', '==', 'FREE_TRIAL_15_DAYS')
+        .where('paymentMethod', 'in', ['FREE_TRIAL_15_DAYS', 'FREE_TRIAL_7_DAYS'])
         .limit(1)
         .get();
 
       if (!subSnap.empty) {
+        const subData = subSnap.docs[0].data();
+        if (subData?.status === 'trial') {
+          return NextResponse.json({
+            success: true,
+            message: 'Your 7-Day Free Trial is already active!',
+            status: 'trial_active',
+          });
+        }
         return NextResponse.json(
-          { success: false, error: 'A 15-day free trial has already been recorded for this account.' },
+          { success: false, error: 'A 7-day free trial has already been recorded for this account. Please select an annual subscription plan.' },
           { status: 400 }
         );
       }
@@ -68,11 +86,20 @@ export async function POST(req: NextRequest) {
       const companyDoc = await db.collection('companies').doc(targetCompanyId).get();
       if (companyDoc.exists) {
         existingCompanyData = companyDoc.data() || null;
-        if (existingCompanyData && (existingCompanyData.trialStartDate || existingCompanyData.trialEndDate)) {
-          return NextResponse.json(
-            { success: false, error: 'A 15-day free trial has already been used by this company.' },
-            { status: 400 }
-          );
+        if (existingCompanyData) {
+          if (existingCompanyData.subscriptionStatus === 'trial' || existingCompanyData.accountStatus === 'trial_active') {
+            return NextResponse.json({
+              success: true,
+              message: 'Your 7-Day Free Trial is already active for this company!',
+              status: 'trial_active',
+            });
+          }
+          if (existingCompanyData.trialStartDate || existingCompanyData.trialEndDate) {
+            return NextResponse.json(
+              { success: false, error: 'A 7-day free trial has already been used by this company. Please select an annual subscription plan.' },
+              { status: 400 }
+            );
+          }
         }
 
         // Automatic 15-day free trial activates immediately without upfront payment.

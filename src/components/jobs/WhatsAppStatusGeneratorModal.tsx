@@ -19,6 +19,16 @@ interface WhatsAppStatusGeneratorModalProps {
   company?: any;
 }
 
+const STORY_CATEGORIES = [
+  { id: 'all', label: 'Auto', icon: '✨' },
+  { id: 'Manufacturing', label: 'Factory / ஆலை', icon: '🏭' },
+  { id: 'Corporate', label: 'Office / அலுவலகம்', icon: '🏢' },
+  { id: 'IT & Software', label: 'IT & Tech', icon: '💻' },
+  { id: 'Healthcare', label: 'Hospital / மருத்துவம்', icon: '🏥' },
+  { id: 'Retail', label: 'Retail / சில்லறை', icon: '🛍️' },
+  { id: 'Agriculture', label: 'Agro / விவசாயம்', icon: '🌾' },
+];
+
 export default function WhatsAppStatusGeneratorModal({
   isOpen,
   onClose,
@@ -28,6 +38,7 @@ export default function WhatsAppStatusGeneratorModal({
   const [loading, setLoading] = useState(true);
   const [poster, setPoster] = useState<GeneratedPoster | null>(null);
   const [posterData, setPosterData] = useState<PosterData | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -46,7 +57,8 @@ export default function WhatsAppStatusGeneratorModal({
     setError(null);
     setShareFeedback(null);
 
-    generateWhatsAppStatusStory(job, company)
+    const overrideCat = selectedCategory !== 'all' ? selectedCategory : undefined;
+    generateWhatsAppStatusStory(job, company, overrideCat)
       .then(({ poster: genPoster, posterData: data }) => {
         if (!isCancelled) {
           setPoster(genPoster);
@@ -65,7 +77,7 @@ export default function WhatsAppStatusGeneratorModal({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, job, company]);
+  }, [isOpen, job, company, selectedCategory]);
 
   if (!isOpen) return null;
 
@@ -148,6 +160,30 @@ export default function WhatsAppStatusGeneratorModal({
           >
             <X size={18} />
           </button>
+        </div>
+
+        {/* Industry Style Presets */}
+        <div className="space-y-1.5 px-4 sm:px-6 pt-3">
+          <span className="text-[11px] font-bold text-gray-600 block">
+            Choose Visual Category / துறை வாரியான ஸ்டேட்டஸ் வடிவம்:
+          </span>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            {STORY_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-2.5 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 cursor-pointer ${
+                  selectedCategory === cat.id
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <span>{cat.icon}</span>
+                <span>{cat.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Modal Body */}

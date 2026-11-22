@@ -384,7 +384,7 @@ export default function EmployerDashboard() {
           }`}
         >
           {company.verificationStatus === 'pending'
-            ? 'Your company profile is under review. You can still post jobs, but they become visible after approval.'
+            ? 'Your business registration is under admin verification. Your dashboard is available, but publishing features will be activated after approval.'
             : `Company rejected: ${company.rejectionReason || 'See your company profile for details.'}`}
         </div>
       )}

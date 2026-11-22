@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import { notifyGoogleJobPosting } from '@/lib/seo/googleIndexingApi';
-import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    await syncClockSkew().catch(() => 0);
     const body = await safeReadRequestBody<any>(request, {});
     const { jobId, slug, type = 'URL_UPDATED' } = body;
 

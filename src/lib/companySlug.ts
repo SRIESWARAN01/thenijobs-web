@@ -65,25 +65,32 @@ export async function resolveCompanyBySlug(
   // Public list queries must carry the constraint the companies read rule enforces, or
   // Firestore refuses the query outright rather than returning nothing.
   const verified = where('verificationStatus', '==', 'verified');
+  const active = where('isActive', '==', true);
   const first = async (...constraints: any[]) => {
-    const snap = await getDocs(query(collection(db, 'companies'), ...constraints));
-    return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+    try {
+      const snap = await getDocs(query(collection(db, 'companies'), ...constraints));
+      return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+    } catch {
+      return null;
+    }
   };
 
   // Priority order. Index 0 wins over index 1, and so on.
   const branches: Array<Promise<Record<string, any> | null>> = [
     first(where('slug', '==', slug), verified, limit(1)),
-    getDoc(doc(db, 'companies', slug)).then(s => (s.exists() ? { id: s.id, ...s.data() } : null)),
-    first(where('aliases', 'array-contains', slug), verified, limit(1)),
+    first(where('slug', '==', slug), active, limit(1)),
+    getDoc(doc(db, 'companies', slug)).then(s => (s.exists() ? { id: s.id, ...s.data() } : null)).catch(() => null),
     first(where('slugLower', '==', slug.toLowerCase()), verified, limit(1)),
+    first(where('slugLower', '==', slug.toLowerCase()), active, limit(1)),
+    first(where('aliases', 'array-contains', slug), verified, limit(1)),
+    first(where('aliases', 'array-contains', slug), active, limit(1)),
   ];
 
   // A company saved without a slug/slugLower is still reachable: the directory links to
-  // slugifyCompany(name), so match the name that produces this slug. PERF-2 added the verified
-  // constraint here — it was the one branch missing it, which would have made it throw rather
-  // than return empty once the default-deny rules ship.
+  // slugifyCompany(name), so match the name that produces this slug.
   if (options.includeNameMatch) {
     branches.push(first(where('name', '==', slug.replace(/-/g, ' ')), verified, limit(1)));
+    branches.push(first(where('name', '==', slug.replace(/-/g, ' ')), active, limit(1)));
   }
 
   // Last resort: a signed-in owner may preview their own pending or rejected company.

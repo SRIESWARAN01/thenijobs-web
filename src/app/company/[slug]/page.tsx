@@ -44,20 +44,27 @@ export async function generateMetadata({
   }
 
   // Fetch real company data from Firebase
-  const company = await getCompanyBySlugServer(slug);
+  const company = await getCompanyBySlugServer(slug).catch(() => null);
 
   if (company) {
     // Use the centralized SEO engine with real data
     return generateCompanySEO(company);
   }
 
-  // Return non-indexed 404 metadata for missing companies
+  // Graceful metadata fallback: allow client-side hydration while preventing invalid indexing
+  const readableName = slug
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c: string) => c.toUpperCase());
+
   return {
-    title: 'Company Not Found | THENIJOBS',
-    description: 'The requested company profile was not found on THENIJOBS.',
+    title: `${readableName} | Business Profile | THENIJOBS`,
+    description: `View company profile, verified contact details, products, and services for ${readableName} on THENIJOBS.`,
+    alternates: {
+      canonical: `https://www.thenijobs.com/company/${slug}`,
+    },
     robots: {
       index: false,
-      follow: false,
+      follow: true,
     },
   };
 }
@@ -73,10 +80,9 @@ export default async function CompanyProfilePage({
   const company = await getCompanyBySlugServer(slug).catch(() => null);
 
   if (!company) {
-    if (slug === '_fallback') {
-      return <CompanyProfilePageClient slug={slug} />;
-    }
-    notFound();
+    // Graceful fallback to client-side resolver (handles newly approved companies,
+    // custom IDs, and unindexed slugs without throwing a 404 page)
+    return <CompanyProfilePageClient slug={slug} />;
   }
 
   const displayName = company.name || slug

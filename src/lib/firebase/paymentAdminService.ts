@@ -3,6 +3,7 @@ import { getAdminFirestore, getServiceAccountCredentials } from './firebaseAdmin
 import { assignNextBillingSlogan, getDeterministicBillingSlogan } from '@/lib/billing/sloganService';
 import { ALL_VALID_PLAN_PRICES, SUBSCRIPTION_PLANS } from '@/lib/constants';
 import type { ReceiptData } from '@/lib/pdf/receiptGenerator';
+import { sendAdminPaymentWhatsAppAlert } from '@/lib/notifications/adminWhatsAppAlert';
 
 export interface VerifyPaymentInput {
   orderId: string;
@@ -693,6 +694,21 @@ export async function recordVerifiedPayment(input: VerifyPaymentInput) {
   if (!writeSucceeded) {
     throw new Error('Database write channels encountered an error while saving payment record.');
   }
+
+  // Automated Admin WhatsApp alert notification
+  void sendAdminPaymentWhatsAppAlert({
+    companyName: companyName || (rpPayment?.notes?.companyName as string),
+    ownerName: userName || (rpPayment?.notes?.ownerName as string),
+    phone: userPhone || rpPayment?.contact,
+    email: userEmail || rpPayment?.email,
+    planName: resolvedPlanName,
+    amount: paymentPayload.amount,
+    paymentId,
+    date: now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+    status: 'SUCCESSFUL',
+  }).catch((alertErr) => {
+    console.warn('[paymentAdminService] Admin WhatsApp alert dispatch notice:', alertErr);
+  });
 
   return {
     success: true,

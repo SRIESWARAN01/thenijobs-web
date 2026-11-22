@@ -7,7 +7,7 @@ import {
   Eye, Trash2, ToggleLeft, ToggleRight, MessageSquare,
   Phone, Mail, MapPin, ExternalLink, Loader2, Filter,
   Smartphone, RefreshCw, Send, Check, Download, AlertCircle,
-  Briefcase, ShieldCheck, X, MessageCircle
+  Briefcase, ShieldCheck, X, MessageCircle, FileSpreadsheet
 } from 'lucide-react';
 import { useCollection } from '@/hooks/useFirestore';
 import { updateDocument, deleteDocument } from '@/lib/firebase/firestoreService';
@@ -262,6 +262,40 @@ export default function AdminJobAlertsPage() {
     }
   };
 
+  const handleExportExcel = async () => {
+    if (filteredAlerts.length === 0) {
+      toast.error('No job alerts to export.');
+      return;
+    }
+
+    try {
+      const XLSX = await import('xlsx');
+      const rows = filteredAlerts.map((a: any) => ({
+        'Alert ID': a.id,
+        'Candidate Name': a.candidateName || a.name || 'Candidate',
+        'Mobile Number': a.candidatePhone || a.phone || '',
+        'WhatsApp Number': (a.whatsappNumber || a.phone || a.candidatePhone || '') as string,
+        'Preferred Categories': (Array.isArray(a.categories) ? a.categories : (a.category ? [a.category] : [])).join(', ') || 'All Categories',
+        'Preferred Locations': (Array.isArray(a.taluks) ? a.taluks : (a.district ? [a.district] : [])).join(', ') || 'Theni District',
+        'Job Type': a.jobType || 'Full-time',
+        'Status': (a.status || (a.active ? 'active' : 'paused')).toUpperCase(),
+        'WhatsApp Channel': a.whatsappEnabled || a.channels?.whatsapp ? 'ACTIVE' : 'INACTIVE',
+        'Registration Date': formatDate(a.createdAt),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'WhatsApp Job Alerts');
+      const filename = `THENIJOBS_WhatsApp_Job_Alerts_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+      toast.success('Job Alerts Excel (.xlsx) exported successfully!');
+    } catch (err: any) {
+      console.error('Excel export error:', err);
+      toast.error('Failed to export Excel file. Falling back to CSV.');
+      handleExportCSV();
+    }
+  };
+
   const handleExportCSV = () => {
     if (filteredAlerts.length === 0) {
       toast.error('No job alerts to export.');
@@ -326,6 +360,15 @@ export default function AdminJobAlertsPage() {
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               <span>Refresh</span>
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 text-xs font-bold bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+            >
+              <FileSpreadsheet size={14} className="text-emerald-700" />
+              <span>Export Excel (.xlsx)</span>
             </Button>
             <Button
               variant="secondary"

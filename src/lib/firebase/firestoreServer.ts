@@ -563,31 +563,64 @@ export async function getCompanyByIdServer(companyId: string): Promise<ServerCom
 export async function getCompanyBySlugServer(slug: string): Promise<ServerCompanyData | null> {
   if (!slug || slug === '_fallback') return null;
 
-  // 1. Query by slug field (most common)
-  const bySlug = await runQueryREST<any>(
+  // 1. Query by slug field with verified status (most common)
+  const bySlugVerified = await runQueryREST<any>(
     'companies',
     [
       { field: 'slug', op: 'EQUAL', value: { stringValue: slug } },
       { field: 'verificationStatus', op: 'EQUAL', value: { stringValue: 'verified' } },
     ],
     undefined, undefined, 1,
-  );
-  if (bySlug.length > 0) return parseServerCompanyData(bySlug[0]);
+  ).catch(() => []);
+  if (bySlugVerified.length > 0) return parseServerCompanyData(bySlugVerified[0]);
 
-  // 2. Try direct doc ID lookup
-  const byId = await fetchDocumentREST<any>('companies', slug);
+  // 2. Query by slug field where company is active (e.g. approved or active trial)
+  const bySlugActive = await runQueryREST<any>(
+    'companies',
+    [
+      { field: 'slug', op: 'EQUAL', value: { stringValue: slug } },
+      { field: 'isActive', op: 'EQUAL', value: { booleanValue: true } },
+    ],
+    undefined, undefined, 1,
+  ).catch(() => []);
+  if (bySlugActive.length > 0) return parseServerCompanyData(bySlugActive[0]);
+
+  // 3. Try direct doc ID lookup
+  const byId = await fetchDocumentREST<any>('companies', slug).catch(() => null);
   if (byId) return parseServerCompanyData(byId);
 
-  // 3. Query by slugLower
-  const byLower = await runQueryREST<any>(
+  // 4. Query by slugLower with verified status
+  const byLowerVerified = await runQueryREST<any>(
     'companies',
     [
       { field: 'slugLower', op: 'EQUAL', value: { stringValue: slug.toLowerCase() } },
       { field: 'verificationStatus', op: 'EQUAL', value: { stringValue: 'verified' } },
     ],
     undefined, undefined, 1,
-  );
-  if (byLower.length > 0) return parseServerCompanyData(byLower[0]);
+  ).catch(() => []);
+  if (byLowerVerified.length > 0) return parseServerCompanyData(byLowerVerified[0]);
+
+  // 5. Query by slugLower where company is active
+  const byLowerActive = await runQueryREST<any>(
+    'companies',
+    [
+      { field: 'slugLower', op: 'EQUAL', value: { stringValue: slug.toLowerCase() } },
+      { field: 'isActive', op: 'EQUAL', value: { booleanValue: true } },
+    ],
+    undefined, undefined, 1,
+  ).catch(() => []);
+  if (byLowerActive.length > 0) return parseServerCompanyData(byLowerActive[0]);
+
+  // 6. Query by aliases array containing slug
+  const byAlias = await runQueryREST<any>(
+    'companies',
+    [
+      { field: 'aliases', op: 'ARRAY_CONTAINS', value: { stringValue: slug } },
+      { field: 'isActive', op: 'EQUAL', value: { booleanValue: true } },
+    ],
+    undefined, undefined, 1,
+  ).catch(() => []);
+  if (byAlias.length > 0) return parseServerCompanyData(byAlias[0]);
 
   return null;
 }

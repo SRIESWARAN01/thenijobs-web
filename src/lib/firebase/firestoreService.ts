@@ -22,6 +22,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
+import { slugifyCompany } from '@/lib/companySlug';
 
 // ============================================================
 // HELPERS
@@ -680,7 +681,17 @@ export async function approveCompany(companyId: string, adminId: string) {
   const now = new Date();
   const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // exactly 15-day free trial
 
+  const company = await fetchDocument<{ ownerId?: string; name?: string; phone?: string; district?: string; slug?: string }>(
+    'companies',
+    companyId,
+  );
+
+  const derivedSlug = company?.slug || slugifyCompany(company?.name || companyId);
+
   await updateDoc(doc(db, 'companies', companyId), {
+    slug: derivedSlug,
+    slugLower: derivedSlug.toLowerCase(),
+    approvalStatus: 'approved',
     verificationStatus: 'verified',
     isVerified: true,
     isActive: true,
@@ -696,10 +707,30 @@ export async function approveCompany(companyId: string, adminId: string) {
     updatedAt: serverTimestamp(),
   });
 
-  const company = await fetchDocument<{ ownerId?: string; name?: string; phone?: string; district?: string }>(
-    'companies',
-    companyId,
-  );
+  // Guarantee slug reservation in companySlugs collection
+  try {
+    await setDoc(doc(db, 'companySlugs', derivedSlug), {
+      companyId,
+      ownerId: company?.ownerId || '',
+      approvedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (slugErr) {
+    console.warn('[approveCompany] Failed to reserve slug:', slugErr);
+  }
+
+  // Best-effort search engine indexing trigger
+  try {
+    if (typeof window !== 'undefined') {
+      void fetch('/api/seo/index-company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId, slug: derivedSlug }),
+      }).catch(() => 0);
+    }
+  } catch {
+    // non-blocking
+  }
 
   if (company?.ownerId) {
     try {
@@ -914,7 +945,13 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
   // If user already has a company, also mark verified, active, and sync plan
   if (targetCompanyId) {
     try {
+      const compDoc = await fetchDocument<any>('companies', targetCompanyId);
+      const derivedSlug = compDoc?.slug || slugifyCompany(compDoc?.name || userDoc?.displayName || targetCompanyId);
+
       const companyUpdates: Record<string, any> = {
+        slug: derivedSlug,
+        slugLower: derivedSlug.toLowerCase(),
+        approvalStatus: 'approved',
         verificationStatus: 'verified',
         isVerified: true,
         isActive: true,
@@ -939,6 +976,31 @@ export async function approveBusinessOwner(userId: string, adminId: string) {
       }
 
       await updateDoc(doc(db, 'companies', targetCompanyId), companyUpdates);
+
+      // Reserve slug in companySlugs
+      try {
+        await setDoc(doc(db, 'companySlugs', derivedSlug), {
+          companyId: targetCompanyId,
+          ownerId: userId,
+          approvedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } catch (slugErr) {
+        console.warn('[approveBusinessOwner] Failed to reserve slug:', slugErr);
+      }
+
+      // Best-effort search engine indexing trigger
+      try {
+        if (typeof window !== 'undefined') {
+          void fetch('/api/seo/index-company', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyId: targetCompanyId, slug: derivedSlug }),
+          }).catch(() => 0);
+        }
+      } catch {
+        // non-blocking
+      }
     } catch (cErr) {
       console.warn('[approveBusinessOwner] Note updating company:', cErr);
     }

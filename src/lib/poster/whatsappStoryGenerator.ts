@@ -15,9 +15,13 @@ export { normalizeJobToPosterData, formatWhatsAppStatusShareText };
  */
 export async function generateWhatsAppStatusStory(
   jobOrData: any,
-  company?: any
+  company?: any,
+  themeCategory?: string
 ): Promise<{ poster: GeneratedPoster; posterData: PosterData }> {
   const posterData = normalizeJobToPosterData(jobOrData, company);
+  if (themeCategory) {
+    posterData.category = themeCategory;
+  }
 
   // Pre-generate scannable QR Code targeting the canonical job posting
   const qrDataUrl = await QRCode.toDataURL(posterData.publicUrl, {

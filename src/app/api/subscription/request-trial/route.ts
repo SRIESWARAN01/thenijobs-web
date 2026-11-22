@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore, FieldValue } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
+import { sendAdminTrialWhatsAppAlert } from '@/lib/notifications/adminWhatsAppAlert';
 
 export async function POST(req: NextRequest) {
   try {
-
     const body = await safeReadRequestBody<{ userId?: string; companyId?: string }>(req, {});
     const { userId, companyId } = body;
 
@@ -17,12 +17,15 @@ export async function POST(req: NextRequest) {
 
     const db = getAdminFirestore();
 
+    let existingUserData: Record<string, any> | null = null;
+    let existingCompanyData: Record<string, any> | null = null;
+
     // 1. Guard against duplicate trial activation
     if (userId) {
-      const existingUser = await db.collection('users').doc(userId).get();
-      if (existingUser.exists) {
-        const udata = existingUser.data()!;
-        if (udata.trialStartDate || udata.trialEndDate) {
+      const userDoc = await db.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        existingUserData = userDoc.data() || null;
+        if (existingUserData && (existingUserData.trialStartDate || existingUserData.trialEndDate)) {
           return NextResponse.json(
             { success: false, error: 'A 15-day free trial has already been used by this account.' },
             { status: 400 }
@@ -62,17 +65,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (targetCompanyId) {
-      const existingCompany = await db.collection('companies').doc(targetCompanyId).get();
-      if (existingCompany.exists) {
-        const cdata = existingCompany.data()!;
-        if (cdata.trialStartDate || cdata.trialEndDate) {
+      const companyDoc = await db.collection('companies').doc(targetCompanyId).get();
+      if (companyDoc.exists) {
+        existingCompanyData = companyDoc.data() || null;
+        if (existingCompanyData && (existingCompanyData.trialStartDate || existingCompanyData.trialEndDate)) {
           return NextResponse.json(
             { success: false, error: 'A 15-day free trial has already been used by this company.' },
             { status: 400 }
           );
         }
 
-        // Automatic 15-day free trial activates immediately without admin approval.
+        // Automatic 15-day free trial activates immediately without upfront payment.
         // Website preview is accessible (isActive: true), but verificationStatus stays pending.
         await db.collection('companies').doc(targetCompanyId).set({
           trialRequested: true,
@@ -115,6 +118,43 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true });
     }
+
+    // Record entry in subscriptions collection for tracking
+    try {
+      await db.collection('subscriptions').add({
+        companyId: targetCompanyId || '',
+        companyName: existingCompanyData?.name || existingUserData?.companyName || 'Business Owner',
+        userId: userId || '',
+        plan: 'standard',
+        status: 'trial',
+        paymentStatus: 'free_trial',
+        paymentMethod: 'FREE_TRIAL_15_DAYS',
+        amount: 0,
+        startDate: now,
+        endDate: trialEndDate,
+        autoRenew: false,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    } catch (subErr) {
+      console.warn('[request-trial] Failed to record subscription entry:', subErr);
+    }
+
+    // Automated WhatsApp alert to Admin for new free trial registration
+    const companyDisplayName = existingCompanyData?.name || existingUserData?.companyName || 'Registered Company';
+    const ownerDisplayName = existingUserData?.name || existingUserData?.displayName || 'Business Owner';
+    const contactPhone = existingCompanyData?.phone || existingUserData?.phone || '';
+    const contactEmail = existingCompanyData?.email || existingUserData?.email || '';
+
+    void sendAdminTrialWhatsAppAlert({
+      companyName: companyDisplayName,
+      ownerName: ownerDisplayName,
+      phone: contactPhone,
+      email: contactEmail,
+      planName: 'Standard Plan (15-Day Free Trial)',
+      trialStartDate: now.toLocaleDateString('en-IN'),
+      trialExpiryDate: trialEndDate.toLocaleDateString('en-IN'),
+    }).catch(() => 0);
 
     return NextResponse.json({
       success: true,

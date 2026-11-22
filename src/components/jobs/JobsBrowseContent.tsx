@@ -26,6 +26,7 @@ import { useToast } from '@/contexts/ToastContext';
 import UrgentSpotlightBadge from '@/components/jobs/UrgentSpotlightBadge';
 import WhatsAppStatusButton from '@/components/jobs/WhatsAppStatusButton';
 import WhatsAppJobAlertsCard from '@/components/jobs/WhatsAppJobAlertsCard';
+import FloatingWhatsAppJobAlert from '@/components/jobs/FloatingWhatsAppJobAlert';
 import { isJobUrgent } from '@/lib/constants';
 
 /* ─── Types ─── */
@@ -783,6 +784,9 @@ export default function JobsBrowseContent({ embedded = false }: JobsBrowseConten
       >
         <FilterPanel filters={filters} setFilters={setFilters} onReset={resetFilters} />
       </FilterBottomSheet>
+
+      {/* Floating AI-Assistant Style WhatsApp Job Alert Trigger for Mobile Users */}
+      <FloatingWhatsAppJobAlert />
     </>
   );
 }

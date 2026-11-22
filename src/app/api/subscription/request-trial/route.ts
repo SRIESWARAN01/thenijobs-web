@@ -49,8 +49,20 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
 
-    if (companyId) {
-      const existingCompany = await db.collection('companies').doc(companyId).get();
+    let targetCompanyId = companyId;
+    if (!targetCompanyId && userId) {
+      try {
+        const compSnap = await db.collection('companies').where('ownerId', '==', userId).limit(1).get();
+        if (!compSnap.empty) {
+          targetCompanyId = compSnap.docs[0].id;
+        }
+      } catch (err) {
+        console.warn('[request-trial] Could not query company by ownerId:', err);
+      }
+    }
+
+    if (targetCompanyId) {
+      const existingCompany = await db.collection('companies').doc(targetCompanyId).get();
       if (existingCompany.exists) {
         const cdata = existingCompany.data()!;
         if (cdata.trialStartDate || cdata.trialEndDate) {
@@ -62,7 +74,7 @@ export async function POST(req: NextRequest) {
 
         // Automatic 15-day free trial activates immediately without admin approval.
         // Website preview is accessible (isActive: true), but verificationStatus stays pending.
-        await db.collection('companies').doc(companyId).update({
+        await db.collection('companies').doc(targetCompanyId).set({
           trialRequested: true,
           requestedPlan: 'standard',
           subscriptionPlan: 'standard',
@@ -76,7 +88,7 @@ export async function POST(req: NextRequest) {
           isVerified: false,
           isActive: true,
           updatedAt: FieldValue.serverTimestamp(),
-        });
+        }, { merge: true });
       }
     }
 

@@ -398,7 +398,7 @@ export function generateWhatsAppReminderUrl(
 
   const text = `Hello ${companyName},
 
-Your THENIJOBS 15-day free trial has ended and we have not received your subscription payment.
+Your THENIJOBS 7-day free trial has ended and we have not received your subscription payment.
 
 Status: 🚫 Trial Expired — Upgrade Required
 
@@ -443,12 +443,49 @@ export function generateAdminWhatsAppContactUrl(
 Business Name: "${companyName}"${contactInfo}
 Status: 🚫 Trial Expired — Upgrade Required${planInfo}
 
-My 15-day free trial has expired and my employer services are currently suspended.
+My 7-day free trial has expired and my employer services are currently suspended.
 
 I want to upgrade to a paid subscription plan. Please assist me with payment and instant account activation.
 
 Admin WhatsApp Number: +91 93605 19460
 Thank you!`;
+
+  return `https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(text)}`;
+}
+
+/**
+ * Generates the WhatsApp enquiry URL with structured business details for approval and feature unlocking.
+ */
+export function generateAdminWhatsAppEnquiryUrl(params: {
+  company?: { name?: string; phone?: string; email?: string; district?: string; address?: string } | null;
+  user?: { displayName?: string; name?: string; fullName?: string; phone?: string; mobileNumber?: string; email?: string } | null;
+  featureName?: string;
+  status?: string;
+}): string {
+  const companyName = params.company?.name || 'My Company';
+  const ownerName = params.user?.fullName || params.user?.displayName || params.user?.name || 'Business Owner';
+  const phone = params.company?.phone || params.user?.mobileNumber || params.user?.phone || '—';
+  const email = params.company?.email || params.user?.email || '—';
+  const location = params.company?.district || params.company?.address || 'Theni District';
+  const feature = params.featureName || 'Job Posting & Company Website';
+  const status = params.status || 'Pending Admin Approval (7-Day Free Trial)';
+
+  const text = [
+    'Hello THENIJOBS Admin,',
+    '',
+    'I would like to request account approval and activation for my business:',
+    '',
+    `*Company:* ${companyName}`,
+    `*Owner:* ${ownerName}`,
+    `*Mobile:* ${phone}`,
+    `*Email:* ${email}`,
+    `*Location:* ${location}`,
+    `*Feature:* ${feature}`,
+    `*Account Status:* ${status}`,
+    '',
+    'Please review my business registration and approve my account.',
+    'Thank you!',
+  ].join('\n');
 
   return `https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(text)}`;
 }

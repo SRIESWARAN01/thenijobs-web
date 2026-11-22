@@ -141,12 +141,12 @@ export async function sendAdminTrialWhatsAppAlert(input: FreeTrialAlertInput): P
   const ownerName = input.ownerName?.trim() || 'Business Owner';
   const phone = input.phone || '—';
   const email = input.email || '—';
-  const plan = input.planName || 'Standard Plan (15-Day Free Trial)';
+  const plan = input.planName || 'Standard Plan (7-Day Free Trial)';
   const startDate = input.trialStartDate || new Date().toLocaleDateString('en-IN');
-  const expiryDate = input.trialExpiryDate || new Date(Date.now() + 15 * 86400000).toLocaleDateString('en-IN');
+  const expiryDate = input.trialExpiryDate || new Date(Date.now() + 7 * 86400000).toLocaleDateString('en-IN');
 
   const formattedMessage = [
-    '⭐ *NEW 15-DAY FREE TRIAL REGISTRATION!*',
+    '⭐ *NEW 7-DAY FREE TRIAL REGISTRATION!*',
     '',
     `*Company:* ${companyName}`,
     `*Owner:* ${ownerName}`,

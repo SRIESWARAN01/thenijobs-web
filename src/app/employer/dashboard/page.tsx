@@ -189,7 +189,7 @@ export default function EmployerDashboard() {
             </span>
           ) : subscriptionState.isTrialActive ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold">
-              <Clock size={14} className="text-blue-600" /> 15-Day Free Trial ({subscriptionState.trialDaysRemaining}d remaining)
+              <Clock size={14} className="text-blue-600" /> 7-Day Free Trial ({subscriptionState.trialDaysRemaining}d remaining)
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">
@@ -210,12 +210,13 @@ export default function EmployerDashboard() {
           <div className="space-y-1">
             <div className="flex items-center gap-2 font-bold text-blue-900">
               <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-black uppercase tracking-wider">
-                15-Day Free Trial Active
+                {/* 15-Day Free Trial Active / 7-Day Free Trial Active */}
+                7-Day Free Trial Active
               </span>
               <span>{subscriptionState.trialDaysRemaining} {subscriptionState.trialDaysRemaining === 1 ? 'day' : 'days'} remaining</span>
             </div>
             <p className="text-slate-600 text-[11px]">
-              Trial started: <strong>{subscriptionState.trialStartDate ? formatDate(subscriptionState.trialStartDate) : 'On approval'}</strong> • Ends: <strong>{subscriptionState.trialEndDate ? formatDate(subscriptionState.trialEndDate) : 'In 15 days'}</strong>. All Standard Plan features are unlocked.
+              Trial started: <strong>{subscriptionState.trialStartDate ? formatDate(subscriptionState.trialStartDate) : 'On approval'}</strong> • Ends: <strong>{subscriptionState.trialEndDate ? formatDate(subscriptionState.trialEndDate) : 'In 7 days'}</strong>. All Standard Plan features are unlocked.
             </p>
           </div>
           <Link href="/pricing" className="shrink-0">

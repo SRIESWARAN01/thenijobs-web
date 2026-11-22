@@ -22,7 +22,7 @@ import { auth } from '@/lib/firebase/config';
 import { where, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/contexts/ToastContext';
 import { canPostNewJob, getPlan } from '@/lib/plans';
-import { computeSubscriptionState } from '@/lib/subscriptionService';
+import { computeSubscriptionState, generateAdminWhatsAppEnquiryUrl } from '@/lib/subscriptionService';
 import { Switch } from '@/components/dashboard';
 import { requestAIService } from '@/lib/ai/aiClient';
 import { generateJobSlug } from '@/lib/seo/jobSlug';
@@ -441,26 +441,37 @@ export default function PostJobPage() {
           Job Posting Is Locked Awaiting Admin Approval
         </h2>
         <p className="text-xs sm:text-sm text-gray-600 max-w-md mb-6 leading-relaxed">
-          Your <strong>15-day free trial is active</strong>! You have full access to your Dashboard and Website Preview, but publishing job vacancies stays locked until THENIJOBS Admin approves your business profile.
+          Your <strong>7-day free trial is active</strong>! You have full access to your Dashboard and Website Preview, but publishing job vacancies stays locked until THENIJOBS Admin approves your business profile.
         </p>
 
         {/* WhatsApp & Call Support Box */}
         <div className="w-full p-5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-3 mb-6 shadow-xs">
           <p className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-            Request Immediate Approval:
+            Request Immediate Approval &amp; Unlock:
           </p>
+          <div className="bg-white p-3 rounded-xl border border-slate-100 text-xs space-y-1 text-slate-700">
+            <div><span className="text-slate-400">Company:</span> <strong className="text-slate-900">{company?.name || 'My Company'}</strong></div>
+            <div><span className="text-slate-400">Owner:</span> <strong className="text-slate-900">{user?.displayName || (user as any)?.name || 'Business Owner'}</strong></div>
+            <div><span className="text-slate-400">Mobile:</span> <strong className="text-slate-900">{company?.phone || user?.phone || '—'}</strong></div>
+            <div><span className="text-slate-400">Location:</span> <strong className="text-slate-900">{company?.district || 'Theni District'}</strong></div>
+          </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Contact THENIJOBS support directly via WhatsApp or phone call to fast-track your business verification and unlock job posting immediately.
+            Contact THENIJOBS admin directly via WhatsApp or phone call to fast-track your business verification and unlock job posting immediately.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <a
-              href="https://wa.me/919360519460?text=Hello%20THENIJOBS%2C%20I%20have%20an%20active%2015-day%20free%20trial%20for%20my%20business%20and%20would%20like%20to%20request%20admin%20approval%20to%20unlock%20Job%20Posting."
+              href={generateAdminWhatsAppEnquiryUrl({
+                company,
+                user,
+                featureName: 'Job Vacancy Posting',
+                status: 'Pending Admin Verification (7-Day Free Trial)',
+              })}
               target="_blank"
               rel="noopener noreferrer"
               className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
             >
               <MessageCircle size={15} />
-              <span>WhatsApp Support</span>
+              <span>WhatsApp Admin</span>
             </a>
             <a
               href={`tel:${SITE_CONTACT.phone1Raw}`}
@@ -471,7 +482,7 @@ export default function PostJobPage() {
             </a>
           </div>
           <p className="text-[11px] text-slate-500 pt-1 text-center">
-            Secondary Helpline: <a href={`tel:${SITE_CONTACT.phone2Raw}`} className="font-semibold text-slate-700 hover:underline">{SITE_CONTACT.phone2}</a> · {SITE_CONTACT.supportEmail}
+            Primary: <a href={`tel:${SITE_CONTACT.phone1Raw}`} className="font-semibold text-slate-700 hover:underline">{SITE_CONTACT.phone1}</a> · Secondary Helpline: <a href={`tel:${SITE_CONTACT.phone2Raw}`} className="font-semibold text-slate-700 hover:underline">{SITE_CONTACT.phone2}</a>
           </p>
         </div>
 

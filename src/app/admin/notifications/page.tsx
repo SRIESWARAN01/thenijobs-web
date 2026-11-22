@@ -171,11 +171,10 @@ export default function NotificationsPage() {
                   return (
                     <div
                       key={log.id}
-                      className={`rounded-2xl border p-4 transition-all ${
-                        isPayment
+                      className={`rounded-2xl border p-4 transition-all ${isPayment
                           ? 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50/70'
                           : 'border-amber-200 bg-amber-50/40 hover:bg-amber-50/70'
-                      }`}
+                        }`}
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -275,11 +274,10 @@ export default function NotificationsPage() {
                         type="button"
                         aria-pressed={isSelected}
                         onClick={() => setComposeAudience(opt.value)}
-                        className={`flex items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                          isSelected
+                        className={`flex items-center gap-2 rounded-xl border p-3 text-xs font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${isSelected
                             ? 'border-blue-300 bg-[#EFF6FF] text-[#1E40AF]'
                             : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                        }`}
+                          }`}
                       >
                         <Icon size={16} className={isSelected ? 'text-blue-600' : 'text-slate-400'} aria-hidden />
                         <span className="text-left">{opt.label}</span>

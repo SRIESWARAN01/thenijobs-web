@@ -362,10 +362,52 @@ export default function SubscriptionsPage() {
   const handleRenewSubscription = useCallback(async (sub: SubscriptionDoc) => {
     const cId = sub.companyId || sub.userId || sub.id;
     if (!cId) { toast.error('Cannot renew', 'No company ID found on this subscription.'); return; }
+
+    // Guard: Trial Plan should NOT be accidentally renewed as Standard 1-year without admin confirmation
+    if (sub.plan === 'trial' || sub.status === 'trial') {
+      const confirmedPlan = prompt(
+        `This business is on a 7-Day Free Trial.\n\nTo activate a paid annual subscription, enter plan name:\n• basic (₹999/yr)\n• standard (₹1,800/yr)\n• premium (₹3,500/yr)\n• enterprise (₹5,000/yr)\n\nOr enter "extend" to extend the trial by 7 days:`,
+        'standard'
+      );
+      if (!confirmedPlan) return;
+
+      const cleanPlan = confirmedPlan.trim().toLowerCase();
+      if (cleanPlan === 'extend') {
+        setActionLoading(`renew_${sub.id}`);
+        try {
+          await extendCompanyTrial(cId, 7, 'Admin 7-day trial extension');
+          toast.success('Trial Extended! 🌟', `${sub.businessName || sub.companyName || 'Company'} extended by 7 days.`);
+        } catch (err: any) {
+          toast.error('Extension failed', err.message);
+        } finally {
+          setActionLoading(null);
+        }
+        return;
+      }
+
+      if (!['basic', 'standard', 'premium', 'enterprise'].includes(cleanPlan)) {
+        toast.warning('Invalid Plan', 'Please enter basic, standard, premium, or enterprise.');
+        return;
+      }
+
+      setActionLoading(`renew_${sub.id}`);
+      try {
+        await manualActivateSubscription(cId, cleanPlan as any, currentUser?.uid || 'admin', `Admin conversion from trial to ${cleanPlan}`);
+        toast.success('Subscription Activated! 🌟', `${sub.businessName || sub.companyName || 'Company'} converted to ${cleanPlan.toUpperCase()} plan for 1 year.`);
+      } catch (err: any) {
+        toast.error('Activation failed', err.message);
+      } finally {
+        setActionLoading(null);
+      }
+      return;
+    }
+
+    // Exact existing plan renewal: Basic -> Basic, Standard -> Standard, Premium -> Premium, Enterprise -> Enterprise
+    const exactPlan = (sub.plan as any) || 'basic';
     setActionLoading(`renew_${sub.id}`);
     try {
-      await manualActivateSubscription(cId, (sub.plan as any) || 'standard', currentUser?.uid || 'admin', 'Admin renewal via subscriptions panel');
-      toast.success('Subscription Renewed! 🌟', `${sub.businessName || sub.companyName || 'Company'} renewed for 1 year on ${sub.plan || 'standard'} plan.`);
+      await manualActivateSubscription(cId, exactPlan, currentUser?.uid || 'admin', `Admin renewal of existing ${exactPlan} plan`);
+      toast.success('Subscription Renewed! 🌟', `${sub.businessName || sub.companyName || 'Company'} renewed for 1 year on ${String(exactPlan).toUpperCase()} plan.`);
     } catch (err: any) {
       toast.error('Renewal failed', err.message);
     } finally {

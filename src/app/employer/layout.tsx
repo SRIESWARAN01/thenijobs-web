@@ -23,8 +23,9 @@ import { auth } from '@/lib/firebase/config';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useSubscriptionStatus } from '@/hooks/useSubscriptionStatus';
 import { SUBSCRIPTION_PLANS, SITE_CONTACT } from '@/lib/constants';
-import { generateAdminWhatsAppContactUrl } from '@/lib/subscriptionService';
+import { generateAdminWhatsAppContactUrl, generateAdminWhatsAppEnquiryUrl } from '@/lib/subscriptionService';
 import PaymentCheckoutModal, { PlanDetails } from '@/components/payment/PaymentCheckoutModal';
+import FeatureLockModal from '@/components/employer/FeatureLockModal';
 
 const EMPLOYER_NAV = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/employer/dashboard' },
@@ -64,6 +65,7 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
   const [checkoutPlan, setCheckoutPlan] = useState<PlanDetails | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [lockModalFeature, setLockModalFeature] = useState<string | null>(null);
 
   const handleOpenCheckout = (plan: (typeof SUBSCRIPTION_PLANS)[number]) => {
     setCheckoutPlan({
@@ -506,14 +508,14 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
             <h1 className="text-2xl font-black text-gray-900 mt-3">Registration Under Review</h1>
             <p className="text-sm text-gray-600 mt-2 leading-relaxed">
               Your business registration for <strong>&quot;{company.name}&quot;</strong> is being reviewed by THENIJOBS admin.
-              Once approved, your 15-day Standard free trial will begin automatically.
+              Once approved, your 7-day Standard free trial will begin automatically.
             </p>
           </div>
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left space-y-2">
             <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">What happens next?</p>
             <ul className="text-xs text-amber-700 space-y-1">
               <li>✓ Admin verifies your business details</li>
-              <li>✓ 15-day Standard free trial starts from approval</li>
+              <li>✓ 7-day Standard free trial starts from approval</li>
               <li>✓ Company website goes live immediately</li>
               <li>✓ You can post jobs and manage candidates</li>
             </ul>
@@ -1029,21 +1031,27 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
           </Link>
         </header>
 
-        {/* 15-Day Free Trial Notice Banner (Job Posting locked until Admin Approval) */}
+        {/* 15-Day Free Trial / 7-Day Free Trial Notice Banner (Job Posting stays locked until Admin approval) */}
         {subState.isTrialActive && !subState.isJobPostingAllowed && (
           <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-amber-200/90 px-4 py-2.5 sm:px-6 shadow-2xs">
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs">
               <div className="flex items-center gap-2 text-amber-950 font-medium">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black shrink-0 shadow-xs">
-                  🎁 15-Day Free Trial
+                  🎁 7-Day Free Trial
                 </span>
                 <span>
-                  <strong>{subState.trialDaysRemaining || 15} days remaining</strong>. Your Website preview is accessible! Job Posting stays locked until Admin approval.
+                  {/* 15-Day Free Trial */}
+                  <strong>{subState.trialDaysRemaining || 7} days remaining</strong>. Your Website preview is accessible! Job Posting stays locked until Admin approval.
                 </span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <a
-                  href={`https://wa.me/${SITE_CONTACT.whatsapp}?text=${encodeURIComponent(`Hi THENIJOBS Admin, I am on the 15-day Free Trial (${company?.name || user?.fullName || user?.email}). Please verify and approve my business to unlock Job Posting.`)}`}
+                  href={generateAdminWhatsAppEnquiryUrl({
+                    company,
+                    user,
+                    featureName: 'Job Vacancy Posting',
+                    status: 'Pending Admin Verification (7-Day Free Trial)',
+                  }) /* https://wa.me/919360519460 */}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs transition-colors"
@@ -1052,11 +1060,11 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
                   <span>Fast-Track on WhatsApp</span>
                 </a>
                 <a
-                  href="tel:+919360519460"
+                  href={`tel:${SITE_CONTACT.phone1Raw}`}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 hover:bg-amber-50 font-semibold text-[11px] transition-colors"
                 >
                   <PhoneCall size={12} />
-                  <span>Call Admin</span>
+                  <span>Call {SITE_CONTACT.phone1}</span>
                 </a>
               </div>
             </div>
@@ -1078,6 +1086,17 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
             setIsCheckoutOpen(false);
             window.location.reload();
           }}
+        />
+      )}
+
+      {lockModalFeature && (
+        <FeatureLockModal
+          isOpen={Boolean(lockModalFeature)}
+          onClose={() => setLockModalFeature(null)}
+          featureName={lockModalFeature}
+          company={company}
+          user={user}
+          isTrialExpired={subState.isTrialExpired}
         />
       )}
     </div>

@@ -21,6 +21,10 @@ export const SITE_CONTACT = {
   location: 'Theni, Tamil Nadu, India',
 };
 
+// ===== FREE TRIAL CONFIGURATION =====
+export const FREE_TRIAL_DURATION_DAYS = 7;
+export const FREE_TRIAL_NAME = '7-Day Free Trial';
+
 // ===== DESIGNATED RETAINED ADMIN & PRODUCTION COMPANIES =====
 export const DESIGNATED_RETAINED_ADMIN_UID = 'xNM3lkvzQ5fcgVVZirlC6kkyoSE2';
 export const DESIGNATED_RETAINED_ADMIN_EMAIL = 'srieswaran22@gmail.com';

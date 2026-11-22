@@ -224,13 +224,13 @@ export default function PricingClient() {
               </div>
               <div>
                 <h4 className="font-bold text-sm">Welcome to THENIJOBS! Account Created</h4>
-                <p className="text-xs text-blue-100 mt-0.5">Select an annual subscription plan below, or request our 15-day Standard Free Trial under admin review.</p>
+                <p className="text-xs text-blue-100 mt-0.5">Select an annual subscription plan below, or request our 7-day Standard Free Trial under admin review.</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* 15-Day Free Trial Option Card */}
+        {/* 7-Day Free Trial Option Card */}
         <div className="max-w-4xl mx-auto mb-8 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border-2 border-amber-400/40 rounded-3xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5">
           <div className="flex items-start gap-4 text-left">
             <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
@@ -238,13 +238,13 @@ export default function PricingClient() {
             </div>
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold uppercase tracking-wider mb-1">
-                ⭐ 15-Day Free Trial
+                ⭐ 7-Day Free Trial
               </div>
               <h3 className="text-base sm:text-lg font-bold text-gray-900">
-                Try THENIJOBS Free for 15 Days (Standard Plan)
+                Try THENIJOBS Free for 7 Days (Standard Plan)
               </h3>
               <p className="text-xs text-gray-600 mt-1 max-w-xl leading-relaxed">
-                Experience 10 active job postings, verified company profile, and WhatsApp lead capture free for 15 days. Trial begins automatically after Admin approval. No upfront payment required.
+                Experience 10 active job postings, verified company profile, and WhatsApp lead capture free for 7 days. Trial begins automatically after Admin approval. No upfront payment required.
               </p>
               <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-gray-500 font-medium">
                 <span className="flex items-center gap-1"><Check size={12} className="text-emerald-600" /> 10 Active Jobs</span>
@@ -261,7 +261,7 @@ export default function PricingClient() {
             className="w-full md:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-bold text-xs sm:text-sm hover:from-amber-600 hover:to-amber-700 transition-all shadow-md shadow-amber-500/20 whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {trialLoading ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />}
-            <span>Request 15-Day Free Trial</span>
+            <span>Request 7-Day Free Trial</span>
           </button>
         </div>
 

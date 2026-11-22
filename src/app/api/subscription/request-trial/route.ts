@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
-    const trialEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+    const trialEndDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     let targetCompanyId = companyId;
     if (!targetCompanyId && userId) {
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         trialEndsAt: trialEndDate,
         trialEligible: false,
         hasUsedFreeTrial: true,
-        trialDurationDays: 15,
+        trialDurationDays: 7,
         paymentStatus: 'not_required',
         approvalStatus: 'pending',
         isEmployer: true,
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
         plan: 'standard',
         status: 'trial',
         paymentStatus: 'free_trial',
-        paymentMethod: 'FREE_TRIAL_15_DAYS',
+        paymentMethod: 'FREE_TRIAL_7_DAYS',
         amount: 0,
         startDate: now,
         endDate: trialEndDate,
@@ -151,14 +151,14 @@ export async function POST(req: NextRequest) {
       ownerName: ownerDisplayName,
       phone: contactPhone,
       email: contactEmail,
-      planName: 'Standard Plan (15-Day Free Trial)',
+      planName: 'Standard Plan (7-Day Free Trial)',
       trialStartDate: now.toLocaleDateString('en-IN'),
       trialExpiryDate: trialEndDate.toLocaleDateString('en-IN'),
     }).catch(() => 0);
 
     return NextResponse.json({
       success: true,
-      message: '15-Day Free Trial activated! Your website preview is accessible. Job posting will unlock upon Admin approval.',
+      message: '7-Day Free Trial activated! Your website preview is accessible. Job posting will unlock upon Admin approval.',
       status: 'trial_active',
     });
   } catch (error: any) {

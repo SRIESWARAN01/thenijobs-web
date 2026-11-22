@@ -56,6 +56,32 @@ export default function AdminDatabaseCleanupPage() {
     fetchData();
   }, [fetchData]);
 
+  // Handle Cleanup of Rejected Data (> 15 Days)
+  const handleCleanupRejected = async () => {
+    if (!confirm('This will purge rejected registrations older than 15 days. Approved and active data will never be touched. Proceed?')) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch('/api/cron/cleanup-rejected?days=15', { method: 'POST' });
+      let json: any = {};
+      try {
+        const rawText = await res.text();
+        json = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        json = {};
+      }
+      if (json.success) {
+        toast.success(`Purged ${json.totalDeleted} rejected records older than 15 days.`);
+        await fetchData();
+      } else {
+        toast.error(json.error || 'Failed to clean up rejected records');
+      }
+    } catch {
+      toast.error('Network error executing rejected cleanup');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Handle Dry Run
   const handleDryRun = async () => {
     try {
@@ -224,6 +250,15 @@ export default function AdminDatabaseCleanupPage() {
           >
             <Download size={14} />
             <span>Export Backup</span>
+          </button>
+
+          <button
+            onClick={handleCleanupRejected}
+            disabled={actionLoading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+          >
+            <Trash2 size={14} />
+            <span>Clean Rejected (&gt;15 Days)</span>
           </button>
 
           <button

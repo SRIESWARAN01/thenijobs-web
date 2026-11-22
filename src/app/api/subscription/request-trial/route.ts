@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminFirestore, FieldValue } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Proactively synchronize system clock skew to avoid OAuth JWT rejections
-    await syncClockSkew().catch(() => 0);
 
     const body = await safeReadRequestBody<{ userId?: string; companyId?: string }>(req, {});
     const { userId, companyId } = body;

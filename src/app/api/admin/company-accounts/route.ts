@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFirestore, getAdminAuth, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminFirestore, getAdminAuth, syncClockSkew, FieldValue } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 async function verifyAdmin(req: NextRequest) {

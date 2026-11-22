@@ -10,8 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { getAdminFirestore, FieldValue, Timestamp } from '@/lib/firebase/firebaseAdmin';
 
 import crypto from 'crypto';
 

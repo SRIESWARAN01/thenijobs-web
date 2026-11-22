@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminFirestore, FieldValue } from '@/lib/firebase/firebaseAdmin';
 import { resolveAuthRedirect } from '@/lib/authRedirect';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 

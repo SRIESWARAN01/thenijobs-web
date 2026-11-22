@@ -1,5 +1,4 @@
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
-import { FieldValue } from 'firebase-admin/firestore';
+import { getAdminFirestore, FieldValue } from '@/lib/firebase/firebaseAdmin';
 import { AI_CREDIT_COSTS, AIFeatureKey } from './config';
 
 export interface AIUsageLog {

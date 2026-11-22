@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getAdminFirestore, getServiceAccountCredentials, syncClockSkew } from './firebaseAdmin';
+import { getAdminFirestore, getServiceAccountCredentials } from './firebaseAdmin';
 import { assignNextBillingSlogan, getDeterministicBillingSlogan } from '@/lib/billing/sloganService';
 import { ALL_VALID_PLAN_PRICES, SUBSCRIPTION_PLANS } from '@/lib/constants';
 import type { ReceiptData } from '@/lib/pdf/receiptGenerator';
@@ -315,7 +315,6 @@ export function buildReceiptDataFromPayment(p: Record<string, any>): ReceiptData
  * Updates payments, subscriptions, companies, users, and seekerProfiles idempotently.
  */
 export async function recordVerifiedPayment(input: VerifyPaymentInput) {
-  await syncClockSkew().catch(() => 0);
   const {
     orderId,
     paymentId,

@@ -319,7 +319,7 @@ export default function AdminCareerGrowthPage() {
     try {
       setActionLoading('seed_presets');
       for (const preset of COURSE_LAUNCH_PRESETS) {
-        let cat = categories.find(c => c.name.toLowerCase() === preset.categoryName.toLowerCase());
+        const cat = categories.find(c => c.name.toLowerCase() === preset.categoryName.toLowerCase());
         let catId = cat?.id;
         if (!catId) {
           catId = await createSkillCategory({

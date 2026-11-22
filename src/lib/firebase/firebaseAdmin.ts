@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { getAuth, type Auth } from 'firebase-admin/auth';
+import type { App } from 'firebase-admin/app';
+import type { Firestore } from 'firebase-admin/firestore';
+import type { Auth } from 'firebase-admin/auth';
 
 let adminApp: App | null = null;
 let clockSkewSyncPromise: Promise<number> | null = null;
@@ -158,10 +158,14 @@ export function getServiceAccountCredentials(): Record<string, any> | null {
 export function getAdminApp(): App {
   if (adminApp) return adminApp;
 
+  // Lazy load firebase-admin/app to prevent module evaluation crashes in serverless
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { initializeApp, getApps, cert } = require('firebase-admin/app');
+
   const existing = getApps();
   if (existing.length > 0) {
     adminApp = existing[0];
-    return adminApp;
+    return adminApp!;
   }
 
   // Proactively trigger non-blocking clock skew check in node environment
@@ -180,7 +184,7 @@ export function getAdminApp(): App {
 
   try {
     adminApp = initializeApp({ credential: cert(credentials as any) });
-    return adminApp;
+    return adminApp!;
   } catch (err: any) {
     console.error('[firebaseAdmin] Failed to initialize Firebase Admin with credentials:', err?.message || err);
     throw err;
@@ -191,6 +195,8 @@ export function getAdminApp(): App {
  * Returns the Firebase Admin Firestore instance.
  */
 export function getAdminFirestore(): Firestore {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getFirestore } = require('firebase-admin/firestore');
   return getFirestore(getAdminApp());
 }
 
@@ -198,7 +204,86 @@ export function getAdminFirestore(): Firestore {
  * Returns the Firebase Admin Auth instance.
  */
 export function getAdminAuth(): Auth {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getAuth } = require('firebase-admin/auth');
   return getAuth(getAdminApp());
 }
+
+/**
+ * Lazy, safe FieldValue implementation avoiding top-level firebase-admin/firestore imports.
+ */
+export const FieldValue = {
+  serverTimestamp: () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').FieldValue.serverTimestamp();
+    } catch {
+      return new Date();
+    }
+  },
+  delete: () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').FieldValue.delete();
+    } catch {
+      return null;
+    }
+  },
+  increment: (n: number) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').FieldValue.increment(n);
+    } catch {
+      return n;
+    }
+  },
+  arrayUnion: (...elements: any[]) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').FieldValue.arrayUnion(...elements);
+    } catch {
+      return elements;
+    }
+  },
+  arrayRemove: (...elements: any[]) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').FieldValue.arrayRemove(...elements);
+    } catch {
+      return elements;
+    }
+  },
+};
+
+/**
+ * Lazy, safe Timestamp implementation avoiding top-level firebase-admin/firestore imports.
+ */
+export const Timestamp = {
+  now: () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').Timestamp.now();
+    } catch {
+      return new Date();
+    }
+  },
+  fromDate: (d: Date) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').Timestamp.fromDate(d);
+    } catch {
+      return d;
+    }
+  },
+  fromMillis: (ms: number) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('firebase-admin/firestore').Timestamp.fromMillis(ms);
+    } catch {
+      return new Date(ms);
+    }
+  },
+};
+
 
 

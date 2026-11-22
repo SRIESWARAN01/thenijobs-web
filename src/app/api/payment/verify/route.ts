@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ALL_VALID_PLAN_PRICES } from '@/lib/constants';
-import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 import { 
   verifyRazorpaySignature, 

@@ -13,8 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminFirestore, syncClockSkew } from '@/lib/firebase/firebaseAdmin';
-import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { getAdminFirestore, syncClockSkew, FieldValue, Timestamp } from '@/lib/firebase/firebaseAdmin';
 import { safeReadRequestBody } from '@/lib/api/safeResponse';
 
 const reconcileRateLimitMap = new Map<string, { count: number; resetTime: number }>();

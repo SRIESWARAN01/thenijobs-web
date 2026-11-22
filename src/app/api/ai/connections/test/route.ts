@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldValue } from 'firebase-admin/firestore';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore, FieldValue } from '@/lib/firebase/firebaseAdmin';
 import { verifyRequestIdToken } from '@/lib/ai/verifyIdToken';
 import { decryptApiKey } from '@/lib/ai/keyEncryption';
 import { createOpenAIProvider } from '@/lib/ai/providers/openaiProvider';

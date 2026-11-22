@@ -21,6 +21,7 @@ export function useEmployerCompany() {
   const [company, setCompany] = useState<CompanyEntity | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const userCompanyId = (user as any)?.companyId as string | undefined;
 
   const resolveAndListen = useCallback(() => {
     if (!user?.uid) {
@@ -129,7 +130,7 @@ export function useEmployerCompany() {
       isCancelled = true;
       if (unsubPrimary) unsubPrimary();
     };
-  }, [user?.uid, (user as any)?.companyId, user?.email]);
+  }, [user?.uid, userCompanyId, user?.email]);
 
   useEffect(() => {
     const unsub = resolveAndListen();

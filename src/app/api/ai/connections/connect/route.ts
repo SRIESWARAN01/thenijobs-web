@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FieldValue } from 'firebase-admin/firestore';
-import { getAdminFirestore } from '@/lib/firebase/firebaseAdmin';
+import { getAdminFirestore, FieldValue } from '@/lib/firebase/firebaseAdmin';
 import { verifyRequestIdToken } from '@/lib/ai/verifyIdToken';
 import { checkConnectionAccess } from '@/lib/ai/aiConnectionAccess';
 import { encryptApiKey, maskApiKey } from '@/lib/ai/keyEncryption';
